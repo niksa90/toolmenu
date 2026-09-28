@@ -11,6 +11,13 @@ BODY="$OUT/comment.md"
 MARKER='<!-- toolmenu-report -->'
 FAIL_ON="${TOOLMENU_FAIL_ON:-error}"
 
+# Connection options, one per line: HTTP headers ("Name: value", e.g. an API key
+# from a secret) and environment variables for a stdio server ("KEY=value"). They
+# go to the CLI as arguments and never into the report.
+CONN=()
+while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--header "$line"); done <<< "${TOOLMENU_HEADERS:-}"
+while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--env "$line"); done <<< "${TOOLMENU_ENV:-}"
+
 if [ -n "${TOOLMENU_URL:-}" ]; then
   TARGET=("$TOOLMENU_URL")
 elif [ -n "${TOOLMENU_COMMAND:-}" ]; then
@@ -31,28 +38,58 @@ note() { [ "$1" -gt "$status" ] && status=$1; }
 #     on the base branch → the same file here.
 # Projects versioned only by git tags (Go, setuptools-scm) have no next version
 # in a PR; their bump is checked when the tag is pushed.
+# The previous version tag before the tag being pushed, in version order.
+previous_tag() {
+  local tag="$1"
+  git fetch --quiet --tags origin 2>/dev/null
+  git tag --list --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+' | grep -vxF "$tag" \
+    | while read -r t; do [ "$(printf '%s\n%s\n' "$t" "$tag" | sort -V | tail -1)" = "$tag" ] && { echo "$t"; break; }; done
+}
+
+# The ref the baseline and the release versions come from: the PR's base branch,
+# or the previous version tag on a tag push. Empty when neither applies.
+base_ref() {
+  if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
+    previous_tag "${GITHUB_REF#refs/tags/}"
+  elif [ -n "${TOOLMENU_BASE_REF:-}" ] && git fetch --quiet --depth=1 origin "$TOOLMENU_BASE_REF" 2>/dev/null; then
+    git rev-parse FETCH_HEAD
+  fi
+}
+
 release_args() {
   local release="${TOOLMENU_RELEASE:-auto}"
   if [ "$release" = "off" ] || [ -z "$release" ]; then return; fi
   if [ "$release" != "auto" ]; then echo "--release $release"; return; fi
   local version="${TOOLMENU_VERSION_SCRIPT:-$(dirname "$0")/version.mjs}"
+  local base="$BASE"
+  [ -n "$base" ] || return
   if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
-    local tag="${GITHUB_REF#refs/tags/}" previous
-    git fetch --quiet --tags origin 2>/dev/null
-    previous=$(git tag --list --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+' | grep -vxF "$tag" \
-      | while read -r t; do [ "$(printf '%s\n%s\n' "$t" "$tag" | sort -V | tail -1)" = "$tag" ] && { echo "$t"; break; }; done)
-    [ -n "$previous" ] && echo "--release $previous..$tag"
+    echo "--release $base..${GITHUB_REF#refs/tags/}"
     return
   fi
-  [ -n "${TOOLMENU_BASE_REF:-}" ] || return
-  git fetch --quiet --depth=1 origin "$TOOLMENU_BASE_REF" 2>/dev/null || return
   local file before after
   for file in package.json pyproject.toml Cargo.toml; do
     [ -f "$file" ] || continue
     after=$(node "$version" "$file" < "$file")
-    before=$(git show "FETCH_HEAD:$file" 2>/dev/null | node "$version" "$file")
+    before=$(git show "$base:$file" 2>/dev/null | node "$version" "$file")
     if [ -n "$before" ] && [ -n "$after" ]; then echo "--release $before..$after"; return; fi
   done
+}
+
+# The menu to diff against: the baseline as it is on the base ref, so a PR that
+# also commits its refreshed snapshot is still compared with what shipped.
+# Falls back to the checked-out file.
+set_baseline() {
+  local file="${TOOLMENU_BASELINE:-menu.json}"
+  BASELINE=""
+  BASELINE_FROM=""
+  if [ -n "$BASE" ] && git show "$BASE:$file" > "$OUT/baseline.json" 2>/dev/null; then
+    BASELINE="$OUT/baseline.json"
+    BASELINE_FROM="\`$file\` as of ${TOOLMENU_BASE_REF:-$BASE}"
+  elif [ -f "$file" ]; then
+    BASELINE="$file"
+    BASELINE_FROM="\`$file\` in this checkout"
+  fi
 }
 
 {
@@ -62,19 +99,21 @@ release_args() {
 } > "$BODY"
 
 # 1. Snapshot the menu this change produces.
-$CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
+$CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
 if [ "$code" -eq 2 ]; then
   { echo "**Couldn't snapshot the server.**"; echo; echo '```'; tail -20 "$OUT/snapshot.err"; echo '```'; } >> "$BODY"
   note 2
 else
   note "$code"
-  # 2. Compare with the committed baseline.
-  if [ -f "${TOOLMENU_BASELINE:-menu.json}" ]; then
+  # 2. Compare with the baseline as it is on the base branch (or previous tag).
+  BASE=$(base_ref)
+  set_baseline
+  if [ -n "$BASELINE" ]; then
     # shellcheck disable=SC2046
-    $CLI diff --format markdown --fail-on "$FAIL_ON" $(release_args) "${TOOLMENU_BASELINE:-menu.json}" "$OUT/current.json" > "$OUT/diff.md" 2> "$OUT/diff.err"
+    $CLI diff --format markdown --fail-on "$FAIL_ON" $(release_args) "$BASELINE" "$OUT/current.json" > "$OUT/diff.md" 2> "$OUT/diff.err"
     code=$?; note "$code"
-    if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { cat "$OUT/diff.md"; echo; } >> "$BODY"; fi
+    if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { cat "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
   else
     { echo "No baseline at \`${TOOLMENU_BASELINE:-menu.json}\`, so there's nothing to compare with yet. Commit the snapshot to start tracking changes:"; echo; echo '```sh'; echo "npx toolmenu snapshot ${TOOLMENU_URL:-"-- $TOOLMENU_COMMAND"}"; echo '```'; echo; } >> "$BODY"
   fi
@@ -83,7 +122,7 @@ fi
 
 # 3. Watch the menu during a scripted session.
 if [ -n "${TOOLMENU_SCENARIO:-}" ]; then
-  $CLI session --scenario "$TOOLMENU_SCENARIO" --format markdown --fail-on "$FAIL_ON" "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
+  $CLI session --scenario "$TOOLMENU_SCENARIO" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
   code=$?; note "$code"
   if [ "$code" -eq 2 ]; then { echo "**Session didn't run:** $(head -3 "$OUT/session.err")"; echo; } >> "$BODY"; else { cat "$OUT/session.md"; echo; } >> "$BODY"; fi
 fi

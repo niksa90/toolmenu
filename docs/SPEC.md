@@ -21,8 +21,8 @@ and they need different answers:
 
 | When the menu changes | What it risks | toolmenu command |
 |---|---|---|
-| **During a live conversation** (unlocks, dynamic tools, unstable output) | Cache breaks. A change can force the changed suffix of the prompt to be written to the cache again. In my logs, one mid-conversation unlock rewrote **40–57K tokens of cached prefix** | `session` |
-| **Between releases** | Compatibility. Agents, saved prompts and evals break or quietly change behaviour. Little cache impact: caches expire within minutes to an hour, so a deploy costs roughly one rewrite | `diff` |
+| **During a live conversation** (unlocks, dynamic tools, unstable output) | Cache breaks. Prompt caches match a prefix, and most clients put the tool list at the start of the prompt (Claude's Messages API renders tools, then system, then messages), so a change anywhere in the tool list means everything after it, the whole conversation included, is processed again. In my logs, one mid-conversation unlock rewrote **40–57K tokens of cached prefix** | `session` |
+| **Between releases** | Compatibility. Agents, saved prompts and evals break or quietly change behaviour. Little cache impact: prompt caches are short-lived (minutes to hours, depending on the provider), so a deploy costs roughly one rewrite | `diff` |
 
 The 40–57K figure supports the first row only. v0.1 of this spec mixed the two up.
 
@@ -134,8 +134,8 @@ through the notification on the session.
 
 | Change during session | Severity | Why |
 |---|---|---|
-| Tool appended at the end | info | Usually the most cache-friendly change: the existing prefix can stay valid. Exact behaviour depends on the provider |
-| Tool inserted mid-list | error | Can break the cache from the insert point on |
+| Tool appended at the end | warn | The end of the tool list isn't the end of the prompt. With tools first, an append still invalidates the cached conversation after the list. Cache-safe only when the client adds new tools after the cached content, as tool search (deferred loading) does. (Corrected before 0.7.0: earlier drafts called appends "usually cache-friendly", which only holds for tool search.) |
+| Tool inserted mid-list | error | Invalidates the cache from the insert point on, and the conversation after the list |
 | Reorder | error | Same, from the first moved tool on |
 | Tool removed | error | Same, from the removed tool on |
 | Description/schema/annotations of existing tool edited | error | Same, from the edited tool on |
@@ -171,12 +171,12 @@ SESSION  scenario.yml
 step 3: call unlock_toolset { toolset: "audits" }
   ERROR session/mid-insert
     +3 tools inserted at position 42 (list_team_audits, get_team_audit, …)
-    ~14,200 estimated tokens of cached prefix affected (positions 42–118)
+    ~14,200 estimated tokens of the tool list from position 42 on (positions 42–118), a floor
 
 step 5: list
   ERROR session/edit
     get_form: description changed (no tool call in between)
-    ~9,800 estimated tokens of cached prefix affected (positions 17–118)
+    ~9,800 estimated tokens of the tool list from position 17 on (positions 17–118), a floor
 ```
 
 That turns "something bad happened" into "this operation changed the menu in a
@@ -627,4 +627,43 @@ positive or a miss in that run.
     `Cargo.toml` (`[package]`) on the base branch and the head; on a tag push it takes
     the previous version tag and this one. A project versioned only by tags (Go,
     setuptools-scm) has no next version in a PR, so its bump is checked at the tag.
+
+## 20. Before the first release: a claims check and a code review
+
+Nothing had checked the claims themselves: the reviews so far covered writing, and the
+tests checked the code against the spec, not the spec against reality. Two passes
+before 0.7.0:
+
+- **The cache model was wrong.** The end of the tool list isn't the end of the
+  prompt. Claude's Messages API renders tools, then system, then messages, and its
+  docs say adding, removing or reordering a tool invalidates the entire cache. So a
+  tool appended mid-session still re-processes the whole conversation, unless the
+  client adds new tools after the cached content (tool search / deferred loading).
+  `session/append` is now a warning, and the mid-list estimate is labelled as a floor.
+- **Key order counts.** Comparisons for caching and determinism are byte-exact now:
+  a new property order is a `serialization` change. `diff` between releases stays
+  semantic.
+- **`diff`:** every parameter is checked for changes it doesn't classify, so a
+  description change on one parameter can't hide a narrowed enum on another (array
+  item enums count too). The suggested bump only counts findings that survive
+  `ignore` and rules set to off. A version that goes backwards is flagged; a
+  prerelease isn't judged.
+- **`history`** orders versions by semver, not publish time, so a backport is diffed
+  against its own line.
+- **`session`** lists the menu after a failed or timed-out step too, so a change the
+  server applied anyway is pinned to that step. An append in the same step as an
+  edit is still an append. Removals at the end get a sensible cost line.
+- **The Action** diffs against the baseline as it is on the base branch (or the
+  previous tag), not the PR's own copy, so a PR that commits its refreshed snapshot
+  is still checked.
+- **The CLI** waits for stdout to drain before exiting, so piped `--json` isn't cut.
+- Wording: "the linters I found", no "common today", and determinism scoped to the
+  same inputs (`history` excepted).
+- **A second review, of those fixes**, found ten more, several introduced by them: a
+  failed menu listing after a step was swallowed (now `session/step-failed`); array
+  item types weren't compared; ignored tools could still pair into a rename or a
+  reorder (they now leave the comparison); a version going backwards now has its own
+  rule, `diff/version-backwards`; build metadata (`+build-1`) no longer reads as a
+  prerelease, with one semver parser shared by `diff` and `history`; and piping into
+  `head` keeps the exit code instead of crashing on EPIPE.
 

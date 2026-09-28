@@ -10,6 +10,7 @@ const LABELS: Record<ToolChange['kind'], string> = {
   outputSchema: 'outputSchema changed',
   annotations: 'annotations changed',
   other: 'definition changed',
+  serialization: 'key order changed (same content, different bytes)',
 };
 
 export const nondeterministic: Rule = {

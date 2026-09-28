@@ -74,6 +74,8 @@ export interface StepRecord {
   index: number;
   label: string;
   status: 'ok' | 'refused' | 'failed' | 'timed-out';
+  /** Why no call was made, when none was: set where the status is set, never parsed from text. */
+  reason?: 'missing' | 'refused';
   note?: string;
   changed: boolean;
   listChanged: number;
@@ -158,13 +160,12 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         const tool = current.tools.find((t) => t.name === step.tool);
         if (!tool) {
           record.status = 'failed';
+          record.reason = 'missing';
           record.note = `${step.tool} isn't in the menu at this point`;
           raw.push({ rule: 'session/step-failed', severity: 'error', step: index, message: `Step ${index} calls ${step.tool}, which isn't in the menu at this point.` });
-          steps.push(record);
-          continue;
-        }
-        if (!scenario.allowWrites && tool.annotations?.readOnlyHint !== true) {
+        } else if (!scenario.allowWrites && tool.annotations?.readOnlyHint !== true) {
           record.status = 'refused';
+          record.reason = 'refused';
           record.note = 'not marked readOnlyHint';
           raw.push({
             rule: 'session/refused',
@@ -173,10 +174,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             tool: step.tool,
             message: `Refused to call ${step.tool}: it isn't marked readOnlyHint, and session calls tools for real. Set "allow_writes: true" in the scenario if that's intended.`,
           });
-          steps.push(record);
-          continue;
         }
-        try {
+        if (record.status === 'ok') try {
           const result = await conn.client.callTool({ name: step.tool, arguments: step.args }, { timeout: timeoutMs });
           if (result.isError) {
             const text = (Array.isArray(result.content) ? result.content : [])
@@ -198,8 +197,6 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           record.status = 'failed';
           record.note = error instanceof Error ? error.message.split('\n')[0] : String(error);
           raw.push({ rule: 'session/step-failed', severity: 'error', step: index, tool: step.tool, message: `Step ${index} (${label}) failed: ${record.note}` });
-          steps.push(record);
-          continue;
         }
       } else if (step.kind === 'wait_for') {
         const arrived = await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, step.timeoutMs);
@@ -209,14 +206,35 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         }
       }
 
-      const next = await menuOf(conn);
+      // List even after a failed step: a call that errored or timed out may still
+      // have changed the menu, and the change belongs to this step, not the next.
+      let next: Menu;
+      try {
+        next = await menuOf(conn);
+      } catch (error) {
+        const why = error instanceof Error ? error.message.split('\n')[0] : String(error);
+        record.status = 'failed';
+        record.note = record.note ? `${record.note}; then listing the menu failed: ${why}` : `listing the menu failed: ${why}`;
+        raw.push({ rule: 'session/step-failed', severity: 'error', step: index, message: `After step ${index} (${label}), listing the menu failed: ${why}` });
+        steps.push(record);
+        continue;
+      }
       const changes = compareMenus(current.tools, next.tools);
       if (changes.length) {
         record.changed = true;
         if (conn.wire.notificationsSince(mark, LIST_CHANGED) === 0) {
           await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, grace);
         }
-        const origin = step.kind === 'list' ? 'no tool call in between' : undefined;
+        const origin =
+          step.kind === 'list'
+            ? 'no tool call in between'
+            : record.reason === 'missing'
+              ? 'no tool call made (the tool wasn\'t in the menu)'
+              : record.reason === 'refused'
+                ? 'no tool call made (refused)'
+                : record.status === 'failed'
+                  ? 'the call failed, but the menu changed: the server may have applied it anyway'
+                  : undefined;
         raw.push(...changeFindings(current.tools, next.tools, changes, index, origin));
 
         if (declared && listening && conn.wire.notificationsSince(mark, LIST_CHANGED) === 0) {
@@ -290,15 +308,17 @@ function waitFor(done: () => boolean, ms: number): Promise<boolean> {
   });
 }
 
-const EDIT_KINDS = new Set<ToolChange['kind']>(['description', 'inputSchema', 'outputSchema', 'annotations', 'other']);
+const EDIT_KINDS = new Set<ToolChange['kind']>(['description', 'inputSchema', 'outputSchema', 'annotations', 'other', 'serialization']);
 
 /** Turn a menu change into findings, with the cost of each. */
 export function changeFindings(before: MenuTool[], after: MenuTool[], changes: ToolChange[], step: number, origin?: string): Raw[] {
   const out: Raw[] = [];
   const brk = cacheBreak(before, after);
-  const cost = brk
-    ? [`~${brk.tokensAffected.toLocaleString('en-US')} estimated tokens of cached prefix affected (positions ${brk.position}–${after.length - 1})`]
-    : [];
+  const cost = !brk
+    ? []
+    : brk.position >= after.length
+      ? [`the tool list is unchanged up to position ${brk.position}, where tools were removed from the end; with the tool list at the start of the prompt, the conversation after it is processed again`]
+      : [`~${brk.tokensAffected.toLocaleString('en-US')} estimated tokens of the tool list from position ${brk.position} on (positions ${brk.position}–${after.length - 1}), a floor: with the tool list at the start of the prompt, the conversation after it is processed again too`];
   const why = origin ? [origin] : [];
 
   const added = changes.filter((c) => c.kind === 'added');
@@ -308,13 +328,13 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
 
   if (added.length) {
     const names = added.map((a) => a.tool);
-    if (appended && others.length === 0) {
+    if (appended) {
       const tokens = after.filter((t) => names.includes(t.name)).reduce((s, t) => s + t.tokens, 0);
       out.push({
         rule: 'session/append',
-        severity: 'info',
+        severity: 'warn',
         step,
-        message: `+${names.length} tool${names.length === 1 ? '' : 's'} appended at the end (${names.join(', ')}). Usually the most cache-friendly change: the prefix before them can stay valid.`,
+        message: `+${names.length} tool${names.length === 1 ? '' : 's'} appended at the end of the list (${names.join(', ')}). The end of the tool list isn't the end of the prompt: most clients send tools first (Claude's Messages API does), so any change to them, an append too, invalidates the cached conversation after them. Appends are cache-safe only if your client adds new tools after the cached content, as tool search (deferred loading) does.`,
         detail: [`~${tokens.toLocaleString('en-US')} new tokens (estimate)`, ...why],
       });
     } else {
@@ -323,7 +343,7 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
         rule: 'session/mid-insert',
         severity: 'error',
         step,
-        message: `+${names.length} tool${names.length === 1 ? '' : 's'} inserted at position ${first} (${names.join(', ')}). Can break the prompt cache from there on.`,
+        message: `+${names.length} tool${names.length === 1 ? '' : 's'} inserted at position ${first} (${names.join(', ')}). Invalidates the cached prompt from that tool on, and the conversation after the tool list.`,
         detail: [...cost, ...why],
       });
     }
@@ -337,7 +357,7 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
     out.push({ rule: 'session/remove', severity: 'error', step, message: `${removed.map((r) => r.tool).join(', ')} disappeared from the menu mid-session.`, detail: [...cost, ...why] });
   }
   const edits = new Map<string, string[]>();
-  for (const c of changes.filter((c) => EDIT_KINDS.has(c.kind))) edits.set(c.tool, [...(edits.get(c.tool) ?? []), c.kind === 'other' ? 'definition' : c.kind]);
+  for (const c of changes.filter((c) => EDIT_KINDS.has(c.kind))) edits.set(c.tool, [...(edits.get(c.tool) ?? []), c.kind === 'other' ? 'definition' : c.kind === 'serialization' ? 'key order (same content, different bytes)' : c.kind]);
   for (const [tool, fields] of edits) {
     out.push({ rule: 'session/edit', severity: 'error', step, tool, message: `${tool}: ${fields.join(', ')} changed mid-session.`, detail: [...cost, ...why] });
   }
