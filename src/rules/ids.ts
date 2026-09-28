@@ -21,6 +21,15 @@ const QUALIFIERS = new Set([
   'creator', 'new', 'old', 'target', 'source', 'parent', 'child', 'from', 'to', 'destination', 'current',
   'previous', 'next', 'owner', 'assigned', 'assignee', 'primary', 'default', 'other', 'related', 'base', 'root',
 ]);
+// Short and long names for the same kind: `orgId` is returned by
+// `get-organization` (Miro), `repoId` by `list_repositories`.
+const ABBREVIATIONS: Record<string, string> = {
+  org: 'organization', repo: 'repository', db: 'database', env: 'environment', dir: 'directory',
+  msg: 'message', doc: 'document', proj: 'project', ws: 'workspace', cfg: 'config', conf: 'config',
+};
+/** One spelling per kind word. */
+export const canonicalWord = (w: string): string => ABBREVIATIONS[w] ?? w;
+
 // A description that tells the agent not to make the value up.
 const DONT_INVENT = /\b(do not|don't|never|avoid|must not)\s+(invent|make up|guess|fabricate|generate)\b/i;
 // "Omit this in the normal case": optional, and the agent is told to leave it out.
@@ -53,8 +62,10 @@ export function idParams(tool: MenuTool): IdParam[] {
     const bare = BARE_ID.test(param);
     const opaqueFormat = schema.format === 'uuid' || (typeof schema.pattern === 'string' && /\[0-9a-f|\[a-f0-9/i.test(schema.pattern));
     if (!match && !bare && !opaqueFormat) continue;
-    const kindWords = match?.[1] ? words(match[1]).map(singular).filter((w) => !JOINERS.has(w)) : [];
+    const kindWords = match?.[1] ? words(match[1]).map(singular).filter((w) => !JOINERS.has(w)).map(canonicalWord) : [];
     while (kindWords.length > 1 && QUALIFIERS.has(kindWords[0])) kindWords.shift();
+    // A qualifier alone (`parentId`, `targetId`) says how it relates, not what it is.
+    if (kindWords.length === 1 && QUALIFIERS.has(kindWords[0])) kindWords.length = 0;
     const prefix = kindWords.join('_');
     // A bare `id` doesn't say what it identifies (naming/vague-id covers that), so no kind is guessed.
     params.push({ param, kind: prefix || undefined });
@@ -72,7 +83,7 @@ function looksLikeIdValue(schema: JsonSchema): boolean {
 function isReturnedBySomeTool(kind: string, self: MenuTool, tools: MenuTool[], common: Set<string>): boolean {
   return tools.some((other) => {
     if (other.name === self.name) return false;
-    const w = words(other.name).map(singular).filter((x) => !common.has(x));
+    const w = words(other.name).map(singular).map(canonicalWord).filter((x) => !common.has(x));
     const verbs = w.filter((x) => VERBS.has(x));
     const subject = nouns(other.name).filter((x) => !common.has(x));
     // The kind in its name, as a noun or a word run (data_source), or as the verb itself (searchId ← search).
@@ -94,8 +105,8 @@ function isReturnedBySomeTool(kind: string, self: MenuTool, tools: MenuTool[], c
 function outputMentions(schema: JsonSchema | undefined, kind: string, depth = 0, parent = ''): boolean {
   if (!schema || depth > 6) return false;
   for (const [name, child] of Object.entries(schema.properties ?? {})) {
-    const n = words(name).map(singular).join('_');
-    if (n === `${kind}_id` || n === `${kind}_uuid` || (n === 'id' && singular(parent) === kind)) return true;
+    const n = words(name).map(singular).map(canonicalWord).join('_');
+    if (n === `${kind}_id` || n === `${kind}_uuid` || (n === 'id' && canonicalWord(singular(parent)) === kind)) return true;
     if (outputMentions(child, kind, depth + 1, name)) return true;
   }
   if (schema.items && outputMentions(schema.items, kind, depth + 1, parent)) return true;
@@ -104,11 +115,13 @@ function outputMentions(schema: JsonSchema | undefined, kind: string, depth = 0,
 
 export const authoredIds: Rule = {
   id: 'ids/authored',
-  severity: 'warn',
+  // A heuristic: IDs that only appear in another tool's text output look the same
+  // as invented ones from the schema alone (FINDINGS F12).
+  severity: 'info',
   lesson: '01',
   summary: 'IDs the agent must supply should come from some other tool',
   run(ctx) {
-    const findings: RuleFinding[] = [];
+    const byKind = new Map<string, { tool: string; param: string }[]>();
     const common = commonWords(ctx.menu.tools.map((t) => t.name));
     for (const tool of ctx.menu.tools) {
       for (const { param, kind } of idParams(tool)) {
@@ -118,17 +131,26 @@ export const authoredIds: Rule = {
         // Optional, and the description already tells the agent not to invent it.
         const optional = !(tool.inputSchema?.required ?? []).includes(param);
         if (optional && toldNotToInvent(tool, param, schema)) continue;
-        findings.push({
-          tool: tool.name,
-          message: `${tool.name}.${param}: looks like a ${kind} ID the agent must supply, but no tool appears to return one (no list/search/get tool for "${kind}", no output schema with a ${kind} ID). The agent may invent it. Heuristic.`,
-        });
+        byKind.set(kind, [...(byKind.get(kind) ?? []), { tool: tool.name, param }]);
       }
     }
-    return findings;
+    // One finding per kind: 17 tools taking an orgId are one question, not 17.
+    return [...byKind].map(([kind, uses]): RuleFinding => {
+      const tools = [...new Set(uses.map((u) => u.tool))];
+      const where = uses.map((u) => `${u.tool}.${u.param}`);
+      return {
+        ...(tools.length === 1 ? { tool: tools[0] } : {}),
+        message: `${where.length === 1 ? `${where[0]} looks like` : `${where.length} parameters look like`} a ${kind} ID the agent must supply, but no tool appears to return one (no list/search/get tool for "${kind}", no output schema with a ${kind} ID). The agent may invent it, unless it comes from somewhere toolmenu can't see (a URL, another tool's text output). Heuristic.`,
+        ...(where.length > 1 ? { detail: [where.slice(0, 8).join(', ') + (where.length > 8 ? `, and ${where.length - 8} more` : '')] } : {}),
+      };
+    });
   },
 };
 
-const PROVENANCE = /\b(from|returned by|obtained|output of|result of|as (listed|shown|returned))\b/i;
+// Where the value comes from: another tool, or a URL the user has ("often found as
+// URL parameter node-id": Figma). A bare mention of a URL isn't enough: Sentry's
+// "Required when not using a URL" names an alternative input, not a source.
+const PROVENANCE = /\b(from|returned by|obtained|output of|result of|as (listed|shown|returned))\b|\bfound (in|as|on)\b[^.]{0,40}\b(url|link)\b|\b(url|query) param(eter)?\b/i;
 
 /** The parameter's description says where the value comes from, or names the tool that gives it. */
 function saysWhereItComesFrom(schema: JsonSchema | undefined, tools: MenuTool[], self: string): boolean {

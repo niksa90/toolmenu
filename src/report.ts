@@ -232,7 +232,7 @@ export function formatSession(s: SessionResult, format: Format): string {
     `toolmenu session  ${s.scenario}`,
     `  ${s.server.name ?? 'server'} ${s.server.version ?? ''} · protocol ${s.server.protocolVersion ?? '?'} · ${s.transport}`,
     `  baseline: ${plural(s.baseline.tools, 'tool')} · ${tok(s.baseline.tokens)} tokens (estimate) · listening for list_changed: ${s.listening ? 'yes' : 'no'}`,
-    `  fresh-connection check: ${s.connectionCheck === 'same' ? 'a second connection got the same menu' : 'a second connection got a DIFFERENT menu'}`,
+    `  fresh-${s.transport === 'stdio' ? 'process' : 'connection'} check: ${s.connectionCheck === undefined ? 'not checked' : s.connectionCheck === 'same' ? 'the same menu' : 'a DIFFERENT menu'}`,
     '',
   ];
   const at = (step: number) => s.findings.filter((f) => f.step === step);
@@ -255,6 +255,12 @@ export function formatSession(s: SessionResult, format: Format): string {
     ].filter(Boolean);
     lines.push(`step ${step.index}: ${step.label} · ${facts.join(' · ')}`);
     block(at(step.index));
+  }
+  // Findings about the whole run (session/untested), after the steps.
+  const run = s.findings.filter((f) => f.step === undefined);
+  if (run.length) {
+    lines.push('');
+    block(run);
   }
   lines.push('');
   lines.push(`final: ${plural(s.final.tools, 'tool')} · ${tok(s.final.tokens)} tokens (estimate)`);

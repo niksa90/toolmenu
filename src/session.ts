@@ -3,6 +3,9 @@ import { parse } from 'yaml';
 import { cacheBreak, compareMenus, type ToolChange } from './compare.js';
 import { connect, listTools, type Connection, type Target } from './connect.js';
 import { buildMenu } from './menu.js';
+import { isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
+import { varianceFinding } from './rules/determinism.js';
+import { classifyFailure, FAILURE_LABELS, SETUP_FAILURES, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { verbOf, WRITE_VERBS } from './words.js';
@@ -77,6 +80,8 @@ export interface StepRecord {
   /** Why no call was made, when none was: set where the status is set, never parsed from text. */
   reason?: 'missing' | 'refused';
   note?: string;
+  /** Why the call failed, when it did (a tool error or a failed request). */
+  failure?: FailureClass;
   changed: boolean;
   listChanged: number;
   scope?: Scope;
@@ -91,6 +96,7 @@ export interface SessionResult {
   listening: boolean;
   baseline: { tools: number; tokens: number };
   final: { tools: number; tokens: number };
+  /** Undefined when not checked (processes: 1). */
   connectionCheck?: 'same' | 'different';
   steps: StepRecord[];
   findings: Finding[];
@@ -103,6 +109,8 @@ export interface SessionOptions {
   rules?: Record<string, Severity | 'off'>;
   ignore?: string[];
   scenarioName?: string;
+  /** Server processes (stdio) or connections (HTTP) to compare before the first step, the main one included (default 2). */
+  processes?: number;
 }
 
 type Raw = Omit<Finding, 'severity'> & { severity: Severity };
@@ -112,7 +120,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   const timeoutMs = options.timeoutMs ?? 30_000;
   const grace = options.noticeGraceMs ?? 500;
   const raw: Raw[] = [];
-  const conn = await connect(target, { timeoutMs });
+  // The main process runs with a pinned hash seed, and so does every scope probe:
+  // a probe with a different seed would count ordering variance as a change.
+  const mainTarget = seeded(target, MAIN_SEED);
+  const conn = await connect(mainTarget, { timeoutMs });
   try {
     const era = conn.era;
     const modern = era === 'modern';
@@ -131,21 +142,18 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     let current = await menuOf(conn);
     const baseline = current;
 
-    // Two fresh connections, same credentials, must see the same menu.
-    const fresh = await freshMenu(target, timeoutMs);
-    const connectionCheck = sameMenu(fresh, current) ? 'same' : 'different';
-    if (connectionCheck === 'different') {
-      const detail = describe(compareMenus(current.tools, fresh.tools));
-      if (target.kind === 'http') {
-        raw.push({
-          rule: 'session/connection-variance',
-          severity: modern ? 'error' : 'warn',
-          step: 0,
-          message: `A second connection with the same credentials got a different menu.${modern ? ' On 2026-07-28 the tool set MUST NOT vary per-connection.' : ''} Clients can't share a cached menu.`,
-          detail,
-        });
-      } else {
-        raw.push({ rule: 'session/connection-variance', severity: 'warn', step: 0, message: 'A second server process returned a different menu. Every client that starts this server gets its own menu, so none can share a cached prefix.', detail });
+    // Fresh processes or connections, same credentials, must see the same menu.
+    let connectionCheck: SessionResult['connectionCheck'];
+    for (const probe of await probeVariance(target, current.tools, options.processes ?? 2, timeoutMs)) {
+      if (probe.error) {
+        raw.push({ rule: target.kind === 'stdio' ? 'menu/process-variance' : 'menu/connection-variance', severity: 'info', step: 0, message: `Couldn't ${target.kind === 'stdio' ? 'start a second server process' : 'open a second connection'} to compare menus, so this wasn't checked: ${probe.error.split('\n')[0]}` });
+        continue;
+      }
+      const f = varianceFinding(current.tools, probe.tools ?? [], { transport: target.kind, modern, wrapper: isContainerWrapper(target) });
+      connectionCheck = f ? 'different' : connectionCheck ?? 'same';
+      if (f) {
+        raw.push({ ...f, step: 0 });
+        break;
       }
     }
 
@@ -185,7 +193,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
               .trim();
             const short = clip(text, 120);
             record.note = text ? `the tool returned an error: ${short}` : 'the tool returned an error';
-            raw.push({
+            record.failure = classifyFailure(text, { hadArguments: Object.keys(step.args).length > 0 });
+            // A setup failure is reported once, for the whole run (session/untested).
+            if (!SETUP_FAILURES.has(record.failure)) raw.push({
               rule: 'session/tool-error',
               severity: 'warn',
               step: index,
@@ -196,7 +206,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         } catch (error) {
           record.status = 'failed';
           record.note = error instanceof Error ? error.message.split('\n')[0] : String(error);
-          raw.push({ rule: 'session/step-failed', severity: 'error', step: index, tool: step.tool, message: `Step ${index} (${label}) failed: ${record.note}` });
+          const code = (error as { code?: unknown }).code;
+          record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
+          if (!SETUP_FAILURES.has(record.failure)) raw.push({ rule: 'session/step-failed', severity: 'error', step: index, tool: step.tool, message: `Step ${index} (${label}) failed: ${record.note}` });
         }
       } else if (step.kind === 'wait_for') {
         const arrived = await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, step.timeoutMs);
@@ -247,7 +259,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         }
 
         if (step.kind !== 'list') {
-          const probe = await freshMenu(target, timeoutMs);
+          const probe = await probeMenu(mainTarget, timeoutMs);
           record.scope = scopeOf(changes, next.tools, probe.tools, target.kind);
           raw.push(...scopeFindings(record.scope, modern, index));
         }
@@ -258,6 +270,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       record.tokens = current.totalTokens;
       steps.push(record);
     }
+
+    raw.push(...untested(steps, target));
 
     return {
       scenario: options.scenarioName ?? 'scenario',
@@ -275,21 +289,32 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   }
 }
 
+/**
+ * Calls that failed before reaching the tool's logic (credentials, this machine,
+ * the network) tested nothing but whether a failed call changes the menu. Said
+ * once. An error when no call got through at all: otherwise an expired CI secret
+ * turns the job green while testing nothing.
+ */
+function untested(steps: StepRecord[], target: Target): Raw[] {
+  const calls = steps.filter((s) => s.label.startsWith('call ') && s.reason === undefined);
+  const setup = calls.filter((s) => s.failure && SETUP_FAILURES.has(s.failure));
+  if (setup.length === 0) return [];
+  const byClass = new Map<FailureClass, StepRecord[]>();
+  for (const s of setup) byClass.set(s.failure!, [...(byClass.get(s.failure!) ?? []), s]);
+  const all = setup.length === calls.length;
+  const how = target.kind === 'http' ? 'real credentials (--header "Authorization: …")' : 'real credentials (--env KEY=…)';
+  return [
+    {
+      rule: 'session/untested',
+      severity: all ? 'error' : 'warn',
+      message: `${all ? `All ${calls.length}` : `${setup.length} of ${calls.length}`} tool calls failed before reaching the tool: ${[...byClass].map(([c, list]) => `${list.length} on ${FAILURE_LABELS[c]}`).join(', ')}. Those steps only tested whether a failed call changes the menu.${byClass.has('auth') || byClass.has('not-found') ? ` Run with ${how}.` : ''}`,
+      detail: [...byClass].map(([c, list]) => `${c}: steps ${list.map((s) => s.index).join(', ')} (“${(list[0].note ?? '').replace(/^the tool returned an error: /, '').slice(0, 100)}”)`),
+    },
+  ];
+}
+
 function serverOf(c: Connection): Menu['server'] {
   return { name: c.server.name, version: c.server.version, protocolVersion: c.protocolVersion, era: c.era };
-}
-
-async function freshMenu(target: Target, timeoutMs: number): Promise<Menu> {
-  const c = await connect(target, { timeoutMs });
-  try {
-    return buildMenu((await listTools(c, { timeoutMs })).tools, serverOf(c));
-  } finally {
-    await c.close().catch(() => {});
-  }
-}
-
-function sameMenu(a: Menu, b: Menu): boolean {
-  return compareMenus(a.tools, b.tools).length === 0;
 }
 
 function waitFor(done: () => boolean, ms: number): Promise<boolean> {
@@ -314,11 +339,15 @@ const EDIT_KINDS = new Set<ToolChange['kind']>(['description', 'inputSchema', 'o
 export function changeFindings(before: MenuTool[], after: MenuTool[], changes: ToolChange[], step: number, origin?: string): Raw[] {
   const out: Raw[] = [];
   const brk = cacheBreak(before, after);
+  // Claude's docs: adding, removing or reordering a tool invalidates the entire
+  // cache (SPEC §20), not just what follows the change. So the cost is the whole
+  // tool list and everything after it; toolmenu can measure this server's part.
+  const total = after.reduce((sum, t) => sum + t.tokens, 0);
   const cost = !brk
     ? []
-    : brk.position >= after.length
-      ? [`the tool list is unchanged up to position ${brk.position}, where tools were removed from the end; with the tool list at the start of the prompt, the conversation after it is processed again`]
-      : [`~${brk.tokensAffected.toLocaleString('en-US')} estimated tokens of the tool list from position ${brk.position} on (positions ${brk.position}–${after.length - 1}), a floor: with the tool list at the start of the prompt, the conversation after it is processed again too`];
+    : [
+        `the change starts at position ${brk.position}${brk.position >= after.length ? ' (tools removed from the end)' : ''}; any change to the tool list invalidates the cached prompt, so the whole tool list (this server's part: ~${total.toLocaleString('en-US')} tokens, estimate) and the conversation after it are processed again`,
+      ];
   const why = origin ? [origin] : [];
 
   const added = changes.filter((c) => c.kind === 'added');
@@ -343,7 +372,7 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
         rule: 'session/mid-insert',
         severity: 'error',
         step,
-        message: `+${names.length} tool${names.length === 1 ? '' : 's'} inserted at position ${first} (${names.join(', ')}). Invalidates the cached prompt from that tool on, and the conversation after the tool list.`,
+        message: `+${names.length} tool${names.length === 1 ? '' : 's'} inserted at position ${first} (${names.join(', ')}). Invalidates the cached prompt: the tool list and the conversation after it are processed again.`,
         detail: [...cost, ...why],
       });
     }
@@ -444,7 +473,11 @@ export type { Era };
  * back it up. Words like "scope" or "mode" alone say nothing: `get_my_scope_ids`
  * changes no menu.
  */
-const UNLOCK_PARAM = /^(?:domains?|toolsets?|tool_?sets?|capabilit(?:y|ies)|categor(?:y|ies)|modules?|features?|groups?|packs?|bundles?|namespaces?)$/i;
+// A parameter that names what to unlock. Strong names say so alone; weak ones
+// (`category` is also a search filter: GitHub, Firecrawl) need the tool's name or
+// description to back them up.
+const UNLOCK_PARAM = /^(?:domains?|toolsets?|tool_?sets?|capabilit(?:y|ies)|packs?|bundles?|namespaces?)$/i;
+const WEAK_UNLOCK_PARAM = /^(?:categor(?:y|ies)|modules?|features?|groups?)$/i;
 const UNLOCK_NAME = /unlock|enable|activate|capabilit|toolset|load_?tools|expand/i;
 const UNLOCK_DESC = /(?:unlock|enable|activate|load|expose|add)s?[^.]{0,60}tools?|more tools|toolsets?|capabilit(?:y|ies)|unlock/i;
 
@@ -486,7 +519,8 @@ export function unlockers(tools: MenuTool[]): Unlocker[] {
   const found: Unlocker[] = [];
   for (const tool of tools) {
     const props = tool.inputSchema?.properties ?? {};
-    const param = Object.keys(props).find((p) => UNLOCK_PARAM.test(p));
+    const backed = UNLOCK_NAME.test(tool.name) || UNLOCK_DESC.test(tool.description ?? '');
+    const param = Object.keys(props).find((p) => UNLOCK_PARAM.test(p)) ?? (backed ? Object.keys(props).find((p) => WEAK_UNLOCK_PARAM.test(p)) : undefined);
     let score = 0;
     if (param) score += enumOf(props[param]).length ? 3 : 2;
     if (UNLOCK_NAME.test(tool.name)) score += 2;
