@@ -14,7 +14,8 @@ connections and releases, and checks **when** it changes:
   invalidate the cached conversation: most clients put the tool list at the start of
   the prompt, so any change to it, even a tool added at the end, means everything
   after it is processed again. In my logs, one mid-conversation unlock rewrote
-  40–57K tokens of cached prefix. `session` catches it, pins it to the step that
+  40–57K tokens of cached prefix (my own measurement; how I measured it, and a
+  benchmark of the setups, is in [this write-up](https://niksa.me/agent-tools-design-lessons)). `session` catches it, pins it to the step that
   caused it, and says where in the list it happened.
 - **Ready for 2026-07-28.** That protocol version says the tool set **must not** vary
   per connection or as a side effect of other requests (the 2025 versions allow it).
@@ -33,7 +34,7 @@ serve now, which can differ from what they shipped with: FINDINGS F4.)
 
 ## Start here
 
-Needs Node 20 or later. Your server can be in any language: toolmenu starts it (stdio)
+Needs Node 22 or later. Your server can be in any language: toolmenu starts it (stdio)
 or connects to it (HTTP).
 
 ```sh
@@ -88,10 +89,24 @@ and anything `session` caught. The same report goes to the job summary.
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
 | `fail-on` | `error` | Fail the job on findings at or above this level |
 | `comment` | `true` | Post and update the PR comment |
-| `version` | `latest` | toolmenu version from npm |
+| `version` | `latest` | toolmenu version from npm. The Action installs toolmenu from npm, so it needs a published version |
 
-Projects versioned only by git tags (Go, setuptools-scm) have no next version in a PR,
-so add `push: { tags: ['v*'] }` to `on:` to get the bump checked when you tag.
+`headers` only applies to a `url` server and `env` only to a `command` server; the
+Action warns if one is set for the other. Projects versioned only by git tags (Go,
+setuptools-scm) have no next version in a PR, so add `push: { tags: ['v*'] }` to
+`on:` to get the bump checked when you tag.
+
+**`command` checks the PR's code; `url` checks whatever is deployed at that URL.**
+With `command`, the job builds and starts the PR's version. With `url`, it connects
+to the live server, usually production, so the report is about that server, not the
+PR. To check the PR, either start the server inside the job and point `url` at
+`http://localhost:…`, or point it at a per-PR preview deployment. And with `url` plus
+a `scenario`, `session` calls that server for real on every push (read-only tools
+only, unless the scenario sets `allow_writes`).
+
+**Pull requests from forks don't get your repository's secrets**, so on a server
+behind auth `headers` comes through empty. The Action then skips the check with a
+note instead of failing the contributor's PR.
 
 ## `session`: the menu changing while the agent works
 
@@ -240,8 +255,12 @@ meant to steer away from, and toolmenu says so.
 ```
 
 `descriptionLimit` is where your client cuts tool descriptions: a number, or a client
-whose cut is documented: `"claude-code"` (2,048, the default; changeable since Claude
-Code 2.1.280 with `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH`) or `"amazon-q"` (10,024).
+whose cut has been reported: `"claude-code"` (2,048, the default: reported in
+[anthropics/claude-code#87650](https://github.com/anthropics/claude-code/issues/87650);
+the [Claude Code changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)
+lists `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH` to change it from 2.1.280) or
+`"amazon-q"` (10,024, reported in
+[makenotion/notion-mcp-server#145](https://github.com/makenotion/notion-mcp-server/issues/145)).
 Clients that send descriptions in full don't need a setting beyond that. If your own
 client cuts shorter, as mine did at 280, set its number. `fullDescriptions` lists the
 tools it sends uncut, so the description rules skip them.
@@ -254,7 +273,7 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
   menu doesn't have, no menu check can see the gap.
 - **What the client does with the menu.** Truncating descriptions, sorting or
   filtering tools, merging several servers. The description rules use Claude Code's
-  documented cut unless you set yours (`descriptionLimit`); they can't see your client.
+  reported cut unless you set yours (`descriptionLimit`); they can't see your client.
 - **Your code and your logs.** A capability check that's answered with one yes/no
   for two different behaviours, or a log line that reads the same whether something
   happened or not. Those live in the client or the server's code.
