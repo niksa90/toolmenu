@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.11.0
+
+- **`--catalog` crawls the catalog by its own names:** from the search tool's own
+  example phrases and the menu's nouns, it searches for every operation found or
+  mentioned, until 20 queries in a row find nothing new (at most 200). On
+  Atlassian's hosted server: 154 of 154 operations, from 8. `catalog.crawl`,
+  `catalog.maxQueries`, `catalog.stopAfter` in the config.
+- **Fix:** a search result that is JSON followed by prose (Atlassian's `discover`)
+  was dropped whole. The leading JSON is read, and operations named in the prose are
+  followed.
+
 ## 0.10.0
 
 - **`toolmenu init`:** snapshots the server into `menu.json` and writes

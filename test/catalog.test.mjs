@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { defaultQueries, findCatalogTool, operationsIn } from '../dist/catalog.js';
+import { defaultQueries, findCatalogTool, leadingJson, mentionedNames, operationsIn } from '../dist/catalog.js';
 import { FIXTURES, menuOf, run, tempDir, tool } from './helpers.mjs';
 
 const server = (fixture, version = '1') => ['--env', `FIXTURE=${fixture}`, '--env', `CATALOG_VERSION=${version}`, '--', process.execPath, join(FIXTURES, 'raw-server.mjs')];
@@ -71,5 +71,26 @@ test('cli: a rate-limited search is retried; one that stays limited leaves a par
   const rules = JSON.parse(d.stdout).findings.map((f) => f.rule);
   assert.ok(rules.includes('diff/catalog-queries'));
   assert.equal(d.code, 0, 'a partial catalog is never breaking');
+});
+
+test('leadingJson and mentionedNames: JSON followed by prose (Atlassian discover)', () => {
+  const text = '{"results":[{"name":"listJiraIssueWorklogs","inputs":[]}]}\n\nRelated:\n  createJiraBoard — Create a board\n  - `getJiraProjectVersions` — List versions\nNot a name — just prose, twice over';
+  assert.deepEqual(leadingJson(text), { results: [{ name: 'listJiraIssueWorklogs', inputs: [] }] });
+  assert.equal(leadingJson('Found nothing.'), undefined);
+  assert.deepEqual(operationsIn({ content: [{ type: 'text', text }] }).map((o) => o.name), ['listJiraIssueWorklogs']);
+  assert.deepEqual(mentionedNames({ content: [{ type: 'text', text }] }), ['createJiraBoard', 'getJiraProjectVersions']);
+});
+
+test('cli: the crawl follows the catalog\'s own names to operations no seed query finds, then stops', async () => {
+  const cwd = tempDir();
+  // One seed that matches only list_releases; the rest are reached by name.
+  writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ catalog: { pauseMs: 0, queries: ['list'] } }));
+  await run(['snapshot', '--catalog', '--out', 'crawl.json', ...server('catalog-inputs')], { cwd });
+  const crawled = JSON.parse(readFileSync(join(cwd, 'crawl.json'), 'utf8')).catalog;
+  assert.deepEqual(crawled.operations.map((o) => o.name), ['delete_release', 'get_release', 'list_releases']);
+  assert.ok(crawled.queries.length > 1 && crawled.queries.length < 10, crawled.queries.join(' | '));
+  writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ catalog: { pauseMs: 0, queries: ['list'], crawl: false } }));
+  await run(['snapshot', '--catalog', '--out', 'seeds.json', ...server('catalog-inputs')], { cwd });
+  assert.deepEqual(JSON.parse(readFileSync(join(cwd, 'seeds.json'), 'utf8')).catalog.operations.map((o) => o.name), ['list_releases']);
 });
 
