@@ -519,3 +519,39 @@ Reproduce: start `mcp-atlassian` with `JIRA_URL`, `JIRA_USERNAME` and
   pastes (Figma's `nodeId`, Sentry's `resourceId`). The starter scenario's unlock
   guess matched two search filters (`category`).
 
+
+## F13. 0.8 on the same servers: what changed
+
+*Checked 2026-09-28.* `bench/run.sh` (the F12 servers at pinned versions, dummy
+credentials) with 0.7.1 and with 0.8.0, compared with `node bench/report.mjs`.
+
+| Finding | 0.7.1 | 0.8.0 |
+|---|---|---|
+| `menu/process-variance` | – (rule didn't exist) | 2: mcp-atlassian only (`snapshot` and `session`) |
+| `session/connection-variance` (0.7 name) | 1: mcp-atlassian | – |
+| `session/tool-error` | 33 warnings | 3 |
+| `session/step-failed` | 1 error (GitHub, a 401) | 0 |
+| `session/untested` | – | 7 errors (no call got through), 3 warnings |
+| `ids/authored` | 49 warnings | 20 info |
+| `naming/vague-id` | 15 warnings | 10 |
+
+- **One server, one finding, and the fix.** `menu/process-variance` fires only on
+  mcp-atlassian, and says what to do: "`jira_get_issue`:
+  `inputSchema.properties.fields.default`: same 11 items, different order … Sort
+  them." Nothing on the other 21.
+- **The pinned seed works.** Two 0.8 runs saved identical mcp-atlassian menus (`diff`:
+  0 changes). 0.7.1's menu against 0.8's shows 4 notices for the same release: the
+  noise every pull request on such a server would have seen.
+- **The 31 failures that went away** (30 tool errors and the one failed step) were all
+  setup: 22 on authentication, 6 on Chrome missing from the container, 3 on a 404
+  from an account or site that doesn't exist (HubSpot's answer to a bad token, the
+  made-up Jira URL). The 3 left are real argument problems in the
+  starter scenarios (Sentry's `get_sentry_resource`, Atlassian's `get_page`) and one
+  bare "HTTPError" that can't be classified.
+- **`session/untested` is an error on 7 servers** because no call got through with
+  dummy keys. That's the honest result: the run tested nothing but the menu.
+- **`ids/authored`:** Miro 34 → 6 (17 `orgId`s are returned by the organization
+  tools; findings are grouped per kind), Figma's `nodeId` is gone (it comes from the
+  URL), and GitHub's are info. `naming/vague-id` no longer flags GitHub's `ref`.
+
+Reproduce: `npm run build && bench/run.sh out/0.8` and `node bench/report.mjs out/0.8 out/0.7.1`.
