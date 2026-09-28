@@ -759,3 +759,16 @@ the plan (docs/plans/0.8-roadmap.md).
   rate-limit searches (Sentry did after ~70), so queries are paced (300 ms) and a
   rate limit is retried (2, 4, 8 s) before a query is left out.
 
+
+## 24. 0.11: the catalog crawls
+
+0.10's fixed queries found 8 of Atlassian's ~154 operations. Most of that was a bug:
+`discover` returns JSON followed by a prose list of related operations, and the whole
+text was dropped as invalid JSON. The leading JSON value is read now. The rest was
+the query design: a search returns its top matches, so a fixed list only reaches what
+it happens to name. The catalog's own names reach the rest: every operation found or
+mentioned becomes a query (its name split into words), breadth first in the order
+found, so the same catalog gives the same path. Seeds are the search tool's own
+example phrases (quoted in its description), then the menu's nouns, or the config's
+queries. It stops when 20 queries in a row find nothing new, at most 200. Measured
+against Atlassian's `?tools=all` as ground truth: 154 of 154, no false operations.
