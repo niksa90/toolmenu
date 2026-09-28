@@ -14,8 +14,8 @@ inputs:
     required: false
   headers:
     description: >-
-      HTTP headers for a url server, one "Name: value" per line. Take secrets from
-      secrets, e.g. "x-api-key: ${{ secrets.MCP_API_KEY }}".
+      HTTP headers for a url server, one "Name: value" per line. Pass keys in from
+      the workflow's secrets (see the README), not as plain text.
     required: false
   env:
     description: >-
