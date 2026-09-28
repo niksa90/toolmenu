@@ -1,5 +1,9 @@
 # toolmenu
 
+[![npm](https://img.shields.io/npm/v/toolmenu)](https://www.npmjs.com/package/toolmenu)
+[![ci](https://github.com/niksa90/toolmenu/actions/workflows/ci.yml/badge.svg)](https://github.com/niksa90/toolmenu/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 **Lint your MCP server's tool menu for changes that confuse agents or break caches.**
 
 Most MCP linters grade one snapshot of the menu an agent reads: tool names,
@@ -25,6 +29,9 @@ run.
 > real servers: [docs/FINDINGS.md](docs/FINDINGS.md).
 
 ## Start here
+
+Needs Node 20 or later. Your server can be in any language: toolmenu starts it (stdio)
+or connects to it (HTTP).
 
 ```sh
 # write a starter scenario from your server's menu, then run it
@@ -65,15 +72,20 @@ jobs:
 It snapshots the PR's build, diffs it against the baseline, runs the scenario, and
 posts **one comment that updates on every push**: breaking changes, the token change
 ("this PR adds ~1,240 tokens to every conversation"), the suggested version bump,
-and anything `session` caught. The same report goes to the job summary. Inputs:
-`command` or `url`, `baseline`, `scenario`, `fail-on` (default `error`), `comment`
-(default `true`), `version`, and `release`: the release versions for the bump check.
-Its default, `auto`, works in any language: on a pull request it reads the version in
-`package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head; on a
-tag push it compares the tag with the previous version tag. Projects versioned only by
-git tags (Go, setuptools-scm) get their bump checked when the tag is pushed, so add
-`push: { tags: ['v*'] }` to the workflow's `on:`. Or set `"1.4.0..1.5.0"` yourself, or
-`off`.
+and anything `session` caught. The same report goes to the job summary.
+
+| Input | Default | |
+|---|---|---|
+| `command` or `url` | | How to start the server over stdio, or its Streamable HTTP endpoint |
+| `baseline` | `menu.json` | The committed snapshot to diff against |
+| `scenario` | | A scenario to run with `session` |
+| `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
+| `fail-on` | `error` | Fail the job on findings at or above this level |
+| `comment` | `true` | Post and update the PR comment |
+| `version` | `latest` | toolmenu version from npm |
+
+Projects versioned only by git tags (Go, setuptools-scm) have no next version in a PR,
+so add `push: { tags: ['v*'] }` to `on:` to get the bump checked when you tag.
 
 ## `session`: the menu changing while the agent works
 
@@ -120,16 +132,19 @@ npx toolmenu diff menu.json new-menu.json
 ```
 
 ```
-toolmenu diff  secure-filesystem-server 0.2.0 → 0.2.0
+$ npx toolmenu diff --release 2026.1.14..2026.8.31 fs-2026.1.14.json fs-2026.8.31.json
+toolmenu diff  secure-filesystem-server 2026.1.14 → 2026.8.31
   14 → 14 tools · ~2,638 → ~2,821 tokens (+183, estimate): this release adds ~183 tokens to every conversation that loads the menu
-  1 breaking · 0 minor · 15 notice · suggested bump: major · actual: none
+  1 breaking · 0 minor · 15 notice · suggested bump: major · actual: not checked (calendar version)
 
 ERROR  diff/safety-hint
        move_file was additive-only and is now destructive.
 …
 ```
 
-That's two real releases of the official filesystem server. Changes are classified
+That's two real releases of the official filesystem server. Its calendar versions
+promise nothing about compatibility, so the bump isn't judged, but the breaking change
+is still an error. Changes are classified
 the way OpenAPI breaking-change checkers do it:
 
 | Class | Changes | Rules |
@@ -144,8 +159,8 @@ bump, pass the **release** versions: `--release 1.4.0..1.5.0` (npm, a git tag).
 nothing and `0.x` may break in a minor). The version in the snapshot is what the
 server reports (`serverInfo.version`), which is often not the release: the filesystem
 server has said `0.2.0` for 19 releases (FINDINGS F5). It's shown, and only checked
-with `--server-version-is-release`. `diff` also enforces an optional `tokenBudget` (`diff/token-budget`). Order
-changes are only a notice here: between releases, prompt caches rebuild. Order
+with `--server-version-is-release`. `diff` also enforces an optional `tokenBudget`
+(`diff/token-budget`). Order changes are only a notice here: between releases, prompt caches rebuild. Order
 matters *within* a session.
 
 ## `history`: a package's releases, researched
@@ -174,7 +189,7 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `menu/nondeterministic` | error | Two identical `tools/list` calls returning different menus (order, descriptions, schemas, annotations) |
 | `spec/schema` | error | A `tools/list` result that fails the official schema for its protocol version |
 | `naming/route` | error | A `routes.yml` expectation broke: a keyword now matches the wrong tool at least as well as the right one |
-| `description/buried` | warn | Instructions to the agent ("use X instead", "call X first", "don't retry", "never guess one") past the point where your client cuts descriptions: Claude Code's 2,048 characters by default, or your client's `descriptionLimit`. Each one past the cut counts, including one the cut falls inside; descriptions of behaviour ("never throws", "instead of failing") don't. From a real failure: a client cut a description at 280 characters, and the line that decided routing was at 1,222 |
+| `description/buried` | warn | Instructions to the agent ("use X instead", "don't retry", "never guess one") past the point where your client cuts descriptions: 2,048 characters in Claude Code, or your `descriptionLimit`. From a real failure: a client cut at 280 characters, and the line that decided routing was at 1,222 |
 | `description/cut` | info | Descriptions longer than the client sends, with nothing that reads as an instruction past the cut, as one summary. The model gets a prefix that can read as complete |
 | `naming/vague-id` | warn | A parameter called just `id` that doesn't say *which* thing |
 | `ids/authored` | warn | An ID the agent must supply that no tool appears to return, so the agent may invent it (heuristic) |
@@ -266,6 +281,17 @@ or bad usage. `toolmenu --help` lists the `session` and `history` options.
   differently.
 - **Heuristic rules say so** in their messages.
 - Not a security scanner or a full conformance suite. Other tools do those well.
+
+## About
+
+Built by [Niksa](https://niksa.me) while running a 115-tool MCP server and watching
+agents trip over its menu. Every rule started as one of those failures, and the
+research behind them is in [docs/FINDINGS.md](docs/FINDINGS.md).
+
+Found a false positive, or a failure toolmenu should catch?
+[Open an issue](https://github.com/niksa90/toolmenu/issues) with the menu (a
+`menu.json` is enough) and what you expected. Changes are listed in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
