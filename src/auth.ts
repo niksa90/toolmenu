@@ -241,6 +241,17 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
       await client.close().catch(() => {});
     }
     return await check(serverUrl);
+  } catch (error) {
+    // GitHub's hosted server, for one: no dynamic registration, so toolmenu can't
+    // register itself. Say what works instead.
+    if (error instanceof Error && /does not support dynamic client registration/i.test(error.message) && !options.clientId) {
+      error.message =
+        `${serverUrl} doesn't let clients register themselves (no dynamic client registration). Two ways in:\n` +
+        `  - register an OAuth app with the provider, with the callback URL http://127.0.0.1:${port}/callback, then:\n` +
+        `      toolmenu auth login ${serverUrl} --client-id <id> --client-secret <secret>\n` +
+        `  - or skip OAuth and pass a token the server accepts: toolmenu snapshot ${serverUrl} --header "Authorization: Bearer <token>"`;
+    }
+    throw error;
   } finally {
     callback.close();
   }

@@ -112,3 +112,30 @@ test('cli: auth usage', async () => {
   assert.match(list.stdout, /No logins/);
 });
 
+test('auth: a server without dynamic registration says how to get in (GitHub\'s hosted server)', async () => {
+  isolated();
+  const server = await start({ registration: false });
+  try {
+    await assert.rejects(login(server.url, { port: port(), open: browser() }), (e) => /register an OAuth app/.test(e.message) && /--client-id/.test(e.message) && /Authorization: Bearer/.test(e.message));
+  } finally {
+    await server.close();
+  }
+});
+
+test('auth: a pre-registered app (--client-id, --client-secret) logs in without registering', async () => {
+  isolated();
+  const p = port();
+  const app = { client_id: 'toolmenu-app', client_secret: 's3cret', redirect_uris: [`http://127.0.0.1:${p}/callback`] };
+  const server = await start({ registration: false, preRegistered: app });
+  try {
+    const result = await login(server.url, { port: p, clientId: app.client_id, clientSecret: app.client_secret, open: browser() });
+    assert.ok(result.tools > 0);
+    assert.equal(server.seen.registrations, 0);
+    // A wrong secret fails the exchange (after the stored login is revoked, so there is one).
+    server.revokeAll();
+    await assert.rejects(login(server.url, { port: p, clientId: app.client_id, clientSecret: 'wrong', open: browser() }), /invalid_client|401/);
+  } finally {
+    await server.close();
+  }
+});
+

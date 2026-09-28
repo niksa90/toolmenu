@@ -7,9 +7,11 @@ import { createServer } from 'node:http';
 import { createMcpHandler } from '@modelcontextprotocol/server';
 import { build } from './forms.mjs';
 
-export async function start({ tokenLifetime = 3600 } = {}) {
+export async function start({ tokenLifetime = 3600, registration = true, preRegistered } = {}) {
   const handler = createMcpHandler(build);
   const clients = new Map();
+  // An app registered by hand, as GitHub requires: { client_id, client_secret, redirect_uris }.
+  if (preRegistered) clients.set(preRegistered.client_id, preRegistered);
   const codes = new Map();
   const tokens = new Map(); // access token → expiry (ms)
   const refreshes = new Set();
@@ -42,11 +44,11 @@ export async function start({ tokenLifetime = 3600 } = {}) {
         issuer: base,
         authorization_endpoint: `${base}/authorize`,
         token_endpoint: `${base}/token`,
-        registration_endpoint: `${base}/register`,
+        ...(registration ? { registration_endpoint: `${base}/register` } : {}),
         response_types_supported: ['code'],
         grant_types_supported: ['authorization_code', 'refresh_token'],
         code_challenge_methods_supported: ['S256'],
-        token_endpoint_auth_methods_supported: ['none'],
+        token_endpoint_auth_methods_supported: preRegistered?.client_secret ? ['client_secret_basic', 'client_secret_post'] : ['none'],
       });
     }
     if (url.pathname === '/register' && req.method === 'POST') {
@@ -71,6 +73,11 @@ export async function start({ tokenLifetime = 3600 } = {}) {
     }
     if (url.pathname === '/token' && req.method === 'POST') {
       const p = new URLSearchParams(body);
+      // Client authentication, either way the spec allows: HTTP Basic or the body.
+      const basic = /^Basic (.+)$/.exec(req.headers.authorization ?? '');
+      const [basicId, basicSecret] = basic ? Buffer.from(basic[1], 'base64').toString().split(':').map(decodeURIComponent) : [];
+      const client = clients.get(basicId ?? p.get('client_id'));
+      if (client?.client_secret && (basicSecret ?? p.get('client_secret')) !== client.client_secret) return json(res, 401, { error: 'invalid_client' });
       if (p.get('grant_type') === 'authorization_code') {
         const entry = codes.get(p.get('code'));
         codes.delete(p.get('code'));
