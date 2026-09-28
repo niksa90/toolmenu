@@ -1,3 +1,4 @@
+import { compareVersions } from './semver.js';
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -115,9 +116,13 @@ export interface HistoryOptions {
 export async function history(pkg: string, options: HistoryOptions): Promise<HistoryResult> {
   const source = options.source ?? npmSource;
   const all = await source.versions(pkg);
+  // Version order, not publish order: a backport (1.0.1 after 2.0.0) is diffed
+  // against 1.0.0, not against 2.0.0.
   const candidates = all
-    .filter((v) => options.includePrereleases || !v.version.includes('-'))
-    .sort((a, b) => (a.published && b.published ? a.published.localeCompare(b.published) : 0));
+    .map((v, index) => ({ v, index }))
+    .filter(({ v }) => options.includePrereleases || !v.version.includes('-'))
+    .sort((a, b) => compareVersions(a.v.version, b.v.version) || a.index - b.index)
+    .map(({ v }) => v);
   const count = options.versions ?? 10;
   const picked = Number.isFinite(count) ? candidates.slice(-count) : candidates;
   await mkdir(options.outDir, { recursive: true });
@@ -313,3 +318,6 @@ export function historyCsv(result: HistoryResult): string {
   }
   return lines.join('\n') + '\n';
 }
+
+
+export { compareVersions };

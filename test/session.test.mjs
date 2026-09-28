@@ -38,13 +38,15 @@ test('parseScenario accepts the three step kinds and rejects mistakes', () => {
   assert.throws(() => parseScenario({ allow_writes: 'yes', steps: ['list'] }), /allow_writes/);
 });
 
-test('changeFindings: append is info, everything else is an error with its cost', () => {
+test('changeFindings: append is a warning (tools come first in the prompt), everything else an error with its cost', () => {
   const base = menuOf([tool('a'), tool('b'), tool('c')]).tools;
   const find = (after) => changeFindings(base, after, compareMenus(base, after), 3);
 
   const appended = find(menuOf([tool('a'), tool('b'), tool('c'), tool('d')]).tools);
   assert.deepEqual(appended.map((f) => f.rule), ['session/append']);
-  assert.equal(appended[0].severity, 'info');
+  assert.equal(appended[0].severity, 'warn');
+  assert.match(appended[0].message, /end of the tool list isn't the end of the prompt/);
+  assert.match(appended[0].message, /tool search/);
 
   const inserted = find(menuOf([tool('a'), tool('x'), tool('b'), tool('c')]).tools);
   assert.deepEqual(inserted.map((f) => f.rule), ['session/mid-insert']);
@@ -191,7 +193,7 @@ test('cli: session output, --plan and usage errors', async () => {
   assert.equal(r.code, 1, r.stderr);
   assert.match(r.stdout, /^step 3: call unlock_toolset \{"toolset":"audits"\} · menu changed · list_changed received · scope: per-process$/m);
   assert.match(r.stdout, /ERROR  session\/mid-insert\n\s+\+2 tools inserted at position 1 \(list_team_audits, get_team_audit\)/);
-  assert.match(r.stdout, /estimated tokens of cached prefix affected \(positions 1–6\)/);
+  assert.match(r.stdout, /estimated tokens of the tool list from position 1 on \(positions 1–6\), a floor/);
 
   const gh = await run(['session', '--format', 'github', '--scenario', scenario, ...server], { cwd: dir });
   assert.match(gh.stdout, /^::error title=toolmenu session\/mid-insert::step 3 \(call unlock_toolset/m);

@@ -1,4 +1,5 @@
 import { canonical, compareMenus } from './compare.js';
+import { isCalendar, parseSemver } from './semver.js';
 import type { Finding, JsonSchema, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 
@@ -35,6 +36,7 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/other': { severity: 'info', class: 'notice' },
   'diff/order': { severity: 'info', class: 'notice' },
   'diff/version-bump': { severity: 'warn' },
+  'diff/version-backwards': { severity: 'warn' },
   'diff/token-budget': { severity: 'error' },
 };
 
@@ -76,11 +78,16 @@ type Raw = { rule: string; tool?: string; message: string; detail?: string[] };
 
 export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}): DiffResult {
   const raw: Raw[] = [];
-  const oldByName = new Map(before.tools.map((t) => [t.name, t]));
-  const newByName = new Map(after.tools.map((t) => [t.name, t]));
+  // Ignored tools leave the comparison entirely, so they can't pair into a
+  // rename or show up as a reorder.
+  const ignored = ignoreMatcher(options.ignore);
+  const oldTools = before.tools.filter((t) => !ignored(t.name));
+  const newTools = after.tools.filter((t) => !ignored(t.name));
+  const oldByName = new Map(oldTools.map((t) => [t.name, t]));
+  const newByName = new Map(newTools.map((t) => [t.name, t]));
 
-  const removed = before.tools.filter((t) => !newByName.has(t.name));
-  const added = after.tools.filter((t) => !oldByName.has(t.name));
+  const removed = oldTools.filter((t) => !newByName.has(t.name));
+  const added = newTools.filter((t) => !oldByName.has(t.name));
   const renames = findRenames(removed, added);
   const renamedFrom = new Set(renames.map((r) => r.from.name));
   const renamedTo = new Set(renames.map((r) => r.to.name));
@@ -95,17 +102,17 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
     raw.push({ rule: 'diff/tool-added', tool: t.name, message: `${t.name} was added (~${t.tokens} tokens).` });
   }
 
-  for (const t of after.tools) {
+  for (const t of newTools) {
     const old = oldByName.get(t.name);
     if (old) raw.push(...compareTool(old, t));
   }
   for (const { from, to } of renames) raw.push(...compareTool(from, to).filter((f) => f.rule !== 'diff/description' && f.rule !== 'diff/other'));
 
-  const moved = compareMenus(before.tools, after.tools).filter((c) => c.kind === 'moved');
+  const moved = compareMenus(oldTools, newTools).filter((c) => c.kind === 'moved');
   if (moved.length) {
     raw.push({
       rule: 'diff/order',
-      message: `Tool order changed (${moved.map((m) => m.tool).join(', ')}). Only a notice between releases: prompt caches expire and rebuild after a deploy. It matters within a session.`,
+      message: `Tool order changed (${moved.map((m) => m.tool).join(', ')}). Only a notice between releases: prompt caches are short-lived, so a deploy costs roughly one rewrite. It matters within a session.`,
     });
   }
 
@@ -117,17 +124,31 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
     });
   }
 
-  const suggestedBump = bumpFor(raw.map((r) => DIFF_RULES[r.rule]?.class));
+  // Only what survives ignore and 'off' counts toward the bump. Settled once:
+  // the bump and the reported findings come from the same list.
+  const changes = settle(raw, options);
+  const suggestedBump = bumpFor(changes.map((f) => f.class));
+  const versionRaw: Raw[] = [];
   const release = options.release
     ? { ...options.release, source: 'release' as const }
     : options.serverVersionIsRelease && before.server.version && after.server.version
       ? { before: before.server.version, after: after.server.version, source: 'server' as const }
       : undefined;
   const actualBump = release ? versionBump(release.before, release.after) : undefined;
+  const notChecked = release && !actualBump ? whyNotChecked(release.before, release.after) : undefined;
+  if (release && notChecked === 'version went backwards') {
+    versionRaw.push({
+      rule: 'diff/version-backwards',
+      message:
+        release.source === 'server'
+          ? `The server-reported version went backwards: ${release.before} → ${release.after}.`
+          : `${release.before} → ${release.after}: the version went backwards. Check the --release order.`,
+    });
+  }
   const required = requiredBump(suggestedBump, release?.before);
   if (release && actualBump && BUMP_RANK[actualBump] < BUMP_RANK[required]) {
     const what = release.source === 'server' ? 'The server-reported version' : 'The release version';
-    raw.push({
+    versionRaw.push({
       rule: 'diff/version-bump',
       message:
         actualBump === 'none'
@@ -139,12 +160,12 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   return {
     before: before.server,
     after: after.server,
-    findings: settle(raw, options),
+    findings: [...changes, ...settle(versionRaw, options)].sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]),
     tokens,
     suggestedBump,
     ...(actualBump ? { actualBump } : {}),
     ...(release ? { release } : {}),
-    ...(release && !actualBump ? { bumpNotChecked: /^v?\d{4}\.\d+/.test(release.after) ? 'calendar version' : 'not semver' } : {}),
+    ...(notChecked ? { bumpNotChecked: notChecked } : {}),
   };
 }
 
@@ -173,7 +194,6 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
   const newProps = t.inputSchema?.properties ?? {};
   const oldReq = new Set(old.inputSchema?.required ?? []);
   const newReq = new Set(t.inputSchema?.required ?? []);
-  let classified = false;
 
   // Removing an optional parameter only breaks callers if the new schema rejects
   // unknown properties; otherwise calls that still send it stay valid.
@@ -185,7 +205,6 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
           ? { rule: 'diff/param-removed', tool: name, message: `${name}.${p} was removed. Calls that pass it can fail.` }
           : { rule: 'diff/param-dropped', tool: name, message: `${name}.${p} (optional) was removed. Calls that still send it stay valid, but the server may ignore it.` },
       );
-      classified = true;
     }
   }
   for (const [p, schema] of Object.entries(newProps)) {
@@ -196,15 +215,12 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
           ? { rule: 'diff/param-required', tool: name, message: `${name}.${p} is new and required. Existing calls don't send it.` }
           : { rule: 'diff/param-added', tool: name, message: `${name}.${p} is a new optional parameter.` },
       );
-      classified = true;
       continue;
     }
     if (!oldReq.has(p) && newReq.has(p)) {
       out.push({ rule: 'diff/param-required', tool: name, message: `${name}.${p} was optional and is now required.` });
-      classified = true;
     } else if (oldReq.has(p) && !newReq.has(p)) {
       out.push({ rule: 'diff/param-relaxed', tool: name, message: `${name}.${p} was required and is now optional.` });
-      classified = true;
     }
     const oldType = typeOf(before);
     const newType = typeOf(schema);
@@ -216,20 +232,46 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
           ? { rule: 'diff/type-widened', tool: name, message: `${name}.${p} now accepts more types: ${oldType || 'any'} → ${newType || 'any'}.` }
           : { rule: 'diff/param-type', tool: name, message: `${name}.${p} changed type: ${oldType || 'any'} → ${newType || 'any'}. Calls that worked before can fail.` },
       );
-      classified = true;
     }
     const e = enumChange(before, schema);
     if (e) {
       out.push({ rule: e.rule, tool: name, message: `${name}.${p}: ${e.message}` });
-      classified = true;
+    }
+    // Array parameters: the element type and allowed values count like the
+    // parameter's own (no items schema = any element).
+    const isArray = (s: JsonSchema) => (Array.isArray(s.type) ? s.type.includes('array') : s.type === 'array');
+    if (isArray(before) && isArray(schema)) {
+      const oldItems = before.items ?? {};
+      const newItems = schema.items ?? {};
+      const oldItemType = typeOf(oldItems);
+      const newItemType = typeOf(newItems);
+      if (oldItemType !== newItemType) {
+        out.push(
+          accepts(newItems, oldItems)
+            ? { rule: 'diff/type-widened', tool: name, message: `${name}.${p} (array items) now accept more types: ${oldItemType || 'any'} → ${newItemType || 'any'}.` }
+            : { rule: 'diff/param-type', tool: name, message: `${name}.${p} (array items) changed type: ${oldItemType || 'any'} → ${newItemType || 'any'}. Calls that worked before can fail.` },
+        );
+      }
+      const ie = enumChange(oldItems, newItems);
+      if (ie) out.push({ rule: ie.rule, tool: name, message: `${name}.${p} (array items): ${ie.message}` });
     }
     if ((before.description ?? '') !== (schema.description ?? '')) {
       out.push({ rule: 'diff/description', tool: name, message: `${name}.${p}: parameter description changed.`, detail: textDiff(String(before.description ?? ''), String(schema.description ?? '')) });
-      classified = true;
+    }
+    // Whatever changed beyond type, enum and description is checked per
+    // parameter, so a classified change elsewhere can't hide it.
+    // A breaking type change already covers a reshaped schema: no duplicate
+    // notice. A widened type can still bring new constraints, so it's checked.
+    if ((oldType === newType || accepts(schema, before)) && canonical(residual(before)) !== canonical(residual(schema))) {
+      out.push({ rule: 'diff/schema-other', tool: name, message: `${name}.${p}: changed in a way toolmenu doesn't classify (nested fields, constraints…). Review it.` });
     }
   }
-  if (!classified && canonical(old.inputSchema) !== canonical(t.inputSchema)) {
-    out.push({ rule: 'diff/schema-other', tool: name, message: `${name}: inputSchema changed in a way toolmenu doesn't classify (nested fields, constraints…). Review it.` });
+  const shell = (s: JsonSchema | undefined) => {
+    const { properties: _p, required: _r, ...rest } = (s ?? {}) as Record<string, unknown>;
+    return rest;
+  };
+  if (canonical(shell(old.inputSchema)) !== canonical(shell(t.inputSchema))) {
+    out.push({ rule: 'diff/schema-other', tool: name, message: `${name}: inputSchema changed outside its parameters (additionalProperties, $defs…). Review it.` });
   }
   return out.concat(compareRest(old, t));
 }
@@ -319,6 +361,16 @@ function accepts(next: JsonSchema, prev: JsonSchema): boolean {
   return [...p].every((t) => n.has(t) || (t === 'integer' && n.has('number')));
 }
 
+/** A parameter's schema without the parts diff classifies itself. */
+function residual(schema: JsonSchema): unknown {
+  const { type: _t, enum: _e, description: _d, items, ...rest } = schema as Record<string, unknown>;
+  if (items && typeof items === 'object') {
+    const { enum: _ie, type: _it, ...itemRest } = items as Record<string, unknown>;
+    return Object.keys(itemRest).length ? { ...rest, items: itemRest } : rest;
+  }
+  return rest;
+}
+
 function typeOf(schema: JsonSchema): string {
   const t = schema.type;
   return Array.isArray(t) ? [...t].sort().join('|') : t ?? '';
@@ -368,37 +420,47 @@ function bumpFor(classes: (ChangeClass | undefined)[]): Bump {
 
 /** Under 1.0.0, semver lets a minor bump carry breaking changes. */
 function requiredBump(suggested: Bump, version: string | undefined): Bump {
-  const v = parseVersion(version);
+  const v = parseSemver(version);
   // 0.0.x promises nothing; 0.x lets a minor bump break.
-  if (v && v[0] === 0 && v[1] === 0) return 'none';
-  if (v && v[0] === 0 && suggested === 'major') return 'minor';
+  if (v && v.nums[0] === 0 && v.nums[1] === 0) return 'none';
+  if (v && v.nums[0] === 0 && suggested === 'major') return 'minor';
   return suggested;
 }
 
-function parseVersion(version: string | undefined): [number, number, number] | undefined {
-  const m = /^v?(\d+)\.(\d+)\.(\d+)/.exec(version ?? '');
-  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : undefined;
+/** Why a bump can't be judged: not semver, calendar, prerelease, or backwards. */
+function whyNotChecked(before: string, after: string): string {
+  const a = parseSemver(before);
+  const b = parseSemver(after);
+  if (!a || !b) return 'not semver';
+  if (isCalendar(a) || isCalendar(b)) return 'calendar version';
+  if (a.pre || b.pre) return 'prerelease';
+  return 'version went backwards';
 }
 
 export function versionBump(before: string | undefined, after: string | undefined): Bump | undefined {
-  const a = parseVersion(before);
-  const b = parseVersion(after);
+  const a = parseSemver(before);
+  const b = parseSemver(after);
   if (!a || !b) return undefined;
-  // Calendar versions (2026.8.31) don't promise anything about compatibility.
-  if (a[0] >= 1000 || b[0] >= 1000) return undefined;
-  if (b[0] !== a[0]) return b[0] > a[0] ? 'major' : undefined;
-  if (b[1] !== a[1]) return b[1] > a[1] ? 'minor' : undefined;
-  if (b[2] !== a[2]) return b[2] > a[2] ? 'patch' : undefined;
+  // Calendar versions and prereleases make no compatibility promise to compare.
+  if (isCalendar(a) || isCalendar(b) || a.pre || b.pre) return undefined;
+  for (const [i, bump] of [[0, 'major'], [1, 'minor'], [2, 'patch']] as const) {
+    if (b.nums[i] !== a.nums[i]) return b.nums[i] > a.nums[i] ? bump : undefined;
+  }
   return 'none';
 }
 
+function ignoreMatcher(globs: string[] | undefined): (name: string) => boolean {
+  const res = (globs ?? []).map((g) => new RegExp('^' + g.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
+  return (name) => res.some((re) => re.test(name));
+}
+
 function settle(raw: Raw[], options: DiffOptions): DiffFinding[] {
-  const ignore = (options.ignore ?? []).map((g) => new RegExp('^' + g.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
+  const ignored = ignoreMatcher(options.ignore);
   const findings: DiffFinding[] = [];
   for (const r of raw) {
     const configured = options.rules?.[r.rule];
     if (configured === 'off') continue;
-    if (r.tool && ignore.some((re) => re.test(r.tool!))) continue;
+    if (r.tool && ignored(r.tool)) continue;
     const rule = DIFF_RULES[r.rule];
     findings.push({ ...r, severity: configured ?? rule.severity, ...(rule.class ? { class: rule.class } : {}) });
   }

@@ -254,14 +254,23 @@ function parsePairs(items: string[], separator: string, flag: string): Record<st
   return pairs;
 }
 
-main(process.argv.slice(2)).then(
-  (code) => process.exit(code),
-  (error: unknown) => {
-    const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`toolmenu: ${message}\n`);
-    process.exit(2);
-  },
-);
+// Exit only once stdout and stderr have drained: on a pipe, writes can be
+// asynchronous, and exiting early truncates a large --json report. (An explicit
+// exit is still needed: a stdio server or HTTP socket can keep the loop alive.)
+function exitWhenFlushed(code: number): void {
+  process.exitCode = code;
+  // A reader that closed the pipe early (| head) isn't an error: keep the exit code.
+  for (const stream of [process.stdout, process.stderr]) {
+    stream.on('error', (error: NodeJS.ErrnoException) => process.exit(error.code === 'EPIPE' ? code : 2));
+  }
+  process.stdout.write('', () => process.stderr.write('', () => process.exit(code)));
+}
+
+main(process.argv.slice(2)).then(exitWhenFlushed, (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  process.stderr.write(`toolmenu: ${message}\n`);
+  exitWhenFlushed(2);
+});
 
 function parseRelease(value: string): { before: string; after: string } {
   const m = /^(.+?)\.\.(.+)$/.exec(value);
