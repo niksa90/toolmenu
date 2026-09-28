@@ -24,6 +24,10 @@ PR, so `release: auto` has nothing to check there. Add `push: { tags: ['v*'] }` 
 `on:` to get the bump checked when you tag.
 
 In a monorepo, set `release` yourself: `auto` reads the version files at the repo root.
+On a tag push, the Action compares the tag with the previous version tag, and only
+tags like `v1.2.3` or `1.2.3` count. A tag like `mcp-v1.3.0` fails the check, since
+there's no previous release to find: run the Action on pull requests only, or on
+version tags only.
 
 ## Git history
 

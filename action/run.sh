@@ -207,9 +207,17 @@ else
   # 2. Compare with the baseline as it is on the base branch (or previous tag).
   BASE=$(base_ref)
   set_baseline
+  TAG="${GITHUB_REF:-}"; TAG="${TAG#refs/tags/}"
+  # A tag that isn't a version tag (e.g. a monorepo's mcp-v1.3.0) has no previous
+  # release to find, so it too would compare the change with itself.
+  if [[ "${GITHUB_REF:-}" == refs/tags/* ]] && ! [[ "$TAG" =~ ^v?[0-9]+\.[0-9]+ ]]; then
+    { echo "**\`$TAG\` isn't a version tag, so there's no previous release to compare with.** The Action compares a tag with the previous \`v1.2.3\` or \`1.2.3\` tag. Run it on pull requests, or only on version tags: see [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#the-version-check-release-auto)."; echo; } >> "$BODY"
+    echo "::error title=toolmenu::'$TAG' isn't a version tag (v1.2.3 or 1.2.3), so there's no previous release to compare with. See docs/github-action.md."
+    ERROR_SHOWN=true
+    note 2
   # A PR whose base couldn't be fetched (no git in the job, or no access), or a
   # tag push outside a git checkout, would compare the change with itself.
-  if [ -z "$BASE" ] && { [ -n "${TOOLMENU_BASE_REF:-}" ] || { [[ "${GITHUB_REF:-}" == refs/tags/* ]] && ! git rev-parse --git-dir > /dev/null 2>&1; }; }; then
+  elif [ -z "$BASE" ] && { [ -n "${TOOLMENU_BASE_REF:-}" ] || { [[ "${GITHUB_REF:-}" == refs/tags/* ]] && ! git rev-parse --git-dir > /dev/null 2>&1; }; }; then
     { echo "**Couldn't read the base branch, so there's nothing to compare with:** checking the change against its own \`${TOOLMENU_BASELINE:-menu.json}\` would hide every change. The Action needs git history in the job: see [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#git-history)."; echo; } >> "$BODY"
     echo "::error title=toolmenu::Couldn't read the base branch (no git in the job, or no access to fetch it), so the menu wasn't compared. See docs/github-action.md#git-history."
     ERROR_SHOWN=true
