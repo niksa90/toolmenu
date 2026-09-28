@@ -104,6 +104,42 @@ PR. To check the PR, either start the server inside the job and point `url` at
 a `scenario`, `session` calls that server for real on every push (read-only tools
 only, unless the scenario sets `allow_writes`).
 
+### Checking an HTTP server behind auth
+
+toolmenu has to talk to a running copy of your server. The simplest way to check a
+pull request is to start that copy inside the job, from the PR's code, and point
+toolmenu at it. The job starts the server, so the job also picks its key: make one
+up. It's a throwaway copy that only lives for that job, so no real secret is involved.
+
+```yaml
+# .github/workflows/toolmenu.yml, in your MCP server's repository
+on: pull_request
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  toolmenu:
+    runs-on: ubuntu-latest
+    env:
+      MCP_API_KEY: ci-only-key          # made up: only this job's copy uses it
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci && npm run build
+      - run: npm start &                # start the PR's version in the background
+      - run: npx --yes wait-on http://localhost:3000/health
+      - uses: niksa90/toolmenu@v0.7.0
+        with:
+          url: http://localhost:3000/mcp
+          headers: "x-mcp-api-key: ci-only-key"
+          baseline: menu.json
+```
+
+Use your own start command, port and header name. If your server needs real
+credentials just to list its tools, pass test ones the same way. Listing tools
+usually doesn't touch the systems behind them.
+
 **Pull requests from forks don't get your repository's secrets**
 ([GitHub docs](https://docs.github.com/actions/security-guides/using-secrets-in-github-actions)),
 so on a server behind auth `headers` comes through empty. The Action then skips the
