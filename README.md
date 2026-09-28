@@ -104,9 +104,14 @@ PR. To check the PR, either start the server inside the job and point `url` at
 a `scenario`, `session` calls that server for real on every push (read-only tools
 only, unless the scenario sets `allow_writes`).
 
-**Pull requests from forks don't get your repository's secrets**, so on a server
-behind auth `headers` comes through empty. The Action then skips the check with a
-note instead of failing the contributor's PR.
+**Pull requests from forks don't get your repository's secrets**
+([GitHub docs](https://docs.github.com/actions/security-guides/using-secrets-in-github-actions)),
+so on a server behind auth `headers` comes through empty. The Action then skips the
+check with a note instead of failing the contributor's PR. The setup that works for
+every PR is the one above: start the server inside the job (`command`, or `url`
+pointing at `localhost`), which needs no secret and checks the PR's own code. Don't
+switch to `pull_request_target` to get secrets: it runs the PR's code with them
+([GitHub's guidance](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target)).
 
 ## `session`: the menu changing while the agent works
 

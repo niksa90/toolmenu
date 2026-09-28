@@ -120,7 +120,12 @@ code=$?
 if [ "$code" -eq 2 ] && [ "${TOOLMENU_FORK_PR:-false}" = "true" ] && [ -n "${TOOLMENU_URL:-}" ]; then
   # Pull requests from forks don't get secrets, so a server behind auth can't
   # be reached. Say so and don't fail an outside contributor's PR for it.
-  { echo "**Skipped: this pull request comes from a fork.** GitHub doesn't give fork PRs the repository's secrets, so the server couldn't be reached (\`headers\` came through empty). A maintainer can run the check on a branch in this repository."; echo; } >> "$BODY"
+  {
+    echo "**Skipped: this pull request comes from a fork.** GitHub doesn't pass the repository's secrets to fork PRs ([GitHub docs](https://docs.github.com/actions/security-guides/using-secrets-in-github-actions)), so \`headers\` came through empty and the server couldn't be reached."
+    echo
+    echo "The fix that works for every PR: start the server inside the job with \`command\` (or \`url: http://localhost:…\`), so no secret is needed and the check runs against this PR's code. Avoid \`pull_request_target\` for this: it would run the PR's code with your secrets ([GitHub's guidance](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target))."
+    echo
+  } >> "$BODY"
   echo "::notice title=toolmenu::Skipped on a fork PR: no secrets, so the server couldn't be reached."
 elif [ "$code" -eq 2 ]; then
   { echo "**Couldn't snapshot the server.**"; echo; echo '```'; tail -20 "$OUT/snapshot.err"; echo '```'; } >> "$BODY"
