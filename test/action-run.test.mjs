@@ -179,6 +179,7 @@ test('action: a PR whose base branch cannot be fetched fails instead of comparin
   });
   assert.equal(r.code, 2);
   assert.match(r.comment, /Couldn't read the base branch/);
-  assert.match(r.stdout, /::warning title=toolmenu::Couldn't read the base branch/);
+  assert.match(r.stdout, /::error title=toolmenu::Couldn't read the base branch/);
+  assert.doesNotMatch(r.stdout, /the server didn't start/);
   assert.equal(r.ran('diff'), false);
 });
