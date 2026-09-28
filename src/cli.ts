@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadConfig } from './config.js';
 import type { Target } from './connect.js';
 import { diffMenus } from './diff.js';
 import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
-import { formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
+import { counts, formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
 import { loadScenario, session, starterScenario } from './session.js';
 import { connect, listTools } from './connect.js';
 import { buildMenu } from './menu.js';
@@ -17,6 +17,7 @@ import { snapshot } from './snapshot.js';
 import { MAIN_SEED, probeMenu, seeded } from './probe.js';
 import { autoScenario, scenarioYaml } from './auto.js';
 import { authDir, listLogins, login, logout } from './auth.js';
+import { detectProject, secretsNeeded, workflowYaml } from './init.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
 import { VERSION } from './version.js';
 
@@ -24,6 +25,7 @@ const HELP = `toolmenu ${VERSION}
 Lint your MCP server's tool menu for changes that confuse agents or break caches.
 
 Usage:
+  toolmenu init [options] -- <command> | <url>          set up CI: a baseline and a workflow
   toolmenu snapshot [options] -- <command> [args...]   stdio server
   toolmenu snapshot [options] <url>                    Streamable HTTP server
   toolmenu diff [options] <old.json> <new.json>        compare two snapshots
@@ -35,6 +37,7 @@ Usage:
                                                        the same, with steps built from the menu
 
 Commands:
+  init       snapshot the server into menu.json and write .github/workflows/toolmenu.yml
   snapshot   establish the menu: list tools twice, write menu.json, run the menu rules
   diff       compare releases: breaking changes, token change, semver bump
   session    observe the menu changing while a scripted session runs
@@ -54,6 +57,8 @@ Options:
                       only gets a minimal environment (PATH, HOME, ...) plus these
   --no-auth           don't use a stored OAuth login for this server
   --timeout <ms>      per-request timeout (default: 30000)
+  --catalog           also read the operations behind a search tool (search and execute:
+                      discover, search_*_tools) and keep them in the menu file for diff
   --processes <n>     server processes (stdio) or connections (HTTP) to compare,
                       the main one included (default: 2; 1 turns the check off)
   -h, --help          show this help
@@ -91,6 +96,9 @@ history options (best effort; installs and runs third-party code, so use a conta
   --csv <path>          also write the dataset as CSV
   --keep-installs       keep each version's install directory
   --out <dir>           where menus and history.json go (default: toolmenu-history/<package>)
+
+init options:
+  --with-session        the workflow also runs session --auto (calls read-only tools)
 
 auth options:
   --port <n>            loopback port for the login redirect (default: 33418)
@@ -144,6 +152,8 @@ export async function main(argv: string[]): Promise<number> {
       init: { type: 'boolean' },
       'union-out': { type: 'string' },
       auto: { type: 'boolean' },
+      'with-session': { type: 'boolean' },
+      catalog: { type: 'boolean' },
       'open-world': { type: 'boolean' },
       'max-calls': { type: 'string' },
       'save-scenario': { type: 'string' },
@@ -161,7 +171,7 @@ export async function main(argv: string[]): Promise<number> {
     process.stdout.write(HELP);
     return sub || values.help ? 0 : 2;
   }
-  if (!['snapshot', 'diff', 'history', 'session', 'auth'].includes(sub)) throw new UsageError(`Unknown command "${sub}". Try --help.`);
+  if (!['init', 'snapshot', 'diff', 'history', 'session', 'auth'].includes(sub)) throw new UsageError(`Unknown command "${sub}". Try --help.`);
 
   const format = (values.json ? 'json' : values.format ?? 'text') as Format;
   if (!['text', 'json', 'github', 'markdown'].includes(format)) throw new UsageError(`--format must be text, json, github or markdown`);
@@ -237,6 +247,34 @@ export async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
+  if (sub === 'init') {
+    const workflow = join('.github', 'workflows', 'toolmenu.yml');
+    const baseline = values.out ?? 'menu.json';
+    for (const f of [workflow, baseline]) if (existsSync(f)) throw new UsageError(`${f} already exists; init never overwrites. Remove it, or set things up by hand (README: "In CI").`);
+    const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
+    const { menu, findings } = await snapshot(target, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+    await writeFile(baseline, JSON.stringify(menu, null, 2) + '\n');
+    await mkdir(dirname(workflow), { recursive: true });
+    const project = detectProject('.');
+    await writeFile(workflow, workflowYaml({ target, project, session: values['with-session'], baseline }));
+    const c = counts(findings);
+    const secrets = secretsNeeded(target);
+    const lines = [
+      `toolmenu init  ${menu.server.name ?? 'server'} · ${menu.tools.length} tools · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)`,
+      `  wrote ${baseline}: the baseline every pull request is compared with`,
+      `  wrote ${workflow}${project.kind === 'unknown' ? ' (fill in the TODO: how CI builds your server)' : ` (${project.kind} project)`}`,
+      `  today's menu: ${c.error} errors, ${c.warn} warnings, ${c.info} info (run toolmenu snapshot to see them)`,
+      ...(secrets.length ? ['', `Add these repository secrets (Settings → Secrets and variables → Actions): ${secrets.join(', ')}`] : []),
+      '',
+      'Next:',
+      `  git add ${baseline} ${workflow} && git commit -m "Check the MCP tool menu on every PR"`,
+      '  Then open a pull request: toolmenu comments on it. Refresh the baseline when a change is intended:',
+      `  toolmenu snapshot --out ${baseline} ${target.kind === 'stdio' ? '-- ' + [target.command, ...target.args].join(' ') : target.url}`,
+    ];
+    process.stdout.write(lines.join('\n') + '\n');
+    return 0;
+  }
+
   if (sub === 'session' && values.auto) {
     if (values.scenario) throw new UsageError('--auto builds the steps itself; drop --scenario (or drop --auto).');
     const maxCalls = values['max-calls'] ? Number(values['max-calls']) : 20;
@@ -283,7 +321,7 @@ export async function main(argv: string[]): Promise<number> {
   const routesPath = values.routes ?? config.routes;
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
-  const { menu, findings } = await snapshot(target, { routes, timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const { menu, findings } = await snapshot(target, { routes, timeoutMs, processes, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');

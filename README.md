@@ -29,7 +29,7 @@ No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
 (`history` installs old versions with today's dependencies, so it records what they
 serve now, which can differ from what they shipped with: FINDINGS F4.)
 
-> **Status: 0.9, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
+> **Status: 0.10, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
 > real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 ## Start here
@@ -38,13 +38,23 @@ Needs Node 22 or later. The GitHub Action brings its own if the runner's Node is
 for toolmenu only: your server and the job's later steps keep the job's Node.
 Your server can be in any language: toolmenu starts it (stdio) or connects to it (HTTP).
 
-```sh
-# write a starter scenario from your server's menu, then run it
-npx toolmenu session --init -- node dist/server.js
-npx toolmenu session --scenario scenario.yml -- node dist/server.js
+One command sets up CI: it snapshots your server into `menu.json` (the baseline) and
+writes `.github/workflows/toolmenu.yml` for your project (Node, Python, Go or Rust).
+Commit both, open a pull request, and toolmenu comments on it.
 
-# snapshot the menu and commit menu.json as your baseline
-npx toolmenu snapshot -- node dist/server.js
+```sh
+npx toolmenu init -- node dist/server.js          # add --with-session to also run session --auto
+```
+
+Credentials you pass with `--env` go into the workflow as `${{ secrets.… }}`, never as
+values; `init` says which secrets to add. It never overwrites a file.
+
+By hand:
+
+```sh
+npx toolmenu snapshot -- node dist/server.js       # the menu, its findings, menu.json
+npx toolmenu diff menu.json new-menu.json          # what changed between two releases
+npx toolmenu session --auto -- node dist/server.js # call read-only tools, watch the menu
 ```
 
 HTTP servers work the same way: `npx toolmenu snapshot https://example.com/mcp --header "Authorization: Bearer $TOKEN"`.
@@ -80,7 +90,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.9.0
+      - uses: niksa90/toolmenu@v0.10.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -100,6 +110,7 @@ and anything `session` caught. The same report goes to the job summary.
 | `env` | | Environment variables for a `command` server, one `KEY=value` per line |
 | `baseline` | `menu.json` | The committed snapshot to diff against |
 | `scenario` | | A scenario to run with `session`, or `auto` to build the steps from the menu |
+| `catalog` | `false` | `true` also diffs the operations behind a search tool (`snapshot --catalog`) |
 | `baseline-from` | `snapshot` | `session` diffs every tool the scenario saw (the union menu), for servers whose tools appear after an unlock |
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
 | `fail-on` | `error` | Fail the job on findings at or above this level |
@@ -197,6 +208,27 @@ server has said `0.2.0` for 19 releases (FINDINGS F5). It's shown, and only chec
 with `--server-version-is-release`. `diff` also enforces an optional `tokenBudget`
 (`diff/token-budget`). Order changes are only a notice here: between releases, prompt caches rebuild. Order
 matters *within* a session.
+
+### Operations behind a search tool (`--catalog`)
+
+Big servers increasingly keep most operations out of the menu: a small fixed menu, a
+search tool, and an execute tool (Sentry's `search_sentry_tools` + `execute_sentry_tool`,
+Atlassian's `discover` + `executeRead`). A breaking change to one of those operations
+never shows in the menu. `snapshot --catalog` asks the search tool a fixed set of
+queries and keeps the operations it returns in `menu.json`; `diff` then compares
+operations found in both snapshots with the same rules as tools.
+
+```sh
+npx toolmenu snapshot --catalog -- node dist/server.js
+```
+
+A search returns its top matches, not everything, so an operation not found this time
+is a notice ("not returned by the same queries"), never "removed". The default queries
+come from the nouns in your tool names; on your own server, list the ones that matter
+in `toolmenu.config.json` (`"catalog": { "queries": ["list releases", "delete issue"] }`).
+If the server can serve the whole list as a menu (Atlassian: `?tools=all`), snapshot
+that instead: it's complete. Queries are paced and a rate limit is waited out; on
+Sentry's hosted server, two runs of 25 queries found the same 61 operations (FINDINGS F15).
 
 ## `history`: a package's releases, researched
 

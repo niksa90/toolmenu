@@ -44,4 +44,6 @@ export interface Menu {
   tools: MenuTool[];
   totalTokens: number;
   listMeta?: { ttlMs?: number; cacheScope?: string };
+  /** Operations behind a search tool (snapshot --catalog). Not part of the menu or its tokens. */
+  catalog?: import('./catalog.js').Catalog;
 }

@@ -38,6 +38,12 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/version-bump': { severity: 'warn' },
   'diff/version-backwards': { severity: 'warn' },
   'diff/token-budget': { severity: 'error' },
+  // Operations behind a search tool (snapshot --catalog). A search returns its top
+  // matches, so one not found this time may be ranked out, not removed: a notice,
+  // no bump. Changes to operations found in both runs use the rules above.
+  'diff/catalog-missing': { severity: 'info' },
+  'diff/catalog-added': { severity: 'info' },
+  'diff/catalog-queries': { severity: 'info' },
 };
 
 export interface TokenChange {
@@ -115,6 +121,8 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
       message: `Tool order changed (${moved.map((m) => m.tool).join(', ')}). Only a notice between releases: prompt caches are short-lived, so a deploy costs roughly one rewrite. It matters within a session.`,
     });
   }
+
+  raw.push(...compareCatalogs(before.catalog, after.catalog, ignored));
 
   // Ignored tools leave the token counts and the budget too.
   const tokens = tokenChange(oldTools, newTools);
@@ -275,6 +283,41 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
     out.push({ rule: 'diff/schema-other', tool: name, message: `${name}: inputSchema changed outside its parameters (additionalProperties, $defs…). Review it.` });
   }
   return out.concat(compareRest(old, t));
+}
+
+/** Operations behind a search tool, compared like tools where both runs found them. */
+function compareCatalogs(before: Menu['catalog'], after: Menu['catalog'], ignored: (name: string) => boolean): Raw[] {
+  if (!before && !after) return [];
+  if (!before || !after) {
+    return [{ rule: 'diff/catalog-queries', message: `Only the ${before ? 'older' : 'newer'} snapshot has a catalog (snapshot --catalog), so the operations behind ${(before ?? after)!.tool} weren't compared.` }];
+  }
+  const out: Raw[] = [];
+  const where = `behind ${after.tool}`;
+  if (JSON.stringify(before.queries) !== JSON.stringify(after.queries)) {
+    out.push({ rule: 'diff/catalog-queries', message: `The two catalogs were read with different queries, so operations found on one side only say little. Pin them with catalog.queries in the config.` });
+  }
+  const partial = [before, after].filter((c) => c.failed?.length);
+  if (partial.length) {
+    out.push({ rule: 'diff/catalog-queries', message: `${partial.length === 2 ? 'Both catalogs are' : `The ${partial[0] === before ? 'older' : 'newer'} catalog is`} partial: some queries failed (rate limits or errors), so operations found on one side only say even less.` });
+  }
+  const oldOps = new Map(before.operations.filter((o) => !ignored(o.name)).map((o) => [o.name, o]));
+  const newOps = new Map(after.operations.filter((o) => !ignored(o.name)).map((o) => [o.name, o]));
+  for (const [name, op] of newOps) {
+    const old = oldOps.get(name);
+    if (!old) {
+      out.push({ rule: 'diff/catalog-added', tool: name, message: `${name} (${where}) is new, or newly found by the same queries.` });
+      continue;
+    }
+    for (const r of compareTool(old, op)) out.push({ ...r, message: `${r.message.replace(/\.$/, '')} (an operation ${where}).` });
+  }
+  const missing = [...oldOps.keys()].filter((n) => !newOps.has(n));
+  if (missing.length) {
+    out.push({
+      rule: 'diff/catalog-missing',
+      message: `${missing.length} operation${missing.length === 1 ? '' : 's'} ${where} weren't returned by the same queries this time: removed, renamed, or ranked lower. Check before relying on them: ${missing.slice(0, 8).join(', ')}${missing.length > 8 ? ', …' : ''}.`,
+    });
+  }
+  return out;
 }
 
 const TOOL_FIELDS = new Set(['name', 'description', 'inputSchema', 'outputSchema', 'annotations', 'tokens']);
