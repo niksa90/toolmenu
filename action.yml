@@ -12,6 +12,16 @@ inputs:
   url:
     description: A Streamable HTTP endpoint to check instead of a stdio command.
     required: false
+  headers:
+    description: >-
+      HTTP headers for a url server, one "Name: value" per line. Take secrets from
+      secrets, e.g. "x-api-key: ${{ secrets.MCP_API_KEY }}".
+    required: false
+  env:
+    description: >-
+      Environment variables for a stdio server, one KEY=value per line (it only gets a
+      minimal environment otherwise).
+    required: false
   baseline:
     description: The committed menu file to diff against.
     required: false
@@ -64,6 +74,8 @@ runs:
       env:
         TOOLMENU_COMMAND: ${{ inputs.command }}
         TOOLMENU_URL: ${{ inputs.url }}
+        TOOLMENU_HEADERS: ${{ inputs.headers }}
+        TOOLMENU_ENV: ${{ inputs.env }}
         TOOLMENU_BASELINE: ${{ inputs.baseline }}
         TOOLMENU_SCENARIO: ${{ inputs.scenario }}
         TOOLMENU_FAIL_ON: ${{ inputs.fail-on }}

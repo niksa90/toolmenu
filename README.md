@@ -81,6 +81,8 @@ and anything `session` caught. The same report goes to the job summary.
 | Input | Default | |
 |---|---|---|
 | `command` or `url` | | How to start the server over stdio, or its Streamable HTTP endpoint |
+| `headers` | | HTTP headers for a `url` server, one `Name: value` per line. Use a secret for keys: `x-api-key: ${{ secrets.MCP_API_KEY }}` |
+| `env` | | Environment variables for a `command` server, one `KEY=value` per line |
 | `baseline` | `menu.json` | The committed snapshot to diff against |
 | `scenario` | | A scenario to run with `session` |
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
