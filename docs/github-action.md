@@ -65,7 +65,7 @@ jobs:
       - run: npm ci && npm run build
       - run: npm start &                # the PR's version, in the background (it keeps running for later steps)
       - run: npx --yes wait-on --timeout 60000 tcp:localhost:3000   # fail after 60 s instead of hanging
-      - uses: niksa90/toolmenu@v0.8.0
+      - uses: niksa90/toolmenu@v0.9.0
         with:
           url: http://localhost:3000/mcp
           headers: "x-mcp-api-key: ${{ env.MCP_API_KEY }}"
@@ -79,40 +79,37 @@ usually doesn't touch the systems behind them.
 ## Servers that unlock tools
 
 If your server starts with a core menu and adds tools on request (an unlock tool, a
-`toolset` parameter, a mode switch in its environment), one configuration can't
-check both things that matter. Use two:
-
-- **The baseline is the full menu.** `diff` only compares the tools it sees. If the
-  baseline holds the core menu alone, a renamed, removed or no-longer-read-only tool
-  behind an unlock never reaches the report. Snapshot a configuration that serves
-  every tool, and commit that as `menu.json`:
-
-  ```sh
-  npx toolmenu snapshot --env UNLOCK_MODE=all -- node dist/server.js
-  ```
-
-- **The session runs the default menu**, the one clients start with, so `session`
-  sees each unlock happen: where the new tools land in the list, what they cost, and
-  whether repeating an unlock changes nothing. A `session --init` scenario is a good
-  start: it finds unlock tools and unlocks for real.
-
-The Action runs its snapshot and its scenario with the same settings, so give it the
-full menu and run the session as its own step:
+`toolset` parameter), a snapshot only holds the core menu, and `diff` never sees the
+tools behind an unlock: a renamed, removed or no-longer-read-only one never reaches
+the report. Let the scenario build the baseline instead:
 
 ```yaml
-      - uses: niksa90/toolmenu@v0.8.0
+      - uses: niksa90/toolmenu@v0.9.0
         with:
           command: node dist/server.js
-          env: UNLOCK_MODE=all        # every tool: this is what diff checks
+          scenario: scenario.yml       # unlocks each toolset, lists after each
+          baseline-from: session       # diff every tool the scenario saw
           baseline: menu.json
-      # The default menu, unlocked step by step. Findings show up as annotations
-      # on the PR, and errors fail the job.
-      - run: npx --yes toolmenu@0.8.0 session --scenario scenario.yml --format github -- node dist/server.js
 ```
 
-`UNLOCK_MODE` stands for whatever switch your server has. The unlock calls in the
-scenario are real, so the server needs whatever it needs to answer them in CI. Use
-one Action step per job: steps in the same job update the same PR comment.
+With `baseline-from: session`, the Action runs the scenario first and diffs its
+**union menu**: every tool the session saw, in the order first seen, as an ordinary
+menu file. Write the first baseline the same way and commit it:
+
+```sh
+npx toolmenu session --scenario scenario.yml --union-out menu.json -- node dist/server.js
+```
+
+A `session --init` scenario is a good start: it finds unlock tools and unlocks for
+real. The unlock calls are real, so the server needs whatever it needs to answer them
+in CI. The same run still reports how each unlock changes the menu: where the new
+tools land, what they cost, whether repeating an unlock changes nothing.
+
+If a switch in the environment serves every tool at once (say `UNLOCK_MODE=all`),
+snapshotting that works too: `env: UNLOCK_MODE=all` with the default
+`baseline-from: snapshot`. Then run the session on the default menu as its own step
+(`npx --yes toolmenu@0.9.0 session --scenario scenario.yml --format github -- …`):
+the Action runs its snapshot and scenario with the same settings.
 
 Expect `session/append` warnings: an append invalidates the cached conversation for
 clients that send tools first. Once the server speaks 2026-07-28, unlocks that only
@@ -142,7 +139,7 @@ check even though nothing was checked. The PR comment and a notice say so, and t
 `skipped` output is `'true'`. To make a skip fail instead, gate on it:
 
 ```yaml
-      - uses: niksa90/toolmenu@v0.8.0
+      - uses: niksa90/toolmenu@v0.9.0
         id: toolmenu
         with:
           url: https://mcp.example.com/mcp   # a remote server that needs a key

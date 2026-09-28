@@ -29,7 +29,7 @@ No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
 (`history` installs old versions with today's dependencies, so it records what they
 serve now, which can differ from what they shipped with: FINDINGS F4.)
 
-> **Status: 0.8, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
+> **Status: 0.9, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
 > real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 ## Start here
@@ -48,6 +48,19 @@ npx toolmenu snapshot -- node dist/server.js
 ```
 
 HTTP servers work the same way: `npx toolmenu snapshot https://example.com/mcp --header "Authorization: Bearer $TOKEN"`.
+Servers behind OAuth (most hosted ones: GitHub, Atlassian, Sentry…): log in once, in a
+browser, and `snapshot` and `session` use that login from then on, refreshing it as
+needed:
+
+```sh
+npx toolmenu auth login https://mcp.example.com/mcp
+npx toolmenu snapshot https://mcp.example.com/mcp
+```
+
+Logins are stored per server in `~/.config/toolmenu/auth` (readable only by you);
+`auth list` and `auth logout <url>` manage them. A server that doesn't allow
+dynamic registration needs a pre-registered app: `--client-id` (and
+`--client-secret`). In CI, where no browser can open, pass a token as a header.
 Both protocol generations are supported: 2026-07-28 (`server/discover`, stateless)
 and the 2025 `initialize` handshake, through the official TypeScript SDK.
 
@@ -67,7 +80,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.8.0
+      - uses: niksa90/toolmenu@v0.9.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -86,7 +99,8 @@ and anything `session` caught. The same report goes to the job summary.
 | `headers` | | HTTP headers for a `url` server, one `Name: value` per line. Use a secret for keys: `x-api-key: ${{ secrets.MCP_API_KEY }}` |
 | `env` | | Environment variables for a `command` server, one `KEY=value` per line |
 | `baseline` | `menu.json` | The committed snapshot to diff against |
-| `scenario` | | A scenario to run with `session` |
+| `scenario` | | A scenario to run with `session`, or `auto` to build the steps from the menu |
+| `baseline-from` | `snapshot` | `session` diffs every tool the scenario saw (the union menu), for servers whose tools appear after an unlock |
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
 | `fail-on` | `error` | Fail the job on findings at or above this level |
 | `comment` | `true` | Post and update the PR comment |
@@ -131,6 +145,16 @@ as its steps, so the starter is a floor, not a ceiling.
 | `session/untested` | warn, error if no call got through | Calls that failed before reaching the tool: authentication, something missing on this machine (no Chrome), the network. One finding for the run, not one per step, so an expired CI secret doesn't pass a run that tested nothing |
 | `session/refused`, `session/step-failed` | error | A write the scenario didn't allow, or a call that failed for another reason |
 | `session/tool-error` | warn | A tool that answered with an error for another reason (`isError`): the run tested less than it looks |
+
+**No scenario? `session --auto`** builds the steps from the menu: every read-only tool
+whose required arguments the schema itself gives (a `default`, `examples`, an `enum`,
+a type or format), cheapest first, then the first call again. It never guesses an ID:
+a tool that needs `owner`, `repo` or an issue key is skipped, and the report says
+which values were missing (`--save-scenario auto.yml` writes the steps, with the
+skipped tools commented out, to fill in). Tools marked `openWorldHint: true` (web
+search, fetch, scraping, which can cost API credits) are called only with
+`--open-world`. On the 22 servers in `bench/`, `--auto` reaches 60 of 262 read-only
+tools, 84 with `--open-world`.
 
 **`session` calls tools for real.** Without `allow_writes: true` it refuses any tool
 not marked `readOnlyHint: true`. `--plan` prints the steps without connecting.

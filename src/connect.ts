@@ -1,13 +1,14 @@
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import type { Transport } from '@modelcontextprotocol/client';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/client/stdio';
+import { hasLogin, StoredOAuthProvider } from './auth.js';
 import { eraOf } from './menu.js';
 import type { Era } from './types.js';
 import { VERSION } from './version.js';
 
 export type Target =
   | { kind: 'stdio'; command: string; args: string[]; env?: Record<string, string>; cwd?: string }
-  | { kind: 'http'; url: string; headers?: Record<string, string> };
+  | { kind: 'http'; url: string; headers?: Record<string, string>; noAuth?: boolean };
 
 export interface WireResponse {
   method: string;
@@ -82,6 +83,7 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
   const client = new Client({ name: 'toolmenu', version: VERSION }, { versionNegotiation: { mode: 'auto' } });
   let transport: Transport;
   let stderrText = '';
+  let oauth = false;
 
   if (target.kind === 'stdio') {
     const stdio = new StdioClientTransport({
@@ -96,8 +98,13 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     });
     transport = stdio;
   } else {
+    // A stored OAuth login (toolmenu auth login) is used unless the request brings
+    // its own Authorization header, or --no-auth.
+    const ownAuth = Object.keys(target.headers ?? {}).some((h) => h.toLowerCase() === 'authorization');
+    oauth = !target.noAuth && !ownAuth && hasLogin(target.url);
     transport = new StreamableHTTPClientTransport(new URL(target.url), {
       requestInit: { headers: target.headers ?? {} },
+      ...(oauth ? { authProvider: new StoredOAuthProvider(target.url) } : {}),
     });
   }
 
@@ -108,6 +115,9 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     await new Promise((resolve) => setTimeout(resolve, 100));
     const stderr = stderrText.trim();
     if (stderr && error instanceof Error) error.message += `\nserver stderr:\n${stderr}`;
+    if (target.kind === 'http' && !oauth && error instanceof Error && /\b401\b|unauthori[sz]ed/i.test(error.message)) {
+      error.message += `\nIf the server uses OAuth, log in once with: toolmenu auth login ${target.url}`;
+    }
     await client.close().catch(() => {});
     throw error;
   }
@@ -125,7 +135,7 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     capabilities: (client.getServerCapabilities() ?? {}) as Record<string, unknown>,
     usedAuth:
       target.kind === 'http' &&
-      Object.keys(target.headers ?? {}).some((h) => /^(authorization|x-api-key|api-key|cookie)$/i.test(h)),
+      (oauth || Object.keys(target.headers ?? {}).some((h) => /^(authorization|x-api-key|api-key|cookie)$/i.test(h))),
     stderr: () => stderrText,
     close: () => client.close(),
   };

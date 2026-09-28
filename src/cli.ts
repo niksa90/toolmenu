@@ -14,7 +14,9 @@ import { buildMenu } from './menu.js';
 import { existsSync } from 'node:fs';
 import { loadRoutes } from './routes.js';
 import { snapshot } from './snapshot.js';
-import { MAIN_SEED, seeded } from './probe.js';
+import { MAIN_SEED, probeMenu, seeded } from './probe.js';
+import { autoScenario, scenarioYaml } from './auto.js';
+import { authDir, listLogins, login, logout } from './auth.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
 import { VERSION } from './version.js';
 
@@ -26,14 +28,18 @@ Usage:
   toolmenu snapshot [options] <url>                    Streamable HTTP server
   toolmenu diff [options] <old.json> <new.json>        compare two snapshots
   toolmenu history [options] <npm-package>             snapshot and diff published versions
+  toolmenu auth login <url> | logout <url> | list      OAuth logins for HTTP servers
   toolmenu session --scenario <file> [options] -- <command> | <url>
                                                        run a scripted session, watch the menu
+  toolmenu session --auto [options] -- <command> | <url>
+                                                       the same, with steps built from the menu
 
 Commands:
   snapshot   establish the menu: list tools twice, write menu.json, run the menu rules
   diff       compare releases: breaking changes, token change, semver bump
   session    observe the menu changing while a scripted session runs
   history    research release history: install, snapshot and diff published npm versions
+  auth       log in to an OAuth-protected server once; snapshot and session then use it
 
 Options:
   --out <path>        where to write the menu (default: menu.json)
@@ -46,6 +52,7 @@ Options:
   --header <k: v>     HTTP header, repeatable (e.g. "Authorization: Bearer ...")
   --env <K=V>         environment variable for a stdio server, repeatable. The server
                       only gets a minimal environment (PATH, HOME, ...) plus these
+  --no-auth           don't use a stored OAuth login for this server
   --timeout <ms>      per-request timeout (default: 30000)
   --processes <n>     server processes (stdio) or connections (HTTP) to compare,
                       the main one included (default: 2; 1 turns the check off)
@@ -63,6 +70,15 @@ session options:
   --plan                print the steps without connecting or running anything
   --init                write a starter scenario from the server's menu (to --scenario,
                         default scenario.yml; never overwrites)
+  --auto                build the steps from the menu: every read-only tool whose
+                        required arguments the schema can fill (const, default,
+                        examples, enum, type), then the first call again
+  --open-world          with --auto, also call read-only tools marked openWorldHint:
+                        true (web search, fetch, scraping): they may cost API credits
+  --max-calls <n>       with --auto, at most n calls (default: 20)
+  --save-scenario <p>   with --auto, write the steps it ran as a scenario file
+  --union-out <path>    write every tool the session saw as a menu file, to commit as
+                        the baseline for diff (tools behind unlocks included)
 
 history options (best effort; installs and runs third-party code, so use a container):
   --versions <n|all>    number of published versions to inspect (default: 10)
@@ -75,6 +91,12 @@ history options (best effort; installs and runs third-party code, so use a conta
   --csv <path>          also write the dataset as CSV
   --keep-installs       keep each version's install directory
   --out <dir>           where menus and history.json go (default: toolmenu-history/<package>)
+
+auth options:
+  --port <n>            loopback port for the login redirect (default: 33418)
+  --scope <scopes>      scopes to ask for (default: the server's)
+  --client-id <id>      a pre-registered client, for servers without dynamic registration
+  --client-secret <s>   its secret, if it has one
 
 Exit codes: 0 clean · 1 findings at or above --fail-on · 2 couldn't connect or bad usage
 `;
@@ -100,6 +122,11 @@ export async function main(argv: string[]): Promise<number> {
       header: { type: 'string', multiple: true },
       env: { type: 'string', multiple: true },
       timeout: { type: 'string' },
+      'no-auth': { type: 'boolean' },
+      port: { type: 'string' },
+      scope: { type: 'string' },
+      'client-id': { type: 'string' },
+      'client-secret': { type: 'string' },
       processes: { type: 'string' },
       versions: { type: 'string' },
       release: { type: 'string' },
@@ -115,6 +142,11 @@ export async function main(argv: string[]): Promise<number> {
       scenario: { type: 'string' },
       plan: { type: 'boolean' },
       init: { type: 'boolean' },
+      'union-out': { type: 'string' },
+      auto: { type: 'boolean' },
+      'open-world': { type: 'boolean' },
+      'max-calls': { type: 'string' },
+      'save-scenario': { type: 'string' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
     },
@@ -129,7 +161,7 @@ export async function main(argv: string[]): Promise<number> {
     process.stdout.write(HELP);
     return sub || values.help ? 0 : 2;
   }
-  if (!['snapshot', 'diff', 'history', 'session'].includes(sub)) throw new UsageError(`Unknown command "${sub}". Try --help.`);
+  if (!['snapshot', 'diff', 'history', 'session', 'auth'].includes(sub)) throw new UsageError(`Unknown command "${sub}". Try --help.`);
 
   const format = (values.json ? 'json' : values.format ?? 'text') as Format;
   if (!['text', 'json', 'github', 'markdown'].includes(format)) throw new UsageError(`--format must be text, json, github or markdown`);
@@ -137,6 +169,8 @@ export async function main(argv: string[]): Promise<number> {
   if (!(failOn in SEVERITY_RANK)) throw new UsageError(`--fail-on must be error, warn or info`);
   const timeoutMs = values.timeout ? Number(values.timeout) : 30_000;
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new UsageError(`--timeout must be a positive number of milliseconds`);
+
+  if (sub === 'auth') return authCommand(rest, values);
 
   const config = await loadConfig(values.config);
   const processes = values.processes !== undefined ? Number(values.processes) : config.processes ?? 2;
@@ -190,7 +224,7 @@ export async function main(argv: string[]): Promise<number> {
   if (sub === 'session' && values.init) {
     const path = values.scenario ?? 'scenario.yml';
     if (existsSync(path)) throw new UsageError(`${path} already exists. Pick another path with --scenario.`);
-    const initTarget = parseTarget(rest, command, values.header ?? [], values.env ?? []);
+    const initTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
     const conn = await connect(seeded(initTarget, MAIN_SEED), { timeoutMs });
     try {
       const list = await listTools(conn, { timeoutMs });
@@ -201,6 +235,28 @@ export async function main(argv: string[]): Promise<number> {
       await conn.close().catch(() => {});
     }
     return 0;
+  }
+
+  if (sub === 'session' && values.auto) {
+    if (values.scenario) throw new UsageError('--auto builds the steps itself; drop --scenario (or drop --auto).');
+    const maxCalls = values['max-calls'] ? Number(values['max-calls']) : 20;
+    if (!Number.isInteger(maxCalls) || maxCalls < 1) throw new UsageError('--max-calls must be a whole number, 1 or more');
+    const savePath = values['save-scenario'];
+    if (savePath && existsSync(savePath)) throw new UsageError(`${savePath} already exists. Pick another path for --save-scenario.`);
+    const autoTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
+    const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs);
+    const plan = autoScenario(menu, { openWorld: values['open-world'], maxCalls });
+    if (savePath) await writeFile(savePath, scenarioYaml(plan, menu.server.name));
+    if (values.plan) {
+      process.stdout.write(formatPlan(plan.scenario, 'auto') + '\n');
+      return 0;
+    }
+    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto' });
+    result.auto = { called: plan.called, skipped: plan.skipped };
+    if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
+    const output = formatSession(result, format);
+    if (output) process.stdout.write(output + '\n');
+    return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
   if (sub === 'session') {
@@ -215,14 +271,15 @@ export async function main(argv: string[]): Promise<number> {
       process.stdout.write(formatPlan(scenario, values.scenario) + '\n');
       return 0;
     }
-    const sessionTarget = parseTarget(rest, command, values.header ?? [], values.env ?? []);
+    const sessionTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
     const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario });
+    if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
     if (output) process.stdout.write(output + '\n');
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
-  const target = parseTarget(rest, command, values.header ?? [], values.env ?? []);
+  const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
   const routesPath = values.routes ?? config.routes;
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
@@ -236,7 +293,7 @@ export async function main(argv: string[]): Promise<number> {
   return findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
 }
 
-function parseTarget(positionals: string[], command: string[] | undefined, headers: string[], env: string[]): Target {
+function parseTarget(positionals: string[], command: string[] | undefined, headers: string[], env: string[], noAuth = false): Target {
   if (command) {
     if (command.length === 0) throw new UsageError('Nothing after "--": give the command that starts the server.');
     if (positionals.length) throw new UsageError(`Unexpected "${positionals[0]}" before "--".`);
@@ -246,7 +303,29 @@ function parseTarget(positionals: string[], command: string[] | undefined, heade
   if (!url) throw new UsageError('Give a server URL, or "-- <command>" for a stdio server.');
   if (extra.length) throw new UsageError(`Unexpected "${extra[0]}". For a stdio server, put the command after "--".`);
   if (!/^https?:\/\//.test(url)) throw new UsageError(`"${url}" isn't an http(s) URL. For a stdio server, put the command after "--".`);
-  return { kind: 'http', url, headers: parsePairs(headers, ':', '--header') };
+  return { kind: 'http', url, headers: parsePairs(headers, ':', '--header'), ...(noAuth ? { noAuth } : {}) };
+}
+
+async function authCommand(args: string[], values: { port?: string; scope?: string; 'client-id'?: string; 'client-secret'?: string; timeout?: string }): Promise<number> {
+  const [action, url, ...extra] = args;
+  if (action === 'list') {
+    const logins = await listLogins();
+    process.stdout.write(logins.length ? logins.map((l) => `${l.serverUrl}  (issuer ${l.issuer ?? '?'}, saved ${l.savedAt?.slice(0, 10) ?? '?'})`).join('\n') + '\n' : `No logins. Stored in ${authDir()}.\n`);
+    return 0;
+  }
+  if (action !== 'login' && action !== 'logout') throw new UsageError('auth takes login <url>, logout <url> or list.');
+  if (!url || extra.length) throw new UsageError(`auth ${action} needs one server URL: toolmenu auth ${action} https://example.com/mcp`);
+  if (!/^https?:\/\//.test(url)) throw new UsageError(`"${url}" isn't an http(s) URL.`);
+  if (action === 'logout') {
+    process.stdout.write((await logout(url)) ? `Logged out of ${url}.\n` : `No login stored for ${url}.\n`);
+    return 0;
+  }
+  const port = values.port ? Number(values.port) : undefined;
+  if (port !== undefined && !(Number.isInteger(port) && port > 0 && port < 65536)) throw new UsageError('--port must be a port number');
+  if (values['client-secret'] && !values['client-id']) throw new UsageError('--client-secret goes with --client-id');
+  const result = await login(url, { port, scope: values.scope, clientId: values['client-id'], clientSecret: values['client-secret'] });
+  process.stdout.write(`Logged in to ${result.name ?? url}: ${result.tools} tools. snapshot and session use this login from now on (--no-auth to skip it).\n`);
+  return 0;
 }
 
 function parsePairs(items: string[], separator: string, flag: string): Record<string, string> {

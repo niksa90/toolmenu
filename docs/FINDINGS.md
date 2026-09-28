@@ -555,3 +555,47 @@ credentials) with 0.7.1 and with 0.8.0, compared with `node bench/report.mjs`.
   URL), and GitHub's are info. `naming/vague-id` no longer flags GitHub's `ref`.
 
 Reproduce: `npm run build && bench/run.sh out/0.8` and `node bench/report.mjs out/0.8 out/0.7.1`.
+
+## F14. Hosted servers, behind OAuth
+
+*Checked 2026-09-29 with `toolmenu auth login` (0.9), on the maintainer's own
+accounts.* The hosted versions of three servers from F12, which toolmenu couldn't
+reach before 0.9.
+
+| Server | Registration | Protocol | Tools | Menu (est.) |
+|---|---|---|---|---|
+| Sentry, `https://mcp.sentry.dev/mcp` | dynamic | **2026-07-28** | 9 | ~5,529 |
+| GitHub, `https://api.githubcopilot.com/mcp/` | **none**: needs an OAuth app you register | **2026-07-28** | 45 | ~11,008 |
+| Atlassian, `https://mcp.atlassian.com/v2/mcp` | dynamic | 2025-11-25 | 21 | ~14,135 |
+| same, `?tools=all` | | 2025-11-25 | 171 | ~79,906 |
+
+- **Hosted and packaged versions speak different protocols.** Sentry's hosted server
+  speaks 2026-07-28; its npm package, the same version (0.42.0), speaks 2025-11-25
+  (F12). Checking the package says little about what hosted users get.
+- **Atlassian uses search and execute, not unlocks.** Its default menu is 21 tools:
+  a few common ones, `discover` (searches ~302 operations) and `executeRead`,
+  `executeWrite`, `executeDestructive` (run one by name). The menu never changes:
+  `session` listed it, called `discover`, and listed again, with no change and the same
+  menu on a second connection. `?tools=all` serves the operations as 171 tools
+  instead, for gateways that can't search: ~80K tokens against ~14K, 5.7× the menu for
+  the same capabilities. Together with Sentry (`search_sentry_tools` +
+  `execute_sentry_tool`, F11), GitHub dropping dynamic toolsets and Apify dropping
+  added tools (F12), that's the direction: a small fixed menu plus a way to reach the
+  rest, not a menu that grows.
+- **What `diff` can't see.** Operations behind `discover` aren't in the menu, so a
+  breaking change to one never shows in a `diff` of the default endpoint. Atlassian's
+  `?tools=all` makes them a menu, which `diff` can compare: snapshot that endpoint as
+  the baseline.
+- **Default scopes are broad.** Every server's default scope set includes writes:
+  Sentry `project:write`, `event:write`; GitHub `repo`, `write:packages`; Atlassian 40
+  scopes, including `delete:jira` and writes to Confluence, Bitbucket and Loom.
+  `auth login` prints the scopes it asks for; `--scope` narrows them.
+- **GitHub marks its list `cacheScope: "public"` on an authenticated request**, and
+  its server documents that OAuth scopes filter the tools. A token with different
+  scopes (the `gh` CLI's) got the same 45 tools here, so a caller-dependent menu isn't
+  shown. A deliberately narrow token would settle it.
+- **What toolmenu fixed on the way:** it didn't persist the SDK's discovery state, so
+  the SDK couldn't check that a login's code goes back to the server that started it
+  (SEP-2352; warned on Sentry); a pre-registered app (GitHub) wasn't stamped with its
+  issuer, nor stored for refresh; and a server without dynamic registration gave only
+  "Incompatible auth server". All fixed and tested before 0.9.0.
