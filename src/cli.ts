@@ -259,6 +259,10 @@ function parsePairs(items: string[], separator: string, flag: string): Record<st
 // exit is still needed: a stdio server or HTTP socket can keep the loop alive.)
 function exitWhenFlushed(code: number): void {
   process.exitCode = code;
+  // A reader that closed the pipe early (| head) isn't an error: keep the exit code.
+  for (const stream of [process.stdout, process.stderr]) {
+    stream.on('error', (error: NodeJS.ErrnoException) => process.exit(error.code === 'EPIPE' ? code : 2));
+  }
   process.stdout.write('', () => process.stderr.write('', () => process.exit(code)));
 }
 

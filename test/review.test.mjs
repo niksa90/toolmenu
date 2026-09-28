@@ -51,7 +51,7 @@ test('review 6: a version that goes backwards is flagged; a prerelease is not ju
   const after = menu([]);
   const back = diffMenus(before, after, { release: { before: '2.0.0', after: '1.9.0' } });
   assert.equal(back.bumpNotChecked, 'version went backwards');
-  assert.ok(back.findings.some((f) => f.rule === 'diff/version-bump' && /went backwards/.test(f.message)));
+  assert.ok(back.findings.some((f) => f.rule === 'diff/version-backwards' && /went backwards/.test(f.message)));
   const rc = diffMenus(before, after, { release: { before: '1.0.0-rc.1', after: '1.0.0' } });
   assert.equal(rc.bumpNotChecked, 'prerelease');
   assert.ok(!rc.findings.some((f) => f.rule === 'diff/version-bump'));
@@ -82,4 +82,36 @@ test('review 9: an append in the same step as an edit is still an append', () =>
   const after = menuOf([tool('a', [], { description: 'edited' }), tool('z')]).tools;
   const rules = changeFindings(before, after, compareMenus(before, after), 1).map((f) => f.rule).sort();
   assert.deepEqual(rules, ['session/append', 'session/edit']);
+});
+
+// Second review pass, on the fixes above.
+test('review 2b: array item types and newly added item constraints are classified', () => {
+  const arr = (items) => menu([withProps({ a: { type: 'array', ...(items ? { items } : {}) } })]);
+  const narrowed = diffMenus(arr(), arr({ type: 'string', enum: ['x'] }));
+  assert.ok(narrowed.findings.some((f) => f.rule === 'diff/param-type'));
+  assert.ok(narrowed.findings.some((f) => f.rule === 'diff/enum-narrowed'));
+  assert.equal(narrowed.suggestedBump, 'major');
+  const retyped = diffMenus(arr({ type: 'string' }), arr({ type: 'integer' }));
+  assert.ok(retyped.findings.some((f) => f.rule === 'diff/param-type'));
+  const reshaped = diffMenus(menu([withProps({ a: { type: 'string' } })]), menu([withProps({ a: { type: 'array', items: { type: 'string' } } })]));
+  assert.deepEqual(reshaped.findings.map((f) => f.rule), ['diff/param-type'], 'no duplicate schema-other');
+});
+
+test('review 4b: ignored tools do not pair into renames or reorders', () => {
+  const before = menu([tool('debug_get_user', ['user_id']), tool('b'), tool('debug_a'), tool('debug_z')]);
+  const after = menu([tool('get_user', ['user_id']), tool('b'), tool('debug_z'), tool('debug_a')], '1.3.0');
+  const d = diffMenus(before, after, { ignore: ['debug_*'], release: { before: '1.2.0', after: '1.3.0' } });
+  assert.deepEqual(d.findings.map((f) => f.rule), ['diff/tool-added']);
+  assert.equal(d.suggestedBump, 'minor');
+});
+
+test('review 6b: backwards has its own rule and wording; build metadata is not a prerelease', () => {
+  const server = diffMenus(menu([tool('a')], '2.0.0'), menu([tool('a')], '1.0.0'), { serverVersionIsRelease: true });
+  const back = server.findings.find((f) => f.rule === 'diff/version-backwards');
+  assert.ok(back);
+  assert.doesNotMatch(back.message, /--release/);
+  assert.ok(!server.findings.some((f) => f.rule === 'diff/version-bump'));
+  const build = diffMenus(menu([tool('a', ['x'])]), menu([]), { release: { before: '1.0.0+build-1', after: '1.0.1' } });
+  assert.equal(build.actualBump, 'patch');
+  assert.ok(build.findings.some((f) => f.rule === 'diff/version-bump'));
 });
