@@ -1,6 +1,6 @@
 export { snapshot, type SnapshotOptions, type SnapshotResult } from './snapshot.js';
 export { connect, listTools, type Target, type Connection } from './connect.js';
-export { buildMenu, countTokens, loadMenu } from './menu.js';
+export { buildMenu, countTokens, loadMenu, toolTokens } from './menu.js';
 export { diffMenus, versionBump, DIFF_RULES, type DiffResult, type DiffOptions, type DiffFinding, type ChangeClass, type Bump, type TokenChange } from './diff.js';
 export { history, historyCsv, npmSource, classifyFailure, WATCHED_DEPENDENCIES, type HistoryResult, type HistoryRow, type HistoryOptions, type PackageSource, type PublishedVersion, type FailureReason } from './history.js';
 export { session, loadScenario, parseScenario, changeFindings, starterScenario, type Scenario, type Step, type SessionResult, type SessionOptions, type StepRecord, type Scope } from './session.js';

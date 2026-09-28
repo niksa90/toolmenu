@@ -281,7 +281,10 @@ the README links to the existing checkers.
 - **Server order ≠ final client order.** Clients like Claude Code merge tools from
   several servers and may sort or filter them. A stable server menu is necessary for
   cache hits, not sufficient. toolmenu measures what the server controls.
-- **"Tokens affected" is an estimate, not a bill.** Counts come from `js-tiktoken`.
+- **"Tokens affected" is an estimate, not a bill.** Counts come from `js-tiktoken`,
+  over each tool's name, description and input schema: what clients send the model.
+  Output schemas, annotations, icons, `title` and `_meta` aren't counted (before
+  0.7.1 they were, which inflated servers with embedded icons up to 5×).
   Vendors tokenize differently, and cache expiry, minimum cacheable size and
   cache-write pricing are all provider-specific. The figure is an upper bound on
   what a provider might need to write to the cache again.

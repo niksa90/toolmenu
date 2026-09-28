@@ -51,7 +51,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 173
+      "tokens": 107
     },
     {
       "name": "read_text_file",
@@ -96,7 +96,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 250
+      "tokens": 186
     },
     {
       "name": "read_media_file",
@@ -158,7 +158,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 185
+      "tokens": 68
     },
     {
       "name": "read_multiple_files",
@@ -200,7 +200,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 204
+      "tokens": 140
     },
     {
       "name": "write_file",
@@ -243,7 +243,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 168
+      "tokens": 92
     },
     {
       "name": "edit_file",
@@ -308,7 +308,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 239
+      "tokens": 163
     },
     {
       "name": "create_directory",
@@ -347,7 +347,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 171
+      "tokens": 95
     },
     {
       "name": "list_directory",
@@ -384,7 +384,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 160
+      "tokens": 97
     },
     {
       "name": "list_directory_with_sizes",
@@ -430,7 +430,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 195
+      "tokens": 130
     },
     {
       "name": "directory_tree",
@@ -474,7 +474,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 196
+      "tokens": 133
     },
     {
       "name": "move_file",
@@ -517,7 +517,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 186
+      "tokens": 110
     },
     {
       "name": "search_files",
@@ -565,7 +565,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 212
+      "tokens": 149
     },
     {
       "name": "get_file_info",
@@ -602,7 +602,7 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 156
+      "tokens": 92
     },
     {
       "name": "list_allowed_directories",
@@ -632,8 +632,8 @@
         ],
         "additionalProperties": false
       },
-      "tokens": 143
+      "tokens": 78
     }
   ],
-  "totalTokens": 2638
+  "totalTokens": 1640
 }
