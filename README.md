@@ -38,13 +38,23 @@ Needs Node 22 or later. The GitHub Action brings its own if the runner's Node is
 for toolmenu only: your server and the job's later steps keep the job's Node.
 Your server can be in any language: toolmenu starts it (stdio) or connects to it (HTTP).
 
-```sh
-# write a starter scenario from your server's menu, then run it
-npx toolmenu session --init -- node dist/server.js
-npx toolmenu session --scenario scenario.yml -- node dist/server.js
+One command sets up CI: it snapshots your server into `menu.json` (the baseline) and
+writes `.github/workflows/toolmenu.yml` for your project (Node, Python, Go or Rust).
+Commit both, open a pull request, and toolmenu comments on it.
 
-# snapshot the menu and commit menu.json as your baseline
-npx toolmenu snapshot -- node dist/server.js
+```sh
+npx toolmenu init -- node dist/server.js          # add --with-session to also run session --auto
+```
+
+Credentials you pass with `--env` go into the workflow as `${{ secrets.… }}`, never as
+values; `init` says which secrets to add. It never overwrites a file.
+
+By hand:
+
+```sh
+npx toolmenu snapshot -- node dist/server.js       # the menu, its findings, menu.json
+npx toolmenu diff menu.json new-menu.json          # what changed between two releases
+npx toolmenu session --auto -- node dist/server.js # call read-only tools, watch the menu
 ```
 
 HTTP servers work the same way: `npx toolmenu snapshot https://example.com/mcp --header "Authorization: Bearer $TOKEN"`.
