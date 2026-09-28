@@ -243,3 +243,10 @@ test('action: scenario auto runs session --auto', () => {
   assert.doesNotMatch(args, /--scenario/);
 });
 
+test('action: catalog true passes --catalog to snapshot', () => {
+  const on = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_CATALOG: 'true' });
+  assert.match(on.args, /^snapshot\n--catalog\n/);
+  const off = runAction({ TOOLMENU_COMMAND: 'node server.js' });
+  assert.doesNotMatch(off.args, /--catalog/);
+});
+

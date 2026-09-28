@@ -70,6 +70,7 @@ export async function loadMenu(path: string): Promise<Menu> {
     t.tokens = toolTokens(t);
   }
   menu.totalTokens = menu.tools.reduce((s, t) => s + t.tokens, 0);
+  for (const op of menu.catalog?.operations ?? []) op.tokens = toolTokens(op);
   menu.server ??= {};
   return menu as Menu;
 }

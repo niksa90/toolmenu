@@ -20,6 +20,8 @@ export interface Config {
   fullDescriptions?: string[];
   /** Server processes (stdio) or connections (HTTP) to compare, the main one included (default 2). */
   processes?: number;
+  /** snapshot --catalog: which search tool and which queries (default: detected, derived from the menu). */
+  catalog?: { tool?: string; queries?: string[]; pauseMs?: number };
 }
 
 const DEFAULT_PATH = 'toolmenu.config.json';
