@@ -72,7 +72,8 @@ jobs:
           scenario: scenario.yml       # optional: run a session too
 ```
 
-It snapshots the PR's build, diffs it against the baseline, runs the scenario, and
+It snapshots the PR's build, diffs it against the baseline as it is on the PR's base
+branch (or at the previous tag, on a tag push), runs the scenario, and
 posts **one comment that updates on every push**: breaking changes, the token change
 ("this PR adds ~1,240 tokens to every conversation"), the suggested version bump,
 and anything `session` caught. The same report goes to the job summary.

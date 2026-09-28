@@ -9,7 +9,9 @@ export type ChangeKind =
   | 'inputSchema'
   | 'outputSchema'
   | 'annotations'
-  | 'other';
+  | 'other'
+  /** Same content, different bytes: key or property order changed. */
+  | 'serialization';
 
 export interface ToolChange {
   kind: ChangeKind;
@@ -49,6 +51,9 @@ export function toolDiff(before: MenuTool, after: MenuTool): ChangeKind[] {
     return canonical(def);
   };
   if (rest(before) !== rest(after)) kinds.push('other');
+  // Clients send the tool as serialized, and prompt caches match bytes: a new key
+  // or property order is a change even when the content is the same.
+  if (kinds.length === 0 && JSON.stringify(toolDefinition(before)) !== JSON.stringify(toolDefinition(after))) kinds.push('serialization');
   return kinds;
 }
 
@@ -126,7 +131,8 @@ export interface CacheBreak {
  */
 export function cacheBreak(before: MenuTool[], after: MenuTool[]): CacheBreak | null {
   let i = 0;
-  while (i < before.length && i < after.length && canonical(toolDefinition(before[i])) === canonical(toolDefinition(after[i]))) {
+  // Byte-exact, not canonical: a prompt cache compares what was sent.
+  while (i < before.length && i < after.length && JSON.stringify(toolDefinition(before[i])) === JSON.stringify(toolDefinition(after[i]))) {
     i++;
   }
   if (i === before.length) return null;

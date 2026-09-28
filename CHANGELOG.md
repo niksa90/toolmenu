@@ -14,6 +14,7 @@
 - `diff`: breaking, minor and notice changes between two menus, the token change,
   and a suggested semver bump, checked against release versions (`--release`).
 - `history`: installs, snapshots and diffs an npm package's published versions.
-- GitHub Action: one PR comment, updated on every push, with the version-bump check
-  in any language (`release: auto`).
+- GitHub Action: one PR comment, updated on every push, diffing against the
+  baseline on the base branch (or the previous tag), with the version-bump check in
+  any language (`release: auto`).
 - Formats: text, json, github annotations, markdown.
