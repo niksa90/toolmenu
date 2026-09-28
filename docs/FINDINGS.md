@@ -599,3 +599,27 @@ reach before 0.9.
   (SEP-2352; warned on Sentry); a pre-registered app (GitHub) wasn't stamped with its
   issuer, nor stored for refresh; and a server without dynamic registration gave only
   "Incompatible auth server". All fixed and tested before 0.9.0.
+
+## F15. The catalogs behind search tools
+
+*Checked 2026-09-29 with `snapshot --catalog` (0.10), default queries, on the
+maintainer's accounts.*
+
+| Server | Menu | Search tool | Queries | Operations found |
+|---|---|---|---|---|
+| Sentry (hosted) | 9 tools | `search_sentry_tools` | 25 | 61 |
+| Atlassian (hosted, `/v2/mcp`) | 21 tools | `discover` | 40 | 8 of ~302 |
+
+- **Sentry's catalog is most of the server.** 61 operations behind 9 tools: alert
+  rules, monitors, DSNs, teams, releases. Before `--catalog`, `diff` saw none of them.
+- **Reproducible.** Two runs of the same 25 queries found the same 61 operations, and
+  `diff` between them reported nothing: Sentry's search ranks deterministically.
+- **Rate limits are real.** Sentry answered "Rate limit exceeded" after about 70
+  searches in a few minutes. Paced at 300 ms with retries, later runs had no failed
+  queries.
+- **Default queries don't fit every search.** Atlassian's `discover` wants "verb +
+  object + product" ("list jira worklogs"); queries built from its menu's nouns found 8
+  operations. Its `?tools=all` endpoint (171 tools) is complete and needs no search.
+  On your own server, you know which operations matter: list them in
+  `catalog.queries`.
+

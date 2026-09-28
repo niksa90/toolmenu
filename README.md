@@ -29,7 +29,7 @@ No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
 (`history` installs old versions with today's dependencies, so it records what they
 serve now, which can differ from what they shipped with: FINDINGS F4.)
 
-> **Status: 0.9, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
+> **Status: 0.10, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
 > real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 ## Start here
@@ -90,7 +90,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.9.0
+      - uses: niksa90/toolmenu@v0.10.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -110,6 +110,7 @@ and anything `session` caught. The same report goes to the job summary.
 | `env` | | Environment variables for a `command` server, one `KEY=value` per line |
 | `baseline` | `menu.json` | The committed snapshot to diff against |
 | `scenario` | | A scenario to run with `session`, or `auto` to build the steps from the menu |
+| `catalog` | `false` | `true` also diffs the operations behind a search tool (`snapshot --catalog`) |
 | `baseline-from` | `snapshot` | `session` diffs every tool the scenario saw (the union menu), for servers whose tools appear after an unlock |
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
 | `fail-on` | `error` | Fail the job on findings at or above this level |
@@ -207,6 +208,27 @@ server has said `0.2.0` for 19 releases (FINDINGS F5). It's shown, and only chec
 with `--server-version-is-release`. `diff` also enforces an optional `tokenBudget`
 (`diff/token-budget`). Order changes are only a notice here: between releases, prompt caches rebuild. Order
 matters *within* a session.
+
+### Operations behind a search tool (`--catalog`)
+
+Big servers increasingly keep most operations out of the menu: a small fixed menu, a
+search tool, and an execute tool (Sentry's `search_sentry_tools` + `execute_sentry_tool`,
+Atlassian's `discover` + `executeRead`). A breaking change to one of those operations
+never shows in the menu. `snapshot --catalog` asks the search tool a fixed set of
+queries and keeps the operations it returns in `menu.json`; `diff` then compares
+operations found in both snapshots with the same rules as tools.
+
+```sh
+npx toolmenu snapshot --catalog -- node dist/server.js
+```
+
+A search returns its top matches, not everything, so an operation not found this time
+is a notice ("not returned by the same queries"), never "removed". The default queries
+come from the nouns in your tool names; on your own server, list the ones that matter
+in `toolmenu.config.json` (`"catalog": { "queries": ["list releases", "delete issue"] }`).
+If the server can serve the whole list as a menu (Atlassian: `?tools=all`), snapshot
+that instead: it's complete. Queries are paced and a rate limit is waited out; on
+Sentry's hosted server, two runs of 25 queries found the same 61 operations (FINDINGS F15).
 
 ## `history`: a package's releases, researched
 

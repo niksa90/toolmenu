@@ -738,3 +738,24 @@ the plan (docs/plans/0.8-roadmap.md).
   definition, as a `toolmenu: 1` file. It replaces the plan's full session traces:
   `diff` already does the comparison.
 
+## 23. 0.10: init, the token breakdown, the catalog
+
+- **`init`**, because setting up CI by hand (baseline, workflow, the project's build
+  steps, secrets) was the biggest barrier. Env var and header names that look like
+  credentials go into the workflow as `${{ secrets.NAME }}`; values never reach the
+  file. Setup actions are pinned to their current majors, checked when written.
+- **The token breakdown** is information, not findings. The planned
+  `size/dominant-tool` rule was dropped: its evidence came from 0.7.0's inflated
+  counts, and recounted, no server in the corpus has a problem it would catch.
+- **The catalog.** Search and execute is where large servers go (FINDINGS F14): the
+  menu stays small and the operations move behind a search tool, out of `diff`'s
+  sight. `--catalog` finds the search tool (read-only, one required query, named
+  `search_*_tools`, `discover`…), asks a fixed set of queries (from the config, or
+  derived from the menu's nouns: the same menu gives the same queries), and collects
+  objects with a name and a JSON Schema, or Atlassian's `inputs` list, converted.
+  Operations found in both snapshots go through the tool rules; found on one side
+  only, or with different or failed queries, they're notices: a search is ranked and
+  partial, and a false "removed" would be worse than a missed one. Hosted servers
+  rate-limit searches (Sentry did after ~70), so queries are paced (300 ms) and a
+  rate limit is retried (2, 4, 8 s) before a query is left out.
+

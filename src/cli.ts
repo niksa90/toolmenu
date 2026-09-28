@@ -57,6 +57,8 @@ Options:
                       only gets a minimal environment (PATH, HOME, ...) plus these
   --no-auth           don't use a stored OAuth login for this server
   --timeout <ms>      per-request timeout (default: 30000)
+  --catalog           also read the operations behind a search tool (search and execute:
+                      discover, search_*_tools) and keep them in the menu file for diff
   --processes <n>     server processes (stdio) or connections (HTTP) to compare,
                       the main one included (default: 2; 1 turns the check off)
   -h, --help          show this help
@@ -151,6 +153,7 @@ export async function main(argv: string[]): Promise<number> {
       'union-out': { type: 'string' },
       auto: { type: 'boolean' },
       'with-session': { type: 'boolean' },
+      catalog: { type: 'boolean' },
       'open-world': { type: 'boolean' },
       'max-calls': { type: 'string' },
       'save-scenario': { type: 'string' },
@@ -318,7 +321,7 @@ export async function main(argv: string[]): Promise<number> {
   const routesPath = values.routes ?? config.routes;
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
-  const { menu, findings } = await snapshot(target, { routes, timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const { menu, findings } = await snapshot(target, { routes, timeoutMs, processes, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');

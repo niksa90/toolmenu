@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.10.0
+
+- **`toolmenu init`:** snapshots the server into `menu.json` and writes
+  `.github/workflows/toolmenu.yml` for the project it finds (Node, Python, Go,
+  Rust), the Action pinned to this version. Credentials become `${{ secrets.… }}`,
+  never values; it never overwrites a file.
+- **Where the tokens go:** the snapshot report shows the biggest tools and their
+  description/schema split, the largest enums, and parameters repeated across tools.
+- **`snapshot --catalog`:** operations behind a search tool (search and execute:
+  Sentry, Atlassian) are read with a fixed set of queries and kept in the menu file;
+  `diff` compares them with the tool rules. Not found this time is a notice, never a
+  breaking change. Paced, and rate limits are waited out.
+
 ## 0.9.0
 
 - **OAuth:** `toolmenu auth login <url>` logs in to an OAuth-protected server once

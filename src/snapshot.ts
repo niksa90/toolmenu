@@ -2,6 +2,7 @@ import { connect, listTools, type Target } from './connect.js';
 import { buildMenu } from './menu.js';
 import { isContainerWrapper, MAIN_SEED, probeVariance, seeded } from './probe.js';
 import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
+import { readCatalog, type CatalogOptions } from './catalog.js';
 import type { Routes } from './routes.js';
 import type { Finding, Menu } from './types.js';
 
@@ -15,6 +16,8 @@ export interface SnapshotOptions extends RuleSettings {
    * included. Default 2; 1 turns the check off.
    */
   processes?: number;
+  /** Also read the operations behind a catalog search tool (true, or which tool and queries). */
+  catalog?: boolean | CatalogOptions;
 }
 
 export interface SnapshotResult {
@@ -39,6 +42,9 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
     };
     menu = buildMenu(first.tools, server, first.listMeta);
     secondList = buildMenu(second.tools, server, second.listMeta).tools;
+    if (options.catalog) {
+      menu.catalog = await readCatalog(connection, menu.tools, { ...(typeof options.catalog === 'object' ? options.catalog : {}), timeoutMs: options.timeoutMs });
+    }
   } catch (error) {
     const stderr = connection.stderr().trim();
     if (stderr && error instanceof Error) error.message += `\nserver stderr:\n${stderr}`;
