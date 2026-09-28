@@ -17,6 +17,13 @@ FAIL_ON="${TOOLMENU_FAIL_ON:-error}"
 CONN=()
 while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--header "$line"); done <<< "${TOOLMENU_HEADERS:-}"
 while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--env "$line"); done <<< "${TOOLMENU_ENV:-}"
+# Each only applies to one kind of server: say so instead of ignoring it quietly.
+if [ -n "${TOOLMENU_URL:-}" ] && [ -n "${TOOLMENU_ENV:-}" ] && [ -n "${TOOLMENU_ENV//[[:space:]]/}" ]; then
+  echo "::warning title=toolmenu::'env' only applies to a 'command' (stdio) server; it's ignored for 'url'."
+fi
+if [ -z "${TOOLMENU_URL:-}" ] && [ -n "${TOOLMENU_HEADERS:-}" ] && [ -n "${TOOLMENU_HEADERS//[[:space:]]/}" ]; then
+  echo "::warning title=toolmenu::'headers' only applies to a 'url' server; it's ignored for 'command'. Use 'env' to pass keys to a stdio server."
+fi
 
 if [ -n "${TOOLMENU_URL:-}" ]; then
   TARGET=("$TOOLMENU_URL")
@@ -98,10 +105,29 @@ set_baseline() {
   echo
 } > "$BODY"
 
+# The snapshot command for the "no baseline yet" hint: header names (never their
+# values) and env names, so the command works on a server behind auth.
+hint_target() {
+  local line opts=""
+  while IFS= read -r line; do [ -n "${line// }" ] && opts+="--header \"${line%%:*}: …\" "; done <<< "${TOOLMENU_HEADERS:-}"
+  while IFS= read -r line; do [ -n "${line// }" ] && opts+="--env ${line%%=*}=… "; done <<< "${TOOLMENU_ENV:-}"
+  if [ -n "${TOOLMENU_URL:-}" ]; then echo "$opts$TOOLMENU_URL"; else echo "$opts-- $TOOLMENU_COMMAND"; fi
+}
+
 # 1. Snapshot the menu this change produces.
 $CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
-if [ "$code" -eq 2 ]; then
+if [ "$code" -eq 2 ] && [ "${TOOLMENU_FORK_PR:-false}" = "true" ] && [ -n "${TOOLMENU_URL:-}" ]; then
+  # Pull requests from forks don't get secrets, so a server behind auth can't
+  # be reached. Say so and don't fail an outside contributor's PR for it.
+  {
+    echo "**Skipped: this pull request comes from a fork.** GitHub doesn't pass the repository's secrets to fork PRs ([GitHub docs](https://docs.github.com/actions/security-guides/using-secrets-in-github-actions)), so \`headers\` came through empty and the server couldn't be reached."
+    echo
+    echo "The fix that works for every PR: start the server inside the job with \`command\` (or \`url: http://localhost:…\`), so no secret is needed and the check runs against this PR's code. Avoid \`pull_request_target\` for this: it would run the PR's code with your secrets ([GitHub's guidance](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target))."
+    echo
+  } >> "$BODY"
+  echo "::notice title=toolmenu::Skipped on a fork PR: no secrets, so the server couldn't be reached."
+elif [ "$code" -eq 2 ]; then
   { echo "**Couldn't snapshot the server.**"; echo; echo '```'; tail -20 "$OUT/snapshot.err"; echo '```'; } >> "$BODY"
   note 2
 else
@@ -115,7 +141,7 @@ else
     code=$?; note "$code"
     if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { cat "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
   else
-    { echo "No baseline at \`${TOOLMENU_BASELINE:-menu.json}\`, so there's nothing to compare with yet. Commit the snapshot to start tracking changes:"; echo; echo '```sh'; echo "npx toolmenu snapshot ${TOOLMENU_URL:-"-- $TOOLMENU_COMMAND"}"; echo '```'; echo; } >> "$BODY"
+    { echo "No baseline at \`${TOOLMENU_BASELINE:-menu.json}\`, so there's nothing to compare with yet. Commit the snapshot to start tracking changes:"; echo; echo '```sh'; echo "npx toolmenu snapshot $(hint_target)"; echo '```'; echo; } >> "$BODY"
   fi
   { cat "$OUT/snapshot.md"; echo; } >> "$BODY"
 fi
