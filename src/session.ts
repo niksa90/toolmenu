@@ -105,6 +105,8 @@ export interface SessionResult {
    * menu to diff between releases when tools only appear after an unlock.
    */
   union: Menu;
+  /** With --auto: which tools were called, and which weren't and why. */
+  auto?: { called: string[]; skipped: import('./auto.js').AutoPlan['skipped'] };
 }
 
 export interface SessionOptions {

@@ -236,3 +236,10 @@ test('action: baseline-from session without a scenario, or a typo, fails clearly
   assert.match(typo.stdout, /'snapshot' or 'session'/);
 });
 
+test('action: scenario auto runs session --auto', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_SCENARIO: 'auto' });
+  const args = readFileSync(join(r.dir, 'stub-cli.sh.session.args'), 'utf8');
+  assert.match(args, /^session\n--auto\n/);
+  assert.doesNotMatch(args, /--scenario/);
+});
+

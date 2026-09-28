@@ -14,7 +14,8 @@ import { buildMenu } from './menu.js';
 import { existsSync } from 'node:fs';
 import { loadRoutes } from './routes.js';
 import { snapshot } from './snapshot.js';
-import { MAIN_SEED, seeded } from './probe.js';
+import { MAIN_SEED, probeMenu, seeded } from './probe.js';
+import { autoScenario, scenarioYaml } from './auto.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
 import { VERSION } from './version.js';
 
@@ -28,6 +29,8 @@ Usage:
   toolmenu history [options] <npm-package>             snapshot and diff published versions
   toolmenu session --scenario <file> [options] -- <command> | <url>
                                                        run a scripted session, watch the menu
+  toolmenu session --auto [options] -- <command> | <url>
+                                                       the same, with steps built from the menu
 
 Commands:
   snapshot   establish the menu: list tools twice, write menu.json, run the menu rules
@@ -63,6 +66,13 @@ session options:
   --plan                print the steps without connecting or running anything
   --init                write a starter scenario from the server's menu (to --scenario,
                         default scenario.yml; never overwrites)
+  --auto                build the steps from the menu: every read-only tool whose
+                        required arguments the schema can fill (const, default,
+                        examples, enum, type), then the first call again
+  --open-world          with --auto, also call read-only tools marked openWorldHint:
+                        true (web search, fetch, scraping): they may cost API credits
+  --max-calls <n>       with --auto, at most n calls (default: 20)
+  --save-scenario <p>   with --auto, write the steps it ran as a scenario file
   --union-out <path>    write every tool the session saw as a menu file, to commit as
                         the baseline for diff (tools behind unlocks included)
 
@@ -118,6 +128,10 @@ export async function main(argv: string[]): Promise<number> {
       plan: { type: 'boolean' },
       init: { type: 'boolean' },
       'union-out': { type: 'string' },
+      auto: { type: 'boolean' },
+      'open-world': { type: 'boolean' },
+      'max-calls': { type: 'string' },
+      'save-scenario': { type: 'string' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
     },
@@ -204,6 +218,28 @@ export async function main(argv: string[]): Promise<number> {
       await conn.close().catch(() => {});
     }
     return 0;
+  }
+
+  if (sub === 'session' && values.auto) {
+    if (values.scenario) throw new UsageError('--auto builds the steps itself; drop --scenario (or drop --auto).');
+    const maxCalls = values['max-calls'] ? Number(values['max-calls']) : 20;
+    if (!Number.isInteger(maxCalls) || maxCalls < 1) throw new UsageError('--max-calls must be a whole number, 1 or more');
+    const savePath = values['save-scenario'];
+    if (savePath && existsSync(savePath)) throw new UsageError(`${savePath} already exists. Pick another path for --save-scenario.`);
+    const autoTarget = parseTarget(rest, command, values.header ?? [], values.env ?? []);
+    const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs);
+    const plan = autoScenario(menu, { openWorld: values['open-world'], maxCalls });
+    if (savePath) await writeFile(savePath, scenarioYaml(plan, menu.server.name));
+    if (values.plan) {
+      process.stdout.write(formatPlan(plan.scenario, 'auto') + '\n');
+      return 0;
+    }
+    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto' });
+    result.auto = { called: plan.called, skipped: plan.skipped };
+    if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
+    const output = formatSession(result, format);
+    if (output) process.stdout.write(output + '\n');
+    return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
   if (sub === 'session') {
