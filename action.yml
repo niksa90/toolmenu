@@ -29,6 +29,13 @@ inputs:
   scenario:
     description: Optional scenario.yml for a session run (tools not marked readOnlyHint are refused unless it allows writes).
     required: false
+  baseline-from:
+    description: >-
+      Which menu to diff against the baseline: "snapshot" (default), or "session":
+      every tool the scenario saw, for servers whose tools appear after an unlock.
+      Needs a scenario.
+    required: false
+    default: snapshot
   fail-on:
     description: Fail the job on findings at or above this level (error, warn or info).
     required: false
@@ -84,6 +91,7 @@ runs:
         TOOLMENU_ENV: ${{ inputs.env }}
         TOOLMENU_BASELINE: ${{ inputs.baseline }}
         TOOLMENU_SCENARIO: ${{ inputs.scenario }}
+        TOOLMENU_BASELINE_FROM: ${{ inputs.baseline-from }}
         TOOLMENU_FAIL_ON: ${{ inputs.fail-on }}
         TOOLMENU_COMMENT: ${{ inputs.comment }}
         TOOLMENU_VERSION: ${{ inputs.version }}

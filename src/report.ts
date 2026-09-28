@@ -209,7 +209,11 @@ export function formatHistory(h: HistoryResult, format: Format, outDir: string):
 }
 
 export function formatSession(s: SessionResult, format: Format): string {
-  if (format === 'json') return JSON.stringify({ command: 'session', ...s, counts: counts(s.findings) }, null, 2);
+  if (format === 'json') {
+    // The union menu itself goes to --union-out; the report says how big it is.
+    const { union, ...rest } = s;
+    return JSON.stringify({ command: 'session', ...rest, union: { tools: union.tools.length, totalTokens: union.totalTokens }, counts: counts(s.findings) }, null, 2);
+  }
   if (format === 'github') {
     return githubLines(s.findings.map((f) => ({ ...f, message: f.step ? `step ${f.step} (${s.steps[f.step - 1]?.label}): ${f.message}` : f.message }))).join('\n');
   }

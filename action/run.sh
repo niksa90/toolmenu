@@ -186,6 +186,29 @@ hint_target() {
   if [ -n "${TOOLMENU_URL:-}" ]; then echo "$opts$TOOLMENU_URL"; else echo "$opts-- $TOOLMENU_COMMAND"; fi
 }
 
+# With baseline-from: session, the menu that's diffed is every tool the scenario
+# saw (the union menu), so tools behind an unlock are compared too.
+FROM_SESSION=false
+if [ "${TOOLMENU_BASELINE_FROM:-snapshot}" = "session" ]; then
+  if [ -z "${TOOLMENU_SCENARIO:-}" ]; then
+    echo "::error title=toolmenu::'baseline-from: session' needs a 'scenario' to run."
+    exit 2
+  fi
+  FROM_SESSION=true
+elif [ "${TOOLMENU_BASELINE_FROM:-snapshot}" != "snapshot" ]; then
+  echo "::error title=toolmenu::'baseline-from' is 'snapshot' or 'session', not '${TOOLMENU_BASELINE_FROM}'."
+  exit 2
+fi
+
+SESSION_RAN=false
+run_session() {
+  local union=()
+  [ "$FROM_SESSION" = true ] && union=(--union-out "$OUT/union.json")
+  $CLI session --scenario "$TOOLMENU_SCENARIO" --format markdown --fail-on "$FAIL_ON" ${union[@]+"${union[@]}"} ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
+  SESSION_CODE=$?
+  SESSION_RAN=true
+}
+
 # 1. Snapshot the menu this change produces.
 $CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
@@ -207,6 +230,11 @@ elif [ "$code" -eq 2 ]; then
   note 2
 else
   note "$code"
+  CURRENT="$OUT/current.json"
+  if [ "$FROM_SESSION" = true ]; then
+    run_session
+    if [ -s "$OUT/union.json" ]; then CURRENT="$OUT/union.json"; fi
+  fi
   # 2. Compare with the baseline as it is on the base branch (or previous tag).
   BASE=$(base_ref)
   set_baseline
@@ -227,19 +255,20 @@ else
     note 2
   elif [ -n "$BASELINE" ]; then
     # shellcheck disable=SC2046
-    $CLI diff --format markdown --fail-on "$FAIL_ON" $(release_args) "$BASELINE" "$OUT/current.json" > "$OUT/diff.md" 2> "$OUT/diff.err"
+    $CLI diff --format markdown --fail-on "$FAIL_ON" $(release_args) "$BASELINE" "$CURRENT" > "$OUT/diff.md" 2> "$OUT/diff.err"
     code=$?; note "$code"
     if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { sed -e "s/pass --release/set the Action's \`release\` input/" -e "s/Check the --release order/Check the order in the Action's \`release\` input/" "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
   else
-    { echo "No baseline at \`${TOOLMENU_BASELINE:-menu.json}\`, so there's nothing to compare with yet. Commit the snapshot to start tracking changes:"; echo; echo '```sh'; echo "npx toolmenu snapshot $(hint_target)"; echo '```'; echo; } >> "$BODY"
+    if [ "$FROM_SESSION" = true ]; then hint="npx toolmenu session --scenario $TOOLMENU_SCENARIO --union-out ${TOOLMENU_BASELINE:-menu.json} $(hint_target)"; else hint="npx toolmenu snapshot $(hint_target)"; fi
+    { echo "No baseline at \`${TOOLMENU_BASELINE:-menu.json}\`, so there's nothing to compare with yet. Commit the $([ "$FROM_SESSION" = true ] && echo "session's union menu" || echo snapshot) to start tracking changes:"; echo; echo '```sh'; echo "$hint"; echo '```'; echo; } >> "$BODY"
   fi
   { cat "$OUT/snapshot.md"; echo; } >> "$BODY"
 fi
 
 # 3. Watch the menu during a scripted session.
 if [ -n "${TOOLMENU_SCENARIO:-}" ] && [ "$SKIPPED" = false ]; then
-  $CLI session --scenario "$TOOLMENU_SCENARIO" --format markdown --fail-on "$FAIL_ON" ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
-  code=$?; note "$code"
+  [ "$SESSION_RAN" = true ] || run_session
+  code=$SESSION_CODE; note "$code"
   if [ "$code" -eq 2 ]; then { echo "**Session didn't run:** $(head -3 "$OUT/session.err")"; echo; } >> "$BODY"; else { cat "$OUT/session.md"; echo; } >> "$BODY"; fi
 fi
 
