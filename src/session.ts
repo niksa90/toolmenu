@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
 import { cacheBreak, compareMenus, type ToolChange } from './compare.js';
 import { connect, listTools, type Connection, type Target } from './connect.js';
-import { buildMenu } from './menu.js';
+import { buildMenu, toolDefinition } from './menu.js';
 import { isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
 import { classifyFailure, FAILURE_LABELS, SETUP_FAILURES, type FailureClass } from './failures.js';
@@ -100,6 +100,13 @@ export interface SessionResult {
   connectionCheck?: 'same' | 'different';
   steps: StepRecord[];
   findings: Finding[];
+  /**
+   * Every tool the session saw, in the order first seen, each as last seen: the
+   * menu to diff between releases when tools only appear after an unlock.
+   */
+  union: Menu;
+  /** With --auto: which tools were called, and which weren't and why. */
+  auto?: { called: string[]; skipped: import('./auto.js').AutoPlan['skipped'] };
 }
 
 export interface SessionOptions {
@@ -140,6 +147,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
 
     const menuOf = async (c: Connection) => buildMenu((await listTools(c, { timeoutMs })).tools, serverOf(c));
     let current = await menuOf(conn);
+    // Map keeps first-insertion order; set() on a known name updates it in place.
+    const seen = new Map<string, MenuTool>();
+    const see = (menu: Menu) => menu.tools.forEach((t) => seen.set(t.name, t));
+    see(current);
     const baseline = current;
 
     // Fresh processes or connections, same credentials, must see the same menu.
@@ -264,6 +275,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           raw.push(...scopeFindings(record.scope, modern, index));
         }
         current = next;
+        see(next);
       }
       record.listChanged = conn.wire.notificationsSince(mark, LIST_CHANGED);
       record.tools = current.tools.length;
@@ -283,6 +295,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       connectionCheck,
       steps,
       findings: settle(mergeSideEffects(raw), options),
+      union: buildMenu([...seen.values()].map(toolDefinition), baseline.server),
     };
   } finally {
     await conn.close().catch(() => {});

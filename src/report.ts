@@ -209,7 +209,11 @@ export function formatHistory(h: HistoryResult, format: Format, outDir: string):
 }
 
 export function formatSession(s: SessionResult, format: Format): string {
-  if (format === 'json') return JSON.stringify({ command: 'session', ...s, counts: counts(s.findings) }, null, 2);
+  if (format === 'json') {
+    // The union menu itself goes to --union-out; the report says how big it is.
+    const { union, ...rest } = s;
+    return JSON.stringify({ command: 'session', ...rest, union: { tools: union.tools.length, totalTokens: union.totalTokens }, counts: counts(s.findings) }, null, 2);
+  }
   if (format === 'github') {
     return githubLines(s.findings.map((f) => ({ ...f, message: f.step ? `step ${f.step} (${s.steps[f.step - 1]?.label}): ${f.message}` : f.message }))).join('\n');
   }
@@ -219,6 +223,7 @@ export function formatSession(s: SessionResult, format: Format): string {
       '',
       `\`${s.server.name ?? 'server'}\` ${s.server.version ?? ''} · protocol ${s.server.protocolVersion ?? '?'} · ${s.transport} · ${s.baseline.tools} → ${s.final.tools} tools · ~${s.baseline.tokens.toLocaleString('en-US')} → ~${s.final.tokens.toLocaleString('en-US')} tokens (estimate)`,
       '',
+      ...(autoLine(s) ? [autoLine(s)!, ''] : []),
       '| Step | Menu | list_changed | Scope |',
       '|---|---|---|---|',
       ...s.steps.map((st) => `| ${st.index}. ${mdCell(st.label)} | ${st.status !== 'ok' ? st.status : st.changed ? `changed (${st.tools} tools)` : 'no change'} | ${st.changed ? (st.listChanged ? 'received' : '**missing**') : ''} | ${st.scope ?? ''} |`),
@@ -232,6 +237,7 @@ export function formatSession(s: SessionResult, format: Format): string {
     `toolmenu session  ${s.scenario}`,
     `  ${s.server.name ?? 'server'} ${s.server.version ?? ''} · protocol ${s.server.protocolVersion ?? '?'} · ${s.transport}`,
     `  baseline: ${plural(s.baseline.tools, 'tool')} · ${tok(s.baseline.tokens)} tokens (estimate) · listening for list_changed: ${s.listening ? 'yes' : 'no'}`,
+    ...(autoLine(s) ? [`  ${autoLine(s)}`] : []),
     `  fresh-${s.transport === 'stdio' ? 'process' : 'connection'} check: ${s.connectionCheck === undefined ? 'not checked' : s.connectionCheck === 'same' ? 'the same menu' : 'a DIFFERENT menu'}`,
     '',
   ];
@@ -273,6 +279,21 @@ export function formatPlan(scenario: Scenario, name: string): string {
   scenario.steps.forEach((step, i) => lines.push(`step ${i + 1}: ${stepLabel(step)}${step.kind === 'wait_for' ? ` (up to ${step.timeoutMs} ms)` : ''}`));
   lines.push('', 'After every step the menu is listed and compared with the one before. Nothing was run.');
   return lines.join('\n');
+}
+
+/** One line on what --auto called and what it left out, and how to reach more. */
+function autoLine(s: SessionResult): string | undefined {
+  if (!s.auto) return undefined;
+  const by = (r: string) => s.auto!.skipped.filter((x) => x.reason === r);
+  const needs = by('needs values');
+  const params = [...new Set(needs.flatMap((x) => x.missing ?? []))];
+  const parts = [
+    by('not read-only').length && `${by('not read-only').length} not read-only`,
+    by('open world').length && `${by('open world').length} marked openWorldHint: true (--open-world to call them)`,
+    needs.length && `${needs.length} need values the schema doesn't give (${params.slice(0, 6).join(', ')}${params.length > 6 ? ', …' : ''}: write a scenario, or --save-scenario and fill them in)`,
+    by('over the call budget').length && `${by('over the call budget').length} over --max-calls`,
+  ].filter(Boolean);
+  return `auto: called ${s.auto.called.length} tool${s.auto.called.length === 1 ? '' : 's'}${parts.length ? ` · skipped ${parts.join(', ')}` : ''}`;
 }
 
 function mdCell(text: string): string {

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.0
+
+- **OAuth:** `toolmenu auth login <url>` logs in to an OAuth-protected server once
+  (browser, PKCE, a loopback redirect on a fixed port, `state` checked), and
+  `snapshot` and `session` use the stored login, refreshing it as needed. `auth
+  list`, `auth logout`, `--no-auth`; `--client-id`/`--client-secret` for servers
+  without dynamic registration. Logins are stored per server, readable only by you,
+  and bound to the authorization server that issued them.
+- **`session --auto`:** steps built from the menu, no scenario: every read-only
+  tool whose required arguments the schema gives, cheapest first, then the first
+  call again. Never a guessed ID; tools marked `openWorldHint: true` only with
+  `--open-world`; `--max-calls`, `--save-scenario`. The Action takes `scenario: auto`.
+- **`session --union-out`:** every tool the session saw, as a menu file: the
+  baseline for servers whose tools appear after an unlock. The Action's
+  `baseline-from: session` diffs it, in one step.
+
 ## 0.8.0
 
 Measured on 22 public servers before and after (`bench/`, FINDINGS F13).

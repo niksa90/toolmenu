@@ -13,7 +13,8 @@ function runAction(env, setup) {
   const stub = join(dir, 'stub-cli.sh');
   // Records its arguments, prints STUB_ERR to stderr and exits with STUB_CODE,
   // like a failed snapshot.
-  writeFileSync(stub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$0.$1.args"\nprintf "%s\\n" "$STUB_ERR" >&2\nexit "${STUB_CODE:-0}"\n');
+  // Also writes the file --union-out names, like session does.
+  writeFileSync(stub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$0.$1.args"\nfor ((i=1;i<$#;i++)); do if [ "${!i}" = --union-out ]; then j=$((i+1)); echo "{}" > "${!j}"; fi; done\nprintf "%s\\n" "$STUB_ERR" >&2\nexit "${STUB_CODE:-0}"\n');
   chmodSync(stub, 0o755);
   const r = spawnSync('bash', [join(ROOT, 'action/run.sh')], {
     cwd: dir,
@@ -209,3 +210,36 @@ test('action: by default it runs the toolmenu release matching the Action, with 
   assert.ok(args.includes(`toolmenu@${version}`), args.join(' '));
   assert.doesNotMatch(r.stdout + r.stderr, /unbound variable/);
 });
+
+
+test('action: baseline-from session diffs the union menu, and runs the session once', () => {
+  let diffArgs = '';
+  let sessionArgs = '';
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_SCENARIO: 'scenario.yml', TOOLMENU_BASELINE_FROM: 'session', TOOLMENU_RELEASE: 'off' }, (dir) => {
+    writeFileSync(join(dir, 'menu.json'), '{}');
+    return {};
+  });
+  diffArgs = readFileSync(join(r.dir, 'stub-cli.sh.diff.args'), 'utf8');
+  sessionArgs = readFileSync(join(r.dir, 'stub-cli.sh.session.args'), 'utf8');
+  assert.equal(r.code, 0, r.stdout + r.stderr);
+  assert.match(sessionArgs, /--union-out\n.*union\.json/);
+  assert.match(diffArgs, /union\.json\n?$/);
+  assert.equal((r.comment.match(/Baseline:/g) ?? []).length, 1);
+});
+
+test('action: baseline-from session without a scenario, or a typo, fails clearly', () => {
+  const none = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASELINE_FROM: 'session' });
+  assert.equal(none.code, 2);
+  assert.match(none.stdout, /needs a 'scenario'/);
+  const typo = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASELINE_FROM: 'sesion' });
+  assert.equal(typo.code, 2);
+  assert.match(typo.stdout, /'snapshot' or 'session'/);
+});
+
+test('action: scenario auto runs session --auto', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_SCENARIO: 'auto' });
+  const args = readFileSync(join(r.dir, 'stub-cli.sh.session.args'), 'utf8');
+  assert.match(args, /^session\n--auto\n/);
+  assert.doesNotMatch(args, /--scenario/);
+});
+
