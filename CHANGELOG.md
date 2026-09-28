@@ -19,9 +19,5 @@
   any language (`release: auto`).
 - Formats: text, json, github annotations, markdown.
 - Needs Node 22 or later (Node 20 reached end of life in April 2026).
-- The Action: `headers` and `env` inputs for servers behind auth. PRs that get no
-  secrets (from forks, including deleted ones, and from Dependabot) are skipped with
-  a note instead of failing, but only when a secret is plainly missing; a 401 from
-  a server inside the job still fails. On a runner with Node older than 22 it
-  fetches Node 22 (checksum-verified) for toolmenu alone, leaving the job's Node to
-  the server and later steps. Uses `actions/checkout@v7` and `actions/setup-node@v7`.
+- The Action: `headers` and `env` for servers behind auth; PRs without secrets are
+  skipped with a note.

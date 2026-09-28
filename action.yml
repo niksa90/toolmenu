@@ -15,7 +15,7 @@ inputs:
   headers:
     description: >-
       HTTP headers for a url server, one "Name: value" per line. Pass keys in from
-      the workflow's secrets (see the README), not as plain text.
+      the workflow's secrets (see docs/github-action.md), not as plain text.
     required: false
   env:
     description: >-
@@ -64,6 +64,11 @@ outputs:
   exit-code:
     description: 0 clean, 1 findings at or above fail-on, 2 couldn't run.
     value: ${{ steps.run.outputs.exit-code }}
+  skipped:
+    description: >-
+      'true' when the check was skipped because the PR runs without the repository's
+      secrets. The job still passes then: gate on this output if a skip shouldn't.
+    value: ${{ steps.run.outputs.skipped }}
 
 runs:
   using: composite

@@ -27,7 +27,8 @@ if [ "$node_major" -lt 22 ]; then
     sum=$(awk -v f="$file" '$2 == f {print $1; exit}' <<< "$sums")
     if [ -z "$file" ] || [ -z "$sum" ] || ! curl -fsSL --retry 3 "$base/$file" -o "$node_dir/node.tar.gz" \
        || [ "$( (sha256sum "$node_dir/node.tar.gz" 2>/dev/null || shasum -a 256 "$node_dir/node.tar.gz") | awk '{print $1}')" != "$sum" ] \
-       || ! tar -xzf "$node_dir/node.tar.gz" -C "$node_dir" --strip-components=1; then
+       || ! tar -xzf "$node_dir/node.tar.gz" -C "$node_dir" --strip-components=1 \
+       || ! "$node_dir/bin/node" -v > /dev/null 2>&1; then  # e.g. a glibc build on Alpine
       echo "::error title=toolmenu::Couldn't fetch Node 22 for toolmenu (the runner has $node_label). Add actions/setup-node with node-version 22 before the Action."
       exit 2
     fi
@@ -156,8 +157,10 @@ missing_secret() {
   done <<< "${TOOLMENU_ENV:-}"
   [ -n "${TOOLMENU_URL:-}" ] || return 1
   # A 401/403 from a server started inside the job is a setup mistake, not a
-  # missing secret: localhost, a loopback address, or a service container
-  # (a host name without a dot). Only a remote server's refusal counts.
+  # missing secret: localhost, a loopback address, or a service container.
+  # A host name without a dot is a guess at the last: an internal server on a
+  # self-hosted runner reads the same, and then fails instead of skipping.
+  # Only a remote server's refusal counts.
   local host
   host=$(echo "$TOOLMENU_URL" | tr '[:upper:]' '[:lower:]' | sed -E 's#^[a-z]+://([^/@]*@)?##; s#^(\[[^]]*\]|[^:/?\#]*).*#\1#; s#\.$##')
   if [[ "$host" =~ ^(localhost|.+\.localhost|127\.[0-9.]+|0\.0\.0\.0|\[::1?\]|\[::ffff:127\.[0-9.]+\]|[^.\[]+)$ ]]; then
@@ -221,6 +224,7 @@ echo "<sub>[toolmenu](https://github.com/niksa90/toolmenu) · token counts are e
 [ -n "${GITHUB_STEP_SUMMARY:-}" ] && cat "$BODY" >> "$GITHUB_STEP_SUMMARY"
 echo "report=$BODY" >> "${GITHUB_OUTPUT:-/dev/null}"
 echo "exit-code=$status" >> "${GITHUB_OUTPUT:-/dev/null}"
+echo "skipped=$SKIPPED" >> "${GITHUB_OUTPUT:-/dev/null}"
 
 # 4. One PR comment, updated in place on every push.
 if [ "${TOOLMENU_COMMENT:-true}" = "true" ] && [ -n "${TOOLMENU_PR:-}" ] && [ -n "${GH_TOKEN:-}" ]; then
