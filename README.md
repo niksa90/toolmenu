@@ -34,7 +34,8 @@ serve now, which can differ from what they shipped with: FINDINGS F4.)
 
 ## Start here
 
-Needs Node 22 or later (the GitHub Action sets it up if the runner's Node is older).
+Needs Node 22 or later. The GitHub Action brings its own if the runner's Node is older,
+for toolmenu only: your server and the job's later steps keep the job's Node.
 Your server can be in any language: toolmenu starts it (stdio) or connects to it (HTTP).
 
 ```sh
@@ -62,8 +63,8 @@ jobs:
   toolmenu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
       - uses: niksa90/toolmenu@v0.7.0
@@ -125,8 +126,8 @@ jobs:
       # its key from MCP_API_KEY (or whatever variable it uses): that's the trick.
       MCP_API_KEY: ci-only-key
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
       - run: npm start &                # the PR's version, in the background (it keeps running for later steps)
@@ -144,8 +145,13 @@ usually doesn't touch the systems behind them.
 
 **Pull requests from forks don't get your repository's secrets**
 ([GitHub docs](https://docs.github.com/actions/security-guides/using-secrets-in-github-actions)),
-so on a server behind auth `headers` comes through empty. The Action then skips the
-check with a note instead of failing the contributor's PR. The setup that works for
+and Dependabot's only get Dependabot secrets
+([GitHub docs](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions)),
+so on a server behind auth the key in `headers` or `env` comes through empty. The
+Action then skips the check with a note instead of failing the PR. It skips only
+when a secret is plainly missing: an empty value, or a remote server answering
+401/403. A 401 from a server inside the job (`localhost`, a service container) is
+a setup mistake, and fails. The setup that works for
 every PR is the one above: start the server inside the job (`command`, or `url`
 pointing at `localhost`), which needs no secret and checks the PR's own code. Don't
 switch to `pull_request_target` to get secrets: it runs the PR's code with them

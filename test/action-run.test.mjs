@@ -3,45 +3,52 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT, tempDir } from './helpers.mjs';
 
-function runAction(env) {
+function runAction(env, setup) {
   const dir = tempDir();
+  const extra = setup ? setup(dir) : {};
   const stub = join(dir, 'stub-cli.sh');
-  // Prints STUB_ERR to stderr and exits with STUB_CODE, like a failed snapshot.
-  writeFileSync(stub, '#!/usr/bin/env bash\nprintf "%s\\n" "$STUB_ERR" >&2\nexit "${STUB_CODE:-0}"\n');
+  // Records its arguments, prints STUB_ERR to stderr and exits with STUB_CODE,
+  // like a failed snapshot.
+  writeFileSync(stub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$0.$1.args"\nprintf "%s\\n" "$STUB_ERR" >&2\nexit "${STUB_CODE:-0}"\n');
   chmodSync(stub, 0o755);
   const r = spawnSync('bash', [join(ROOT, 'action/run.sh')], {
     cwd: dir,
     encoding: 'utf8',
-    env: { PATH: process.env.PATH, HOME: dir, RUNNER_TEMP: dir, TOOLMENU_CLI: stub, TOOLMENU_COMMENT: 'false', ...env },
+    env: { PATH: process.env.PATH, HOME: dir, RUNNER_TEMP: dir, TOOLMENU_CLI: stub, TOOLMENU_COMMENT: 'false', ...env, ...extra },
   });
   let comment = '';
   try {
     comment = readFileSync(join(dir, 'toolmenu/comment.md'), 'utf8');
   } catch {}
-  return { code: r.status, stdout: r.stdout, comment };
+  let args = '';
+  try {
+    args = readFileSync(join(dir, 'stub-cli.sh.snapshot.args'), 'utf8');
+  } catch {}
+  const ran = (cmd) => existsSync(join(dir, `stub-cli.sh.${cmd}.args`));
+  return { code: r.status, stdout: r.stdout, comment, args, ran };
 }
 
 const url = { TOOLMENU_URL: 'https://example.com/mcp' };
 
 test('action: a fork PR whose secret came through empty is skipped with the fix', () => {
-  const r = runAction({ ...url, TOOLMENU_HEADERS: 'x-api-key: ', TOOLMENU_FORK_PR: 'true', STUB_CODE: '2', STUB_ERR: 'connection failed' });
+  const r = runAction({ ...url, TOOLMENU_HEADERS: 'x-api-key: ', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'connection failed' });
   assert.equal(r.code, 0);
-  assert.match(r.comment, /Skipped: this pull request comes from a fork/);
+  assert.match(r.comment, /Skipped: this pull request runs without the repository's secrets/);
   assert.match(r.comment, /start the server inside the job/);
 });
 
 test('action: a fork PR the server answers 401 is skipped', () => {
-  const r = runAction({ ...url, TOOLMENU_HEADERS: 'x-api-key: something', TOOLMENU_FORK_PR: 'true', STUB_CODE: '2', STUB_ERR: 'HTTP 401 Unauthorized' });
+  const r = runAction({ ...url, TOOLMENU_HEADERS: 'x-api-key: something', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'HTTP 401 Unauthorized' });
   assert.equal(r.code, 0);
-  assert.match(r.comment, /Skipped: this pull request comes from a fork/);
+  assert.match(r.comment, /Skipped: this pull request runs without the repository's secrets/);
 });
 
 test('action: a fork PR whose server never started still fails', () => {
-  const r = runAction({ TOOLMENU_URL: 'http://localhost:3999/mcp', TOOLMENU_FORK_PR: 'true', STUB_CODE: '2', STUB_ERR: 'connect ECONNREFUSED 127.0.0.1:3999' });
+  const r = runAction({ TOOLMENU_URL: 'http://localhost:3999/mcp', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'connect ECONNREFUSED 127.0.0.1:3999' });
   assert.equal(r.code, 2);
   assert.match(r.comment, /Couldn't snapshot the server/);
   assert.doesNotMatch(r.comment, /Skipped/);
@@ -49,7 +56,7 @@ test('action: a fork PR whose server never started still fails', () => {
 });
 
 test('action: a same-repo PR with a 401 fails (secrets exist there)', () => {
-  const r = runAction({ ...url, TOOLMENU_HEADERS: 'x-api-key: wrong', TOOLMENU_FORK_PR: 'false', STUB_CODE: '2', STUB_ERR: 'HTTP 401 Unauthorized' });
+  const r = runAction({ ...url, TOOLMENU_HEADERS: 'x-api-key: wrong', TOOLMENU_NO_SECRETS: 'false', STUB_CODE: '2', STUB_ERR: 'HTTP 401 Unauthorized' });
   assert.equal(r.code, 2);
   assert.doesNotMatch(r.comment, /Skipped/);
 });
@@ -59,4 +66,92 @@ test('action: findings and a failed run get different error lines', () => {
   assert.equal(r.code, 1);
   assert.match(r.stdout, /Findings at or above 'error'/);
   assert.doesNotMatch(r.stdout, /couldn't run/);
+});
+
+test('action: a 401 from a server started in the job (localhost) is a real failure, not a missing secret', () => {
+  const r = runAction({ TOOLMENU_URL: 'http://127.0.0.1:3000/mcp', TOOLMENU_HEADERS: 'x-api-key: ci-only-key', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'HTTP 401 Unauthorized' });
+  assert.equal(r.code, 2);
+  assert.doesNotMatch(r.comment, /Skipped/);
+});
+
+test('action: a stdio server starts with the job\'s own PATH', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node dist/server.js', STUB_CODE: '0' });
+  const script = r.args.split('\n').find((a) => a.startsWith('PATH='));
+  assert.ok(script, r.args);
+  assert.match(script, new RegExp(`^PATH=${process.env.PATH.split(':')[0].replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}`));
+  assert.match(script, /export PATH; exec node dist\/server\.js$/);
+});
+
+test('action: "Authorization: Bearer" with an empty secret counts as missing', () => {
+  const r = runAction({ ...url, TOOLMENU_HEADERS: 'Authorization: Bearer ', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'connection failed' });
+  assert.equal(r.code, 0);
+  assert.match(r.comment, /Skipped/);
+});
+
+test('action: a stdio server whose env secret came through empty is skipped', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_ENV: 'API_KEY=', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'server exited' });
+  assert.equal(r.code, 0);
+  assert.match(r.comment, /Skipped/);
+});
+
+test('action: a stdio server that fails with its env set is a real failure', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_ENV: 'API_KEY=ci-only', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'HTTP 401 Unauthorized' });
+  assert.equal(r.code, 2);
+  assert.doesNotMatch(r.comment, /Skipped/);
+});
+
+for (const u of ['http://LOCALHOST.:3000/mcp', 'http://api.localhost/mcp', 'http://127.1.2.3/mcp', 'http://0.0.0.0:8080', 'http://[::1]:3000/mcp', 'http://mcp:3000/mcp', 'http://user@mcp-server/mcp']) {
+  test(`action: a 401 from a server inside the job (${u}) is a real failure`, () => {
+    const r = runAction({ TOOLMENU_URL: u, TOOLMENU_HEADERS: 'x-api-key: ci-only-key', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'HTTP 401 Unauthorized' });
+    assert.equal(r.code, 2);
+    assert.doesNotMatch(r.comment, /Skipped/);
+  });
+}
+
+test('action: a port number that contains 401 is not a 401', () => {
+  const r = runAction({ ...url, TOOLMENU_HEADERS: 'x-api-key: something', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'connect ECONNREFUSED 10.0.0.5:4010' });
+  assert.equal(r.code, 2);
+  assert.doesNotMatch(r.comment, /Skipped/);
+});
+
+test('action: a skipped check skips the session too', () => {
+  const r = runAction({ ...url, TOOLMENU_HEADERS: 'x-api-key: ', TOOLMENU_SCENARIO: 'scenario.yml', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'connection failed' });
+  assert.equal(r.code, 0);
+  assert.equal(r.ran('session'), false);
+});
+
+// A fake bin directory whose `node` reports an old version, so the script
+// looks for Node 22 of its own.
+function oldNode(dir, extra = '') {
+  const bin = join(dir, 'oldbin');
+  mkdirSync(bin, { recursive: true });
+  writeFileSync(join(bin, 'node'), '#!/bin/sh\necho 18\n');
+  chmodSync(join(bin, 'node'), 0o755);
+  if (extra) {
+    writeFileSync(join(bin, 'uname'), extra);
+    chmodSync(join(bin, 'uname'), 0o755);
+  }
+  return bin;
+}
+
+test('action: on an unsupported platform with old Node, it says to add setup-node', () => {
+  const r = runAction({ ...url, STUB_CODE: '0' }, (dir) => ({ PATH: `${oldNode(dir, '#!/bin/sh\necho MINGW64_NT\n')}:${process.env.PATH}` }));
+  assert.equal(r.code, 2);
+  assert.match(r.stdout, /needs Node 22 or later, and this runner has Node 18\. Add actions\/setup-node/);
+  assert.equal(r.ran('snapshot'), false);
+});
+
+test('action: a Node 22 fetched earlier in the job is reused, for toolmenu only', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node dist/server.js', STUB_CODE: '0' }, (dir) => {
+    const bin = oldNode(dir);
+    const fetched = join(dir, 'toolmenu-node/bin');
+    mkdirSync(fetched, { recursive: true });
+    writeFileSync(join(fetched, 'node'), '#!/bin/sh\nexit 0\n');
+    chmodSync(join(fetched, 'node'), 0o755);
+    return { PATH: `${bin}:${process.env.PATH}` };
+  });
+  assert.equal(r.code, 0);
+  // The server still gets the job's PATH, old Node first.
+  assert.match(r.args, /PATH=[^;]*oldbin/);
+  assert.doesNotMatch(r.args, /PATH=[^;]*toolmenu-node/);
 });
