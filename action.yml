@@ -85,4 +85,5 @@ runs:
         TOOLMENU_BASE_REF: ${{ github.base_ref }}
         TOOLMENU_CLI: ${{ inputs.cli }}
         TOOLMENU_PR: ${{ github.event.pull_request.number }}
+        TOOLMENU_FORK_PR: ${{ github.event.pull_request.head.repo.full_name != '' && github.event.pull_request.head.repo.full_name != github.repository }}
         GH_TOKEN: ${{ inputs.token }}

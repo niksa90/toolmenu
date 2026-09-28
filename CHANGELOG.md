@@ -18,3 +18,6 @@
   baseline on the base branch (or the previous tag), with the version-bump check in
   any language (`release: auto`).
 - Formats: text, json, github annotations, markdown.
+- Needs Node 22 or later (Node 20 reached end of life in April 2026).
+- The Action: `headers` and `env` inputs for servers behind auth; fork PRs, which
+  get no secrets, are skipped with a note instead of failing.
