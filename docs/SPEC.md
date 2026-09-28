@@ -297,7 +297,7 @@ glob. No config needed for a useful first run.
 
 ## 7. Tech
 
-- Node 22+, TypeScript, ESM. `@modelcontextprotocol/sdk` for connecting.
+- Node 22+, TypeScript, ESM. `@modelcontextprotocol/client` (SDK v2) for connecting.
 - `js-tiktoken` for estimates. No network calls except to the server being
   checked and, for `history`, the npm registry.
 - Official `schema.json` per spec version, vendored and pinned.

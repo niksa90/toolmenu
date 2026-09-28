@@ -14,8 +14,8 @@ connections and releases, and checks **when** it changes:
   invalidate the cached conversation: most clients put the tool list at the start of
   the prompt, so any change to it, even a tool added at the end, means everything
   after it is processed again. In my logs, one mid-conversation unlock rewrote
-  40–57K tokens of cached prefix (my own measurement; how I measured it, and a
-  benchmark of the setups, is in [this write-up](https://niksa.me/agent-tools-design-lessons)). `session` catches it, pins it to the step that
+  40–57K tokens of cached prefix (from my own logs; more on this, with a benchmark
+  of the setups, in [this write-up](https://niksa.me/agent-tools-design-lessons)). `session` catches it, pins it to the step that
   caused it, and says where in the list it happened.
 - **Ready for 2026-07-28.** That protocol version says the tool set **must not** vary
   per connection or as a side effect of other requests (the 2025 versions allow it).
@@ -34,8 +34,8 @@ serve now, which can differ from what they shipped with: FINDINGS F4.)
 
 ## Start here
 
-Needs Node 22 or later. Your server can be in any language: toolmenu starts it (stdio)
-or connects to it (HTTP).
+Needs Node 22 or later (the GitHub Action sets it up if the runner's Node is older).
+Your server can be in any language: toolmenu starts it (stdio) or connects to it (HTTP).
 
 ```sh
 # write a starter scenario from your server's menu, then run it
@@ -121,18 +121,20 @@ jobs:
   toolmenu:
     runs-on: ubuntu-latest
     env:
-      MCP_API_KEY: ci-only-key          # made up: only this job's copy uses it
+      # Made up: only this job's copy of the server uses it. Your server must read
+      # its key from MCP_API_KEY (or whatever variable it uses): that's the trick.
+      MCP_API_KEY: ci-only-key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - run: npm start &                # start the PR's version in the background
-      - run: npx --yes wait-on http://localhost:3000/health
+      - run: npm start &                # the PR's version, in the background (it keeps running for later steps)
+      - run: npx --yes wait-on --timeout 60000 tcp:localhost:3000   # fail after 60 s instead of hanging
       - uses: niksa90/toolmenu@v0.7.0
         with:
           url: http://localhost:3000/mcp
-          headers: "x-mcp-api-key: ci-only-key"
+          headers: "x-mcp-api-key: ${{ env.MCP_API_KEY }}"
           baseline: menu.json
 ```
 
