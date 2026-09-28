@@ -46,9 +46,10 @@ inputs:
     required: false
     default: auto
   version:
-    description: toolmenu version from npm.
+    description: >-
+      toolmenu version from npm. Default: the version of this Action (the tag you
+      pinned), so the CLI and the Action match. Set "latest" to always run the newest.
     required: false
-    default: latest
   cli:
     description: Override how toolmenu is run (for testing a local build), e.g. "node dist/cli.js".
     required: false

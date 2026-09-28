@@ -111,6 +111,16 @@ test('token budget and config', () => {
   assert.deepEqual(rules(diffMenus(before, after, { ignore: ['b'] })), []);
 });
 
+test('ignored tools leave the token change and the budget too', () => {
+  const before = menu([tool('a'), tool('debug_dump')]);
+  const after = menu([tool('a'), tool('debug_dump', [], { description: 'Dump everything. '.repeat(400) })]);
+  const d = diffMenus(before, after, { ignore: ['debug_*'], tokenBudget: 1000 });
+  assert.equal(d.tokens.delta, 0);
+  assert.deepEqual(d.tokens.tools, []);
+  assert.deepEqual(rules(d), []);
+  assert.ok(rules(diffMenus(before, after, { tokenBudget: 1000 })).includes('diff/token-budget'));
+});
+
 test('real data: server-filesystem 2026.1.14 → 2026.8.31', async () => {
   const before = await loadMenu(join(FIXTURES, 'menus/server-filesystem-2026.1.14.json'));
   const after = await loadMenu(join(FIXTURES, 'menus/server-filesystem-2026.8.31.json'));

@@ -26,7 +26,12 @@ const DEFAULT_PATH = 'toolmenu.config.json';
 export async function loadConfig(path?: string): Promise<Config> {
   const file = path ?? DEFAULT_PATH;
   if (!path && !existsSync(file)) return {};
-  const config = JSON.parse(await readFile(file, 'utf8')) as Config;
+  let config: Config;
+  try {
+    config = JSON.parse(await readFile(file, 'utf8')) as Config;
+  } catch (error) {
+    throw new Error(`${file}: ${error instanceof Error ? error.message : String(error)}`);
+  }
   for (const [id, value] of Object.entries(config.rules ?? {})) {
     if (!['error', 'warn', 'info', 'off'].includes(value)) {
       throw new Error(`${file}: rules["${id}"] must be error, warn, info or off`);
