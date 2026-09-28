@@ -239,7 +239,8 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
     }
     // Array parameters: the element type and allowed values count like the
     // parameter's own (no items schema = any element).
-    if (oldType === 'array' && newType === 'array') {
+    const isArray = (s: JsonSchema) => (Array.isArray(s.type) ? s.type.includes('array') : s.type === 'array');
+    if (isArray(before) && isArray(schema)) {
       const oldItems = before.items ?? {};
       const newItems = schema.items ?? {};
       const oldItemType = typeOf(oldItems);
@@ -259,8 +260,9 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
     }
     // Whatever changed beyond type, enum and description is checked per
     // parameter, so a classified change elsewhere can't hide it.
-    // (A type change already covers a reshaped schema: no duplicate notice.)
-    if (oldType === newType && canonical(residual(before)) !== canonical(residual(schema))) {
+    // A breaking type change already covers a reshaped schema: no duplicate
+    // notice. A widened type can still bring new constraints, so it's checked.
+    if ((oldType === newType || accepts(schema, before)) && canonical(residual(before)) !== canonical(residual(schema))) {
       out.push({ rule: 'diff/schema-other', tool: name, message: `${name}.${p}: changed in a way toolmenu doesn't classify (nested fields, constraints…). Review it.` });
     }
   }
