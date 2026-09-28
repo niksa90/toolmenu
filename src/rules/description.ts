@@ -2,9 +2,9 @@ import type { MenuTool } from '../types.js';
 import type { Rule, RuleFinding } from './rule.js';
 
 /*
- * Clients that cut tool descriptions, and where. Only documented cuts:
+ * Clients that cut tool descriptions, and where. Only reported cuts, with sources:
  * - claude-code: 2,048 characters, "… [truncated]" appended, silently (anthropics/claude-code#87650);
- *   CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH changes it since 2.1.280.
+ *   the Claude Code changelog lists CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH to change it from 2.1.280.
  * - amazon-q: 10,024 characters, with a warning (Amazon Q CLI 1.19; makenotion/notion-mcp-server#145).
  * Other clients send the description in full or don't document a cut. Your own
  * client may cut elsewhere: set descriptionLimit to its number.
