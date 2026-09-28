@@ -183,3 +183,15 @@ test('action: a PR whose base branch cannot be fetched fails instead of comparin
   assert.doesNotMatch(r.stdout, /the server didn't start/);
   assert.equal(r.ran('diff'), false);
 });
+
+test('action: a tag push with a non-version tag fails instead of comparing with itself', () => {
+  const r = runAction({ ...url, GITHUB_REF: 'refs/tags/mcp-v1.3.0', STUB_CODE: '0' }, (dir) => {
+    writeFileSync(join(dir, 'menu.json'), '{}');
+    return {};
+  });
+  assert.equal(r.code, 2);
+  assert.match(r.comment, /`mcp-v1\.3\.0` isn't a version tag/);
+  assert.match(r.stdout, /::error title=toolmenu::'mcp-v1\.3\.0' isn't a version tag/);
+  assert.doesNotMatch(r.stdout, /the server didn't start/);
+  assert.equal(r.ran('diff'), false);
+});
