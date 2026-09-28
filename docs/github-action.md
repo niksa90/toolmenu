@@ -1,8 +1,8 @@
 # The GitHub Action in detail
 
 The basic setup and the inputs are in the [README](../README.md#in-ci-one-pr-comment).
-This page covers what the basic setup doesn't: servers behind auth, PRs that run
-without your secrets, and where the Action gets Node.
+This page covers what the basic setup doesn't: servers behind auth, servers that
+unlock tools, PRs that run without your secrets, and where the Action gets Node.
 
 ## `command` or `url`
 
@@ -75,6 +75,51 @@ jobs:
 Use your own start command, port and header name. If your server needs real
 credentials just to list its tools, pass test ones the same way. Listing tools
 usually doesn't touch the systems behind them.
+
+## Servers that unlock tools
+
+If your server starts with a core menu and adds tools on request (an unlock tool, a
+`toolset` parameter, a mode switch in its environment), one configuration can't
+check both things that matter. Use two:
+
+- **The baseline is the full menu.** `diff` only compares the tools it sees. If the
+  baseline holds the core menu alone, a renamed, removed or no-longer-read-only tool
+  behind an unlock never reaches the report. Snapshot a configuration that serves
+  every tool, and commit that as `menu.json`:
+
+  ```sh
+  npx toolmenu snapshot --env UNLOCK_MODE=all -- node dist/server.js
+  ```
+
+- **The session runs the default menu**, the one clients start with, so `session`
+  sees each unlock happen: where the new tools land in the list, what they cost, and
+  whether repeating an unlock changes nothing. A `session --init` scenario is a good
+  start: it finds unlock tools and unlocks for real.
+
+The Action runs its snapshot and its scenario with the same settings, so give it the
+full menu and run the session as its own step:
+
+```yaml
+      - uses: niksa90/toolmenu@v0.7.0
+        with:
+          command: node dist/server.js
+          env: UNLOCK_MODE=all        # every tool: this is what diff checks
+          baseline: menu.json
+      # The default menu, unlocked step by step. Findings show up as annotations
+      # on the PR, and errors fail the job.
+      - run: npx --yes toolmenu@0.7.0 session --scenario scenario.yml --format github -- node dist/server.js
+```
+
+`UNLOCK_MODE` stands for whatever switch your server has. The unlock calls in the
+scenario are real, so the server needs whatever it needs to answer them in CI. Use
+one Action step per job: steps in the same job update the same PR comment.
+
+Expect `session/append` warnings: an append invalidates the cached conversation for
+clients that send tools first. Once the server speaks 2026-07-28, unlocks that only
+the unlocking connection sees are ruled out: an error over HTTP
+(`session/connection-local`), a warning over stdio (`session/side-effect`, since each
+stdio connection is its own process). On the 2025 versions they're allowed. That
+error is the spec, not a false alarm.
 
 ## PRs from forks and Dependabot
 

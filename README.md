@@ -93,6 +93,7 @@ and anything `session` caught. The same report goes to the job summary.
 | `version` | the Action's own | toolmenu version from npm: by default the one matching the Action tag you pinned (`latest` for the newest). The Action installs toolmenu from npm, so it needs a published version |
 
 Server behind auth, or PRs from forks and Dependabot? See [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md).
+Server that unlocks tools on request? Snapshot the full menu for the baseline and run the session on the default one: [servers that unlock tools](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#servers-that-unlock-tools).
 PRs without secrets are skipped, and a skipped check still passes; the `skipped` output tells you.
 
 ## `session`: the menu changing while the agent works
