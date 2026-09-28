@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { FIXTURES, run, tempDir } from './helpers.mjs';
+import { FIXTURES, ROOT, run, tempDir } from './helpers.mjs';
 import { start } from './fixtures/http-server.mjs';
 
 const sdkServer = ['--', process.execPath, join(FIXTURES, 'sdk-server.mjs')];
@@ -110,4 +110,17 @@ test('a server that fails to start exits 2 with a message', async () => {
   const r = await run(['snapshot', '--no-write', '--timeout', '5000', '--', process.execPath, '-e', 'process.exit(3)']);
   assert.equal(r.code, 2);
   assert.match(r.stderr, /^toolmenu: /);
+});
+
+test('cli: a broken config file is named in the error', async () => {
+  const cwd = tempDir();
+  writeFileSync(join(cwd, 'toolmenu.config.json'), '{"rules": {');
+  const r = await run(['diff', 'a.json', 'b.json'], { cwd });
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /toolmenu\.config\.json: /);
+});
+
+test('cli: --version is package.json\'s version', async () => {
+  const r = await run(['--version']);
+  assert.equal(r.stdout.trim(), JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version);
 });

@@ -42,6 +42,9 @@ if [ "$node_major" -lt 22 ]; then
   PATH="$node_dir/bin:$PATH"
 fi
 
+# By default, the toolmenu release that matches this Action's own version, so a
+# pinned Action (@v0.7.0) keeps running the CLI it was written for.
+TOOLMENU_VERSION="${TOOLMENU_VERSION:-$(node "$(dirname "$0")/version.mjs" package.json < "$(dirname "$0")/../package.json")}"
 CLI="${TOOLMENU_CLI:-npx --yes toolmenu@${TOOLMENU_VERSION:-latest}}"
 OUT="${RUNNER_TEMP:-/tmp}/toolmenu"
 mkdir -p "$OUT"
@@ -184,7 +187,7 @@ hint_target() {
 }
 
 # 1. Snapshot the menu this change produces.
-$CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
+$CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
 SKIPPED=false
 ERROR_SHOWN=false
@@ -235,7 +238,7 @@ fi
 
 # 3. Watch the menu during a scripted session.
 if [ -n "${TOOLMENU_SCENARIO:-}" ] && [ "$SKIPPED" = false ]; then
-  $CLI session --scenario "$TOOLMENU_SCENARIO" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
+  $CLI session --scenario "$TOOLMENU_SCENARIO" --format markdown --fail-on "$FAIL_ON" ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
   code=$?; note "$code"
   if [ "$code" -eq 2 ]; then { echo "**Session didn't run:** $(head -3 "$OUT/session.err")"; echo; } >> "$BODY"; else { cat "$OUT/session.md"; echo; } >> "$BODY"; fi
 fi
