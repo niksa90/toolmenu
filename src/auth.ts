@@ -135,10 +135,19 @@ export class StoredOAuthProvider implements OAuthClientProvider {
   }
 
   async clientInformation(ctx?: OAuthClientInformationContext): Promise<StoredOAuthClientInformation | undefined> {
-    if (this.options.clientId) {
-      return { client_id: this.options.clientId, ...(this.options.clientSecret ? { client_secret: this.options.clientSecret } : {}) } as StoredOAuthClientInformation;
-    }
     const s = await this.stored();
+    if (this.options.clientId) {
+      // Stamped with the issuer, like everything the SDK stores (SEP-2352): the one
+      // this server's login was first bound to, or on a first login the one being
+      // discovered. The SDK then won't hand this client to another server.
+      if (s.issuer && ctx?.issuer && s.issuer !== ctx.issuer) return undefined;
+      const issuer = s.issuer ?? ctx?.issuer;
+      const info = { client_id: this.options.clientId, ...(this.options.clientSecret ? { client_secret: this.options.clientSecret } : {}), ...(issuer ? { issuer } : {}) } as StoredOAuthClientInformation;
+      // Kept like a registered client, so a later snapshot can refresh the token
+      // without --client-id.
+      if (JSON.stringify(s.clientInformation) !== JSON.stringify(info)) await this.update({ clientInformation: info, redirectUrl: this.redirectUrl });
+      return info;
+    }
     if (!(await this.sameIssuer(ctx))) return undefined;
     // Registered for another redirect URI (a different --port): register again.
     if (this.options.interactive && s.redirectUrl && s.redirectUrl !== this.redirectUrl) return undefined;
