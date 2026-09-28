@@ -90,7 +90,7 @@ and anything `session` caught. The same report goes to the job summary.
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
 | `fail-on` | `error` | Fail the job on findings at or above this level |
 | `comment` | `true` | Post and update the PR comment |
-| `version` | `latest` | toolmenu version from npm. The Action installs toolmenu from npm, so it needs a published version |
+| `version` | the Action's own | toolmenu version from npm: by default the one matching the Action tag you pinned (`latest` for the newest). The Action installs toolmenu from npm, so it needs a published version |
 
 Server behind auth, or PRs from forks and Dependabot? See [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md).
 PRs without secrets are skipped, and a skipped check still passes; the `skipped` output tells you.

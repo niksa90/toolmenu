@@ -15,8 +15,7 @@ import { existsSync } from 'node:fs';
 import { loadRoutes } from './routes.js';
 import { snapshot } from './snapshot.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
-
-const VERSION = '0.7.0';
+import { VERSION } from './version.js';
 
 const HELP = `toolmenu ${VERSION}
 Lint your MCP server's tool menu for changes that confuse agents or break caches.
