@@ -256,6 +256,12 @@ export function formatSession(s: SessionResult, format: Format): string {
     lines.push(`step ${step.index}: ${step.label} · ${facts.join(' · ')}`);
     block(at(step.index));
   }
+  // Findings about the whole run (session/untested), after the steps.
+  const run = s.findings.filter((f) => f.step === undefined);
+  if (run.length) {
+    lines.push('');
+    block(run);
+  }
   lines.push('');
   lines.push(`final: ${plural(s.final.tools, 'tool')} · ${tok(s.final.tokens)} tokens (estimate)`);
   lines.push(summaryLine(s.findings));

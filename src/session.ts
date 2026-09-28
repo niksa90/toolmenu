@@ -5,6 +5,7 @@ import { connect, listTools, type Connection, type Target } from './connect.js';
 import { buildMenu } from './menu.js';
 import { isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
+import { classifyFailure, FAILURE_LABELS, SETUP_FAILURES, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { verbOf, WRITE_VERBS } from './words.js';
@@ -79,6 +80,8 @@ export interface StepRecord {
   /** Why no call was made, when none was: set where the status is set, never parsed from text. */
   reason?: 'missing' | 'refused';
   note?: string;
+  /** Why the call failed, when it did (a tool error or a failed request). */
+  failure?: FailureClass;
   changed: boolean;
   listChanged: number;
   scope?: Scope;
@@ -190,7 +193,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
               .trim();
             const short = clip(text, 120);
             record.note = text ? `the tool returned an error: ${short}` : 'the tool returned an error';
-            raw.push({
+            record.failure = classifyFailure(text, { hadArguments: Object.keys(step.args).length > 0 });
+            // A setup failure is reported once, for the whole run (session/untested).
+            if (!SETUP_FAILURES.has(record.failure)) raw.push({
               rule: 'session/tool-error',
               severity: 'warn',
               step: index,
@@ -201,7 +206,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         } catch (error) {
           record.status = 'failed';
           record.note = error instanceof Error ? error.message.split('\n')[0] : String(error);
-          raw.push({ rule: 'session/step-failed', severity: 'error', step: index, tool: step.tool, message: `Step ${index} (${label}) failed: ${record.note}` });
+          const code = (error as { code?: unknown }).code;
+          record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
+          if (!SETUP_FAILURES.has(record.failure)) raw.push({ rule: 'session/step-failed', severity: 'error', step: index, tool: step.tool, message: `Step ${index} (${label}) failed: ${record.note}` });
         }
       } else if (step.kind === 'wait_for') {
         const arrived = await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, step.timeoutMs);
@@ -264,6 +271,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       steps.push(record);
     }
 
+    raw.push(...untested(steps, target));
+
     return {
       scenario: options.scenarioName ?? 'scenario',
       server: baseline.server,
@@ -278,6 +287,30 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   } finally {
     await conn.close().catch(() => {});
   }
+}
+
+/**
+ * Calls that failed before reaching the tool's logic (credentials, this machine,
+ * the network) tested nothing but whether a failed call changes the menu. Said
+ * once. An error when no call got through at all: otherwise an expired CI secret
+ * turns the job green while testing nothing.
+ */
+function untested(steps: StepRecord[], target: Target): Raw[] {
+  const calls = steps.filter((s) => s.label.startsWith('call ') && s.reason === undefined);
+  const setup = calls.filter((s) => s.failure && SETUP_FAILURES.has(s.failure));
+  if (setup.length === 0) return [];
+  const byClass = new Map<FailureClass, StepRecord[]>();
+  for (const s of setup) byClass.set(s.failure!, [...(byClass.get(s.failure!) ?? []), s]);
+  const all = setup.length === calls.length;
+  const how = target.kind === 'http' ? 'real credentials (--header "Authorization: …")' : 'real credentials (--env KEY=…)';
+  return [
+    {
+      rule: 'session/untested',
+      severity: all ? 'error' : 'warn',
+      message: `${all ? `All ${calls.length}` : `${setup.length} of ${calls.length}`} tool calls failed before reaching the tool: ${[...byClass].map(([c, list]) => `${list.length} on ${FAILURE_LABELS[c]}`).join(', ')}. Those steps only tested whether a failed call changes the menu.${byClass.has('auth') || byClass.has('not-found') ? ` Run with ${how}.` : ''}`,
+      detail: [...byClass].map(([c, list]) => `${c}: steps ${list.map((s) => s.index).join(', ')} (“${(list[0].note ?? '').replace(/^the tool returned an error: /, '').slice(0, 100)}”)`),
+    },
+  ];
 }
 
 function serverOf(c: Connection): Menu['server'] {
@@ -306,11 +339,15 @@ const EDIT_KINDS = new Set<ToolChange['kind']>(['description', 'inputSchema', 'o
 export function changeFindings(before: MenuTool[], after: MenuTool[], changes: ToolChange[], step: number, origin?: string): Raw[] {
   const out: Raw[] = [];
   const brk = cacheBreak(before, after);
+  // Claude's docs: adding, removing or reordering a tool invalidates the entire
+  // cache (SPEC §20), not just what follows the change. So the cost is the whole
+  // tool list and everything after it; toolmenu can measure this server's part.
+  const total = after.reduce((sum, t) => sum + t.tokens, 0);
   const cost = !brk
     ? []
-    : brk.position >= after.length
-      ? [`the tool list is unchanged up to position ${brk.position}, where tools were removed from the end; with the tool list at the start of the prompt, the conversation after it is processed again`]
-      : [`~${brk.tokensAffected.toLocaleString('en-US')} estimated tokens of the tool list from position ${brk.position} on (positions ${brk.position}–${after.length - 1}), a floor: with the tool list at the start of the prompt, the conversation after it is processed again too`];
+    : [
+        `the change starts at position ${brk.position}${brk.position >= after.length ? ' (tools removed from the end)' : ''}; any change to the tool list invalidates the cached prompt, so the whole tool list (this server's part: ~${total.toLocaleString('en-US')} tokens, estimate) and the conversation after it are processed again`,
+      ];
   const why = origin ? [origin] : [];
 
   const added = changes.filter((c) => c.kind === 'added');
@@ -335,7 +372,7 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
         rule: 'session/mid-insert',
         severity: 'error',
         step,
-        message: `+${names.length} tool${names.length === 1 ? '' : 's'} inserted at position ${first} (${names.join(', ')}). Invalidates the cached prompt from that tool on, and the conversation after the tool list.`,
+        message: `+${names.length} tool${names.length === 1 ? '' : 's'} inserted at position ${first} (${names.join(', ')}). Invalidates the cached prompt: the tool list and the conversation after it are processed again.`,
         detail: [...cost, ...why],
       });
     }

@@ -171,12 +171,15 @@ SESSION  scenario.yml
 step 3: call unlock_toolset { toolset: "audits" }
   ERROR session/mid-insert
     +3 tools inserted at position 42 (list_team_audits, get_team_audit, …)
-    ~14,200 estimated tokens of the tool list from position 42 on (positions 42–118), a floor
+    the change starts at position 42; any change to the tool list invalidates the cached
+    prompt, so the whole tool list (this server's part: ~31,000 tokens, estimate) and the
+    conversation after it are processed again
 
 step 5: list
   ERROR session/edit
     get_form: description changed (no tool call in between)
-    ~9,800 estimated tokens of the tool list from position 17 on (positions 17–118), a floor
+    the change starts at position 17; … the whole tool list (~31,000 tokens) and the
+    conversation after it are processed again
 ```
 
 That turns "something bad happened" into "this operation changed the menu in a
@@ -643,6 +646,9 @@ before 0.7.0:
   tool appended mid-session still re-processes the whole conversation, unless the
   client adds new tools after the cached content (tool search / deferred loading).
   `session/append` is now a warning, and the mid-list estimate is labelled as a floor.
+  (0.8 goes further: the estimate "from position p on" still implied the prompt before
+  p stayed cached. Findings now give the whole tool list's size and where the change
+  starts.)
 - **Key order counts.** Comparisons for caching and determinism are byte-exact now:
   a new property order is a `serialization` change. `diff` between releases stays
   semantic.
