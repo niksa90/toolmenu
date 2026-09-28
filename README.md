@@ -29,7 +29,7 @@ No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
 (`history` installs old versions with today's dependencies, so it records what they
 serve now, which can differ from what they shipped with: FINDINGS F4.)
 
-> **Status: 0.7, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
+> **Status: 0.8, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
 > real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 ## Start here
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.7.1
+      - uses: niksa90/toolmenu@v0.8.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -126,10 +126,11 @@ as its steps, so the starter is a floor, not a ceiling.
 | `session/append` | warn | Tools added at the end of the list. Still a cache miss for the conversation when your client sends tools at the start of the prompt (Claude's Messages API does); cache-safe only when the client adds new tools after the cached content, as tool search (deferred loading) does |
 | `session/connection-local` | error on 2026-07-28 (HTTP) | A change only this connection sees. 2026-07-28: the tool set MUST NOT vary "per-connection or as a side effect of other requests on the connection" |
 | `session/side-effect` | warn on 2026-07-28 (stdio) | The same, where stdio can't tell per-connection from global |
-| `session/connection-variance` | error/warn | A second connection with the same credentials gets a different menu |
+| `menu/process-variance`, `menu/connection-variance` | error | Checked before the first step, as in `snapshot` (below) |
 | `session/unannounced` | warn | The menu changed without `notifications/tools/list_changed`, although the server declared `listChanged` |
-| `session/refused`, `session/step-failed` | error | A write the scenario didn't allow, or a call that failed |
-| `session/tool-error` | warn | A tool that answered with an error (`isError`, an expired token): the run tested less than it looks |
+| `session/untested` | warn, error if no call got through | Calls that failed before reaching the tool: authentication, something missing on this machine (no Chrome), the network. One finding for the run, not one per step, so an expired CI secret doesn't pass a run that tested nothing |
+| `session/refused`, `session/step-failed` | error | A write the scenario didn't allow, or a call that failed for another reason |
+| `session/tool-error` | warn | A tool that answered with an error for another reason (`isError`): the run tested less than it looks |
 
 **`session` calls tools for real.** Without `allow_writes: true` it refuses any tool
 not marked `readOnlyHint: true`. `--plan` prints the steps without connecting.
@@ -196,13 +197,15 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 
 | Rule | Default | Catches |
 |---|---|---|
-| `menu/nondeterministic` | error | Two identical `tools/list` calls returning different menus (order, descriptions, schemas, annotations) |
+| `menu/nondeterministic` | error | Two identical `tools/list` calls returning different menus (order, descriptions, schemas, annotations), with the value that differs |
+| `menu/process-variance` | error | A second server process, started the same way, serves a different menu, so every restart misses the cache. Seen on mcp-atlassian: a default built from a Python set, in a new order every start (FINDINGS F12). toolmenu runs the main process with `PYTHONHASHSEED=0`, so a Python server's saved menu is reproducible, and the second with another seed. `--processes 1` turns it off |
+| `menu/connection-variance` | error (warn on 2025 protocols) | The same over HTTP: a second connection with the same credentials gets a different menu. Retried once before reporting |
 | `spec/schema` | error | A `tools/list` result that fails the official schema for its protocol version |
 | `naming/route` | error | A `routes.yml` expectation broke: a keyword now matches the wrong tool at least as well as the right one |
 | `description/buried` | warn | Instructions to the agent ("use X instead", "don't retry", "never guess one") past the point where your client cuts descriptions: 2,048 characters in Claude Code, or your `descriptionLimit`. From a real failure: a client cut at 280 characters, and the line that decided routing was at 1,222 |
 | `description/cut` | info | Descriptions longer than the client sends, with nothing that reads as an instruction past the cut, as one summary. The model gets a prefix that can read as complete |
 | `naming/vague-id` | warn | A parameter called just `id` that doesn't say *which* thing |
-| `ids/authored` | warn | An ID the agent must supply that no tool appears to return, so the agent may invent it (heuristic) |
+| `ids/authored` | info | An ID the agent must supply that no tool appears to return, so the agent may invent it, one finding per kind of ID (heuristic: IDs from a URL or another tool's text output look the same) |
 | `write/unannotated` | warn | A tool named like a write (`delete_`, `send_`…) with no annotations |
 | `naming/shared-word` | info | Nouns that name different things across tools (`list_team_audits` vs `get_audit_trail`), as one summary |
 | `write/no-dry-run` | info | Destructive tools with no dry-run parameter or preview tool, as one summary |
@@ -281,6 +284,7 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --env <K=V>         env var for a stdio server, repeatable (it only gets a
                     minimal environment otherwise)
 --timeout <ms>      per-request timeout (default: 30000)
+--processes <n>     server processes or connections to compare (default: 2)
 ```
 
 Exit codes: `0` clean · `1` findings at or above `--fail-on` · `2` couldn't connect
