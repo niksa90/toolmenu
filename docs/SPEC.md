@@ -628,3 +628,35 @@ positive or a miss in that run.
     the previous version tag and this one. A project versioned only by tags (Go,
     setuptools-scm) has no next version in a PR, so its bump is checked at the tag.
 
+## 20. Before the first release: a claims check and a code review
+
+Nothing had checked the claims themselves: the reviews so far covered writing, and the
+tests checked the code against the spec, not the spec against reality. Two passes
+before 0.7.0:
+
+- **The cache model was wrong.** The end of the tool list isn't the end of the
+  prompt. Claude's Messages API renders tools, then system, then messages, and its
+  docs say adding, removing or reordering a tool invalidates the entire cache. So a
+  tool appended mid-session still re-processes the whole conversation, unless the
+  client adds new tools after the cached content (tool search / deferred loading).
+  `session/append` is now a warning, and the mid-list estimate is labelled as a floor.
+- **Key order counts.** Comparisons for caching and determinism are byte-exact now:
+  a new property order is a `serialization` change. `diff` between releases stays
+  semantic.
+- **`diff`:** every parameter is checked for changes it doesn't classify, so a
+  description change on one parameter can't hide a narrowed enum on another (array
+  item enums count too). The suggested bump only counts findings that survive
+  `ignore` and rules set to off. A version that goes backwards is flagged; a
+  prerelease isn't judged.
+- **`history`** orders versions by semver, not publish time, so a backport is diffed
+  against its own line.
+- **`session`** lists the menu after a failed or timed-out step too, so a change the
+  server applied anyway is pinned to that step. An append in the same step as an
+  edit is still an append. Removals at the end get a sensible cost line.
+- **The Action** diffs against the baseline as it is on the base branch (or the
+  previous tag), not the PR's own copy, so a PR that commits its refreshed snapshot
+  is still checked.
+- **The CLI** waits for stdout to drain before exiting, so piped `--json` isn't cut.
+- Wording: "the linters I found", no "common today", and determinism scoped to the
+  same inputs (`history` excepted).
+

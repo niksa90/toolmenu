@@ -5,10 +5,13 @@ import { menuOf, tool } from './helpers.mjs';
 
 const kinds = (changes) => changes.map((c) => `${c.kind}:${c.tool}`).sort();
 
-test('identical menus have no changes, whatever the key order', () => {
+test('identical menus have no changes; a new key order is a serialization change', () => {
   const a = menuOf([tool('a', ['x']), tool('b')]).tools;
+  assert.deepEqual(compareMenus(a, menuOf([tool('a', ['x']), tool('b')]).tools), []);
+  // Same content, different bytes: prompt caches compare bytes, so it counts.
   const b = menuOf([{ inputSchema: a[0].inputSchema, description: a[0].description, name: 'a' }, tool('b')]).tools;
-  assert.deepEqual(compareMenus(a, b), []);
+  assert.deepEqual(compareMenus(a, b).map((c) => `${c.kind}:${c.tool}`), ['serialization:a']);
+  assert.ok(cacheBreak(a, b), 'and the cache breaks at that tool');
   assert.equal(canonical({ b: 1, a: [{ d: 1, c: 2 }] }), canonical({ a: [{ c: 2, d: 1 }], b: 1 }));
 });
 
