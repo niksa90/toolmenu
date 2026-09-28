@@ -18,6 +18,8 @@ export interface Config {
   descriptionLimit?: number | string;
   /** Tools (names or globs) your client sends with the full description. */
   fullDescriptions?: string[];
+  /** Server processes (stdio) or connections (HTTP) to compare, the main one included (default 2). */
+  processes?: number;
 }
 
 const DEFAULT_PATH = 'toolmenu.config.json';
@@ -40,6 +42,9 @@ export async function loadConfig(path?: string): Promise<Config> {
   const limit = config.descriptionLimit;
   if (limit !== undefined && !(typeof limit === 'number' && limit > 0) && !(typeof limit === 'string' && limit in CLIENT_LIMITS)) {
     throw new Error(`${file}: descriptionLimit must be a positive number or one of ${Object.keys(CLIENT_LIMITS).join(', ')}`);
+  }
+  if (config.processes !== undefined && !(Number.isInteger(config.processes) && config.processes >= 1)) {
+    throw new Error(`${file}: processes must be a whole number, 1 or more`);
   }
   return config;
 }

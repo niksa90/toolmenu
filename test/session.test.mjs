@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareMenus } from '../dist/compare.js';
-import { changeFindings, clip, parseScenario, scopeOf, session, starterScenario } from '../dist/session.js';
+import { changeFindings, clip, parseScenario, scopeOf, session, starterScenario, unlockers } from '../dist/session.js';
 import { parse as parseYaml } from 'yaml';
 import { FIXTURES, ROOT, menuOf, run, tempDir, tool } from './helpers.mjs';
 import { start as startSdkHttp } from './fixtures/http-server.mjs';
@@ -177,7 +177,7 @@ test('http: menus that differ per connection are caught before the first step', 
   try {
     const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: 15_000 });
     assert.equal(r.connectionCheck, 'different');
-    assert.deepEqual(byStep(r), ['0:session/connection-variance']);
+    assert.deepEqual(byStep(r), ['0:menu/connection-variance']);
   } finally {
     await server.close();
   }
@@ -255,3 +255,13 @@ test('cli: session --init writes a scenario and never overwrites', async () => {
   const s = await run(['session', '--scenario', 'scenario.yml', ...server], { cwd: dir });
   assert.match(s.stdout, /session\/edit/, 'the starter scenario alone catches the description rewrite');
 });
+
+test('unlockers: a search filter named category is not an unlock; with an unlock signal it is (FINDINGS F12)', () => {
+  const ro = { annotations: { readOnlyHint: true } };
+  const categories = { type: 'array', items: { type: 'string', enum: ['github', 'research', 'pdf'] } };
+  const search = tool('firecrawl_search', [], { ...ro, description: 'Search the web.', inputSchema: { type: 'object', properties: { query: { type: 'string' }, categories } } });
+  assert.deepEqual(unlockers([search]).map((u) => u.tool.name), []);
+  const enable = tool('enable_category', [], { ...ro, description: 'Enable more tools.', inputSchema: { type: 'object', properties: { category: { type: 'string', enum: ['audits'] } } } });
+  assert.deepEqual(unlockers([enable]).map((u) => [u.tool.name, u.param]), [['enable_category', 'category']]);
+});
+

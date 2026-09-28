@@ -164,7 +164,7 @@ test('menu/nondeterministic compares content as well as order', () => {
   const run = (secondList) =>
     runRules(MENU_RULES, { menu: first, secondList, pages: [], capabilities: {}, usedAuth: false }).filter((f) => f.rule === 'menu/nondeterministic');
   assert.match(run(reordered)[0].message, /different order/);
-  assert.match(run(edited)[0].detail.join('\n'), /description changed: a/);
+  assert.match(run(edited)[0].detail.join("\n"), /a: description: "a\." vs "other"/);
   assert.deepEqual(run(first.tools), []);
 });
 
@@ -182,7 +182,7 @@ test('spec/schema validates older protocol versions too (draft-07 schemas)', () 
 });
 
 test('real-menu regressions: ID heuristics (FINDINGS F10)', () => {
-  const authored = (tools) => lint(tools).filter((f) => f.rule === 'ids/authored').map((f) => f.message.split(':')[0]);
+  const authored = (tools) => lint(tools).filter((f) => f.rule === 'ids/authored').flatMap((f) => (f.detail ? f.detail[0].split(', ') : [f.message.split(' looks like')[0]]));
   const ro = { annotations: { readOnlyHint: true } };
   // chrome-devtools: uid is not "u" + "id"; a description that says where the value comes from counts
   assert.deepEqual(authored([tool('click', ['uid'], ro), tool('drag', ['from_uid'], ro)]), []);
@@ -219,7 +219,7 @@ test('write/no-dry-run is one finding per server, listing the tools', () => {
 
 test('real-menu regressions: qualifiers, "don\'t invent" and group prefixes (a 115-tool server)', () => {
   const ro = { annotations: { readOnlyHint: true } };
-  const authored = (tools) => lint(tools).filter((f) => f.rule === 'ids/authored').map((f) => f.message.split(':')[0]);
+  const authored = (tools) => lint(tools).filter((f) => f.rule === 'ids/authored').flatMap((f) => (f.detail ? f.detail[0].split(', ') : [f.message.split(' looks like')[0]]));
   // creatorRegionId and newRegionId are region IDs, which search_regions returns
   assert.deepEqual(authored([tool('search_regions', ['query'], ro), tool('content_findCourseDropouts', ['creatorRegionId'], ro), tool('form_updateRegions', ['newRegionId'])]), []);
   // an optional ID whose description says not to invent it
@@ -371,3 +371,28 @@ test('description/cut: with the default cut, instructions a shorter client cut w
   assert.deepEqual(lint(tools, { descriptionLimit: 280 }).filter((f) => f.rule.startsWith('description/')).map((f) => f.rule), ['description/buried']);
   assert.deepEqual(lint(tools, { descriptionLimit: 'claude-code' }).filter((f) => f.rule === 'description/cut'), []);
 });
+
+test('ids/authored: abbreviations, lone qualifiers, URL provenance, one finding per kind (FINDINGS F12)', () => {
+  const ro = { annotations: { readOnlyHint: true } };
+  const found = (tools) => lint(tools).filter((f) => f.rule === 'ids/authored');
+  // Miro: orgId is returned by the organization tools.
+  assert.deepEqual(found([tool('get-board-classification', ['orgId'], ro), tool('get-organization-info', [], ro)]), []);
+  // A qualifier alone names no kind.
+  assert.deepEqual(found([tool('update-item-position', ['parentId'])]), []);
+  // Figma: the ID comes from the URL the user pastes.
+  const figma = { type: 'object', properties: { nodeId: { type: 'string', description: 'The ID of the node to fetch, often found as URL parameter node-id=<nodeId>' } }, required: ['nodeId'] };
+  assert.deepEqual(found([tool('get_figma_data', [], { ...ro, inputSchema: figma })]), []);
+  // Sentry: "when not using a URL" names an alternative input, not a source.
+  const sentry = { type: 'object', properties: { resourceId: { type: 'string', description: 'Required when not using a URL.' } }, required: ['resourceId'] };
+  assert.equal(found([tool('get_sentry_resource', [], { ...ro, inputSchema: sentry })]).length, 1);
+  // One finding for every tool taking the same kind, at info.
+  const team = found([tool('create-board', ['teamId']), tool('copy-board', ['teamId']), tool('share-board', ['teamId'])]);
+  assert.equal(team.length, 1);
+  assert.equal(team[0].severity, 'info');
+  assert.match(team[0].message, /^3 parameters look like a team ID/);
+});
+
+test('naming/vague-id: a git ref is not a vague ID', () => {
+  assert.deepEqual(lint([tool('get_file_contents', ['owner', 'repo', 'path', 'ref'])]).filter((f) => f.rule === 'naming/vague-id'), []);
+});
+

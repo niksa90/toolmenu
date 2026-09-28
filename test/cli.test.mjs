@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { FIXTURES, ROOT, run, tempDir } from './helpers.mjs';
 import { start } from './fixtures/http-server.mjs';
+import { start as startRaw } from './fixtures/raw-http-server.mjs';
 
 const sdkServer = ['--', process.execPath, join(FIXTURES, 'sdk-server.mjs')];
 const raw = (fixture) => ['--env', `FIXTURE=${fixture}`, '--', process.execPath, join(FIXTURES, 'raw-server.mjs')];
@@ -54,7 +55,7 @@ test('an unstable order fails the run', async () => {
 test('a description that changes between calls fails the run', async () => {
   const r = await run(['snapshot', '--no-write', ...raw('drift')]);
   assert.equal(r.code, 1);
-  assert.match(r.stdout, /description changed: get_time/);
+  assert.match(r.stdout, /get_time: description: "Get the time. Generated at call 1." vs "Get the time. Generated at call 2."/);
 });
 
 test('a result the SDK rejects is still read and reported against the schema', async () => {
@@ -124,3 +125,38 @@ test('cli: --version is package.json\'s version', async () => {
   const r = await run(['--version']);
   assert.equal(r.stdout.trim(), JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version);
 });
+
+test('snapshot: a menu that differs per process is caught, and says what differs', async () => {
+  const r = await run(['snapshot', '--no-write', ...raw('seedorder')]);
+  assert.equal(r.code, 1);
+  assert.match(r.stdout, /ERROR  menu\/process-variance/);
+  assert.match(r.stdout, /get_issue: inputSchema\.properties\.fields\.default: same 5 items, different order/);
+  assert.match(r.stdout, /PYTHONHASHSEED=0/);
+  // The main process is pinned: two snapshots save the same menu.
+  const [a, b] = await Promise.all([1, 2].map(async () => {
+    const cwd = tempDir();
+    await run(['snapshot', '--processes', '1', ...raw('seedorder')], { cwd });
+    return JSON.parse(readFileSync(join(cwd, 'menu.json'), 'utf8')).tools;
+  }));
+  assert.deepEqual(a, b);
+});
+
+test('snapshot: --processes 1 turns the check off; a stable server passes it', async () => {
+  const off = await run(['snapshot', '--no-write', '--processes', '1', ...raw('seedorder')]);
+  assert.doesNotMatch(off.stdout, /process-variance/);
+  const clean = await run(['snapshot', '--no-write', ...raw('clean')]);
+  assert.doesNotMatch(clean.stdout, /process-variance/);
+  const bad = await run(['snapshot', '--no-write', '--processes', '0', ...raw('clean')]);
+  assert.equal(bad.code, 2);
+});
+
+test('snapshot over http: a menu that differs per connection is caught', async () => {
+  const server = await startRaw({ vary: true });
+  try {
+    const r = await run(['snapshot', '--no-write', server.url]);
+    assert.match(r.stdout, /menu\/connection-variance/);
+  } finally {
+    await server.close();
+  }
+});
+

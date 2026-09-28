@@ -3,7 +3,8 @@ import { commonWords, nouns, singular, words } from '../words.js';
 import { missingWords, negatedMention, routeScores } from '../routes.js';
 import type { Rule, RuleFinding } from './rule.js';
 
-const VAGUE_IDS = /^(id|ids|uuid|uuids|identifier|identifiers|ref)$/i;
+// Not `ref`: in real menus it's a git ref (GitHub ×4), a name with a meaning of its own.
+const VAGUE_IDS = /^(id|ids|uuid|uuids|identifier|identifiers)$/i;
 
 export const vagueId: Rule = {
   id: 'naming/vague-id',
