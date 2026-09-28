@@ -86,7 +86,7 @@ and anything `session` caught. The same report goes to the job summary.
 | `headers` | | HTTP headers for a `url` server, one `Name: value` per line. Use a secret for keys: `x-api-key: ${{ secrets.MCP_API_KEY }}` |
 | `env` | | Environment variables for a `command` server, one `KEY=value` per line |
 | `baseline` | `menu.json` | The committed snapshot to diff against |
-| `scenario` | | A scenario to run with `session` |
+| `scenario` | | A scenario to run with `session`, or `auto` to build the steps from the menu |
 | `baseline-from` | `snapshot` | `session` diffs every tool the scenario saw (the union menu), for servers whose tools appear after an unlock |
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
 | `fail-on` | `error` | Fail the job on findings at or above this level |
@@ -132,6 +132,16 @@ as its steps, so the starter is a floor, not a ceiling.
 | `session/untested` | warn, error if no call got through | Calls that failed before reaching the tool: authentication, something missing on this machine (no Chrome), the network. One finding for the run, not one per step, so an expired CI secret doesn't pass a run that tested nothing |
 | `session/refused`, `session/step-failed` | error | A write the scenario didn't allow, or a call that failed for another reason |
 | `session/tool-error` | warn | A tool that answered with an error for another reason (`isError`): the run tested less than it looks |
+
+**No scenario? `session --auto`** builds the steps from the menu: every read-only tool
+whose required arguments the schema itself gives (a `default`, `examples`, an `enum`,
+a type or format), cheapest first, then the first call again. It never guesses an ID:
+a tool that needs `owner`, `repo` or an issue key is skipped, and the report says
+which values were missing (`--save-scenario auto.yml` writes the steps, with the
+skipped tools commented out, to fill in). Tools marked `openWorldHint: true` (web
+search, fetch, scraping, which can cost API credits) are called only with
+`--open-world`. On the 22 servers in `bench/`, `--auto` reaches 60 of 262 read-only
+tools, 84 with `--open-world`.
 
 **`session` calls tools for real.** Without `allow_writes: true` it refuses any tool
 not marked `readOnlyHint: true`. `--plan` prints the steps without connecting.

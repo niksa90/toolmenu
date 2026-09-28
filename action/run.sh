@@ -202,9 +202,11 @@ fi
 
 SESSION_RAN=false
 run_session() {
-  local union=()
+  local union=() steps=(--scenario "$TOOLMENU_SCENARIO")
   [ "$FROM_SESSION" = true ] && union=(--union-out "$OUT/union.json")
-  $CLI session --scenario "$TOOLMENU_SCENARIO" --format markdown --fail-on "$FAIL_ON" ${union[@]+"${union[@]}"} ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
+  # scenario: auto builds the steps from the menu (read-only tools only).
+  [ "$TOOLMENU_SCENARIO" = auto ] && steps=(--auto)
+  $CLI session "${steps[@]}" --format markdown --fail-on "$FAIL_ON" ${union[@]+"${union[@]}"} ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
   SESSION_CODE=$?
   SESSION_RAN=true
 }
@@ -259,7 +261,7 @@ else
     code=$?; note "$code"
     if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { sed -e "s/pass --release/set the Action's \`release\` input/" -e "s/Check the --release order/Check the order in the Action's \`release\` input/" "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
   else
-    if [ "$FROM_SESSION" = true ]; then hint="npx toolmenu session --scenario $TOOLMENU_SCENARIO --union-out ${TOOLMENU_BASELINE:-menu.json} $(hint_target)"; else hint="npx toolmenu snapshot $(hint_target)"; fi
+    if [ "$FROM_SESSION" = true ]; then hint="npx toolmenu session $([ "$TOOLMENU_SCENARIO" = auto ] && echo --auto || echo "--scenario $TOOLMENU_SCENARIO") --union-out ${TOOLMENU_BASELINE:-menu.json} $(hint_target)"; else hint="npx toolmenu snapshot $(hint_target)"; fi
     { echo "No baseline at \`${TOOLMENU_BASELINE:-menu.json}\`, so there's nothing to compare with yet. Commit the $([ "$FROM_SESSION" = true ] && echo "session's union menu" || echo snapshot) to start tracking changes:"; echo; echo '```sh'; echo "$hint"; echo '```'; echo; } >> "$BODY"
   fi
   { cat "$OUT/snapshot.md"; echo; } >> "$BODY"

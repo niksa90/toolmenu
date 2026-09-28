@@ -27,7 +27,10 @@ inputs:
     required: false
     default: menu.json
   scenario:
-    description: Optional scenario.yml for a session run (tools not marked readOnlyHint are refused unless it allows writes).
+    description: >-
+      Optional scenario.yml for a session run (tools not marked readOnlyHint are refused
+      unless it allows writes), or "auto" to build the steps from the menu: every
+      read-only tool whose required arguments the schema can fill.
     required: false
   baseline-from:
     description: >-
