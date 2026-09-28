@@ -17,11 +17,13 @@ only, unless the scenario sets `allow_writes`).
 `headers` only applies to a `url` server and `env` only to a `command` server; the
 Action warns if one is set for the other.
 
-## Projects versioned by git tags
+## The version check (`release: auto`)
 
 Projects versioned only by git tags (Go, setuptools-scm) have no next version in a
 PR, so `release: auto` has nothing to check there. Add `push: { tags: ['v*'] }` to
 `on:` to get the bump checked when you tag.
+
+In a monorepo, set `release` yourself: `auto` reads the version files at the repo root.
 
 ## Git history
 

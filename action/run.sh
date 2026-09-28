@@ -187,6 +187,7 @@ hint_target() {
 $CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
 SKIPPED=false
+ERROR_SHOWN=false
 if [ "$code" -eq 2 ] && [ "${TOOLMENU_NO_SECRETS:-false}" = "true" ] && missing_secret; then
   # Pull requests from forks and Dependabot don't get the repository's secrets,
   # so a server that needs one can't be checked. Say so and don't fail the PR.
@@ -210,7 +211,8 @@ else
   # tag push outside a git checkout, would compare the change with itself.
   if [ -z "$BASE" ] && { [ -n "${TOOLMENU_BASE_REF:-}" ] || { [[ "${GITHUB_REF:-}" == refs/tags/* ]] && ! git rev-parse --git-dir > /dev/null 2>&1; }; }; then
     { echo "**Couldn't read the base branch, so there's nothing to compare with:** checking the change against its own \`${TOOLMENU_BASELINE:-menu.json}\` would hide every change. The Action needs git history in the job: see [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#git-history)."; echo; } >> "$BODY"
-    echo "::warning title=toolmenu::Couldn't read the base branch (no git in the job, or no access to fetch it), so the menu wasn't compared. See docs/github-action.md#git-history."
+    echo "::error title=toolmenu::Couldn't read the base branch (no git in the job, or no access to fetch it), so the menu wasn't compared. See docs/github-action.md#git-history."
+    ERROR_SHOWN=true
     note 2
   elif [ -n "$BASELINE" ]; then
     # shellcheck disable=SC2046
@@ -248,7 +250,9 @@ if [ "${TOOLMENU_COMMENT:-true}" = "true" ] && [ -n "${TOOLMENU_PR:-}" ] && [ -n
   fi
 fi
 
-if [ "$status" -eq 2 ]; then
+if [ "$status" -eq 2 ] && [ "$ERROR_SHOWN" = true ]; then
+  :  # the specific error is already out
+elif [ "$status" -eq 2 ]; then
   echo "::error title=toolmenu::The check couldn't run: the server didn't start or couldn't be reached, or a baseline or scenario couldn't be read. See the job summary."
 elif [ "$status" -ne 0 ]; then
   echo "::error title=toolmenu::Findings at or above '$FAIL_ON'. See the job summary."
