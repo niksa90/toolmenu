@@ -1,13 +1,31 @@
-// Summarise several `toolmenu history --json` runs as one markdown table.
-// Usage: node scripts/history-report.mjs out/*.json
+// Summarise several `toolmenu history` runs as one markdown table.
+// Usage: npm run build && node scripts/history-report.mjs <out>/*/history.json
+// Every saved menu is reloaded and re-diffed with this build, so the table uses
+// today's token counting and diff rules, not the ones the run was made with.
 import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { diffMenus } from '../dist/diff.js';
+import { loadMenu } from '../dist/menu.js';
 
-const BUMP = { none: 0, patch: 1, minor: 2, major: 3 };
 const rows = [];
 for (const file of process.argv.slice(2)) {
   const h = JSON.parse(readFileSync(file, 'utf8'));
   const ok = h.rows.filter((r) => r.status === 'ok');
   if (!ok.length) continue;
+  let previous;
+  for (const r of ok) {
+    const menu = await loadMenu(join(dirname(file), r.menuFile));
+    r.tokens = menu.totalTokens;
+    delete r.diff;
+    if (previous) {
+      const d = diffMenus(previous.menu, menu, { release: { before: previous.version, after: r.version } });
+      r.diff = {
+        breaking: d.findings.filter((f) => f.class === 'breaking').length,
+        bumpTooSmall: d.findings.some((f) => f.rule === 'diff/version-bump'),
+      };
+    }
+    previous = { menu, version: r.version };
+  }
   const first = ok[0];
   const last = ok.at(-1);
   const diffs = h.rows.filter((r) => r.diff);
