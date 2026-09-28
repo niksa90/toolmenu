@@ -579,15 +579,15 @@ reach before 0.9.
   menu on a second connection. `?tools=all` serves the operations as 171 tools
   instead, for gateways that can't search: ~80K tokens against ~14K, 5.7× the menu for
   the same capabilities. Together with Sentry (`search_sentry_tools` +
-  `execute_sentry_tool`, F11), GitHub dropping dynamic toolsets and Apify dropping
-  added tools (F12), that's the direction: a small fixed menu plus a way to reach the
+  `execute_sentry_tool`, F11), Apify (`fetch-actor-details` + `call-actor`) and GitHub
+  dropping its dynamic-toolsets flag (F12), that's the direction: a small fixed menu plus a way to reach the
   rest, not a menu that grows.
 - **What `diff` can't see.** Operations behind `discover` aren't in the menu, so a
   breaking change to one never shows in a `diff` of the default endpoint. Atlassian's
   `?tools=all` makes them a menu, which `diff` can compare: snapshot that endpoint as
   the baseline.
 - **Default scopes are broad.** Every server's default scope set includes writes:
-  Sentry `project:write`, `event:write`; GitHub `repo`, `write:packages`; Atlassian 40
+  Sentry `project:write`, `event:write`; GitHub `repo`, `write:packages`; Atlassian 38
   scopes, including `delete:jira` and writes to Confluence, Bitbucket and Loom.
   `auth login` prints the scopes it asks for; `--scope` narrows them.
 - **GitHub marks its list `cacheScope: "public"` on an authenticated request**, and
