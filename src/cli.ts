@@ -63,6 +63,8 @@ session options:
   --plan                print the steps without connecting or running anything
   --init                write a starter scenario from the server's menu (to --scenario,
                         default scenario.yml; never overwrites)
+  --union-out <path>    write every tool the session saw as a menu file, to commit as
+                        the baseline for diff (tools behind unlocks included)
 
 history options (best effort; installs and runs third-party code, so use a container):
   --versions <n|all>    number of published versions to inspect (default: 10)
@@ -115,6 +117,7 @@ export async function main(argv: string[]): Promise<number> {
       scenario: { type: 'string' },
       plan: { type: 'boolean' },
       init: { type: 'boolean' },
+      'union-out': { type: 'string' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
     },
@@ -217,6 +220,7 @@ export async function main(argv: string[]): Promise<number> {
     }
     const sessionTarget = parseTarget(rest, command, values.header ?? [], values.env ?? []);
     const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario });
+    if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
     if (output) process.stdout.write(output + '\n');
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;

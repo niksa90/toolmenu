@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareMenus } from '../dist/compare.js';
 import { changeFindings, clip, parseScenario, scopeOf, session, starterScenario, unlockers } from '../dist/session.js';
@@ -274,5 +274,21 @@ test('unlockers: a search filter named category is not an unlock; with an unlock
   assert.deepEqual(unlockers([search]).map((u) => u.tool.name), []);
   const enable = tool('enable_category', [], { ...ro, description: 'Enable more tools.', inputSchema: { type: 'object', properties: { category: { type: 'string', enum: ['audits'] } } } });
   assert.deepEqual(unlockers([enable]).map((u) => [u.tool.name, u.param]), [['enable_category', 'category']]);
+});
+
+test('the union menu holds every tool the session saw, first-seen order, and diffs like any menu', async () => {
+  const cwd = tempDir();
+  writeFileSync(join(cwd, 'unlock.yml'), 'steps:\n  - list\n  - call: unlock_toolset\n    args: { toolset: audits }\n');
+  const r = await run(['session', '--scenario', 'unlock.yml', '--union-out', 'union.json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')], { cwd });
+  assert.ok([0, 1].includes(r.code), r.stderr);
+  const union = JSON.parse(readFileSync(join(cwd, 'union.json'), 'utf8'));
+  assert.equal(union.toolmenu, 1);
+  const names = union.tools.map((t) => t.name);
+  assert.ok(names.includes('search_forms') && names.includes('unlock_toolset'));
+  assert.ok(names.some((n) => /audit/.test(n)), names.join(','));
+  // The core tools come first, the unlocked ones after.
+  assert.ok(names.indexOf('unlock_toolset') < names.findIndex((n) => /audit/.test(n)));
+  const d = await run(['diff', 'union.json', 'union.json'], { cwd });
+  assert.equal(d.code, 0);
 });
 

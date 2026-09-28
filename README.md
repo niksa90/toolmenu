@@ -87,6 +87,7 @@ and anything `session` caught. The same report goes to the job summary.
 | `env` | | Environment variables for a `command` server, one `KEY=value` per line |
 | `baseline` | `menu.json` | The committed snapshot to diff against |
 | `scenario` | | A scenario to run with `session` |
+| `baseline-from` | `snapshot` | `session` diffs every tool the scenario saw (the union menu), for servers whose tools appear after an unlock |
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
 | `fail-on` | `error` | Fail the job on findings at or above this level |
 | `comment` | `true` | Post and update the PR comment |
