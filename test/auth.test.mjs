@@ -24,7 +24,12 @@ test('auth login: register, authorize, exchange, and snapshot uses the login', a
   const server = await start();
   try {
     const p = port();
-    const result = await login(server.url, { port: p, open: browser() });
+    // The SDK warns when a provider can't keep the discovery state (SEP-2352).
+    const warnings = [];
+    const warn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(' '));
+    const result = await login(server.url, { port: p, open: browser() }).finally(() => (console.warn = warn));
+    assert.deepEqual(warnings.filter((w) => w.includes('mcp-sdk')), []);
     assert.equal(result.tools > 0, true);
     assert.equal(server.seen.registrations, 1);
     assert.equal(hasLogin(server.url), true);

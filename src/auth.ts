@@ -6,7 +6,7 @@ import { createServer } from 'node:http';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Client, StreamableHTTPClientTransport, UnauthorizedError } from '@modelcontextprotocol/client';
-import type { OAuthClientInformationContext, OAuthClientMetadata, OAuthClientProvider, StoredOAuthClientInformation, StoredOAuthTokens } from '@modelcontextprotocol/client';
+import type { OAuthClientInformationContext, OAuthClientMetadata, OAuthClientProvider, OAuthDiscoveryState, StoredOAuthClientInformation, StoredOAuthTokens } from '@modelcontextprotocol/client';
 import { VERSION } from './version.js';
 
 /**
@@ -24,6 +24,12 @@ interface Stored {
   clientInformation?: StoredOAuthClientInformation;
   tokens?: StoredOAuthTokens;
   codeVerifier?: string;
+  /**
+   * Which authorization server the login started with. The SDK checks the callback
+   * against it (SEP-2352): a code and PKCE verifier are never sent to another
+   * server's token endpoint.
+   */
+  discoveryState?: OAuthDiscoveryState;
   savedAt?: string;
 }
 
@@ -169,6 +175,14 @@ export class StoredOAuthProvider implements OAuthClientProvider {
     return v;
   }
 
+  async saveDiscoveryState(discoveryState: OAuthDiscoveryState): Promise<void> {
+    await this.update({ discoveryState });
+  }
+
+  async discoveryState(): Promise<OAuthDiscoveryState | undefined> {
+    return (await this.stored()).discoveryState;
+  }
+
   async invalidateCredentials(scope: 'all' | 'client' | 'tokens' | 'verifier' | 'discovery'): Promise<void> {
     const s = await this.stored();
     if (scope === 'all') {
@@ -180,6 +194,7 @@ export class StoredOAuthProvider implements OAuthClientProvider {
     if (scope === 'client') patch.clientInformation = undefined;
     if (scope === 'tokens') patch.tokens = undefined;
     if (scope === 'verifier') patch.codeVerifier = undefined;
+    if (scope === 'discovery') patch.discoveryState = undefined;
     await this.update(patch);
   }
 }
@@ -208,6 +223,9 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
   const callback = await listenForCallback(port, options.timeoutMs ?? 300_000);
   try {
     const provider = new StoredOAuthProvider(serverUrl, { ...options, port, interactive: true, onRedirect: options.open ?? openInBrowser });
+    // Each login discovers the authorization server afresh (a server may have
+    // moved); the state is then kept for the callback leg's check.
+    await provider.invalidateCredentials('discovery');
     const transport = new StreamableHTTPClientTransport(new URL(serverUrl), { authProvider: provider });
     const client = new Client({ name: 'toolmenu', version: VERSION });
     try {
@@ -300,6 +318,10 @@ function listenForCallback(port: number, timeoutMs: number): Promise<{ params: P
 
 /** Print the URL (always) and try to open it (best effort). */
 function openInBrowser(url: URL): void {
+  const scope = url.searchParams.get('scope');
+  // toolmenu only lists tools and calls read-only ones, but it asks for the
+  // server's default scopes, as other clients do: some servers show tools by scope.
+  if (scope) process.stderr.write(`Asking for the server's default scopes: ${scope} (narrower: --scope; toolmenu never calls a write tool on its own)\n`);
   process.stderr.write(`Opening your browser to log in. If it doesn't open, visit:\n  ${url.href}\n`);
   const [cmd, args] =
     process.platform === 'darwin' ? ['open', [url.href]] : process.platform === 'win32' ? ['cmd', ['/c', 'start', '""', url.href]] : ['xdg-open', [url.href]];
