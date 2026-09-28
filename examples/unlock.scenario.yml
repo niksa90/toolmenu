@@ -1,0 +1,14 @@
+# The unlock pattern from "I built 100+ tools for one MCP server", lesson 05.
+allow_writes: false
+steps:
+  - list
+  - call: search_forms
+    args: { query: onboarding }
+  - call: unlock_toolset
+    args: { toolset: audits }
+  - call: unlock_toolset
+    args: { toolset: reports }
+  - call: touch_descriptions
+  - list
+  - call: delete_form
+    args: { form_id: f_1, dry_run: true }
