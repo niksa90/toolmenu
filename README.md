@@ -92,70 +92,8 @@ and anything `session` caught. The same report goes to the job summary.
 | `comment` | `true` | Post and update the PR comment |
 | `version` | `latest` | toolmenu version from npm. The Action installs toolmenu from npm, so it needs a published version |
 
-`headers` only applies to a `url` server and `env` only to a `command` server; the
-Action warns if one is set for the other. Projects versioned only by git tags (Go,
-setuptools-scm) have no next version in a PR, so add `push: { tags: ['v*'] }` to
-`on:` to get the bump checked when you tag.
-
-**`command` checks the PR's code; `url` checks whatever is deployed at that URL.**
-With `command`, the job builds and starts the PR's version. With `url`, it connects
-to the live server, usually production, so the report is about that server, not the
-PR. To check the PR, either start the server inside the job and point `url` at
-`http://localhost:…`, or point it at a per-PR preview deployment. And with `url` plus
-a `scenario`, `session` calls that server for real on every push (read-only tools
-only, unless the scenario sets `allow_writes`).
-
-### Checking an HTTP server behind auth
-
-toolmenu has to talk to a running copy of your server. The simplest way to check a
-pull request is to start that copy inside the job, from the PR's code, and point
-toolmenu at it. The job starts the server, so the job also picks its key: make one
-up. It's a throwaway copy that only lives for that job, so no real secret is involved.
-
-```yaml
-# .github/workflows/toolmenu.yml, in your MCP server's repository
-on: pull_request
-permissions:
-  contents: read
-  pull-requests: write
-jobs:
-  toolmenu:
-    runs-on: ubuntu-latest
-    env:
-      # Made up: only this job's copy of the server uses it. Your server must read
-      # its key from MCP_API_KEY (or whatever variable it uses): that's the trick.
-      MCP_API_KEY: ci-only-key
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with: { node-version: 22 }
-      - run: npm ci && npm run build
-      - run: npm start &                # the PR's version, in the background (it keeps running for later steps)
-      - run: npx --yes wait-on --timeout 60000 tcp:localhost:3000   # fail after 60 s instead of hanging
-      - uses: niksa90/toolmenu@v0.7.0
-        with:
-          url: http://localhost:3000/mcp
-          headers: "x-mcp-api-key: ${{ env.MCP_API_KEY }}"
-          baseline: menu.json
-```
-
-Use your own start command, port and header name. If your server needs real
-credentials just to list its tools, pass test ones the same way. Listing tools
-usually doesn't touch the systems behind them.
-
-**Pull requests from forks don't get your repository's secrets**
-([GitHub docs](https://docs.github.com/actions/security-guides/using-secrets-in-github-actions)),
-and Dependabot's only get Dependabot secrets
-([GitHub docs](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions)),
-so on a server behind auth the key in `headers` or `env` comes through empty. The
-Action then skips the check with a note instead of failing the PR. It skips only
-when a secret is plainly missing: an empty value, or a remote server answering
-401/403. A 401 from a server inside the job (`localhost`, a service container) is
-a setup mistake, and fails. The setup that works for
-every PR is the one above: start the server inside the job (`command`, or `url`
-pointing at `localhost`), which needs no secret and checks the PR's own code. Don't
-switch to `pull_request_target` to get secrets: it runs the PR's code with them
-([GitHub's guidance](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target)).
+Server behind auth, or PRs from forks and Dependabot? See [docs/github-action.md](docs/github-action.md).
+A check skipped there for missing secrets still passes; the `skipped` output tells you.
 
 ## `session`: the menu changing while the agent works
 

@@ -155,3 +155,12 @@ test('action: a Node 22 fetched earlier in the job is reused, for toolmenu only'
   assert.match(r.args, /PATH=[^;]*oldbin/);
   assert.doesNotMatch(r.args, /PATH=[^;]*toolmenu-node/);
 });
+
+test('action: a skip sets the skipped output, a real run does not', () => {
+  const out = (dir) => ({ GITHUB_OUTPUT: join(dir, 'out.txt') });
+  let file;
+  runAction({ ...url, TOOLMENU_HEADERS: 'x-api-key: ', TOOLMENU_NO_SECRETS: 'true', STUB_CODE: '2', STUB_ERR: 'x' }, (dir) => ((file = join(dir, 'out.txt')), out(dir)));
+  assert.match(readFileSync(file, 'utf8'), /^skipped=true$/m);
+  runAction({ ...url, STUB_CODE: '0' }, (dir) => ((file = join(dir, 'out.txt')), out(dir)));
+  assert.match(readFileSync(file, 'utf8'), /^skipped=false$/m);
+});
