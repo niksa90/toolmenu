@@ -21,3 +21,6 @@
 - Needs Node 22 or later (Node 20 reached end of life in April 2026).
 - The Action: `headers` and `env` for servers behind auth; PRs without secrets are
   skipped with a note.
+- The Action runs the toolmenu release that matches its own tag by default
+  (`version: latest` for the newest), so a pinned Action keeps its CLI.
+- `ignore` in `diff` covers the token change and `tokenBudget` too.

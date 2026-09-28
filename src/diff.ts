@@ -116,11 +116,12 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
     });
   }
 
-  const tokens = tokenChange(before, after);
-  if (options.tokenBudget !== undefined && after.totalTokens > options.tokenBudget) {
+  // Ignored tools leave the token counts and the budget too.
+  const tokens = tokenChange(oldTools, newTools);
+  if (options.tokenBudget !== undefined && tokens.after > options.tokenBudget) {
     raw.push({
       rule: 'diff/token-budget',
-      message: `The menu is ~${fmt(after.totalTokens)} tokens, over the budget of ${fmt(options.tokenBudget)} (estimate).`,
+      message: `The menu is ~${fmt(tokens.after)} tokens, over the budget of ${fmt(options.tokenBudget)} (estimate).`,
     });
   }
 
@@ -394,10 +395,10 @@ function textDiff(before: string, after: string): string[] {
   return [`- ${cut(before) || '(none)'}`, `+ ${cut(after) || '(none)'}`];
 }
 
-function tokenChange(before: Menu, after: Menu): TokenChange {
-  const names = new Set([...before.tools, ...after.tools].map((t) => t.name));
-  const oldTokens = new Map(before.tools.map((t) => [t.name, t.tokens]));
-  const newTokens = new Map(after.tools.map((t) => [t.name, t.tokens]));
+function tokenChange(before: MenuTool[], after: MenuTool[]): TokenChange {
+  const names = new Set([...before, ...after].map((t) => t.name));
+  const oldTokens = new Map(before.map((t) => [t.name, t.tokens]));
+  const newTokens = new Map(after.map((t) => [t.name, t.tokens]));
   const tools = [...names]
     .map((name) => {
       const b = oldTokens.get(name) ?? 0;
@@ -406,7 +407,8 @@ function tokenChange(before: Menu, after: Menu): TokenChange {
     })
     .filter((t) => t.delta !== 0)
     .sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta));
-  return { before: before.totalTokens, after: after.totalTokens, delta: after.totalTokens - before.totalTokens, tools };
+  const total = (tools: MenuTool[]) => tools.reduce((sum, t) => sum + t.tokens, 0);
+  return { before: total(before), after: total(after), delta: total(after) - total(before), tools };
 }
 
 const BUMP_RANK: Record<Bump, number> = { none: 0, patch: 1, minor: 2, major: 3 };

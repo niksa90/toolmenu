@@ -3,6 +3,7 @@ import type { Transport } from '@modelcontextprotocol/client';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/client/stdio';
 import { eraOf } from './menu.js';
 import type { Era } from './types.js';
+import { VERSION } from './version.js';
 
 export type Target =
   | { kind: 'stdio'; command: string; args: string[]; env?: Record<string, string>; cwd?: string }
@@ -78,7 +79,7 @@ export interface ConnectOptions {
 }
 
 export async function connect(target: Target, options: ConnectOptions = {}): Promise<Connection> {
-  const client = new Client({ name: 'toolmenu', version: '0.7.0' }, { versionNegotiation: { mode: 'auto' } });
+  const client = new Client({ name: 'toolmenu', version: VERSION }, { versionNegotiation: { mode: 'auto' } });
   let transport: Transport;
   let stderrText = '';
 

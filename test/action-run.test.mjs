@@ -29,7 +29,7 @@ function runAction(env, setup) {
     args = readFileSync(join(dir, 'stub-cli.sh.snapshot.args'), 'utf8');
   } catch {}
   const ran = (cmd) => existsSync(join(dir, `stub-cli.sh.${cmd}.args`));
-  return { code: r.status, stdout: r.stdout, comment, args, ran };
+  return { code: r.status, stdout: r.stdout, stderr: r.stderr, comment, args, ran, dir };
 }
 
 const url = { TOOLMENU_URL: 'https://example.com/mcp' };
@@ -194,4 +194,18 @@ test('action: a tag push with a non-version tag fails instead of comparing with 
   assert.match(r.stdout, /::error title=toolmenu::'mcp-v1\.3\.0' isn't a version tag/);
   assert.doesNotMatch(r.stdout, /the server didn't start/);
   assert.equal(r.ran('diff'), false);
+});
+
+test('action: by default it runs the toolmenu release matching the Action, with no connection options', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_CLI: '' }, (dir) => {
+    const bin = join(dir, 'bin');
+    mkdirSync(bin);
+    writeFileSync(join(bin, 'npx'), '#!/usr/bin/env bash\nprintf "%s\\n" "$@" >> "$RUNNER_TEMP/npx.args"\nexit 2\n');
+    chmodSync(join(bin, 'npx'), 0o755);
+    return { PATH: `${bin}:${process.env.PATH}` };
+  });
+  const version = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
+  const args = readFileSync(join(r.dir, 'npx.args'), 'utf8').split('\n');
+  assert.ok(args.includes(`toolmenu@${version}`), args.join(' '));
+  assert.doesNotMatch(r.stdout + r.stderr, /unbound variable/);
 });
