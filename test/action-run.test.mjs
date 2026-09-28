@@ -134,7 +134,7 @@ function oldNode(dir, extra = '') {
   return bin;
 }
 
-test('action: on an unsupported platform with old Node, it says to add setup-node', () => {
+test('action: on an unsupported platform with old Node, it says to install Node 22', () => {
   const r = runAction({ ...url, STUB_CODE: '0' }, (dir) => ({ PATH: `${oldNode(dir, '#!/bin/sh\necho MINGW64_NT\n')}:${process.env.PATH}` }));
   assert.equal(r.code, 2);
   assert.match(r.stdout, /needs Node 22 or later, and this runner has Node 18\. Install Node 22 before the Action \(actions\/setup-node, or your container's package manager\)/);
@@ -170,4 +170,15 @@ test('action: an early stop still writes the outputs', () => {
   const r = runAction({ STUB_CODE: '0' }, (dir) => ((file = join(dir, 'out.txt')), { GITHUB_OUTPUT: file }));
   assert.equal(r.code, 2);
   assert.equal(readFileSync(file, 'utf8'), 'exit-code=2\nskipped=false\n');
+});
+
+test('action: a PR whose base branch cannot be fetched fails instead of comparing with itself', () => {
+  const r = runAction({ ...url, TOOLMENU_BASE_REF: 'main', STUB_CODE: '0' }, (dir) => {
+    writeFileSync(join(dir, 'menu.json'), '{}');
+    return {};
+  });
+  assert.equal(r.code, 2);
+  assert.match(r.comment, /Couldn't read the base branch/);
+  assert.match(r.stdout, /::warning title=toolmenu::Couldn't read the base branch/);
+  assert.equal(r.ran('diff'), false);
 });

@@ -206,11 +206,17 @@ else
   # 2. Compare with the baseline as it is on the base branch (or previous tag).
   BASE=$(base_ref)
   set_baseline
-  if [ -n "$BASELINE" ]; then
+  # A PR whose base couldn't be fetched (no git in the job, or no access), or a
+  # tag push outside a git checkout, would compare the change with itself.
+  if [ -z "$BASE" ] && { [ -n "${TOOLMENU_BASE_REF:-}" ] || { [[ "${GITHUB_REF:-}" == refs/tags/* ]] && ! git rev-parse --git-dir > /dev/null 2>&1; }; }; then
+    { echo "**Couldn't read the base branch, so there's nothing to compare with:** checking the change against its own \`${TOOLMENU_BASELINE:-menu.json}\` would hide every change. The Action needs git history in the job: see [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#git-history)."; echo; } >> "$BODY"
+    echo "::warning title=toolmenu::Couldn't read the base branch (no git in the job, or no access to fetch it), so the menu wasn't compared. See docs/github-action.md#git-history."
+    note 2
+  elif [ -n "$BASELINE" ]; then
     # shellcheck disable=SC2046
     $CLI diff --format markdown --fail-on "$FAIL_ON" $(release_args) "$BASELINE" "$OUT/current.json" > "$OUT/diff.md" 2> "$OUT/diff.err"
     code=$?; note "$code"
-    if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { cat "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
+    if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { sed -e "s/pass --release/set the Action's \`release\` input/" -e "s/Check the --release order/Check the order in the Action's \`release\` input/" "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
   else
     { echo "No baseline at \`${TOOLMENU_BASELINE:-menu.json}\`, so there's nothing to compare with yet. Commit the snapshot to start tracking changes:"; echo; echo '```sh'; echo "npx toolmenu snapshot $(hint_target)"; echo '```'; echo; } >> "$BODY"
   fi
