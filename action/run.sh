@@ -11,6 +11,13 @@ BODY="$OUT/comment.md"
 MARKER='<!-- toolmenu-report -->'
 FAIL_ON="${TOOLMENU_FAIL_ON:-error}"
 
+# Connection options, one per line: HTTP headers ("Name: value", e.g. an API key
+# from a secret) and environment variables for a stdio server ("KEY=value"). They
+# go to the CLI as arguments and never into the report.
+CONN=()
+while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--header "$line"); done <<< "${TOOLMENU_HEADERS:-}"
+while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--env "$line"); done <<< "${TOOLMENU_ENV:-}"
+
 if [ -n "${TOOLMENU_URL:-}" ]; then
   TARGET=("$TOOLMENU_URL")
 elif [ -n "${TOOLMENU_COMMAND:-}" ]; then
@@ -92,7 +99,7 @@ set_baseline() {
 } > "$BODY"
 
 # 1. Snapshot the menu this change produces.
-$CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
+$CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
 if [ "$code" -eq 2 ]; then
   { echo "**Couldn't snapshot the server.**"; echo; echo '```'; tail -20 "$OUT/snapshot.err"; echo '```'; } >> "$BODY"
@@ -115,7 +122,7 @@ fi
 
 # 3. Watch the menu during a scripted session.
 if [ -n "${TOOLMENU_SCENARIO:-}" ]; then
-  $CLI session --scenario "$TOOLMENU_SCENARIO" --format markdown --fail-on "$FAIL_ON" "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
+  $CLI session --scenario "$TOOLMENU_SCENARIO" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
   code=$?; note "$code"
   if [ "$code" -eq 2 ]; then { echo "**Session didn't run:** $(head -3 "$OUT/session.err")"; echo; } >> "$BODY"; else { cat "$OUT/session.md"; echo; } >> "$BODY"; fi
 fi
