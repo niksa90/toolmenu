@@ -23,6 +23,15 @@ Projects versioned only by git tags (Go, setuptools-scm) have no next version in
 PR, so `release: auto` has nothing to check there. Add `push: { tags: ['v*'] }` to
 `on:` to get the bump checked when you tag.
 
+## Git history
+
+The Action reads the baseline and the release versions from the PR's base branch
+(or the previous tag), so it needs git in the job. Container images often lack it,
+and without git `actions/checkout` downloads the files with no history. If the base
+can't be fetched, the check fails rather than compare the PR with itself: install
+git before `actions/checkout`, and keep the default `persist-credentials` on a
+private repo.
+
 ## Checking an HTTP server behind auth
 
 toolmenu has to talk to a running copy of your server. The simplest way to check a
