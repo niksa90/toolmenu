@@ -3,6 +3,8 @@ import { parse } from 'yaml';
 import { cacheBreak, compareMenus, type ToolChange } from './compare.js';
 import { connect, listTools, type Connection, type Target } from './connect.js';
 import { buildMenu } from './menu.js';
+import { isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
+import { varianceFinding } from './rules/determinism.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { verbOf, WRITE_VERBS } from './words.js';
@@ -91,6 +93,7 @@ export interface SessionResult {
   listening: boolean;
   baseline: { tools: number; tokens: number };
   final: { tools: number; tokens: number };
+  /** Undefined when not checked (processes: 1). */
   connectionCheck?: 'same' | 'different';
   steps: StepRecord[];
   findings: Finding[];
@@ -103,6 +106,8 @@ export interface SessionOptions {
   rules?: Record<string, Severity | 'off'>;
   ignore?: string[];
   scenarioName?: string;
+  /** Server processes (stdio) or connections (HTTP) to compare before the first step, the main one included (default 2). */
+  processes?: number;
 }
 
 type Raw = Omit<Finding, 'severity'> & { severity: Severity };
@@ -112,7 +117,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   const timeoutMs = options.timeoutMs ?? 30_000;
   const grace = options.noticeGraceMs ?? 500;
   const raw: Raw[] = [];
-  const conn = await connect(target, { timeoutMs });
+  // The main process runs with a pinned hash seed, and so does every scope probe:
+  // a probe with a different seed would count ordering variance as a change.
+  const mainTarget = seeded(target, MAIN_SEED);
+  const conn = await connect(mainTarget, { timeoutMs });
   try {
     const era = conn.era;
     const modern = era === 'modern';
@@ -131,21 +139,18 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     let current = await menuOf(conn);
     const baseline = current;
 
-    // Two fresh connections, same credentials, must see the same menu.
-    const fresh = await freshMenu(target, timeoutMs);
-    const connectionCheck = sameMenu(fresh, current) ? 'same' : 'different';
-    if (connectionCheck === 'different') {
-      const detail = describe(compareMenus(current.tools, fresh.tools));
-      if (target.kind === 'http') {
-        raw.push({
-          rule: 'session/connection-variance',
-          severity: modern ? 'error' : 'warn',
-          step: 0,
-          message: `A second connection with the same credentials got a different menu.${modern ? ' On 2026-07-28 the tool set MUST NOT vary per-connection.' : ''} Clients can't share a cached menu.`,
-          detail,
-        });
-      } else {
-        raw.push({ rule: 'session/connection-variance', severity: 'warn', step: 0, message: 'A second server process returned a different menu. Every client that starts this server gets its own menu, so none can share a cached prefix.', detail });
+    // Fresh processes or connections, same credentials, must see the same menu.
+    let connectionCheck: SessionResult['connectionCheck'];
+    for (const probe of await probeVariance(target, current.tools, options.processes ?? 2, timeoutMs)) {
+      if (probe.error) {
+        raw.push({ rule: target.kind === 'stdio' ? 'menu/process-variance' : 'menu/connection-variance', severity: 'info', step: 0, message: `Couldn't ${target.kind === 'stdio' ? 'start a second server process' : 'open a second connection'} to compare menus, so this wasn't checked: ${probe.error.split('\n')[0]}` });
+        continue;
+      }
+      const f = varianceFinding(current.tools, probe.tools ?? [], { transport: target.kind, modern, wrapper: isContainerWrapper(target) });
+      connectionCheck = f ? 'different' : connectionCheck ?? 'same';
+      if (f) {
+        raw.push({ ...f, step: 0 });
+        break;
       }
     }
 
@@ -247,7 +252,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         }
 
         if (step.kind !== 'list') {
-          const probe = await freshMenu(target, timeoutMs);
+          const probe = await probeMenu(mainTarget, timeoutMs);
           record.scope = scopeOf(changes, next.tools, probe.tools, target.kind);
           raw.push(...scopeFindings(record.scope, modern, index));
         }
@@ -277,19 +282,6 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
 
 function serverOf(c: Connection): Menu['server'] {
   return { name: c.server.name, version: c.server.version, protocolVersion: c.protocolVersion, era: c.era };
-}
-
-async function freshMenu(target: Target, timeoutMs: number): Promise<Menu> {
-  const c = await connect(target, { timeoutMs });
-  try {
-    return buildMenu((await listTools(c, { timeoutMs })).tools, serverOf(c));
-  } finally {
-    await c.close().catch(() => {});
-  }
-}
-
-function sameMenu(a: Menu, b: Menu): boolean {
-  return compareMenus(a.tools, b.tools).length === 0;
 }
 
 function waitFor(done: () => boolean, ms: number): Promise<boolean> {
@@ -444,7 +436,11 @@ export type { Era };
  * back it up. Words like "scope" or "mode" alone say nothing: `get_my_scope_ids`
  * changes no menu.
  */
-const UNLOCK_PARAM = /^(?:domains?|toolsets?|tool_?sets?|capabilit(?:y|ies)|categor(?:y|ies)|modules?|features?|groups?|packs?|bundles?|namespaces?)$/i;
+// A parameter that names what to unlock. Strong names say so alone; weak ones
+// (`category` is also a search filter: GitHub, Firecrawl) need the tool's name or
+// description to back them up.
+const UNLOCK_PARAM = /^(?:domains?|toolsets?|tool_?sets?|capabilit(?:y|ies)|packs?|bundles?|namespaces?)$/i;
+const WEAK_UNLOCK_PARAM = /^(?:categor(?:y|ies)|modules?|features?|groups?)$/i;
 const UNLOCK_NAME = /unlock|enable|activate|capabilit|toolset|load_?tools|expand/i;
 const UNLOCK_DESC = /(?:unlock|enable|activate|load|expose|add)s?[^.]{0,60}tools?|more tools|toolsets?|capabilit(?:y|ies)|unlock/i;
 
@@ -486,7 +482,8 @@ export function unlockers(tools: MenuTool[]): Unlocker[] {
   const found: Unlocker[] = [];
   for (const tool of tools) {
     const props = tool.inputSchema?.properties ?? {};
-    const param = Object.keys(props).find((p) => UNLOCK_PARAM.test(p));
+    const backed = UNLOCK_NAME.test(tool.name) || UNLOCK_DESC.test(tool.description ?? '');
+    const param = Object.keys(props).find((p) => UNLOCK_PARAM.test(p)) ?? (backed ? Object.keys(props).find((p) => WEAK_UNLOCK_PARAM.test(p)) : undefined);
     let score = 0;
     if (param) score += enumOf(props[param]).length ? 3 : 2;
     if (UNLOCK_NAME.test(tool.name)) score += 2;

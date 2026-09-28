@@ -27,6 +27,16 @@ const MENUS = {
   ],
   badschema: () => [{ name: 'no_schema', description: 'Missing inputSchema.' }],
   clean: () => [{ name: 'ping_service', description: 'Check the service is up.', inputSchema: obj({}), annotations: { readOnlyHint: true } }],
+  // Like mcp-atlassian 0.23.1: a default built from a set, in the process's hash
+  // order. Stable within a process, different per PYTHONHASHSEED (and per process
+  // when it's unset).
+  seedorder: () => {
+    const fields = ['summary', 'status', 'assignee', 'labels', 'priority'];
+    const seed = process.env.PYTHONHASHSEED ?? String(process.pid);
+    const shift = [...seed].reduce((n, c) => n + c.charCodeAt(0), 0) % fields.length;
+    const order = [...fields.slice(shift), ...fields.slice(0, shift)];
+    return [{ name: 'get_issue', description: 'Get an issue.', inputSchema: obj({ issue_key: str, fields: { type: 'string', default: order.join(',') } }, ['issue_key']), annotations: { readOnlyHint: true } }];
+  },
 };
 
 let calls = 0;

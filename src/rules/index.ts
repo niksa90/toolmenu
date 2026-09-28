@@ -1,7 +1,7 @@
 import type { Finding, Severity } from '../types.js';
 import { SEVERITY_RANK } from '../types.js';
 import { buried, cut } from './description.js';
-import { nondeterministic } from './determinism.js';
+import { connectionVariance, nondeterministic, processVariance } from './determinism.js';
 import { authoredIds } from './ids.js';
 import { route, sharedWord, vagueId } from './naming.js';
 import { cacheHints, deprecated, discover, schema } from './spec.js';
@@ -12,6 +12,8 @@ export type { Rule, RuleContext } from './rule.js';
 
 export const MENU_RULES: Rule[] = [
   nondeterministic,
+  processVariance,
+  connectionVariance,
   vagueId,
   sharedWord,
   route,

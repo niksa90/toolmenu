@@ -1,5 +1,6 @@
 import { connect, listTools, type Target } from './connect.js';
 import { buildMenu } from './menu.js';
+import { isContainerWrapper, MAIN_SEED, probeVariance, seeded } from './probe.js';
 import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
 import type { Routes } from './routes.js';
 import type { Finding, Menu } from './types.js';
@@ -9,6 +10,11 @@ export interface SnapshotOptions extends RuleSettings {
   timeoutMs?: number;
   descriptionLimit?: number | string;
   fullDescriptions?: string[];
+  /**
+   * Server processes (stdio) or connections (HTTP) to compare, the main one
+   * included. Default 2; 1 turns the check off.
+   */
+  processes?: number;
 }
 
 export interface SnapshotResult {
@@ -18,9 +24,12 @@ export interface SnapshotResult {
 
 /** Establish the menu: connect, list the tools twice, run the menu rules. */
 export async function snapshot(target: Target, options: SnapshotOptions = {}): Promise<SnapshotResult> {
-  const connection = await connect(target, { timeoutMs: options.timeoutMs });
+  const connection = await connect(seeded(target, MAIN_SEED), { timeoutMs: options.timeoutMs });
+  let menu: Menu;
+  let secondList: Menu['tools'];
+  let first: Awaited<ReturnType<typeof listTools>>;
   try {
-    const first = await listTools(connection, options);
+    first = await listTools(connection, options);
     const second = await listTools(connection, options);
     const server = {
       name: connection.server.name,
@@ -28,26 +37,8 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
       protocolVersion: connection.protocolVersion,
       era: connection.era,
     };
-    const menu = buildMenu(first.tools, server, first.listMeta);
-    const secondMenu = buildMenu(second.tools, server, second.listMeta);
-    const findings = runRules(
-      MENU_RULES,
-      {
-        menu,
-        secondList: secondMenu.tools,
-        pages: first.pages,
-        clientError: first.clientError,
-        protocolVersion: connection.protocolVersion,
-        era: connection.era,
-        capabilities: connection.capabilities,
-        usedAuth: connection.usedAuth,
-        routes: options.routes,
-        descriptionLimit: options.descriptionLimit,
-        fullDescriptions: options.fullDescriptions,
-      },
-      options,
-    );
-    return { menu, findings };
+    menu = buildMenu(first.tools, server, first.listMeta);
+    secondList = buildMenu(second.tools, server, second.listMeta).tools;
   } catch (error) {
     const stderr = connection.stderr().trim();
     if (stderr && error instanceof Error) error.message += `\nserver stderr:\n${stderr}`;
@@ -55,4 +46,30 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
   } finally {
     await connection.close().catch(() => {});
   }
+
+  // After the main process has exited: a server that holds a file or a port
+  // shouldn't have to share it with its own probe.
+  const probes = await probeVariance(target, menu.tools, options.processes ?? 2, options.timeoutMs ?? 30_000);
+
+  const findings = runRules(
+    MENU_RULES,
+    {
+      menu,
+      secondList,
+      pages: first.pages,
+      clientError: first.clientError,
+      protocolVersion: connection.protocolVersion,
+      era: connection.era,
+      capabilities: connection.capabilities,
+      usedAuth: connection.usedAuth,
+      routes: options.routes,
+      descriptionLimit: options.descriptionLimit,
+      fullDescriptions: options.fullDescriptions,
+      transport: target.kind,
+      probes,
+      wrapper: isContainerWrapper(target),
+    },
+    options,
+  );
+  return { menu, findings };
 }

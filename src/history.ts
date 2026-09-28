@@ -172,7 +172,8 @@ async function inspectVersion(
     try {
       result = await snapshot(
         { kind: 'stdio', command: command[0], args: [...command.slice(1), ...(options.args ?? [])], env: options.env, cwd: dir },
-        { timeoutMs: options.timeoutMs ?? 30_000 },
+        // One process per version: history already starts one for each, and runs long.
+        { timeoutMs: options.timeoutMs ?? 30_000, processes: 1 },
       );
     } catch (error) {
       return { row: fail(row, classifyFailure(error), error) };

@@ -1,0 +1,22 @@
+github|GITHUB_PERSONAL_ACCESS_TOKEN=ghp_dummy|github-mcp-server stdio
+github-all|GITHUB_PERSONAL_ACCESS_TOKEN=ghp_dummy|github-mcp-server stdio --toolsets all
+github-legacy-npm|GITHUB_PERSONAL_ACCESS_TOKEN=ghp_dummy|mcp-server-github
+atlassian|JIRA_URL=https://example.atlassian.net JIRA_USERNAME=a@example.com JIRA_API_TOKEN=dummy CONFLUENCE_URL=https://example.atlassian.net/wiki CONFLUENCE_USERNAME=a@example.com CONFLUENCE_API_TOKEN=dummy|mcp-atlassian
+jira-aashari|ATLASSIAN_SITE_NAME=example ATLASSIAN_USER_EMAIL=a@example.com ATLASSIAN_API_TOKEN=dummy|mcp-atlassian-jira
+sentry||sentry-mcp --access-token=dummy
+firecrawl|FIRECRAWL_API_KEY=fc-dummy|firecrawl-mcp
+figma||figma-developer-mcp --figma-api-key=dummy --stdio
+miro|MIRO_ACCESS_TOKEN=dummy|mcp-miro
+notion|NOTION_TOKEN=ntn_dummy|notion-mcp-server
+playwright||playwright-mcp
+chrome-devtools||chrome-devtools-mcp
+context7||context7-mcp
+supabase||mcp-server-supabase --access-token=dummy
+brave|BRAVE_API_KEY=dummy|brave-search-mcp-server
+hubspot|PRIVATE_APP_ACCESS_TOKEN=dummy|mcp-hubspot
+browserbase|BROWSERBASE_API_KEY=dummy BROWSERBASE_PROJECT_ID=dummy|mcp-server-browserbase
+mongodb||mongodb-mcp-server
+exa|EXA_API_KEY=dummy|exa-mcp-server
+tavily|TAVILY_API_KEY=dummy|tavily-mcp
+apify|APIFY_TOKEN=dummy|actors-mcp-server
+everything||mcp-server-everything
