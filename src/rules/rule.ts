@@ -14,6 +14,12 @@ export interface RuleContext {
   capabilities: Record<string, unknown>;
   usedAuth: boolean;
   routes?: Routes;
+  /** stdio or HTTP: which variance rule applies. */
+  transport?: 'stdio' | 'http';
+  /** Menus from fresh processes (stdio) or connections (HTTP), for the variance rules. */
+  probes?: import('./determinism.js').Probe[];
+  /** The stdio command is a container wrapper (docker run …): env vars may not reach the server. */
+  wrapper?: boolean;
   /** Where clients are assumed to cut tool descriptions (description/buried). */
   descriptionLimit?: number | string;
   /** Tools (names or globs) the client sends uncut, so description/buried skips them. */

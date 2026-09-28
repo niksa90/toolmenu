@@ -1,6 +1,6 @@
 {
   "name": "toolmenu",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Lint your MCP server's tool menu for changes that confuse agents or break caches.",
   "author": "Niksa (https://niksa.me)",
   "main": "dist/index.js",

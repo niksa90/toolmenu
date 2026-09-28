@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareMenus } from '../dist/compare.js';
-import { changeFindings, clip, parseScenario, scopeOf, session, starterScenario } from '../dist/session.js';
+import { changeFindings, clip, parseScenario, scopeOf, session, starterScenario, unlockers } from '../dist/session.js';
 import { parse as parseYaml } from 'yaml';
 import { FIXTURES, ROOT, menuOf, run, tempDir, tool } from './helpers.mjs';
 import { start as startSdkHttp } from './fixtures/http-server.mjs';
@@ -51,7 +51,7 @@ test('changeFindings: append is a warning (tools come first in the prompt), ever
   const inserted = find(menuOf([tool('a'), tool('x'), tool('b'), tool('c')]).tools);
   assert.deepEqual(inserted.map((f) => f.rule), ['session/mid-insert']);
   assert.match(inserted[0].message, /position 1 \(x\)/);
-  assert.match(inserted[0].detail[0], /positions 1–3/);
+  assert.match(inserted[0].detail[0], /change starts at position 1; .*this server's part: ~\d+ tokens/);
 
   assert.deepEqual(find(menuOf([tool('b'), tool('a'), tool('c')]).tools).map((f) => f.rule), ['session/reorder']);
   assert.deepEqual(find(menuOf([tool('a'), tool('c')]).tools).map((f) => f.rule), ['session/remove']);
@@ -103,10 +103,21 @@ test('allow_writes lets the scenario call a destructive tool', async () => {
 });
 
 test('a tool that returns an error is a warning, not a clean step', async () => {
-  const r = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'expired' } }, { call: 'get_form', args: { form_id: 'f_1' } }] }), { timeoutMs: 15_000 });
+  const r = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'broken' } }, { call: 'get_form', args: { form_id: 'f_1' } }] }), { timeoutMs: 15_000 });
   assert.deepEqual(byStep(r), ['1:session/tool-error']);
   assert.equal(r.findings[0].severity, 'warn');
-  assert.match(r.findings[0].message, /401 Unauthorized: token expired/);
+  assert.match(r.findings[0].message, /The form definition is corrupt/);
+});
+
+test('calls that fail on credentials are one session/untested finding: warn if some got through, error if none did', async () => {
+  const some = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'expired' } }, { call: 'get_form', args: { form_id: 'f_1' } }] }), { timeoutMs: 15_000 });
+  assert.deepEqual(byStep(some), ['undefined:session/untested']);
+  assert.equal(some.findings[0].severity, 'warn');
+  assert.match(some.findings[0].message, /^1 of 2 tool calls failed before reaching the tool: 1 on authentication/);
+  assert.equal(some.steps[0].failure, 'auth');
+  const none = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'expired' } }] }), { timeoutMs: 15_000 });
+  assert.equal(none.findings.find((f) => f.rule === 'session/untested').severity, 'error');
+  assert.match(none.findings[0].message, /^All 1 tool calls failed/);
 });
 
 test('clip: never splits a character, drops a server\'s broken tail', () => {
@@ -177,7 +188,7 @@ test('http: menus that differ per connection are caught before the first step', 
   try {
     const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: 15_000 });
     assert.equal(r.connectionCheck, 'different');
-    assert.deepEqual(byStep(r), ['0:session/connection-variance']);
+    assert.deepEqual(byStep(r), ['0:menu/connection-variance']);
   } finally {
     await server.close();
   }
@@ -193,7 +204,7 @@ test('cli: session output, --plan and usage errors', async () => {
   assert.equal(r.code, 1, r.stderr);
   assert.match(r.stdout, /^step 3: call unlock_toolset \{"toolset":"audits"\} · menu changed · list_changed received · scope: per-process$/m);
   assert.match(r.stdout, /ERROR  session\/mid-insert\n\s+\+2 tools inserted at position 1 \(list_team_audits, get_team_audit\)/);
-  assert.match(r.stdout, /estimated tokens of the tool list from position 1 on \(positions 1–6\), a floor/);
+  assert.match(r.stdout, /the change starts at position 1; any change to the tool list invalidates the cached prompt/);
 
   const gh = await run(['session', '--format', 'github', '--scenario', scenario, ...server], { cwd: dir });
   assert.match(gh.stdout, /^::error title=toolmenu session\/mid-insert::step 3 \(call unlock_toolset/m);
@@ -255,3 +266,13 @@ test('cli: session --init writes a scenario and never overwrites', async () => {
   const s = await run(['session', '--scenario', 'scenario.yml', ...server], { cwd: dir });
   assert.match(s.stdout, /session\/edit/, 'the starter scenario alone catches the description rewrite');
 });
+
+test('unlockers: a search filter named category is not an unlock; with an unlock signal it is (FINDINGS F12)', () => {
+  const ro = { annotations: { readOnlyHint: true } };
+  const categories = { type: 'array', items: { type: 'string', enum: ['github', 'research', 'pdf'] } };
+  const search = tool('firecrawl_search', [], { ...ro, description: 'Search the web.', inputSchema: { type: 'object', properties: { query: { type: 'string' }, categories } } });
+  assert.deepEqual(unlockers([search]).map((u) => u.tool.name), []);
+  const enable = tool('enable_category', [], { ...ro, description: 'Enable more tools.', inputSchema: { type: 'object', properties: { category: { type: 'string', enum: ['audits'] } } } });
+  assert.deepEqual(unlockers([enable]).map((u) => [u.tool.name, u.param]), [['enable_category', 'category']]);
+});
+

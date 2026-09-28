@@ -14,6 +14,7 @@ import { buildMenu } from './menu.js';
 import { existsSync } from 'node:fs';
 import { loadRoutes } from './routes.js';
 import { snapshot } from './snapshot.js';
+import { MAIN_SEED, seeded } from './probe.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
 import { VERSION } from './version.js';
 
@@ -46,6 +47,8 @@ Options:
   --env <K=V>         environment variable for a stdio server, repeatable. The server
                       only gets a minimal environment (PATH, HOME, ...) plus these
   --timeout <ms>      per-request timeout (default: 30000)
+  --processes <n>     server processes (stdio) or connections (HTTP) to compare,
+                      the main one included (default: 2; 1 turns the check off)
   -h, --help          show this help
   -v, --version       show the version
 
@@ -97,6 +100,7 @@ export async function main(argv: string[]): Promise<number> {
       header: { type: 'string', multiple: true },
       env: { type: 'string', multiple: true },
       timeout: { type: 'string' },
+      processes: { type: 'string' },
       versions: { type: 'string' },
       release: { type: 'string' },
       'server-version-is-release': { type: 'boolean' },
@@ -135,6 +139,8 @@ export async function main(argv: string[]): Promise<number> {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new UsageError(`--timeout must be a positive number of milliseconds`);
 
   const config = await loadConfig(values.config);
+  const processes = values.processes !== undefined ? Number(values.processes) : config.processes ?? 2;
+  if (!Number.isInteger(processes) || processes < 1) throw new UsageError('--processes must be a whole number, 1 or more');
 
   if (sub === 'diff') {
     if (command) throw new UsageError('diff compares two menu files; it doesn\'t start a server. Run snapshot first.');
@@ -185,7 +191,7 @@ export async function main(argv: string[]): Promise<number> {
     const path = values.scenario ?? 'scenario.yml';
     if (existsSync(path)) throw new UsageError(`${path} already exists. Pick another path with --scenario.`);
     const initTarget = parseTarget(rest, command, values.header ?? [], values.env ?? []);
-    const conn = await connect(initTarget, { timeoutMs });
+    const conn = await connect(seeded(initTarget, MAIN_SEED), { timeoutMs });
     try {
       const list = await listTools(conn, { timeoutMs });
       const menu = buildMenu(list.tools, { name: conn.server.name, version: conn.server.version, protocolVersion: conn.protocolVersion });
@@ -210,7 +216,7 @@ export async function main(argv: string[]): Promise<number> {
       return 0;
     }
     const sessionTarget = parseTarget(rest, command, values.header ?? [], values.env ?? []);
-    const result = await session(sessionTarget, scenario, { timeoutMs, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario });
+    const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario });
     const output = formatSession(result, format);
     if (output) process.stdout.write(output + '\n');
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
@@ -220,7 +226,7 @@ export async function main(argv: string[]): Promise<number> {
   const routesPath = values.routes ?? config.routes;
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
-  const { menu, findings } = await snapshot(target, { routes, timeoutMs, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const { menu, findings } = await snapshot(target, { routes, timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');

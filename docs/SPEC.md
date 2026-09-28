@@ -171,12 +171,15 @@ SESSION  scenario.yml
 step 3: call unlock_toolset { toolset: "audits" }
   ERROR session/mid-insert
     +3 tools inserted at position 42 (list_team_audits, get_team_audit, …)
-    ~14,200 estimated tokens of the tool list from position 42 on (positions 42–118), a floor
+    the change starts at position 42; any change to the tool list invalidates the cached
+    prompt, so the whole tool list (this server's part: ~31,000 tokens, estimate) and the
+    conversation after it are processed again
 
 step 5: list
   ERROR session/edit
     get_form: description changed (no tool call in between)
-    ~9,800 estimated tokens of the tool list from position 17 on (positions 17–118), a floor
+    the change starts at position 17; … the whole tool list (~31,000 tokens) and the
+    conversation after it are processed again
 ```
 
 That turns "something bad happened" into "this operation changed the menu in a
@@ -643,6 +646,9 @@ before 0.7.0:
   tool appended mid-session still re-processes the whole conversation, unless the
   client adds new tools after the cached content (tool search / deferred loading).
   `session/append` is now a warning, and the mid-list estimate is labelled as a floor.
+  (0.8 goes further: the estimate "from position p on" still implied the prompt before
+  p stayed cached. Findings now give the whole tool list's size and where the change
+  starts.)
 - **Key order counts.** Comparisons for caching and determinism are byte-exact now:
   a new property order is a `serialization` change. `diff` between releases stays
   semantic.
@@ -670,3 +676,38 @@ before 0.7.0:
   prerelease, with one semver parser shared by `diff` and `history`; and piping into
   `head` keeps the exit code instead of crashing on EPIPE.
 
+
+## 21. 0.8: a second process, and setup failures told apart
+
+From running 0.7 on 25 public servers (FINDINGS F12) and an independent review of
+the plan (docs/plans/0.8-roadmap.md).
+
+- **A second process.** `menu/nondeterministic` lists twice on one connection, which
+  can't see a menu that's stable within a process and different in the next one.
+  mcp-atlassian 0.23.1 is that case: a tool default built from a Python `set`. So
+  `snapshot` starts a second process (stdio) or connection (HTTP) and compares
+  (`menu/process-variance`, `menu/connection-variance`; HTTP retries once, for rolling
+  deploys). `--processes <n>`, default 2.
+- **Pinned hash seed.** The main process runs with `PYTHONHASHSEED=0` unless the user
+  set it: a Python server's saved menu is then the same on every run, so `diff` and
+  the Action don't report set order as a change. The probe gets another seed, so the
+  bug shows every time, not by chance. The seed covers `str`/`bytes` hashing (sets of
+  strings); Go and Rust maps vary per process with no env var, and the second process
+  catches those by chance. A server started through `docker run` doesn't get the
+  seed unless it's passed with `-e`; findings say so. `session`'s scope probes use
+  the main seed, so ordering variance can't leak into scope verdicts.
+- **The value that differs.** Variance and determinism findings name the JSON path
+  and both values, and spot the same items in a different order.
+- **Setup failures.** With dummy credentials, most calls in a session fail on
+  authentication, and 0.7 reported each as `session/tool-error` or
+  `session/step-failed`. Failures are classified by their text (patterns from the
+  corpus's real errors): authentication, something missing on the machine, the
+  network, a 404 on a call that named nothing, invalid arguments, other. The first
+  four are one `session/untested` finding: a warning, or an error when no call got
+  through, so an expired CI secret can't pass a run that tested nothing.
+- **Cache wording.** "~N tokens from position p on, a floor" implied the prompt
+  before p stayed cached, which §20 already says isn't so. Findings now give where
+  the change starts and the whole tool list's size.
+- **Heuristics.** `ids/authored` became `info`, one finding per kind of ID, with
+  abbreviations (`org` = `organization`), no kind for a lone qualifier (`parentId`),
+  and "found in the URL" as a source. `naming/vague-id` dropped `ref`.
