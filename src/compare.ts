@@ -110,13 +110,19 @@ function longestIncreasingRun(values: number[]): Set<number> {
 export interface CacheBreak {
   /** First position where the newer menu stops matching the older one. */
   position: number;
-  /** Estimated tokens of the newer menu from that position to the end. */
+  /**
+   * Estimated tokens of the newer tool list from that position to the end.
+   * A floor, not the cost: most clients send the tool list at the start of the
+   * prompt (Claude's Messages API renders tools first), so everything after the
+   * list, the system prompt and the whole conversation, is processed again too.
+   */
   tokensAffected: number;
 }
 
 /**
- * Where a prompt cache holding `before` would stop matching `after`.
- * Null when `after` only appends to `before` (the cached prefix stays valid).
+ * Where the tool list itself stops matching between `before` and `after`.
+ * Null when `after` only appends to `before`. That keeps the tool list a valid
+ * prefix of itself, not the conversation's cache: see session/append.
  */
 export function cacheBreak(before: MenuTool[], after: MenuTool[]): CacheBreak | null {
   let i = 0;

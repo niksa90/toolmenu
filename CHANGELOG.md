@@ -7,8 +7,9 @@
   buried instructions, vague and invented IDs, unannotated writes, routing
   (`routes.yml`).
 - `session`: runs a scripted session and reports every mid-session menu change with
-  the step that caused it, where in the list it happened and the cached prefix it
-  affects; flags per-connection changes ruled out by 2026-07-28. `--init` writes a
+  the step that caused it and where in the list it happened (any mid-session change
+  to a tool list sent at the start of the prompt invalidates the cached conversation;
+  appends are only cache-safe with tool search); flags per-connection changes ruled out by 2026-07-28. `--init` writes a
   starter scenario that finds unlock tools and unlocks for real.
 - `diff`: breaking, minor and notice changes between two menus, the token change,
   and a suggested semver bump, checked against release versions (`--release`).

@@ -297,7 +297,7 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
   const out: Raw[] = [];
   const brk = cacheBreak(before, after);
   const cost = brk
-    ? [`~${brk.tokensAffected.toLocaleString('en-US')} estimated tokens of cached prefix affected (positions ${brk.position}–${after.length - 1})`]
+    ? [`~${brk.tokensAffected.toLocaleString('en-US')} estimated tokens of the tool list from position ${brk.position} on (positions ${brk.position}–${after.length - 1}), a floor: with the tool list at the start of the prompt, the conversation after it is processed again too`]
     : [];
   const why = origin ? [origin] : [];
 
@@ -312,9 +312,9 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
       const tokens = after.filter((t) => names.includes(t.name)).reduce((s, t) => s + t.tokens, 0);
       out.push({
         rule: 'session/append',
-        severity: 'info',
+        severity: 'warn',
         step,
-        message: `+${names.length} tool${names.length === 1 ? '' : 's'} appended at the end (${names.join(', ')}). Usually the most cache-friendly change: the prefix before them can stay valid.`,
+        message: `+${names.length} tool${names.length === 1 ? '' : 's'} appended at the end of the list (${names.join(', ')}). The end of the tool list isn't the end of the prompt: most clients send tools first (Claude's Messages API does), so any change to them, an append too, invalidates the cached conversation after them. Appends are cache-safe only if your client adds new tools after the cached content, as tool search (deferred loading) does.`,
         detail: [`~${tokens.toLocaleString('en-US')} new tokens (estimate)`, ...why],
       });
     } else {
@@ -323,7 +323,7 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
         rule: 'session/mid-insert',
         severity: 'error',
         step,
-        message: `+${names.length} tool${names.length === 1 ? '' : 's'} inserted at position ${first} (${names.join(', ')}). Can break the prompt cache from there on.`,
+        message: `+${names.length} tool${names.length === 1 ? '' : 's'} inserted at position ${first} (${names.join(', ')}). Invalidates the cached prompt from that tool on, and the conversation after the tool list.`,
         detail: [...cost, ...why],
       });
     }
