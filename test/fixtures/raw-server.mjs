@@ -57,10 +57,16 @@ const OPERATIONS = [
 /** What the search tool answers: operations whose name shares a word with the query. */
 function search(query) {
   const words = query.toLowerCase().split(/\W+/);
-  const hits = OPERATIONS.filter((op) => op.name.split('_').some((w) => words.some((q) => q && (w.startsWith(q) || q.startsWith(w)))));
+  const match = (w, q) => q && (w.startsWith(q) || q.startsWith(w));
+  // Ranked like a real search: the operation whose name matches most query words first.
+  const score = (op) => op.name.split('_').filter((w) => words.some((q) => match(w, q))).length;
+  const hits = OPERATIONS.filter((op) => score(op) > 0).sort((a, b) => score(b) - score(a));
   if (fixture === 'catalog-inputs') {
-    const results = hits.map((op) => ({ name: op.name, description: op.description, executeTool: 'execute_op', inputs: Object.entries(op.inputSchema.properties).map(([name, p]) => ({ name, type: p.type === 'integer' ? 'number' : p.type, ...(p.type === 'integer' ? { integer: true } : {}), required: op.inputSchema.required.includes(name) })) }));
-    return { content: [{ type: 'text', text: JSON.stringify({ results }) }] };
+    // Like Atlassian's discover: the best match as JSON, then a prose list of other
+    // operations (which makes the text invalid JSON as a whole).
+    const others = OPERATIONS.filter((op) => !hits.slice(0, 1).includes(op)).map((op) => `  ${op.name} — ${op.description}`).join('\n');
+    const results = hits.slice(0, 1).map((op) => ({ name: op.name, description: op.description, executeTool: 'execute_op', inputs: Object.entries(op.inputSchema.properties).map(([name, p]) => ({ name, type: p.type === 'integer' ? 'number' : p.type, ...(p.type === 'integer' ? { integer: true } : {}), required: op.inputSchema.required.includes(name) })) }));
+    return { content: [{ type: 'text', text: `${JSON.stringify({ results })}\n\nRelated operations:\n${others}` }] };
   }
   return { content: [{ type: 'text', text: JSON.stringify({ query, results: hits }) }], structuredContent: { query, results: hits } };
 }

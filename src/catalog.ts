@@ -28,6 +28,12 @@ export interface CatalogOptions {
   timeoutMs?: number;
   /** Pause between queries, ms (default 300): hosted servers rate-limit searches (Sentry did). */
   pauseMs?: number;
+  /** Follow the catalog's own words: search for each operation found or mentioned (default true). */
+  crawl?: boolean;
+  /** At most this many queries (default 200). */
+  maxQueries?: number;
+  /** Stop after this many queries in a row find nothing new (default 20): the catalog is exhausted. */
+  stopAfter?: number;
 }
 
 const QUERY_PARAM = /^(q|query|search|keywords?|text)$/i;
@@ -62,12 +68,32 @@ export async function readCatalog(conn: Connection, tools: MenuTool[], options: 
   if (!tool) throw new Error(options.tool ? `--catalog: no tool named ${options.tool} in the menu.` : '--catalog: no catalog search tool in the menu (read-only, one required query, named like search_*_tools or discover). Name it with catalog.tool in the config.');
   const queryParam = tool.inputSchema!.required![0];
   const limit = limitArg(tool.inputSchema);
-  const queries = options.queries ?? defaultQueries(tools);
+  // Seeds, then the catalog's own words: every operation found or mentioned is
+  // searched for by name, which finds it and its neighbours. Breadth first, in the
+  // order found, so the same catalog gives the same queries.
+  const queue = [...new Set(options.queries ?? [...describedExamples(tool), ...defaultQueries(tools)])];
+  const crawl = options.crawl ?? true;
+  // Crawl until the catalog stops yielding: a small one ends early, a big one
+  // (Atlassian's ~300 operations) goes on, up to the cap.
+  const maxQueries = options.maxQueries ?? 200;
+  const stopAfter = options.stopAfter ?? 20;
+  let dry = 0;
+  const asked: string[] = [];
+  const queued = new Set(queue);
+  const enqueue = (name: string) => {
+    const q = phrase(name);
+    if (crawl && q && !queued.has(q)) {
+      queued.add(q);
+      queue.push(q);
+    }
+  };
   const found = new Map<string, MenuTool>();
   const failed: { query: string; error: string }[] = [];
   const pause = options.pauseMs ?? 300;
-  for (const [i, query] of queries.entries()) {
-    if (i > 0) await sleep(pause);
+  while (queue.length && asked.length < maxQueries && dry < stopAfter) {
+    const query = queue.shift()!;
+    if (asked.length > 0) await sleep(pause);
+    asked.push(query);
     // A rate limit is waited out (2 s, 4 s, 8 s); anything else, or a limit that
     // persists, leaves this query out and the catalog partial, never the snapshot
     // failed: diff treats operations not found as notices.
@@ -80,7 +106,16 @@ export async function readCatalog(conn: Connection, tools: MenuTool[], options: 
           continue;
         }
         if (result.isError) failed.push({ query, error: text.slice(0, 200) || 'the tool returned an error' });
-        else for (const op of operationsIn(result)) if (!found.has(op.name)) found.set(op.name, op);
+        else {
+          const before = found.size;
+          for (const op of operationsIn(result)) {
+            if (found.has(op.name)) continue;
+            found.set(op.name, op);
+            enqueue(op.name);
+          }
+          for (const name of mentionedNames(result)) if (!found.has(name)) enqueue(name);
+          dry = found.size > before ? 0 : dry + 1;
+        }
         break;
       } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
@@ -94,7 +129,26 @@ export async function readCatalog(conn: Connection, tools: MenuTool[], options: 
     }
   }
   const operations = [...found.values()].sort((a, b) => a.name.localeCompare(b.name));
-  return { tool: tool.name, queries, operations, ...(failed.length ? { failed } : {}) };
+  return { tool: tool.name, queries: asked, operations, ...(failed.length ? { failed } : {}) };
+}
+
+/** An operation name as a search phrase: listJiraIssueWorklogs → "list jira issue worklogs". */
+function phrase(name: string): string {
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((w) => w.toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Example queries the search tool's own schema suggests: Atlassian's discover
+ * documents its query with "transition a jira issue", "list confluence spaces"…
+ */
+function describedExamples(tool: MenuTool): string[] {
+  const text = [tool.description ?? '', ...Object.values(tool.inputSchema?.properties ?? {}).map((p) => String(p.description ?? ''))].join(' ');
+  return [...text.matchAll(/["“]([a-z][a-z0-9 ,'-]{5,60})["”]/g)].map((m) => m[1]).filter((q) => q.includes(' '));
 }
 
 const RATE_LIMIT = /rate.?limit|too many requests|\b429\b/i;
@@ -130,11 +184,8 @@ export function operationsIn(result: { structuredContent?: unknown; content?: un
   for (const part of Array.isArray(result.content) ? result.content : []) {
     const text = (part as { text?: unknown }).text;
     if (typeof text !== 'string') continue;
-    try {
-      roots.push(JSON.parse(text));
-    } catch {
-      // prose, not a catalog
-    }
+    const value = leadingJson(text);
+    if (value !== undefined) roots.push(value);
   }
   const out = new Map<string, MenuTool>();
   const walk = (v: unknown, depth: number) => {
@@ -149,6 +200,42 @@ export function operationsIn(result: { structuredContent?: unknown; content?: un
   };
   roots.forEach((r) => walk(r, 0));
   return [...out.values()];
+}
+
+/**
+ * The JSON value a text starts with, ignoring what follows: Atlassian's discover
+ * returns its results as JSON and then a prose list of related operations, which
+ * makes the whole text invalid JSON.
+ */
+export function leadingJson(text: string): unknown {
+  const trimmed = text.trimStart();
+  if (!/^[[{]/.test(trimmed)) return undefined;
+  try {
+    return JSON.parse(trimmed);
+  } catch (error) {
+    const at = /position (\d+)/.exec(error instanceof Error ? error.message : '');
+    if (!at) return undefined;
+    try {
+      return JSON.parse(trimmed.slice(0, Number(at[1])));
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+/**
+ * Operation names a result mentions without defining them: lines like
+ * "createJiraBoard — Create a new company-managed…" after Atlassian's JSON. Each
+ * is worth a search of its own.
+ */
+export function mentionedNames(result: { content?: unknown }): string[] {
+  const names = new Set<string>();
+  for (const part of Array.isArray(result.content) ? result.content : []) {
+    const text = (part as { text?: unknown }).text;
+    if (typeof text !== 'string') continue;
+    for (const m of text.matchAll(/^[ \t]*[-*]?[ \t]*`?([A-Za-z][A-Za-z0-9_.-]{2,80})`?[ \t]+(?:—|–|-{1,2}|:)[ \t]/gm)) names.add(m[1]);
+  }
+  return [...names];
 }
 
 function asOperation(o: Record<string, unknown>): MenuTool | undefined {
