@@ -29,7 +29,7 @@ No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
 (`history` installs old versions with today's dependencies, so it records what they
 serve now, which can differ from what they shipped with: FINDINGS F4.)
 
-> **Status: 0.10, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
+> **Status: 0.11, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
 > real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 ## Start here
@@ -90,7 +90,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.10.0
+      - uses: niksa90/toolmenu@v0.11.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -222,13 +222,15 @@ operations found in both snapshots with the same rules as tools.
 npx toolmenu snapshot --catalog -- node dist/server.js
 ```
 
-A search returns its top matches, not everything, so an operation not found this time
-is a notice ("not returned by the same queries"), never "removed". The default queries
-come from the nouns in your tool names; on your own server, list the ones that matter
-in `toolmenu.config.json` (`"catalog": { "queries": ["list releases", "delete issue"] }`).
-If the server can serve the whole list as a menu (Atlassian: `?tools=all`), snapshot
-that instead: it's complete. Queries are paced and a rate limit is waited out; on
-Sentry's hosted server, two runs of 25 queries found the same 61 operations (FINDINGS F15).
+A search returns only its top matches, so toolmenu crawls the catalog by its own
+words: it starts from the search tool's own example phrases and the nouns in your tool
+names, then searches for every operation it finds or sees mentioned, until 20 queries
+in a row turn up nothing new (at most 200). On Atlassian's hosted server that finds all
+154 operations behind its 21 tools; on Sentry's, 65 behind 9, the same on every run.
+Queries are paced and a rate limit is waited out. An operation not found this time is a
+notice ("not returned by the same queries"), never "removed". To steer it, set
+`"catalog": { "queries": [...], "maxQueries": 200, "crawl": true }` in
+`toolmenu.config.json` (FINDINGS F15).
 
 ## `history`: a package's releases, researched
 

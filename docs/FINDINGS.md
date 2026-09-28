@@ -602,24 +602,29 @@ reach before 0.9.
 
 ## F15. The catalogs behind search tools
 
-*Checked 2026-09-29 with `snapshot --catalog` (0.10), default queries, on the
-maintainer's accounts.*
+*Checked 2026-09-29 with `snapshot --catalog`, on the maintainer's accounts.* 0.10.0
+asked a fixed set of queries; 0.11.0 crawls the catalog by its own names. Atlassian's
+`?tools=all` endpoint lists the same operations as tools, which makes it a ground
+truth: 171 tools, 154 of them not in the default menu.
 
-| Server | Menu | Search tool | Queries | Operations found |
+| Server | Menu | Search tool | 0.10.0 (fixed queries) | 0.11.0 (crawl, defaults) |
 |---|---|---|---|---|
-| Sentry (hosted) | 9 tools | `search_sentry_tools` | 25 | 61 |
-| Atlassian (hosted, `/v2/mcp`) | 21 tools | `discover` | 40 | 8 of ~302 |
+| Atlassian (hosted, `/v2/mcp`) | 21 tools | `discover` | 8 operations (40 queries) | **154 of 154** (181 queries) |
+| Sentry (hosted) | 9 tools | `search_sentry_tools` | 61 (25 queries) | 65 (47 queries) |
 
-- **Sentry's catalog is most of the server.** 61 operations behind 9 tools: alert
+- **The 8 was a toolmenu bug, not a weak search.** Atlassian's `discover` returns its
+  results as JSON followed by a prose list of related operations ("createJiraBoard —
+  Create a new company-managed…"). That makes the whole text invalid JSON, and 0.10.0
+  dropped it. 0.11.0 reads the leading JSON and follows the names in the prose.
+- **Crawling by the catalog's own names reaches everything.** Each operation found or
+  mentioned is searched for by name, which returns it and its neighbours. On
+  Atlassian, one result per search plus the mentioned names reached all 154
+  operations; it stops when 20 queries in a row find nothing new. At a fixed 60
+  queries it had 93 (60%), at 150, 143 (93%). Every operation found was real.
+- **Reproducible.** Two crawls of Sentry asked the same 47 queries in the same order
+  and found the same 65 operations; `diff` between them reported nothing.
+- **Sentry's catalog is most of the server**, 65 operations behind 9 tools: alert
   rules, monitors, DSNs, teams, releases. Before `--catalog`, `diff` saw none of them.
-- **Reproducible.** Two runs of the same 25 queries found the same 61 operations, and
-  `diff` between them reported nothing: Sentry's search ranks deterministically.
 - **Rate limits are real.** Sentry answered "Rate limit exceeded" after about 70
-  searches in a few minutes. Paced at 300 ms with retries, later runs had no failed
-  queries.
-- **Default queries don't fit every search.** Atlassian's `discover` wants "verb +
-  object + product" ("list jira worklogs"); queries built from its menu's nouns found 8
-  operations. Its `?tools=all` endpoint (171 tools) is complete and needs no search.
-  On your own server, you know which operations matter: list them in
-  `catalog.queries`.
-
+  searches in a few minutes. Paced at 300 ms with retries (2, 4, 8 s), later runs had
+  no failed queries, including Atlassian's 181.
