@@ -137,7 +137,7 @@ function oldNode(dir, extra = '') {
 test('action: on an unsupported platform with old Node, it says to add setup-node', () => {
   const r = runAction({ ...url, STUB_CODE: '0' }, (dir) => ({ PATH: `${oldNode(dir, '#!/bin/sh\necho MINGW64_NT\n')}:${process.env.PATH}` }));
   assert.equal(r.code, 2);
-  assert.match(r.stdout, /needs Node 22 or later, and this runner has Node 18\. Add actions\/setup-node/);
+  assert.match(r.stdout, /needs Node 22 or later, and this runner has Node 18\. Install Node 22 before the Action \(actions\/setup-node, or your container's package manager\)/);
   assert.equal(r.ran('snapshot'), false);
 });
 
@@ -163,4 +163,11 @@ test('action: a skip sets the skipped output, a real run does not', () => {
   assert.match(readFileSync(file, 'utf8'), /^skipped=true$/m);
   runAction({ ...url, STUB_CODE: '0' }, (dir) => ((file = join(dir, 'out.txt')), out(dir)));
   assert.match(readFileSync(file, 'utf8'), /^skipped=false$/m);
+});
+
+test('action: an early stop still writes the outputs', () => {
+  let file;
+  const r = runAction({ STUB_CODE: '0' }, (dir) => ((file = join(dir, 'out.txt')), { GITHUB_OUTPUT: file }));
+  assert.equal(r.code, 2);
+  assert.equal(readFileSync(file, 'utf8'), 'exit-code=2\nskipped=false\n');
 });

@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/toolmenu)](https://www.npmjs.com/package/toolmenu)
 [![ci](https://github.com/niksa90/toolmenu/actions/workflows/ci.yml/badge.svg)](https://github.com/niksa90/toolmenu/actions/workflows/ci.yml)
-[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/niksa90/toolmenu/blob/main/LICENSE)
 
 **Lint your MCP server's tool menu for changes that confuse agents or break caches.**
 
@@ -23,14 +23,14 @@ connections and releases, and checks **when** it changes:
 - **Between releases.** `diff` finds breaking changes and token growth, and checks
   the version bump.
 
-![toolmenu session output: tools inserted mid-list, a description edited, each pinned to the step that caused it](docs/demo.svg)
+![toolmenu session output: tools inserted mid-list, a description edited, each pinned to the step that caused it](https://raw.githubusercontent.com/niksa90/toolmenu/main/docs/demo.svg)
 
 No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
 (`history` installs old versions with today's dependencies, so it records what they
 serve now, which can differ from what they shipped with: FINDINGS F4.)
 
-> **Status: 0.7, early.** Spec in [docs/SPEC.md](docs/SPEC.md). What it has found on
-> real servers: [docs/FINDINGS.md](docs/FINDINGS.md).
+> **Status: 0.7, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
+> real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 ## Start here
 
@@ -92,8 +92,8 @@ and anything `session` caught. The same report goes to the job summary.
 | `comment` | `true` | Post and update the PR comment |
 | `version` | `latest` | toolmenu version from npm. The Action installs toolmenu from npm, so it needs a published version |
 
-Server behind auth, or PRs from forks and Dependabot? See [docs/github-action.md](docs/github-action.md).
-A check skipped there for missing secrets still passes; the `skipped` output tells you.
+Server behind auth, or PRs from forks and Dependabot? See [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md).
+PRs without secrets are skipped, and a skipped check still passes; the `skipped` output tells you.
 
 ## `session`: the menu changing while the agent works
 
@@ -299,12 +299,12 @@ or bad usage. `toolmenu --help` lists the `session` and `history` options.
 
 Built by [Niksa](https://niksa.me) while running a 115-tool MCP server and watching
 agents trip over its menu. Every rule started as one of those failures, and the
-research behind them is in [docs/FINDINGS.md](docs/FINDINGS.md).
+research behind them is in [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 Found a false positive, or a failure toolmenu should catch?
 [Open an issue](https://github.com/niksa90/toolmenu/issues) with the menu (a
 `menu.json` is enough) and what you expected. Changes are listed in
-[CHANGELOG.md](CHANGELOG.md).
+[CHANGELOG.md](https://github.com/niksa90/toolmenu/blob/main/CHANGELOG.md).
 
 ## License
 
