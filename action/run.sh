@@ -212,7 +212,9 @@ run_session() {
 }
 
 # 1. Snapshot the menu this change produces.
-$CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
+SNAPSHOT_OPTS=()
+[ "${TOOLMENU_CATALOG:-false}" = "true" ] && SNAPSHOT_OPTS+=(--catalog)
+$CLI snapshot ${SNAPSHOT_OPTS[@]+"${SNAPSHOT_OPTS[@]}"} --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
 SKIPPED=false
 ERROR_SHOWN=false

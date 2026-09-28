@@ -27,7 +27,12 @@ const MENUS = {
   ],
   badschema: () => [{ name: 'no_schema', description: 'Missing inputSchema.' }],
   clean: () => [{ name: 'ping_service', description: 'Check the service is up.', inputSchema: obj({}), annotations: { readOnlyHint: true } }],
-  // Like mcp-atlassian 0.23.1: a default built from a set, in the process's hash
+  // Search and execute, like Sentry (catalog: standard tool definitions) and
+  // Atlassian (catalog-inputs: an `inputs` list). CATALOG_VERSION=2 makes a
+  // breaking change to one operation and drops another.
+  catalog: () => SEARCH_MENU,
+  'catalog-inputs': () => SEARCH_MENU,
+    // Like mcp-atlassian 0.23.1: a default built from a set, in the process's hash
   // order. Stable within a process, different per PYTHONHASHSEED (and per process
   // when it's unset).
   seedorder: () => {
@@ -39,7 +44,29 @@ const MENUS = {
   },
 };
 
+const SEARCH_MENU = [
+  { name: 'search_ops_tools', description: 'Find operations not in your tool list.', inputSchema: obj({ query: str, limit: { anyOf: [{ type: 'integer', maximum: 20 }, { type: 'null' }] } }, ['query']), annotations: { readOnlyHint: true, openWorldHint: false } },
+  { name: 'execute_op', description: 'Run an operation by name.', inputSchema: obj({ name: str, params: { type: 'object' } }, ['name']) },
+];
+const v2 = process.env.CATALOG_VERSION === '2';
+const OPERATIONS = [
+  { name: 'list_releases', description: 'List releases.', inputSchema: obj({ project: str, limit: { type: 'integer' } }, ['project']) },
+  { name: 'get_release', description: 'Get one release.', inputSchema: obj(v2 ? { project: str, version: str, region: str } : { project: str, version: str }) },
+  ...(v2 ? [] : [{ name: 'delete_release', description: 'Delete a release.', inputSchema: obj({ version: str }) }]),
+];
+/** What the search tool answers: operations whose name shares a word with the query. */
+function search(query) {
+  const words = query.toLowerCase().split(/\W+/);
+  const hits = OPERATIONS.filter((op) => op.name.split('_').some((w) => words.some((q) => q && (w.startsWith(q) || q.startsWith(w)))));
+  if (fixture === 'catalog-inputs') {
+    const results = hits.map((op) => ({ name: op.name, description: op.description, executeTool: 'execute_op', inputs: Object.entries(op.inputSchema.properties).map(([name, p]) => ({ name, type: p.type === 'integer' ? 'number' : p.type, ...(p.type === 'integer' ? { integer: true } : {}), required: op.inputSchema.required.includes(name) })) }));
+    return { content: [{ type: 'text', text: JSON.stringify({ results }) }] };
+  }
+  return { content: [{ type: 'text', text: JSON.stringify({ query, results: hits }) }], structuredContent: { query, results: hits } };
+}
+
 let calls = 0;
+let searches = 0;
 const send = (message) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', ...message }) + '\n');
 
 createInterface({ input: process.stdin }).on('line', (line) => {
@@ -55,6 +82,11 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   } else if (msg.method === 'tools/list') {
     calls++;
     send({ id: msg.id, result: { tools: MENUS[fixture](calls) } });
+  } else if (msg.method === 'tools/call' && msg.params?.name === 'search_ops_tools') {
+    searches++;
+    // RATE_LIMIT=first: the first search is rate-limited, as Sentry did. =always: every one is.
+    const limited = process.env.RATE_LIMIT === 'always' || (process.env.RATE_LIMIT === 'first' && searches === 1);
+    send({ id: msg.id, result: limited ? { isError: true, content: [{ type: 'text', text: 'Rate limit exceeded. Please wait before trying again.' }] } : search(String(msg.params.arguments?.query ?? '')) });
   } else {
     send({ id: msg.id, error: { code: -32601, message: 'Method not found' } });
   }
