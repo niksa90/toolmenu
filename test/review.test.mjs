@@ -115,3 +115,14 @@ test('review 6b: backwards has its own rule and wording; build metadata is not a
   assert.equal(build.actualBump, 'patch');
   assert.ok(build.findings.some((f) => f.rule === 'diff/version-bump'));
 });
+
+// Third review pass.
+test('review 2c: nullable arrays keep their item checks; a widened type still reports new constraints', () => {
+  const p = (a) => menu([withProps({ a })]);
+  const nullable = diffMenus(p({ type: ['array', 'null'], items: { enum: ['a', 'b'] } }), p({ type: ['array', 'null'], items: { enum: ['a'] } }));
+  assert.ok(nullable.findings.some((f) => f.rule === 'diff/enum-narrowed'));
+  const mixed = diffMenus(p({ type: 'array', items: { enum: ['a', 'b'] } }), p({ type: ['array', 'null'], items: { enum: ['a'] } }));
+  assert.equal(mixed.suggestedBump, 'major');
+  const widened = diffMenus(p({ type: 'string' }), p({ type: ['string', 'null'], maxLength: 5 }));
+  assert.deepEqual(widened.findings.map((f) => f.rule).sort(), ['diff/schema-other', 'diff/type-widened']);
+});
