@@ -18,10 +18,12 @@ CONN=()
 while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--header "$line"); done <<< "${TOOLMENU_HEADERS:-}"
 while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--env "$line"); done <<< "${TOOLMENU_ENV:-}"
 # Each only applies to one kind of server: say so instead of ignoring it quietly.
-if [ -n "${TOOLMENU_URL:-}" ] && [ -n "${TOOLMENU_ENV:-}" ] && [ -n "${TOOLMENU_ENV//[[:space:]]/}" ]; then
+HEADERS_SET="${TOOLMENU_HEADERS:-}"; HEADERS_SET="${HEADERS_SET//[[:space:]]/}"
+ENV_SET="${TOOLMENU_ENV:-}"; ENV_SET="${ENV_SET//[[:space:]]/}"
+if [ -n "${TOOLMENU_URL:-}" ] && [ -n "$ENV_SET" ]; then
   echo "::warning title=toolmenu::'env' only applies to a 'command' (stdio) server; it's ignored for 'url'."
 fi
-if [ -z "${TOOLMENU_URL:-}" ] && [ -n "${TOOLMENU_HEADERS:-}" ] && [ -n "${TOOLMENU_HEADERS//[[:space:]]/}" ]; then
+if [ -z "${TOOLMENU_URL:-}" ] && [ -n "$HEADERS_SET" ]; then
   echo "::warning title=toolmenu::'headers' only applies to a 'url' server; it's ignored for 'command'. Use 'env' to pass keys to a stdio server."
 fi
 
@@ -105,6 +107,18 @@ set_baseline() {
   echo
 } > "$BODY"
 
+# Did the snapshot fail because a secret was missing? Only then is a fork PR
+# skipped: a header whose value came through empty (what an unset secret turns
+# into), or the server answering 401/403. Anything else is a real failure.
+missing_secret() {
+  local line
+  while IFS= read -r line; do
+    [ -n "${line// }" ] || continue
+    [[ "$line" == *:* ]] && [ -z "$(echo "${line#*:}" | tr -d '[:space:]')" ] && return 0
+  done <<< "${TOOLMENU_HEADERS:-}"
+  grep -Eq '\b(401|403)\b|Unauthorized|Forbidden' "$OUT/snapshot.err" 2>/dev/null
+}
+
 # The snapshot command for the "no baseline yet" hint: header names (never their
 # values) and env names, so the command works on a server behind auth.
 hint_target() {
@@ -117,7 +131,7 @@ hint_target() {
 # 1. Snapshot the menu this change produces.
 $CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
-if [ "$code" -eq 2 ] && [ "${TOOLMENU_FORK_PR:-false}" = "true" ] && [ -n "${TOOLMENU_URL:-}" ]; then
+if [ "$code" -eq 2 ] && [ "${TOOLMENU_FORK_PR:-false}" = "true" ] && [ -n "${TOOLMENU_URL:-}" ] && missing_secret; then
   # Pull requests from forks don't get secrets, so a server behind auth can't
   # be reached. Say so and don't fail an outside contributor's PR for it.
   {
@@ -169,5 +183,9 @@ if [ "${TOOLMENU_COMMENT:-true}" = "true" ] && [ -n "${TOOLMENU_PR:-}" ] && [ -n
   fi
 fi
 
-[ "$status" -ne 0 ] && echo "::error title=toolmenu::Findings at or above '$FAIL_ON' (or the server didn't start). See the job summary."
+if [ "$status" -eq 2 ]; then
+  echo "::error title=toolmenu::The check couldn't run: the server didn't start or couldn't be reached, or a baseline or scenario couldn't be read. See the job summary."
+elif [ "$status" -ne 0 ]; then
+  echo "::error title=toolmenu::Findings at or above '$FAIL_ON'. See the job summary."
+fi
 exit "$status"
