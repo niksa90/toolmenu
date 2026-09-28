@@ -1,0 +1,56 @@
+{
+  "name": "toolmenu",
+  "version": "0.7.0",
+  "description": "Lint your MCP server's tool menu for changes that confuse agents or break caches.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test --test-reporter=spec test/*.test.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/niksa90/toolmenu.git"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "linter",
+    "agents",
+    "prompt-caching",
+    "cli"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/niksa90/toolmenu/issues"
+  },
+  "homepage": "https://github.com/niksa90/toolmenu#readme",
+  "dependencies": {
+    "@modelcontextprotocol/client": "^2.1.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "js-tiktoken": "^1.0.21",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/server": "^2.1.0",
+    "@types/node": "^20.19.43",
+    "typescript": "^7.0.2",
+    "zod": "^4.6.5"
+  },
+  "type": "module",
+  "bin": {
+    "toolmenu": "dist/cli.js"
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "schemas",
+    "README.md",
+    "LICENSE",
+    "docs/SPEC.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

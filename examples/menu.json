@@ -1,0 +1,81 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "forms-fixture",
+    "version": "1.2.3",
+    "protocolVersion": "2026-07-28",
+    "era": "modern"
+  },
+  "capturedAt": "2026-09-27T00:00:00.000Z",
+  "tools": [
+    {
+      "name": "search_forms",
+      "description": "Search forms by title. Returns form_id for each match.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "tokens": 66
+    },
+    {
+      "name": "get_form",
+      "description": "Get one form by form_id.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "form_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "form_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "tokens": 63
+    },
+    {
+      "name": "delete_form",
+      "description": "Delete a form. Use dry_run first to see what would be deleted.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "form_id": {
+            "type": "string"
+          },
+          "dry_run": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "form_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 85
+    }
+  ],
+  "totalTokens": 214,
+  "listMeta": {
+    "ttlMs": 0,
+    "cacheScope": "private"
+  }
+}

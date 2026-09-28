@@ -1,0 +1,390 @@
+# Findings
+
+A research log: what toolmenu found on real, public MCP servers. Every entry says
+when it was checked and how to reproduce it. Servers are named on purpose: the
+data is public and anyone can re-run it.
+
+**Caveat for every entry:** installing an old version today resolves its
+dependencies *today* (see F4). So these describe "this version as installed on the
+date shown", not necessarily what users got when it shipped.
+
+Setup (toolmenu from this repo, `npm run build`, in a container: `history` installs
+and runs third-party packages):
+
+```sh
+# the whole release history in one go
+toolmenu history @modelcontextprotocol/server-filesystem --versions 19 --arg /tmp --csv fs.csv
+
+# or by hand, one version
+mkdir -p fs/$V && cd fs/$V && npm init -y && \
+  npm i --ignore-scripts @modelcontextprotocol/server-filesystem@$V && cd ../..
+toolmenu snapshot --out fs/$V.json -- fs/$V/node_modules/.bin/mcp-server-filesystem /tmp
+toolmenu diff fs/$OLD.json fs/$NEW.json
+```
+
+---
+
+## F1. The official reference servers don't speak 2026-07-28 yet
+
+*Checked 2026-09-27, two months after the 2026-07-28 spec release.*
+
+| Server (npm) | Protocol it speaks | SDK dependency |
+|---|---|---|
+| `@modelcontextprotocol/server-filesystem@2026.8.31` | 2025-11-25 | `@modelcontextprotocol/sdk ^1.30.0` (v1) |
+| `@modelcontextprotocol/server-everything@2026.8.31` | 2025-11-25 | `@modelcontextprotocol/sdk ^1.30.0` (v1) |
+
+Both answer the 2025 `initialize` handshake and have no working `server/discover`.
+toolmenu reports it as `spec/discover` (info).
+
+Reproduce: `toolmenu snapshot -- npx -y @modelcontextprotocol/server-filesystem@2026.8.31 /tmp`
+(install first if `npx` is slow; see the setup above).
+
+## F2. Getting to 2026-07-28 takes two steps, and the first one is a rename
+
+- The package most people know, **`@modelcontextprotocol/sdk` (latest 1.30.1), tops
+  out at 2025-11-25.** 2026-07-28 support lives in the v2 packages under new names:
+  `@modelcontextprotocol/client` and `@modelcontextprotocol/server` (2.1.0), whose
+  README says v2 "is the stable release line, implementing the 2026-07-28 MCP spec".
+- **Upgrading isn't enough on its own.** A v2 server wired the old way,
+  `server.connect(new StdioServerTransport())`, still only speaks 2025. You get
+  2026-07-28 through the new entry points: `serveStdio(factory)` for stdio,
+  `createMcpHandler(factory)` for HTTP. (toolmenu's own first test server hit this.)
+- A trap for anyone checking by hand: v2's exported `LATEST_PROTOCOL_VERSION` is
+  still `'2025-11-25'`. That constant only covers the legacy `initialize` list. The
+  2026 versions are in a separate internal list, negotiated via `server/discover`.
+
+Reproduce: `npm view @modelcontextprotocol/sdk version`,
+`npm view @modelcontextprotocol/client version`, and the fixtures in
+`test/fixtures/sdk-server.mjs` (with and without `LEGACY=1`).
+
+## F3. Official SDK v2 servers say "don't cache this" by default
+
+A v2 server built with `serveStdio` or `createMcpHandler` and no cache settings
+returns `ttlMs: 0` and `cacheScope: "private"` on `tools/list`. `ttlMs: 0` means
+"immediately stale": clients may re-fetch the list every time. It's valid per
+spec, but it's the opposite of what a stable tool menu wants. toolmenu reports it
+as `spec/cache-hints` (info) and says it's the SDK default.
+
+Reproduce: `toolmenu snapshot -- node test/fixtures/sdk-server.mjs`.
+
+## F4. The same published version can serve a different menu depending on install date
+
+*Checked 2026-09-27.* Installed today, **10 of the 19 releases** of
+`@modelcontextprotocol/server-filesystem`, every one from 0.5.1 (Nov 2024) through
+2025.8.21 (Aug 2025), serve all but one of their tools with an **empty input
+schema**: the whole schema is `{"$schema": "http://json-schema.org/draft-07/schema#"}`,
+with no `type` and no `properties`. Only `list_allowed_directories` (hand-written
+schema) survives. 2025.11.25 is the first clean release.
+
+Why: these releases build their schemas with `zod-to-json-schema` 3.x, which
+returns an empty schema when handed a zod 4 schema. And zod 4 gets in through
+ranges resolved today:
+
+| Releases | How zod 4 gets in |
+|---|---|
+| 0.5.1 – 0.6.2, 2025.1.14, 2025.3.28 | SDK pinned exactly (0.5.0 or 1.0.1, zod 3), but `zod-to-json-schema ^3.23.5` now resolves to 3.25.2, which brings its own **zod 4.6.5** |
+| 2025.7.1 – 2025.8.21 | no direct `zod` dependency; `@modelcontextprotocol/sdk ^1.12.3` / `^1.17.0` resolves to 1.30.1, which brings **zod 4.6.5** |
+
+What that means:
+- An agent sees tools with no parameters at all.
+- The result fails the official schema for its protocol version (`inputSchema`
+  requires `type: "object"`), and **the official v2 client rejects the whole
+  `tools/list` result**. toolmenu still reads it off the wire and reports `spec/schema`.
+- The packages didn't change. Their dependency resolution did.
+
+For toolmenu: this is a menu changing "at the wrong time" with no release at all.
+`history` now records the declared and the resolved (installed today) versions of
+the SDK, zod and zod-to-json-schema for every release.
+
+Reproduce:
+`toolmenu history @modelcontextprotocol/server-filesystem --versions 19 --arg /tmp`
+(then look at `resolved` in `history.json`), or install one version by hand and run
+`npm ls zod zod-to-json-schema`.
+
+## F5. A server's self-reported version can't be used for semver checks
+
+All 19 npm releases of the filesystem server, from 0.2.0 (2024-11-21) to 2026.8.31
+(2026-08-31), report the same `serverInfo.version`: **`0.2.0`**.
+
+For toolmenu:
+- `diff` used to check the bump against the versions in the snapshots, so on raw
+  snapshots every release tripped `diff/version-bump` ("version stayed 0.2.0").
+  That's accurate about `serverInfo`, but it's not the version people install. Since
+  0.7, `diff` keeps the two apart: the **release version** (npm, a git tag, passed with
+  `--release`) is what the bump is checked against, and the **server-reported
+  version** (`serverInfo.version`) is only shown, unless `--server-version-is-release`.
+- `history` compares by **npm version**, and calendar versions (2026.8.31) are
+  treated as carrying no compatibility promise.
+
+## F6. One server's menu, release by release
+
+`toolmenu history @modelcontextprotocol/server-filesystem --versions 19 --arg /tmp`,
+run 2026-09-27 (26 s for the last 5 versions, about 2 min for all 19):
+
+```
+  version     published   protocol         tools  tokens  sdk     zod            findings      vs previous
+  0.2.0       2024-11-21  failed: crashed                 0.5.0   3.25.76
+  0.3.0       2024-11-21  failed: crashed                 0.5.0   3.25.76
+  0.5.0       2024-11-25  failed: crashed                 0.5.0   3.25.76
+  0.5.1       2024-11-25  2024-11-05       9      ~674    0.5.0   3.25.76+4.6.5  1 err 3 warn  —
+  0.6.0       2024-12-03  2024-11-05       9      ~674    1.0.1   3.25.76+4.6.5  1 err 3 warn  ±0 tokens · no changes
+  0.6.1       2024-12-03  2024-11-05       9      ~674    1.0.1   3.25.76+4.6.5  1 err 3 warn  ±0 tokens · no changes
+  0.6.2       2024-12-04  2024-11-05       9      ~674    1.0.1   3.25.76+4.6.5  1 err 3 warn  ±0 tokens · no changes
+  2025.1.14   2025-01-14  2024-11-05       11     ~833    0.5.0   3.25.76+4.6.5  1 err 4 warn  +159 tokens · 2 minor
+  2025.3.28   2025-03-28  2024-11-05       11     ~833    0.5.0   3.25.76+4.6.5  1 err 4 warn  ±0 tokens · no changes
+  2025.7.1    2025-07-01  2025-11-25       12     ~951    1.30.1  4.6.5          1 err 4 warn  +118 tokens · 1 minor · 1 notice
+  2025.7.29   2025-07-31  2025-11-25       14     ~1,062  1.30.1  4.6.5          1 err 4 warn  +111 tokens · 2 minor · 2 notice
+  2025.8.18   2025-08-18  2025-11-25       14     ~1,074  1.30.1  4.6.5          1 err 4 warn  +12 tokens · 1 notice
+  2025.8.21   2025-08-21  2025-11-25       14     ~1,074  1.30.1  4.6.5          1 err 4 warn  ±0 tokens · no changes
+  2025.11.25  2025-11-25  2025-11-25       14     ~2,638  1.30.1  4.6.5          clean         +1,564 tokens · 57 notice
+  2025.12.18  2025-12-18  2025-11-25       14     ~2,638  1.30.1  4.6.5          clean         ±0 tokens · no changes
+  2026.1.14   2026-01-14  2025-11-25       14     ~2,638  1.30.1  4.6.5          clean         ±0 tokens · no changes
+  2026.7.4    2026-07-04  2025-11-25       14     ~2,638  1.30.1  4.6.5          clean         ±0 tokens · 1 breaking
+  2026.7.10   2026-07-10  2025-11-25       14     ~2,821  1.30.1  4.6.5          clean         +183 tokens · 16 notice
+  2026.8.31   2026-08-31  2025-11-25       14     ~2,821  1.30.1  4.6.5          clean         ±0 tokens · no changes
+```
+
+What stands out:
+- **The menu an agent loads grew 4.2×** from the first release that runs today to the
+  latest (~674 → ~2,821 tokens per conversation, estimate). The biggest single jump
+  is 2025.11.25 (+1,564): output schemas and annotations across the menu,
+  `read_text_file` and `read_media_file` added, `read_file` kept but marked
+  "DEPRECATED: Use read_text_file instead".
+- **The one breaking-class change is in 2026.7.4:** `move_file`'s
+  `destructiveHint` went `false` → `true`, with no token change and nothing in the
+  version number to signal it. Clients that auto-approve additive-only tools would
+  have stopped doing so for `move_file`.
+- **2026.7.10** added `openWorldHint: false` to all 14 tools (+183 tokens) and
+  widened `read_media_file` to any file type.
+- **The protocol a release speaks depends on today's install**, not its publish
+  date: 2025.7.1 (July 2025) speaks 2025-11-25 because its SDK range resolves to
+  1.30.1 today.
+- The SDK pin went **backwards** once: 0.6.x pinned SDK 1.0.1, 2025.1.14 pinned 0.5.0.
+
+## F7. What toolmenu got wrong on the first real run (fixed)
+
+The first `diff` run on these releases produced misleading output. Recorded here
+because the fixes came from real data:
+
+1. **17 false "breaking" changes** (2025.7.1 → 2025.11.25): every parameter looked
+   "new and required" because the old schemas were empty (F4). Now `diff` reports
+   an empty or invalid schema as unclassifiable instead of guessing.
+2. **"write_file is now marked destructive"** was wrong. The old version had no
+   annotations, and MCP's defaults (`readOnlyHint: false`, `destructiveHint: true`)
+   already made it destructive. `diff` now compares effective hints after
+   defaults.
+3. **A silent +6 tokens on every tool** (2026.1.14 → 2026.8.31) had no matching
+   finding: `diff` only looked at two safety hints. It now reports every annotation
+   change (`diff/annotations`) and any other changed field (`diff/other`).
+
+4. **2025.1.14's empty schemas went unreported** because toolmenu had no schema
+   for protocol 2024-11-05 and skipped the check. It now bundles the official
+   schemas for 2024-11-05, 2025-03-26, 2025-06-18, 2025-11-25 and 2026-07-28
+   (draft-07 and draft 2020-12), from the same pinned commit.
+
+5. **`history` first reported the three crashes with a useless stack frame**
+   ("at ModuleLoader.getModuleJobForImport…"). It now keeps the lines that say what
+   went wrong (F8).
+
+6. **The ID and naming heuristics were noisy on real menus** (F10): `uid` read as
+   "u" + "id", keyboard `key`s read as identifiers, `status` "singularised" to
+   `statu`, tool-name prefixes like `API-` and `firecrawl_` hiding verbs or counted
+   as shared nouns, and 18 separate dry-run notes for one browser server. On ten
+   real servers, `ids/authored` went from 48 findings to 4, `naming/shared-word` from
+   19 to 7, and `write/no-dry-run` from 70 to one line per server.
+
+All of these are covered by tests, most using the real menus in `test/fixtures/menus/`.
+
+## F8. The first three releases can't start: an undeclared dependency
+
+`@modelcontextprotocol/server-filesystem` 0.2.0, 0.3.0 and 0.5.0 (November 2024)
+crash on start when installed today:
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'zod-to-json-schema'
+imported from …/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js
+```
+
+They import `zod-to-json-schema` without declaring it; their only dependency is
+`@modelcontextprotocol/sdk 0.5.0`. 0.5.1, published the same day as 0.5.0, adds
+`zod-to-json-schema ^3.23.5`. (They may have worked in the monorepo at the time, via
+a hoisted copy; from npm they don't.) `history` records these as `failed: crashed`
+with the cause.
+
+## F9. The unlock pattern, on the official SDK v2: allowed on stdio, a silent no-op on HTTP
+
+*Checked 2026-09-27 with `@modelcontextprotocol/server` 2.1.0.* The same server code,
+a tool that calls `enable()` on hidden tools (the "unlock" pattern behind the 40–57K
+tokens in lesson 05), behaves in two opposite ways depending on transport:
+
+- **stdio (`serveStdio`), 2026-07-28:** it works. The call inserts two tools in the
+  middle of the menu for that connection, and the server sends
+  `notifications/tools/list_changed`. So the SDK doesn't stop the pattern that
+  2026-07-28 rules out ("MUST NOT vary … as a side effect of other requests on the
+  connection"). toolmenu reports `session/mid-insert` plus `session/side-effect`.
+- **Streamable HTTP (`createMcpHandler`), 2026-07-28:** the SDK builds a fresh
+  server instance for every request (4 factory calls for 3 requests in the
+  experiment). The unlock call **returns success, "unlocked audits", and the next
+  `tools/list` is unchanged**. State kept on the instance is simply gone. toolmenu
+  sees "no change". There's no error for the agent or the developer to notice.
+- **HTTP with state kept outside the instance** (shared across requests): the
+  change is visible to every connection (toolmenu: scope `global`), but **no
+  `list_changed` notification arrives**, although the server declares
+  `listChanged: true`: the instance that changed the menu isn't the one holding the
+  `subscriptions/listen` stream. toolmenu reports `session/unannounced`.
+  **The fix is one line:** call `handler.notify.toolsChanged()` (the handler
+  `createMcpHandler` returns) wherever the tool set changes. With it, the
+  notification reaches the open `subscriptions/listen` stream and
+  `session/unannounced` goes away (checked 2026-09-27, same fixture). The SDK
+  doesn't infer it from `enable()` or `registerTool()` on a per-request instance;
+  on stateless HTTP the server has to say so itself.
+
+For the article: moving a stateful MCP server to the stateless protocol doesn't
+fail loudly. The same code keeps "working" on stdio and quietly stops working on
+HTTP.
+
+Reproduce: `test/fixtures/session-server.mjs` and the HTTP cases in
+`test/session.test.mjs`, or
+`toolmenu session --scenario examples/unlock.scenario.yml -- node test/fixtures/session-server.mjs`.
+
+## F10. Ten popular MCP servers, as installed from npm
+
+*Checked 2026-09-27.* `toolmenu snapshot` on the latest npm version of each, over
+stdio, with dummy credentials where a server wanted one at start-up. (A dummy
+token is enough to list tools; none of them checked it before answering
+`tools/list`.) `@supabase/mcp-server-supabase` 0.13.0 couldn't be included: it
+calls its API before serving, so a dummy token fails.
+
+| Server (npm) | Built on | Protocol | Tools | Menu size (est.) |
+|---|---|---|---|---|
+| `@upstash/context7-mcp@4.1.1` | `@modelcontextprotocol/server` 2.0.0 (v2) | **2026-07-28** | 2 | ~1,050 |
+| `@modelcontextprotocol/server-memory@2026.8.31` | sdk ^1.30.0 | 2025-11-25 | 9 | ~2,376 |
+| `@modelcontextprotocol/server-sequential-thinking@2026.8.31` | sdk ^1.30.0 | 2025-11-25 | 1 | ~1,001 |
+| `@playwright/mcp@0.0.82` | bundled | 2025-11-25 | 25 | ~4,374 |
+| `chrome-devtools-mcp@1.10.1` | bundled | 2025-11-25 | 30 | ~5,912 |
+| `@notionhq/notion-mcp-server@2.5.2` | sdk ^1.29.0 | 2025-11-25 | 24 | ~17,498 |
+| `@sentry/mcp-server@0.42.0` | sdk 1.30.0 | 2025-11-25 | 9 | ~6,141 |
+| `firecrawl-mcp@3.25.5` | fastmcp 4.3.2 | 2025-11-25 | 29 | ~18,697 |
+| `mcp-server-kubernetes@4.1.7` | sdk 1.26.0 | 2025-11-25 | 23 | ~5,266 |
+| `@modelcontextprotocol/server-github@2025.4.8` (archived) | sdk 1.0.1 | 2024-11-05 | 26 | ~3,546 |
+
+What stands out:
+- **One of ten speaks 2026-07-28**, two months after it shipped: Context7, the only
+  one on the v2 SDK. It returns `ttlMs: 0` (the SDK default, F3) and declares no
+  `listChanged`.
+- **All ten menus are deterministic** and **all ten pass the official schema** for
+  their protocol version. No `menu/nondeterministic`, no `spec/schema`.
+- **Menu size varies 17×** for similar tool counts: Firecrawl's 29 tools cost
+  ~18,700 tokens per conversation, Playwright's 25 cost ~4,400. Notion's 24 tools
+  are ~17,500: its schemas are generated from the Notion API.
+- **Annotations are mostly there now.** The archived GitHub server (April 2025) has
+  9 write tools with no annotations; the current servers annotate almost
+  everything (Kubernetes misses one, `kubectl_create`).
+- **Firecrawl names 8 parameters just `id`** (`firecrawl_monitor_get.id`,
+  `firecrawl_check_crawl_status.id`, …), lesson 04's vague-ID pattern.
+- **`session` on Memory and Context7:** stable menus through lookups and searches,
+  nothing to report.
+
+Reproduce:
+
+```sh
+npm i --ignore-scripts @upstash/context7-mcp@4.1.1   # etc.
+toolmenu snapshot -- node_modules/.bin/context7-mcp
+toolmenu snapshot --env FIRECRAWL_API_KEY=fc-dummy -- node_modules/.bin/firecrawl-mcp
+toolmenu session --scenario mem.yml --env MEMORY_FILE_PATH=/tmp/mem.jsonl -- node_modules/.bin/mcp-server-memory
+```
+
+### Buried routing instructions (`description/buried`)
+
+Where a description is cut depends on the client. The documented cuts: Claude Code
+sends 2,048 characters and appends "… [truncated]" (anthropics/claude-code#87650;
+changeable since 2.1.280), Amazon Q CLI 10,024. My own client cut at 280, which is
+where the rule came from. So the same menu reads differently per client:
+
+- **At Claude Code's 2,048** (0.7's default): none of these ten servers has an
+  instruction past the cut. One description is longer than the cut:
+  `sequentialthinking` (2,781), whose tail ("Don't hesitate to add more thoughts"…)
+  the model never sees in Claude Code (`description/cut`, info).
+- **At 280** (`descriptionLimit: 280`, a client that cuts short): **15 tool
+  descriptions on 4 servers give the agent instructions past the cut** (0.6, SPEC
+  §18; 0.5 found 6 on 2, counting only the first routing word):
+
+| Server | Tools | Examples past character 280 |
+|---|---|---|
+| Sentry | 7 of its tools (`search_issues`, `search_events`, `get_sentry_resource`, `analyze_issue_with_seer`, `update_issue`, `search_sentry_tools`, `execute_sentry_tool`) | char 700: "DO NOT USE FOR COUNTS/AGGREGATIONS → use search_events"; char 309: "Do NOT call this tool as an automatic follow-up to get_sentry_resource" |
+| Firecrawl | 5 (`firecrawl_find_tools`, `firecrawl_agent`, `firecrawl_agent_status`, `firecrawl_parse`, `firecrawl_scrape`) | char 367: "Prefer normal firecrawl_search for a data task"; char 461: "do not send both fields together" |
+| Context7 | 2 (`resolve-library-id`, `query-docs`) | char 1,875: "IMPORTANT: Do not call this tool more than 3 times per question." |
+| Sequential Thinking | 1 (`sequentialthinking`) | char 273, cut mid-heading: "When to use this tool:", and the whole list under it |
+
+These are the lines that tell an agent which tool *not* to use, or when to stop. They
+are lost only in a client that cuts that short; in Claude Code they arrive. Checked
+by hand: every one of the 15 is an instruction.
+
+### What the first pass got wrong
+
+The first run of the heuristic rules on these servers was noisy, and I fixed the
+rules before recording the table above (F7, item 6). The remaining heuristic
+findings are plausible rather than proven: `ids/authored` still flags IDs that only
+ever appear in a tool's text output (`serviceWorkerId`, `insightSetId`,
+`resourceId`), and `sequentialthinking.branchId`, which the agent is *meant* to
+invent. The rule says it's a heuristic; these are the cases where that matters.
+
+## F11. Ten servers' last ten releases
+
+*Checked 2026-09-27 with toolmenu 0.5:* `toolmenu history <package> --versions 10` for
+each server from F10 (plus `server-everything`, minus the archived GitHub server),
+99 installs in about 9 minutes. Same caveat as always: each version was installed
+today, so its dependencies resolve as of today (F4).
+
+| Package | Releases | Protocol | Tools | Menu (est.) | × | Releases with breaking changes | Bump too small |
+|---|---|---|---|---|---|---|---|
+| `@modelcontextprotocol/server-memory` | 0.6.0 → 2026.8.31 (2024-12 → 2026-08) | 2024-11-05, 2025-11-25 | 9 → 9 | ~765 → ~2,376 | 3.1× | 0 (0 changes) | – |
+| `@modelcontextprotocol/server-sequential-thinking` | 0.5.1 → 2026.8.31 (2024-12 → 2026-08) | 2024-11-05, 2025-11-25 | 1 → 1 | ~773 → ~1,001 | 1.3× | 0 (0 changes) | – |
+| `@modelcontextprotocol/server-everything` | 2025.9.12 → 2026.8.31 (2025-09 → 2026-08) | 2025-11-25 | 10 → 13 | ~840 → ~1,706 | 2.0× | 1 (11 changes) | – |
+| `@upstash/context7-mcp` | 4.0.0 → 4.1.1 (2026-08 → 2026-09) | 2026-07-28 | 2 → 2 | ~1,050 → ~1,050 | 1.0× | 0 (0 changes) | – |
+| `@playwright/mcp` | 0.0.73 → 0.0.82 (2026-05 → 2026-09) | 2025-11-25 | 23 → 25 | ~3,707 → ~4,374 | 1.2× | 2 (3 changes) | – |
+| `chrome-devtools-mcp` | 1.2.0 → 1.10.1 (2026-06 → 2026-09) | 2025-11-25 | 29 → 30 | ~5,114 → ~5,912 | 1.2× | 2 (28 changes) | 1.6.0, 1.8.0 |
+| `@notionhq/notion-mcp-server` | 2.0.0 → 2.5.2 (2025-12 → 2026-09) | 2025-11-25 | 21 → 24 | ~14,612 → ~17,498 | 1.2× | 0 (0 changes) | – |
+| `@sentry/mcp-server` | 0.33.0 → 0.42.0 (2026-04 → 2026-09) | 2025-11-25 | 22 → 9 | ~13,803 → ~6,141 | 0.4× | 4 (23 changes) | – |
+| `firecrawl-mcp` | 3.23.7 → 3.25.5 (2026-08 → 2026-09) | 2025-11-25 | 27 → 29 | ~9,424 → ~18,697 | 2.0× | 1 (1 changes) | 3.25.0 |
+| `mcp-server-kubernetes` | 4.0.8 → 4.1.7 (2026-07 → 2026-09) | 2025-11-25 | 23 → 23 | ~5,222 → ~5,266 | 1.0× | 0 (0 changes) | – |
+
+- `chrome-devtools-mcp`: failed: 1.10.0 (crashed)
+
+Reproduce: the commands in F10 with `history` instead of `snapshot`, then
+`node scripts/history-report.mjs out/*.json` for this table.
+
+What stands out:
+- **Token growth can happen in patch releases.** `firecrawl-mcp` 3.25.4 → **3.25.5 added
+  ~6,300 tokens** to every conversation that loads it, and the menu doubled
+  (~9,400 → ~18,700) in six weeks. `server-memory` tripled over its history with the
+  same 9 tools. The releases don't surface that number to the people who install them.
+- **Sentry went the other way, with a design change.** `@sentry/mcp-server` 0.37.0 cut
+  22 tools to 9 (~14,400 → ~6,500 tokens) by adding `search_sentry_tools` and
+  `execute_sentry_tool`: it looks like the "deferred" setup from lesson 05, a small
+  core menu plus a way to look up the rest. The removals are real breaking changes
+  for anything that called the old tools, released in 0.x minors (which semver
+  allows).
+- **Breaking changes in 1.x minor releases:** `chrome-devtools-mcp` 1.8.0 added a
+  required `pageId` to 27 tools, and 1.6.0 narrowed an enum. `firecrawl-mcp` 3.25.0
+  narrowed `limit` from number to integer.
+- **Renames happen, and break callers:** `server-everything` 2026.1.14 renamed its
+  tools from camelCase to kebab-case (`add` → `get-sum`, …) and dropped five.
+- **Another undeclared dependency:** `chrome-devtools-mcp` 1.10.0 crashes on start
+  (`Cannot find package 'pkce-challenge'`); 1.10.1, a day later, works. Same pattern
+  as F8.
+- **No menu was unstable and none failed the official schema** in any of the 98
+  releases that ran (99 inspected, one crashed).
+
+### What this run fixed in toolmenu
+
+Three `diff` rules were too strict on real release history, and I fixed them before
+recording the table:
+1. Widening a type (`sequential-thinking` 2026.8.31: `boolean` → `boolean|string`;
+   `notion` 2.3.1: `object` → any) was reported as breaking. It's now
+   `diff/type-widened`, minor.
+2. Removing an optional parameter from a schema that allows extra properties (`notion`
+   2.3.1 dropped `Notion-Version` from 21 tools) was reported as 21 breaking changes.
+   Calls that still send it stay valid, so it's now `diff/param-dropped`, a notice.
+3. `0.0.x` releases (`@playwright/mcp`) were held to semver bump rules they never
+   promised. They no longer are.
