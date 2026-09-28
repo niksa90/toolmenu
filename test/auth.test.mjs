@@ -128,9 +128,19 @@ test('auth: a pre-registered app (--client-id, --client-secret) logs in without 
   const app = { client_id: 'toolmenu-app', client_secret: 's3cret', redirect_uris: [`http://127.0.0.1:${p}/callback`] };
   const server = await start({ registration: false, preRegistered: app });
   try {
-    const result = await login(server.url, { port: p, clientId: app.client_id, clientSecret: app.client_secret, open: browser() });
+    const warnings = [];
+    const warn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(' '));
+    const result = await login(server.url, { port: p, clientId: app.client_id, clientSecret: app.client_secret, open: browser() }).finally(() => (console.warn = warn));
     assert.ok(result.tools > 0);
+    // The pre-registered client carries the issuer stamp like stored ones (SEP-2352).
+    assert.deepEqual(warnings.filter((w) => w.includes('mcp-sdk')), []);
     assert.equal(server.seen.registrations, 0);
+    // Later commands refresh with the stored app, no --client-id needed.
+    server.expireTokens();
+    const { menu } = await snapshot({ kind: 'http', url: server.url }, { timeoutMs: 15_000, processes: 1 });
+    assert.ok(menu.tools.length > 0);
+    assert.equal(server.seen.refreshes, 1);
     // A wrong secret fails the exchange (after the stored login is revoked, so there is one).
     server.revokeAll();
     await assert.rejects(login(server.url, { port: p, clientId: app.client_id, clientSecret: 'wrong', open: browser() }), /invalid_client|401/);
