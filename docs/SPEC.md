@@ -659,4 +659,11 @@ before 0.7.0:
 - **The CLI** waits for stdout to drain before exiting, so piped `--json` isn't cut.
 - Wording: "the linters I found", no "common today", and determinism scoped to the
   same inputs (`history` excepted).
+- **A second review, of those fixes**, found ten more, several introduced by them: a
+  failed menu listing after a step was swallowed (now `session/step-failed`); array
+  item types weren't compared; ignored tools could still pair into a rename or a
+  reorder (they now leave the comparison); a version going backwards now has its own
+  rule, `diff/version-backwards`; build metadata (`+build-1`) no longer reads as a
+  prerelease, with one semver parser shared by `diff` and `history`; and piping into
+  `head` keeps the exit code instead of crashing on EPIPE.
 

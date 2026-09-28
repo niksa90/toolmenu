@@ -160,7 +160,8 @@ the way OpenAPI breaking-change checkers do it:
 It also reports the token change per tool and suggests a semver bump. To check the
 bump, pass the **release** versions: `--release 1.4.0..1.5.0` (npm, a git tag).
 `diff/version-bump` then warns when the release's bump is smaller (`0.0.x` promises
-nothing and `0.x` may break in a minor). The version in the snapshot is what the
+nothing and `0.x` may break in a minor), and `diff/version-backwards` when the version
+goes down. Calendar versions and prereleases aren't judged. The version in the snapshot is what the
 server reports (`serverInfo.version`), which is often not the release: the filesystem
 server has said `0.2.0` for 19 releases (FINDINGS F5). It's shown, and only checked
 with `--server-version-is-release`. `diff` also enforces an optional `tokenBudget`

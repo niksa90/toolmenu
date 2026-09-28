@@ -74,6 +74,8 @@ export interface StepRecord {
   index: number;
   label: string;
   status: 'ok' | 'refused' | 'failed' | 'timed-out';
+  /** Why no call was made, when none was: set where the status is set, never parsed from text. */
+  reason?: 'missing' | 'refused';
   note?: string;
   changed: boolean;
   listChanged: number;
@@ -158,10 +160,12 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         const tool = current.tools.find((t) => t.name === step.tool);
         if (!tool) {
           record.status = 'failed';
+          record.reason = 'missing';
           record.note = `${step.tool} isn't in the menu at this point`;
           raw.push({ rule: 'session/step-failed', severity: 'error', step: index, message: `Step ${index} calls ${step.tool}, which isn't in the menu at this point.` });
         } else if (!scenario.allowWrites && tool.annotations?.readOnlyHint !== true) {
           record.status = 'refused';
+          record.reason = 'refused';
           record.note = 'not marked readOnlyHint';
           raw.push({
             rule: 'session/refused',
@@ -207,7 +211,11 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       let next: Menu;
       try {
         next = await menuOf(conn);
-      } catch {
+      } catch (error) {
+        const why = error instanceof Error ? error.message.split('\n')[0] : String(error);
+        record.status = 'failed';
+        record.note = record.note ? `${record.note}; then listing the menu failed: ${why}` : `listing the menu failed: ${why}`;
+        raw.push({ rule: 'session/step-failed', severity: 'error', step: index, message: `After step ${index} (${label}), listing the menu failed: ${why}` });
         steps.push(record);
         continue;
       }
@@ -220,9 +228,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         const origin =
           step.kind === 'list'
             ? 'no tool call in between'
-            : record.status === 'failed' && record.note?.includes("isn't in the menu")
+            : record.reason === 'missing'
               ? 'no tool call made (the tool wasn\'t in the menu)'
-              : record.status === 'refused'
+              : record.reason === 'refused'
                 ? 'no tool call made (refused)'
                 : record.status === 'failed'
                   ? 'the call failed, but the menu changed: the server may have applied it anyway'
