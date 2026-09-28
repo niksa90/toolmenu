@@ -2,6 +2,7 @@ import type { DiffResult } from './diff.js';
 import type { HistoryResult, HistoryRow } from './history.js';
 import { stepLabel, type Scenario, type SessionResult } from './session.js';
 import type { Finding, Menu, Severity } from './types.js';
+import { breakdown, breakdownLines } from './breakdown.js';
 
 export type Format = 'text' | 'json' | 'github' | 'markdown';
 
@@ -26,6 +27,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
         tools: menu.tools.length,
         totalTokens: menu.totalTokens,
         listMeta: menu.listMeta,
+        breakdown: breakdown(menu),
         written: outPath ?? null,
         counts: counts(findings),
         findings,
@@ -43,6 +45,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
       `Protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)`,
       '',
       ...mdFindings(findings),
+      ...mdBreakdown(menu),
     ].join('\n');
   }
 
@@ -53,9 +56,17 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
   ];
   if (outPath) lines.push(`  wrote ${outPath}`);
   lines.push('');
+  const where = breakdownLines(breakdown(menu), menu.tools.length);
+  if (where.length) lines.push(...where, '');
   lines.push(...findingLines(findings));
   lines.push(summaryLine(findings));
   return lines.join('\n');
+}
+
+function mdBreakdown(menu: Menu): string[] {
+  const where = breakdownLines(breakdown(menu), menu.tools.length);
+  if (!where.length) return [];
+  return ['', `<details><summary>${where[0]}</summary>`, '', '```', ...where.slice(1).map((l) => l.trimStart()), '```', '', '</details>'];
 }
 
 function findingLines(findings: Finding[]): string[] {
