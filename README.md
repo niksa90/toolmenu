@@ -29,7 +29,7 @@ No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
 (`history` installs old versions with today's dependencies, so it records what they
 serve now, which can differ from what they shipped with: FINDINGS F4.)
 
-> **Status: 0.8, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
+> **Status: 0.9, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
 > real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 ## Start here
@@ -48,6 +48,19 @@ npx toolmenu snapshot -- node dist/server.js
 ```
 
 HTTP servers work the same way: `npx toolmenu snapshot https://example.com/mcp --header "Authorization: Bearer $TOKEN"`.
+Servers behind OAuth (most hosted ones: GitHub, Atlassian, Sentry…): log in once, in a
+browser, and `snapshot` and `session` use that login from then on, refreshing it as
+needed:
+
+```sh
+npx toolmenu auth login https://mcp.example.com/mcp
+npx toolmenu snapshot https://mcp.example.com/mcp
+```
+
+Logins are stored per server in `~/.config/toolmenu/auth` (readable only by you);
+`auth list` and `auth logout <url>` manage them. A server that doesn't allow
+dynamic registration needs a pre-registered app: `--client-id` (and
+`--client-secret`). In CI, where no browser can open, pass a token as a header.
 Both protocol generations are supported: 2026-07-28 (`server/discover`, stateless)
 and the 2025 `initialize` handshake, through the official TypeScript SDK.
 
@@ -67,7 +80,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.8.0
+      - uses: niksa90/toolmenu@v0.9.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot

@@ -711,3 +711,30 @@ the plan (docs/plans/0.8-roadmap.md).
 - **Heuristics.** `ids/authored` became `info`, one finding per kind of ID, with
   abbreviations (`org` = `organization`), no kind for a lone qualifier (`parentId`),
   and "found in the URL" as a source. `naming/vague-id` dropped `ref`.
+
+## 22. 0.9: OAuth, `--auto`, the union menu
+
+- **OAuth.** Most hosted MCP servers need an OAuth login, so toolmenu couldn't check
+  them. `auth login` implements the SDK's `OAuthClientProvider`: dynamic
+  registration (deprecated by 2026-07-28 in favour of Client ID Metadata Documents,
+  still supported for a year; CIMD needs a hosted metadata document and comes when a
+  server requires it) or a pre-registered client; a loopback redirect on a fixed port
+  (`127.0.0.1:33418`), because registration records the exact redirect URI; `state`
+  generated and checked by toolmenu (the SDK checks `iss`, not `state`); PKCE and the
+  token exchange by the SDK. Stored credentials are bound to the issuer and never
+  handed to another authorization server. Outside `auth login`, a flow that would need
+  a browser fails with "run `toolmenu auth login`" instead of waiting. Tested end to
+  end against a local authorization server (`test/fixtures/oauth-server.mjs`):
+  registration, login, refresh, revocation, a forged `state`.
+- **`--auto`.** Values only from the schema (`const`, `default`, `examples`, `enum`,
+  type and format), never a guessed ID or anything with a `pattern`. Tools marked
+  `openWorldHint: true` are opt-in (`--open-world`): they're the web search, fetch and
+  scraping tools that spend credits. Unmarked tools are called: on the corpus,
+  GitHub, Atlassian and Notion leave the hint unset on every read, and skipping them
+  left 18 of 262 read-only tools callable; with this rule it's 60 (84 with
+  `--open-world`). The reviewed plan's unlock phase is deferred: no public server in
+  the corpus unlocks tools (§ docs/plans/0.8-roadmap.md, 10).
+- **The union menu.** Every tool a session saw, first-seen order, last-seen
+  definition, as a `toolmenu: 1` file. It replaces the plan's full session traces:
+  `diff` already does the comparison.
+
