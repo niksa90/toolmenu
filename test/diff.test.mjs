@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { diffMenus, versionBump } from '../dist/diff.js';
-import { loadMenu } from '../dist/menu.js';
+import { buildMenu, loadMenu } from '../dist/menu.js';
 import { FIXTURES, menuOf, run, tempDir, tool } from './helpers.mjs';
 
 const menu = (tools, version = '1.0.0') => menuOf(tools, { name: 'fx', version });
@@ -218,4 +218,45 @@ test('removing an optional parameter only breaks callers when extra properties a
   assert.deepEqual(rulesOf(t(withVersion, ['user_id']), t({ user_id: { type: 'string' } }, ['user_id'])), ['diff/param-dropped']);
   assert.deepEqual(rulesOf(t(withVersion, ['user_id']), t({ user_id: { type: 'string' } }, ['user_id'], { additionalProperties: false })), ['diff/param-removed', 'diff/schema-other'], 'closing the schema is itself reported');
   assert.deepEqual(rulesOf(t(withVersion, ['user_id', 'Notion-Version']), t({ user_id: { type: 'string' } }, ['user_id'])), ['diff/param-removed']);
+});
+
+test('tokens count what the model reads: name, description, inputSchema', () => {
+  const plain = tool('get_form', ['form_id']);
+  const dressed = {
+    ...plain,
+    title: 'Get form',
+    icons: [{ src: 'data:image/png;base64,' + 'A'.repeat(4000) }],
+    outputSchema: { type: 'object', properties: { form: { type: 'object', description: 'The form. '.repeat(50) } } },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+    _meta: { 'x/y': 'z'.repeat(500) },
+  };
+  const [a, b] = [buildMenu([plain], {}), buildMenu([dressed], {})];
+  assert.equal(b.totalTokens, a.totalTokens);
+  assert.equal(diffMenus(a, b).tokens.delta, 0);
+});
+
+test('loadMenu recounts tokens a baseline file carries (older toolmenu counted every field)', async () => {
+  const fresh = buildMenu([tool('a', ['x'])], {});
+  const path = join(tempDir(), 'menu.json');
+  writeFileSync(path, JSON.stringify({ ...fresh, tools: fresh.tools.map((t) => ({ ...t, tokens: 9999 })), totalTokens: 9999 }));
+  const loaded = await loadMenu(path);
+  assert.equal(loaded.totalTokens, fresh.totalTokens);
+  assert.equal(loaded.tools[0].tokens, fresh.tools[0].tokens);
+});
+
+test('a type written as anyOf alternatives is the same type (zod switched between the two)', () => {
+  const desc = { description: 'Sort field.' };
+  const before = menu([{ name: 't', inputSchema: schema({ sort: { anyOf: [{ type: 'string' }, { type: 'null' }], ...desc } }, []) }]);
+  const after = menu([{ name: 't', inputSchema: schema({ sort: { type: ['string', 'null'], ...desc } }, []) }]);
+  assert.deepEqual(rules(diffMenus(before, after)), []);
+  // A real narrowing written either way is still caught.
+  const narrow = menu([{ name: 't', inputSchema: schema({ sort: { type: 'string', ...desc } }, []) }]);
+  assert.deepEqual(rules(diffMenus(before, narrow)), ['diff/param-type:t']);
+});
+
+test('a new required parameter with a default says so', () => {
+  const before = menu([{ name: 'shot', inputSchema: schema({ type: str }) }]);
+  const after = menu([{ name: 'shot', inputSchema: schema({ type: str, scale: { type: 'string', enum: ['css', 'device'], default: 'css' } }) }]);
+  const f = diffMenus(before, after).findings.find((f) => f.rule === 'diff/param-required');
+  assert.match(f.message, /has a default \("css"\)/);
 });

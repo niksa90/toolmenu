@@ -67,7 +67,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.7.0
+      - uses: niksa90/toolmenu@v0.7.1
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -143,7 +143,7 @@ npx toolmenu diff menu.json new-menu.json
 ```
 $ npx toolmenu diff --release 2026.1.14..2026.8.31 fs-2026.1.14.json fs-2026.8.31.json
 toolmenu diff  secure-filesystem-server 2026.1.14 → 2026.8.31
-  14 → 14 tools · ~2,638 → ~2,821 tokens (+183, estimate): this release adds ~183 tokens to every conversation that loads the menu
+  14 → 14 tools · ~1,640 → ~1,664 tokens (+24, estimate): this release adds ~24 tokens to every conversation that loads the menu
   1 breaking · 0 minor · 15 notice · suggested bump: major · actual: not checked (calendar version)
 
 ERROR  diff/safety-hint
@@ -291,7 +291,9 @@ or bad usage. `toolmenu --help` lists the `session` and `history` options.
 - **Server order isn't final client order.** Clients merge tools from several servers
   and may sort or filter them. A stable server menu is necessary for cache hits, not
   sufficient. toolmenu measures what the server controls.
-- **Token counts are estimates** (`o200k_base`). Vendors tokenize, cache and bill
+- **Token counts are estimates** (`o200k_base`) of what the model reads: each tool's
+  name, description and input schema. Output schemas, annotations, icons and `_meta`
+  stay with the client and aren't counted. Vendors tokenize, cache and bill
   differently.
 - **Heuristic rules say so** in their messages.
 - Not a security scanner or a full conformance suite. Other tools do those well.
