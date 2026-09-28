@@ -85,7 +85,7 @@ check even though nothing was checked. The PR comment and a notice say so, and t
       - uses: niksa90/toolmenu@v0.7.0
         id: toolmenu
         with:
-          url: https://mcp.example.com/mcp
+          url: https://mcp.example.com/mcp   # a remote server that needs a key
           headers: "x-api-key: ${{ secrets.MCP_API_KEY }}"
       - if: steps.toolmenu.outputs.skipped == 'true'
         run: |
@@ -108,6 +108,11 @@ Action downloads Node 22 from nodejs.org for toolmenu alone: your server and the
 job's later steps keep the job's own Node. The download is integrity-checked
 against nodejs.org's SHASUMS256.txt, which catches a corrupted download but not a
 tampered one (the signature on that file isn't checked). If you'd rather not have
-the Action download anything, or your job runs in an Alpine container (the
-download is the glibc build), add `actions/setup-node` with `node-version: 22`
+the Action download anything, add `actions/setup-node` with `node-version: 22`
 before the Action.
+
+**Alpine containers** need more. The Action runs with `bash`, which Alpine images
+don't include, and Node's builds from nodejs.org (the ones `actions/setup-node`
+installs too) don't run on Alpine. Install both from Alpine's own packages before
+the Action, `apk add bash nodejs npm` (check that its `nodejs` is 22 or later), or
+use a Debian-based image.

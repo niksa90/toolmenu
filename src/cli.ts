@@ -199,7 +199,7 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   if (sub === 'session') {
-    if (!values.scenario) throw new UsageError('session needs --scenario <file>. See docs/SPEC.md §3.3 for the format.');
+    if (!values.scenario) throw new UsageError('session needs --scenario <file>. Run session --init for a starter, or see https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md for the format.');
     let scenario;
     try {
       scenario = await loadScenario(values.scenario);

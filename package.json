@@ -48,8 +48,7 @@
     "dist",
     "schemas",
     "README.md",
-    "LICENSE",
-    "docs/SPEC.md"
+    "LICENSE"
   ],
   "engines": {
     "node": ">=22"

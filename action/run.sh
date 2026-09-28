@@ -4,6 +4,11 @@
 # summary and (on pull requests) one PR comment that updates in place.
 set -uo pipefail
 
+# Outputs for a workflow that reads them with if: always(), even when the script
+# stops early (no command or url, no Node 22).
+OUTPUTS_WRITTEN=false
+trap 'code=$?; [ "$OUTPUTS_WRITTEN" = true ] || printf "exit-code=%s\nskipped=false\n" "$code" >> "${GITHUB_OUTPUT:-/dev/null}"' EXIT
+
 # toolmenu needs Node 22+. If the runner's Node is older (or missing), fetch
 # Node 22 for toolmenu alone: it goes first on this script's PATH only, so the
 # job's later steps and the server started by 'command' keep the job's own Node.
@@ -18,7 +23,7 @@ if [ "$node_major" -lt 22 ]; then
     case "$(uname -s)-$(uname -m)" in
       Linux-x86_64) plat=linux-x64 ;; Linux-aarch64) plat=linux-arm64 ;;
       Darwin-x86_64) plat=darwin-x64 ;; Darwin-arm64) plat=darwin-arm64 ;;
-      *) echo "::error title=toolmenu::toolmenu needs Node 22 or later, and this runner has $node_label. Add actions/setup-node with node-version 22 before the Action."; exit 2 ;;
+      *) echo "::error title=toolmenu::toolmenu needs Node 22 or later, and this runner has $node_label. Install Node 22 before the Action (actions/setup-node, or your container's package manager)."; exit 2 ;;
     esac
     base="https://nodejs.org/dist/latest-v22.x"
     rm -rf "$node_dir" && mkdir -p "$node_dir"
@@ -29,7 +34,7 @@ if [ "$node_major" -lt 22 ]; then
        || [ "$( (sha256sum "$node_dir/node.tar.gz" 2>/dev/null || shasum -a 256 "$node_dir/node.tar.gz") | awk '{print $1}')" != "$sum" ] \
        || ! tar -xzf "$node_dir/node.tar.gz" -C "$node_dir" --strip-components=1 \
        || ! "$node_dir/bin/node" -v > /dev/null 2>&1; then  # e.g. a glibc build on Alpine
-      echo "::error title=toolmenu::Couldn't fetch Node 22 for toolmenu (the runner has $node_label). Add actions/setup-node with node-version 22 before the Action."
+      echo "::error title=toolmenu::Couldn't fetch Node 22 for toolmenu (the runner has $node_label). Install Node 22 before the Action (actions/setup-node, or your container's package manager)."
       exit 2
     fi
     rm -f "$node_dir/node.tar.gz"
@@ -225,6 +230,7 @@ echo "<sub>[toolmenu](https://github.com/niksa90/toolmenu) · token counts are e
 echo "report=$BODY" >> "${GITHUB_OUTPUT:-/dev/null}"
 echo "exit-code=$status" >> "${GITHUB_OUTPUT:-/dev/null}"
 echo "skipped=$SKIPPED" >> "${GITHUB_OUTPUT:-/dev/null}"
+OUTPUTS_WRITTEN=true
 
 # 4. One PR comment, updated in place on every push.
 if [ "${TOOLMENU_COMMENT:-true}" = "true" ] && [ -n "${TOOLMENU_PR:-}" ] && [ -n "${GH_TOKEN:-}" ]; then
