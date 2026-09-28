@@ -105,7 +105,7 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   if (moved.length) {
     raw.push({
       rule: 'diff/order',
-      message: `Tool order changed (${moved.map((m) => m.tool).join(', ')}). Only a notice between releases: prompt caches expire and rebuild after a deploy. It matters within a session.`,
+      message: `Tool order changed (${moved.map((m) => m.tool).join(', ')}). Only a notice between releases: prompt caches are short-lived, so a deploy costs roughly one rewrite. It matters within a session.`,
     });
   }
 

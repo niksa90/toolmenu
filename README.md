@@ -6,24 +6,27 @@
 
 **Lint your MCP server's tool menu for changes that confuse agents or break caches.**
 
-Most MCP linters grade one snapshot of the menu an agent reads: tool names,
+The MCP linters I found grade one snapshot of the menu an agent reads: tool names,
 descriptions, schemas. toolmenu observes how the menu behaves across calls,
 connections and releases, and checks **when** it changes:
 
-- **Mid-session.** A menu that changes after the conversation has started can break
-  the prompt cache from that point on. In my logs, one mid-conversation unlock
-  rewrote 40–57K tokens of cached prefix. `session` catches it, pins it to the step
-  that caused it, and says where in the list it happened.
-- **Ready for 2026-07-28.** The new MCP spec says the tool set **must not** vary per
-  connection or as a side effect of other requests. Per-session "unlock" designs,
-  common today, are ruled out. `session` tells you whether yours is one of them.
+- **Mid-session.** A menu that changes after the conversation has started can
+  invalidate the cached conversation: most clients put the tool list at the start of
+  the prompt, so any change to it, even a tool added at the end, means everything
+  after it is processed again. In my logs, one mid-conversation unlock rewrote
+  40–57K tokens of cached prefix. `session` catches it, pins it to the step that
+  caused it, and says where in the list it happened.
+- **Ready for 2026-07-28.** That protocol version says the tool set **must not** vary
+  per connection or as a side effect of other requests (the 2025 versions allow it).
+  Per-session "unlock" designs, like the one I built, are ruled out. `session` tells you whether yours is one of them.
 - **Between releases.** `diff` finds breaking changes and token growth, and checks
   the version bump.
 
 ![toolmenu session output: tools inserted mid-list, a description edited, each pinned to the step that caused it](docs/demo.svg)
 
-No LLM anywhere: every command is deterministic, so CI gives the same answer every
-run.
+No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
+(`history` installs old versions with today's dependencies, so it records what they
+serve now, which can differ from what they shipped with: FINDINGS F4.)
 
 > **Status: 0.7, early.** Spec in [docs/SPEC.md](docs/SPEC.md). What it has found on
 > real servers: [docs/FINDINGS.md](docs/FINDINGS.md).
@@ -113,8 +116,8 @@ as its steps, so the starter is a floor, not a ceiling.
 
 | Rule | Default | Catches |
 |---|---|---|
-| `session/mid-insert`, `session/reorder`, `session/remove`, `session/edit` | error | The menu changing mid-session anywhere but the end, with the estimated tokens of cached prefix affected |
-| `session/append` | info | Tools added at the end: usually cache-friendly |
+| `session/mid-insert`, `session/reorder`, `session/remove`, `session/edit` | error | The menu changing mid-session anywhere but the end, with the estimated tokens of the tool list from the change on: a floor, since the conversation after the tool list is processed again too |
+| `session/append` | warn | Tools added at the end of the list. Still a cache miss for the conversation when your client sends tools at the start of the prompt (Claude's Messages API does); cache-safe only when the client adds new tools after the cached content, as tool search (deferred loading) does |
 | `session/connection-local` | error on 2026-07-28 (HTTP) | A change only this connection sees. 2026-07-28: the tool set MUST NOT vary "per-connection or as a side effect of other requests on the connection" |
 | `session/side-effect` | warn on 2026-07-28 (stdio) | The same, where stdio can't tell per-connection from global |
 | `session/connection-variance` | error/warn | A second connection with the same credentials gets a different menu |

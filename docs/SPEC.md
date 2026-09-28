@@ -21,8 +21,8 @@ and they need different answers:
 
 | When the menu changes | What it risks | toolmenu command |
 |---|---|---|
-| **During a live conversation** (unlocks, dynamic tools, unstable output) | Cache breaks. A change can force the changed suffix of the prompt to be written to the cache again. In my logs, one mid-conversation unlock rewrote **40–57K tokens of cached prefix** | `session` |
-| **Between releases** | Compatibility. Agents, saved prompts and evals break or quietly change behaviour. Little cache impact: caches expire within minutes to an hour, so a deploy costs roughly one rewrite | `diff` |
+| **During a live conversation** (unlocks, dynamic tools, unstable output) | Cache breaks. Prompt caches match a prefix, and most clients put the tool list at the start of the prompt (Claude's Messages API renders tools, then system, then messages), so a change anywhere in the tool list means everything after it, the whole conversation included, is processed again. In my logs, one mid-conversation unlock rewrote **40–57K tokens of cached prefix** | `session` |
+| **Between releases** | Compatibility. Agents, saved prompts and evals break or quietly change behaviour. Little cache impact: prompt caches are short-lived (minutes to hours, depending on the provider), so a deploy costs roughly one rewrite | `diff` |
 
 The 40–57K figure supports the first row only. v0.1 of this spec mixed the two up.
 
@@ -134,8 +134,8 @@ through the notification on the session.
 
 | Change during session | Severity | Why |
 |---|---|---|
-| Tool appended at the end | info | Usually the most cache-friendly change: the existing prefix can stay valid. Exact behaviour depends on the provider |
-| Tool inserted mid-list | error | Can break the cache from the insert point on |
+| Tool appended at the end | warn | The end of the tool list isn't the end of the prompt. With tools first, an append still invalidates the cached conversation after the list. Cache-safe only when the client adds new tools after the cached content, as tool search (deferred loading) does. (Corrected before 0.7.0: earlier drafts called appends "usually cache-friendly", which only holds for tool search.) |
+| Tool inserted mid-list | error | Invalidates the cache from the insert point on, and the conversation after the list |
 | Reorder | error | Same, from the first moved tool on |
 | Tool removed | error | Same, from the removed tool on |
 | Description/schema/annotations of existing tool edited | error | Same, from the edited tool on |
@@ -171,12 +171,12 @@ SESSION  scenario.yml
 step 3: call unlock_toolset { toolset: "audits" }
   ERROR session/mid-insert
     +3 tools inserted at position 42 (list_team_audits, get_team_audit, …)
-    ~14,200 estimated tokens of cached prefix affected (positions 42–118)
+    ~14,200 estimated tokens of the tool list from position 42 on (positions 42–118), a floor
 
 step 5: list
   ERROR session/edit
     get_form: description changed (no tool call in between)
-    ~9,800 estimated tokens of cached prefix affected (positions 17–118)
+    ~9,800 estimated tokens of the tool list from position 17 on (positions 17–118), a floor
 ```
 
 That turns "something bad happened" into "this operation changed the menu in a
