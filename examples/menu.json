@@ -26,7 +26,7 @@
       "annotations": {
         "readOnlyHint": true
       },
-      "tokens": 66
+      "tokens": 58
     },
     {
       "name": "get_form",
@@ -46,7 +46,7 @@
       "annotations": {
         "readOnlyHint": true
       },
-      "tokens": 63
+      "tokens": 55
     },
     {
       "name": "delete_form",
@@ -70,10 +70,10 @@
         "readOnlyHint": false,
         "destructiveHint": true
       },
-      "tokens": 85
+      "tokens": 71
     }
   ],
-  "totalTokens": 214,
+  "totalTokens": 184,
   "listMeta": {
     "ttlMs": 0,
     "cacheScope": "private"

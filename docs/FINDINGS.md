@@ -4,6 +4,11 @@ A research log: what toolmenu found on real, public MCP servers. Every entry say
 when it was checked and how to reproduce it. Servers are named on purpose: the
 data is public and anyone can re-run it.
 
+**Corrected 2026-09-28:** toolmenu 0.7.0 counted every field of a tool definition as
+tokens, including output schemas, annotations and icons that clients don't send the
+model. Token numbers in F6, F10 and F11 are recounted with 0.7.1, and F11 is re-run;
+what changed is in F7, items 7 and 8.
+
 **Caveat for every entry:** installing an old version today resolves its
 dependencies *today* (see F4). So these describe "this version as installed on the
 date shown", not necessarily what users got when it shipped.
@@ -119,7 +124,8 @@ For toolmenu:
 ## F6. One server's menu, release by release
 
 `toolmenu history @modelcontextprotocol/server-filesystem --versions 19 --arg /tmp`,
-run 2026-09-27 (26 s for the last 5 versions, about 2 min for all 19):
+run 2026-09-27 (26 s for the last 5 versions, about 2 min for all 19). Token counts
+recounted 2026-09-28 with 0.7.1, which counts only what the model reads (F7, item 7):
 
 ```
   version     published   protocol         tools  tokens  sdk     zod            findings      vs previous
@@ -136,26 +142,29 @@ run 2026-09-27 (26 s for the last 5 versions, about 2 min for all 19):
   2025.7.29   2025-07-31  2025-11-25       14     ~1,062  1.30.1  4.6.5          1 err 4 warn  +111 tokens · 2 minor · 2 notice
   2025.8.18   2025-08-18  2025-11-25       14     ~1,074  1.30.1  4.6.5          1 err 4 warn  +12 tokens · 1 notice
   2025.8.21   2025-08-21  2025-11-25       14     ~1,074  1.30.1  4.6.5          1 err 4 warn  ±0 tokens · no changes
-  2025.11.25  2025-11-25  2025-11-25       14     ~2,638  1.30.1  4.6.5          clean         +1,564 tokens · 57 notice
-  2025.12.18  2025-12-18  2025-11-25       14     ~2,638  1.30.1  4.6.5          clean         ±0 tokens · no changes
-  2026.1.14   2026-01-14  2025-11-25       14     ~2,638  1.30.1  4.6.5          clean         ±0 tokens · no changes
-  2026.7.4    2026-07-04  2025-11-25       14     ~2,638  1.30.1  4.6.5          clean         ±0 tokens · 1 breaking
-  2026.7.10   2026-07-10  2025-11-25       14     ~2,821  1.30.1  4.6.5          clean         +183 tokens · 16 notice
-  2026.8.31   2026-08-31  2025-11-25       14     ~2,821  1.30.1  4.6.5          clean         ±0 tokens · no changes
+  2025.11.25  2025-11-25  2025-11-25       14     ~1,640  1.30.1  4.6.5          clean         +566 tokens · 57 notice
+  2025.12.18  2025-12-18  2025-11-25       14     ~1,640  1.30.1  4.6.5          clean         ±0 tokens · no changes
+  2026.1.14   2026-01-14  2025-11-25       14     ~1,640  1.30.1  4.6.5          clean         ±0 tokens · no changes
+  2026.7.4    2026-07-04  2025-11-25       14     ~1,640  1.30.1  4.6.5          clean         ±0 tokens · 1 breaking
+  2026.7.10   2026-07-10  2025-11-25       14     ~1,664  1.30.1  4.6.5          clean         +24 tokens · 16 notice
+  2026.8.31   2026-08-31  2025-11-25       14     ~1,664  1.30.1  4.6.5          clean         ±0 tokens · no changes
 ```
 
 What stands out:
-- **The menu an agent loads grew 4.2×** from the first release that runs today to the
-  latest (~674 → ~2,821 tokens per conversation, estimate). The biggest single jump
-  is 2025.11.25 (+1,564): output schemas and annotations across the menu,
-  `read_text_file` and `read_media_file` added, `read_file` kept but marked
-  "DEPRECATED: Use read_text_file instead".
+- **The menu an agent loads grew 2.5×** from the first release that runs today to the
+  latest (~674 → ~1,664 tokens per conversation, estimate). The biggest single jump
+  is 2025.11.25 (+566): `read_text_file` and `read_media_file` added, `read_file`
+  kept but marked "DEPRECATED: Use read_text_file instead", and longer descriptions.
+  The same release added output schemas and annotations across the menu, which
+  clients keep and don't send the model. (0.7.0 counted those too and reported
+  +1,564 and 4.2×.)
 - **The one breaking-class change is in 2026.7.4:** `move_file`'s
   `destructiveHint` went `false` → `true`, with no token change and nothing in the
   version number to signal it. Clients that auto-approve additive-only tools would
   have stopped doing so for `move_file`.
-- **2026.7.10** added `openWorldHint: false` to all 14 tools (+183 tokens) and
-  widened `read_media_file` to any file type.
+- **2026.7.10** added `openWorldHint: false` to all 14 tools and widened
+  `read_media_file` to any file type (+24 tokens; 0.7.0 said +183, counting the
+  annotations the model never sees).
 - **The protocol a release speaks depends on today's install**, not its publish
   date: 2025.7.1 (July 2025) speaks 2025-11-25 because its SDK range resolves to
   1.30.1 today.
@@ -173,9 +182,10 @@ because the fixes came from real data:
    annotations, and MCP's defaults (`readOnlyHint: false`, `destructiveHint: true`)
    already made it destructive. `diff` now compares effective hints after
    defaults.
-3. **A silent +6 tokens on every tool** (2026.1.14 → 2026.8.31) had no matching
-   finding: `diff` only looked at two safety hints. It now reports every annotation
-   change (`diff/annotations`) and any other changed field (`diff/other`).
+3. **A silent change to every tool** (2026.1.14 → 2026.8.31: `openWorldHint` added)
+   had no matching finding: `diff` only looked at two safety hints. It now reports
+   every annotation change (`diff/annotations`) and any other changed field
+   (`diff/other`).
 
 4. **2025.1.14's empty schemas went unreported** because toolmenu had no schema
    for protocol 2024-11-05 and skipped the check. It now bundles the official
@@ -192,6 +202,21 @@ because the fixes came from real data:
    as shared nouns, and 18 separate dry-run notes for one browser server. On ten
    real servers, `ids/authored` went from 48 findings to 4, `naming/shared-word` from
    19 to 7, and `write/no-dry-run` from 70 to one line per server.
+
+7. **Token counts included what the model never reads** (fixed in 0.7.1, found
+   running 25 servers on 2026-09-28, F12). 0.7.0 counted the whole tool definition.
+   Clients send the model a tool's name, description and input schema; output
+   schemas, annotations, icons, `title` and `_meta` stay with the client. The error
+   was largest where it mattered most: GitHub's official server embeds an icon in
+   every tool, so its full menu read ~115,000 tokens instead of ~23,000. It also
+   invented findings: Firecrawl 3.25.5's "+6,300 tokens in a patch release" was
+   output schemas (the real change: −110), and several "grew N×" claims in F6, F10
+   and F11 were annotations and output schemas.
+8. **A type written two ways was a breaking change.** Sentry 0.38.0's schemas went
+   from `anyOf: [{type: string}, {type: null}]` to `type: [string, null]` (a zod
+   upgrade), the same thing. `diff` read only `type` and reported "any →
+   null|string" as breaking. Simple `anyOf`/`oneOf` type alternatives now count as
+   the type.
 
 All of these are covered by tests, most using the real menus in `test/fixtures/menus/`.
 
@@ -252,20 +277,20 @@ Reproduce: `test/fixtures/session-server.mjs` and the HTTP cases in
 *Checked 2026-09-27.* `toolmenu snapshot` on the latest npm version of each, over
 stdio, with dummy credentials where a server wanted one at start-up. (A dummy
 token is enough to list tools; none of them checked it before answering
-`tools/list`.) `@supabase/mcp-server-supabase` 0.13.0 couldn't be included: it
-calls its API before serving, so a dummy token fails.
+`tools/list`.) `@supabase/mcp-server-supabase` 0.13.0 couldn't be included then; with network access
+it lists its 29 tools on a dummy token (F12).
 
-| Server (npm) | Built on | Protocol | Tools | Menu size (est.) |
+| Server (npm) | Built on | Protocol | Tools | Menu size (est., recounted with 0.7.1) |
 |---|---|---|---|---|
-| `@upstash/context7-mcp@4.1.1` | `@modelcontextprotocol/server` 2.0.0 (v2) | **2026-07-28** | 2 | ~1,050 |
-| `@modelcontextprotocol/server-memory@2026.8.31` | sdk ^1.30.0 | 2025-11-25 | 9 | ~2,376 |
-| `@modelcontextprotocol/server-sequential-thinking@2026.8.31` | sdk ^1.30.0 | 2025-11-25 | 1 | ~1,001 |
-| `@playwright/mcp@0.0.82` | bundled | 2025-11-25 | 25 | ~4,374 |
-| `chrome-devtools-mcp@1.10.1` | bundled | 2025-11-25 | 30 | ~5,912 |
-| `@notionhq/notion-mcp-server@2.5.2` | sdk ^1.29.0 | 2025-11-25 | 24 | ~17,498 |
-| `@sentry/mcp-server@0.42.0` | sdk 1.30.0 | 2025-11-25 | 9 | ~6,141 |
-| `firecrawl-mcp@3.25.5` | fastmcp 4.3.2 | 2025-11-25 | 29 | ~18,697 |
-| `mcp-server-kubernetes@4.1.7` | sdk 1.26.0 | 2025-11-25 | 23 | ~5,266 |
+| `@upstash/context7-mcp@4.1.1` | `@modelcontextprotocol/server` 2.0.0 (v2) | **2026-07-28** | 2 | ~983 |
+| `@modelcontextprotocol/server-memory@2026.8.31` | sdk ^1.30.0 | 2025-11-25 | 9 | ~900 |
+| `@modelcontextprotocol/server-sequential-thinking@2026.8.31` | sdk ^1.30.0 | 2025-11-25 | 1 | ~863 |
+| `@playwright/mcp@0.0.82` | bundled | 2025-11-25 | 25 | ~3,725 |
+| `chrome-devtools-mcp@1.10.1` | bundled | 2025-11-25 | 30 | ~5,537 |
+| `@notionhq/notion-mcp-server@2.5.2` | sdk ^1.29.0 | 2025-11-25 | 24 | ~17,161 |
+| `@sentry/mcp-server@0.42.0` | sdk 1.30.0 | 2025-11-25 | 9 | ~5,497 |
+| `firecrawl-mcp@3.25.5` | fastmcp 4.3.2 | 2025-11-25 | 29 | ~11,481 |
+| `mcp-server-kubernetes@4.1.7` | sdk 1.26.0 | 2025-11-25 | 23 | ~5,088 |
 | `@modelcontextprotocol/server-github@2025.4.8` (archived) | sdk 1.0.1 | 2024-11-05 | 26 | ~3,546 |
 
 What stands out:
@@ -274,9 +299,9 @@ What stands out:
   `listChanged`.
 - **All ten menus are deterministic** and **all ten pass the official schema** for
   their protocol version. No `menu/nondeterministic`, no `spec/schema`.
-- **Menu size varies 17×** for similar tool counts: Firecrawl's 29 tools cost
-  ~18,700 tokens per conversation, Playwright's 25 cost ~4,400. Notion's 24 tools
-  are ~17,500: its schemas are generated from the Notion API.
+- **Menu size varies 4.6×** for similar tool counts: Notion's 24 tools cost ~17,200
+  tokens per conversation (its schemas are generated from the Notion API),
+  Playwright's 25 cost ~3,700, Firecrawl's 29 ~11,500.
 - **Annotations are mostly there now.** The archived GitHub server (April 2025) has
   9 write tools with no annotations; the current servers annotate almost
   everything (Kubernetes misses one, `kubectl_create`).
@@ -329,52 +354,57 @@ ever appear in a tool's text output (`serviceWorkerId`, `insightSetId`,
 `resourceId`), and `sequentialthinking.branchId`, which the agent is *meant* to
 invent. The rule says it's a heuristic; these are the cases where that matters.
 
-## F11. Ten servers' last ten releases
+## F11. Ten servers' last releases
 
-*Checked 2026-09-27 with toolmenu 0.5:* `toolmenu history <package> --versions 10` for
-each server from F10 (plus `server-everything`, minus the archived GitHub server),
-99 installs in about 9 minutes. Same caveat as always: each version was installed
-today, so its dependencies resolve as of today (F4).
+*First run 2026-09-27 with toolmenu 0.5; re-run 2026-09-28 with 0.7.1* (F7, items 7
+and 8): `toolmenu history <package> --versions 12` for each server from F10 (10 for
+memory, sequential-thinking, everything and kubernetes), in a container. Same caveat
+as always: each version was installed today, so its dependencies resolve as of
+today (F4).
 
 | Package | Releases | Protocol | Tools | Menu (est.) | × | Releases with breaking changes | Bump too small |
 |---|---|---|---|---|---|---|---|
-| `@modelcontextprotocol/server-memory` | 0.6.0 → 2026.8.31 (2024-12 → 2026-08) | 2024-11-05, 2025-11-25 | 9 → 9 | ~765 → ~2,376 | 3.1× | 0 (0 changes) | – |
-| `@modelcontextprotocol/server-sequential-thinking` | 0.5.1 → 2026.8.31 (2024-12 → 2026-08) | 2024-11-05, 2025-11-25 | 1 → 1 | ~773 → ~1,001 | 1.3× | 0 (0 changes) | – |
-| `@modelcontextprotocol/server-everything` | 2025.9.12 → 2026.8.31 (2025-09 → 2026-08) | 2025-11-25 | 10 → 13 | ~840 → ~1,706 | 2.0× | 1 (11 changes) | – |
-| `@upstash/context7-mcp` | 4.0.0 → 4.1.1 (2026-08 → 2026-09) | 2026-07-28 | 2 → 2 | ~1,050 → ~1,050 | 1.0× | 0 (0 changes) | – |
-| `@playwright/mcp` | 0.0.73 → 0.0.82 (2026-05 → 2026-09) | 2025-11-25 | 23 → 25 | ~3,707 → ~4,374 | 1.2× | 2 (3 changes) | – |
-| `chrome-devtools-mcp` | 1.2.0 → 1.10.1 (2026-06 → 2026-09) | 2025-11-25 | 29 → 30 | ~5,114 → ~5,912 | 1.2× | 2 (28 changes) | 1.6.0, 1.8.0 |
-| `@notionhq/notion-mcp-server` | 2.0.0 → 2.5.2 (2025-12 → 2026-09) | 2025-11-25 | 21 → 24 | ~14,612 → ~17,498 | 1.2× | 0 (0 changes) | – |
-| `@sentry/mcp-server` | 0.33.0 → 0.42.0 (2026-04 → 2026-09) | 2025-11-25 | 22 → 9 | ~13,803 → ~6,141 | 0.4× | 4 (23 changes) | – |
-| `firecrawl-mcp` | 3.23.7 → 3.25.5 (2026-08 → 2026-09) | 2025-11-25 | 27 → 29 | ~9,424 → ~18,697 | 2.0× | 1 (1 changes) | 3.25.0 |
-| `mcp-server-kubernetes` | 4.0.8 → 4.1.7 (2026-07 → 2026-09) | 2025-11-25 | 23 → 23 | ~5,222 → ~5,266 | 1.0× | 0 (0 changes) | – |
+| `@modelcontextprotocol/server-memory` | 0.6.0 → 2026.8.31 (2024-12 → 2026-08) | 2024-11-05, 2025-11-25 | 9 → 9 | ~765 → ~900 | 1.2× | 0 (0 changes) | – |
+| `@modelcontextprotocol/server-sequential-thinking` | 0.5.1 → 2026.8.31 (2024-12 → 2026-08) | 2024-11-05, 2025-11-25 | 1 → 1 | ~773 → ~863 | 1.1× | 0 (0 changes) | – |
+| `@modelcontextprotocol/server-everything` | 2025.9.12 → 2026.8.31 (2025-09 → 2026-08) | 2025-11-25 | 10 → 13 | ~762 → ~1,084 | 1.4× | 1 (11 changes) | – |
+| `@upstash/context7-mcp` | 3.2.4 → 4.1.1 (2026-07 → 2026-09) | 2025-11-25, 2026-07-28 | 2 → 2 | ~977 → ~983 | 1.0× | 0 (0 changes) | – |
+| `@playwright/mcp` | 0.0.71 → 0.0.82 (2026-04 → 2026-09) | 2025-11-25 | 22 → 25 | ~2,949 → ~3,725 | 1.3× | 3 (6 changes) | – |
+| `chrome-devtools-mcp` | 1.1.0 → 1.10.1 (2026-05 → 2026-09) | 2025-11-25 | 29 → 30 | ~4,474 → ~5,537 | 1.2× | 2 (28 changes) | 1.6.0, 1.8.0 |
+| `@notionhq/notion-mcp-server` | 1.9.0 → 2.5.2 (2025-08 → 2026-09) | 2025-06-18, 2025-11-25 | 19 → 24 | ~3,637 → ~17,161 | 4.7× | 1 (4 changes) | – |
+| `@sentry/mcp-server` | 0.31.0 → 0.42.0 (2026-03 → 2026-09) | 2025-11-25 | 21 → 9 | ~11,832 → ~5,497 | 0.5× | 4 (21 changes) | – |
+| `firecrawl-mcp` | 3.23.4 → 3.25.5 (2026-08 → 2026-09) | 2025-11-25 | 27 → 29 | ~8,607 → ~11,481 | 1.3× | 2 (2 changes) | 3.25.0, 3.25.3 |
+| `mcp-server-kubernetes` | 4.0.8 → 4.1.7 (2026-07 → 2026-09) | 2025-11-25 | 23 → 23 | ~5,044 → ~5,088 | 1.0× | 0 (0 changes) | – |
 
 - `chrome-devtools-mcp`: failed: 1.10.0 (crashed)
 
 Reproduce: the commands in F10 with `history` instead of `snapshot`, then
-`node scripts/history-report.mjs out/*.json` for this table.
+`node scripts/history-report.mjs out/*/history.json` for this table (it reloads the
+saved menus and re-diffs them with the current build).
 
 What stands out:
-- **Token growth can happen in patch releases.** `firecrawl-mcp` 3.25.4 → **3.25.5 added
-  ~6,300 tokens** to every conversation that loads it, and the menu doubled
-  (~9,400 → ~18,700) in six weeks. `server-memory` tripled over its history with the
-  same 9 tools. The releases don't surface that number to the people who install them.
+- **Firecrawl grew 1.3× in six weeks**, most of it in one minor release: 3.25.0 added
+  two tools and ~2,900 tokens (+32%) to every conversation that loads it. (0.7.0
+  reported 2× and "+6,300 tokens in patch 3.25.5"; that was output schemas, F7.)
+- **Notion grew 4.7× in its 2.0.0 major** (~3,600 → ~14,600 tokens): schemas
+  generated from the Notion API. The major version said so.
 - **Sentry went the other way, with a design change.** `@sentry/mcp-server` 0.37.0 cut
-  22 tools to 9 (~14,400 → ~6,500 tokens) by adding `search_sentry_tools` and
+  22 tools to 9 (~13,800 → ~6,000 tokens) by adding `search_sentry_tools` and
   `execute_sentry_tool`: it looks like the "deferred" setup from lesson 05, a small
   core menu plus a way to look up the rest. The removals are real breaking changes
   for anything that called the old tools, released in 0.x minors (which semver
   allows).
-- **Breaking changes in 1.x minor releases:** `chrome-devtools-mcp` 1.8.0 added a
-  required `pageId` to 27 tools, and 1.6.0 narrowed an enum. `firecrawl-mcp` 3.25.0
-  narrowed `limit` from number to integer.
+- **Breaking changes in 1.x minor and patch releases:** `chrome-devtools-mcp` 1.8.0
+  made a new `pageId` required on 25 tools, and 1.6.0 narrowed an enum.
+  `firecrawl-mcp` 3.25.0 narrowed `limit` from number to integer, and patch 3.25.3
+  dropped `github` from `firecrawl_search`'s `categories`.
 - **Renames happen, and break callers:** `server-everything` 2026.1.14 renamed its
-  tools from camelCase to kebab-case (`add` → `get-sum`, …) and dropped five.
+  tools from camelCase to kebab-case (`add` → `get-sum`, …) and dropped five;
+  `@playwright/mcp` 0.0.72 renamed `browser_run_code` to `browser_run_code_unsafe`.
 - **Another undeclared dependency:** `chrome-devtools-mcp` 1.10.0 crashes on start
   (`Cannot find package 'pkce-challenge'`); 1.10.1, a day later, works. Same pattern
   as F8.
-- **No menu was unstable and none failed the official schema** in any of the 98
-  releases that ran (99 inspected, one crashed).
+- **No menu was unstable and none failed the official schema** in any release that
+  ran.
 
 ### What this run fixed in toolmenu
 
@@ -388,3 +418,104 @@ recording the table:
    Calls that still send it stay valid, so it's now `diff/param-dropped`, a notice.
 3. `0.0.x` releases (`@playwright/mcp`) were held to semver bump rules they never
    promised. They no longer are.
+
+## F12. 25 servers, from GitHub and Atlassian to Miro
+
+*Checked 2026-09-28 with toolmenu 0.7.0 and recounted with 0.7.1.* The latest
+release of each, over stdio, in a `node:22` container with no credentials: dummy
+keys where a server wanted one to start, network on. For each: `snapshot`, then
+`session --init` and the starter scenario it writes (read-only tools only, so calls
+that needed a real account returned errors: `session/tool-error`, expected here).
+
+| Server | Protocol | Tools | Menu (est.) | What stood out |
+|---|---|---|---|---|
+| `github-mcp-server` v1.12.2 (official, Go), default toolsets | **2026-07-28** | 45 | ~10,963 | Embeds an icon in every tool: 0.7.0 counted ~56,000 (F7, item 7) |
+| same, `--toolsets all` | **2026-07-28** | 90 | ~22,892 | 0.7.0 counted ~115,000 |
+| `mcp-atlassian` 0.23.1 (Jira + Confluence, Python) | 2025-11-25 | 98 | ~20,613 | **A different menu in every process** (below) |
+| `@aashari/mcp-server-atlassian-jira` 3.3.0 | 2025-11-25 | 5 | ~3,540 | 4 write tools unannotated |
+| `@sentry/mcp-server` 0.42.0 | 2025-11-25 | 9 | ~5,497 | |
+| `firecrawl-mcp` 3.25.5 | 2025-11-25 | 29 | ~11,481 | 8 parameters named just `id` |
+| `figma-developer-mcp` 0.13.2 (Framelink) | 2025-11-25 | 2 | ~896 | |
+| `@k-jarzyna/mcp-miro` 1.0.11 | 2025-11-25 | 97 | ~17,506 | 53 write tools without annotations |
+| `@notionhq/notion-mcp-server` 2.5.2 | 2025-11-25 | 24 | ~17,161 | |
+| `@playwright/mcp` 0.0.82 | 2025-11-25 | 25 | ~3,725 | |
+| `chrome-devtools-mcp` 1.10.1 | 2025-11-25 | 30 | ~5,537 | |
+| `@upstash/context7-mcp` 4.1.1 | **2026-07-28** | 2 | ~983 | |
+| `@supabase/mcp-server-supabase` 0.13.0 | **2026-07-28** | 29 | ~4,192 | |
+| `mongodb-mcp-server` 3.0.4 | **2026-07-28** | 27 | ~13,673 | Advertises `logging`, deprecated in 2026-07-28 |
+| `@brave/brave-search-mcp-server` 2.1.4 | 2025-11-25 | 8 | ~8,289 | |
+| `@hubspot/mcp-server` 0.4.0 | 2025-11-25 | 21 | ~8,431 | |
+| `@browserbasehq/mcp-server-browserbase` 2.4.3 | 2025-11-25 | 9 | ~1,054 | |
+| `@apify/actors-mcp-server` 0.16.0 | 2025-11-25 | 10 | ~4,791 | An instruction past Claude Code's 2,048-character cut (`search-actors`) |
+| `exa-mcp-server` 3.4.1 | 2025-11-25 | 2 | ~412 | |
+| `tavily-mcp` 0.2.22 | 2025-11-25 | 5 | ~1,651 | |
+| `@modelcontextprotocol/server-everything` 2026.8.31 | 2025-11-25 | 13 | ~1,084 | |
+| `@modelcontextprotocol/server-github` 2025.4.8 (archived) | 2024-11-05 | 26 | ~3,546 | 9 write tools unannotated |
+
+Not included: `@stripe/mcp` 0.3.3 (no answer within 30 s on a dummy key; its `--tools`
+flag is gone, and the key's permissions now decide the tools)
+and `@heroku/mcp-server` 1.2.9 (failed to import its SDK in my shared install, likely
+my setup rather than the package).
+
+### mcp-atlassian serves a different menu every time it starts
+
+Every process of `mcp-atlassian` 0.23.1 describes four Jira tools (`jira_get_issue`,
+`jira_search`, `jira_get_board_issues`, `jira_get_sprint_issues`) differently: the
+default of their `fields` parameter lists the same eleven fields in a new order each
+time.
+
+```
+"default": "assignee,description,updated,created,labels,summary,reporter,…"
+"default": "issuetype,assignee,reporter,status,description,priority,created,…"
+"default": "updated,summary,priority,created,labels,status,assignee,versions,…"
+```
+
+The defaults are built with `",".join(DEFAULT_READ_JIRA_FIELDS)`, a Python `set`,
+whose order changes with every process (hash randomization). Within one process the
+menu is stable, so a check that lists twice on one connection can't see it; `session`
+did, because it starts a second process to compare (`session/connection-variance`).
+The cost: prompt caches match bytes, so every restart of the server, and every
+client that starts its own copy, gets a tool list that can't reuse a cached prefix.
+The maintainers fixed it on 2026-09-19 (`sorted(...)`,
+[sooperset/mcp-atlassian#1685](https://github.com/sooperset/mcp-atlassian/pull/1685));
+0.23.1, the latest release, still has it.
+
+Reproduce: start `mcp-atlassian` with `JIRA_URL`, `JIRA_USERNAME` and
+`JIRA_API_TOKEN` set to anything, snapshot it twice, and diff the two.
+
+### Release histories (`history --versions 12`)
+
+| Package | Releases | Tools | Menu (est.) | × | Releases with breaking changes | Bump too small |
+|---|---|---|---|---|---|---|
+| `exa-mcp-server` | 3.1.2 → 3.4.1 | 2 → 2 | ~465 → ~412 | 0.9× | 4 (11 changes) | 3.1.4, 3.1.8, 3.1.9, 3.2.0, 3.2.1 |
+| `@brave/brave-search-mcp-server` | 2.0.77 → 2.1.4 | 6 → 8 | ~4,858 → ~8,289 | 1.7× | 0 | 2.0.81 |
+| `mongodb-mcp-server` | 1.12.0 → 3.0.4 | 25 → 27 | ~4,034 → ~13,673 | 3.4× | 2 (25 changes) | – |
+| `@supabase/mcp-server-supabase` | 0.8.1 → 0.13.0 (0.6.2–0.8.0 crash) | 29 → 29 | ~3,420 → ~4,192 | 1.2× | 1 (1 change) | – |
+| `figma-developer-mcp` | 0.7.0 → 0.13.2 | 2 → 2 | ~842 → ~904 | 1.1× | 0 | – |
+| `@k-jarzyna/mcp-miro` | 1.0.2 → 1.0.11 | 97 → 97 | ~17,506 → ~17,506 | 1.0× | 0 | – |
+
+- **Exa removes tools and parameters in patch releases.** 3.1.9 removed
+  `company_research_exa`; 3.2.1 removed `crawling_exa`, `get_code_context_exa` and
+  three parameters of `web_search_exa`, whose schema sets `additionalProperties:
+  false`, so calls that still send them are rejected. 3.1.8 dropped `deep` from
+  `type`'s values.
+- **Brave's 2.0.81, a patch, added two tools and ~3,400 tokens (+70%)** to every
+  conversation that loads it. (0.7.0 said +20,000: output schemas.)
+- **MongoDB's majors say what they do:** 2.0.0 made `connectionId` required on 21
+  tools and marked `rename-collection` and `update-many` destructive; 3.0.0 more than
+  tripled the menu (~4,500 → ~13,700 tokens).
+
+### What this run says about toolmenu
+
+- The token counting was wrong, and wrong by the most on the biggest menus (F7,
+  item 7). Fixed in 0.7.1.
+- One `diff` false positive (F7, item 8). Every other breaking change above was
+  checked against the schemas by hand.
+- No server changed its menu mid-session: none of these unlocks tools on request, so
+  `session`'s main check had nothing to find. What it did find was the Atlassian
+  bug, through its second-process check.
+- The heuristics are the weak part. `naming/vague-id` flags GitHub's `ref` (a git
+  ref, a well-known name), and `ids/authored` flags IDs that come from a URL the user
+  pastes (Figma's `nodeId`, Sentry's `resourceId`). The starter scenario's unlock
+  guess matched two search filters (`category`).
+

@@ -213,13 +213,13 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
     if (!before) {
       out.push(
         newReq.has(p)
-          ? { rule: 'diff/param-required', tool: name, message: `${name}.${p} is new and required. Existing calls don't send it.` }
+          ? { rule: 'diff/param-required', tool: name, message: `${name}.${p} is new and required. Existing calls don't send it.${hasDefault(schema) ? ` It has a default (${show(schema.default)}), so the server may still accept calls without it, but clients that validate arguments won't.` : ''}` }
           : { rule: 'diff/param-added', tool: name, message: `${name}.${p} is a new optional parameter.` },
       );
       continue;
     }
     if (!oldReq.has(p) && newReq.has(p)) {
-      out.push({ rule: 'diff/param-required', tool: name, message: `${name}.${p} was optional and is now required.` });
+      out.push({ rule: 'diff/param-required', tool: name, message: `${name}.${p} was optional and is now required.${hasDefault(schema) ? ` It has a default (${show(schema.default)}), so the server may still accept calls without it, but clients that validate arguments won't.` : ''}` });
     } else if (oldReq.has(p) && !newReq.has(p)) {
       out.push({ rule: 'diff/param-relaxed', tool: name, message: `${name}.${p} was required and is now optional.` });
     }
@@ -240,7 +240,7 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
     }
     // Array parameters: the element type and allowed values count like the
     // parameter's own (no items schema = any element).
-    const isArray = (s: JsonSchema) => (Array.isArray(s.type) ? s.type.includes('array') : s.type === 'array');
+    const isArray = (s: JsonSchema) => typesOf(s)?.includes('array') ?? false;
     if (isArray(before) && isArray(schema)) {
       const oldItems = before.items ?? {};
       const newItems = schema.items ?? {};
@@ -322,6 +322,10 @@ function destructive(a: Record<string, unknown>): boolean {
   return !readOnly(a) && a.destructiveHint !== false;
 }
 
+function hasDefault(schema: JsonSchema): boolean {
+  return 'default' in schema;
+}
+
 function show(value: unknown): string {
   return value === undefined ? '(unset)' : JSON.stringify(value);
 }
@@ -354,7 +358,10 @@ function paramKey(t: MenuTool): string | undefined {
 
 /** Does `next` accept every value type that `prev` accepted? */
 function accepts(next: JsonSchema, prev: JsonSchema): boolean {
-  const types = (s: JsonSchema) => (s.type === undefined ? undefined : new Set(Array.isArray(s.type) ? s.type : [s.type]));
+  const types = (s: JsonSchema) => {
+    const t = typesOf(s);
+    return t && new Set(t);
+  };
   const n = types(next);
   const p = types(prev);
   if (!n) return true; // no type: anything goes
@@ -365,6 +372,8 @@ function accepts(next: JsonSchema, prev: JsonSchema): boolean {
 /** A parameter's schema without the parts diff classifies itself. */
 function residual(schema: JsonSchema): unknown {
   const { type: _t, enum: _e, description: _d, items, ...rest } = schema as Record<string, unknown>;
+  // A type written as anyOf/oneOf alternatives is compared as the type.
+  if (typeAlternatives(schema)) delete rest[schema.anyOf ? 'anyOf' : 'oneOf'];
   if (items && typeof items === 'object') {
     const { enum: _ie, type: _it, ...itemRest } = items as Record<string, unknown>;
     return Object.keys(itemRest).length ? { ...rest, items: itemRest } : rest;
@@ -373,8 +382,30 @@ function residual(schema: JsonSchema): unknown {
 }
 
 function typeOf(schema: JsonSchema): string {
-  const t = schema.type;
-  return Array.isArray(t) ? [...t].sort().join('|') : t ?? '';
+  return [...new Set(typesOf(schema) ?? [])].sort().join('|');
+}
+
+/**
+ * The types a schema accepts, undefined for any. `anyOf: [{type: string}, {type:
+ * null}]` is the same as `type: [string, null]`: schema generators switch between
+ * the two (zod did), and that isn't a change.
+ */
+function typesOf(schema: JsonSchema): string[] | undefined {
+  if (schema.type !== undefined) return Array.isArray(schema.type) ? schema.type : [schema.type];
+  return typeAlternatives(schema);
+}
+
+/** anyOf/oneOf whose branches only name a type (a description or title aside). */
+function typeAlternatives(schema: JsonSchema): string[] | undefined {
+  const branches = (schema.anyOf ?? schema.oneOf) as unknown;
+  if (!Array.isArray(branches) || branches.length === 0) return undefined;
+  const types: string[] = [];
+  for (const b of branches as JsonSchema[]) {
+    if (!b || typeof b !== 'object' || b.type === undefined) return undefined;
+    if (Object.keys(b).some((k) => !['type', 'description', 'title'].includes(k))) return undefined;
+    types.push(...(Array.isArray(b.type) ? b.type : [b.type]));
+  }
+  return types;
 }
 
 function enumChange(before: JsonSchema, after: JsonSchema): { rule: string; message: string } | undefined {

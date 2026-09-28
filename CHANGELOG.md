@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.1
+
+- **Token counts cover what the model reads**: each tool's name, description and
+  input schema. 0.7.0 counted the whole tool definition, including output schemas,
+  annotations, icons and `_meta`, which clients don't send the model. On GitHub's
+  official server (embedded icons) that inflated the menu 5×: ~115K estimated, ~23K
+  real. Baselines written by 0.7.0 are recounted when read, so `diff` compares them
+  fairly with new snapshots.
+- `diff`: a type written as `anyOf`/`oneOf` alternatives (`anyOf: [{type: string},
+  {type: null}]`) is the same as `type: [string, null]`. Schema generators switch
+  between the two; 0.7.0 reported it as a breaking type change.
+- `diff`: a new required parameter that has a default says so.
+
 ## 0.7.0 (first release)
 
 - `snapshot`: lists the menu twice, checks it against the official schema for its

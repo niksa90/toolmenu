@@ -10,6 +10,16 @@ export function countTokens(text: string): number {
   return encoder.encode(text).length;
 }
 
+/**
+ * Estimated tokens the model reads for a tool: its name, description and input
+ * schema, which is what clients send (Claude's Messages API takes exactly those).
+ * outputSchema, annotations, icons, title and _meta stay with the client: GitHub's
+ * server embeds icons that would otherwise count five times its real menu.
+ */
+export function toolTokens(tool: Record<string, unknown>): number {
+  return countTokens(JSON.stringify({ name: tool.name, description: tool.description, inputSchema: tool.inputSchema }));
+}
+
 /** The tool definition without toolmenu's own `tokens` field. */
 export function toolDefinition(tool: MenuTool): Record<string, unknown> {
   const { tokens: _tokens, ...definition } = tool;
@@ -23,7 +33,7 @@ export function buildMenu(
 ): Menu {
   const tools = rawTools.map((raw) => ({
     ...(raw as Omit<MenuTool, 'tokens'>),
-    tokens: countTokens(JSON.stringify(raw)),
+    tokens: toolTokens(raw),
   })) as MenuTool[];
   return {
     toolmenu: 1,
@@ -53,11 +63,13 @@ export async function loadMenu(path: string): Promise<Menu> {
   if (menu?.toolmenu !== 1 || !Array.isArray(menu.tools)) {
     throw new Error(`${path} isn't a toolmenu menu file (expected "toolmenu": 1 and a "tools" list). Write one with \`toolmenu snapshot\`.`);
   }
+  // Always recounted, never read from the file: a baseline written by an older
+  // toolmenu (which counted every field) still compares fairly with a new snapshot.
   for (const t of menu.tools) {
     if (typeof t?.name !== 'string') throw new Error(`${path}: every tool needs a name`);
-    if (typeof t.tokens !== 'number') t.tokens = countTokens(JSON.stringify(t));
+    t.tokens = toolTokens(t);
   }
-  if (typeof menu.totalTokens !== 'number') menu.totalTokens = menu.tools.reduce((s, t) => s + t.tokens, 0);
+  menu.totalTokens = menu.tools.reduce((s, t) => s + t.tokens, 0);
   menu.server ??= {};
   return menu as Menu;
 }

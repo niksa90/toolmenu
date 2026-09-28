@@ -65,7 +65,7 @@ jobs:
       - run: npm ci && npm run build
       - run: npm start &                # the PR's version, in the background (it keeps running for later steps)
       - run: npx --yes wait-on --timeout 60000 tcp:localhost:3000   # fail after 60 s instead of hanging
-      - uses: niksa90/toolmenu@v0.7.0
+      - uses: niksa90/toolmenu@v0.7.1
         with:
           url: http://localhost:3000/mcp
           headers: "x-mcp-api-key: ${{ env.MCP_API_KEY }}"
@@ -100,14 +100,14 @@ The Action runs its snapshot and its scenario with the same settings, so give it
 full menu and run the session as its own step:
 
 ```yaml
-      - uses: niksa90/toolmenu@v0.7.0
+      - uses: niksa90/toolmenu@v0.7.1
         with:
           command: node dist/server.js
           env: UNLOCK_MODE=all        # every tool: this is what diff checks
           baseline: menu.json
       # The default menu, unlocked step by step. Findings show up as annotations
       # on the PR, and errors fail the job.
-      - run: npx --yes toolmenu@0.7.0 session --scenario scenario.yml --format github -- node dist/server.js
+      - run: npx --yes toolmenu@0.7.1 session --scenario scenario.yml --format github -- node dist/server.js
 ```
 
 `UNLOCK_MODE` stands for whatever switch your server has. The unlock calls in the
@@ -142,7 +142,7 @@ check even though nothing was checked. The PR comment and a notice say so, and t
 `skipped` output is `'true'`. To make a skip fail instead, gate on it:
 
 ```yaml
-      - uses: niksa90/toolmenu@v0.7.0
+      - uses: niksa90/toolmenu@v0.7.1
         id: toolmenu
         with:
           url: https://mcp.example.com/mcp   # a remote server that needs a key
