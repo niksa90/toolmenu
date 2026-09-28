@@ -100,14 +100,14 @@ The Action runs its snapshot and its scenario with the same settings, so give it
 full menu and run the session as its own step:
 
 ```yaml
-      - uses: niksa90/toolmenu@v0.7.0
+      - uses: niksa90/toolmenu@v0.7.1
         with:
           command: node dist/server.js
           env: UNLOCK_MODE=all        # every tool: this is what diff checks
           baseline: menu.json
       # The default menu, unlocked step by step. Findings show up as annotations
       # on the PR, and errors fail the job.
-      - run: npx --yes toolmenu@0.7.0 session --scenario scenario.yml --format github -- node dist/server.js
+      - run: npx --yes toolmenu@0.7.1 session --scenario scenario.yml --format github -- node dist/server.js
 ```
 
 `UNLOCK_MODE` stands for whatever switch your server has. The unlock calls in the
