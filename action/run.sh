@@ -4,6 +4,38 @@
 # summary and (on pull requests) one PR comment that updates in place.
 set -uo pipefail
 
+# toolmenu needs Node 22+. If the runner's Node is older (or missing), fetch
+# Node 22 for toolmenu alone: it goes first on this script's PATH only, so the
+# job's later steps and the server started by 'command' keep the job's own Node.
+ORIG_PATH="$PATH"
+node_major=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null)
+[[ "$node_major" =~ ^[0-9]+$ ]] || node_major=0
+if [ "$node_major" -eq 0 ]; then node_label="no Node"; else node_label="Node $node_major"; fi
+if [ "$node_major" -lt 22 ]; then
+  node_dir="${RUNNER_TEMP:-/tmp}/toolmenu-node"
+  # Fetched by an earlier toolmenu step in this job: reuse it.
+  if ! "$node_dir/bin/node" -e 'process.exit(+process.versions.node.split(".")[0] >= 22 ? 0 : 1)' 2>/dev/null; then
+    case "$(uname -s)-$(uname -m)" in
+      Linux-x86_64) plat=linux-x64 ;; Linux-aarch64) plat=linux-arm64 ;;
+      Darwin-x86_64) plat=darwin-x64 ;; Darwin-arm64) plat=darwin-arm64 ;;
+      *) echo "::error title=toolmenu::toolmenu needs Node 22 or later, and this runner has $node_label. Add actions/setup-node with node-version 22 before the Action."; exit 2 ;;
+    esac
+    base="https://nodejs.org/dist/latest-v22.x"
+    rm -rf "$node_dir" && mkdir -p "$node_dir"
+    sums=$(curl -fsSL --retry 3 "$base/SHASUMS256.txt")
+    file=$(awk -v p="-$plat.tar.gz" '$2 ~ p"$" {print $2; exit}' <<< "$sums")
+    sum=$(awk -v f="$file" '$2 == f {print $1; exit}' <<< "$sums")
+    if [ -z "$file" ] || [ -z "$sum" ] || ! curl -fsSL --retry 3 "$base/$file" -o "$node_dir/node.tar.gz" \
+       || [ "$( (sha256sum "$node_dir/node.tar.gz" 2>/dev/null || shasum -a 256 "$node_dir/node.tar.gz") | awk '{print $1}')" != "$sum" ] \
+       || ! tar -xzf "$node_dir/node.tar.gz" -C "$node_dir" --strip-components=1; then
+      echo "::error title=toolmenu::Couldn't fetch Node 22 for toolmenu (the runner has $node_label). Add actions/setup-node with node-version 22 before the Action."
+      exit 2
+    fi
+    rm -f "$node_dir/node.tar.gz"
+  fi
+  PATH="$node_dir/bin:$PATH"
+fi
+
 CLI="${TOOLMENU_CLI:-npx --yes toolmenu@${TOOLMENU_VERSION:-latest}}"
 OUT="${RUNNER_TEMP:-/tmp}/toolmenu"
 mkdir -p "$OUT"
@@ -30,7 +62,8 @@ fi
 if [ -n "${TOOLMENU_URL:-}" ]; then
   TARGET=("$TOOLMENU_URL")
 elif [ -n "${TOOLMENU_COMMAND:-}" ]; then
-  TARGET=(-- sh -c "exec $TOOLMENU_COMMAND")
+  # The server runs with the job's own PATH, not the one toolmenu got above.
+  TARGET=(-- sh -c "PATH=$(printf %q "$ORIG_PATH"); export PATH; exec $TOOLMENU_COMMAND")
 else
   echo "::error title=toolmenu::Set either 'command' (how to start the server) or 'url'."
   exit 2
@@ -107,16 +140,30 @@ set_baseline() {
   echo
 } > "$BODY"
 
-# Did the snapshot fail because a secret was missing? Only then is a fork PR
-# skipped: a header whose value came through empty (what an unset secret turns
-# into), or the server answering 401/403. Anything else is a real failure.
+# Did the snapshot fail because a secret was missing? Only then is a PR without
+# secrets skipped: a header or env value that came through empty (what an unset
+# secret turns into, "Bearer" alone included), or a remote server answering
+# 401/403. Anything else is a real failure.
 missing_secret() {
-  local line
+  local line value
   while IFS= read -r line; do
-    [ -n "${line// }" ] || continue
-    [[ "$line" == *:* ]] && [ -z "$(echo "${line#*:}" | tr -d '[:space:]')" ] && return 0
+    [[ "$line" == *:* ]] || continue
+    value=$(echo "${line#*:}" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+    case "$value" in ''|bearer|basic|token) return 0 ;; esac
   done <<< "${TOOLMENU_HEADERS:-}"
-  grep -Eq '\b(401|403)\b|Unauthorized|Forbidden' "$OUT/snapshot.err" 2>/dev/null
+  while IFS= read -r line; do
+    [[ "$line" == *=* ]] && [ -z "$(echo "${line#*=}" | tr -d '[:space:]')" ] && return 0
+  done <<< "${TOOLMENU_ENV:-}"
+  [ -n "${TOOLMENU_URL:-}" ] || return 1
+  # A 401/403 from a server started inside the job is a setup mistake, not a
+  # missing secret: localhost, a loopback address, or a service container
+  # (a host name without a dot). Only a remote server's refusal counts.
+  local host
+  host=$(echo "$TOOLMENU_URL" | tr '[:upper:]' '[:lower:]' | sed -E 's#^[a-z]+://([^/@]*@)?##; s#^(\[[^]]*\]|[^:/?\#]*).*#\1#; s#\.$##')
+  if [[ "$host" =~ ^(localhost|.+\.localhost|127\.[0-9.]+|0\.0\.0\.0|\[::1?\]|\[::ffff:127\.[0-9.]+\]|[^.\[]+)$ ]]; then
+    return 1
+  fi
+  grep -Eq '(^|[^0-9])(401|403)([^0-9]|$)|Unauthorized|Forbidden' "$OUT/snapshot.err" 2>/dev/null
 }
 
 # The snapshot command for the "no baseline yet" hint: header names (never their
@@ -131,16 +178,18 @@ hint_target() {
 # 1. Snapshot the menu this change produces.
 $CLI snapshot --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
-if [ "$code" -eq 2 ] && [ "${TOOLMENU_FORK_PR:-false}" = "true" ] && [ -n "${TOOLMENU_URL:-}" ] && missing_secret; then
-  # Pull requests from forks don't get secrets, so a server behind auth can't
-  # be reached. Say so and don't fail an outside contributor's PR for it.
+SKIPPED=false
+if [ "$code" -eq 2 ] && [ "${TOOLMENU_NO_SECRETS:-false}" = "true" ] && missing_secret; then
+  # Pull requests from forks and Dependabot don't get the repository's secrets,
+  # so a server that needs one can't be checked. Say so and don't fail the PR.
+  SKIPPED=true
   {
-    echo "**Skipped: this pull request comes from a fork.** GitHub doesn't pass the repository's secrets to fork PRs ([GitHub docs](https://docs.github.com/actions/security-guides/using-secrets-in-github-actions)), so \`headers\` came through empty and the server couldn't be reached."
+    echo "**Skipped: this pull request runs without the repository's secrets.** GitHub doesn't pass them to PRs from forks ([GitHub docs](https://docs.github.com/actions/security-guides/using-secrets-in-github-actions)), and Dependabot PRs only get Dependabot secrets ([GitHub docs](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions)), so a key in \`headers\` or \`env\` came through empty or the server turned the check away."
     echo
-    echo "The fix that works for every PR: start the server inside the job with \`command\` (or \`url: http://localhost:…\`), so no secret is needed and the check runs against this PR's code. Avoid \`pull_request_target\` for this: it would run the PR's code with your secrets ([GitHub's guidance](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target))."
+    echo "The fix that works for every PR: start the server inside the job with \`command\` (or \`url: http://localhost:…\`), so no secret is needed and the check runs against this PR's code. Avoid \`pull_request_target\` for this: it would run the PR's code with your secrets ([GitHub's guidance](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target)). For Dependabot alone, adding the key as a Dependabot secret with the same name also works."
     echo
   } >> "$BODY"
-  echo "::notice title=toolmenu::Skipped on a fork PR: no secrets, so the server couldn't be reached."
+  echo "::notice title=toolmenu::Skipped: this PR runs without the repository's secrets, so the server couldn't be reached."
 elif [ "$code" -eq 2 ]; then
   { echo "**Couldn't snapshot the server.**"; echo; echo '```'; tail -20 "$OUT/snapshot.err"; echo '```'; } >> "$BODY"
   note 2
@@ -161,7 +210,7 @@ else
 fi
 
 # 3. Watch the menu during a scripted session.
-if [ -n "${TOOLMENU_SCENARIO:-}" ]; then
+if [ -n "${TOOLMENU_SCENARIO:-}" ] && [ "$SKIPPED" = false ]; then
   $CLI session --scenario "$TOOLMENU_SCENARIO" --format markdown --fail-on "$FAIL_ON" "${CONN[@]}" "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
   code=$?; note "$code"
   if [ "$code" -eq 2 ]; then { echo "**Session didn't run:** $(head -3 "$OUT/session.err")"; echo; } >> "$BODY"; else { cat "$OUT/session.md"; echo; } >> "$BODY"; fi
@@ -177,9 +226,9 @@ echo "exit-code=$status" >> "${GITHUB_OUTPUT:-/dev/null}"
 if [ "${TOOLMENU_COMMENT:-true}" = "true" ] && [ -n "${TOOLMENU_PR:-}" ] && [ -n "${GH_TOKEN:-}" ]; then
   existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" --paginate --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" 2>/dev/null | head -1)
   if [ -n "$existing" ]; then
-    gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't update the PR comment (does the workflow have pull-requests: write?)"
+    gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't update the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
   else
-    gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't post the PR comment (does the workflow have pull-requests: write?)"
+    gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't post the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
   fi
 fi
 

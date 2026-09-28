@@ -68,17 +68,6 @@ outputs:
 runs:
   using: composite
   steps:
-    # toolmenu needs Node 22+. Install it only when the runner's Node is missing
-    # or older, so a job that already set up Node keeps its own version.
-    - id: node
-      shell: bash
-      run: |
-        major=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
-        if [ "$major" -ge 22 ]; then echo "setup=false" >> "$GITHUB_OUTPUT"; else echo "setup=true" >> "$GITHUB_OUTPUT"; fi
-    - if: steps.node.outputs.setup == 'true'
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22
     - id: run
       shell: bash
       run: '"$GITHUB_ACTION_PATH/action/run.sh"'
@@ -96,5 +85,9 @@ runs:
         TOOLMENU_BASE_REF: ${{ github.base_ref }}
         TOOLMENU_CLI: ${{ inputs.cli }}
         TOOLMENU_PR: ${{ github.event.pull_request.number }}
-        TOOLMENU_FORK_PR: ${{ github.event.pull_request.head.repo.full_name != '' && github.event.pull_request.head.repo.full_name != github.repository }}
+        # Runs without the repository's secrets: pull request events (pull_request
+        # and its review events; pull_request_target does get secrets) from a fork,
+        # where a deleted fork has no head repo at all, and anything Dependabot
+        # triggers, which only gets Dependabot secrets.
+        TOOLMENU_NO_SECRETS: ${{ (github.event.pull_request.number > 0 && github.event_name != 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository) || github.actor == 'dependabot[bot]' }}
         GH_TOKEN: ${{ inputs.token }}
