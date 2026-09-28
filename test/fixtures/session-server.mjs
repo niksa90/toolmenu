@@ -22,7 +22,11 @@ export function build(shared) {
   ];
   if (!state.audits) for (const t of audits) t.disable();
   const getForm = server.registerTool('get_form', { description: state.touched ? `Get one form by form_id. Updated at ${state.touched}.` : 'Get one form by form_id.', inputSchema: { form_id: z.string() }, annotations: ro }, async ({ form_id }) =>
-    form_id === 'expired' ? { isError: true, content: [{ type: 'text', text: '401 Unauthorized: token expired' }] } : text('{}'));
+    form_id === 'expired'
+      ? { isError: true, content: [{ type: 'text', text: '401 Unauthorized: token expired' }] }
+      : form_id === 'broken'
+        ? { isError: true, content: [{ type: 'text', text: 'The form definition is corrupt' }] }
+        : text('{}'));
   const addReports = () => server.registerTool('export_report', { description: 'Export a report as CSV.', inputSchema: { report_id: z.string() }, annotations: ro }, async () => text(''));
   server.registerTool(
     'unlock_toolset',
