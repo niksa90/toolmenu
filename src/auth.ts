@@ -343,8 +343,15 @@ function openInBrowser(url: URL): void {
   // server's default scopes, as other clients do: some servers show tools by scope.
   if (scope) process.stderr.write(`Asking for the server's default scopes: ${scope} (narrower: --scope; toolmenu never calls a write tool on its own)\n`);
   process.stderr.write(`Opening your browser to log in. If it doesn't open, visit:\n  ${url.href}\n`);
+  // Not `cmd /c start` on Windows: cmd reads the URL's `&` as a command separator,
+  // cutting the URL, and the URL comes from the server's metadata. rundll32 opens
+  // it in the default browser without a shell.
   const [cmd, args] =
-    process.platform === 'darwin' ? ['open', [url.href]] : process.platform === 'win32' ? ['cmd', ['/c', 'start', '""', url.href]] : ['xdg-open', [url.href]];
+    process.platform === 'darwin'
+      ? ['open', [url.href]]
+      : process.platform === 'win32'
+        ? ['rundll32', ['url.dll,FileProtocolHandler', url.href]]
+        : ['xdg-open', [url.href]];
   try {
     spawn(cmd, args, { detached: true, stdio: 'ignore' }).on('error', () => {}).unref();
   } catch {
