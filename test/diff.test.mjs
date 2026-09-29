@@ -116,12 +116,220 @@ test('breaking changes inside $defs and inside nested objects are breaking, with
   ]) {
     const d = diffMenus(gen(before), gen(after));
     assert.equal(d.suggestedBump, 'major', label);
-    const msgs = d.findings.map((f) => `${f.rule}: ${f.message.split(/[ :]/)[0]}`);
-    for (const expected of ['diff/param-type: gen.body.text', 'diff/enum-narrowed: gen.body.size', 'diff/param-required: gen.body.lang']) {
-      assert.ok(msgs.includes(expected), `${label}: ${expected} in ${msgs.join('; ')}`);
+    // The block is used three times (header, footer, body): each change is one
+    // finding that lists the three places.
+    const places = (rule) => d.findings.filter((f) => f.rule === rule).flatMap((f) => f.places ?? []);
+    for (const [rule, field] of [['diff/param-type', 'text'], ['diff/enum-narrowed', 'size'], ['diff/param-required', 'lang']]) {
+      assert.equal(d.findings.filter((f) => f.rule === rule).length, 1, `${label}: ${rule}`);
+      assert.deepEqual(places(rule), ['header', 'footer', 'body'].map((b) => `gen.${b}.${field}`), `${label}: ${rule}`);
     }
     assert.ok(!d.findings.some((f) => f.rule === 'diff/type-widened'), label);
   }
+});
+
+test('one change to a definition five block types share: one error, every place, however deep (field report)', async () => {
+  const { documentSchema } = await import('./fixtures/shared-defs.mjs');
+  const tool = (s) => menu([{ name: 'content_create', inputSchema: s }]);
+  const d = diffMenus(tool(documentSchema()), tool(documentSchema(['bold', 'italic', 'code'])));
+  assert.deepEqual(d.findings.map((f) => `${f.severity} ${f.rule}`), ['error diff/enum-narrowed'], d.findings.map((f) => f.message).join('\n'));
+  assert.equal(d.suggestedBump, 'major');
+  const places = d.findings[0].places.map((p) => p.match(/\(type="(\w+)"\)/)[1]);
+  assert.deepEqual(places, ['paragraph', 'heading', 'bulletList', 'orderedList', 'table', 'blockquote']);
+  // The deepest place, as a path that says how it's reached.
+  assert.ok(d.findings[0].places.includes('content_create.blocks[](type="table").rows[].cells[].content[].content[](type="text").marks (array items)'));
+  // A change in one place only stays one finding at that place.
+  const one = documentSchema();
+  one.$defs.block.oneOf[1].properties.level = { type: 'string' };
+  const e = diffMenus(tool(documentSchema()), tool(one));
+  assert.deepEqual(e.findings.map((f) => f.message.split(' ')[0]), ['content_create.blocks[](type="heading").level']);
+});
+
+test('different parameters with the same kind of change are separate findings (exa-mcp-server 3.1.9 → 3.2.0)', () => {
+  const before = { type: 'object', properties: { query: { type: 'string' }, livecrawl: { type: 'string', enum: ['always', 'never'] }, category: { type: 'string' }, contextMaxCharacters: { type: 'number' } }, required: ['query', 'livecrawl', 'category', 'contextMaxCharacters'] };
+  const after = { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] };
+  const d = diffMenus(gen(before), gen(after));
+  assert.deepEqual(d.findings.map((f) => f.message.split(' ')[0]).sort(), ['gen.category', 'gen.contextMaxCharacters', 'gen.livecrawl']);
+  assert.ok(d.findings.every((f) => !/more place/.test(f.message)));
+  // Same schema, different names: still two changes, not one shared one.
+  const two = diffMenus(gen({ type: 'object', properties: { a: { type: 'string' }, b: { type: 'string' } } }), gen({ type: 'object', properties: {} }));
+  assert.equal(two.findings.length, 2);
+});
+
+test('independent fields with the same name and change, in different objects, stay two findings (review of #15)', () => {
+  const limit = { type: 'integer' };
+  const obj = (extra, withLimit) => ({ type: 'object', properties: { ...extra, ...(withLimit ? { limit } : {}) }, ...(withLimit ? { required: ['limit'] } : {}) });
+  const s = (withLimit) => ({ type: 'object', properties: { search: obj({ q: { type: 'string' } }, withLimit), export: obj({ fmt: { type: 'string' } }, withLimit) } });
+  const d = diffMenus(gen(s(true)), gen(s(false)));
+  assert.deepEqual(d.findings.map((f) => f.message.split(' ')[0]), ['gen.search.limit', 'gen.export.limit']);
+  assert.ok(d.findings.every((f) => !f.places && !/more place/.test(f.message)));
+});
+
+test('union options without a discriminator: reorder is no change, adding in front is one addition (review of #15)', () => {
+  const url = { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] };
+  const path = { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] };
+  const data = { type: 'object', properties: { data: { type: 'string' } }, required: ['data'] };
+  const src = (options) => ({ type: 'object', properties: { src: { anyOf: options } } });
+  assert.deepEqual(diffMenus(gen(src([url, path])), gen(src([path, url]))).findings, []);
+  const front = diffMenus(gen(src([url, path])), gen(src([data, url, path])));
+  assert.deepEqual(rules(front), ['diff/type-widened:gen']);
+  assert.match(front.findings[0].message, /now also accepts an object\{data\} option/);
+  assert.equal(front.suggestedBump, 'minor');
+  const removed = diffMenus(gen(src([url, path, data])), gen(src([url, data])));
+  assert.deepEqual(removed.findings.map((f) => f.message), ['gen.src: no longer accepts the object{path} option. Calls that sent it can fail.']);
+  // Reshaped and moved: paired by the property names it keeps, compared inside.
+  const timeout = { type: 'object', properties: { url: { type: 'string' }, timeout: { type: 'integer' } }, required: ['url', 'timeout'] };
+  const reshaped = diffMenus(gen(src([url, path])), gen(src([path, timeout])));
+  assert.deepEqual(reshaped.findings.map((f) => `${f.rule} ${f.message.split(' ')[0]}`), ['diff/param-required gen.src(object{timeout,url}).timeout']);
+});
+
+test('an option removed from a union that objects of different shapes share is one finding (review of #15, 3rd round)', () => {
+  const inline = { oneOf: [
+    { type: 'object', properties: { type: { const: 'text' }, text: { type: 'string' } }, required: ['type'] },
+    { type: 'object', properties: { type: { const: 'hashtag' }, tag: { type: 'string' } }, required: ['type'] },
+  ] };
+  const s = (u) => ({ type: 'object', $defs: { inline: u }, properties: {
+    heading: { type: 'object', properties: { level: { type: 'integer' }, content: { type: 'array', items: { $ref: '#/$defs/inline' } } } },
+    cell: { type: 'object', properties: { header: { type: 'boolean' }, content: { type: 'array', items: { $ref: '#/$defs/inline' } } } },
+  } });
+  const d = diffMenus(gen(s(inline)), gen(s({ oneOf: [inline.oneOf[0]] })));
+  assert.deepEqual(d.findings.map((f) => f.rule), ['diff/param-type']);
+  assert.deepEqual(d.findings[0].places, ['gen.heading.content (array items)', 'gen.cell.content (array items)']);
+});
+
+test('a description inside a nullable type option is compared, and moving it to the node is no change (sentry-mcp)', () => {
+  const nullable = (desc) => ({ type: 'object', properties: { query: { default: null, anyOf: [{ type: 'string', description: desc }, { type: 'null' }] } } });
+  const d = diffMenus(gen(nullable('Search query.')), gen(nullable('Search query to filter results.')));
+  assert.deepEqual(d.findings.map((f) => f.message.split(':')[0] + ': ' + f.rule), ['gen.query: diff/description']);
+  // zod versions differ on where the description goes: same text, no change.
+  const onNode = { type: 'object', properties: { query: { default: null, description: 'Search query.', anyOf: [{ type: 'string' }, { type: 'null' }] } } };
+  assert.deepEqual(diffMenus(gen(nullable('Search query.')), gen(onNode)).findings, []);
+});
+
+test('zod 3 → 4 spellings are the same schema (chrome-devtools-mcp 1.9.0 → 1.10.1: 61 "review it")', () => {
+  const v3 = { $schema: 'http://json-schema.org/draft-07/schema#', type: 'object', additionalProperties: true, properties: { pageSize: { type: 'integer', exclusiveMinimum: 0 } } };
+  const v4 = { $schema: 'https://json-schema.org/draft/2020-12/schema', type: 'object', additionalProperties: {}, properties: { pageSize: { type: 'integer', exclusiveMinimum: 0, maximum: Number.MAX_SAFE_INTEGER } } };
+  assert.deepEqual(rules(diffMenus(gen(v3), gen(v4))), ['diff/schema-dialect:gen']);
+  // A real maximum is still a change.
+  const capped = { ...v4, properties: { pageSize: { type: 'integer', exclusiveMinimum: 0, maximum: 100 } } };
+  assert.ok(diffMenus(gen(v3), gen(capped)).findings.some((f) => f.rule === 'diff/schema-other' && f.message.startsWith('gen.pageSize')));
+});
+
+test('a zod 3 → 4 upgrade of an MCP SDK server: the real changes, and nothing else (review of #15)', async () => {
+  const [v3, v4] = await Promise.all(['zod3', 'zod4'].map((f) => loadMenu(join(FIXTURES, 'zod', `${f}.json`))));
+  const d = diffMenus(v3, v4);
+  assert.deepEqual(d.findings.map((f) => `${f.rule} ${f.tool ?? '(menu)'}`).sort(), [
+    // z.any() / z.unknown() keys become required in zod 4: breaking.
+    'diff/param-required zod_anyValue',
+    'diff/param-required zod_unknownValue',
+    // additionalProperties: false dropped from every object: one line for the menu.
+    'diff/properties-opened (menu)',
+    // Real changes toolmenu doesn't classify: patterns zod 4 adds, a tuple's bounds dropped.
+    'diff/schema-other zod_datetime',
+    'diff/schema-other zod_email',
+    'diff/schema-other zod_tuple',
+    'diff/schema-other zod_uuid',
+  ]);
+  const opened = d.findings.find((f) => f.rule === 'diff/properties-opened');
+  assert.match(opened.message, /^27 tools now accept properties they don't list/);
+  assert.equal(opened.places.length, 35);
+  assert.equal(d.suggestedBump, 'major');
+});
+
+test('additionalProperties absent, true and {} are one spelling; false removed or added is its own change', () => {
+  const s = (ap) => ({ type: 'object', properties: { a: { type: 'string' } }, ...(ap === undefined ? {} : { additionalProperties: ap }) });
+  for (const [x, y] of [[undefined, {}], [undefined, true], [{}, true]]) {
+    assert.deepEqual(diffMenus(gen(s(x)), gen(s(y))).findings.filter((f) => f.rule !== 'diff/schema-equivalent'), [], `${JSON.stringify(x)} → ${JSON.stringify(y)}`);
+  }
+  assert.deepEqual(rules(diffMenus(gen(s(false)), gen(s(undefined)))), ['diff/properties-opened:gen']);
+  const closed = diffMenus(gen(s(undefined)), gen(s(false)));
+  assert.deepEqual(rules(closed), ['diff/properties-closed:gen']);
+  assert.equal(closed.suggestedBump, 'major');
+  // propertyNames: {type: "string"} (zod 4's z.record) accepts the same.
+  const rec = (extra) => ({ type: 'object', properties: { r: { type: 'object', additionalProperties: { type: 'number' }, ...extra } } });
+  assert.deepEqual(diffMenus(gen(rec({})), gen(rec({ propertyNames: { type: 'string' } }))).findings.filter((f) => f.rule !== 'diff/schema-equivalent'), []);
+});
+
+test('an option\'s description is compared even when the field has its own (review of #15, sentry-both)', () => {
+  const s = (option) => ({ type: 'object', properties: { query: { description: 'The query.', anyOf: [{ type: 'string', description: option }, { type: 'null' }] } } });
+  assert.deepEqual(rules(diffMenus(gen(s('Search text.')), gen(s('Search text, by name or slug.')))), ['diff/description:gen']);
+});
+
+test('union options: a replaced option (different fields, none shared) is one gone and one new', () => {
+  const opt = (field) => ({ type: 'object', properties: { [field]: { type: 'string' } }, required: [field] });
+  const s = (o) => ({ type: 'object', properties: { src: { anyOf: [opt('url'), o] } } });
+  const d = diffMenus(gen(s(opt('path'))), gen(s(opt('data'))));
+  assert.deepEqual(d.findings.map((f) => f.message), [
+    'gen.src: no longer accepts the object{path} option. Calls that sent it can fail.',
+    'gen.src now also accepts an object{data} option.',
+  ]);
+});
+
+test('a union option that is an unexpanded $ref doesn\'t hide the others\' discriminator (a document schema\'s list path)', () => {
+  // A recursive definition: its second level stays a $ref.
+  const s = (enumValues) => ({ type: 'object', $defs: { node: { oneOf: [
+    { type: 'object', properties: { type: { const: 'paragraph' }, text: { type: 'string', enum: enumValues } } },
+    { type: 'object', properties: { type: { const: 'list' }, items: { type: 'array', items: { $ref: '#/$defs/node' } } } },
+  ] } }, properties: { doc: { $ref: '#/$defs/node' } } });
+  const d = diffMenus(gen(s(['a', 'b'])), gen(s(['a'])));
+  assert.deepEqual(d.findings.map((f) => f.message.split(':')[0]), ['gen.doc(type="paragraph").text']);
+  // An option that is itself a $ref left as written (another document here; a
+  // recursive definition past its unrolled level in a real one): the other options
+  // still pair by their discriminator, not by position (was object{…} #1).
+  const withRef = (enumValues) => ({ type: 'object', properties: { doc: { oneOf: [
+    { type: 'object', properties: { type: { const: 'paragraph' }, text: { type: 'string', enum: enumValues } } },
+    { type: 'object', properties: { type: { const: 'quote' }, text: { type: 'string' } } },
+    { $ref: 'https://example.com/block.json' },
+  ] } } });
+  const e = diffMenus(gen(withRef(['a', 'b'])), gen(withRef(['a'])));
+  assert.deepEqual(e.findings.map((f) => f.message.split(':')[0]), ['gen.doc(type="paragraph").text']);
+});
+
+test('a wide union where every option changed stays fast (review of #15: 36 s at 1,500)', () => {
+  const u = (last) => ({ type: 'object', properties: { v: { anyOf: Array.from({ length: 1500 }, (_, i) => ({ type: 'object', properties: { [`f${i}`]: { type: 'string' }, [`g${i}`]: { type: 'integer', enum: last } } })) } } });
+  const t = performance.now();
+  const d = diffMenus(gen(u([1, 2, 3])), gen(u([1, 2])));
+  assert.ok(performance.now() - t < 10_000, `${Math.round(performance.now() - t)} ms`);
+  assert.equal(d.suggestedBump, 'major');
+});
+
+test('a schema too large to expand on one side is compared as written, and says so (review of #15)', () => {
+  const big = (n) => {
+    const $defs = { [`D${n}`]: { type: 'string' } };
+    for (let i = 0; i < n; i++) $defs[`D${i}`] = { type: 'object', properties: { x: { $ref: `#/$defs/D${i + 1}` }, y: { $ref: `#/$defs/D${i + 1}` } } };
+    return { type: 'object', $defs, properties: { root: { $ref: '#/$defs/D0' } } };
+  };
+  const d = diffMenus(gen(big(10)), gen(big(17)));
+  const cap = d.findings.find((f) => /expands past/.test(f.message));
+  assert.match(cap.message, /the new inputSchema expands past 50,000 nodes through its \$refs, so both are compared as written, \$defs entries by name/);
+  assert.ok(!d.findings.some((f) => f.rule === 'diff/type-widened'), 'no "object → any"');
+  // $defs compared by name: D10 was the string leaf and is now an object (breaking),
+  // and D11…D17 are new, said in one line.
+  assert.ok(d.findings.some((f) => f.rule === 'diff/param-type' && f.message.startsWith('gen.$defs.D10 changed type: string → object')));
+  assert.deepEqual(d.findings.filter((f) => /entries added/.test(f.message)).map((f) => f.message), ['gen: $defs entries added (D11, D12, D13, D14, D15, D16, D17).']);
+  assert.deepEqual(diffMenus(gen(big(17)), gen(big(17))).findings, []);
+  // Both sides too large, and an enum narrowed inside a definition: still breaking (review of #15).
+  const narrow = (n, values) => {
+    const s = big(n);
+    s.$defs[`D${n}`] = { type: 'string', enum: values };
+    return s;
+  };
+  const both = diffMenus(gen(narrow(17, ['a', 'b'])), gen(narrow(17, ['a'])));
+  assert.equal(both.suggestedBump, 'major');
+  assert.ok(both.findings.some((f) => f.rule === 'diff/enum-narrowed' && f.message.startsWith('gen.$defs.D17')));
+  assert.match(both.findings.find((f) => /expand past/.test(f.message)).message, /the old and new inputSchemas expand past 50,000 nodes through their \$refs/);
+});
+
+test('a change past the depth limit says so, and is still caught', () => {
+  const nest = (levels, leaf) => {
+    let s = { type: 'string', enum: leaf };
+    for (let i = 0; i < levels; i++) s = { type: 'object', properties: { n: s } };
+    return { type: 'object', properties: { root: s } };
+  };
+  const deep = diffMenus(gen(nest(70, ['a', 'b'])), gen(nest(70, ['a'])));
+  assert.deepEqual(rules(deep), ['diff/schema-other:gen']);
+  assert.match(deep.findings[0].message, /changed more than 64 levels deep, below where toolmenu compares field by field\. Review it\./);
+  const shallow = diffMenus(gen(nest(40, ['a', 'b'])), gen(nest(40, ['a'])));
+  assert.deepEqual(rules(shallow), ['diff/enum-narrowed:gen']);
 });
 
 test('arrays of objects are compared item field by item field', () => {
@@ -145,10 +353,11 @@ const shared = (values) => ({ type: 'object', $defs: { Text: { type: 'object', p
 test('an enum narrowed inside a union, behind a shared $ref, is breaking (the reporter\'s marks)', () => {
   const d = diffMenus(gen(shared(['bold', 'italic', 'code'])), gen(shared(['bold', 'italic'])));
   assert.equal(d.suggestedBump, 'major');
-  assert.deepEqual(d.findings.map((f) => `${f.severity} ${f.rule}: ${f.message.split(':')[0]}`).sort(), [
-    'error diff/enum-narrowed: gen.body.marks (array option) (array items)',
-    'error diff/enum-narrowed: gen.title.marks (array option) (array items)',
-  ]);
+  // One change to a shared definition: one finding, both places listed.
+  assert.deepEqual(d.findings.map((f) => `${f.severity} ${f.rule}`), ['error diff/enum-narrowed']);
+  assert.deepEqual(d.findings[0].places, ['gen.title.marks (array option) (array items)', 'gen.body.marks (array option) (array items)']);
+  // The headline names the first place, the detail the others: no place twice.
+  assert.deepEqual(d.findings[0].detail, ['also at gen.body.marks (array option) (array items)']);
   // Widened, it's minor; nothing but the enum changed, so nothing else is said.
   assert.equal(diffMenus(gen(shared(['bold'])), gen(shared(['bold', 'code']))).suggestedBump, 'minor');
 });
@@ -202,7 +411,7 @@ test('only the $schema dialect changing, in several tools, is one notice naming 
   assert.deepEqual(d.findings[0].detail, ['connect, find, count']);
   // One tool: said for it. With another change outside the parameters: still a review.
   assert.deepEqual(rules(diffMenus(menu([{ name: 'find', inputSchema: s(d7) }]), menu([{ name: 'find', inputSchema: s(d20) }]))), ['diff/schema-dialect:find']);
-  assert.deepEqual(rules(diffMenus(menu([{ name: 'find', inputSchema: s(d7) }]), menu([{ name: 'find', inputSchema: s(d20, { additionalProperties: true }) }]))), ['diff/schema-other:find']);
+  assert.deepEqual(rules(diffMenus(menu([{ name: 'find', inputSchema: s(d7) }]), menu([{ name: 'find', inputSchema: s(d20, { minProperties: 1 }) }]))), ['diff/schema-other:find']);
 });
 
 test('a $ref to another document is left as it is', () => {
@@ -346,7 +555,7 @@ test('removing an optional parameter only breaks callers when extra properties a
   const rulesOf = (a, b) => diffMenus(a, b).findings.filter((f) => f.rule !== 'diff/version-bump').map((f) => f.rule);
   const withVersion = { user_id: { type: 'string' }, 'Notion-Version': { type: 'string', default: '2025-09-03' } };
   assert.deepEqual(rulesOf(t(withVersion, ['user_id']), t({ user_id: { type: 'string' } }, ['user_id'])), ['diff/param-dropped']);
-  assert.deepEqual(rulesOf(t(withVersion, ['user_id']), t({ user_id: { type: 'string' } }, ['user_id'], { additionalProperties: false })), ['diff/param-removed', 'diff/schema-other'], 'closing the schema is itself reported');
+  assert.deepEqual(rulesOf(t(withVersion, ['user_id']), t({ user_id: { type: 'string' } }, ['user_id'], { additionalProperties: false })), ['diff/properties-closed', 'diff/param-removed'], 'closing the schema is itself reported, as breaking');
   assert.deepEqual(rulesOf(t(withVersion, ['user_id', 'Notion-Version']), t({ user_id: { type: 'string' } }, ['user_id'])), ['diff/param-removed']);
 });
 

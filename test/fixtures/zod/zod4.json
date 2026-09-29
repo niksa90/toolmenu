@@ -1,0 +1,687 @@
+{
+ "toolmenu": 1,
+ "server": {
+  "name": "zod-constructs",
+  "version": "1.1.0"
+ },
+ "source": "zod 3.25.76 (zod/v4), @modelcontextprotocol/sdk 1.29.0 toJsonSchemaCompat",
+ "tools": [
+  {
+   "name": "zod_int",
+   "description": "The int construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "n": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+     }
+    },
+    "required": [
+     "n"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_intBounded",
+   "description": "The intBounded construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "n": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     }
+    },
+    "required": [
+     "n"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_positive",
+   "description": "The positive construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "n": {
+      "type": "number",
+      "exclusiveMinimum": 0
+     }
+    },
+    "required": [
+     "n"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_optional",
+   "description": "The optional construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "s": {
+      "type": "string"
+     }
+    }
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_nullableString",
+   "description": "The nullableString construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "s": {
+      "description": "a nullable string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "s"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_nullableObject",
+   "description": "The nullableObject construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "o": {
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "a": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "a"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "o"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_defaulted",
+   "description": "The defaulted construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "s": {
+      "default": "x",
+      "type": "string"
+     }
+    }
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_enumField",
+   "description": "The enumField construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "e": {
+      "type": "string",
+      "enum": [
+       "a",
+       "b",
+       "c"
+      ]
+     }
+    },
+    "required": [
+     "e"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_literal",
+   "description": "The literal construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "l": {
+      "type": "string",
+      "const": "fixed"
+     }
+    },
+    "required": [
+     "l"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_union",
+   "description": "The union construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "u": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "number"
+       }
+      ]
+     }
+    },
+    "required": [
+     "u"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_objectUnion",
+   "description": "The objectUnion construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "u": {
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "a": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "a"
+        ]
+       },
+       {
+        "type": "object",
+        "properties": {
+         "b": {
+          "type": "number"
+         }
+        },
+        "required": [
+         "b"
+        ]
+       }
+      ]
+     }
+    },
+    "required": [
+     "u"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_discriminated",
+   "description": "The discriminated construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "d": {
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "kind": {
+          "type": "string",
+          "const": "x"
+         },
+         "a": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "kind",
+         "a"
+        ]
+       },
+       {
+        "type": "object",
+        "properties": {
+         "kind": {
+          "type": "string",
+          "const": "y"
+         },
+         "b": {
+          "type": "number"
+         }
+        },
+        "required": [
+         "kind",
+         "b"
+        ]
+       }
+      ]
+     }
+    },
+    "required": [
+     "d"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_record",
+   "description": "The record construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "r": {
+      "type": "object",
+      "propertyNames": {
+       "type": "string"
+      },
+      "additionalProperties": {
+       "type": "number"
+      }
+     }
+    },
+    "required": [
+     "r"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_arrayMin",
+   "description": "The arrayMin construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "a": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "a"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_nestedObject",
+   "description": "The nestedObject construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "o": {
+      "type": "object",
+      "properties": {
+       "a": {
+        "type": "string"
+       },
+       "b": {
+        "type": "object",
+        "properties": {
+         "c": {
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "c"
+        ]
+       }
+      },
+      "required": [
+       "a",
+       "b"
+      ]
+     }
+    },
+    "required": [
+     "o"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_strictObject",
+   "description": "The strictObject construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "o": {
+      "type": "object",
+      "properties": {
+       "a": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "a"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "required": [
+     "o"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_passthrough",
+   "description": "The passthrough construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "o": {
+      "type": "object",
+      "properties": {
+       "a": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "a"
+      ],
+      "additionalProperties": {}
+     }
+    },
+    "required": [
+     "o"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_email",
+   "description": "The email construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "s": {
+      "type": "string",
+      "format": "email",
+      "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+     }
+    },
+    "required": [
+     "s"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_url",
+   "description": "The url construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "s": {
+      "type": "string",
+      "format": "uri"
+     }
+    },
+    "required": [
+     "s"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_uuid",
+   "description": "The uuid construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "s": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+     }
+    },
+    "required": [
+     "s"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_datetime",
+   "description": "The datetime construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "s": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+     }
+    },
+    "required": [
+     "s"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_regex",
+   "description": "The regex construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "s": {
+      "type": "string",
+      "pattern": "^[a-z]+$"
+     }
+    },
+    "required": [
+     "s"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_lengths",
+   "description": "The lengths construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "s": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 10
+     }
+    },
+    "required": [
+     "s"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_tuple",
+   "description": "The tuple construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "t": {
+      "type": "array",
+      "items": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "number"
+       }
+      ]
+     }
+    },
+    "required": [
+     "t"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_anyValue",
+   "description": "The anyValue construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "v": {}
+    },
+    "required": [
+     "v"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_unknownValue",
+   "description": "The unknownValue construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "v": {}
+    },
+    "required": [
+     "v"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  },
+  {
+   "name": "zod_describedNested",
+   "description": "The describedNested construct.",
+   "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+     "o": {
+      "description": "outer",
+      "type": "object",
+      "properties": {
+       "a": {
+        "description": "inner",
+        "type": "string"
+       }
+      },
+      "required": [
+       "a"
+      ]
+     }
+    },
+    "required": [
+     "o"
+    ]
+   },
+   "annotations": {
+    "readOnlyHint": true
+   }
+  }
+ ]
+}

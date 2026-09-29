@@ -1,6 +1,7 @@
-import { connect, listTools, type Target } from './connect.js';
+import { listTools, type Target } from './connect.js';
+import { patiently, tooMany } from './failures.js';
 import { buildMenu } from './menu.js';
-import { isContainerWrapper, MAIN_SEED, probeVariance, seeded } from './probe.js';
+import { connectPatiently, isContainerWrapper, MAIN_SEED, probeVariance, seeded } from './probe.js';
 import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
 import { readCatalog, type CatalogOptions } from './catalog.js';
 import type { Routes } from './routes.js';
@@ -27,13 +28,15 @@ export interface SnapshotResult {
 
 /** Establish the menu: connect, list the tools twice, run the menu rules. */
 export async function snapshot(target: Target, options: SnapshotOptions = {}): Promise<SnapshotResult> {
-  const connection = await connect(seeded(target, MAIN_SEED), { timeoutMs: options.timeoutMs });
+  // Connecting and listing are read-only: a refusal for being too many is waited
+  // out and they're sent again (CI behind a shared rate limit).
+  const connection = await connectPatiently(seeded(target, MAIN_SEED), { timeoutMs: options.timeoutMs });
   let menu: Menu;
   let secondList: Menu['tools'];
   let first: Awaited<ReturnType<typeof listTools>>;
   try {
-    first = await listTools(connection, options);
-    const second = await listTools(connection, options);
+    first = await patiently(() => listTools(connection, options), { error: tooMany });
+    const second = await patiently(() => listTools(connection, options), { error: tooMany });
     const server = {
       name: connection.server.name,
       version: connection.server.version,

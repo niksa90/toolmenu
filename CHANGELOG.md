@@ -1,6 +1,78 @@
 # Changelog
 
-## Unreleased
+## 0.12.0
+
+- **`diff` is tested by mutation, on real menus:** `test/mutation.test.mjs` edits the
+  schemas of five published servers (mongodb, Notion, Firecrawl, Playwright,
+  Supabase) and the field report's document schema at every position `diff`
+  compares, ten ways (enum narrowed or widened, type changed, field made required,
+  removed or added, union option removed or reordered, block moved to `$defs`,
+  description changed), and checks each gives exactly the rule and bump it should.
+  About 3,100 mutations, every `npm test`. On 0.11.0's code (main at 8b41fc2) 166 were
+  misreported; all pass now. What the sweep found, fixed:
+  - a property named `type` was read as the `type` keyword in the check that keeps
+    changes from going unreported, so reordering its union's options was a false
+    "review it";
+  - a union option that is itself a union (a `$ref` to one) is compared as its
+    options (Notion's `parent`);
+  - an option edited beyond recognition (its type, its only field) is one change,
+    not "removed" plus "added", and two options without properties have the same
+    shape;
+  - a union cut down to one option is compared with the option it was.
+  The harness also checks that one edit is one finding, which caught this:
+- **Fix, shared unions:** an option added to or removed from a union that fields of
+  differently shaped objects share (a heading's content and a table cell's) was one
+  finding per object. Findings about a union group by the union itself.
+- **Union options, further:** an option that's an unexpanded `$ref` (a recursive
+  definition past its unrolled level) no longer hides the others' discriminator
+  (`type="paragraph"`, not `object{content,type} #1`); two objects with fields and
+  none in common are one option replaced by another; matching options is a lookup,
+  not a scan (1,500 changed options: under a second, was 36 s).
+- **Too large to expand, both sides:** `$defs` entries are compared by name, so an
+  enum narrowed inside one is still breaking; definitions only one side has are one
+  line.
+- **Checked on 14 public servers' releases (69 pairs) and their menus:**
+  - **zod 3 → 4 spellings are the same schema:** `additionalProperties: {}` is
+    `true`, and an integer's `maximum`/`minimum` of ±(2^53 − 1) (zod 4 adds them to
+    every `.int()`) excludes nothing. chrome-devtools-mcp 1.9.0 → 1.10.1 goes from 61
+    "review it" to one dialect notice.
+  - **A description inside a nullable option** (`anyOf: [{type: string,
+    description}, {type: null}]`, sentry-mcp) is compared, also when the field has
+    a description of its own; one moved between the option and the node is no
+    change.
+- **zod 3 → 4 on an MCP SDK server** (27 constructs, zod 3.25 through the SDK's
+  converter, `test/fixtures/zod`): from 2 errors and 40 notices to the real changes.
+  - **`diff/properties-opened`** (minor) and **`diff/properties-closed`**
+    (breaking): `additionalProperties: false` removed or added. zod 4 drops it from
+    every object; that's one line for the menu ("27 tools now accept properties
+    they don't list, at 35 places"), not a "review it" per object. The official
+    `everything` server's 2026.7.4 release: 9 "review it" became that one line.
+  - Absent, `true` and `{}` `additionalProperties` are one spelling, and
+    `propertyNames: {type: "string"}` is dropped.
+  - Still reported: `z.any()`/`z.unknown()` keys made required (breaking), and the
+    patterns zod 4 adds to email, uuid and datetime, and a tuple's dropped bounds.
+  - Several tools restructured or spelled differently but accepting the same
+    input are one `diff/schema-equivalent` line.
+
+- **Fix, `diff` on deep schemas:** the field-by-field comparison stopped 8 levels
+  down, counting every array and union option, so one change to a definition a
+  document schema's five block types share was an error for paragraphs and headings
+  and a "review it" for lists, tables and quotes. The limit is 64, and a change past
+  it says so. On mongodb-mcp-server 2.1.2 → 3.0.0 this finds `numCandidates` and
+  `limit` narrowed to integer inside `explain` and `export` too, not only `aggregate`.
+- **One change at several places is one finding:** the same change, to the same
+  field, with the same schema before and after, inside objects that accept the same
+  (one shared definition), is reported once: the headline names the first place, the
+  detail the others, and `places` in `--json` has them all. Two independent `limit`
+  parameters removed stay two findings.
+- **Fix, `diff` on unions without a discriminator:** options were paired by position,
+  so reordering a plain `z.union` of objects, or adding an option in front, read as
+  four breaking changes. Identical options pair first, then by type and shared
+  property names; an option with nothing in common is removed or added. Labels name
+  an option by its shape (`object{path}`), not its position.
+- **Fix, `diff` on very large schemas:** past 50,000 nodes of `$ref` expansion one
+  side was compared unexpanded against the other, and read as "object → any". Both
+  sides are now compared as written, with a notice saying why.
 
 - **`diff` compares inside parameters:** fields of object parameters and of array
   items are compared at every depth, with the same rules and their path
@@ -34,6 +106,22 @@
 - **`diff/schema-dialect`** (notice): only the declared `$schema` changed. Said once for
   every tool that switched: mongodb-mcp-server 3.0.0 moved 27 tools from draft-07 to
   2020-12, which read as 27 "review it" notices.
+- **`session` and rate limits:** a request refused for being too many is waited out,
+  2 s up to 32 s, and sent again, when that repeats nothing: connecting, listing, the
+  list_changed subscription, the second connections that compare menus and check a
+  change's scope, and a tool call the transport refused with a 429 (the server never
+  ran it). A tool that says it was rate-limited, thrown or as its result, is called
+  again only if it's marked readOnlyHint: it may have done part of the work first. A
+  limit that outlasts the waits, or a write's, stops the run with one
+  `session/rate-limited` (error) naming the steps that didn't run; one while
+  connecting says so instead of the transport's error. A session and a scenario run
+  back to back against a server with a per-IP limit was 19 errors, three for each
+  refused step, and kept calling. An unlock the stopped run never got to isn't also
+  `session/unlock-coverage`. "Order 429 not found" or "rateLimit must be a positive
+  number" isn't a rate limit, for catalog either. `snapshot` (so the Action and
+  `init`), `session --init` and `session --auto` wait out a refused connection and
+  menu read the same way, and say what to do when it outlasts the waits instead of
+  the transport's error.
 
 - **Fix, `init`:** only `--env` names that looked like credentials became secrets,
   so values like `DATABASE_URL` or `SENTRY_DSN` went into the workflow as text.

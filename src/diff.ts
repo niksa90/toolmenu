@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { canonical, compareMenus } from './compare.js';
 import { countTokens } from './menu.js';
 import { isCalendar, parseSemver } from './semver.js';
@@ -9,6 +10,8 @@ export type Bump = 'major' | 'minor' | 'patch' | 'none';
 
 export interface DiffFinding extends Finding {
   class?: ChangeClass;
+  /** Every place one change was found, when it's reached from several (a shared definition). */
+  places?: string[];
 }
 
 interface DiffRule {
@@ -37,6 +40,9 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/schema-equivalent': { severity: 'info', class: 'notice' },
   // Only the declared $schema dialect changed: one finding for the menu.
   'diff/schema-dialect': { severity: 'info', class: 'notice' },
+  // additionalProperties: false removed (widens) or added (breaks callers sending extras).
+  'diff/properties-opened': { severity: 'info', class: 'minor' },
+  'diff/properties-closed': { severity: 'error', class: 'breaking' },
   'diff/annotations': { severity: 'info', class: 'notice' },
   'diff/other': { severity: 'info', class: 'notice' },
   'diff/order': { severity: 'info', class: 'notice' },
@@ -85,7 +91,8 @@ export interface DiffOptions {
   serverVersionIsRelease?: boolean;
 }
 
-type Raw = { rule: string; tool?: string; message: string; detail?: string[] };
+/** A finding before settle. `place` and `text`: where in the schema, and what changed there (say, collapsePlaces). */
+type Raw = { rule: string; tool?: string; message: string; detail?: string[]; place?: string; text?: string; group?: string; places?: string[] };
 
 export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}): DiffResult {
   const raw: Raw[] = [];
@@ -120,6 +127,7 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   for (const { from, to } of renames) raw.push(...compareTool(from, to).filter((f) => f.rule !== 'diff/description' && f.rule !== 'diff/other'));
 
   collapseDialects(raw);
+  collapseMenuWide(raw);
 
   const moved = compareMenus(oldTools, newTools).filter((c) => c.kind === 'moved');
   if (moved.length) {
@@ -205,8 +213,42 @@ function collapseDialects(raw: Raw[]): void {
   }
 }
 
-/** How deep nested objects are compared field by field. Deeper, a change is one schema-other notice. */
-const MAX_DEPTH = 8;
+/**
+ * Findings that are one change made to the whole menu, found in several tools
+ * (zod 4 dropping additionalProperties: false from every object; a refactor
+ * across tools): one line naming the tools, every place in `places`.
+ */
+const MENU_WIDE: Record<string, (tools: number, places: number) => string> = {
+  'diff/properties-opened': (t, p) => `${t} tools now accept properties they don't list (additionalProperties: false removed, at ${p} places): most likely a schema generator upgrade (zod 4 writes nothing where zod 3 wrote false).`,
+  'diff/properties-closed': (t, p) => `${t} tools now reject properties they don't list (additionalProperties: false added, at ${p} places). Calls that send one can fail.`,
+  'diff/schema-equivalent': (t) => `${t} tools are restructured or spelled differently but accept the same input.`,
+};
+
+function collapseMenuWide(raw: Raw[]): void {
+  for (const [rule, summary] of Object.entries(MENU_WIDE)) {
+    const list = raw.filter((r) => r.rule === rule && r.tool);
+    if (list.length < 2) continue;
+    const at = raw.indexOf(list[0]);
+    for (const r of list) raw.splice(raw.indexOf(r), 1);
+    const places = list.flatMap((r) => r.places ?? [r.message.split(' ')[0].replace(/:$/, '')]);
+    const names = list.map((r) => r.tool!);
+    raw.splice(at, 0, {
+      rule,
+      message: summary(list.length, places.length),
+      detail: [names.slice(0, 12).join(', ') + (names.length > 12 ? `, and ${names.length - 12} more` : '')],
+      places,
+    });
+  }
+}
+
+/**
+ * How deep a schema is compared field by field, counting every object, array
+ * items and union option on the way. 8 cut off a document schema's lists, tables
+ * and quotes (block → items → option → fields → items → option → …) while its
+ * paragraphs were compared, so one change read as an error at two places and
+ * "review it" at four. Recursion is bounded by resolveRefs, not by this.
+ */
+const MAX_DEPTH = 64;
 
 function compareTool(old: MenuTool, t: MenuTool): Raw[] {
   const out: Raw[] = [];
@@ -218,8 +260,21 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
 
   // Compared by what they accept, not how they're spelled: a block moved into
   // $defs and referenced is the same schema.
-  const a = resolveRefs(old.inputSchema);
-  const b = resolveRefs(t.inputSchema);
+  const ea = expandRefs(old.inputSchema);
+  const eb = expandRefs(t.inputSchema);
+  // Too large to expand on either side: compare both as written, so an expanded
+  // side isn't read against a $ref on the other ("object → any"), and say so.
+  const expanded = ea.expanded && eb.expanded;
+  const a = expanded ? ea.schema : old.inputSchema;
+  const b = expanded ? eb.schema : t.inputSchema;
+  if (!expanded && canonical(old.inputSchema) !== canonical(t.inputSchema)) {
+    const which = ea.expanded ? 'the new inputSchema expands' : eb.expanded ? 'the old inputSchema expands' : 'the old and new inputSchemas expand';
+    out.push({
+      rule: 'diff/schema-other',
+      tool: name,
+      message: `${name}: ${which} past ${fmt(MAX_EXPANDED_NODES)} nodes through ${ea.expanded || eb.expanded ? 'its' : 'their'} $refs, so both are compared as written, $defs entries by name: a $ref moved to another name reads as a change. Review it.`,
+    });
+  }
   const oldEmpty = isEmptySchema(a);
   const newEmpty = isEmptySchema(b);
   if (oldEmpty || newEmpty) {
@@ -235,8 +290,15 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
 
   const found = out.length;
   compareObject({ tool: name, out }, name, a!, b!, 0);
+  // Compared as written (too large to expand): the parameters hold $refs, so
+  // what they point to is compared here, definition by definition, by name. A
+  // narrowed enum inside one is still breaking.
+  if (!expanded) compareDefinitions({ tool: name, out }, name, old.inputSchema ?? {}, t.inputSchema ?? {});
+  collapsePlaces(out, found);
   const shell = (s: JsonSchema | undefined) => {
     const { properties: _p, required: _r, $defs: _d, definitions: _df, ...rest } = (s ?? {}) as Record<string, unknown>;
+    // additionalProperties: false coming or going is said by compareObject.
+    if (rest.additionalProperties === false) delete rest.additionalProperties;
     return rest;
   };
   const [sa, sb] = [shell(a), shell(b)];
@@ -254,7 +316,7 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
   }
   // Never silent: the schemas differ, and nothing above says how. Spellings the
   // rules treat as one (a type as anyOf alternatives or a list) don't count.
-  if (out.length === found && canonical(sameTypes(a)) !== canonical(sameTypes(b))) {
+  if (expanded && out.length === found && canonical(sameTypes(a)) !== canonical(sameTypes(b))) {
     out.push({ rule: 'diff/schema-other', tool: name, message: `${name}: inputSchema changed in a way toolmenu doesn't classify. Review it.` });
   }
   // Spelled differently, accepts the same: say so, so the refactor needs no review.
@@ -274,22 +336,93 @@ function sameTypes(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(sameTypes);
   if (!node || typeof node !== 'object') return node;
   const s = node as JsonSchema;
-  const out: Record<string, unknown> = Object.fromEntries(Object.entries(s).map(([k, v]) => [k, sameTypes(v)]));
+  // Name → schema maps: their keys are names, not keywords (a property called
+  // `type` is a schema, not a type).
+  const out: Record<string, unknown> = Object.fromEntries(
+    Object.entries(s).map(([k, v]) => [k, SCHEMA_MAPS.has(k) && v && typeof v === 'object' && !Array.isArray(v) ? mapValues(v as Record<string, unknown>, sameTypes) : sameTypes(v)]),
+  );
   const alternatives = typeAlternatives(s);
   if (alternatives) {
     delete out.anyOf;
     delete out.oneOf;
     out.type = [...new Set(alternatives)].sort();
-  } else if (s.type !== undefined) {
+    // The options' descriptions stay, as the node's (describedAs).
+    const described = describedAs(s);
+    if (described) out.description = described;
+  } else if (typeof s.type === 'string' || (Array.isArray(s.type) && s.type.every((t) => typeof t === 'string'))) {
     out.type = [...new Set(Array.isArray(s.type) ? s.type : [s.type])].sort();
   }
+  // A union accepts the same whatever order its options come in.
+  for (const k of ['anyOf', 'oneOf'] as const) {
+    if (Array.isArray(out[k])) out[k] = [...(out[k] as unknown[])].sort((x, y) => (canonical(x) < canonical(y) ? -1 : canonical(x) > canonical(y) ? 1 : 0));
+  }
   return out;
+}
+
+/** `$defs` and `definitions` entries of two unexpanded schemas, compared by name. */
+function compareDefinitions(w: Walk, name: string, oldS: JsonSchema, newS: JsonSchema): void {
+  const list = (names: string[]) => [...names].sort((x, y) => x.localeCompare(y, 'en', { numeric: true })).slice(0, 8).join(', ') + (names.length > 8 ? `, and ${names.length - 8} more` : '');
+  for (const pool of ['$defs', 'definitions'] as const) {
+    const [a, b] = [(oldS[pool] ?? {}) as Record<string, JsonSchema>, (newS[pool] ?? {}) as Record<string, JsonSchema>];
+    const removed = Object.keys(a).filter((k) => !(k in b));
+    const added = Object.keys(b).filter((k) => !(k in a));
+    // One line each for definitions only one side has: what refers to them is compared above.
+    if (removed.length) w.out.push({ rule: 'diff/schema-other', tool: w.tool, message: `${name}: ${pool} ${removed.length === 1 ? 'entry' : 'entries'} removed (${list(removed)}). Review what referred to ${removed.length === 1 ? 'it' : 'them'}.` });
+    if (added.length) w.out.push({ rule: 'diff/schema-other', tool: w.tool, message: `${name}: ${pool} ${added.length === 1 ? 'entry' : 'entries'} added (${list(added)}).` });
+    for (const [k, def] of Object.entries(b)) {
+      if (k in a) compareSchema(w, `${name}.${pool}.${k}`, `${name}.${pool}.${k}`, a[k], def, 1);
+    }
+  }
 }
 
 /** Where a tool's schema comparison reports to. */
 interface Walk {
   tool: string;
   out: Raw[];
+  /** Fingerprint of the enclosing object schema, before and after (compareObject sets it). */
+  scope?: string;
+}
+
+const DESCRIPTIVE = new Set(['description', 'title', 'examples', '$comment']);
+
+/** A schema without the keywords that describe it but don't change what it accepts. */
+function shape(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(shape);
+  if (!node || typeof node !== 'object') return node;
+  return Object.fromEntries(
+    Object.entries(node as Record<string, unknown>)
+      .filter(([k]) => !DESCRIPTIVE.has(k))
+      .map(([k, v]) => [k, SCHEMA_MAPS.has(k) && v && typeof v === 'object' && !Array.isArray(v) ? mapValues(v as Record<string, unknown>, shape) : shape(v)]),
+  );
+}
+
+/** Keywords whose value maps names to schemas. */
+const SCHEMA_MAPS = new Set(['properties', '$defs', 'definitions', 'patternProperties', 'dependentSchemas']);
+
+function mapValues(map: Record<string, unknown>, f: (v: unknown) => unknown): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, f(v)]));
+}
+
+/** A short, stable fingerprint of a (canonical) value. */
+function digest(value: unknown): string {
+  return createHash('sha1').update(canonical(value ?? null)).digest('base64').slice(0, 16);
+}
+
+/**
+ * A finding at a place in the schema, about `node` (the schema there, before and
+ * after). The place and what changed are kept apart, so one change reached
+ * through a shared definition at several places can be said once
+ * (collapsePlaces). That takes the same rule and words, the same field name, the
+ * same schema before and after, and the same enclosing object: two independent
+ * `limit` parameters removed from different objects are two findings, while one
+ * definition used at five places has the same enclosing object at all five.
+ */
+function say(w: Walk, rule: string, place: string, text: string, node: unknown, detail?: string[], groupAs?: string): void {
+  const field = place.replace(/( \([^()]*(?:\([^()]*\)[^()]*)*\))+$/, '').split('.').pop();
+  // groupAs: findings that are one change wherever they're found in the tool,
+  // whatever the field (additionalProperties: false dropped from every object).
+  const group = groupAs ?? [rule, text, field, digest(node), w.scope ?? '', digest(detail)].join('\u0000');
+  w.out.push({ rule, tool: w.tool, message: place + text, place, text, group, ...(detail ? { detail } : {}) });
 }
 
 /**
@@ -297,41 +430,45 @@ interface Walk {
  * added, or became required or optional; each one that's in both is compared by
  * compareSchema, under a path (`gen.body.text`).
  */
-function compareObject(w: Walk, path: string, oldS: JsonSchema, newS: JsonSchema, depth: number): void {
-  const { tool, out } = w;
+function compareObject(outer: Walk, path: string, oldS: JsonSchema, newS: JsonSchema, depth: number): void {
+  // Findings inside this object group only with findings inside one that accepts
+  // the same (descriptions aside: a $ref with its own description is the same
+  // definition).
+  const w: Walk = { ...outer, scope: digest([shape(oldS), shape(newS)]) };
   const oldProps = oldS.properties ?? {};
   const newProps = newS.properties ?? {};
   const oldReq = new Set(oldS.required ?? []);
   const newReq = new Set(newS.required ?? []);
+  const defaulted = (schema: JsonSchema) =>
+    hasDefault(schema) ? ` It has a default (${show(schema.default)}), so the server may still accept calls without it, but clients that validate arguments won't.` : '';
 
   // Removing an optional parameter only breaks callers if the new schema rejects
   // unknown properties; otherwise calls that still send it stay valid.
   const closed = newS.additionalProperties === false;
+  // additionalProperties: false removed, or added (absent, true and {} are one
+  // spelling after expansion). zod 4 drops it from every object: one finding for
+  // the tool (collapsePlaces), and one line for the menu (collapseOpenings).
+  const wasClosed = oldS.additionalProperties === false;
+  if (wasClosed && newS.additionalProperties === undefined) {
+    say(w, 'diff/properties-opened', path, ` now accepts properties it doesn't list (additionalProperties: false removed).`, null, undefined, 'diff/properties-opened');
+  } else if (!wasClosed && oldS.additionalProperties === undefined && closed) {
+    say(w, 'diff/properties-closed', path, ` now rejects properties it doesn't list (additionalProperties: false added). Calls that send one can fail.`, null, undefined, 'diff/properties-closed');
+  }
   for (const p of Object.keys(oldProps)) {
-    if (!(p in newProps)) {
-      out.push(
-        oldReq.has(p) || closed
-          ? { rule: 'diff/param-removed', tool, message: `${path}.${p} was removed. Calls that pass it can fail.` }
-          : { rule: 'diff/param-dropped', tool, message: `${path}.${p} (optional) was removed. Calls that still send it stay valid, but the server may ignore it.` },
-      );
-    }
+    if (p in newProps) continue;
+    if (oldReq.has(p) || closed) say(w, 'diff/param-removed', `${path}.${p}`, ' was removed. Calls that pass it can fail.', oldProps[p]);
+    else say(w, 'diff/param-dropped', `${path}.${p}`, ' (optional) was removed. Calls that still send it stay valid, but the server may ignore it.', oldProps[p]);
   }
   for (const [p, schema] of Object.entries(newProps)) {
     const before = oldProps[p];
     const at = `${path}.${p}`;
     if (!before) {
-      out.push(
-        newReq.has(p)
-          ? { rule: 'diff/param-required', tool, message: `${at} is new and required. Existing calls don't send it.${hasDefault(schema) ? ` It has a default (${show(schema.default)}), so the server may still accept calls without it, but clients that validate arguments won't.` : ''}` }
-          : { rule: 'diff/param-added', tool, message: `${at} is a new optional parameter.` },
-      );
+      if (newReq.has(p)) say(w, 'diff/param-required', at, ` is new and required. Existing calls don't send it.${defaulted(schema)}`, schema);
+      else say(w, 'diff/param-added', at, ' is a new optional parameter.', schema);
       continue;
     }
-    if (!oldReq.has(p) && newReq.has(p)) {
-      out.push({ rule: 'diff/param-required', tool, message: `${at} was optional and is now required.${hasDefault(schema) ? ` It has a default (${show(schema.default)}), so the server may still accept calls without it, but clients that validate arguments won't.` : ''}` });
-    } else if (oldReq.has(p) && !newReq.has(p)) {
-      out.push({ rule: 'diff/param-relaxed', tool, message: `${at} was required and is now optional.` });
-    }
+    if (!oldReq.has(p) && newReq.has(p)) say(w, 'diff/param-required', at, ` was optional and is now required.${defaulted(schema)}`, [before, schema]);
+    else if (oldReq.has(p) && !newReq.has(p)) say(w, 'diff/param-relaxed', at, ' was required and is now optional.', [before, schema]);
     compareSchema(w, at, at, before, schema, depth);
   }
 }
@@ -344,39 +481,43 @@ function compareObject(w: Walk, path: string, oldS: JsonSchema, newS: JsonSchema
  * (`gen.rows (array items)`).
  */
 function compareSchema(w: Walk, at: string, label: string, before: JsonSchema, after: JsonSchema, depth: number): void {
-  const { tool, out } = w;
-  const deeper = depth < MAX_DEPTH;
+  // Past the limit, a change is said as such, not passed off as an unclassified one.
+  if (depth >= MAX_DEPTH) {
+    if (canonical(sameTypes(before)) !== canonical(sameTypes(after))) {
+      say(w, 'diff/schema-other', label, `: changed more than ${MAX_DEPTH} levels deep, below where toolmenu compares field by field. Review it.`, [before, after]);
+    }
+    return;
+  }
   const oldOptions = unionOf(before);
   const newOptions = unionOf(after);
   // anyOf/oneOf whose options are more than a type: zod's unions, discriminated
   // unions, and .nullable() on anything but a primitive. A side that isn't a union
   // is one option.
-  const union = deeper && (oldOptions || newOptions) ? true : false;
+  const union = oldOptions !== undefined || newOptions !== undefined;
   const oldType = typeOf(before);
   const newType = typeOf(after);
   if (union) {
-    compareUnion(w, at, label, oldOptions ?? [before], newOptions ?? [after], depth);
+    // The plain side's description is the node's, compared below, not an option's.
+    compareUnion(w, at, label, optionsOf(before), optionsOf(after), depth);
   } else {
     if (oldType !== newType) {
       // Widening (boolean → boolean|string, object → any) accepts every call that
       // worked before; only a narrower or different type breaks callers.
-      out.push(
-        accepts(after, before)
-          ? { rule: 'diff/type-widened', tool, message: `${label} now accepts more types: ${oldType || 'any'} → ${newType || 'any'}.` }
-          : { rule: 'diff/param-type', tool, message: `${label} changed type: ${oldType || 'any'} → ${newType || 'any'}. Calls that worked before can fail.` },
-      );
+      if (accepts(after, before)) say(w, 'diff/type-widened', label, ` now accepts more types: ${oldType || 'any'} → ${newType || 'any'}.`, [before, after]);
+      else say(w, 'diff/param-type', label, ` changed type: ${oldType || 'any'} → ${newType || 'any'}. Calls that worked before can fail.`, [before, after]);
     }
     const e = enumChange(before, after);
-    if (e) out.push({ rule: e.rule, tool, message: `${label}: ${e.message}` });
+    if (e) say(w, e.rule, label, `: ${e.message}`, [before, after]);
   }
   // Array items: compared like a parameter of their own (no items schema = any element).
   const isArray = (s: JsonSchema) => typesOf(s)?.includes('array') ?? false;
-  const arrays = !union && deeper && isArray(before) && isArray(after);
+  const arrays = !union && isArray(before) && isArray(after);
   if (arrays) compareSchema(w, `${at}[]`, `${label} (array items)`, before.items ?? {}, after.items ?? {}, depth + 1);
-  if ((before.description ?? '') !== (after.description ?? '')) {
-    out.push({ rule: 'diff/description', tool, message: `${label}: ${label.endsWith(')') ? 'description' : 'parameter description'} changed.`, detail: textDiff(String(before.description ?? ''), String(after.description ?? '')) });
+  const [da, db] = [describedAs(before), describedAs(after)];
+  if (da !== db) {
+    say(w, 'diff/description', label, `: ${label.endsWith(')') ? 'description' : 'parameter description'} changed.`, [before, after], textDiff(da, db));
   }
-  const object = !union && deeper && hasProperties(before) && hasProperties(after);
+  const object = !union && hasProperties(before) && hasProperties(after);
   if (object) compareObject(w, at, before, after, depth + 1);
   // What no rule above covers. A breaking type change already covers a reshaped
   // schema: no duplicate notice. A widened type can still bring new constraints.
@@ -384,42 +525,258 @@ function compareSchema(w: Walk, at: string, label: string, before: JsonSchema, a
   if (union && !(oldOptions && newOptions)) return;
   const rest = (s: JsonSchema) => residual(s, { object, items: arrays, union });
   if ((union || oldType === newType || accepts(after, before)) && canonical(rest(before)) !== canonical(rest(after))) {
-    out.push({ rule: 'diff/schema-other', tool, message: `${label}: changed in a way toolmenu doesn't classify (constraints, formats, combinators…). Review it.` });
+    say(w, 'diff/schema-other', label, `: changed in a way toolmenu doesn't classify (constraints, formats, combinators…). Review it.`, [before, after]);
   }
+}
+
+/**
+ * A schema as a list of union options, when the other side is a union: its own
+ * anyOf/oneOf options if it has any (one option, or type-only ones, included),
+ * else itself, without its description (that's the node's, compared as the
+ * node's), as the one option.
+ */
+function optionsOf(s: JsonSchema): JsonSchema[] {
+  const options = unionOptions(s);
+  return options && options.length > 0 ? options : [undescribed(s)];
+}
+
+/**
+ * What a schema says about itself: its description, or, for a type written as
+ * anyOf/oneOf alternatives, the descriptions its options carry. Sentry writes a
+ * nullable string as anyOf [{type: string, description}, {type: null}]; a
+ * description moved from the option to the node is the same one.
+ */
+function describedAs(s: JsonSchema): string {
+  const own = typeof s.description === 'string' ? s.description : '';
+  if (!typeAlternatives(s)) return own;
+  // Its own text and its options', each once: a change to either is seen, even
+  // when the field has a description of its own (review of #15, sentry-both).
+  const texts = [own, ...((s.anyOf ?? s.oneOf) as JsonSchema[]).map((o) => (typeof o.description === 'string' ? o.description : ''))].filter(Boolean);
+  return [...new Set(texts)].join(' ');
 }
 
 /** The options of an anyOf/oneOf that isn't just a list of types. */
 function unionOf(s: JsonSchema): JsonSchema[] | undefined {
-  const options = (s.anyOf ?? s.oneOf) as unknown;
-  if (!Array.isArray(options) || options.length === 0 || typeAlternatives(s)) return undefined;
-  return options as JsonSchema[];
+  const options = unionOptions(s);
+  if (!options || options.length === 0 || typeAlternatives(s)) return undefined;
+  return options;
 }
 
 /**
- * A union's options, paired old with new: by the value of a discriminator every
- * option fixes (`kind: "text"`), else by type, else by position among options of
- * the same type. An option gone is breaking; a new one widens.
+ * anyOf/oneOf options, with an option that is itself only a union (a $ref to
+ * one, expanded: Notion's `parent` is anyOf [parentRequest, string], and
+ * parentRequest is anyOf of objects) flattened into its options: the same values
+ * are accepted either way.
  */
-function compareUnion(w: Walk, at: string, label: string, oldOptions: JsonSchema[], newOptions: JsonSchema[], depth: number): void {
+function unionOptions(s: JsonSchema): JsonSchema[] | undefined {
+  const options = (s.anyOf ?? s.oneOf) as unknown;
+  if (!Array.isArray(options)) return undefined;
+  return (options as JsonSchema[]).flatMap((o) => {
+    const inner = o && typeof o === 'object' ? ((o.anyOf ?? o.oneOf) as unknown) : undefined;
+    const pure = Array.isArray(inner) && Object.keys(o).every((k) => k === 'anyOf' || k === 'oneOf' || DESCRIPTIVE.has(k));
+    return pure ? (unionOptions(o) ?? [o]) : [o];
+  });
+}
+
+/**
+ * A schema with the spellings that accept the same input written one way, the ones
+ * schema generators switch between (zod 3 → 4 did both in chrome-devtools-mcp
+ * 1.9.0 → 1.10.1, 61 "review it"s): `additionalProperties: {}` is `true`, and an
+ * integer's `maximum: 2^53 − 1` / `minimum: −(2^53 − 1)` (zod 4 adds them to every
+ * `.int()`) exclude nothing a call can send.
+ */
+function unspelled(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(unspelled);
+  if (!node || typeof node !== 'object') return node;
+  const s = node as Record<string, unknown>;
+  const out: Record<string, unknown> = Object.fromEntries(
+    Object.entries(s).map(([k, v]) => [k, SCHEMA_MAPS.has(k) && v && typeof v === 'object' && !Array.isArray(v) ? mapValues(v as Record<string, unknown>, unspelled) : unspelled(v)]),
+  );
+  // additionalProperties absent, true and {} all allow any extra property: written
+  // as absent. false stays (compareObject says when it comes or goes).
+  const a = out.additionalProperties;
+  if (a === true || (a && typeof a === 'object' && !Array.isArray(a) && Object.keys(a).length === 0)) delete out.additionalProperties;
+  // Property names are strings anyway (zod 4 adds this to z.record).
+  const names = out.propertyNames as Record<string, unknown> | undefined;
+  if (names && typeof names === 'object' && Object.keys(names).length === 1 && names.type === 'string') delete out.propertyNames;
+  const integer = s.type === 'integer' || (Array.isArray(s.type) && s.type.includes('integer'));
+  if (integer && out.maximum === Number.MAX_SAFE_INTEGER) delete out.maximum;
+  if (integer && out.minimum === Number.MIN_SAFE_INTEGER) delete out.minimum;
+  return out;
+}
+
+/** A schema without its description, for comparing it as one option among others. */
+function undescribed(s: JsonSchema): JsonSchema {
+  const { description: _d, ...rest } = s as Record<string, unknown>;
+  return rest as JsonSchema;
+}
+
+/**
+ * A union's options, paired old with new (pairOptions), each pair compared like
+ * any schema. An option gone is breaking; a new one widens.
+ */
+function compareUnion(outer: Walk, at: string, label: string, oldOptions: JsonSchema[], newOptions: JsonSchema[], depth: number): void {
+  // Findings about the union, and inside its options, group by the union itself:
+  // one union definition shared by fields of different objects (a heading's
+  // content and a table cell's) is one change, whatever the objects around it.
+  const w: Walk = { ...outer, scope: digest([shape(oldOptions), shape(newOptions)]) };
   const d = discriminator(oldOptions);
   const key = d && d === discriminator(newOptions) ? d : undefined;
-  const oldByKey = new Map(optionKeys(oldOptions, key).map((k, i) => [k, oldOptions[i]]));
-  const newByKey = new Map(optionKeys(newOptions, key).map((k, i) => [k, newOptions[i]]));
-  for (const k of oldByKey.keys()) {
-    if (!newByKey.has(k)) w.out.push({ rule: 'diff/param-type', tool: w.tool, message: `${label}: no longer accepts the ${k} option. Calls that sent it can fail.` });
+  const { pairs, gone, fresh } = pairOptions(oldOptions, newOptions, key);
+  const oldLabels = optionLabels(oldOptions, key);
+  const newLabels = optionLabels(newOptions, key);
+  for (const o of gone) say(w, 'diff/param-type', label, `: no longer accepts the ${oldLabels.get(o)} option. Calls that sent it can fail.`, o);
+  for (const o of fresh) say(w, 'diff/type-widened', label, ` now also accepts ${article(newLabels.get(o)!)} ${newLabels.get(o)} option.`, o);
+  for (const [prev, next] of pairs) {
+    const k = newLabels.get(next)!;
+    compareSchema(w, `${at}(${k})`, `${label} (${k} option)`, prev, next, depth + 1);
   }
-  for (const [k, next] of newByKey) {
-    const prev = oldByKey.get(k);
-    if (!prev) w.out.push({ rule: 'diff/type-widened', tool: w.tool, message: `${label} now also accepts a ${k} option.` });
-    else compareSchema(w, `${at}(${k})`, `${label} (${k} option)`, prev, next, depth + 1);
+}
+
+function article(word: string): string {
+  return /^[aeiou]/i.test(word) ? 'an' : 'a';
+}
+
+/**
+ * Which old option became which new one. With a discriminator every option fixes
+ * (`kind: "text"`), by its value. Without one (a plain z.union of objects, an
+ * option that's an unexpanded $ref): identical options first, so a reorder or an
+ * option added in front changes nothing else; then options of the same type,
+ * objects by how many property names they share, best match first. An object
+ * option that shares no property name with any other is gone or new, not a
+ * reshaped one. Pairs come back in the new schema's order.
+ */
+function pairOptions(oldOptions: JsonSchema[], newOptions: JsonSchema[], key: string | undefined): { pairs: [JsonSchema, JsonSchema][]; gone: JsonSchema[]; fresh: JsonSchema[] } {
+  const oldLeft = new Set(oldOptions.keys());
+  const newLeft = new Set(newOptions.keys());
+  const pairs: [number, number][] = [];
+  const take = (i: number, j: number) => {
+    pairs.push([i, j]);
+    oldLeft.delete(i);
+    newLeft.delete(j);
+  };
+  // Old options by fingerprint, each computed once: matching is a lookup, not a
+  // scan (a 1,500-option union took 36 s).
+  const match = (fingerprint: (o: JsonSchema) => string) => {
+    const byPrint = new Map<string, number[]>();
+    oldOptions.forEach((o, i) => {
+      if (!oldLeft.has(i)) return;
+      const f = fingerprint(o);
+      byPrint.set(f, [...(byPrint.get(f) ?? []), i]);
+    });
+    for (const j of newOptions.keys()) {
+      if (!newLeft.has(j)) continue;
+      const i = byPrint.get(fingerprint(newOptions[j]))?.shift();
+      if (i !== undefined) take(i, j);
+    }
+  };
+  if (key) {
+    // An option that's a $ref (unexpanded: a recursive one) has no discriminator
+    // value of its own: it pairs by its ref.
+    match((o) => (typeof o.$ref === 'string' ? `$ref ${o.$ref}` : canonical(fixedValue(o.properties?.[key]))));
+  } else {
+    match((o) => canonical(sameTypes(o)));
+    const names = new Map([...oldOptions, ...newOptions].map((o) => [o, new Set(Object.keys(o.properties ?? {}))]));
+    const types = new Map([...oldOptions, ...newOptions].map((o) => [o, typeOf(o)]));
+    const candidates: [number, number, number][] = [];
+    for (const i of oldLeft) {
+      for (const j of newLeft) {
+        const [a, b] = [oldOptions[i], newOptions[j]];
+        if (types.get(a) !== types.get(b)) continue;
+        let score = 0.5;
+        if (hasProperties(a) || hasProperties(b)) {
+          const [x, y] = [names.get(a)!, names.get(b)!];
+          const all = new Set([...x, ...y]).size;
+          // Two objects with no properties at all have the same shape.
+          score = all === 0 ? 1 : [...x].filter((n) => y.has(n)).length / all;
+        }
+        if (score > 0) candidates.push([score, i, j]);
+      }
+    }
+    candidates.sort((p, q) => q[0] - p[0] || p[1] - q[1] || p[2] - q[2]);
+    for (const [, i, j] of candidates) if (oldLeft.has(i) && newLeft.has(j)) take(i, j);
+    // As many options left on each side: the ones that were edited (a type
+    // changed, an option emptied or given its first field). Paired in order,
+    // compared inside, rather than said as one removed and one added. Not two
+    // objects that each have fields and share none: that's one option replaced by
+    // another (pair-replace in the review of #15).
+    if (oldLeft.size > 0 && oldLeft.size === newLeft.size) {
+      const [olds, news] = [[...oldLeft].sort((a, b) => a - b), [...newLeft].sort((a, b) => a - b)];
+      const filled = (o: JsonSchema) => names.get(o)!.size > 0;
+      olds.forEach((i, n) => {
+        if (!(filled(oldOptions[i]) && filled(newOptions[news[n]]))) take(i, news[n]);
+      });
+    }
+  }
+  pairs.sort((p, q) => p[1] - q[1]);
+  return {
+    pairs: pairs.map(([i, j]) => [oldOptions[i], newOptions[j]]),
+    gone: [...oldLeft].map((i) => oldOptions[i]),
+    fresh: [...newLeft].sort((a, b) => a - b).map((j) => newOptions[j]),
+  };
+}
+
+/**
+ * Each option's name in messages and paths: its discriminator value, or its shape
+ * (`object{path,url}`, the first three property names). Two options that would
+ * share a name get all their property names, then a number.
+ */
+function optionLabels(options: JsonSchema[], key: string | undefined): Map<JsonSchema, string> {
+  const label = (o: JsonSchema, all: boolean): string => {
+    if (key && hasProperties(o)) return `${key}=${JSON.stringify(fixedValue(o.properties![key]))}`;
+    if (typeof o.$ref === 'string') return `$ref ${o.$ref}`;
+    const type = typeOf(o) || 'untyped';
+    if (!hasProperties(o)) return type;
+    const names = Object.keys(o.properties!).sort();
+    return all || names.length <= 3 ? `${type}{${names.join(',')}}` : `${type}{${names.slice(0, 3).join(',')},…}`;
+  };
+  const short = options.map((o) => label(o, false));
+  const named = options.map((o, i) => (short.filter((s) => s === short[i]).length > 1 ? label(o, true) : short[i]));
+  const seen = new Map<string, number>();
+  return new Map(
+    options.map((o, i) => {
+      const n = (seen.get(named[i]) ?? 0) + 1;
+      seen.set(named[i], n);
+      return [o, named.filter((s) => s === named[i]).length > 1 ? `${named[i]} #${n}` : named[i]];
+    }),
+  );
+}
+
+/**
+ * The same change, said at several places of one tool (a shared definition five
+ * block types use), as one finding that lists them: one change, one line, the
+ * same classification everywhere.
+ */
+function collapsePlaces(out: Raw[], from: number): void {
+  const groups = new Map<string, Raw[]>();
+  for (const r of out.slice(from)) {
+    if (r.group === undefined) continue;
+    groups.set(r.group, [...(groups.get(r.group) ?? []), r]);
+  }
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const [first, ...rest] = list;
+    // Same field, same schema, in identical enclosing objects: one definition,
+    // reached from several places.
+    first.message = `${first.place}${first.text} The same change at ${rest.length} more place${rest.length === 1 ? '' : 's'}, in the same definition.`;
+    first.detail = [...(first.detail ?? []), ...rest.slice(0, 10).map((r) => `also at ${r.place}`), ...(rest.length > 10 ? [`…and ${rest.length - 10} more`] : [])];
+    first.places = list.map((r) => r.place!);
+    for (const r of rest) out.splice(out.indexOf(r), 1);
+  }
+  for (const r of out.slice(from)) {
+    delete r.place;
+    delete r.text;
+    delete r.group;
   }
 }
 
 /** A property every option is an object with, and fixes to one value. */
 function discriminator(options: JsonSchema[]): string | undefined {
-  if (!options.every(hasProperties)) return undefined;
-  const names = Object.keys(options[0].properties!).sort();
-  return names.find((n) => options.every((o) => fixedValue(o.properties![n]) !== undefined));
+  // A $ref option (a recursive definition left unexpanded) says nothing either way.
+  const own = options.filter((o) => typeof o.$ref !== 'string');
+  if (own.length === 0 || !own.every(hasProperties)) return undefined;
+  const names = Object.keys(own[0].properties!).sort();
+  return names.find((n) => own.every((o) => fixedValue(o.properties![n]) !== undefined));
 }
 
 function fixedValue(s: JsonSchema | undefined): unknown {
@@ -428,15 +785,6 @@ function fixedValue(s: JsonSchema | undefined): unknown {
   return Array.isArray(s.enum) && s.enum.length === 1 ? s.enum[0] : undefined;
 }
 
-function optionKeys(options: JsonSchema[], key: string | undefined): string[] {
-  const seen = new Map<string, number>();
-  return options.map((o) => {
-    const base = key ? `${key}=${JSON.stringify(fixedValue(o.properties![key]))}` : typeOf(o) || 'untyped';
-    const n = (seen.get(base) ?? 0) + 1;
-    seen.set(base, n);
-    return n === 1 ? base : `${base} #${n}`;
-  });
-}
 
 function hasProperties(s: JsonSchema | undefined): boolean {
   return !!s && typeof s.properties === 'object' && s.properties !== null && !Array.isArray(s.properties);
@@ -458,7 +806,15 @@ const MAX_UNROLL = 1;
  * it is. Keywords next to a $ref (a description) win over the target's.
  */
 export function resolveRefs(schema: JsonSchema | undefined): JsonSchema | undefined {
-  if (!schema || typeof schema !== 'object') return schema;
+  return expandRefs(schema).schema;
+}
+
+/**
+ * resolveRefs, saying whether it finished: past MAX_EXPANDED_NODES the schema
+ * comes back as written, and `expanded` is false.
+ */
+function expandRefs(schema: JsonSchema | undefined): { schema: JsonSchema | undefined; expanded: boolean } {
+  if (!schema || typeof schema !== 'object') return { schema, expanded: true };
   let nodes = 0;
   const pointer = (ref: string): unknown => {
     let node: unknown = schema;
@@ -484,9 +840,9 @@ export function resolveRefs(schema: JsonSchema | undefined): JsonSchema | undefi
   };
   const { $defs: _defs, definitions: _definitions, ...rest } = schema as Record<string, unknown>;
   try {
-    return walk(rest, []) as JsonSchema;
+    return { schema: unspelled(walk(rest, [])) as JsonSchema, expanded: true };
   } catch {
-    return schema;
+    return { schema, expanded: false };
   }
 }
 
@@ -618,11 +974,10 @@ function accepts(next: JsonSchema, prev: JsonSchema): boolean {
   return [...p].every((t) => n.has(t) || (t === 'integer' && n.has('number')));
 }
 
-/** A parameter's schema without the parts diff classifies itself. */
 /**
  * A parameter's schema without the parts diff classifies itself: with `object`,
- * its properties and required list (compared field by field); with `items`, the
- * same for its array items.
+ * its properties, required list and additionalProperties: false (compareObject);
+ * with `items`, its array items; with `union`, its options.
  */
 function residual(schema: JsonSchema, nested: { object?: boolean; items?: boolean; union?: boolean } = {}): unknown {
   const { type: _t, enum: _e, const: _c, description: _d, ...rest } = schema as Record<string, unknown>;
@@ -635,6 +990,7 @@ function residual(schema: JsonSchema, nested: { object?: boolean; items?: boolea
   if (nested.object) {
     delete rest.properties;
     delete rest.required;
+    if (rest.additionalProperties === false) delete rest.additionalProperties;
   }
   if (nested.items) delete rest.items;
   return rest;

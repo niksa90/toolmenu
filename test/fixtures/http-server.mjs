@@ -3,10 +3,25 @@ import { createServer } from 'node:http';
 import { createMcpHandler } from '@modelcontextprotocol/server';
 import { build } from './forms.mjs';
 
-export async function start({ factory = build } = {}) {
+// limit: answer every POST after the first `limit` with 429, the way a per-IP rate
+// limiter does, for `resetAfterMs` after the first refusal and not again (for good, if unset).
+// json: the refusal as a JSON-RPC error body, as some servers send it.
+export async function start({ factory = build, limit = Infinity, resetAfterMs, json = false } = {}) {
   const handler = createMcpHandler(factory);
-  const seen = { authorization: [] };
+  const seen = { authorization: [], posts: 0, refused: 0 };
+  let refusingSince;
+  let cleared = false;
   const server = createServer(async (req, res) => {
+    if (req.method === 'POST' && ++seen.posts > limit && !cleared) {
+      refusingSince ??= Date.now();
+      if (resetAfterMs === undefined || Date.now() - refusingSince < resetAfterMs) {
+        seen.refused++;
+        if (json) res.writeHead(429, { 'content-type': 'application/json', 'retry-after': '1' }).end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: 'Too many requests — retry later' }, id: null }));
+        else res.writeHead(429, { 'content-type': 'text/plain', 'retry-after': '1' }).end('Too many requests, please try again later.');
+        return;
+      }
+      cleared = true;
+    }
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     seen.authorization.push(req.headers.authorization);

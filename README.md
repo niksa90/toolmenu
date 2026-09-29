@@ -29,7 +29,7 @@ No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
 (`history` installs old versions with today's dependencies, so it records what they
 serve now, which can differ from what they shipped with: FINDINGS F4.)
 
-> **Status: 0.11, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
+> **Status: 0.12, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
 > real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 ## Start here
@@ -91,7 +91,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.11.0
+      - uses: niksa90/toolmenu@v0.12.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -170,6 +170,7 @@ serves, and 23 issue and pull-request tools that only the dynamic mode has.
 | `session/unlock-coverage` | warn | An unlock whose enum lists its values, called with only some of them: the tools behind the rest were never seen, so a baseline from the session misses them. With `--union-out` or `--auto`, an unlock never called at all too, with why `--auto` skipped it |
 | `session/nothing-called` | warn | `--auto` called no tools (all open-world, missing values, or not read-only): the run only listed the menu |
 | `session/session-lost` | error | The server ended the session after toolmenu opened a second connection with the same credentials (servers with one session per client). The run stops there; rerun with `--processes 1` |
+| `session/rate-limited` | error | The server kept refusing requests for being too many (a 429) after toolmenu waited about a minute, or a tool not marked `readOnlyHint` said it was rate-limited (it isn't called again). The run stops there, with the steps it didn't check; give the run its own server instance or raise the limit for it |
 | `session/scope-unchecked` | info | A second server process or connection couldn't start mid-session (a server that holds a file or a port), so whether a change was global wasn't checked. Said once for the run |
 
 **No scenario? `session --auto`** builds the steps from the menu: every read-only tool
@@ -222,8 +223,11 @@ The same rules apply inside parameters: fields of an object parameter, array ite
 and the options of an `anyOf`/`oneOf` union (zod's unions, discriminated unions and
 `.nullable()`) are compared at every depth, with their path (`gen.body.text`,
 `search.filters[].field`, `gen.block(kind="image").url`). Union options are paired by
-the value of a discriminator they all fix, else by type; an option gone is breaking,
-a new one widens. Local `$ref`s (`#/$defs/…`, `#/definitions/…`) are expanded first,
+the value of a discriminator they all fix; without one (a plain `z.union` of objects),
+identical options first, so a reorder is no change, then by type and shared property
+names. An option gone is breaking, a new one widens. The same change reached through
+one shared definition at several places is one finding that lists them (`places` in
+`--json`). Local `$ref`s (`#/$defs/…`, `#/definitions/…`) are expanded first,
 recursive ones one level deep, so a schema is compared by what it accepts, not how
 it's spelled: moving a repeated block into `$defs` is one `diff/schema-equivalent`
 notice with its token change ("accepts the same input: ~899 tokens fewer"), and a

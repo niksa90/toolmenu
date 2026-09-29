@@ -14,9 +14,9 @@ export function tempDir() {
 }
 
 /** Run the CLI and collect its output. */
-export function run(args, { cwd = tempDir() } = {}) {
+export function run(args, { cwd = tempDir(), env } = {}) {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, [CLI, ...args], { cwd });
+    const child = spawn(process.execPath, [CLI, ...args], { cwd, ...(env ? { env: { ...process.env, ...env } } : {}) });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d) => (stdout += d));
