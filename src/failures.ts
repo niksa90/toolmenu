@@ -43,8 +43,13 @@ export function tooMany(error: unknown): boolean {
   return httpStatus(error) === 429 || RATE_LIMITED.test(error instanceof Error ? error.message : String(error));
 }
 
-/** How long to wait before each retry of a refused request: a per-minute limit clears within them. */
-export const RATE_LIMIT_WAITS_MS = [2000, 4000, 8000, 16_000, 32_000];
+/**
+ * How long to wait before each retry of a refused request: a per-minute limit clears
+ * within them. TOOLMENU_RATE_LIMIT_WAITS_MS ("100,200") sets others (the CLI's tests).
+ */
+export const RATE_LIMIT_WAITS_MS = (process.env.TOOLMENU_RATE_LIMIT_WAITS_MS?.split(',').map(Number).filter((n) => Number.isFinite(n) && n >= 0) ?? [
+  2000, 4000, 8000, 16_000, 32_000,
+]);
 
 /**
  * Send a request, and again after each wait while it's refused for being too many.

@@ -1,5 +1,5 @@
 import { basename } from 'node:path';
-import { connect, listTools, type Target } from './connect.js';
+import { connect, listTools, type Connection, type Target } from './connect.js';
 import { compareMenus } from './compare.js';
 import { buildMenu } from './menu.js';
 import { patiently, tooMany } from './failures.js';
@@ -29,8 +29,30 @@ export function isContainerWrapper(target: Target): boolean {
   return target.kind === 'stdio' && /^(docker|podman|nerdctl)(\.exe)?$/.test(basename(target.command));
 }
 
+/**
+ * A connection still refused for being too many requests after the waits, said as
+ * that and what to do about it, not as the transport's error. Anything else as is.
+ */
+export function refusedForTooMany(error: unknown, waitedMs: number): unknown {
+  if (!tooMany(error)) return error;
+  const text = error instanceof Error ? error.message.split('\n')[0].replace(/^.*?endpoint:\s*/i, '') : String(error);
+  const said = text.length > 100 ? `${text.slice(0, 99)}…` : text;
+  const seconds = waitedMs < 10_000 ? Math.round(waitedMs / 100) / 10 : Math.round(waitedMs / 1000);
+  return new Error(`The server refused toolmenu's connection for being too many requests (“${said}”) and still refused after it waited ${seconds} s. A rate limit counts toolmenu's requests together with everything else from this address: give the run its own server instance, or raise the limit for it.`);
+}
+
+/** connect, with a refusal for being too many waited out (connecting is read-only). */
+export async function connectPatiently(target: Target, options: { timeoutMs?: number; waits?: number[] } = {}): Promise<Connection> {
+  const waited = { ms: 0 };
+  try {
+    return await patiently(() => connect(target, { timeoutMs: options.timeoutMs }), { waits: options.waits, error: tooMany, waited });
+  } catch (error) {
+    throw refusedForTooMany(error, waited.ms);
+  }
+}
+
 /** The menu a fresh process (stdio) or connection (HTTP) serves: connect, list once, close. */
-export async function probeMenu(target: Target, timeoutMs: number, waits?: number[]): Promise<Menu> {
+export async function probeMenu(target: Target, timeoutMs: number, waits?: number[], waited?: { ms: number }): Promise<Menu> {
   // Read-only: a refusal for being too many is waited out and the probe sent again.
   return patiently(
     async () => {
@@ -42,7 +64,7 @@ export async function probeMenu(target: Target, timeoutMs: number, waits?: numbe
         await c.close().catch(() => {});
       }
     },
-    { waits, error: tooMany },
+    { waits, error: tooMany, waited },
   );
 }
 

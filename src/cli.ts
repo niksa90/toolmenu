@@ -9,12 +9,13 @@ import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
 import { counts, formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
 import { loadScenario, session, starterScenario, unlockListers, valuesFromListing } from './session.js';
-import { connect, listTools } from './connect.js';
+import { listTools } from './connect.js';
+import { patiently, tooMany } from './failures.js';
 import { buildMenu } from './menu.js';
 import { existsSync } from 'node:fs';
 import { loadRoutes } from './routes.js';
 import { snapshot } from './snapshot.js';
-import { MAIN_SEED, probeMenu, seeded } from './probe.js';
+import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded } from './probe.js';
 import { autoScenario, scenarioYaml } from './auto.js';
 import { authDir, listLogins, login, logout } from './auth.js';
 import { detectProject, secretsNeeded, workflowYaml } from './init.js';
@@ -236,9 +237,9 @@ export async function main(argv: string[]): Promise<number> {
     const path = values.scenario ?? 'scenario.yml';
     if (existsSync(path)) throw new UsageError(`${path} already exists. Pick another path with --scenario.`);
     const initTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
-    const conn = await connect(seeded(initTarget, MAIN_SEED), { timeoutMs });
+    const conn = await connectPatiently(seeded(initTarget, MAIN_SEED), { timeoutMs });
     try {
-      const list = await listTools(conn, { timeoutMs });
+      const list = await patiently(() => listTools(conn, { timeoutMs }), { error: tooMany });
       const menu = buildMenu(list.tools, { name: conn.server.name, version: conn.server.version, protocolVersion: conn.protocolVersion });
       // An unlock without an enum: its values come from the server's own read-only
       // listing (list_toolsets), so the scenario can unlock every one.
@@ -299,7 +300,10 @@ export async function main(argv: string[]): Promise<number> {
     const savePath = values['save-scenario'];
     if (savePath && existsSync(savePath)) throw new UsageError(`${savePath} already exists. Pick another path for --save-scenario.`);
     const autoTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
-    const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs);
+    const waited = { ms: 0 };
+    const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
+      throw refusedForTooMany(error, waited.ms);
+    });
     const plan = autoScenario(menu, { openWorld: values['open-world'], maxCalls });
     if (savePath) await writeFile(savePath, scenarioYaml(plan, menu.server.name));
     if (values.plan) {

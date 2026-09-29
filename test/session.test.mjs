@@ -249,7 +249,7 @@ test('RATE_LIMITED: the words for a refusal, not every 429 or rateLimit', () => 
 test('http, rate limit: a connection refused throughout is said so, not the transport error', async () => {
   const server = await startSdkHttp({ limit: 0 });
   try {
-    await assert.rejects(session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: 15_000, rateLimitWaitsMs: [20, 40] }), /refused toolmenu's connection for being too many requests \(“Too many requests, please try again later\.”\) and still refused after it waited 0\.1 s, so the session didn't start/);
+    await assert.rejects(session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: 15_000, rateLimitWaitsMs: [20, 40] }), /refused toolmenu's connection for being too many requests \(“Too many requests, please try again later\.”\) and still refused after it waited 0\.1 s\. A rate limit counts/);
   } finally {
     await server.close();
   }

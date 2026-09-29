@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
 import { cacheBreak, canonical, compareMenus, type ToolChange } from './compare.js';
-import { connect, listTools, type Connection, type Target } from './connect.js';
+import { listTools, type Connection, type Target } from './connect.js';
 import { buildMenu, toolDefinition } from './menu.js';
-import { isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
+import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
 import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, RATE_LIMITED, SETUP_FAILURES, tooMany, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
@@ -143,15 +143,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   const seconds = (ms: number) => (ms < 10_000 ? Math.round(ms / 100) / 10 : Math.round(ms / 1000));
   // Connecting and listing are read-only: a refusal for being too many is waited
   // out and they're sent again.
-  const connectWaited = { ms: 0 };
-  let conn: Connection;
-  try {
-    conn = await patiently(() => connect(mainTarget, { timeoutMs }), { waits, error: tooMany, waited: connectWaited });
-  } catch (error) {
-    if (!tooMany(error)) throw error;
-    const said = error instanceof Error ? error.message.split('\n')[0].replace(/^.*?endpoint:\s*/i, '') : String(error);
-    throw new Error(`The server refused toolmenu's connection for being too many requests (“${clip(said, 100)}”) and still refused after it waited ${seconds(connectWaited.ms)} s, so the session didn't start. A rate limit counts toolmenu's requests together with everything else from this address: give the run its own server instance, or raise the limit for it.`);
-  }
+  const conn = await connectPatiently(mainTarget, { timeoutMs, waits });
   try {
     const era = conn.era;
     const modern = era === 'modern';

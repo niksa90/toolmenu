@@ -45,6 +45,34 @@ test('snapshot over Streamable HTTP, with a header', async () => {
   }
 });
 
+test('cli: snapshot, session --init and --auto wait out a rate limit, and say so when it outlasts the waits', async () => {
+  const env = { TOOLMENU_RATE_LIMIT_WAITS_MS: '150,300' };
+  const commands = [['snapshot', '--no-write', '--json'], ['session', '--init'], ['session', '--auto']];
+  // Refused from the first request for 100 ms: each is waited out.
+  for (const args of commands) {
+    const server = await start({ limit: 0, resetAfterMs: 100 });
+    try {
+      const r = await run([...args, server.url], { env });
+      assert.equal(r.code, 0, `${args.join(' ')}: ${r.stderr}`);
+      assert.ok(server.seen.refused > 0, args.join(' '));
+    } finally {
+      await server.close();
+    }
+  }
+  // Refused throughout: the explanation, not the transport's error.
+  for (const args of commands) {
+    const server = await start({ limit: 0 });
+    try {
+      const r = await run([...args, server.url], { env });
+      assert.equal(r.code, 2, `${args.join(' ')}: ${r.stderr}`);
+      assert.match(r.stderr, /refused toolmenu's connection for being too many requests \(“Too many requests, please try again later\.”\) and still refused after it waited 0\.5 s\. A rate limit counts/, args.join(' '));
+      assert.doesNotMatch(r.stderr, /Error POSTing/, args.join(' '));
+    } finally {
+      await server.close();
+    }
+  }
+});
+
 test('--json stays valid JSON when a library logs, and a missing tools capability is an error', async () => {
   const r = await run(['snapshot', '--json', '--no-write', '--processes', '1', '--env', 'NO_TOOLS_CAPABILITY=1', ...raw('clean')]);
   assert.equal(r.code, 1, r.stderr);

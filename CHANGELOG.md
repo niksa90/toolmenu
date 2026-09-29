@@ -118,7 +118,10 @@
   back to back against a server with a per-IP limit was 19 errors, three for each
   refused step, and kept calling. An unlock the stopped run never got to isn't also
   `session/unlock-coverage`. "Order 429 not found" or "rateLimit must be a positive
-  number" isn't a rate limit, for catalog either.
+  number" isn't a rate limit, for catalog either. `snapshot` (so the Action and
+  `init`), `session --init` and `session --auto` wait out a refused connection and
+  menu read the same way, and say what to do when it outlasts the waits instead of
+  the transport's error.
 
 - **Fix, `init`:** only `--env` names that looked like credentials became secrets,
   so values like `DATABASE_URL` or `SENTRY_DSN` went into the workflow as text.
