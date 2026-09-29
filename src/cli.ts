@@ -306,7 +306,7 @@ export async function main(argv: string[]): Promise<number> {
       process.stdout.write(formatPlan(plan.scenario, 'auto') + '\n');
       return 0;
     }
-    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'] });
+    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'], auto: { called: plan.called, skipped: plan.skipped } });
     result.auto = { called: plan.called, skipped: plan.skipped };
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);

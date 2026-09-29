@@ -233,7 +233,8 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
     return out.concat(compareRest(old, t));
   }
 
-  compareObject(name, name, a!, b!, out, 0);
+  const found = out.length;
+  compareObject({ tool: name, out }, name, a!, b!, 0);
   const shell = (s: JsonSchema | undefined) => {
     const { properties: _p, required: _r, $defs: _d, definitions: _df, ...rest } = (s ?? {}) as Record<string, unknown>;
     return rest;
@@ -251,6 +252,11 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
     }
     else out.push({ rule: 'diff/schema-other', tool: name, message: `${name}: inputSchema changed outside its parameters (additionalProperties, $schema…). Review it.` });
   }
+  // Never silent: the schemas differ, and nothing above says how. Spellings the
+  // rules treat as one (a type as anyOf alternatives or a list) don't count.
+  if (out.length === found && canonical(sameTypes(a)) !== canonical(sameTypes(b))) {
+    out.push({ rule: 'diff/schema-other', tool: name, message: `${name}: inputSchema changed in a way toolmenu doesn't classify. Review it.` });
+  }
   // Spelled differently, accepts the same: say so, so the refactor needs no review.
   if (canonical(a) === canonical(b) && canonical(old.inputSchema) !== canonical(t.inputSchema)) {
     const delta = countTokens(JSON.stringify(t.inputSchema ?? {})) - countTokens(JSON.stringify(old.inputSchema ?? {}));
@@ -263,12 +269,36 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
   return out.concat(compareRest(old, t));
 }
 
+/** A schema with every type written one way: `type: [sorted]`, for anyOf/oneOf type alternatives too. */
+function sameTypes(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(sameTypes);
+  if (!node || typeof node !== 'object') return node;
+  const s = node as JsonSchema;
+  const out: Record<string, unknown> = Object.fromEntries(Object.entries(s).map(([k, v]) => [k, sameTypes(v)]));
+  const alternatives = typeAlternatives(s);
+  if (alternatives) {
+    delete out.anyOf;
+    delete out.oneOf;
+    out.type = [...new Set(alternatives)].sort();
+  } else if (s.type !== undefined) {
+    out.type = [...new Set(Array.isArray(s.type) ? s.type : [s.type])].sort();
+  }
+  return out;
+}
+
+/** Where a tool's schema comparison reports to. */
+interface Walk {
+  tool: string;
+  out: Raw[];
+}
+
 /**
- * One object schema against its next version: its properties, their types,
- * enums, requiredness and descriptions, and, for properties that are objects or
- * arrays of objects, theirs too, under a path (`gen.body.text`, `gen.items[].id`).
+ * One object schema against its next version: which properties were removed,
+ * added, or became required or optional; each one that's in both is compared by
+ * compareSchema, under a path (`gen.body.text`).
  */
-function compareObject(tool: string, path: string, oldS: JsonSchema, newS: JsonSchema, out: Raw[], depth: number): void {
+function compareObject(w: Walk, path: string, oldS: JsonSchema, newS: JsonSchema, depth: number): void {
+  const { tool, out } = w;
   const oldProps = oldS.properties ?? {};
   const newProps = newS.properties ?? {};
   const oldReq = new Set(oldS.required ?? []);
@@ -302,57 +332,110 @@ function compareObject(tool: string, path: string, oldS: JsonSchema, newS: JsonS
     } else if (oldReq.has(p) && !newReq.has(p)) {
       out.push({ rule: 'diff/param-relaxed', tool, message: `${at} was required and is now optional.` });
     }
-    const oldType = typeOf(before);
-    const newType = typeOf(schema);
+    compareSchema(w, at, at, before, schema, depth);
+  }
+}
+
+/**
+ * One schema against its next version, anywhere in a tool: its type, allowed
+ * values and description; array items, object fields and union options, each
+ * compared the same way; and whatever's left, as one "review it". `at` is the path
+ * nested fields hang off (`gen.rows[]`); `label` names this schema in messages
+ * (`gen.rows (array items)`).
+ */
+function compareSchema(w: Walk, at: string, label: string, before: JsonSchema, after: JsonSchema, depth: number): void {
+  const { tool, out } = w;
+  const deeper = depth < MAX_DEPTH;
+  const oldOptions = unionOf(before);
+  const newOptions = unionOf(after);
+  // anyOf/oneOf whose options are more than a type: zod's unions, discriminated
+  // unions, and .nullable() on anything but a primitive. A side that isn't a union
+  // is one option.
+  const union = deeper && (oldOptions || newOptions) ? true : false;
+  const oldType = typeOf(before);
+  const newType = typeOf(after);
+  if (union) {
+    compareUnion(w, at, label, oldOptions ?? [before], newOptions ?? [after], depth);
+  } else {
     if (oldType !== newType) {
       // Widening (boolean → boolean|string, object → any) accepts every call that
       // worked before; only a narrower or different type breaks callers.
       out.push(
-        accepts(schema, before)
-          ? { rule: 'diff/type-widened', tool, message: `${at} now accepts more types: ${oldType || 'any'} → ${newType || 'any'}.` }
-          : { rule: 'diff/param-type', tool, message: `${at} changed type: ${oldType || 'any'} → ${newType || 'any'}. Calls that worked before can fail.` },
+        accepts(after, before)
+          ? { rule: 'diff/type-widened', tool, message: `${label} now accepts more types: ${oldType || 'any'} → ${newType || 'any'}.` }
+          : { rule: 'diff/param-type', tool, message: `${label} changed type: ${oldType || 'any'} → ${newType || 'any'}. Calls that worked before can fail.` },
       );
     }
-    const e = enumChange(before, schema);
-    if (e) {
-      out.push({ rule: e.rule, tool, message: `${at}: ${e.message}` });
-    }
-    // Array parameters: the element type and allowed values count like the
-    // parameter's own (no items schema = any element).
-    const isArray = (s: JsonSchema) => typesOf(s)?.includes('array') ?? false;
-    const arrays = isArray(before) && isArray(schema);
-    if (arrays) {
-      const oldItems = before.items ?? {};
-      const newItems = schema.items ?? {};
-      const oldItemType = typeOf(oldItems);
-      const newItemType = typeOf(newItems);
-      if (oldItemType !== newItemType) {
-        out.push(
-          accepts(newItems, oldItems)
-            ? { rule: 'diff/type-widened', tool, message: `${at} (array items) now accept more types: ${oldItemType || 'any'} → ${newItemType || 'any'}.` }
-            : { rule: 'diff/param-type', tool, message: `${at} (array items) changed type: ${oldItemType || 'any'} → ${newItemType || 'any'}. Calls that worked before can fail.` },
-        );
-      }
-      const ie = enumChange(oldItems, newItems);
-      if (ie) out.push({ rule: ie.rule, tool, message: `${at} (array items): ${ie.message}` });
-    }
-    if ((before.description ?? '') !== (schema.description ?? '')) {
-      out.push({ rule: 'diff/description', tool, message: `${at}: parameter description changed.`, detail: textDiff(String(before.description ?? ''), String(schema.description ?? '')) });
-    }
-    // Objects, and arrays of objects, are compared field by field below, with the
-    // same rules; what's left is checked here, so a classified change can't hide it.
-    const deeper = depth < MAX_DEPTH;
-    const nestedObject = deeper && hasProperties(before) && hasProperties(schema);
-    const nestedItems = deeper && arrays && hasProperties(before.items) && hasProperties(schema.items);
-    // A breaking type change already covers a reshaped schema: no duplicate
-    // notice. A widened type can still bring new constraints, so it's checked.
-    const rest = (s: JsonSchema) => residual(s, { object: nestedObject, items: nestedItems });
-    if ((oldType === newType || accepts(schema, before)) && canonical(rest(before)) !== canonical(rest(schema))) {
-      out.push({ rule: 'diff/schema-other', tool, message: `${at}: changed in a way toolmenu doesn't classify (constraints, formats, combinators…). Review it.` });
-    }
-    if (nestedObject) compareObject(tool, at, before, schema, out, depth + 1);
-    if (nestedItems) compareObject(tool, `${at}[]`, before.items!, schema.items!, out, depth + 1);
+    const e = enumChange(before, after);
+    if (e) out.push({ rule: e.rule, tool, message: `${label}: ${e.message}` });
   }
+  // Array items: compared like a parameter of their own (no items schema = any element).
+  const isArray = (s: JsonSchema) => typesOf(s)?.includes('array') ?? false;
+  const arrays = !union && deeper && isArray(before) && isArray(after);
+  if (arrays) compareSchema(w, `${at}[]`, `${label} (array items)`, before.items ?? {}, after.items ?? {}, depth + 1);
+  if ((before.description ?? '') !== (after.description ?? '')) {
+    out.push({ rule: 'diff/description', tool, message: `${label}: ${label.endsWith(')') ? 'description' : 'parameter description'} changed.`, detail: textDiff(String(before.description ?? ''), String(after.description ?? '')) });
+  }
+  const object = !union && deeper && hasProperties(before) && hasProperties(after);
+  if (object) compareObject(w, at, before, after, depth + 1);
+  // What no rule above covers. A breaking type change already covers a reshaped
+  // schema: no duplicate notice. A widened type can still bring new constraints.
+  // A union against a plain schema is covered by its options entirely.
+  if (union && !(oldOptions && newOptions)) return;
+  const rest = (s: JsonSchema) => residual(s, { object, items: arrays, union });
+  if ((union || oldType === newType || accepts(after, before)) && canonical(rest(before)) !== canonical(rest(after))) {
+    out.push({ rule: 'diff/schema-other', tool, message: `${label}: changed in a way toolmenu doesn't classify (constraints, formats, combinators…). Review it.` });
+  }
+}
+
+/** The options of an anyOf/oneOf that isn't just a list of types. */
+function unionOf(s: JsonSchema): JsonSchema[] | undefined {
+  const options = (s.anyOf ?? s.oneOf) as unknown;
+  if (!Array.isArray(options) || options.length === 0 || typeAlternatives(s)) return undefined;
+  return options as JsonSchema[];
+}
+
+/**
+ * A union's options, paired old with new: by the value of a discriminator every
+ * option fixes (`kind: "text"`), else by type, else by position among options of
+ * the same type. An option gone is breaking; a new one widens.
+ */
+function compareUnion(w: Walk, at: string, label: string, oldOptions: JsonSchema[], newOptions: JsonSchema[], depth: number): void {
+  const d = discriminator(oldOptions);
+  const key = d && d === discriminator(newOptions) ? d : undefined;
+  const oldByKey = new Map(optionKeys(oldOptions, key).map((k, i) => [k, oldOptions[i]]));
+  const newByKey = new Map(optionKeys(newOptions, key).map((k, i) => [k, newOptions[i]]));
+  for (const k of oldByKey.keys()) {
+    if (!newByKey.has(k)) w.out.push({ rule: 'diff/param-type', tool: w.tool, message: `${label}: no longer accepts the ${k} option. Calls that sent it can fail.` });
+  }
+  for (const [k, next] of newByKey) {
+    const prev = oldByKey.get(k);
+    if (!prev) w.out.push({ rule: 'diff/type-widened', tool: w.tool, message: `${label} now also accepts a ${k} option.` });
+    else compareSchema(w, `${at}(${k})`, `${label} (${k} option)`, prev, next, depth + 1);
+  }
+}
+
+/** A property every option is an object with, and fixes to one value. */
+function discriminator(options: JsonSchema[]): string | undefined {
+  if (!options.every(hasProperties)) return undefined;
+  const names = Object.keys(options[0].properties!).sort();
+  return names.find((n) => options.every((o) => fixedValue(o.properties![n]) !== undefined));
+}
+
+function fixedValue(s: JsonSchema | undefined): unknown {
+  if (!s) return undefined;
+  if ('const' in s) return s.const;
+  return Array.isArray(s.enum) && s.enum.length === 1 ? s.enum[0] : undefined;
+}
+
+function optionKeys(options: JsonSchema[], key: string | undefined): string[] {
+  const seen = new Map<string, number>();
+  return options.map((o) => {
+    const base = key ? `${key}=${JSON.stringify(fixedValue(o.properties![key]))}` : typeOf(o) || 'untyped';
+    const n = (seen.get(base) ?? 0) + 1;
+    seen.set(base, n);
+    return n === 1 ? base : `${base} #${n}`;
+  });
 }
 
 function hasProperties(s: JsonSchema | undefined): boolean {
@@ -362,16 +445,20 @@ function hasProperties(s: JsonSchema | undefined): boolean {
 /** Nodes a $ref expansion may produce before it gives up and compares the schema as spelled. */
 const MAX_EXPANDED_NODES = 50_000;
 
+/** How many times one $ref is followed inside itself: a recursive schema unrolled this deep. */
+const MAX_UNROLL = 1;
+
 /**
  * The schema with local $refs (`#/$defs/…`, `#/definitions/…`) replaced by what
- * they point to, and $defs dropped when nothing refers to it any more: two
- * spellings of one schema compare equal. A cycle, or a $ref toolmenu can't follow
- * (another document), stays a $ref, and $defs stays with it. Keywords next to a
- * $ref (a description) win over the target's.
+ * they point to, and the root $defs dropped: two spellings of one schema compare
+ * equal. A recursive definition is unrolled MAX_UNROLL level, then left as a
+ * $ref: a change to it shows in the levels above, and its $defs entry needn't be
+ * kept (keeping it made a recursive schema compare unequal to its own refactor,
+ * with nothing reported). A $ref toolmenu can't follow (another document) stays as
+ * it is. Keywords next to a $ref (a description) win over the target's.
  */
 export function resolveRefs(schema: JsonSchema | undefined): JsonSchema | undefined {
   if (!schema || typeof schema !== 'object') return schema;
-  let unresolved = false;
   let nodes = 0;
   const pointer = (ref: string): unknown => {
     let node: unknown = schema;
@@ -388,22 +475,19 @@ export function resolveRefs(schema: JsonSchema | undefined): JsonSchema | undefi
     const o = node as Record<string, unknown>;
     if (typeof o.$ref === 'string') {
       const target = o.$ref.startsWith('#/') ? pointer(o.$ref) : undefined;
-      if (target && typeof target === 'object' && !Array.isArray(target) && !stack.includes(o.$ref)) {
+      if (target && typeof target === 'object' && !Array.isArray(target) && stack.filter((r) => r === o.$ref).length < MAX_UNROLL) {
         const { $ref: _ref, ...siblings } = o;
         return { ...(walk(target, [...stack, o.$ref]) as object), ...(walk(siblings, stack) as object) };
       }
-      unresolved = true;
     }
     return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, walk(v, stack)]));
   };
-  const { $defs, definitions, ...rest } = schema as Record<string, unknown>;
-  let resolved: JsonSchema;
+  const { $defs: _defs, definitions: _definitions, ...rest } = schema as Record<string, unknown>;
   try {
-    resolved = walk(rest, []) as JsonSchema;
+    return walk(rest, []) as JsonSchema;
   } catch {
     return schema;
   }
-  return unresolved ? { ...resolved, ...($defs !== undefined ? { $defs } : {}), ...(definitions !== undefined ? { definitions } : {}) } : resolved;
 }
 
 /** Operations behind a search tool, compared like tools where both runs found them. */
@@ -540,22 +624,19 @@ function accepts(next: JsonSchema, prev: JsonSchema): boolean {
  * its properties and required list (compared field by field); with `items`, the
  * same for its array items.
  */
-function residual(schema: JsonSchema, nested: { object?: boolean; items?: boolean } = {}): unknown {
-  const { type: _t, enum: _e, const: _c, description: _d, items, ...rest } = schema as Record<string, unknown>;
-  // A type written as anyOf/oneOf alternatives is compared as the type.
-  if (typeAlternatives(schema)) delete rest[schema.anyOf ? 'anyOf' : 'oneOf'];
+function residual(schema: JsonSchema, nested: { object?: boolean; items?: boolean; union?: boolean } = {}): unknown {
+  const { type: _t, enum: _e, const: _c, description: _d, ...rest } = schema as Record<string, unknown>;
+  // A type written as anyOf/oneOf alternatives is compared as the type; a union's
+  // options are compared one by one.
+  if (typeAlternatives(schema) || nested.union) {
+    delete rest.anyOf;
+    delete rest.oneOf;
+  }
   if (nested.object) {
     delete rest.properties;
     delete rest.required;
   }
-  if (items && typeof items === 'object') {
-    const { enum: _ie, const: _ic, type: _it, ...itemRest } = items as Record<string, unknown>;
-    if (nested.items) {
-      delete itemRest.properties;
-      delete itemRest.required;
-    }
-    return Object.keys(itemRest).length ? { ...rest, items: itemRest } : rest;
-  }
+  if (nested.items) delete rest.items;
   return rest;
 }
 

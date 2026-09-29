@@ -167,20 +167,25 @@ serves, and 23 issue and pull-request tools that only the dynamic mode has.
 | `session/untested` | warn, error if no call got through | Calls that failed before reaching the tool: authentication, something missing on this machine (no Chrome), the network. One finding for the run, not one per step, so an expired CI secret doesn't pass a run that tested nothing |
 | `session/refused`, `session/step-failed` | error | A write the scenario didn't allow, or a call that failed for another reason |
 | `session/tool-error` | warn | A tool that answered with an error for another reason (`isError`): the run tested less than it looks |
-| `session/unlock-coverage` | warn | An unlock whose enum lists its values, called with only some of them: the tools behind the rest were never seen, so a baseline from the session misses them. With `--union-out`, an unlock never called at all too |
+| `session/unlock-coverage` | warn | An unlock whose enum lists its values, called with only some of them: the tools behind the rest were never seen, so a baseline from the session misses them. With `--union-out` or `--auto`, an unlock never called at all too, with why `--auto` skipped it |
+| `session/nothing-called` | warn | `--auto` called no tools (all open-world, missing values, or not read-only): the run only listed the menu |
 | `session/session-lost` | error | The server ended the session after toolmenu opened a second connection with the same credentials (servers with one session per client). The run stops there; rerun with `--processes 1` |
 | `session/scope-unchecked` | info | A second server process or connection couldn't start mid-session (a server that holds a file or a port), so whether a change was global wasn't checked. Said once for the run |
 
 **No scenario? `session --auto`** builds the steps from the menu: every read-only tool
 whose required arguments the schema itself gives (a `default`, `examples`, an `enum`,
 a type or format), cheapest first, then every value of each read-only unlock (outside
-`--max-calls`), then the first call again. It never guesses an ID:
+`--max-calls`, and the first value twice: a second identical unlock should change
+nothing), then the first call again. It never guesses an ID:
 a tool that needs `owner`, `repo` or an issue key is skipped, and the report says
 which values were missing (`--save-scenario auto.yml` writes the steps, with the
 skipped tools commented out, to fill in). Tools marked `openWorldHint: true` (web
 search, fetch, scraping, which can cost API credits) are called only with
-`--open-world`. On the 22 servers in `bench/`, `--auto` reaches 60 of 262 read-only
-tools, 84 with `--open-world`.
+`--open-world`, except unlocks: changing the menu is what a session watches, and an
+unlock spends no search credits, so it runs even on a server that marks every tool
+open-world. A run that ends up calling nothing is `session/nothing-called` (warn),
+with why each tool was left out, not a clean pass. On the 22 servers in `bench/`,
+`--auto` reaches 60 of 262 read-only tools, 84 with `--open-world`.
 
 **`session` calls tools for real.** Without `allow_writes: true` it refuses any tool
 not marked `readOnlyHint: true`. `--plan` prints the steps without connecting.
@@ -213,13 +218,21 @@ the way OpenAPI breaking-change checkers do it:
 | **minor** (info) | tool added, new optional parameter, parameter now optional, type or enum widened | `diff/tool-added`, `diff/param-added`, `diff/param-relaxed`, `diff/type-widened`, `diff/enum-widened` |
 | **notice** (info) | optional parameter dropped (extra properties still allowed), description changed (with the text diff: it changes what the agent does), output schema, annotations, other fields, order, a schema restructured but accepting the same input | `diff/param-dropped`, `diff/description`, `diff/schema-other`, `diff/annotations`, `diff/other`, `diff/order`, `diff/schema-equivalent` |
 
-The same rules apply inside parameters: fields of an object parameter, and of array
-items, are compared at every depth, with their path (`gen.body.text`,
-`search.filters[].field`). Local `$ref`s (`#/$defs/…`, `#/definitions/…`) are
-expanded first, so a schema is compared by what it accepts, not how it's spelled:
-moving a repeated block into `$defs` is one `diff/schema-equivalent` notice with its
-token change ("accepts the same input: ~899 tokens fewer"), and a breaking change
-inside `$defs` is breaking.
+The same rules apply inside parameters: fields of an object parameter, array items,
+and the options of an `anyOf`/`oneOf` union (zod's unions, discriminated unions and
+`.nullable()`) are compared at every depth, with their path (`gen.body.text`,
+`search.filters[].field`, `gen.block(kind="image").url`). Union options are paired by
+the value of a discriminator they all fix, else by type; an option gone is breaking,
+a new one widens. Local `$ref`s (`#/$defs/…`, `#/definitions/…`) are expanded first,
+recursive ones one level deep, so a schema is compared by what it accepts, not how
+it's spelled: moving a repeated block into `$defs` is one `diff/schema-equivalent`
+notice with its token change ("accepts the same input: ~899 tokens fewer"), and a
+breaking change inside `$defs` is breaking. A schema change no rule classifies is
+never silent: it's a `diff/schema-other` "review it".
+
+On mongodb-mcp-server 2.1.2 → 3.0.0 this finds `aggregate.pipeline[]…$vectorSearch.numCandidates`
+and `.limit` narrowed from `number` to `integer` inside a union, where the whole
+`pipeline` used to be one "review it".
 
 It also reports the token change per tool and suggests a semver bump. To check the
 bump, pass the **release** versions: `--release 1.4.0..1.5.0` (npm, a git tag).

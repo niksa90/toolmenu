@@ -123,6 +123,8 @@ export interface SessionOptions {
   processes?: number;
   /** The union menu is kept as a baseline (--union-out): an unlock never called then leaves tools out of it. */
   unionOut?: boolean;
+  /** session --auto: what the plan called and skipped, so a run that called nothing isn't a clean one. */
+  auto?: { called: string[]; skipped: import('./auto.js').AutoPlan['skipped'] };
 }
 
 type Raw = Omit<Finding, 'severity'> & { severity: Severity };
@@ -325,7 +327,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     }
 
     raw.push(...untested(steps, target));
-    raw.push(...unlockCoverage(baseline.tools, scenario, steps, options.unionOut === true));
+    // --auto means "find what you can": an unlock it skipped is a gap too.
+    raw.push(...unlockCoverage(baseline.tools, scenario, steps, options.unionOut === true || options.auto !== undefined, options.auto?.skipped));
+    if (options.auto && !scenario.steps.some((s) => s.kind === 'call')) raw.push(nothingCalled(options.auto.skipped));
     if (scopeUnchecked.length) {
       const which = scopeUnchecked.map((s) => s.step);
       raw.push({
@@ -383,7 +387,7 @@ function untested(steps: StepRecord[], target: Target): Raw[] {
  * behind the values it unlocked: GitHub's enable_toolset has 19, the first starter
  * unlocked 2, and 72 of 81 tools never reached the baseline.
  */
-function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[], baselineWanted: boolean): Raw[] {
+function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[], baselineWanted: boolean, skipped: { tool: string; reason: string }[] = []): Raw[] {
   const out: Raw[] = [];
   for (const u of unlockers(menu)) {
     if (!u.param || u.values.length === 0) continue;
@@ -400,16 +404,48 @@ function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[
     // Never called: a scenario about something else, unless it's building the baseline.
     if (missing.length === 0 || (reached.size === 0 && !baselineWanted)) continue;
     const got = u.values.length - missing.length;
+    const skip = skipped.find((s) => s.tool === u.tool.name)?.reason;
+    const why =
+      skip === 'open world'
+        ? ` --auto skipped it: it's marked openWorldHint, so it's called only with --open-world.`
+        : skip === 'not read-only'
+          ? ` --auto skipped it: it isn't marked readOnlyHint, and --auto calls only tools that are.`
+          : '';
     out.push({
       rule: 'session/unlock-coverage',
       severity: 'warn',
       tool: u.tool.name,
       ...(last !== undefined ? { step: last } : {}),
-      message: `${u.tool.name} looks like it unlocks tools, and the run got through ${got} of its ${u.values.length} ${u.param} values. The tools behind the other ${missing.length} were never seen: a baseline from this session (--union-out, baseline-from: session) misses them, so diff can't check them. Unlock every value (session --init writes the steps).`,
+      message: `${u.tool.name} looks like it unlocks tools, and the run got through ${got} of its ${u.values.length} ${u.param} values. The tools behind the other ${missing.length} were never seen: this session didn't check them, and a baseline from it (--union-out, baseline-from: session) misses them, so diff can't either.${why}${why ? '' : ' Unlock every value (session --init puts every one in the starter).'}`,
       detail: [`not unlocked: ${missing.slice(0, 12).map((v) => JSON.stringify(v)).join(', ')}${missing.length > 12 ? `, and ${missing.length - 12} more` : ''}`],
     });
   }
   return out;
+}
+
+/**
+ * --auto that called nothing: the run only listed the menu, so a clean result
+ * says nothing about what the tools do to it. Why each tool was left out.
+ */
+function nothingCalled(skipped: { tool: string; reason: string }[]): Raw {
+  const by = (reason: string) => skipped.filter((s) => s.reason === reason).map((s) => s.tool);
+  const parts: string[] = [];
+  const openWorld = by('open world');
+  const needs = by('needs values');
+  const writes = by('not read-only');
+  if (openWorld.length) parts.push(`${openWorld.length} marked openWorldHint (call them with --open-world: they may cost API credits)`);
+  if (needs.length) parts.push(`${needs.length} need values the schema doesn't give (--save-scenario puts them in a scenario to fill in)`);
+  if (writes.length) parts.push(`${writes.length} not marked readOnlyHint`);
+  const list = (names: string[]) => names.slice(0, 8).join(', ') + (names.length > 8 ? `, and ${names.length - 8} more` : '');
+  return {
+    rule: 'session/nothing-called',
+    severity: 'warn',
+    message: `--auto called no tools${parts.length ? `: ${parts.join('; ')}` : ''}. The run only listed the menu, so a clean result says nothing about what calls do to it.`,
+    detail: [
+      ...(openWorld.length ? [`open world: ${list(openWorld)}`] : []),
+      ...(needs.length ? [`need values: ${list(needs)}`] : []),
+    ],
+  };
 }
 
 function serverOf(c: Connection): Menu['server'] {

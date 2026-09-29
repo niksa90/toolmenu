@@ -138,6 +138,60 @@ test('a recursive $ref neither hangs nor hides a change', () => {
   assert.equal(d.suggestedBump, 'major');
 });
 
+// zod: .nullable() on an array, and z.discriminatedUnion, become anyOf/oneOf.
+const marks = (values) => ({ anyOf: [{ type: 'array', items: { type: 'string', enum: values } }, { type: 'null' }] });
+const shared = (values) => ({ type: 'object', $defs: { Text: { type: 'object', properties: { text: { type: 'string' }, marks: marks(values) } } }, properties: { title: { $ref: '#/$defs/Text' }, body: { $ref: '#/$defs/Text' } } });
+
+test('an enum narrowed inside a union, behind a shared $ref, is breaking (the reporter\'s marks)', () => {
+  const d = diffMenus(gen(shared(['bold', 'italic', 'code'])), gen(shared(['bold', 'italic'])));
+  assert.equal(d.suggestedBump, 'major');
+  assert.deepEqual(d.findings.map((f) => `${f.severity} ${f.rule}: ${f.message.split(':')[0]}`).sort(), [
+    'error diff/enum-narrowed: gen.body.marks (array option) (array items)',
+    'error diff/enum-narrowed: gen.title.marks (array option) (array items)',
+  ]);
+  // Widened, it's minor; nothing but the enum changed, so nothing else is said.
+  assert.equal(diffMenus(gen(shared(['bold'])), gen(shared(['bold', 'code']))).suggestedBump, 'minor');
+});
+
+test('union options: removed is breaking, added is minor, matched by discriminator and compared inside', () => {
+  const text = { type: 'object', properties: { kind: { const: 'text' }, value: { type: 'string' } }, required: ['kind'] };
+  const image = (format) => ({ type: 'object', properties: { kind: { const: 'image' }, url: { type: 'string', format } }, required: ['kind'] });
+  const block = (options) => ({ type: 'object', properties: { block: { oneOf: options } } });
+  const gone = diffMenus(gen(block([text, image('uri')])), gen(block([text])));
+  assert.deepEqual(rules(gone), ['diff/param-type:gen']);
+  assert.match(gone.findings[0].message, /gen\.block: no longer accepts the kind="image" option/);
+  assert.equal(gone.suggestedBump, 'major');
+  const added = diffMenus(gen(block([text])), gen(block([text, image('uri')])));
+  assert.deepEqual(rules(added), ['diff/type-widened:gen']);
+  // Options in another order are matched by kind, not position; a change inside one is found.
+  const inside = diffMenus(gen(block([text, image('uri')])), gen(block([{ ...image('uri'), required: ['kind', 'url'] }, text])));
+  assert.deepEqual(inside.findings.map((f) => f.message.split(' ')[0]), ['gen.block(kind="image").url']);
+  assert.equal(inside.findings[0].rule, 'diff/param-required');
+  // Nullable added to a plain type widens; taken away, it breaks.
+  const plain = { type: 'object', properties: { tags: { type: 'array', items: { type: 'string' } } } };
+  const nullable = { type: 'object', properties: { tags: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] } } };
+  assert.equal(diffMenus(gen(plain), gen(nullable)).suggestedBump, 'minor');
+  assert.equal(diffMenus(gen(nullable), gen(plain)).suggestedBump, 'major');
+});
+
+test('a recursive schema refactored into $defs is equivalent; a change in the recursive definition is found once', () => {
+  const node = (label) => ({ type: 'object', properties: { label: { type: label }, children: { type: 'array', items: { $ref: '#/$defs/Node' } } } });
+  const b = { type: 'object', properties: { text: { type: 'string' }, size: { type: 'string', enum: ['s', 'm'] } } };
+  const before = { type: 'object', $defs: { Node: node('string') }, properties: { tree: { $ref: '#/$defs/Node' }, header: b, footer: b } };
+  const after = { type: 'object', $defs: { Node: node('string'), B: b }, properties: { tree: { $ref: '#/$defs/Node' }, header: { $ref: '#/$defs/B' }, footer: { $ref: '#/$defs/B' } } };
+  // Before: no findings at all, not even this notice.
+  assert.deepEqual(rules(diffMenus(gen(before), gen(after))), ['diff/schema-equivalent:gen']);
+  const changed = diffMenus(gen({ ...before, $defs: { Node: node('string') } }), gen({ ...before, $defs: { Node: node('integer') } }));
+  assert.deepEqual(changed.findings.map((f) => f.message.split(' ')[0]), ['gen.tree.label']);
+});
+
+test('a schema change no rule classifies is never silent', () => {
+  // A keyword toolmenu doesn't compare, deep in a union option: still a "review it".
+  const s = (min) => ({ type: 'object', properties: { v: { anyOf: [{ type: 'object', properties: { n: { type: 'integer', minimum: min } } }, { type: 'null' }] } } });
+  const d = diffMenus(gen(s(0)), gen(s(1)));
+  assert.ok(d.findings.length > 0 && d.findings.every((f) => f.rule === 'diff/schema-other'), JSON.stringify(d.findings));
+});
+
 test('only the $schema dialect changing, in several tools, is one notice naming them (mongodb-mcp-server 3.0.0)', () => {
   const s = (dialect, extra = {}) => ({ $schema: dialect, type: 'object', properties: { q: { type: 'string' } }, additionalProperties: false, ...extra });
   const [d7, d20] = ['http://json-schema.org/draft-07/schema#', 'https://json-schema.org/draft/2020-12/schema'];
