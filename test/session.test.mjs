@@ -358,8 +358,9 @@ test('starterScenario and --auto unlock every value, so the union holds the tool
   // Every value once, then the first again.
   assert.deepEqual(calls(starterScenario(menu)), [...many.enum, 'set_0']);
   const auto = autoScenario(menu).scenario.steps.filter((s) => s.kind === 'call' && s.tool === 'enable_toolset').map((s) => s.args.toolset);
-  assert.deepEqual(auto, many.enum, 'outside the call budget');
-  assert.equal(autoScenario(menu, { maxCalls: 1 }).scenario.steps.filter((s) => s.tool === 'enable_toolset').length, 19);
+  // Every value, then the first again (a second identical unlock should change nothing), as --init does.
+  assert.deepEqual(auto, [...many.enum, 'set_0'], 'outside the call budget');
+  assert.equal(autoScenario(menu, { maxCalls: 1 }).scenario.steps.filter((s) => s.tool === 'enable_toolset').length, 20);
   // A long enum is capped, and the rest named.
   const huge = { type: 'string', enum: Array.from({ length: MAX_UNLOCKS + 3 }, (_, i) => `v${i}`) };
   const capped = starterScenario(menuOf([{ ...GITHUB_DYNAMIC[0], inputSchema: { type: 'object', properties: { toolset: huge }, required: ['toolset'] } }]));
@@ -379,6 +380,38 @@ test('unlock values without an enum come from the server\'s own listing (toolcep
   assert.deepEqual(valuesFromListing({ content: [{ type: 'text', text: 'no JSON here' }] }), []);
   const yaml = starterScenario(menuOf(TOOLCEPTION), { values: { enable_toolset: ['quotes', 'news'] } });
   assert.match(yaml, /# - call: enable_toolset\n {2}# {3}args: \{ name: "quotes" \}\n {2}# - list\n {2}# - call: enable_toolset\n {2}# {3}args: \{ name: "news" \}/);
+});
+
+test('--auto: calling nothing is a warning that says why; an unlock skipped as open world is a coverage gap', async () => {
+  // Every tool calls an outside service (openWorldHint), like the reporter's server.
+  const ow = { readOnlyHint: true, openWorldHint: true };
+  const search = tool('search_web', [], { annotations: ow, inputSchema: { type: 'object', properties: { q: { type: 'string' } }, required: ['q'] } });
+  const fetchPage = tool('fetch_page', [], { annotations: ow, inputSchema: { type: 'object', properties: { url: { type: 'string', format: 'uri' } }, required: ['url'] } });
+  const plan = autoScenario(menuOf([search, fetchPage]));
+  assert.deepEqual(plan.called, []);
+  // The session fixture's own menu doesn't matter: what counts is the plan it was given.
+  const r = await session(stdio(), plan.scenario, { timeoutMs: 15_000, processes: 1, auto: { called: plan.called, skipped: plan.skipped } });
+  const nothing = r.findings.find((f) => f.rule === 'session/nothing-called');
+  assert.equal(nothing?.severity, 'warn');
+  assert.match(nothing.message, /--auto called no tools: 2 marked openWorldHint \(call them with --open-world/);
+});
+
+test('--auto: a read-only unlock runs even when marked openWorldHint, every value then the first again', () => {
+  // The reporter's server marks every tool openWorldHint: true, its unlock too.
+  const unlock = tool('enable_domains', [], { annotations: { readOnlyHint: true, openWorldHint: true }, description: 'Enable more tools.', inputSchema: { type: 'object', properties: { domains: { type: 'string', enum: ['a', 'b'] } }, required: ['domains'] } });
+  const search = tool('search_web', [], { annotations: { readOnlyHint: true, openWorldHint: true }, inputSchema: { type: 'object', properties: { q: { type: 'string' } }, required: ['q'] } });
+  const plan = autoScenario(menuOf([search, unlock]));
+  assert.deepEqual(plan.scenario.steps.filter((s) => s.tool === 'enable_domains').map((s) => s.args.domains), ['a', 'b', 'a']);
+  // Other open-world tools still wait for --open-world: they may spend credits.
+  assert.deepEqual(plan.skipped, [{ tool: 'search_web', reason: 'open world' }]);
+});
+
+test('--auto: an unlock it can\'t call (not read-only) is named, with the reason', async () => {
+  const menu = menuOf([{ name: 'unlock_toolset', description: 'Unlock more tools.', inputSchema: { type: 'object', properties: { toolset: { type: 'string', enum: ['audits', 'reports'] } }, required: ['toolset'] }, annotations: { readOnlyHint: false } }]);
+  const plan = autoScenario(menu);
+  const r = await session(stdio(), plan.scenario, { timeoutMs: 15_000, processes: 1, auto: { called: plan.called, skipped: plan.skipped } });
+  const cov = r.findings.find((f) => f.rule === 'session/unlock-coverage');
+  assert.match(cov?.message ?? '', /got through 0 of its 2 toolset values.*--auto skipped it: it isn't marked readOnlyHint/);
 });
 
 test('session/unlock-coverage: a partial unlock is a warning; an unlock never called only when the run builds the baseline', async () => {

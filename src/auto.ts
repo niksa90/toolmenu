@@ -31,10 +31,14 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   const candidates: { tool: MenuTool; args: Record<string, unknown>; rank: number }[] = [];
   // Read-only unlocks with every value in an enum: each value, outside the call
   // budget, so the tools behind every toolset are seen (GitHub: 19 toolsets).
+  // Called even when marked openWorldHint, without --open-world: an unlock changes
+  // the menu, which is what a session watches, and spends no search credits. A
+  // server whose every tool calls an outside service marks its unlock that way too,
+  // and --auto then tested nothing.
   const unlocks = unlockers(menu.tools).filter((u) => {
     const a = u.tool.annotations ?? {};
     const required = u.tool.inputSchema?.required ?? [];
-    return u.param && u.values.length && a.readOnlyHint === true && (a.openWorldHint !== true || options.openWorld) && required.every((p) => p === u.param);
+    return u.param && u.values.length && a.readOnlyHint === true && required.every((p) => p === u.param);
   });
   const unlocking = new Set(unlocks.map((u) => u.tool.name));
   for (const tool of menu.tools) {
@@ -68,7 +72,10 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   for (const c of chosen) steps.push({ kind: 'call', tool: c.tool.name, args: c.args });
   for (const u of unlocks) {
     const array = u.tool.inputSchema?.properties?.[u.param!]?.type === 'array';
-    for (const v of u.values.slice(0, MAX_UNLOCKS)) steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [v] : v } });
+    const values = u.values.slice(0, MAX_UNLOCKS);
+    for (const v of values) steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [v] : v } });
+    // The same unlock again should change nothing, as in the --init starter.
+    steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [values[0]] : values[0] } });
   }
   if (chosen.length) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args });
   return { scenario: { allowWrites: false, steps }, called: [...chosen.map((c) => c.tool.name), ...unlocks.map((u) => u.tool.name)], skipped };
