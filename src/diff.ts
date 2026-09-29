@@ -414,11 +414,11 @@ function accepts(next: JsonSchema, prev: JsonSchema): boolean {
 
 /** A parameter's schema without the parts diff classifies itself. */
 function residual(schema: JsonSchema): unknown {
-  const { type: _t, enum: _e, description: _d, items, ...rest } = schema as Record<string, unknown>;
+  const { type: _t, enum: _e, const: _c, description: _d, items, ...rest } = schema as Record<string, unknown>;
   // A type written as anyOf/oneOf alternatives is compared as the type.
   if (typeAlternatives(schema)) delete rest[schema.anyOf ? 'anyOf' : 'oneOf'];
   if (items && typeof items === 'object') {
-    const { enum: _ie, type: _it, ...itemRest } = items as Record<string, unknown>;
+    const { enum: _ie, const: _ic, type: _it, ...itemRest } = items as Record<string, unknown>;
     return Object.keys(itemRest).length ? { ...rest, items: itemRest } : rest;
   }
   return rest;
@@ -451,9 +451,15 @@ function typeAlternatives(schema: JsonSchema): string[] | undefined {
   return types;
 }
 
+/** The values a schema limits itself to: its enum, or a const as a one-value enum. */
+function allowedValues(schema: JsonSchema): unknown[] | undefined {
+  if (Array.isArray(schema.enum)) return schema.enum;
+  return 'const' in schema ? [schema.const] : undefined;
+}
+
 function enumChange(before: JsonSchema, after: JsonSchema): { rule: string; message: string } | undefined {
-  const a = before.enum;
-  const b = after.enum;
+  const a = allowedValues(before);
+  const b = allowedValues(after);
   if (!a && !b) return undefined;
   if (!a && b) return { rule: 'diff/enum-narrowed', message: `now limited to ${b.map(String).join(', ')}.` };
   if (a && !b) return { rule: 'diff/enum-widened', message: `no longer limited to a fixed set of values.` };
