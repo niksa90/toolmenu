@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
-import { cacheBreak, compareMenus, type ToolChange } from './compare.js';
+import { cacheBreak, canonical, compareMenus, type ToolChange } from './compare.js';
 import { connect, listTools, type Connection, type Target } from './connect.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
@@ -8,7 +8,8 @@ import { varianceFinding } from './rules/determinism.js';
 import { classifyFailure, FAILURE_LABELS, SETUP_FAILURES, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
-import { verbOf, WRITE_VERBS } from './words.js';
+import { leadingJson } from './catalog.js';
+import { LOOKUP_VERBS, singular, VERBS, verbOf, words, WRITE_VERBS } from './words.js';
 
 export type Step =
   | { kind: 'list' }
@@ -21,6 +22,8 @@ export interface Scenario {
 }
 
 const LIST_CHANGED = 'notifications/tools/list_changed';
+/** A server saying the session is gone: "Session not found or expired" (toolception). */
+const SESSION_LOST = /session (?:not found|(?:has )?expired|is no longer valid)|(?:unknown|invalid|no valid) session/i;
 
 /** Read and check a scenario file. Mistakes are reported before anything runs. */
 export async function loadScenario(path: string): Promise<Scenario> {
@@ -118,6 +121,8 @@ export interface SessionOptions {
   scenarioName?: string;
   /** Server processes (stdio) or connections (HTTP) to compare before the first step, the main one included (default 2). */
   processes?: number;
+  /** The union menu is kept as a baseline (--union-out): an unlock never called then leaves tools out of it. */
+  unionOut?: boolean;
 }
 
 type Raw = Omit<Finding, 'severity'> & { severity: Severity };
@@ -170,6 +175,24 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
 
     const steps: StepRecord[] = [];
     const scopeUnchecked: { step: number; why: string }[] = [];
+    // processes: 1 turns off every second process or connection, the scope probe too.
+    const probes = (options.processes ?? 2) > 1;
+    // The step after which toolmenu last opened a second process or connection (0:
+    // before the first step). A server that keeps one session per client can end
+    // this one when that happens.
+    let probedAfter: number | undefined = probes ? 0 : undefined;
+    const lost = (why: string, index: number): boolean => {
+      if (probedAfter === undefined || !SESSION_LOST.test(why)) return false;
+      // The server's own words, not the transport's wrapping of its JSON-RPC error.
+      const said = /"message"\s*:\s*"([^"]+)"/.exec(why)?.[1] ?? why;
+      raw.push({
+        rule: 'session/session-lost',
+        severity: 'error',
+        step: index,
+        message: `The server ended this session (“${clip(said, 100)}”) after toolmenu opened a second ${target.kind === 'stdio' ? 'process' : 'connection'} with the same credentials${probedAfter ? ` to check step ${probedAfter}'s scope` : ' to compare menus'}. A server that keeps one session per client does that, so the rest of the scenario didn't run. Run with --processes 1: toolmenu then opens no second one.`,
+      });
+      return true;
+    };
     for (const [i, step] of scenario.steps.entries()) {
       const index = i + 1;
       const label = stepLabel(step);
@@ -218,6 +241,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         } catch (error) {
           record.status = 'failed';
           record.note = error instanceof Error ? error.message.split('\n')[0] : String(error);
+          if (lost(record.note, index)) {
+            steps.push(record);
+            break;
+          }
           const code = (error as { code?: unknown }).code;
           record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
           if (!SETUP_FAILURES.has(record.failure)) raw.push({ rule: 'session/step-failed', severity: 'error', step: index, tool: step.tool, message: `Step ${index} (${label}) failed: ${record.note}` });
@@ -239,6 +266,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         const why = error instanceof Error ? error.message.split('\n')[0] : String(error);
         record.status = 'failed';
         record.note = record.note ? `${record.note}; then listing the menu failed: ${why}` : `listing the menu failed: ${why}`;
+        if (lost(why, index)) {
+          steps.push(record);
+          break;
+        }
         raw.push({ rule: 'session/step-failed', severity: 'error', step: index, message: `After step ${index} (${label}), listing the menu failed: ${why}` });
         steps.push(record);
         continue;
@@ -270,13 +301,14 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           });
         }
 
-        if (step.kind !== 'list') {
+        if (step.kind !== 'list' && probes) {
           // The main process is still running here: a server that holds a file or
           // a port can't start a second copy. That leaves the scope unknown, not
           // the run failed.
           try {
+            probedAfter = index;
             const probe = await probeMenu(mainTarget, timeoutMs);
-            record.scope = scopeOf(changes, next.tools, probe.tools, target.kind);
+            record.scope = scopeOf(changes, next.tools, probe.tools, target.kind, baseline.tools);
             raw.push(...scopeFindings(record.scope, modern, index));
           } catch (error) {
             record.scope = 'unclear';
@@ -293,6 +325,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     }
 
     raw.push(...untested(steps, target));
+    raw.push(...unlockCoverage(baseline.tools, scenario, steps, options.unionOut === true));
     if (scopeUnchecked.length) {
       const which = scopeUnchecked.map((s) => s.step);
       raw.push({
@@ -342,6 +375,41 @@ function untested(steps: StepRecord[], target: Target): Raw[] {
       detail: [...byClass].map(([c, list]) => `${c}: steps ${list.map((s) => s.index).join(', ')} (“${(list[0].note ?? '').replace(/^the tool returned an error: /, '').slice(0, 100)}”)`),
     },
   ];
+}
+
+/**
+ * Unlocks whose schema lists every value (an enum), and how many of those values
+ * the run got through. The session sees, and --union-out keeps, only the tools
+ * behind the values it unlocked: GitHub's enable_toolset has 19, the first starter
+ * unlocked 2, and 72 of 81 tools never reached the baseline.
+ */
+function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[], baselineWanted: boolean): Raw[] {
+  const out: Raw[] = [];
+  for (const u of unlockers(menu)) {
+    if (!u.param || u.values.length === 0) continue;
+    const reached = new Set<string>();
+    let last: number | undefined;
+    for (const record of steps) {
+      const step = scenario.steps[record.index - 1];
+      if (step?.kind !== 'call' || step.tool !== u.tool.name || record.status !== 'ok' || record.failure) continue;
+      last = record.index;
+      const arg = step.args[u.param];
+      for (const v of Array.isArray(arg) ? arg : [arg]) if (v !== undefined) reached.add(canonical(v));
+    }
+    const missing = u.values.filter((v) => !reached.has(canonical(v)));
+    // Never called: a scenario about something else, unless it's building the baseline.
+    if (missing.length === 0 || (reached.size === 0 && !baselineWanted)) continue;
+    const got = u.values.length - missing.length;
+    out.push({
+      rule: 'session/unlock-coverage',
+      severity: 'warn',
+      tool: u.tool.name,
+      ...(last !== undefined ? { step: last } : {}),
+      message: `${u.tool.name} looks like it unlocks tools, and the run got through ${got} of its ${u.values.length} ${u.param} values. The tools behind the other ${missing.length} were never seen: a baseline from this session (--union-out, baseline-from: session) misses them, so diff can't check them. Unlock every value (session --init writes the steps).`,
+      detail: [`not unlocked: ${missing.slice(0, 12).map((v) => JSON.stringify(v)).join(', ')}${missing.length > 12 ? `, and ${missing.length - 12} more` : ''}`],
+    });
+  }
+  return out;
 }
 
 function serverOf(c: Connection): Menu['server'] {
@@ -427,9 +495,12 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
 /**
  * Does a fresh connection see this step's changes? All of them: the server's tool
  * set changed. None: the change belongs to this connection (or, on stdio, this
- * process). Reorders alone can't tell, and a mix is unclear.
+ * process). Reorders alone can't tell, and a mix is unclear. So can't a step that
+ * takes the menu back to the session's `baseline` while fresh ones still serve it:
+ * a fresh process starts there anyway (an unlock undone reads as "seen" by it).
  */
-export function scopeOf(changes: ToolChange[], next: MenuTool[], probe: MenuTool[], transport: Target['kind']): Scope {
+export function scopeOf(changes: ToolChange[], next: MenuTool[], probe: MenuTool[], transport: Target['kind'], baseline?: MenuTool[]): Scope {
+  if (baseline && compareMenus(baseline, next).length === 0 && compareMenus(baseline, probe).length === 0) return 'unclear';
   const probeByName = new Map(probe.map((t) => [t.name, t]));
   const nextByName = new Map(next.map((t) => [t.name, t]));
   const verdicts = new Set<boolean>();
@@ -515,6 +586,9 @@ const UNLOCK_NAME = /unlock|enable|activate|capabilit|toolset|load_?tools|expand
 // capabilities", "unlocks…". Whole words: "download" isn't "load", and a device's
 // capabilities alone aren't tools.
 const UNLOCK_DESC = /\b(?:unlock|enable|activate|load|expose|add)s?\b[^.]{0,60}\b(?:tools?|capabilit(?:y|ies))\b|\bmore tools\b|\btoolsets?\b|\bunlock/i;
+// Said outright: a verb that unlocks, then what it gives. Enough to keep a lookup.
+const UNLOCK_SAYS = /\b(?:unlock|enable|activate|load|expose|add)s?\b[^.]{0,60}\b(?:tools?|toolsets?|capabilit(?:y|ies))\b/i;
+const LOOKUPS = new Set([...LOOKUP_VERBS, 'describe']);
 
 interface Unlocker {
   tool: MenuTool;
@@ -538,9 +612,13 @@ export function clip(text: string, max: number): string {
 }
 
 function isWriteLike(t: MenuTool): boolean {
+  // Named as an unlock: changing the menu is its job, whatever its hints say
+  // (toolception marks enable_toolset destructive). It's still only suggested,
+  // never called without allow_writes.
+  if (UNLOCK_NAME.test(t.name)) return false;
   if (t.annotations?.destructiveHint === true) return true;
   const verb = verbOf(t.name);
-  return verb !== undefined && WRITE_VERBS.has(verb) && !UNLOCK_NAME.test(t.name);
+  return verb !== undefined && WRITE_VERBS.has(verb);
 }
 
 function enumOf(schema: MenuTool['inputSchema']): unknown[] {
@@ -554,8 +632,19 @@ export function unlockers(tools: MenuTool[]): Unlocker[] {
   const found: Unlocker[] = [];
   for (const tool of tools) {
     const props = tool.inputSchema?.properties ?? {};
-    const backed = UNLOCK_NAME.test(tool.name) || UNLOCK_DESC.test(tool.description ?? '');
-    const param = Object.keys(props).find((p) => UNLOCK_PARAM.test(p)) ?? (backed ? Object.keys(props).find((p) => WEAK_UNLOCK_PARAM.test(p)) : undefined);
+    const description = tool.description ?? '';
+    // A lookup names toolsets without changing them (GitHub's get_toolset_tools,
+    // toolception's list_toolsets, Firecrawl's find_tools), unless it says it does.
+    const verb = verbOf(tool.name);
+    if (verb && LOOKUPS.has(verb) && !UNLOCK_SAYS.test(description)) continue;
+    const backed = UNLOCK_NAME.test(tool.name) || UNLOCK_DESC.test(description);
+    const required = tool.inputSchema?.required ?? [];
+    const param =
+      Object.keys(props).find((p) => UNLOCK_PARAM.test(p)) ??
+      (backed ? Object.keys(props).find((p) => WEAK_UNLOCK_PARAM.test(p)) : undefined) ??
+      // Named like an unlock, one required parameter: that's what it takes
+      // (toolception's enable_toolset { name }).
+      (UNLOCK_NAME.test(tool.name) && required.length === 1 ? required[0] : undefined);
     let score = 0;
     if (param) score += enumOf(props[param]).length ? 3 : 2;
     if (UNLOCK_NAME.test(tool.name)) score += 2;
@@ -565,22 +654,105 @@ export function unlockers(tools: MenuTool[]): Unlocker[] {
   return found.sort((a, b) => b.score - a.score);
 }
 
+/**
+ * Unlocks whose values the schema doesn't give (no enum), each with a read-only
+ * lister that should: no required arguments, a lookup verb, and a noun in common
+ * with the unlock (toolception: enable_toolset { name } ← list_toolsets).
+ */
+export function unlockListers(tools: MenuTool[]): { unlock: string; lister: string }[] {
+  const out: { unlock: string; lister: string }[] = [];
+  const nounSet = (name: string) => new Set(words(name).map(singular).filter((w) => !VERBS.has(w)));
+  for (const u of unlockers(tools.filter((t) => t.annotations?.readOnlyHint === true || !isWriteLike(t)))) {
+    if (!u.param || u.values.length) continue;
+    const mine = new Set([...nounSet(u.tool.name), ...nounSet(u.param)]);
+    const lister = tools.find((t) => {
+      if (t === u.tool || t.annotations?.readOnlyHint !== true || (t.inputSchema?.required ?? []).length) return false;
+      const verb = verbOf(t.name);
+      return !!verb && LOOKUPS.has(verb) && [...nounSet(t.name)].some((n) => mine.has(n));
+    });
+    if (lister) out.push({ unlock: u.tool.name, lister: lister.name });
+  }
+  return out;
+}
+
+/**
+ * The values a listing offers, from its JSON (structuredContent, or text that
+ * starts with JSON): the first list of strings, or of objects with a key, id,
+ * slug or name, each item's own field first (toolception's `key: "quotes"`, not
+ * the display name "Quotes" nested under it).
+ */
+export function valuesFromListing(result: { structuredContent?: unknown; content?: unknown }): string[] {
+  const roots: unknown[] = [];
+  if (result.structuredContent) roots.push(result.structuredContent);
+  for (const part of Array.isArray(result.content) ? result.content : []) {
+    const text = (part as { text?: unknown }).text;
+    if (typeof text === 'string') {
+      const value = leadingJson(text);
+      if (value !== undefined) roots.push(value);
+    }
+  }
+  const idOf = (item: unknown): string | undefined => {
+    if (typeof item === 'string') return item;
+    if (!item || typeof item !== 'object') return undefined;
+    const o = item as Record<string, unknown>;
+    for (const k of ['key', 'id', 'slug', 'name']) if (typeof o[k] === 'string' && o[k]) return o[k] as string;
+    return undefined;
+  };
+  const walk = (v: unknown, depth: number): string[] | undefined => {
+    if (depth > 5 || !v || typeof v !== 'object') return undefined;
+    if (Array.isArray(v)) {
+      const ids = v.map(idOf).filter((x): x is string => !!x);
+      if (ids.length && ids.length === v.length) return [...new Set(ids)];
+      for (const x of v) {
+        const found = walk(x, depth + 1);
+        if (found) return found;
+      }
+      return undefined;
+    }
+    for (const x of Object.values(v)) {
+      const found = walk(x, depth + 1);
+      if (found) return found;
+    }
+    return undefined;
+  };
+  for (const r of roots) {
+    const found = walk(r, 0);
+    if (found) return found;
+  }
+  return [];
+}
+
 /** A YAML value for an unlock parameter: an array if the schema takes one. */
 function unlockValue(u: Unlocker, value: unknown): string {
   const schema = u.tool.inputSchema?.properties?.[u.param!];
   return schema?.type === 'array' || schema?.items ? `[${JSON.stringify(value)}]` : JSON.stringify(value);
 }
 
-export function starterScenario(menu: Menu): string {
+/** At most this many values of one unlock in a scenario; the rest are named in a comment. */
+export const MAX_UNLOCKS = 50;
+
+export interface StarterOptions {
+  /**
+   * Values for unlocks whose schema has no enum, by tool name: read from the
+   * server's own listing (toolception's list_toolsets), see unlockListers.
+   */
+  values?: Record<string, unknown[]>;
+}
+
+export function starterScenario(menu: Menu, options: StarterOptions = {}): string {
   const readOnly = menu.tools.filter((t) => t.annotations?.readOnlyHint === true);
   const required = (t: MenuTool) => t.inputSchema?.required ?? [];
-  const found = unlockers(menu.tools.filter((t) => t.annotations?.readOnlyHint === true || !isWriteLike(t)));
+  const found = unlockers(menu.tools.filter((t) => t.annotations?.readOnlyHint === true || !isWriteLike(t))).map((u) =>
+    u.values.length === 0 && u.param && options.values?.[u.tool.name]?.length ? { ...u, values: options.values[u.tool.name] } : u,
+  );
   const unlocking = new Set(found.filter((u) => u.param).map((u) => u.tool));
   const ready = readOnly.filter((t) => required(t).length === 0 && !unlocking.has(t)).slice(0, 12);
   const needsArgs = readOnly.filter((t) => required(t).length > 0);
-  // The best candidate with a real value runs for real: two unlocks, then a repeat.
+  // The best candidate with real values runs for real: every value, so the tools
+  // behind each are seen (a session baseline holds only what was unlocked), then a repeat.
   const live = found.find((u) => u.values.length > 0 && u.tool.annotations?.readOnlyHint === true && required(u.tool).every((p) => p === u.param));
-  const changers = found.filter((u) => u !== live).map((u) => u.tool);
+  const others = found.filter((u) => u !== live);
+  const changers = others.map((u) => u.tool);
   const example = (t: MenuTool, p: string) => {
     const schema = t.inputSchema?.properties?.[p];
     const u = found.find((x) => x.tool === t && x.param === p);
@@ -608,17 +780,25 @@ export function starterScenario(menu: Menu): string {
   ];
   for (const t of ready) lines.push(`  - call: ${t.name}`);
   if (live) {
-    const [first, second] = live.values;
-    lines.push('', `  # ${live.tool.name} looks like it unlocks tools. Unlock, list, and unlock again:`);
-    for (const v of second === undefined ? [first] : [first, second]) {
-      lines.push(`  - call: ${live.tool.name}`, `    args: { ${live.param}: ${unlockValue(live, v)} }`, '  - list');
+    const shown = live.values.slice(0, MAX_UNLOCKS);
+    lines.push('', `  # ${live.tool.name} looks like it unlocks tools. Unlock every ${live.param} (${live.values.length}), listing after each, then the first again:`);
+    for (const v of shown) lines.push(`  - call: ${live.tool.name}`, `    args: { ${live.param}: ${unlockValue(live, v)} }`, '  - list');
+    if (live.values.length > shown.length) {
+      lines.push(`  # …and ${live.values.length - shown.length} more: ${live.values.slice(shown.length).map((v) => JSON.stringify(v)).join(', ')}`);
     }
-    lines.push('  # The same unlock twice should change nothing.', `  - call: ${live.tool.name}`, `    args: { ${live.param}: ${unlockValue(live, first)} }`, '  - list');
+    lines.push('  # The same unlock twice should change nothing.', `  - call: ${live.tool.name}`, `    args: { ${live.param}: ${unlockValue(live, shown[0])} }`, '  - list');
   }
   if (changers.length) {
     lines.push('', `  # ${live ? 'These also' : 'These'} look like they could change the menu. Try them:`);
-    for (const t of changers.slice(0, 8)) {
+    for (const u of others.slice(0, 8)) {
+      const t = u.tool;
       if (t.annotations?.readOnlyHint !== true) lines.push(`  # (not marked readOnlyHint: needs allow_writes: true)`);
+      // Every known value, as with a live unlock: each may bring different tools.
+      const values = u.param && required(t).every((p) => p === u.param) ? u.values.slice(0, MAX_UNLOCKS) : [];
+      if (values.length) {
+        for (const v of values) lines.push(`  # - call: ${t.name}`, `  #   args: { ${u.param}: ${unlockValue(u, v)} }`, '  # - list');
+        continue;
+      }
       lines.push(`  # - call: ${t.name}`);
       if (argNames(t).length) lines.push(`  #   args: ${placeholder(t)}`);
       lines.push('  # - list');

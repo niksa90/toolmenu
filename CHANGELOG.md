@@ -24,6 +24,27 @@
   unlock tool was only found by its name. Descriptions count again (whole words),
   and `namespace` alone no longer marks a tool as an unlock (Kubernetes and Pinecone
   take one on every read).
+- **Unlock detection, checked on live servers** (github-mcp-server 1.0.5
+  `--dynamic-toolsets`, toolception 0.6.3, excalidraw-room-mcp staged tools, Serena,
+  and the 22-server corpus): lookups like `get_toolset_tools` and `list_toolsets` no
+  longer count as unlocks (one tied GitHub's `enable_toolset`); an unlock annotated
+  destructive (toolception) is suggested instead of dropped; an unlock-named tool's
+  one required parameter is its argument.
+- **Every unlock value, not two:** `session --init` unlocks every value of an unlock
+  (its enum, or, without one, the values the server's own read-only listing returns,
+  like toolception's `list_toolsets`), and `session --auto` does the same outside the
+  call budget. On github-mcp-server 1.0.5 `--dynamic-toolsets`, the union went from
+  9 tools to 107: all 81 of `--toolsets all`, and 23 only the dynamic mode serves.
+- **`session/unlock-coverage`** (warn): an unlock called with only some of its enum
+  values, or, with `--union-out`, never called. The tools behind the rest aren't in
+  the baseline, so `diff` can't check them.
+- **Fix, `session` scope:** a step that takes the menu back to where it started (a
+  room left, a toolset disabled) read as `global`. It's `unclear`: a fresh process
+  starts there anyway.
+- **`session/session-lost`** (error): a server that keeps one session per client
+  ended toolmenu's when its second connection arrived, and every later step read as a
+  server error, the calls as a "404 on the credentials". Now said once, and the run
+  stops; `--processes 1` also turns off the scope probe, so the run completes.
 - **Fix, `auth login` on Windows:** the browser opens without `cmd`, which cut the
   URL at its first `&`.
 
