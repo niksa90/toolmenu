@@ -4,21 +4,21 @@ import { createMcpHandler } from '@modelcontextprotocol/server';
 import { build } from './forms.mjs';
 
 // limit: answer every POST after the first `limit` with 429, the way a per-IP rate
-// limiter does, until `resetAfterMs` has passed since the first refusal (never, if unset).
+// limiter does, for `resetAfterMs` after the first refusal and not again (for good, if unset).
 export async function start({ factory = build, limit = Infinity, resetAfterMs } = {}) {
   const handler = createMcpHandler(factory);
   const seen = { authorization: [], posts: 0, refused: 0 };
   let refusingSince;
+  let cleared = false;
   const server = createServer(async (req, res) => {
-    if (req.method === 'POST' && ++seen.posts > limit) {
+    if (req.method === 'POST' && ++seen.posts > limit && !cleared) {
       refusingSince ??= Date.now();
       if (resetAfterMs === undefined || Date.now() - refusingSince < resetAfterMs) {
         seen.refused++;
         res.writeHead(429, { 'content-type': 'text/plain', 'retry-after': '1' }).end('Too many requests, please try again later.');
         return;
       }
-      seen.posts = 0;
-      refusingSince = undefined;
+      cleared = true;
     }
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);

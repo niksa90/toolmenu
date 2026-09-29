@@ -106,13 +106,19 @@
 - **`diff/schema-dialect`** (notice): only the declared `$schema` changed. Said once for
   every tool that switched: mongodb-mcp-server 3.0.0 moved 27 tools from draft-07 to
   2020-12, which read as 27 "review it" notices.
-- **`session` and rate limits:** a request refused for being too many (a 429, "Too
-  many requests") is waited out, 2 s up to 32 s, and sent again: the server never ran
-  it. A limit that outlasts the waits stops the run with one `session/rate-limited`
-  (error) naming the steps that didn't run. A session and a scenario run back to back
-  against a server with a per-IP limit was 19 errors, three for each refused step,
-  and kept calling. An unlock the stopped run never got to isn't also
-  `session/unlock-coverage`.
+- **`session` and rate limits:** a request refused for being too many is waited out,
+  2 s up to 32 s, and sent again, when that repeats nothing: connecting, listing, the
+  list_changed subscription, the second connections that compare menus and check a
+  change's scope, and a tool call the transport refused with a 429 (the server never
+  ran it). A tool that says it was rate-limited, thrown or as its result, is called
+  again only if it's marked readOnlyHint: it may have done part of the work first. A
+  limit that outlasts the waits, or a write's, stops the run with one
+  `session/rate-limited` (error) naming the steps that didn't run; one while
+  connecting says so instead of the transport's error. A session and a scenario run
+  back to back against a server with a per-IP limit was 19 errors, three for each
+  refused step, and kept calling. An unlock the stopped run never got to isn't also
+  `session/unlock-coverage`. "Order 429 not found" or "rateLimit must be a positive
+  number" isn't a rate limit, for catalog either.
 
 - **Fix, `init`:** only `--env` names that looked like credentials became secrets,
   so values like `DATABASE_URL` or `SENTRY_DSN` went into the workflow as text.

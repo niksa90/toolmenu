@@ -10,6 +10,8 @@ import { FIXTURES, ROOT, menuOf, run, tempDir, tool } from './helpers.mjs';
 import { start as startSdkHttp } from './fixtures/http-server.mjs';
 import { start as startRawHttp } from './fixtures/raw-http-server.mjs';
 import { build } from './fixtures/session-server.mjs';
+import { build as buildRateLimited } from './fixtures/rate-limit-tools.mjs';
+import { RATE_LIMITED } from '../dist/failures.js';
 
 const stdio = (env = {}) => ({ kind: 'stdio', command: process.execPath, args: [join(FIXTURES, 'session-server.mjs')], env });
 const UNLOCK = parseScenario({
@@ -165,20 +167,28 @@ test('http, SDK server with shared state: global change, and no list_changed', a
 
 test('http, rate limit: a limit that clears is waited out; one that stays is one finding, and the run stops', async () => {
   const steps = ['list', { call: 'unlock_toolset', args: { toolset: 'audits' } }, { call: 'unlock_toolset', args: { toolset: 'reports' } }, 'list'];
-  const clean = await startSdkHttp({ factory: () => build({}) });
-  let expected;
+  // One state for every connection to a server: an unlock changes the menu for all
+  // of them, so the scope probe after it runs.
+  const sharedState = (state = {}) => () => build(state);
+  const clean = await startSdkHttp({ factory: sharedState() });
+  let expected, total;
   try {
     expected = byStep(await session({ kind: 'http', url: clean.url }, parseScenario({ steps }), { timeoutMs: 15_000 }));
+    total = clean.seen.posts;
   } finally {
     await clean.close();
   }
-  const clears = await startSdkHttp({ factory: () => build({}), limit: 8, resetAfterMs: 100 });
-  try {
-    const r = await session({ kind: 'http', url: clears.url }, parseScenario({ steps }), { timeoutMs: 15_000, rateLimitWaitsMs: [150, 300] });
-    assert.ok(clears.seen.refused > 0);
-    assert.deepEqual(byStep(r), expected, 'refused requests sent again: the same run as with no limit');
-  } finally {
-    await clears.close();
+  // Each limit trips at a different request: connecting, the second connection that
+  // compares menus, a call, a listing, the scope probe after an unlock.
+  for (let limit = 0; limit < total; limit++) {
+    const clears = await startSdkHttp({ factory: sharedState(), limit, resetAfterMs: 100 });
+    try {
+      const r = await session({ kind: 'http', url: clears.url }, parseScenario({ steps }), { timeoutMs: 15_000, rateLimitWaitsMs: [150, 300] });
+      assert.ok(clears.seen.refused > 0, `limit ${limit}`);
+      assert.deepEqual(byStep(r), expected, `limit ${limit}: refused requests sent again, the same run as with no limit`);
+    } finally {
+      await clears.close();
+    }
   }
   // It trips on step 3, the second unlock: the "reports" value isn't also unlock-coverage.
   const stays = await startSdkHttp({ factory: () => build({}), limit: 8 });
@@ -193,6 +203,55 @@ test('http, rate limit: a limit that clears is waited out; one that stays is one
     assert.equal(stays.seen.refused, 3, 'the first try and two retries, then no more');
   } finally {
     await stays.close();
+  }
+});
+
+test('http, rate limit: a tool that says it was limited is called again only if it is read-only', async () => {
+  const one = async (name) => {
+    const ran = {};
+    const server = await startSdkHttp({ factory: () => buildRateLimited(ran) });
+    try {
+      const started = Date.now();
+      const r = await session({ kind: 'http', url: server.url }, parseScenario({ allow_writes: true, steps: [{ call: name, args: {} }, 'list'] }), { timeoutMs: 15_000, rateLimitWaitsMs: [300, 300] });
+      return { ran: ran[name], ms: Date.now() - started, rules: byStep(r), limited: r.findings.find((f) => f.rule === 'session/rate-limited') };
+    } finally {
+      await server.close();
+    }
+  };
+  // A write that did its work, then threw "rate limit exceeded" (JSON-RPC -32603, no 429): once.
+  const thrown = await one('send_message');
+  assert.equal(thrown.ran, 1);
+  assert.deepEqual(thrown.rules, ['1:session/rate-limited']);
+  assert.match(thrown.limited.message, /send_message said it was refused .*“Upstream API rate limit exceeded”.*didn't call it again: it isn't marked readOnlyHint/);
+  // Its result says so: once too, and the finding claims no wait.
+  const said = await one('post_comment');
+  assert.equal(said.ran, 1);
+  assert.doesNotMatch(said.limited.message, /waited/);
+  assert.ok(said.ms < 300, `no wait: ${said.ms} ms`);
+  // Read-only, limited twice then fine: waited out.
+  const reads = await one('list_items');
+  assert.equal(reads.ran, 3);
+  assert.deepEqual(reads.rules, []);
+  // Errors that only mention a 429 or a rateLimit: no wait, not a rate limit.
+  for (const name of ['get_order', 'set_quota']) {
+    const r = await one(name);
+    assert.equal(r.ran, 1, name);
+    assert.equal(r.limited, undefined, name);
+    assert.ok(r.ms < 300, `${name}: ${r.ms} ms`);
+  }
+});
+
+test('RATE_LIMITED: the words for a refusal, not every 429 or rateLimit', () => {
+  for (const t of ['Too many requests, please try again later.', 'API rate limit exceeded for 1.2.3.4', 'Rate limit reached for requests', 'You are being rate-limited', 'You have exceeded your rate limit', 'Request failed with status code 429', 'HTTP 429 Too Many Requests', 'rate_limit_exceeded']) assert.ok(RATE_LIMITED.test(t), t);
+  for (const t of ['Order 429 not found', 'rateLimit must be a positive number', 'Invalid rate_limit parameter', 'Item 1429 is archived', 'Set the rate limit in settings']) assert.ok(!RATE_LIMITED.test(t), t);
+});
+
+test('http, rate limit: a connection refused throughout is said so, not the transport error', async () => {
+  const server = await startSdkHttp({ limit: 0 });
+  try {
+    await assert.rejects(session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: 15_000, rateLimitWaitsMs: [20, 40] }), /refused toolmenu's connection for being too many requests \(“Too many requests, please try again later\.”\) and still refused after it waited 0\.1 s, so the session didn't start/);
+  } finally {
+    await server.close();
   }
 });
 

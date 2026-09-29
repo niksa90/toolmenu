@@ -5,7 +5,7 @@ import { connect, listTools, type Connection, type Target } from './connect.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
-import { classifyFailure, FAILURE_LABELS, RATE_LIMITED, SETUP_FAILURES, type FailureClass } from './failures.js';
+import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, RATE_LIMITED, SETUP_FAILURES, tooMany, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
@@ -139,7 +139,19 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   // The main process runs with a pinned hash seed, and so does every scope probe:
   // a probe with a different seed would count ordering variance as a change.
   const mainTarget = seeded(target, MAIN_SEED);
-  const conn = await connect(mainTarget, { timeoutMs });
+  const waits = options.rateLimitWaitsMs ?? RATE_LIMIT_WAITS_MS;
+  const seconds = (ms: number) => (ms < 10_000 ? Math.round(ms / 100) / 10 : Math.round(ms / 1000));
+  // Connecting and listing are read-only: a refusal for being too many is waited
+  // out and they're sent again.
+  const connectWaited = { ms: 0 };
+  let conn: Connection;
+  try {
+    conn = await patiently(() => connect(mainTarget, { timeoutMs }), { waits, error: tooMany, waited: connectWaited });
+  } catch (error) {
+    if (!tooMany(error)) throw error;
+    const said = error instanceof Error ? error.message.split('\n')[0].replace(/^.*?endpoint:\s*/i, '') : String(error);
+    throw new Error(`The server refused toolmenu's connection for being too many requests (“${clip(said, 100)}”) and still refused after it waited ${seconds(connectWaited.ms)} s, so the session didn't start. A rate limit counts toolmenu's requests together with everything else from this address: give the run its own server instance, or raise the limit for it.`);
+  }
   try {
     const era = conn.era;
     const modern = era === 'modern';
@@ -147,7 +159,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     let listening = !modern; // 2025-era notifications arrive on the session itself
     if (modern && declared) {
       try {
-        await conn.client.listen({ toolsListChanged: true });
+        await patiently(() => conn.client.listen({ toolsListChanged: true }), { waits, error: tooMany });
         listening = true;
       } catch {
         listening = false;
@@ -155,39 +167,26 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     }
 
     const menuOf = async (c: Connection) => buildMenu((await listTools(c, { timeoutMs })).tools, serverOf(c));
-    // A request refused for being too many is waited out and sent again: the server
-    // didn't run it, so sending it again repeats nothing. `refused` says whether a
-    // result (not a thrown error) is such a refusal.
-    const waits = options.rateLimitWaitsMs ?? [2000, 4000, 8000, 16_000, 32_000];
-    const patiently = async <T>(request: () => Promise<T>, refused: (r: T) => boolean = () => false): Promise<T> => {
-      for (let attempt = 0; ; attempt++) {
-        try {
-          const r = await request();
-          if (!refused(r) || attempt >= waits.length) return r;
-        } catch (error) {
-          if (attempt >= waits.length || !RATE_LIMITED.test(error instanceof Error ? error.message : String(error))) throw error;
-        }
-        await new Promise((resolve) => setTimeout(resolve, waits[attempt]));
-      }
-    };
-    // A limit that outlasts the waits ends the run with one finding, not one per step.
+    const listPatiently = (waited = { ms: 0 }) => patiently(() => menuOf(conn), { waits, error: tooMany, waited });
+    // A refusal that outlasts the waits, or a write's that isn't sent again, ends
+    // the run with one finding, not one per step. `tool`: the write not sent again.
     let limitedAt: number | undefined;
-    const limited = (why: string, index: number): boolean => {
-      if (!RATE_LIMITED.test(why)) return false;
+    const limited = (index: number, why: string, waitedMs: number, tool?: string): void => {
       limitedAt = index;
-      const said = /"message"\s*:\s*"([^"]+)"/.exec(why)?.[1] ?? why.replace(/^.*?endpoint:\s*/i, '');
+      const said = clip(/"message"\s*:\s*"([^"]+)"/.exec(why)?.[1] ?? why.replace(/^.*?endpoint:\s*/i, ''), 100);
       const last = scenario.steps.length;
-      const total = waits.reduce((a, b) => a + b, 0) / 1000;
-      const seconds = total < 10 ? Math.round(total * 10) / 10 : Math.round(total);
+      const unchecked = `${index < last ? `steps ${index}–${last} weren't` : `step ${index} wasn't`} checked`;
       raw.push({
         rule: 'session/rate-limited',
         severity: 'error',
         step: index,
-        message: `The server refused requests for being too many at step ${index} (“${clip(said, 100)}”) and still refused after toolmenu waited ${seconds} s, so ${index < last ? `steps ${index}–${last} weren't` : `step ${index} wasn't`} checked. A rate limit counts toolmenu's requests together with everything else from this address: give the run its own server instance, or raise the limit for it.`,
+        message:
+          (tool
+            ? `At step ${index}, ${tool} said it was refused for being too many requests (“${said}”). toolmenu didn't call it again: it isn't marked readOnlyHint, so it may have done part of the work first. ${unchecked[0].toUpperCase()}${unchecked.slice(1)}. If the limit is the server's own, give the run its own server instance or raise the limit for it; if it's an API's behind the server, run later or with a higher quota.`
+            : `The server refused requests for being too many at step ${index} (“${said}”) and still refused after toolmenu waited ${seconds(waitedMs)} s, so ${unchecked}. A rate limit counts toolmenu's requests together with everything else from this address: give the run its own server instance, or raise the limit for it.`),
       });
-      return true;
     };
-    let current = await patiently(() => menuOf(conn));
+    let current = await listPatiently();
     // Map keeps first-insertion order; set() on a known name updates it in place.
     const seen = new Map<string, MenuTool>();
     const see = (menu: Menu) => menu.tools.forEach((t) => seen.set(t.name, t));
@@ -196,7 +195,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
 
     // Fresh processes or connections, same credentials, must see the same menu.
     let connectionCheck: SessionResult['connectionCheck'];
-    for (const probe of await probeVariance(target, current.tools, options.processes ?? 2, timeoutMs)) {
+    for (const probe of await probeVariance(target, current.tools, options.processes ?? 2, timeoutMs, waits)) {
       if (probe.error) {
         raw.push({ rule: target.kind === 'stdio' ? 'menu/process-variance' : 'menu/connection-variance', severity: 'info', step: 0, message: `Couldn't ${target.kind === 'stdio' ? 'start a second server process' : 'open a second connection'} to compare menus, so this wasn't checked: ${probe.error.split('\n')[0]}` });
         continue;
@@ -229,6 +228,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       });
       return true;
     };
+    const callWaited = { ms: 0 };
+    const listWaited = { ms: 0 };
     for (const [i, step] of scenario.steps.entries()) {
       const index = i + 1;
       const label = stepLabel(step);
@@ -255,16 +256,22 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           });
         }
         if (record.status === 'ok') try {
-          // A tool that says it was rate-limited is only asked again when calling it
-          // twice is harmless: it may have done part of the work before it said so.
-          const again = tool?.annotations?.readOnlyHint === true;
-          const result = await patiently(
-            () => conn.client.callTool({ name: step.tool, arguments: step.args }, { timeout: timeoutMs }),
-            (r) => again && r.isError === true && RATE_LIMITED.test(errorText(r)),
-          );
+          // Sent again after a refusal only when that repeats nothing: the transport's
+          // 429 means the server never ran it; a tool that says it was rate-limited,
+          // thrown or as its result, may have done part of the work first, so only a
+          // read-only one is asked again.
+          const readOnly = tool?.annotations?.readOnlyHint === true;
+          callWaited.ms = 0;
+          const result = await patiently(() => conn.client.callTool({ name: step.tool, arguments: step.args }, { timeout: timeoutMs }), {
+            waits,
+            waited: callWaited,
+            error: (e) => httpStatus(e) === 429 || (readOnly && tooMany(e)),
+            result: (r) => readOnly && r.isError === true && RATE_LIMITED.test(errorText(r)),
+          });
           if (result.isError) {
             const text = errorText(result);
-            if (limited(text, index)) {
+            if (RATE_LIMITED.test(text)) {
+              limited(index, text, callWaited.ms, readOnly ? undefined : step.tool);
               record.status = 'failed';
               record.note = `the tool returned an error: ${clip(text, 120)}`;
               steps.push(record);
@@ -285,7 +292,12 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         } catch (error) {
           record.status = 'failed';
           record.note = error instanceof Error ? error.message.split('\n')[0] : String(error);
-          if (lost(record.note, index) || limited(record.note, index)) {
+          if (lost(record.note, index)) {
+            steps.push(record);
+            break;
+          }
+          if (tooMany(error)) {
+            limited(index, record.note, callWaited.ms, httpStatus(error) === 429 || tool?.annotations?.readOnlyHint === true ? undefined : step.tool);
             steps.push(record);
             break;
           }
@@ -305,12 +317,18 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       // have changed the menu, and the change belongs to this step, not the next.
       let next: Menu;
       try {
-        next = await patiently(() => menuOf(conn));
+        listWaited.ms = 0;
+        next = await listPatiently(listWaited);
       } catch (error) {
         const why = error instanceof Error ? error.message.split('\n')[0] : String(error);
         record.status = 'failed';
         record.note = record.note ? `${record.note}; then listing the menu failed: ${why}` : `listing the menu failed: ${why}`;
-        if (lost(why, index) || limited(why, index)) {
+        if (lost(why, index)) {
+          steps.push(record);
+          break;
+        }
+        if (tooMany(error)) {
+          limited(index, why, listWaited.ms);
           steps.push(record);
           break;
         }
@@ -351,7 +369,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           // the run failed.
           try {
             probedAfter = index;
-            const probe = await probeMenu(mainTarget, timeoutMs);
+            const probe = await probeMenu(mainTarget, timeoutMs, waits);
             record.scope = scopeOf(changes, next.tools, probe.tools, target.kind, baseline.tools);
             raw.push(...scopeFindings(record.scope, modern, index));
           } catch (error) {

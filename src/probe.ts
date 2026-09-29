@@ -2,6 +2,7 @@ import { basename } from 'node:path';
 import { connect, listTools, type Target } from './connect.js';
 import { compareMenus } from './compare.js';
 import { buildMenu } from './menu.js';
+import { patiently, tooMany } from './failures.js';
 import type { Probe } from './rules/determinism.js';
 import type { Menu, MenuTool } from './types.js';
 
@@ -29,14 +30,20 @@ export function isContainerWrapper(target: Target): boolean {
 }
 
 /** The menu a fresh process (stdio) or connection (HTTP) serves: connect, list once, close. */
-export async function probeMenu(target: Target, timeoutMs: number): Promise<Menu> {
-  const c = await connect(target, { timeoutMs });
-  try {
-    const list = await listTools(c, { timeoutMs });
-    return buildMenu(list.tools, { name: c.server.name, version: c.server.version, protocolVersion: c.protocolVersion, era: c.era });
-  } finally {
-    await c.close().catch(() => {});
-  }
+export async function probeMenu(target: Target, timeoutMs: number, waits?: number[]): Promise<Menu> {
+  // Read-only: a refusal for being too many is waited out and the probe sent again.
+  return patiently(
+    async () => {
+      const c = await connect(target, { timeoutMs });
+      try {
+        const list = await listTools(c, { timeoutMs });
+        return buildMenu(list.tools, { name: c.server.name, version: c.server.version, protocolVersion: c.protocolVersion, era: c.era });
+      } finally {
+        await c.close().catch(() => {});
+      }
+    },
+    { waits, error: tooMany },
+  );
 }
 
 /**
@@ -45,13 +52,13 @@ export async function probeMenu(target: Target, timeoutMs: number): Promise<Menu
  * HTTP probe that differs is retried once: a rolling deploy can serve two
  * versions for a moment.
  */
-export async function probeVariance(target: Target, main: MenuTool[], processes: number, timeoutMs: number): Promise<Probe[]> {
+export async function probeVariance(target: Target, main: MenuTool[], processes: number, timeoutMs: number, waits?: number[]): Promise<Probe[]> {
   const probes: Probe[] = [];
   for (let i = 0; i < processes - 1; i++) {
     const seed = String(Number(PROBE_SEED) + i);
     try {
-      let tools = (await probeMenu(seeded(target, seed), timeoutMs)).tools;
-      if (target.kind === 'http' && compareMenus(main, tools).length) tools = (await probeMenu(target, timeoutMs)).tools;
+      let tools = (await probeMenu(seeded(target, seed), timeoutMs, waits)).tools;
+      if (target.kind === 'http' && compareMenus(main, tools).length) tools = (await probeMenu(target, timeoutMs, waits)).tools;
       probes.push({ tools });
     } catch (error) {
       probes.push({ error: error instanceof Error ? error.message : String(error) });

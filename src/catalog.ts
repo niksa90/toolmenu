@@ -1,7 +1,7 @@
 import type { Connection } from './connect.js';
 import { toolTokens } from './menu.js';
 import type { JsonSchema, MenuTool } from './types.js';
-import { RATE_LIMITED } from './failures.js';
+import { RATE_LIMITED, tooMany } from './failures.js';
 import { nouns, singular } from './words.js';
 
 /**
@@ -120,7 +120,7 @@ export async function readCatalog(conn: Connection, tools: MenuTool[], options: 
         break;
       } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        if (RATE_LIMITED.test(message) && attempt < 3) {
+        if (tooMany(error) && attempt < 3) {
           await sleep(2000 * 2 ** attempt);
           continue;
         }
