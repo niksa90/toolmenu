@@ -215,9 +215,9 @@ the way OpenAPI breaking-change checkers do it:
 
 | Class | Changes | Rules |
 |---|---|---|
-| **breaking** (error) | tool removed or renamed, parameter removed, new required parameter, narrower or different type, enum narrowed, a tool becoming less safe (no longer read-only, or additive → destructive) | `diff/tool-removed`, `diff/tool-renamed`, `diff/param-removed`, `diff/param-required`, `diff/param-type`, `diff/enum-narrowed`, `diff/safety-hint` |
-| **minor** (info) | tool added, new optional parameter, parameter now optional, type or enum widened | `diff/tool-added`, `diff/param-added`, `diff/param-relaxed`, `diff/type-widened`, `diff/enum-widened` |
-| **notice** (info) | optional parameter dropped (extra properties still allowed), description changed (with the text diff: it changes what the agent does), output schema, annotations, other fields, order, a schema restructured but accepting the same input | `diff/param-dropped`, `diff/description`, `diff/schema-other`, `diff/annotations`, `diff/other`, `diff/order`, `diff/schema-equivalent` |
+| **breaking** (error) | tool removed or renamed, parameter removed, new required parameter, narrower or different type, enum narrowed, unlisted properties now rejected (`additionalProperties: false` added), a tool becoming less safe (no longer read-only, or additive → destructive) | `diff/tool-removed`, `diff/tool-renamed`, `diff/param-removed`, `diff/param-required`, `diff/param-type`, `diff/enum-narrowed`, `diff/properties-closed`, `diff/safety-hint` |
+| **minor** (info) | tool added, new optional parameter, parameter now optional, type or enum widened, unlisted properties now accepted (`additionalProperties: false` removed) | `diff/tool-added`, `diff/param-added`, `diff/param-relaxed`, `diff/type-widened`, `diff/enum-widened`, `diff/properties-opened` |
+| **notice** (info) | optional parameter dropped (extra properties still allowed), description changed (with the text diff: it changes what the agent does), output schema, annotations, other fields, order, a schema restructured but accepting the same input, only the declared `$schema` dialect changed | `diff/param-dropped`, `diff/description`, `diff/schema-other`, `diff/annotations`, `diff/other`, `diff/order`, `diff/schema-equivalent`, `diff/schema-dialect` |
 
 The same rules apply inside parameters: fields of an object parameter, array items,
 and the options of an `anyOf`/`oneOf` union (zod's unions, discriminated unions and
@@ -237,6 +237,13 @@ never silent: it's a `diff/schema-other` "review it".
 On mongodb-mcp-server 2.1.2 → 3.0.0 this finds `aggregate.pipeline[]…$vectorSearch.numCandidates`
 and `.limit` narrowed from `number` to `integer` inside a union, where the whole
 `pipeline` used to be one "review it".
+
+Different spellings of the same schema are one schema (`additionalProperties` absent,
+`true` or `{}`; zod 4's safe-integer bounds), and a change every tool shares is said
+once for the menu: a server moving from zod 3 to zod 4 reads as its real changes (a
+field that became required, the patterns zod 4 adds to `email` and `uuid`) plus one
+`diff/properties-opened` line ("27 tools now accept properties they don't list … most
+likely a schema generator upgrade"), not a "review it" per object.
 
 It also reports the token change per tool and suggests a semver bump. To check the
 bump, pass the **release** versions: `--release 1.4.0..1.5.0` (npm, a git tag).
@@ -268,7 +275,9 @@ names, then searches for every operation it finds or sees mentioned, until 20 qu
 in a row turn up nothing new (at most 200). On Atlassian's hosted server that finds all
 154 operations behind its 21 tools; on Sentry's, 65 behind 9, the same on every run.
 Queries are paced and a rate limit is waited out. An operation not found this time is a
-notice ("not returned by the same queries"), never "removed". To steer it, set
+notice (`diff/catalog-missing`: "not returned by the same queries"), never "removed";
+one found only now is `diff/catalog-added`, and catalogs read with different queries,
+or partly (a query failed), are `diff/catalog-queries`. To steer it, set
 `"catalog": { "queries": [...], "maxQueries": 200, "crawl": true }` in
 `toolmenu.config.json` (FINDINGS F15).
 
