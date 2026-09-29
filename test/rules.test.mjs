@@ -42,6 +42,18 @@ test('spec/tools-capability: a server without it serves clients no tools', () =>
   assert.deepEqual(ids(lint([])), []);
 });
 
+test('description/buried: another tool\'s name counts only as a whole word', () => {
+  const padding = 'x'.repeat(2100);
+  const menu = (tail) => [
+    tool('search', ['query'], { annotations: { readOnlyHint: true } }),
+    tool('get_papers', [], { description: `${padding} ${tail}`, annotations: { readOnlyHint: true } }),
+  ];
+  const buried = (tail) => lint(menu(tail)).filter((f) => f.rule === 'description/buried');
+  assert.deepEqual(buried('Covers papers that research groups use.'), [], '"research" is not the search tool');
+  assert.equal(buried('Use search first for anything else.').length, 1);
+  assert.equal(buried('For broad queries, search_all is better; use it.').length, 0, 'search_all is another name');
+});
+
 test('naming/vague-id flags params that just say "id"', () => {
   assert.deepEqual(ids(lint([tool('get_thing', ['id'], { annotations: { readOnlyHint: true } })])).filter((i) => i.startsWith('naming/vague-id')), ['naming/vague-id:get_thing']);
 });
