@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import { detectProject, looksSecret, workflowYaml } from '../dist/init.js';
+import { detectProject, secretsNeeded, workflowYaml } from '../dist/init.js';
 import { loadMenu } from '../dist/menu.js';
 import { FIXTURES, ROOT, run, tempDir } from './helpers.mjs';
 
@@ -19,30 +19,42 @@ test('detectProject: how CI builds each kind of server', () => {
   assert.equal(npm.kind, 'node');
   assert.ok(npm.setup.includes('- run: npm ci && npm run build'));
   assert.ok(detectProject(dir({ 'package.json': '{}', 'pnpm-lock.yaml': '' })).setup.some((l) => l.includes('pnpm install --frozen-lockfile')));
-  assert.ok(detectProject(dir({ 'pyproject.toml': '', 'uv.lock': '' })).setup.includes('- run: uv sync'));
+  const uv = detectProject(dir({ 'pyproject.toml': '', 'uv.lock': '' })).setup;
+  assert.ok(uv.includes('- run: uv sync'));
+  // A tag that resolves: setup-uv publishes no floating v10.
+  assert.ok(uv.some((l) => /astral-sh\/setup-uv@v\d+\.\d+\.\d+$/.test(l)));
   assert.ok(detectProject(dir({ 'requirements.txt': '' })).setup.includes('- run: pip install -r requirements.txt'));
   assert.equal(detectProject(dir({ 'go.mod': '' })).kind, 'go');
   assert.equal(detectProject(dir({})).kind, 'unknown');
 });
 
 test('workflowYaml: valid YAML, pinned Action, credentials only as secrets', () => {
-  const target = { kind: 'stdio', command: 'node', args: ['dist/server.js'], env: { GITHUB_TOKEN: 'ghp_real', API_KEY: 'k', LOG_LEVEL: 'debug' } };
+  const env = {
+    GITHUB_TOKEN: 'ghp_real',
+    API_KEY: 'sk-live-123',
+    LOG_LEVEL: 'verbose-debug',
+    // Credentials no name pattern gives away.
+    DATABASE_URL: 'postgres://admin:hunter2@db.internal/prod',
+    SENTRY_DSN: 'https://abc123@o1.ingest.sentry.io/1',
+  };
+  const target = { kind: 'stdio', command: 'node', args: ['dist/server.js'], env };
   const text = workflowYaml({ target, project: detectProject(tempDir()), session: true });
   const wf = parse(text);
   const step = wf.jobs.toolmenu.steps.find((s) => String(s.uses).startsWith('niksa90/toolmenu'));
   assert.equal(step.uses, `niksa90/toolmenu@v${VERSION}`);
   assert.equal(step.with.command, 'node dist/server.js');
   assert.equal(step.with.scenario, 'auto');
-  assert.match(step.with.env, /GITHUB_TOKEN=\$\{\{ secrets\.GITHUB_TOKEN \}\}/);
+  // GitHub reserves GITHUB_*: secrets.GITHUB_TOKEN would be the job's own token.
+  assert.match(step.with.env, /GITHUB_TOKEN=\$\{\{ secrets\.MCP_GITHUB_TOKEN \}\}/);
   assert.match(step.with.env, /API_KEY=\$\{\{ secrets\.API_KEY \}\}/);
-  assert.match(step.with.env, /LOG_LEVEL=debug/);
-  assert.equal(text.includes('ghp_real'), false);
+  assert.match(step.with.env, /LOG_LEVEL=\$\{\{ secrets\.LOG_LEVEL \}\}/);
+  assert.match(step.with.env, /DATABASE_URL=\$\{\{ secrets\.DATABASE_URL \}\}/);
+  for (const value of Object.values(env)) assert.equal(text.includes(value), false, value);
+  assert.deepEqual(secretsNeeded(target), ['MCP_GITHUB_TOKEN', 'API_KEY', 'LOG_LEVEL', 'DATABASE_URL', 'SENTRY_DSN']);
   const http = parse(workflowYaml({ target: { kind: 'http', url: 'https://mcp.example.com/mcp', headers: { Authorization: 'Bearer x' } }, project: detectProject(tempDir()) }));
   const h = http.jobs.toolmenu.steps.find((s) => s.with);
   assert.equal(h.with.url, 'https://mcp.example.com/mcp');
   assert.match(h.with.headers, /Authorization: \$\{\{ secrets\.MCP_AUTHORIZATION \}\}/);
-  assert.equal(looksSecret('MEMORY_FILE_PATH'), false);
-  assert.equal(looksSecret('SENTRY_ACCESS_TOKEN'), true);
 });
 
 test('cli: init writes the baseline and the workflow, and never overwrites', async () => {
