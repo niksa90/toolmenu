@@ -57,19 +57,35 @@ export function toolDiff(before: MenuTool, after: MenuTool): ChangeKind[] {
   return kinds;
 }
 
+/**
+ * Each tool's identity in a list: its name, and for a name that repeats, which
+ * occurrence it is. The second `search` pairs with the second `search`, so a
+ * duplicate (menu/duplicate-name) isn't also read as a reorder.
+ */
+function identities(tools: MenuTool[]): string[] {
+  const seen = new Map<string, number>();
+  return tools.map((t) => {
+    const n = seen.get(t.name) ?? 0;
+    seen.set(t.name, n + 1);
+    return n === 0 ? t.name : `${t.name}\u0000${n}`;
+  });
+}
+
 export function compareMenus(before: MenuTool[], after: MenuTool[]): ToolChange[] {
   const changes: ToolChange[] = [];
-  const beforeByName = new Map(before.map((t, i) => [t.name, { tool: t, index: i }]));
-  const afterNames = new Set(after.map((t) => t.name));
+  const beforeIds = identities(before);
+  const afterIds = identities(after);
+  const beforeById = new Map(before.map((t, i) => [beforeIds[i], { tool: t, index: i }]));
+  const afterIdSet = new Set(afterIds);
 
   before.forEach((t, i) => {
-    if (!afterNames.has(t.name)) changes.push({ kind: 'removed', tool: t.name, position: i });
+    if (!afterIdSet.has(beforeIds[i])) changes.push({ kind: 'removed', tool: t.name, position: i });
   });
 
   // Tools present in both: the ones outside the longest run that kept its
   // relative order are the ones that moved.
   const common = after
-    .map((t, i) => ({ name: t.name, afterIndex: i, beforeIndex: beforeByName.get(t.name)?.index }))
+    .map((t, i) => ({ name: t.name, afterIndex: i, beforeIndex: beforeById.get(afterIds[i])?.index }))
     .filter((c): c is { name: string; afterIndex: number; beforeIndex: number } => c.beforeIndex !== undefined);
   const kept = longestIncreasingRun(common.map((c) => c.beforeIndex));
   common.forEach((c, i) => {
@@ -77,7 +93,7 @@ export function compareMenus(before: MenuTool[], after: MenuTool[]): ToolChange[
   });
 
   after.forEach((t, i) => {
-    const old = beforeByName.get(t.name);
+    const old = beforeById.get(afterIds[i]);
     if (!old) {
       changes.push({ kind: 'added', tool: t.name, position: i });
       return;
