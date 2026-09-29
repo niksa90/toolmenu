@@ -72,9 +72,10 @@ function mdBreakdown(menu: Menu): string[] {
 function findingLines(findings: Finding[]): string[] {
   const lines: string[] = [];
   for (const f of findings) {
-    lines.push(`${LABEL[f.severity]}  ${f.rule}`);
+    lines.push(`${LABEL[f.severity]}  ${f.rule}${unsureMark(f)}`);
     lines.push(`       ${f.message}`);
     for (const d of f.detail ?? []) lines.push(`         ${d}`);
+    if (f.fix) lines.push(`       → Next: ${f.fix}`);
   }
   lines.push(findings.length ? '' : 'No findings.');
   return lines;
@@ -88,8 +89,8 @@ function summaryLine(findings: Finding[]): string {
 function githubLines(findings: Finding[]): string[] {
   return findings.map((f) => {
     const level = f.severity === 'error' ? 'error' : f.severity === 'warn' ? 'warning' : 'notice';
-    const body = [f.message, ...(f.detail ?? [])].join('\n').replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
-    return `::${level} title=toolmenu ${f.rule}::${body}`;
+    const body = [f.message, ...(f.detail ?? []), ...(f.fix ? [`→ Next: ${f.fix}`] : [])].join('\n').replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+    return `::${level} title=toolmenu ${f.rule}${unsureMark(f)}::${body}`;
   });
 }
 
@@ -226,7 +227,7 @@ export function formatSession(s: SessionResult, format: Format): string {
     return JSON.stringify({ command: 'session', ...rest, union: { tools: union.tools.length, totalTokens: union.totalTokens }, counts: counts(s.findings) }, null, 2);
   }
   if (format === 'github') {
-    return githubLines(s.findings.map((f) => ({ ...f, message: f.step ? `step ${f.step} (${s.steps[f.step - 1]?.label}): ${f.message}` : f.message }))).join('\n');
+    return githubLines(s.findings.map((f) => ({ ...f, message: stepPrefix(f, `step ${f.step} (${s.steps[(f.step ?? 1) - 1]?.label}): `) }))).join('\n');
   }
   if (format === 'markdown') {
     const lines = [
@@ -239,7 +240,7 @@ export function formatSession(s: SessionResult, format: Format): string {
       '|---|---|---|---|',
       ...s.steps.map((st) => `| ${st.index}. ${mdCell(st.label)} | ${st.status !== 'ok' ? st.status : st.changed ? `changed (${st.tools} tools)` : 'no change'} | ${st.changed ? (st.listChanged ? 'received' : '**missing**') : ''} | ${st.scope ?? ''} |`),
       '',
-      ...mdFindings(s.findings.map((f) => ({ ...f, message: f.step ? `Step ${f.step}: ${f.message}` : f.message }))),
+      ...mdFindings(s.findings.map((f) => ({ ...f, message: stepPrefix(f, `Step ${f.step}: `) }))),
     ];
     return lines.join('\n');
   }
@@ -255,9 +256,10 @@ export function formatSession(s: SessionResult, format: Format): string {
   const at = (step: number) => s.findings.filter((f) => f.step === step);
   const block = (findings: Finding[]) => {
     for (const f of findings) {
-      lines.push(`  ${LABEL[f.severity]}  ${f.rule}`);
+      lines.push(`  ${LABEL[f.severity]}  ${f.rule}${unsureMark(f)}`);
       lines.push(`         ${f.message}`);
       for (const d of f.detail ?? []) lines.push(`           ${d}`);
+      if (f.fix) lines.push(`         → Next: ${f.fix}`);
     }
   };
   block(at(0));
@@ -307,13 +309,25 @@ function autoLine(s: SessionResult): string | undefined {
   return `auto: called ${s.auto.called.length} tool${s.auto.called.length === 1 ? '' : 's'}${parts.length ? ` · skipped ${parts.join(', ')}` : ''}`;
 }
 
+/** " · unsure" after the rule, for findings that are a heuristic or an inference. */
+function unsureMark(f: Finding): string {
+  return f.confidence === 'unsure' ? ' · unsure' : '';
+}
+
+/** The step a session finding belongs to, unless its message already names its steps. */
+function stepPrefix(f: Finding, prefix: string): string {
+  if (!f.step || /^steps? \d/i.test(f.message)) return f.message;
+  return prefix + f.message;
+}
+
 function mdCell(text: string): string {
   return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
 }
 
 function mdFindings(findings: Finding[]): string[] {
   if (findings.length === 0) return ['No findings.'];
-  const row = (f: Finding) => `| ${f.severity === 'error' ? '**error**' : f.severity} | \`${f.rule}\` | ${mdCell([f.message, ...(f.detail ?? [])].join(' · '))} |`;
+  const row = (f: Finding) =>
+    `| ${f.severity === 'error' ? '**error**' : f.severity} | \`${f.rule}\`${f.confidence === 'unsure' ? ' · _unsure_' : ''} | ${mdCell([f.message, ...(f.detail ?? [])].join(' · '))}${f.fix ? `<br>**→ Next:** ${mdCell(f.fix)}` : ''} |`;
   const head = ['| | Rule | Finding |', '|---|---|---|'];
   const loud = findings.filter((f) => f.severity !== 'info');
   const quiet = findings.filter((f) => f.severity === 'info');
