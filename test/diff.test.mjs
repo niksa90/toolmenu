@@ -264,7 +264,7 @@ test('union options: a replaced option (different fields, none shared) is one go
   ]);
 });
 
-test('a union option that is an unexpanded $ref doesn\'t hide the others\' discriminator (kh-mcp list path)', () => {
+test('a union option that is an unexpanded $ref doesn\'t hide the others\' discriminator (a document schema\'s list path)', () => {
   // A recursive definition: its second level stays a $ref.
   const s = (enumValues) => ({ type: 'object', $defs: { node: { oneOf: [
     { type: 'object', properties: { type: { const: 'paragraph' }, text: { type: 'string', enum: enumValues } } },
@@ -273,7 +273,7 @@ test('a union option that is an unexpanded $ref doesn\'t hide the others\' discr
   const d = diffMenus(gen(s(['a', 'b'])), gen(s(['a'])));
   assert.deepEqual(d.findings.map((f) => f.message.split(':')[0]), ['gen.doc(type="paragraph").text']);
   // An option that is itself a $ref left as written (another document here; a
-  // recursive definition past its unrolled level in kh-mcp): the other options
+  // recursive definition past its unrolled level in a real one): the other options
   // still pair by their discriminator, not by position (was object{…} #1).
   const withRef = (enumValues) => ({ type: 'object', properties: { doc: { oneOf: [
     { type: 'object', properties: { type: { const: 'paragraph' }, text: { type: 'string', enum: enumValues } } },
