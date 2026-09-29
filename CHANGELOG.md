@@ -30,6 +30,14 @@
   longer count as unlocks (one tied GitHub's `enable_toolset`); an unlock annotated
   destructive (toolception) is suggested instead of dropped; an unlock-named tool's
   one required parameter is its argument.
+- **Every unlock value, not two:** `session --init` unlocks every value of an unlock
+  (its enum, or, without one, the values the server's own read-only listing returns,
+  like toolception's `list_toolsets`), and `session --auto` does the same outside the
+  call budget. On github-mcp-server 1.0.5 `--dynamic-toolsets`, the union went from
+  9 tools to 107: all 81 of `--toolsets all`, and 23 only the dynamic mode serves.
+- **`session/unlock-coverage`** (warn): an unlock called with only some of its enum
+  values, or, with `--union-out`, never called. The tools behind the rest aren't in
+  the baseline, so `diff` can't check them.
 - **Fix, `session` scope:** a step that takes the menu back to where it started (a
   room left, a toolset disabled) read as `global`. It's `unclear`: a fresh process
   starts there anyway.

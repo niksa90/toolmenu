@@ -8,7 +8,7 @@ import { diffMenus } from './diff.js';
 import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
 import { counts, formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
-import { loadScenario, session, starterScenario } from './session.js';
+import { loadScenario, session, starterScenario, unlockListers, valuesFromListing } from './session.js';
 import { connect, listTools } from './connect.js';
 import { buildMenu } from './menu.js';
 import { existsSync } from 'node:fs';
@@ -240,8 +240,24 @@ export async function main(argv: string[]): Promise<number> {
     try {
       const list = await listTools(conn, { timeoutMs });
       const menu = buildMenu(list.tools, { name: conn.server.name, version: conn.server.version, protocolVersion: conn.protocolVersion });
-      await writeFile(path, starterScenario(menu));
-      process.stdout.write(`wrote ${path}: a starter scenario for ${menu.tools.length} tools. Fill in the TODOs, then run toolmenu session --scenario ${path}\n`);
+      // An unlock without an enum: its values come from the server's own read-only
+      // listing (list_toolsets), so the scenario can unlock every one.
+      const unlockValues: Record<string, unknown[]> = {};
+      const read: string[] = [];
+      for (const { unlock, lister } of unlockListers(menu.tools)) {
+        try {
+          const result = await conn.client.callTool({ name: lister, arguments: {} }, { timeout: timeoutMs });
+          const found = result.isError ? [] : valuesFromListing(result);
+          if (found.length) {
+            unlockValues[unlock] = found;
+            read.push(`${found.length} values for ${unlock} from ${lister}`);
+          }
+        } catch {
+          // Left as TODO in the scenario.
+        }
+      }
+      await writeFile(path, starterScenario(menu, { values: unlockValues }));
+      process.stdout.write(`wrote ${path}: a starter scenario for ${menu.tools.length} tools${read.length ? ` (read ${read.join('; ')})` : ''}. Fill in the TODOs, then run toolmenu session --scenario ${path}\n`);
     } finally {
       await conn.close().catch(() => {});
     }
@@ -290,7 +306,7 @@ export async function main(argv: string[]): Promise<number> {
       process.stdout.write(formatPlan(plan.scenario, 'auto') + '\n');
       return 0;
     }
-    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto' });
+    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'] });
     result.auto = { called: plan.called, skipped: plan.skipped };
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
@@ -311,7 +327,7 @@ export async function main(argv: string[]): Promise<number> {
       return 0;
     }
     const sessionTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
-    const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario });
+    const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario, unionOut: !!values['union-out'] });
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
     if (output) process.stdout.write(output + '\n');
