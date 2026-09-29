@@ -196,6 +196,24 @@ test('an option removed from a union that objects of different shapes share is o
   assert.deepEqual(d.findings[0].places, ['gen.heading.content (array items)', 'gen.cell.content (array items)']);
 });
 
+test('a description inside a nullable type option is compared, and moving it to the node is no change (sentry-mcp)', () => {
+  const nullable = (desc) => ({ type: 'object', properties: { query: { default: null, anyOf: [{ type: 'string', description: desc }, { type: 'null' }] } } });
+  const d = diffMenus(gen(nullable('Search query.')), gen(nullable('Search query to filter results.')));
+  assert.deepEqual(d.findings.map((f) => f.message.split(':')[0] + ': ' + f.rule), ['gen.query: diff/description']);
+  // zod versions differ on where the description goes: same text, no change.
+  const onNode = { type: 'object', properties: { query: { default: null, description: 'Search query.', anyOf: [{ type: 'string' }, { type: 'null' }] } } };
+  assert.deepEqual(diffMenus(gen(nullable('Search query.')), gen(onNode)).findings, []);
+});
+
+test('zod 3 → 4 spellings are the same schema (chrome-devtools-mcp 1.9.0 → 1.10.1: 61 "review it")', () => {
+  const v3 = { $schema: 'http://json-schema.org/draft-07/schema#', type: 'object', additionalProperties: true, properties: { pageSize: { type: 'integer', exclusiveMinimum: 0 } } };
+  const v4 = { $schema: 'https://json-schema.org/draft/2020-12/schema', type: 'object', additionalProperties: {}, properties: { pageSize: { type: 'integer', exclusiveMinimum: 0, maximum: Number.MAX_SAFE_INTEGER } } };
+  assert.deepEqual(rules(diffMenus(gen(v3), gen(v4))), ['diff/schema-dialect:gen']);
+  // A real maximum is still a change.
+  const capped = { ...v4, properties: { pageSize: { type: 'integer', exclusiveMinimum: 0, maximum: 100 } } };
+  assert.ok(diffMenus(gen(v3), gen(capped)).findings.some((f) => f.rule === 'diff/schema-other' && f.message.startsWith('gen.pageSize')));
+});
+
 test('union options: a replaced option (different fields, none shared) is one gone and one new', () => {
   const opt = (field) => ({ type: 'object', properties: { [field]: { type: 'string' } }, required: [field] });
   const s = (o) => ({ type: 'object', properties: { src: { anyOf: [opt('url'), o] } } });

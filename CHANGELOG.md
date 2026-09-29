@@ -31,6 +31,14 @@
 - **Too large to expand, both sides:** `$defs` entries are compared by name, so an
   enum narrowed inside one is still breaking; definitions only one side has are one
   line.
+- **Checked on 14 public servers' releases (69 pairs) and their menus:**
+  - **zod 3 → 4 spellings are the same schema:** `additionalProperties: {}` is
+    `true`, and an integer's `maximum`/`minimum` of ±(2^53 − 1) (zod 4 adds them to
+    every `.int()`) excludes nothing. chrome-devtools-mcp 1.9.0 → 1.10.1 goes from 61
+    "review it" to one dialect notice.
+  - **A description inside a nullable option** (`anyOf: [{type: string,
+    description}, {type: null}]`, sentry-mcp) is compared; one moved between the
+    option and the node is no change.
 
 - **Fix, `diff` on deep schemas:** the field-by-field comparison stopped 8 levels
   down, counting every array and union option, so one change to a definition a

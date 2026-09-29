@@ -312,6 +312,9 @@ function sameTypes(node: unknown): unknown {
     delete out.anyOf;
     delete out.oneOf;
     out.type = [...new Set(alternatives)].sort();
+    // The options' descriptions stay, as the node's (describedAs).
+    const described = describedAs(s);
+    if (described) out.description = described;
   } else if (typeof s.type === 'string' || (Array.isArray(s.type) && s.type.every((t) => typeof t === 'string'))) {
     out.type = [...new Set(Array.isArray(s.type) ? s.type : [s.type])].sort();
   }
@@ -465,8 +468,9 @@ function compareSchema(w: Walk, at: string, label: string, before: JsonSchema, a
   const isArray = (s: JsonSchema) => typesOf(s)?.includes('array') ?? false;
   const arrays = !union && isArray(before) && isArray(after);
   if (arrays) compareSchema(w, `${at}[]`, `${label} (array items)`, before.items ?? {}, after.items ?? {}, depth + 1);
-  if ((before.description ?? '') !== (after.description ?? '')) {
-    say(w, 'diff/description', label, `: ${label.endsWith(')') ? 'description' : 'parameter description'} changed.`, [before, after], textDiff(String(before.description ?? ''), String(after.description ?? '')));
+  const [da, db] = [describedAs(before), describedAs(after)];
+  if (da !== db) {
+    say(w, 'diff/description', label, `: ${label.endsWith(')') ? 'description' : 'parameter description'} changed.`, [before, after], textDiff(da, db));
   }
   const object = !union && hasProperties(before) && hasProperties(after);
   if (object) compareObject(w, at, before, after, depth + 1);
@@ -491,6 +495,18 @@ function optionsOf(s: JsonSchema): JsonSchema[] {
   return options && options.length > 0 ? options : [undescribed(s)];
 }
 
+/**
+ * What a schema says about itself: its description, or, for a type written as
+ * anyOf/oneOf alternatives, the descriptions its options carry. Sentry writes a
+ * nullable string as anyOf [{type: string, description}, {type: null}]; a
+ * description moved from the option to the node is the same one.
+ */
+function describedAs(s: JsonSchema): string {
+  if (typeof s.description === 'string' && s.description) return s.description;
+  if (!typeAlternatives(s)) return '';
+  return ((s.anyOf ?? s.oneOf) as JsonSchema[]).map((o) => (typeof o.description === 'string' ? o.description : '')).filter(Boolean).join(' ');
+}
+
 /** The options of an anyOf/oneOf that isn't just a list of types. */
 function unionOf(s: JsonSchema): JsonSchema[] | undefined {
   const options = unionOptions(s);
@@ -512,6 +528,28 @@ function unionOptions(s: JsonSchema): JsonSchema[] | undefined {
     const pure = Array.isArray(inner) && Object.keys(o).every((k) => k === 'anyOf' || k === 'oneOf' || DESCRIPTIVE.has(k));
     return pure ? (unionOptions(o) ?? [o]) : [o];
   });
+}
+
+/**
+ * A schema with the spellings that accept the same input written one way, the ones
+ * schema generators switch between (zod 3 → 4 did both in chrome-devtools-mcp
+ * 1.9.0 → 1.10.1, 61 "review it"s): `additionalProperties: {}` is `true`, and an
+ * integer's `maximum: 2^53 − 1` / `minimum: −(2^53 − 1)` (zod 4 adds them to every
+ * `.int()`) exclude nothing a call can send.
+ */
+function unspelled(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(unspelled);
+  if (!node || typeof node !== 'object') return node;
+  const s = node as Record<string, unknown>;
+  const out: Record<string, unknown> = Object.fromEntries(
+    Object.entries(s).map(([k, v]) => [k, SCHEMA_MAPS.has(k) && v && typeof v === 'object' && !Array.isArray(v) ? mapValues(v as Record<string, unknown>, unspelled) : unspelled(v)]),
+  );
+  const a = out.additionalProperties;
+  if (a && typeof a === 'object' && !Array.isArray(a) && Object.keys(a).length === 0) out.additionalProperties = true;
+  const integer = s.type === 'integer' || (Array.isArray(s.type) && s.type.includes('integer'));
+  if (integer && out.maximum === Number.MAX_SAFE_INTEGER) delete out.maximum;
+  if (integer && out.minimum === Number.MIN_SAFE_INTEGER) delete out.minimum;
+  return out;
 }
 
 /** A schema without its description, for comparing it as one option among others. */
@@ -749,7 +787,7 @@ function expandRefs(schema: JsonSchema | undefined): { schema: JsonSchema | unde
   };
   const { $defs: _defs, definitions: _definitions, ...rest } = schema as Record<string, unknown>;
   try {
-    return { schema: walk(rest, []) as JsonSchema, expanded: true };
+    return { schema: unspelled(walk(rest, [])) as JsonSchema, expanded: true };
   } catch {
     return { schema, expanded: false };
   }
