@@ -22,6 +22,8 @@ const NETWORK = /\b(ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|EHOSTU
 // "**Input Error**" (Sentry), JSON-RPC's invalid params.
 const INVALID_ARGUMENTS = /invalid (params|parameters|arguments|input)|input error|validation (error|failed)|must be provided|is required\b|\beither\b[^.]{0,80}\bor\b[^.]{0,80}\b(must|required)/i;
 const NOT_FOUND = /\b404\b|not found/i;
+/** A refusal for too many requests: "Too many requests, please try again later." (express-rate-limit), a 429, "API rate limit exceeded" (GitHub). */
+export const RATE_LIMITED = /rate.?limit|too many requests|\b429\b/i;
 
 /**
  * Classify a failed call. `code` is the JSON-RPC error code when the call threw.

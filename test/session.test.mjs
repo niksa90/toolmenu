@@ -163,6 +163,39 @@ test('http, SDK server with shared state: global change, and no list_changed', a
   }
 });
 
+test('http, rate limit: a limit that clears is waited out; one that stays is one finding, and the run stops', async () => {
+  const steps = ['list', { call: 'unlock_toolset', args: { toolset: 'audits' } }, { call: 'unlock_toolset', args: { toolset: 'reports' } }, 'list'];
+  const clean = await startSdkHttp({ factory: () => build({}) });
+  let expected;
+  try {
+    expected = byStep(await session({ kind: 'http', url: clean.url }, parseScenario({ steps }), { timeoutMs: 15_000 }));
+  } finally {
+    await clean.close();
+  }
+  const clears = await startSdkHttp({ factory: () => build({}), limit: 8, resetAfterMs: 100 });
+  try {
+    const r = await session({ kind: 'http', url: clears.url }, parseScenario({ steps }), { timeoutMs: 15_000, rateLimitWaitsMs: [150, 300] });
+    assert.ok(clears.seen.refused > 0);
+    assert.deepEqual(byStep(r), expected, 'refused requests sent again: the same run as with no limit');
+  } finally {
+    await clears.close();
+  }
+  // It trips on step 3, the second unlock: the "reports" value isn't also unlock-coverage.
+  const stays = await startSdkHttp({ factory: () => build({}), limit: 8 });
+  try {
+    const r = await session({ kind: 'http', url: stays.url }, parseScenario({ steps }), { timeoutMs: 15_000, rateLimitWaitsMs: [20, 40] });
+    const limited = r.findings.filter((f) => f.rule === 'session/rate-limited');
+    assert.equal(limited.length, 1);
+    assert.equal(limited[0].severity, 'error');
+    assert.match(limited[0].message, /at step 3 \(“Too many requests, please try again later\.”\) and still refused after toolmenu waited 0\.1 s, so steps 3–4 weren't checked/);
+    assert.equal(r.findings.filter((f) => f.rule === 'session/step-failed' || f.rule === 'session/unlock-coverage').length, 0);
+    assert.equal(r.steps.length, 3, 'nothing is sent after the limit stops the run');
+    assert.equal(stays.seen.refused, 3, 'the first try and two retries, then no more');
+  } finally {
+    await stays.close();
+  }
+});
+
 test('http, SDK server with per-instance state: the unlock silently does nothing', async () => {
   const server = await startSdkHttp({ factory: () => build() });
   try {

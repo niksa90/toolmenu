@@ -1,6 +1,7 @@
 import type { Connection } from './connect.js';
 import { toolTokens } from './menu.js';
 import type { JsonSchema, MenuTool } from './types.js';
+import { RATE_LIMITED } from './failures.js';
 import { nouns, singular } from './words.js';
 
 /**
@@ -101,7 +102,7 @@ export async function readCatalog(conn: Connection, tools: MenuTool[], options: 
       try {
         const result = await conn.client.callTool({ name: tool.name, arguments: { [queryParam]: query, ...limit } }, { timeout: options.timeoutMs ?? 30_000 });
         const text = result.isError ? resultText(result) : '';
-        if (result.isError && RATE_LIMIT.test(text) && attempt < 3) {
+        if (result.isError && RATE_LIMITED.test(text) && attempt < 3) {
           await sleep(2000 * 2 ** attempt);
           continue;
         }
@@ -119,7 +120,7 @@ export async function readCatalog(conn: Connection, tools: MenuTool[], options: 
         break;
       } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        if (RATE_LIMIT.test(message) && attempt < 3) {
+        if (RATE_LIMITED.test(message) && attempt < 3) {
           await sleep(2000 * 2 ** attempt);
           continue;
         }
@@ -151,7 +152,6 @@ function describedExamples(tool: MenuTool): string[] {
   return [...text.matchAll(/["“]([a-z][a-z0-9 ,'-]{5,60})["”]/g)].map((m) => m[1]).filter((q) => q.includes(' '));
 }
 
-const RATE_LIMIT = /rate.?limit|too many requests|\b429\b/i;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

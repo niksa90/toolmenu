@@ -8,7 +8,7 @@
   compares, ten ways (enum narrowed or widened, type changed, field made required,
   removed or added, union option removed or reordered, block moved to `$defs`,
   description changed), and checks each gives exactly the rule and bump it should.
-  About 3,100 mutations, every `npm test`. On 0.11.0's code (main at 089e184) 166 were
+  About 3,100 mutations, every `npm test`. On 0.11.0's code (main at 8b41fc2) 166 were
   misreported; all pass now. What the sweep found, fixed:
   - a property named `type` was read as the `type` keyword in the check that keeps
     changes from going unreported, so reordering its union's options was a false
@@ -106,6 +106,13 @@
 - **`diff/schema-dialect`** (notice): only the declared `$schema` changed. Said once for
   every tool that switched: mongodb-mcp-server 3.0.0 moved 27 tools from draft-07 to
   2020-12, which read as 27 "review it" notices.
+- **`session` and rate limits:** a request refused for being too many (a 429, "Too
+  many requests") is waited out, 2 s up to 32 s, and sent again: the server never ran
+  it. A limit that outlasts the waits stops the run with one `session/rate-limited`
+  (error) naming the steps that didn't run. A session and a scenario run back to back
+  against a server with a per-IP limit was 19 errors, three for each refused step,
+  and kept calling. An unlock the stopped run never got to isn't also
+  `session/unlock-coverage`.
 
 - **Fix, `init`:** only `--env` names that looked like credentials became secrets,
   so values like `DATABASE_URL` or `SENTRY_DSN` went into the workflow as text.

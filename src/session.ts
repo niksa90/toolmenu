@@ -5,7 +5,7 @@ import { connect, listTools, type Connection, type Target } from './connect.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
-import { classifyFailure, FAILURE_LABELS, SETUP_FAILURES, type FailureClass } from './failures.js';
+import { classifyFailure, FAILURE_LABELS, RATE_LIMITED, SETUP_FAILURES, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
@@ -125,6 +125,8 @@ export interface SessionOptions {
   unionOut?: boolean;
   /** session --auto: what the plan called and skipped, so a run that called nothing isn't a clean one. */
   auto?: { called: string[]; skipped: import('./auto.js').AutoPlan['skipped'] };
+  /** Waits before retrying a request refused for being too many (default 2, 4, 8, 16, 32 s: a per-minute limit clears within them). */
+  rateLimitWaitsMs?: number[];
 }
 
 type Raw = Omit<Finding, 'severity'> & { severity: Severity };
@@ -153,7 +155,39 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     }
 
     const menuOf = async (c: Connection) => buildMenu((await listTools(c, { timeoutMs })).tools, serverOf(c));
-    let current = await menuOf(conn);
+    // A request refused for being too many is waited out and sent again: the server
+    // didn't run it, so sending it again repeats nothing. `refused` says whether a
+    // result (not a thrown error) is such a refusal.
+    const waits = options.rateLimitWaitsMs ?? [2000, 4000, 8000, 16_000, 32_000];
+    const patiently = async <T>(request: () => Promise<T>, refused: (r: T) => boolean = () => false): Promise<T> => {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const r = await request();
+          if (!refused(r) || attempt >= waits.length) return r;
+        } catch (error) {
+          if (attempt >= waits.length || !RATE_LIMITED.test(error instanceof Error ? error.message : String(error))) throw error;
+        }
+        await new Promise((resolve) => setTimeout(resolve, waits[attempt]));
+      }
+    };
+    // A limit that outlasts the waits ends the run with one finding, not one per step.
+    let limitedAt: number | undefined;
+    const limited = (why: string, index: number): boolean => {
+      if (!RATE_LIMITED.test(why)) return false;
+      limitedAt = index;
+      const said = /"message"\s*:\s*"([^"]+)"/.exec(why)?.[1] ?? why.replace(/^.*?endpoint:\s*/i, '');
+      const last = scenario.steps.length;
+      const total = waits.reduce((a, b) => a + b, 0) / 1000;
+      const seconds = total < 10 ? Math.round(total * 10) / 10 : Math.round(total);
+      raw.push({
+        rule: 'session/rate-limited',
+        severity: 'error',
+        step: index,
+        message: `The server refused requests for being too many at step ${index} (“${clip(said, 100)}”) and still refused after toolmenu waited ${seconds} s, so ${index < last ? `steps ${index}–${last} weren't` : `step ${index} wasn't`} checked. A rate limit counts toolmenu's requests together with everything else from this address: give the run its own server instance, or raise the limit for it.`,
+      });
+      return true;
+    };
+    let current = await patiently(() => menuOf(conn));
     // Map keeps first-insertion order; set() on a known name updates it in place.
     const seen = new Map<string, MenuTool>();
     const see = (menu: Menu) => menu.tools.forEach((t) => seen.set(t.name, t));
@@ -221,13 +255,21 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           });
         }
         if (record.status === 'ok') try {
-          const result = await conn.client.callTool({ name: step.tool, arguments: step.args }, { timeout: timeoutMs });
+          // A tool that says it was rate-limited is only asked again when calling it
+          // twice is harmless: it may have done part of the work before it said so.
+          const again = tool?.annotations?.readOnlyHint === true;
+          const result = await patiently(
+            () => conn.client.callTool({ name: step.tool, arguments: step.args }, { timeout: timeoutMs }),
+            (r) => again && r.isError === true && RATE_LIMITED.test(errorText(r)),
+          );
           if (result.isError) {
-            const text = (Array.isArray(result.content) ? result.content : [])
-              .map((c) => (c && typeof c === 'object' && 'text' in c && typeof c.text === 'string' ? c.text : ''))
-              .join(' ')
-              .replace(/\s+/g, ' ')
-              .trim();
+            const text = errorText(result);
+            if (limited(text, index)) {
+              record.status = 'failed';
+              record.note = `the tool returned an error: ${clip(text, 120)}`;
+              steps.push(record);
+              break;
+            }
             const short = clip(text, 120);
             record.note = text ? `the tool returned an error: ${short}` : 'the tool returned an error';
             record.failure = classifyFailure(text, { hadArguments: Object.keys(step.args).length > 0 });
@@ -243,7 +285,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         } catch (error) {
           record.status = 'failed';
           record.note = error instanceof Error ? error.message.split('\n')[0] : String(error);
-          if (lost(record.note, index)) {
+          if (lost(record.note, index) || limited(record.note, index)) {
             steps.push(record);
             break;
           }
@@ -263,12 +305,12 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       // have changed the menu, and the change belongs to this step, not the next.
       let next: Menu;
       try {
-        next = await menuOf(conn);
+        next = await patiently(() => menuOf(conn));
       } catch (error) {
         const why = error instanceof Error ? error.message.split('\n')[0] : String(error);
         record.status = 'failed';
         record.note = record.note ? `${record.note}; then listing the menu failed: ${why}` : `listing the menu failed: ${why}`;
-        if (lost(why, index)) {
+        if (lost(why, index) || limited(why, index)) {
           steps.push(record);
           break;
         }
@@ -328,7 +370,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
 
     raw.push(...untested(steps, target));
     // --auto means "find what you can": an unlock it skipped is a gap too.
-    raw.push(...unlockCoverage(baseline.tools, scenario, steps, options.unionOut === true || options.auto !== undefined, options.auto?.skipped));
+    raw.push(...unlockCoverage(baseline.tools, scenario, steps, options.unionOut === true || options.auto !== undefined, options.auto?.skipped, limitedAt));
     if (options.auto && !scenario.steps.some((s) => s.kind === 'call')) raw.push(nothingCalled(options.auto.skipped));
     if (scopeUnchecked.length) {
       const which = scopeUnchecked.map((s) => s.step);
@@ -387,19 +429,25 @@ function untested(steps: StepRecord[], target: Target): Raw[] {
  * behind the values it unlocked: GitHub's enable_toolset has 19, the first starter
  * unlocked 2, and 72 of 81 tools never reached the baseline.
  */
-function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[], baselineWanted: boolean, skipped: { tool: string; reason: string }[] = []): Raw[] {
+function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[], baselineWanted: boolean, skipped: { tool: string; reason: string }[] = [], stoppedAt?: number): Raw[] {
   const out: Raw[] = [];
+  // A run a rate limit stopped (session/rate-limited says so) is charged only for
+  // values its scenario leaves out, not for ones in steps it never got to.
+  const unrun = stoppedAt === undefined ? [] : scenario.steps.map((step, i) => ({ step, index: i + 1 })).filter((s) => s.index >= stoppedAt);
   for (const u of unlockers(menu)) {
     if (!u.param || u.values.length === 0) continue;
     const reached = new Set<string>();
     let last: number | undefined;
+    const add = (arg: unknown) => {
+      for (const v of Array.isArray(arg) ? arg : [arg]) if (v !== undefined) reached.add(canonical(v));
+    };
     for (const record of steps) {
       const step = scenario.steps[record.index - 1];
       if (step?.kind !== 'call' || step.tool !== u.tool.name || record.status !== 'ok' || record.failure) continue;
       last = record.index;
-      const arg = step.args[u.param];
-      for (const v of Array.isArray(arg) ? arg : [arg]) if (v !== undefined) reached.add(canonical(v));
+      add(step.args[u.param]);
     }
+    for (const { step } of unrun) if (step.kind === 'call' && step.tool === u.tool.name) add(step.args[u.param]);
     const missing = u.values.filter((v) => !reached.has(canonical(v)));
     // Never called: a scenario about something else, unless it's building the baseline.
     if (missing.length === 0 || (reached.size === 0 && !baselineWanted)) continue;
@@ -450,6 +498,15 @@ function nothingCalled(skipped: { tool: string; reason: string }[]): Raw {
 
 function serverOf(c: Connection): Menu['server'] {
   return { name: c.server.name, version: c.server.version, protocolVersion: c.protocolVersion, era: c.era };
+}
+
+/** A tool result's text, whitespace collapsed. */
+function errorText(result: { content?: unknown }): string {
+  return (Array.isArray(result.content) ? result.content : [])
+    .map((c) => (c && typeof c === 'object' && 'text' in c && typeof c.text === 'string' ? c.text : ''))
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function waitFor(done: () => boolean, ms: number): Promise<boolean> {
