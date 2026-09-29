@@ -84,7 +84,7 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   }
   if (msg.id === undefined) return; // notifications
   if (msg.method === 'initialize') {
-    send({ id: msg.id, result: { protocolVersion: '2025-11-25', capabilities: { tools: {} }, serverInfo: { name: `raw-${fixture}`, version: '0.0.1' } } });
+    send({ id: msg.id, result: { protocolVersion: '2025-11-25', capabilities: process.env.NO_TOOLS_CAPABILITY ? {} : { tools: {} }, serverInfo: { name: `raw-${fixture}`, version: '0.0.1' } } });
   } else if (msg.method === 'tools/list') {
     calls++;
     send({ id: msg.id, result: { tools: MENUS[fixture](calls) } });

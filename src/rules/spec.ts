@@ -56,6 +56,20 @@ export const schema: Rule = {
   },
 };
 
+export const toolsCapability: Rule = {
+  id: 'spec/tools-capability',
+  severity: 'error',
+  summary: 'The server declares the tools capability',
+  run(ctx) {
+    if ('tools' in ctx.capabilities) return [];
+    return [
+      {
+        message: `The server doesn't declare the tools capability, so clients don't ask for its tools: the official MCP SDK client returns an empty list without sending tools/list${ctx.menu.tools.length ? '' : ', and that is the menu toolmenu got'}. Declare "tools": {} in the server's capabilities.`,
+      },
+    ];
+  },
+};
+
 export const duplicateName: Rule = {
   id: 'menu/duplicate-name',
   severity: 'error',

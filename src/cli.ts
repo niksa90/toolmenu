@@ -388,6 +388,13 @@ function exitWhenFlushed(code: number): void {
   process.stdout.write('', () => process.stderr.write('', () => process.exit(code)));
 }
 
+// stdout carries the report alone (--format json is parsed by CI). Libraries log
+// with console: the MCP SDK prints a console.debug line to stdout when a server
+// has no tools capability. Their lines go to stderr.
+for (const method of ['log', 'info', 'debug'] as const) {
+  console[method] = (...args: unknown[]) => console.error(...args);
+}
+
 main(process.argv.slice(2)).then(exitWhenFlushed, (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
   process.stderr.write(`toolmenu: ${message}\n`);
