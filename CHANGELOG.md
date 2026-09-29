@@ -37,8 +37,22 @@
     every `.int()`) excludes nothing. chrome-devtools-mcp 1.9.0 → 1.10.1 goes from 61
     "review it" to one dialect notice.
   - **A description inside a nullable option** (`anyOf: [{type: string,
-    description}, {type: null}]`, sentry-mcp) is compared; one moved between the
-    option and the node is no change.
+    description}, {type: null}]`, sentry-mcp) is compared, also when the field has
+    a description of its own; one moved between the option and the node is no
+    change.
+- **zod 3 → 4 on an MCP SDK server** (27 constructs, zod 3.25 through the SDK's
+  converter, `test/fixtures/zod`): from 2 errors and 40 notices to the real changes.
+  - **`diff/properties-opened`** (minor) and **`diff/properties-closed`**
+    (breaking): `additionalProperties: false` removed or added. zod 4 drops it from
+    every object; that's one line for the menu ("27 tools now accept properties
+    they don't list, at 35 places"), not a "review it" per object. The official
+    `everything` server's 2026.7.4 release: 9 "review it" became that one line.
+  - Absent, `true` and `{}` `additionalProperties` are one spelling, and
+    `propertyNames: {type: "string"}` is dropped.
+  - Still reported: `z.any()`/`z.unknown()` keys made required (breaking), and the
+    patterns zod 4 adds to email, uuid and datetime, and a tuple's dropped bounds.
+  - Several tools restructured or spelled differently but accepting the same
+    input are one `diff/schema-equivalent` line.
 
 - **Fix, `diff` on deep schemas:** the field-by-field comparison stopped 8 levels
   down, counting every array and union option, so one change to a definition a

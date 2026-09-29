@@ -31,7 +31,7 @@ test('mutations: every kind applies somewhere in the corpus, so none is vacuous'
   for (const [, menu] of menus) {
     for (const tool of menu.tools) {
       for (const s of sites(tool.inputSchema)) {
-        for (const [kind, m] of Object.entries(MUTATIONS)) if (m.applies(s.node, s.ptr)) seen.add(kind);
+        for (const [kind, m] of Object.entries(MUTATIONS)) if (m.applies(s.node, s.ptr, tool.inputSchema)) seen.add(kind);
       }
     }
   }

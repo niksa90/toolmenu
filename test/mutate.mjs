@@ -8,6 +8,8 @@
 //   made-required       an optional field         → only diff/param-required, major
 //   property-removed    a required field          → only diff/param-removed, major
 //   property-added      a new optional field      → only diff/param-added, minor
+//   properties-opened   additionalProperties: false removed → only diff/properties-opened, minor
+//   properties-closed   additionalProperties: false added   → only diff/properties-closed, major
 //   option-removed      one union option          → only diff/param-type, major
 //   options-reordered   a union's options         → nothing
 //   moved-to-defs       a block into $defs + $ref → only diff/schema-equivalent
@@ -68,7 +70,9 @@ export const MUTATIONS = {
     bump: 'minor',
   },
   'type-changed': {
-    applies: (n) => typeof n.type === 'string' && n.type in PRIMITIVE && !n.enum && !('const' in n) && !n.anyOf && !n.oneOf,
+    // Not an option whose type another option also has: changing it leaves that
+    // type accepted, a widening, not a narrowing (Notion's children items).
+    applies: (n, ptr, root) => typeof n.type === 'string' && n.type in PRIMITIVE && !n.enum && !('const' in n) && !n.anyOf && !n.oneOf && !typeElsewhere(n, ptr, root),
     edit: (n) => void (n.type = PRIMITIVE[n.type]),
     rules: ['diff/param-type'],
     bump: 'major',
@@ -87,6 +91,18 @@ export const MUTATIONS = {
       n.required = n.required.filter((r) => r !== p);
     },
     rules: ['diff/param-removed'],
+    bump: 'major',
+  },
+  'properties-opened': {
+    applies: (n) => isObject(n) && n.additionalProperties === false,
+    edit: (n) => void delete n.additionalProperties,
+    rules: ['diff/properties-opened'],
+    bump: 'minor',
+  },
+  'properties-closed': {
+    applies: (n) => isObject(n) && n.additionalProperties === undefined,
+    edit: (n) => void (n.additionalProperties = false),
+    rules: ['diff/properties-closed'],
     bump: 'major',
   },
   'property-added': {
@@ -121,6 +137,14 @@ export const MUTATIONS = {
   },
 };
 
+/** Is `n` a union option whose type another option of the same union has too? */
+function typeElsewhere(n, ptr, root) {
+  const [list, i] = [ptr.at(-2), ptr.at(-1)];
+  if (!root || (list !== 'anyOf' && list !== 'oneOf')) return false;
+  const siblings = get(root, ptr.slice(0, -1)) ?? [];
+  return siblings.some((o, j) => j !== i && o && o.type === n.type);
+}
+
 function isObject(n) {
   return n.properties && typeof n.properties === 'object' && !Array.isArray(n.properties);
 }
@@ -145,7 +169,7 @@ function distinctOptions(n) {
 export function mutate(tool, ptr, kind) {
   const m = MUTATIONS[kind];
   const node = get(tool.inputSchema, ptr);
-  if (!node || !m.applies(node, ptr)) return undefined;
+  if (!node || !m.applies(node, ptr, tool.inputSchema)) return undefined;
   const next = clone(tool);
   if (kind === 'moved-to-defs') {
     const root = next.inputSchema;
@@ -197,7 +221,7 @@ export function run(menu, { perKind = 6 } = {}) {
   for (const tool of menu.tools) {
     const all = sites(tool.inputSchema);
     for (const kind of Object.keys(MUTATIONS)) {
-      const applicable = all.filter((s) => MUTATIONS[kind].applies(s.node, s.ptr));
+      const applicable = all.filter((s) => MUTATIONS[kind].applies(s.node, s.ptr, tool.inputSchema));
       const step = Math.max(1, Math.ceil(applicable.length / perKind));
       for (let i = 0; i < applicable.length; i += step) {
         const r = check(tool, applicable[i].ptr, kind);

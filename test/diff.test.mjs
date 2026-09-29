@@ -214,6 +214,46 @@ test('zod 3 → 4 spellings are the same schema (chrome-devtools-mcp 1.9.0 → 1
   assert.ok(diffMenus(gen(v3), gen(capped)).findings.some((f) => f.rule === 'diff/schema-other' && f.message.startsWith('gen.pageSize')));
 });
 
+test('a zod 3 → 4 upgrade of an MCP SDK server: the real changes, and nothing else (review of #15)', async () => {
+  const [v3, v4] = await Promise.all(['zod3', 'zod4'].map((f) => loadMenu(join(FIXTURES, 'zod', `${f}.json`))));
+  const d = diffMenus(v3, v4);
+  assert.deepEqual(d.findings.map((f) => `${f.rule} ${f.tool ?? '(menu)'}`).sort(), [
+    // z.any() / z.unknown() keys become required in zod 4: breaking.
+    'diff/param-required zod_anyValue',
+    'diff/param-required zod_unknownValue',
+    // additionalProperties: false dropped from every object: one line for the menu.
+    'diff/properties-opened (menu)',
+    // Real changes toolmenu doesn't classify: patterns zod 4 adds, a tuple's bounds dropped.
+    'diff/schema-other zod_datetime',
+    'diff/schema-other zod_email',
+    'diff/schema-other zod_tuple',
+    'diff/schema-other zod_uuid',
+  ]);
+  const opened = d.findings.find((f) => f.rule === 'diff/properties-opened');
+  assert.match(opened.message, /^27 tools now accept properties they don't list/);
+  assert.equal(opened.places.length, 35);
+  assert.equal(d.suggestedBump, 'major');
+});
+
+test('additionalProperties absent, true and {} are one spelling; false removed or added is its own change', () => {
+  const s = (ap) => ({ type: 'object', properties: { a: { type: 'string' } }, ...(ap === undefined ? {} : { additionalProperties: ap }) });
+  for (const [x, y] of [[undefined, {}], [undefined, true], [{}, true]]) {
+    assert.deepEqual(diffMenus(gen(s(x)), gen(s(y))).findings.filter((f) => f.rule !== 'diff/schema-equivalent'), [], `${JSON.stringify(x)} → ${JSON.stringify(y)}`);
+  }
+  assert.deepEqual(rules(diffMenus(gen(s(false)), gen(s(undefined)))), ['diff/properties-opened:gen']);
+  const closed = diffMenus(gen(s(undefined)), gen(s(false)));
+  assert.deepEqual(rules(closed), ['diff/properties-closed:gen']);
+  assert.equal(closed.suggestedBump, 'major');
+  // propertyNames: {type: "string"} (zod 4's z.record) accepts the same.
+  const rec = (extra) => ({ type: 'object', properties: { r: { type: 'object', additionalProperties: { type: 'number' }, ...extra } } });
+  assert.deepEqual(diffMenus(gen(rec({})), gen(rec({ propertyNames: { type: 'string' } }))).findings.filter((f) => f.rule !== 'diff/schema-equivalent'), []);
+});
+
+test('an option\'s description is compared even when the field has its own (review of #15, sentry-both)', () => {
+  const s = (option) => ({ type: 'object', properties: { query: { description: 'The query.', anyOf: [{ type: 'string', description: option }, { type: 'null' }] } } });
+  assert.deepEqual(rules(diffMenus(gen(s('Search text.')), gen(s('Search text, by name or slug.')))), ['diff/description:gen']);
+});
+
 test('union options: a replaced option (different fields, none shared) is one gone and one new', () => {
   const opt = (field) => ({ type: 'object', properties: { [field]: { type: 'string' } }, required: [field] });
   const s = (o) => ({ type: 'object', properties: { src: { anyOf: [opt('url'), o] } } });
@@ -371,7 +411,7 @@ test('only the $schema dialect changing, in several tools, is one notice naming 
   assert.deepEqual(d.findings[0].detail, ['connect, find, count']);
   // One tool: said for it. With another change outside the parameters: still a review.
   assert.deepEqual(rules(diffMenus(menu([{ name: 'find', inputSchema: s(d7) }]), menu([{ name: 'find', inputSchema: s(d20) }]))), ['diff/schema-dialect:find']);
-  assert.deepEqual(rules(diffMenus(menu([{ name: 'find', inputSchema: s(d7) }]), menu([{ name: 'find', inputSchema: s(d20, { additionalProperties: true }) }]))), ['diff/schema-other:find']);
+  assert.deepEqual(rules(diffMenus(menu([{ name: 'find', inputSchema: s(d7) }]), menu([{ name: 'find', inputSchema: s(d20, { minProperties: 1 }) }]))), ['diff/schema-other:find']);
 });
 
 test('a $ref to another document is left as it is', () => {
@@ -515,7 +555,7 @@ test('removing an optional parameter only breaks callers when extra properties a
   const rulesOf = (a, b) => diffMenus(a, b).findings.filter((f) => f.rule !== 'diff/version-bump').map((f) => f.rule);
   const withVersion = { user_id: { type: 'string' }, 'Notion-Version': { type: 'string', default: '2025-09-03' } };
   assert.deepEqual(rulesOf(t(withVersion, ['user_id']), t({ user_id: { type: 'string' } }, ['user_id'])), ['diff/param-dropped']);
-  assert.deepEqual(rulesOf(t(withVersion, ['user_id']), t({ user_id: { type: 'string' } }, ['user_id'], { additionalProperties: false })), ['diff/param-removed', 'diff/schema-other'], 'closing the schema is itself reported');
+  assert.deepEqual(rulesOf(t(withVersion, ['user_id']), t({ user_id: { type: 'string' } }, ['user_id'], { additionalProperties: false })), ['diff/properties-closed', 'diff/param-removed'], 'closing the schema is itself reported, as breaking');
   assert.deepEqual(rulesOf(t(withVersion, ['user_id', 'Notion-Version']), t({ user_id: { type: 'string' } }, ['user_id'])), ['diff/param-removed']);
 });
 
