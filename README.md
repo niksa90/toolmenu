@@ -46,8 +46,9 @@ Commit both, open a pull request, and toolmenu comments on it.
 npx toolmenu init -- node dist/server.js          # add --with-session to also run session --auto
 ```
 
-Credentials you pass with `--env` go into the workflow as `${{ secrets.… }}`, never as
-values; `init` says which secrets to add. It never overwrites a file.
+Every value you pass with `--env` or `--header` goes into the workflow as
+`${{ secrets.… }}`, never as text (a name like `DATABASE_URL` doesn't say it holds a
+password); `init` says which secrets to add. It never overwrites a file.
 
 By hand:
 

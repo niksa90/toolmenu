@@ -38,8 +38,9 @@ export function detectProject(dir: string): Project {
     const uv = has('uv.lock');
     return {
       kind: 'python',
+      // setup-uv has no floating major tag (v10): only full versions resolve.
       setup: uv
-        ? ['- uses: astral-sh/setup-uv@v10', '- run: uv sync']
+        ? ['- uses: astral-sh/setup-uv@v10.2.0', '- run: uv sync']
         : ['- uses: actions/setup-python@v7', "  with: { python-version: '3.12' }", `- run: pip install ${has('pyproject.toml') ? '.' : '-r requirements.txt'}`],
     };
   }
@@ -48,9 +49,15 @@ export function detectProject(dir: string): Project {
   return { kind: 'unknown', setup: ['# TODO: install and build your server here'] };
 }
 
-/** An env var whose value is a credential: goes into the workflow as a secret, never as a value. */
-export function looksSecret(key: string): boolean {
-  return /token|secret|password|passwd|api[_-]?key|(^|_)key$|credential|auth/i.test(key);
+/**
+ * The repository secret an env var's value goes into. Every value is a secret: a
+ * name doesn't say whether its value is a credential (DATABASE_URL, SENTRY_DSN and
+ * GITHUB_PAT carry one, and no pattern on names catches them all). GitHub keeps
+ * GITHUB_* for itself (secrets.GITHUB_TOKEN is the job's own token), so those get a prefix.
+ */
+export function envSecretName(key: string): string {
+  const name = key.toUpperCase().replace(/[^A-Z0-9_]+/g, '_');
+  return /^(GITHUB_|[0-9])/.test(name) ? `MCP_${name}` : name;
 }
 
 export interface WorkflowOptions {
@@ -61,7 +68,7 @@ export interface WorkflowOptions {
   baseline?: string;
 }
 
-/** The workflow file, as text. Credentials appear only as ${{ secrets.NAME }}. */
+/** The workflow file, as text. Env and header values appear only as ${{ secrets.NAME }}. */
 export function workflowYaml(opts: WorkflowOptions): string {
   const t = opts.target;
   const lines = [
@@ -87,7 +94,7 @@ export function workflowYaml(opts: WorkflowOptions): string {
     const env = Object.keys(t.env ?? {});
     if (env.length) {
       lines.push('          env: |');
-      for (const k of env) lines.push(`            ${k}=${looksSecret(k) ? `\${{ secrets.${k} }}` : t.env![k]}`);
+      for (const k of env) lines.push(`            ${k}=\${{ secrets.${envSecretName(k)} }}`);
     }
   } else {
     lines.push(`          url: ${yamlString(t.url)}   # checks the server at this URL, not this PR's code: see docs/github-action.md`);
@@ -104,7 +111,7 @@ export function workflowYaml(opts: WorkflowOptions): string {
 
 /** The secret names the workflow refers to, to tell the user what to add. */
 export function secretsNeeded(target: Target): string[] {
-  if (target.kind === 'stdio') return Object.keys(target.env ?? {}).filter(looksSecret);
+  if (target.kind === 'stdio') return Object.keys(target.env ?? {}).map(envSecretName);
   return Object.keys(target.headers ?? {}).map(secretName);
 }
 
