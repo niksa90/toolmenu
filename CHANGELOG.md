@@ -2,6 +2,24 @@
 
 ## 0.12.0
 
+- **`diff` is tested by mutation, on real menus:** `test/mutation.test.mjs` edits the
+  schemas of five published servers (mongodb, Notion, Firecrawl, Playwright,
+  Supabase) and the field report's document schema at every position `diff`
+  compares, ten ways (enum narrowed or widened, type changed, field made required,
+  removed or added, union option removed or reordered, block moved to `$defs`,
+  description changed), and checks each gives exactly the rule and bump it should.
+  About 3,100 mutations, every `npm test`. On 0.11.0's code (main at 089e184) 166 were
+  misreported; all pass now. What the sweep found, fixed:
+  - a property named `type` was read as the `type` keyword in the check that keeps
+    changes from going unreported, so reordering its union's options was a false
+    "review it";
+  - a union option that is itself a union (a `$ref` to one) is compared as its
+    options (Notion's `parent`);
+  - an option edited beyond recognition (its type, its only field) is one change,
+    not "removed" plus "added", and two options without properties have the same
+    shape;
+  - a union cut down to one option is compared with the option it was.
+
 - **Fix, `diff` on deep schemas:** the field-by-field comparison stopped 8 levels
   down, counting every array and union option, so one change to a definition a
   document schema's five block types share was an error for paragraphs and headings

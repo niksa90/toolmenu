@@ -297,13 +297,17 @@ function sameTypes(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(sameTypes);
   if (!node || typeof node !== 'object') return node;
   const s = node as JsonSchema;
-  const out: Record<string, unknown> = Object.fromEntries(Object.entries(s).map(([k, v]) => [k, sameTypes(v)]));
+  // Name → schema maps: their keys are names, not keywords (a property called
+  // `type` is a schema, not a type).
+  const out: Record<string, unknown> = Object.fromEntries(
+    Object.entries(s).map(([k, v]) => [k, SCHEMA_MAPS.has(k) && v && typeof v === 'object' && !Array.isArray(v) ? mapValues(v as Record<string, unknown>, sameTypes) : sameTypes(v)]),
+  );
   const alternatives = typeAlternatives(s);
   if (alternatives) {
     delete out.anyOf;
     delete out.oneOf;
     out.type = [...new Set(alternatives)].sort();
-  } else if (s.type !== undefined) {
+  } else if (typeof s.type === 'string' || (Array.isArray(s.type) && s.type.every((t) => typeof t === 'string'))) {
     out.type = [...new Set(Array.isArray(s.type) ? s.type : [s.type])].sort();
   }
   // A union accepts the same whatever order its options come in.
@@ -327,7 +331,18 @@ const DESCRIPTIVE = new Set(['description', 'title', 'examples', '$comment']);
 function shape(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(shape);
   if (!node || typeof node !== 'object') return node;
-  return Object.fromEntries(Object.entries(node as Record<string, unknown>).filter(([k]) => !DESCRIPTIVE.has(k)).map(([k, v]) => [k, k === 'properties' ? Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([p, s]) => [p, shape(s)])) : shape(v)]));
+  return Object.fromEntries(
+    Object.entries(node as Record<string, unknown>)
+      .filter(([k]) => !DESCRIPTIVE.has(k))
+      .map(([k, v]) => [k, SCHEMA_MAPS.has(k) && v && typeof v === 'object' && !Array.isArray(v) ? mapValues(v as Record<string, unknown>, shape) : shape(v)]),
+  );
+}
+
+/** Keywords whose value maps names to schemas. */
+const SCHEMA_MAPS = new Set(['properties', '$defs', 'definitions', 'patternProperties', 'dependentSchemas']);
+
+function mapValues(map: Record<string, unknown>, f: (v: unknown) => unknown): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, f(v)]));
 }
 
 /** A short, stable fingerprint of a (canonical) value. */
@@ -413,7 +428,8 @@ function compareSchema(w: Walk, at: string, label: string, before: JsonSchema, a
   const oldType = typeOf(before);
   const newType = typeOf(after);
   if (union) {
-    compareUnion(w, at, label, oldOptions ?? [before], newOptions ?? [after], depth);
+    // The plain side's description is the node's, compared below, not an option's.
+    compareUnion(w, at, label, optionsOf(before), optionsOf(after), depth);
   } else {
     if (oldType !== newType) {
       // Widening (boolean → boolean|string, object → any) accepts every call that
@@ -443,11 +459,44 @@ function compareSchema(w: Walk, at: string, label: string, before: JsonSchema, a
   }
 }
 
+/**
+ * A schema as a list of union options, when the other side is a union: its own
+ * anyOf/oneOf options if it has any (one option, or type-only ones, included),
+ * else itself, without its description (that's the node's, compared as the
+ * node's), as the one option.
+ */
+function optionsOf(s: JsonSchema): JsonSchema[] {
+  const options = unionOptions(s);
+  return options && options.length > 0 ? options : [undescribed(s)];
+}
+
 /** The options of an anyOf/oneOf that isn't just a list of types. */
 function unionOf(s: JsonSchema): JsonSchema[] | undefined {
+  const options = unionOptions(s);
+  if (!options || options.length === 0 || typeAlternatives(s)) return undefined;
+  return options;
+}
+
+/**
+ * anyOf/oneOf options, with an option that is itself only a union (a $ref to
+ * one, expanded: Notion's `parent` is anyOf [parentRequest, string], and
+ * parentRequest is anyOf of objects) flattened into its options: the same values
+ * are accepted either way.
+ */
+function unionOptions(s: JsonSchema): JsonSchema[] | undefined {
   const options = (s.anyOf ?? s.oneOf) as unknown;
-  if (!Array.isArray(options) || options.length === 0 || typeAlternatives(s)) return undefined;
-  return options as JsonSchema[];
+  if (!Array.isArray(options)) return undefined;
+  return (options as JsonSchema[]).flatMap((o) => {
+    const inner = o && typeof o === 'object' ? ((o.anyOf ?? o.oneOf) as unknown) : undefined;
+    const pure = Array.isArray(inner) && Object.keys(o).every((k) => k === 'anyOf' || k === 'oneOf' || DESCRIPTIVE.has(k));
+    return pure ? (unionOptions(o) ?? [o]) : [o];
+  });
+}
+
+/** A schema without its description, for comparing it as one option among others. */
+function undescribed(s: JsonSchema): JsonSchema {
+  const { description: _d, ...rest } = s as Record<string, unknown>;
+  return rest as JsonSchema;
 }
 
 /**
@@ -507,14 +556,22 @@ function pairOptions(oldOptions: JsonSchema[], newOptions: JsonSchema[], key: st
         let score = 0.5;
         if (hasProperties(a) || hasProperties(b)) {
           const [x, y] = [names(a), names(b)];
-          const shared = [...x].filter((n) => y.has(n)).length;
-          score = shared / new Set([...x, ...y]).size;
+          const all = new Set([...x, ...y]).size;
+          // Two objects with no properties at all have the same shape.
+          score = all === 0 ? 1 : [...x].filter((n) => y.has(n)).length / all;
         }
         if (score > 0) candidates.push([score, i, j]);
       }
     }
     candidates.sort((p, q) => q[0] - p[0] || p[1] - q[1] || p[2] - q[2]);
     for (const [, i, j] of candidates) if (oldLeft.has(i) && newLeft.has(j)) take(i, j);
+    // As many options left on each side: the ones that were edited (a type
+    // changed, the only property renamed). Paired in order, compared inside, rather
+    // than said as one removed and one added.
+    if (oldLeft.size > 0 && oldLeft.size === newLeft.size) {
+      const [olds, news] = [[...oldLeft].sort((a, b) => a - b), [...newLeft].sort((a, b) => a - b)];
+      olds.forEach((i, n) => take(i, news[n]));
+    }
   }
   pairs.sort((p, q) => p[1] - q[1]);
   return {
