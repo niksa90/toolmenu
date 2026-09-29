@@ -8,6 +8,7 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
 import * as z from 'zod';
+import { closeSync, openSync, rmSync } from 'node:fs';
 
 const text = (t) => ({ content: [{ type: 'text', text: t }] });
 const ro = { readOnlyHint: true };
@@ -53,6 +54,19 @@ export function build(shared) {
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
+  // LOCKFILE: hold an exclusive lock, like a server on a SQLite file, so a second
+  // process can't start while this one runs.
+  if (process.env.LOCKFILE) {
+    try {
+      closeSync(openSync(process.env.LOCKFILE, 'wx'));
+    } catch {
+      process.stderr.write('database is locked\n');
+      process.exit(1);
+    }
+    process.on('exit', () => rmSync(process.env.LOCKFILE, { force: true }));
+    for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => process.exit(0));
+    process.stdin.on('end', () => process.exit(0));
+  }
   if (process.env.LEGACY) await build().connect(new StdioServerTransport());
   else serveStdio(build);
 }

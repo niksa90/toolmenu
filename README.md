@@ -157,6 +157,7 @@ as its steps, so the starter is a floor, not a ceiling.
 | `session/untested` | warn, error if no call got through | Calls that failed before reaching the tool: authentication, something missing on this machine (no Chrome), the network. One finding for the run, not one per step, so an expired CI secret doesn't pass a run that tested nothing |
 | `session/refused`, `session/step-failed` | error | A write the scenario didn't allow, or a call that failed for another reason |
 | `session/tool-error` | warn | A tool that answered with an error for another reason (`isError`): the run tested less than it looks |
+| `session/scope-unchecked` | info | A second server process or connection couldn't start mid-session (a server that holds a file or a port), so whether a change was global wasn't checked. Said once for the run |
 
 **No scenario? `session --auto`** builds the steps from the menu: every read-only tool
 whose required arguments the schema itself gives (a `default`, `examples`, an `enum`,

@@ -169,6 +169,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     }
 
     const steps: StepRecord[] = [];
+    const scopeUnchecked: { step: number; why: string }[] = [];
     for (const [i, step] of scenario.steps.entries()) {
       const index = i + 1;
       const label = stepLabel(step);
@@ -270,9 +271,17 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         }
 
         if (step.kind !== 'list') {
-          const probe = await probeMenu(mainTarget, timeoutMs);
-          record.scope = scopeOf(changes, next.tools, probe.tools, target.kind);
-          raw.push(...scopeFindings(record.scope, modern, index));
+          // The main process is still running here: a server that holds a file or
+          // a port can't start a second copy. That leaves the scope unknown, not
+          // the run failed.
+          try {
+            const probe = await probeMenu(mainTarget, timeoutMs);
+            record.scope = scopeOf(changes, next.tools, probe.tools, target.kind);
+            raw.push(...scopeFindings(record.scope, modern, index));
+          } catch (error) {
+            record.scope = 'unclear';
+            scopeUnchecked.push({ step: index, why: error instanceof Error ? error.message.split('\n')[0] : String(error) });
+          }
         }
         current = next;
         see(next);
@@ -284,6 +293,15 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     }
 
     raw.push(...untested(steps, target));
+    if (scopeUnchecked.length) {
+      const which = scopeUnchecked.map((s) => s.step);
+      raw.push({
+        rule: 'session/scope-unchecked',
+        severity: 'info',
+        step: which[0],
+        message: `Couldn't ${target.kind === 'stdio' ? 'start a second server process' : 'open a second connection'} while the session ran, so whether the change${which.length === 1 ? ` at step ${which[0]}` : `s at steps ${which.join(', ')}`} reach${which.length === 1 ? 'es' : ''} a fresh ${target.kind === 'stdio' ? 'process' : 'connection'} wasn't checked: ${scopeUnchecked[0].why}`,
+      });
+    }
 
     return {
       scenario: options.scenarioName ?? 'scenario',
