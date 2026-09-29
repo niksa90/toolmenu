@@ -19,6 +19,11 @@
   (`search` isn't in "research").
 - **Fix, `diff`:** a changed or added `const` is a breaking change, like a narrowed
   enum. Versions with trailing text (`1.2.3foo`) aren't read as semver.
+- **Fix, `session --init`:** the regex that reads a tool's description for "loads
+  more tools" held stray control bytes where `\b` belonged, so it never matched: an
+  unlock tool was only found by its name. Descriptions count again (whole words),
+  and `namespace` alone no longer marks a tool as an unlock (Kubernetes and Pinecone
+  take one on every read).
 - **Fix, `auth login` on Windows:** the browser opens without `cmd`, which cut the
   URL at its first `&`.
 
