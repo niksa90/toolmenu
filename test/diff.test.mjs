@@ -116,12 +116,43 @@ test('breaking changes inside $defs and inside nested objects are breaking, with
   ]) {
     const d = diffMenus(gen(before), gen(after));
     assert.equal(d.suggestedBump, 'major', label);
-    const msgs = d.findings.map((f) => `${f.rule}: ${f.message.split(/[ :]/)[0]}`);
-    for (const expected of ['diff/param-type: gen.body.text', 'diff/enum-narrowed: gen.body.size', 'diff/param-required: gen.body.lang']) {
-      assert.ok(msgs.includes(expected), `${label}: ${expected} in ${msgs.join('; ')}`);
+    // The block is used three times (header, footer, body): each change is one
+    // finding that lists the three places.
+    const places = (rule) => d.findings.filter((f) => f.rule === rule).flatMap((f) => f.detail ?? []);
+    for (const [rule, field] of [['diff/param-type', 'text'], ['diff/enum-narrowed', 'size'], ['diff/param-required', 'lang']]) {
+      assert.equal(d.findings.filter((f) => f.rule === rule).length, 1, `${label}: ${rule}`);
+      assert.deepEqual(places(rule), ['header', 'footer', 'body'].map((b) => `at gen.${b}.${field}`), `${label}: ${rule}`);
     }
     assert.ok(!d.findings.some((f) => f.rule === 'diff/type-widened'), label);
   }
+});
+
+test('one change to a definition five block types share: one error, every place, however deep (field report)', async () => {
+  const { documentSchema } = await import('./fixtures/shared-defs.mjs');
+  const tool = (s) => menu([{ name: 'content_create', inputSchema: s }]);
+  const d = diffMenus(tool(documentSchema()), tool(documentSchema(['bold', 'italic', 'code'])));
+  assert.deepEqual(d.findings.map((f) => `${f.severity} ${f.rule}`), ['error diff/enum-narrowed'], d.findings.map((f) => f.message).join('\n'));
+  assert.equal(d.suggestedBump, 'major');
+  const places = d.findings[0].detail.map((p) => p.match(/\(type="(\w+)"\)/)[1]);
+  assert.deepEqual(places, ['paragraph', 'heading', 'bulletList', 'orderedList', 'table', 'blockquote']);
+  // The deepest place, as a path that says how it's reached.
+  assert.ok(d.findings[0].detail.includes('at content_create.blocks[](type="table").rows[].cells[].content[].content[](type="text").marks (array items)'));
+  // A change in one place only stays one finding at that place.
+  const one = documentSchema();
+  one.$defs.block.oneOf[1].properties.level = { type: 'string' };
+  const e = diffMenus(tool(documentSchema()), tool(one));
+  assert.deepEqual(e.findings.map((f) => f.message.split(' ')[0]), ['content_create.blocks[](type="heading").level']);
+});
+
+test('different parameters with the same kind of change are separate findings (exa-mcp-server 3.1.9 → 3.2.0)', () => {
+  const before = { type: 'object', properties: { query: { type: 'string' }, livecrawl: { type: 'string', enum: ['always', 'never'] }, category: { type: 'string' }, contextMaxCharacters: { type: 'number' } }, required: ['query', 'livecrawl', 'category', 'contextMaxCharacters'] };
+  const after = { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] };
+  const d = diffMenus(gen(before), gen(after));
+  assert.deepEqual(d.findings.map((f) => f.message.split(' ')[0]).sort(), ['gen.category', 'gen.contextMaxCharacters', 'gen.livecrawl']);
+  assert.ok(d.findings.every((f) => !/more place/.test(f.message)));
+  // Same schema, different names: still two changes, not one shared one.
+  const two = diffMenus(gen({ type: 'object', properties: { a: { type: 'string' }, b: { type: 'string' } } }), gen({ type: 'object', properties: {} }));
+  assert.equal(two.findings.length, 2);
 });
 
 test('arrays of objects are compared item field by item field', () => {
@@ -145,10 +176,9 @@ const shared = (values) => ({ type: 'object', $defs: { Text: { type: 'object', p
 test('an enum narrowed inside a union, behind a shared $ref, is breaking (the reporter\'s marks)', () => {
   const d = diffMenus(gen(shared(['bold', 'italic', 'code'])), gen(shared(['bold', 'italic'])));
   assert.equal(d.suggestedBump, 'major');
-  assert.deepEqual(d.findings.map((f) => `${f.severity} ${f.rule}: ${f.message.split(':')[0]}`).sort(), [
-    'error diff/enum-narrowed: gen.body.marks (array option) (array items)',
-    'error diff/enum-narrowed: gen.title.marks (array option) (array items)',
-  ]);
+  // One change to a shared definition: one finding, both places listed.
+  assert.deepEqual(d.findings.map((f) => `${f.severity} ${f.rule}`), ['error diff/enum-narrowed']);
+  assert.deepEqual(d.findings[0].detail, ['at gen.title.marks (array option) (array items)', 'at gen.body.marks (array option) (array items)']);
   // Widened, it's minor; nothing but the enum changed, so nothing else is said.
   assert.equal(diffMenus(gen(shared(['bold'])), gen(shared(['bold', 'code']))).suggestedBump, 'minor');
 });

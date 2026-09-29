@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.12.0
+
+- **Fix, `diff` on deep schemas:** the field-by-field comparison stopped 8 levels
+  down, counting every array and union option, so one change to a definition a
+  document schema's five block types share was an error for paragraphs and headings
+  and a "review it" for lists, tables and quotes. The limit is 64, and a change past
+  it says so. On mongodb-mcp-server 2.1.2 → 3.0.0 this finds `numCandidates` and
+  `limit` narrowed to integer inside `explain` and `export` too, not only `aggregate`.
+- **One change at several places is one finding:** the same change, to the same
+  field, with the same schema before and after (a shared definition, most likely),
+  is reported once, with every place it's reached from listed.
 
 - **`diff` compares inside parameters:** fields of object parameters and of array
   items are compared at every depth, with the same rules and their path
