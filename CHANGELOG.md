@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+- **Fix, `init`:** only `--env` names that looked like credentials became secrets,
+  so values like `DATABASE_URL` or `SENTRY_DSN` went into the workflow as text.
+  Every value is a `${{ secrets.… }}` now; `GITHUB_*` names get an `MCP_` prefix
+  (GitHub reserves them, and `secrets.GITHUB_TOKEN` is the job's own token). uv
+  projects got `astral-sh/setup-uv@v10`, a tag that doesn't exist: now `v10.2.0`.
+- **Fix, `session`:** a server that holds a file or a port can't start a second copy
+  mid-session, and that ended the run with no report. The scope is left unchecked
+  instead (`session/scope-unchecked`, info).
+- **`menu/duplicate-name`** (error): two tools with one name. Such a menu was
+  reported as `menu/nondeterministic`, which it wasn't.
+- **`spec/tools-capability`** (error): a server that doesn't declare `tools`, which
+  SDK clients never list. Its "0 tools" came with no reason, and the SDK's log line
+  broke `--format json`; library logging goes to stderr now.
+- **Fix, `description/buried`:** another tool's name counts only as a whole word
+  (`search` isn't in "research").
+- **Fix, `diff`:** a changed or added `const` is a breaking change, like a narrowed
+  enum. Versions with trailing text (`1.2.3foo`) aren't read as semver.
+- **Fix, `auth login` on Windows:** the browser opens without `cmd`, which cut the
+  URL at its first `&`.
+
 ## 0.11.0
 
 - **`--catalog` crawls the catalog by its own names:** from the search tool's own
