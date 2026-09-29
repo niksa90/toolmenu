@@ -19,6 +19,18 @@
     not "removed" plus "added", and two options without properties have the same
     shape;
   - a union cut down to one option is compared with the option it was.
+  The harness also checks that one edit is one finding, which caught this:
+- **Fix, shared unions:** an option added to or removed from a union that fields of
+  differently shaped objects share (a heading's content and a table cell's) was one
+  finding per object. Findings about a union group by the union itself.
+- **Union options, further:** an option that's an unexpanded `$ref` (a recursive
+  definition past its unrolled level) no longer hides the others' discriminator
+  (`type="paragraph"`, not `object{content,type} #1`); two objects with fields and
+  none in common are one option replaced by another; matching options is a lookup,
+  not a scan (1,500 changed options: under a second, was 36 s).
+- **Too large to expand, both sides:** `$defs` entries are compared by name, so an
+  enum narrowed inside one is still breaking; definitions only one side has are one
+  line.
 
 - **Fix, `diff` on deep schemas:** the field-by-field comparison stopped 8 levels
   down, counting every array and union option, so one change to a definition a

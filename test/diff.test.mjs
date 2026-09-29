@@ -172,7 +172,7 @@ test('union options without a discriminator: reorder is no change, adding in fro
   assert.deepEqual(diffMenus(gen(src([url, path])), gen(src([path, url]))).findings, []);
   const front = diffMenus(gen(src([url, path])), gen(src([data, url, path])));
   assert.deepEqual(rules(front), ['diff/type-widened:gen']);
-  assert.match(front.findings[0].message, /now also accepts a object\{data\} option/);
+  assert.match(front.findings[0].message, /now also accepts an object\{data\} option/);
   assert.equal(front.suggestedBump, 'minor');
   const removed = diffMenus(gen(src([url, path, data])), gen(src([url, data])));
   assert.deepEqual(removed.findings.map((f) => f.message), ['gen.src: no longer accepts the object{path} option. Calls that sent it can fail.']);
@@ -182,6 +182,58 @@ test('union options without a discriminator: reorder is no change, adding in fro
   assert.deepEqual(reshaped.findings.map((f) => `${f.rule} ${f.message.split(' ')[0]}`), ['diff/param-required gen.src(object{timeout,url}).timeout']);
 });
 
+test('an option removed from a union that objects of different shapes share is one finding (review of #15, 3rd round)', () => {
+  const inline = { oneOf: [
+    { type: 'object', properties: { type: { const: 'text' }, text: { type: 'string' } }, required: ['type'] },
+    { type: 'object', properties: { type: { const: 'hashtag' }, tag: { type: 'string' } }, required: ['type'] },
+  ] };
+  const s = (u) => ({ type: 'object', $defs: { inline: u }, properties: {
+    heading: { type: 'object', properties: { level: { type: 'integer' }, content: { type: 'array', items: { $ref: '#/$defs/inline' } } } },
+    cell: { type: 'object', properties: { header: { type: 'boolean' }, content: { type: 'array', items: { $ref: '#/$defs/inline' } } } },
+  } });
+  const d = diffMenus(gen(s(inline)), gen(s({ oneOf: [inline.oneOf[0]] })));
+  assert.deepEqual(d.findings.map((f) => f.rule), ['diff/param-type']);
+  assert.deepEqual(d.findings[0].places, ['gen.heading.content (array items)', 'gen.cell.content (array items)']);
+});
+
+test('union options: a replaced option (different fields, none shared) is one gone and one new', () => {
+  const opt = (field) => ({ type: 'object', properties: { [field]: { type: 'string' } }, required: [field] });
+  const s = (o) => ({ type: 'object', properties: { src: { anyOf: [opt('url'), o] } } });
+  const d = diffMenus(gen(s(opt('path'))), gen(s(opt('data'))));
+  assert.deepEqual(d.findings.map((f) => f.message), [
+    'gen.src: no longer accepts the object{path} option. Calls that sent it can fail.',
+    'gen.src now also accepts an object{data} option.',
+  ]);
+});
+
+test('a union option that is an unexpanded $ref doesn\'t hide the others\' discriminator (kh-mcp list path)', () => {
+  // A recursive definition: its second level stays a $ref.
+  const s = (enumValues) => ({ type: 'object', $defs: { node: { oneOf: [
+    { type: 'object', properties: { type: { const: 'paragraph' }, text: { type: 'string', enum: enumValues } } },
+    { type: 'object', properties: { type: { const: 'list' }, items: { type: 'array', items: { $ref: '#/$defs/node' } } } },
+  ] } }, properties: { doc: { $ref: '#/$defs/node' } } });
+  const d = diffMenus(gen(s(['a', 'b'])), gen(s(['a'])));
+  assert.deepEqual(d.findings.map((f) => f.message.split(':')[0]), ['gen.doc(type="paragraph").text']);
+  // An option that is itself a $ref left as written (another document here; a
+  // recursive definition past its unrolled level in kh-mcp): the other options
+  // still pair by their discriminator, not by position (was object{…} #1).
+  const withRef = (enumValues) => ({ type: 'object', properties: { doc: { oneOf: [
+    { type: 'object', properties: { type: { const: 'paragraph' }, text: { type: 'string', enum: enumValues } } },
+    { type: 'object', properties: { type: { const: 'quote' }, text: { type: 'string' } } },
+    { $ref: 'https://example.com/block.json' },
+  ] } } });
+  const e = diffMenus(gen(withRef(['a', 'b'])), gen(withRef(['a'])));
+  assert.deepEqual(e.findings.map((f) => f.message.split(':')[0]), ['gen.doc(type="paragraph").text']);
+});
+
+test('a wide union where every option changed stays fast (review of #15: 36 s at 1,500)', () => {
+  const u = (last) => ({ type: 'object', properties: { v: { anyOf: Array.from({ length: 1500 }, (_, i) => ({ type: 'object', properties: { [`f${i}`]: { type: 'string' }, [`g${i}`]: { type: 'integer', enum: last } } })) } } });
+  const t = performance.now();
+  const d = diffMenus(gen(u([1, 2, 3])), gen(u([1, 2])));
+  assert.ok(performance.now() - t < 10_000, `${Math.round(performance.now() - t)} ms`);
+  assert.equal(d.suggestedBump, 'major');
+});
+
 test('a schema too large to expand on one side is compared as written, and says so (review of #15)', () => {
   const big = (n) => {
     const $defs = { [`D${n}`]: { type: 'string' } };
@@ -189,10 +241,24 @@ test('a schema too large to expand on one side is compared as written, and says 
     return { type: 'object', $defs, properties: { root: { $ref: '#/$defs/D0' } } };
   };
   const d = diffMenus(gen(big(10)), gen(big(17)));
-  assert.deepEqual(rules(d), ['diff/schema-other:gen']);
-  assert.match(d.findings[0].message, /the new inputSchema expands past 50,000 nodes through its \$refs, so both are compared as written/);
+  const cap = d.findings.find((f) => /expands past/.test(f.message));
+  assert.match(cap.message, /the new inputSchema expands past 50,000 nodes through its \$refs, so both are compared as written, \$defs entries by name/);
   assert.ok(!d.findings.some((f) => f.rule === 'diff/type-widened'), 'no "object → any"');
+  // $defs compared by name: D10 was the string leaf and is now an object (breaking),
+  // and D11…D17 are new, said in one line.
+  assert.ok(d.findings.some((f) => f.rule === 'diff/param-type' && f.message.startsWith('gen.$defs.D10 changed type: string → object')));
+  assert.deepEqual(d.findings.filter((f) => /entries added/.test(f.message)).map((f) => f.message), ['gen: $defs entries added (D11, D12, D13, D14, D15, D16, D17).']);
   assert.deepEqual(diffMenus(gen(big(17)), gen(big(17))).findings, []);
+  // Both sides too large, and an enum narrowed inside a definition: still breaking (review of #15).
+  const narrow = (n, values) => {
+    const s = big(n);
+    s.$defs[`D${n}`] = { type: 'string', enum: values };
+    return s;
+  };
+  const both = diffMenus(gen(narrow(17, ['a', 'b'])), gen(narrow(17, ['a'])));
+  assert.equal(both.suggestedBump, 'major');
+  assert.ok(both.findings.some((f) => f.rule === 'diff/enum-narrowed' && f.message.startsWith('gen.$defs.D17')));
+  assert.match(both.findings.find((f) => /expand past/.test(f.message)).message, /the old and new inputSchemas expand past 50,000 nodes through their \$refs/);
 });
 
 test('a change past the depth limit says so, and is still caught', () => {

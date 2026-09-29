@@ -236,10 +236,11 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
   const a = expanded ? ea.schema : old.inputSchema;
   const b = expanded ? eb.schema : t.inputSchema;
   if (!expanded && canonical(old.inputSchema) !== canonical(t.inputSchema)) {
+    const which = ea.expanded ? 'the new inputSchema expands' : eb.expanded ? 'the old inputSchema expands' : 'the old and new inputSchemas expand';
     out.push({
       rule: 'diff/schema-other',
       tool: name,
-      message: `${name}: the ${ea.expanded ? 'new' : eb.expanded ? 'old' : 'old and new'} inputSchema expand${ea.expanded || eb.expanded ? 's' : ''} past ${fmt(MAX_EXPANDED_NODES)} nodes through its $refs, so both are compared as written: a $ref moved, renamed or edited in $defs reads as a change here, or not at all. Review it.`,
+      message: `${name}: ${which} past ${fmt(MAX_EXPANDED_NODES)} nodes through ${ea.expanded || eb.expanded ? 'its' : 'their'} $refs, so both are compared as written, $defs entries by name: a $ref moved to another name reads as a change. Review it.`,
     });
   }
   const oldEmpty = isEmptySchema(a);
@@ -257,6 +258,10 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
 
   const found = out.length;
   compareObject({ tool: name, out }, name, a!, b!, 0);
+  // Compared as written (too large to expand): the parameters hold $refs, so
+  // what they point to is compared here, definition by definition, by name. A
+  // narrowed enum inside one is still breaking.
+  if (!expanded) compareDefinitions({ tool: name, out }, name, old.inputSchema ?? {}, t.inputSchema ?? {});
   collapsePlaces(out, found);
   const shell = (s: JsonSchema | undefined) => {
     const { properties: _p, required: _r, $defs: _d, definitions: _df, ...rest } = (s ?? {}) as Record<string, unknown>;
@@ -315,6 +320,22 @@ function sameTypes(node: unknown): unknown {
     if (Array.isArray(out[k])) out[k] = [...(out[k] as unknown[])].sort((x, y) => (canonical(x) < canonical(y) ? -1 : canonical(x) > canonical(y) ? 1 : 0));
   }
   return out;
+}
+
+/** `$defs` and `definitions` entries of two unexpanded schemas, compared by name. */
+function compareDefinitions(w: Walk, name: string, oldS: JsonSchema, newS: JsonSchema): void {
+  const list = (names: string[]) => [...names].sort((x, y) => x.localeCompare(y, 'en', { numeric: true })).slice(0, 8).join(', ') + (names.length > 8 ? `, and ${names.length - 8} more` : '');
+  for (const pool of ['$defs', 'definitions'] as const) {
+    const [a, b] = [(oldS[pool] ?? {}) as Record<string, JsonSchema>, (newS[pool] ?? {}) as Record<string, JsonSchema>];
+    const removed = Object.keys(a).filter((k) => !(k in b));
+    const added = Object.keys(b).filter((k) => !(k in a));
+    // One line each for definitions only one side has: what refers to them is compared above.
+    if (removed.length) w.out.push({ rule: 'diff/schema-other', tool: w.tool, message: `${name}: ${pool} ${removed.length === 1 ? 'entry' : 'entries'} removed (${list(removed)}). Review what referred to ${removed.length === 1 ? 'it' : 'them'}.` });
+    if (added.length) w.out.push({ rule: 'diff/schema-other', tool: w.tool, message: `${name}: ${pool} ${added.length === 1 ? 'entry' : 'entries'} added (${list(added)}).` });
+    for (const [k, def] of Object.entries(b)) {
+      if (k in a) compareSchema(w, `${name}.${pool}.${k}`, `${name}.${pool}.${k}`, a[k], def, 1);
+    }
+  }
 }
 
 /** Where a tool's schema comparison reports to. */
@@ -503,18 +524,26 @@ function undescribed(s: JsonSchema): JsonSchema {
  * A union's options, paired old with new (pairOptions), each pair compared like
  * any schema. An option gone is breaking; a new one widens.
  */
-function compareUnion(w: Walk, at: string, label: string, oldOptions: JsonSchema[], newOptions: JsonSchema[], depth: number): void {
+function compareUnion(outer: Walk, at: string, label: string, oldOptions: JsonSchema[], newOptions: JsonSchema[], depth: number): void {
+  // Findings about the union, and inside its options, group by the union itself:
+  // one union definition shared by fields of different objects (a heading's
+  // content and a table cell's) is one change, whatever the objects around it.
+  const w: Walk = { ...outer, scope: digest([shape(oldOptions), shape(newOptions)]) };
   const d = discriminator(oldOptions);
   const key = d && d === discriminator(newOptions) ? d : undefined;
   const { pairs, gone, fresh } = pairOptions(oldOptions, newOptions, key);
   const oldLabels = optionLabels(oldOptions, key);
   const newLabels = optionLabels(newOptions, key);
   for (const o of gone) say(w, 'diff/param-type', label, `: no longer accepts the ${oldLabels.get(o)} option. Calls that sent it can fail.`, o);
-  for (const o of fresh) say(w, 'diff/type-widened', label, ` now also accepts a ${newLabels.get(o)} option.`, o);
+  for (const o of fresh) say(w, 'diff/type-widened', label, ` now also accepts ${article(newLabels.get(o)!)} ${newLabels.get(o)} option.`, o);
   for (const [prev, next] of pairs) {
     const k = newLabels.get(next)!;
     compareSchema(w, `${at}(${k})`, `${label} (${k} option)`, prev, next, depth + 1);
   }
+}
+
+function article(word: string): string {
+  return /^[aeiou]/i.test(word) ? 'an' : 'a';
 }
 
 /**
@@ -535,27 +564,37 @@ function pairOptions(oldOptions: JsonSchema[], newOptions: JsonSchema[], key: st
     oldLeft.delete(i);
     newLeft.delete(j);
   };
+  // Old options by fingerprint, each computed once: matching is a lookup, not a
+  // scan (a 1,500-option union took 36 s).
+  const match = (fingerprint: (o: JsonSchema) => string) => {
+    const byPrint = new Map<string, number[]>();
+    oldOptions.forEach((o, i) => {
+      if (!oldLeft.has(i)) return;
+      const f = fingerprint(o);
+      byPrint.set(f, [...(byPrint.get(f) ?? []), i]);
+    });
+    for (const j of newOptions.keys()) {
+      if (!newLeft.has(j)) continue;
+      const i = byPrint.get(fingerprint(newOptions[j]))?.shift();
+      if (i !== undefined) take(i, j);
+    }
+  };
   if (key) {
-    const value = (o: JsonSchema) => canonical(fixedValue(o.properties![key]));
-    for (const j of newOptions.keys()) {
-      const i = [...oldLeft].find((i) => value(oldOptions[i]) === value(newOptions[j]));
-      if (i !== undefined) take(i, j);
-    }
+    // An option that's a $ref (unexpanded: a recursive one) has no discriminator
+    // value of its own: it pairs by its ref.
+    match((o) => (typeof o.$ref === 'string' ? `$ref ${o.$ref}` : canonical(fixedValue(o.properties?.[key]))));
   } else {
-    const same = (o: JsonSchema) => canonical(sameTypes(o));
-    for (const j of newOptions.keys()) {
-      const i = [...oldLeft].find((i) => same(oldOptions[i]) === same(newOptions[j]));
-      if (i !== undefined) take(i, j);
-    }
-    const names = (o: JsonSchema) => new Set(Object.keys(o.properties ?? {}));
+    match((o) => canonical(sameTypes(o)));
+    const names = new Map([...oldOptions, ...newOptions].map((o) => [o, new Set(Object.keys(o.properties ?? {}))]));
+    const types = new Map([...oldOptions, ...newOptions].map((o) => [o, typeOf(o)]));
     const candidates: [number, number, number][] = [];
     for (const i of oldLeft) {
       for (const j of newLeft) {
         const [a, b] = [oldOptions[i], newOptions[j]];
-        if (typeOf(a) !== typeOf(b)) continue;
+        if (types.get(a) !== types.get(b)) continue;
         let score = 0.5;
         if (hasProperties(a) || hasProperties(b)) {
-          const [x, y] = [names(a), names(b)];
+          const [x, y] = [names.get(a)!, names.get(b)!];
           const all = new Set([...x, ...y]).size;
           // Two objects with no properties at all have the same shape.
           score = all === 0 ? 1 : [...x].filter((n) => y.has(n)).length / all;
@@ -566,11 +605,16 @@ function pairOptions(oldOptions: JsonSchema[], newOptions: JsonSchema[], key: st
     candidates.sort((p, q) => q[0] - p[0] || p[1] - q[1] || p[2] - q[2]);
     for (const [, i, j] of candidates) if (oldLeft.has(i) && newLeft.has(j)) take(i, j);
     // As many options left on each side: the ones that were edited (a type
-    // changed, the only property renamed). Paired in order, compared inside, rather
-    // than said as one removed and one added.
+    // changed, an option emptied or given its first field). Paired in order,
+    // compared inside, rather than said as one removed and one added. Not two
+    // objects that each have fields and share none: that's one option replaced by
+    // another (pair-replace in the review of #15).
     if (oldLeft.size > 0 && oldLeft.size === newLeft.size) {
       const [olds, news] = [[...oldLeft].sort((a, b) => a - b), [...newLeft].sort((a, b) => a - b)];
-      olds.forEach((i, n) => take(i, news[n]));
+      const filled = (o: JsonSchema) => names.get(o)!.size > 0;
+      olds.forEach((i, n) => {
+        if (!(filled(oldOptions[i]) && filled(newOptions[news[n]]))) take(i, news[n]);
+      });
     }
   }
   pairs.sort((p, q) => p[1] - q[1]);
@@ -637,9 +681,11 @@ function collapsePlaces(out: Raw[], from: number): void {
 
 /** A property every option is an object with, and fixes to one value. */
 function discriminator(options: JsonSchema[]): string | undefined {
-  if (!options.every(hasProperties)) return undefined;
-  const names = Object.keys(options[0].properties!).sort();
-  return names.find((n) => options.every((o) => fixedValue(o.properties![n]) !== undefined));
+  // A $ref option (a recursive definition left unexpanded) says nothing either way.
+  const own = options.filter((o) => typeof o.$ref !== 'string');
+  if (own.length === 0 || !own.every(hasProperties)) return undefined;
+  const names = Object.keys(own[0].properties!).sort();
+  return names.find((n) => own.every((o) => fixedValue(o.properties![n]) !== undefined));
 }
 
 function fixedValue(s: JsonSchema | undefined): unknown {

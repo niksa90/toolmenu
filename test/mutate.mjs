@@ -13,10 +13,10 @@
 //   moved-to-defs       a block into $defs + $ref → only diff/schema-equivalent
 //   description-changed a field's description     → only diff/description, patch
 //
-// "Only": no other rule, no "review it" (diff/schema-other). One change is one
-// kind of finding everywhere it's reached, however deep, and whichever
-// definitions it's shared through. And whatever the edit, a schema that accepts
-// something different never gets no findings at all.
+// "Only": no other rule, no "review it" (diff/schema-other), and one finding: an
+// edit to a definition shared by five places is one finding that lists the five,
+// the same kind everywhere it's reached, however deep. And whatever the edit, a
+// schema that accepts something different never gets no findings at all.
 
 import { diffMenus, resolveRefs } from '../dist/diff.js';
 import { canonical } from '../dist/compare.js';
@@ -178,6 +178,9 @@ export function check(tool, ptr, kind) {
     const unexpected = rules.filter((r) => !m.rules.includes(r));
     if (unexpected.length) problems.push(`unexpected ${unexpected.join(', ')}`);
     for (const r of m.rules) if (!rules.includes(r)) problems.push(`missing ${r}`);
+    // One edit is one finding, however many places reach it through a shared
+    // definition (those are listed in the finding, not repeated as findings).
+    if (m.rules.length && d.findings.length > 1) problems.push(`${d.findings.length} findings for one edit`);
     if (m.rules.length && d.suggestedBump !== m.bump) problems.push(`bump ${d.suggestedBump}, expected ${m.bump}`);
     if (!m.rules.length && d.findings.length) problems.push(`findings on a change that accepts the same: ${rules.join(', ')}`);
   }
