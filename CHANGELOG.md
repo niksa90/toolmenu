@@ -9,8 +9,18 @@
   it says so. On mongodb-mcp-server 2.1.2 → 3.0.0 this finds `numCandidates` and
   `limit` narrowed to integer inside `explain` and `export` too, not only `aggregate`.
 - **One change at several places is one finding:** the same change, to the same
-  field, with the same schema before and after (a shared definition, most likely),
-  is reported once, with every place it's reached from listed.
+  field, with the same schema before and after, inside objects that accept the same
+  (one shared definition), is reported once: the headline names the first place, the
+  detail the others, and `places` in `--json` has them all. Two independent `limit`
+  parameters removed stay two findings.
+- **Fix, `diff` on unions without a discriminator:** options were paired by position,
+  so reordering a plain `z.union` of objects, or adding an option in front, read as
+  four breaking changes. Identical options pair first, then by type and shared
+  property names; an option with nothing in common is removed or added. Labels name
+  an option by its shape (`object{path}`), not its position.
+- **Fix, `diff` on very large schemas:** past 50,000 nodes of `$ref` expansion one
+  side was compared unexpanded against the other, and read as "object → any". Both
+  sides are now compared as written, with a notice saying why.
 
 - **`diff` compares inside parameters:** fields of object parameters and of array
   items are compared at every depth, with the same rules and their path

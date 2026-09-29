@@ -222,8 +222,11 @@ The same rules apply inside parameters: fields of an object parameter, array ite
 and the options of an `anyOf`/`oneOf` union (zod's unions, discriminated unions and
 `.nullable()`) are compared at every depth, with their path (`gen.body.text`,
 `search.filters[].field`, `gen.block(kind="image").url`). Union options are paired by
-the value of a discriminator they all fix, else by type; an option gone is breaking,
-a new one widens. Local `$ref`s (`#/$defs/…`, `#/definitions/…`) are expanded first,
+the value of a discriminator they all fix; without one (a plain `z.union` of objects),
+identical options first, so a reorder is no change, then by type and shared property
+names. An option gone is breaking, a new one widens. The same change reached through
+one shared definition at several places is one finding that lists them (`places` in
+`--json`). Local `$ref`s (`#/$defs/…`, `#/definitions/…`) are expanded first,
 recursive ones one level deep, so a schema is compared by what it accepts, not how
 it's spelled: moving a repeated block into `$defs` is one `diff/schema-equivalent`
 notice with its token change ("accepts the same input: ~899 tokens fewer"), and a

@@ -118,10 +118,10 @@ test('breaking changes inside $defs and inside nested objects are breaking, with
     assert.equal(d.suggestedBump, 'major', label);
     // The block is used three times (header, footer, body): each change is one
     // finding that lists the three places.
-    const places = (rule) => d.findings.filter((f) => f.rule === rule).flatMap((f) => f.detail ?? []);
+    const places = (rule) => d.findings.filter((f) => f.rule === rule).flatMap((f) => f.places ?? []);
     for (const [rule, field] of [['diff/param-type', 'text'], ['diff/enum-narrowed', 'size'], ['diff/param-required', 'lang']]) {
       assert.equal(d.findings.filter((f) => f.rule === rule).length, 1, `${label}: ${rule}`);
-      assert.deepEqual(places(rule), ['header', 'footer', 'body'].map((b) => `at gen.${b}.${field}`), `${label}: ${rule}`);
+      assert.deepEqual(places(rule), ['header', 'footer', 'body'].map((b) => `gen.${b}.${field}`), `${label}: ${rule}`);
     }
     assert.ok(!d.findings.some((f) => f.rule === 'diff/type-widened'), label);
   }
@@ -133,10 +133,10 @@ test('one change to a definition five block types share: one error, every place,
   const d = diffMenus(tool(documentSchema()), tool(documentSchema(['bold', 'italic', 'code'])));
   assert.deepEqual(d.findings.map((f) => `${f.severity} ${f.rule}`), ['error diff/enum-narrowed'], d.findings.map((f) => f.message).join('\n'));
   assert.equal(d.suggestedBump, 'major');
-  const places = d.findings[0].detail.map((p) => p.match(/\(type="(\w+)"\)/)[1]);
+  const places = d.findings[0].places.map((p) => p.match(/\(type="(\w+)"\)/)[1]);
   assert.deepEqual(places, ['paragraph', 'heading', 'bulletList', 'orderedList', 'table', 'blockquote']);
   // The deepest place, as a path that says how it's reached.
-  assert.ok(d.findings[0].detail.includes('at content_create.blocks[](type="table").rows[].cells[].content[].content[](type="text").marks (array items)'));
+  assert.ok(d.findings[0].places.includes('content_create.blocks[](type="table").rows[].cells[].content[].content[](type="text").marks (array items)'));
   // A change in one place only stays one finding at that place.
   const one = documentSchema();
   one.$defs.block.oneOf[1].properties.level = { type: 'string' };
@@ -153,6 +153,59 @@ test('different parameters with the same kind of change are separate findings (e
   // Same schema, different names: still two changes, not one shared one.
   const two = diffMenus(gen({ type: 'object', properties: { a: { type: 'string' }, b: { type: 'string' } } }), gen({ type: 'object', properties: {} }));
   assert.equal(two.findings.length, 2);
+});
+
+test('independent fields with the same name and change, in different objects, stay two findings (review of #15)', () => {
+  const limit = { type: 'integer' };
+  const obj = (extra, withLimit) => ({ type: 'object', properties: { ...extra, ...(withLimit ? { limit } : {}) }, ...(withLimit ? { required: ['limit'] } : {}) });
+  const s = (withLimit) => ({ type: 'object', properties: { search: obj({ q: { type: 'string' } }, withLimit), export: obj({ fmt: { type: 'string' } }, withLimit) } });
+  const d = diffMenus(gen(s(true)), gen(s(false)));
+  assert.deepEqual(d.findings.map((f) => f.message.split(' ')[0]), ['gen.search.limit', 'gen.export.limit']);
+  assert.ok(d.findings.every((f) => !f.places && !/more place/.test(f.message)));
+});
+
+test('union options without a discriminator: reorder is no change, adding in front is one addition (review of #15)', () => {
+  const url = { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] };
+  const path = { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] };
+  const data = { type: 'object', properties: { data: { type: 'string' } }, required: ['data'] };
+  const src = (options) => ({ type: 'object', properties: { src: { anyOf: options } } });
+  assert.deepEqual(diffMenus(gen(src([url, path])), gen(src([path, url]))).findings, []);
+  const front = diffMenus(gen(src([url, path])), gen(src([data, url, path])));
+  assert.deepEqual(rules(front), ['diff/type-widened:gen']);
+  assert.match(front.findings[0].message, /now also accepts a object\{data\} option/);
+  assert.equal(front.suggestedBump, 'minor');
+  const removed = diffMenus(gen(src([url, path, data])), gen(src([url, data])));
+  assert.deepEqual(removed.findings.map((f) => f.message), ['gen.src: no longer accepts the object{path} option. Calls that sent it can fail.']);
+  // Reshaped and moved: paired by the property names it keeps, compared inside.
+  const timeout = { type: 'object', properties: { url: { type: 'string' }, timeout: { type: 'integer' } }, required: ['url', 'timeout'] };
+  const reshaped = diffMenus(gen(src([url, path])), gen(src([path, timeout])));
+  assert.deepEqual(reshaped.findings.map((f) => `${f.rule} ${f.message.split(' ')[0]}`), ['diff/param-required gen.src(object{timeout,url}).timeout']);
+});
+
+test('a schema too large to expand on one side is compared as written, and says so (review of #15)', () => {
+  const big = (n) => {
+    const $defs = { [`D${n}`]: { type: 'string' } };
+    for (let i = 0; i < n; i++) $defs[`D${i}`] = { type: 'object', properties: { x: { $ref: `#/$defs/D${i + 1}` }, y: { $ref: `#/$defs/D${i + 1}` } } };
+    return { type: 'object', $defs, properties: { root: { $ref: '#/$defs/D0' } } };
+  };
+  const d = diffMenus(gen(big(10)), gen(big(17)));
+  assert.deepEqual(rules(d), ['diff/schema-other:gen']);
+  assert.match(d.findings[0].message, /the new inputSchema expands past 50,000 nodes through its \$refs, so both are compared as written/);
+  assert.ok(!d.findings.some((f) => f.rule === 'diff/type-widened'), 'no "object → any"');
+  assert.deepEqual(diffMenus(gen(big(17)), gen(big(17))).findings, []);
+});
+
+test('a change past the depth limit says so, and is still caught', () => {
+  const nest = (levels, leaf) => {
+    let s = { type: 'string', enum: leaf };
+    for (let i = 0; i < levels; i++) s = { type: 'object', properties: { n: s } };
+    return { type: 'object', properties: { root: s } };
+  };
+  const deep = diffMenus(gen(nest(70, ['a', 'b'])), gen(nest(70, ['a'])));
+  assert.deepEqual(rules(deep), ['diff/schema-other:gen']);
+  assert.match(deep.findings[0].message, /changed more than 64 levels deep, below where toolmenu compares field by field\. Review it\./);
+  const shallow = diffMenus(gen(nest(40, ['a', 'b'])), gen(nest(40, ['a'])));
+  assert.deepEqual(rules(shallow), ['diff/enum-narrowed:gen']);
 });
 
 test('arrays of objects are compared item field by item field', () => {
@@ -178,7 +231,9 @@ test('an enum narrowed inside a union, behind a shared $ref, is breaking (the re
   assert.equal(d.suggestedBump, 'major');
   // One change to a shared definition: one finding, both places listed.
   assert.deepEqual(d.findings.map((f) => `${f.severity} ${f.rule}`), ['error diff/enum-narrowed']);
-  assert.deepEqual(d.findings[0].detail, ['at gen.title.marks (array option) (array items)', 'at gen.body.marks (array option) (array items)']);
+  assert.deepEqual(d.findings[0].places, ['gen.title.marks (array option) (array items)', 'gen.body.marks (array option) (array items)']);
+  // The headline names the first place, the detail the others: no place twice.
+  assert.deepEqual(d.findings[0].detail, ['also at gen.body.marks (array option) (array items)']);
   // Widened, it's minor; nothing but the enum changed, so nothing else is said.
   assert.equal(diffMenus(gen(shared(['bold'])), gen(shared(['bold', 'code']))).suggestedBump, 'minor');
 });
