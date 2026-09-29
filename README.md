@@ -211,7 +211,15 @@ the way OpenAPI breaking-change checkers do it:
 |---|---|---|
 | **breaking** (error) | tool removed or renamed, parameter removed, new required parameter, narrower or different type, enum narrowed, a tool becoming less safe (no longer read-only, or additive → destructive) | `diff/tool-removed`, `diff/tool-renamed`, `diff/param-removed`, `diff/param-required`, `diff/param-type`, `diff/enum-narrowed`, `diff/safety-hint` |
 | **minor** (info) | tool added, new optional parameter, parameter now optional, type or enum widened | `diff/tool-added`, `diff/param-added`, `diff/param-relaxed`, `diff/type-widened`, `diff/enum-widened` |
-| **notice** (info) | optional parameter dropped (extra properties still allowed), description changed (with the text diff: it changes what the agent does), output schema, annotations, other fields, order | `diff/param-dropped`, `diff/description`, `diff/schema-other`, `diff/annotations`, `diff/other`, `diff/order` |
+| **notice** (info) | optional parameter dropped (extra properties still allowed), description changed (with the text diff: it changes what the agent does), output schema, annotations, other fields, order, a schema restructured but accepting the same input | `diff/param-dropped`, `diff/description`, `diff/schema-other`, `diff/annotations`, `diff/other`, `diff/order`, `diff/schema-equivalent` |
+
+The same rules apply inside parameters: fields of an object parameter, and of array
+items, are compared at every depth, with their path (`gen.body.text`,
+`search.filters[].field`). Local `$ref`s (`#/$defs/…`, `#/definitions/…`) are
+expanded first, so a schema is compared by what it accepts, not how it's spelled:
+moving a repeated block into `$defs` is one `diff/schema-equivalent` notice with its
+token change ("accepts the same input: ~899 tokens fewer"), and a breaking change
+inside `$defs` is breaking.
 
 It also reports the token change per tool and suggests a semver bump. To check the
 bump, pass the **release** versions: `--release 1.4.0..1.5.0` (npm, a git tag).
@@ -267,6 +275,19 @@ dependencies today, and can serve a different menu than it shipped with.
 It's best effort: packages that need env vars, arguments or auth are recorded as
 failed, with a reason, never skipped. **It installs and runs third-party code. Run it
 in a container.**
+
+## Where the tokens go
+
+`snapshot` also shows what the menu's tokens are spent on: the biggest tools (split
+into description and schema), large enums, and waste you can remove:
+
+- **Repeated blocks**: the same piece of schema at several places, inside one tool (a
+  `$defs` entry could hold it once: "one ~230-token block ×5 in
+  content_generateMessageHtml") or across tools (paid once per tool: mongodb-mcp-server
+  3.0.4 repeats a ~2,200-token `pipeline` schema in 3 tools). Only the largest repeated
+  block is named, not the pieces inside it.
+- **Unused `$defs`**: definitions nothing in the tool refers to. Notion's server 2.5.2
+  ships the same 9 in all 24 tools, 72% of its menu.
 
 ## `snapshot` rules
 
@@ -379,7 +400,10 @@ or bad usage. `toolmenu --help` lists the `session` and `history` options.
 - **Token counts are estimates** (`o200k_base`) of what the model reads: each tool's
   name, description and input schema. Output schemas, annotations, icons and `_meta`
   stay with the client and aren't counted. Vendors tokenize, cache and bill
-  differently.
+  differently. `diff` recounts both menus with the toolmenu that runs it, so a
+  baseline from an older version still compares fairly; a number quoted elsewhere (a
+  commit message, a dashboard) should say which toolmenu counted it (0.7.1 changed the
+  count for menus with icons by up to 5×, FINDINGS F7).
 - **Heuristic rules say so** in their messages.
 - Not a security scanner or a full conformance suite. Other tools do those well.
 
