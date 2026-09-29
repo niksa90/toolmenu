@@ -90,6 +90,19 @@ test('session over stdio (2026-07-28): each change is pinned to the step that ca
   assert.equal(r.final.tools, 8);
 });
 
+test('session: a server that holds a lock still gets its report, with the scope left unchecked', async () => {
+  const lock = join(tempDir(), 'db.lock');
+  const r = await session(stdio({ LOCKFILE: lock }), UNLOCK, { timeoutMs: 15_000 });
+  assert.deepEqual(byStep(r).filter((f) => f !== '3:session/scope-unchecked'), ['0:menu/process-variance', '3:session/mid-insert', '4:session/append', '5:session/edit', '7:session/refused']);
+  const unchecked = r.findings.filter((f) => f.rule === 'session/scope-unchecked');
+  assert.equal(unchecked.length, 1, 'said once for the run');
+  assert.equal(unchecked[0].severity, 'info');
+  assert.match(unchecked[0].message, /steps 3, 4, 5/);
+  assert.equal(r.steps[2].scope, 'unclear');
+  // The second process couldn't start before the first steps either.
+  assert.ok(r.findings.some((f) => f.rule === 'menu/process-variance' && f.severity === 'info'));
+});
+
 test('session over stdio (2025 protocol): cache findings, but no 2026-07-28 side-effect rule', async () => {
   const r = await session(stdio({ LEGACY: '1' }), UNLOCK, { timeoutMs: 15_000 });
   assert.equal(r.server.protocolVersion, '2025-11-25');
