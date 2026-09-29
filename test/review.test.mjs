@@ -28,7 +28,8 @@ test('review 2: a classified change on one parameter no longer hides a breaking 
   assert.ok(d.findings.some((f) => f.rule === 'diff/enum-narrowed' && /array items/.test(f.message)));
   assert.equal(d.suggestedBump, 'major');
   const nested = diffMenus(menu([withProps({ a: { type: 'object', properties: { x: { type: 'string' } } } })]), menu([withProps({ a: { type: 'object', properties: { y: { type: 'string' } } } })]));
-  assert.ok(nested.findings.some((f) => f.rule === 'diff/schema-other'));
+  // Nested fields are classified like parameters, with their path.
+  assert.deepEqual(nested.findings.map((f) => `${f.rule}: ${f.message.split(' ')[0]}`).sort(), ['diff/param-added: t.a.y', 'diff/param-dropped: t.a.x']);
 });
 
 test('review 4: ignored tools and rules set to off do not force a bump', () => {

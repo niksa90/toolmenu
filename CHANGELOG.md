@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+- **`diff` compares inside parameters:** fields of object parameters and of array
+  items are compared at every depth, with the same rules and their path
+  (`gen.body.text`). Before, a breaking change nested in a parameter was a
+  "schema-other" notice and a patch bump.
+- **`diff` expands local `$ref`s** before comparing. A block moved into `$defs` read
+  as "type widened: object → any" on every parameter that used it, with a minor bump;
+  it's now one `diff/schema-equivalent` notice with the token change. A breaking
+  change inside `$defs` is breaking.
+- **Repeated blocks inside one schema:** the token breakdown fingerprints every
+  nested piece of every schema, and reports blocks repeated inside a tool (with what a
+  `$defs` entry could save) as well as across tools. `repeated` in `--json` gains
+  `count`, `within`, `withinTool`, `saving` and `where`.
+- **Unused `$defs`:** the breakdown reports definitions nothing in the tool refers to
+  (`unusedDefs` in `--json`).
+- **`diff` compares union options:** `anyOf`/`oneOf` options (zod unions,
+  discriminated unions, `.nullable()` on a non-primitive) are paired by discriminator
+  value, else by type, and compared with every rule; an option removed is breaking,
+  one added widens. An enum narrowed inside a union was a "review it" and a patch bump
+  while the same change behind a plain `$ref` was an error. mongodb-mcp-server
+  2.1.2 → 3.0.0: `numCandidates` and `limit` narrowed from number to integer, found.
+- **Fix, `diff` and recursive schemas:** a recursive `$ref` kept `$defs` on both sides,
+  so a refactor into `$defs` reported nothing at all, not even the promised
+  `diff/schema-equivalent`. Recursion is unrolled one level and `$defs` dropped.
+  And a schema change no rule classifies is now always a `diff/schema-other`.
+- **`--auto` and open-world servers:** a read-only unlock runs without `--open-world`
+  (it spends no search credits); other open-world tools still wait for the flag. A
+  run that calls nothing is `session/nothing-called` (warn), with the reasons, not a
+  clean pass; an unlock `--auto` skips is `session/unlock-coverage`, with why. Each
+  unlock's first value is repeated, as in the `--init` starter.
+- **`diff/schema-dialect`** (notice): only the declared `$schema` changed. Said once for
+  every tool that switched: mongodb-mcp-server 3.0.0 moved 27 tools from draft-07 to
+  2020-12, which read as 27 "review it" notices.
+
 - **Fix, `init`:** only `--env` names that looked like credentials became secrets,
   so values like `DATABASE_URL` or `SENTRY_DSN` went into the workflow as text.
   Every value is a `${{ secrets.… }}` now; `GITHUB_*` names get an `MCP_` prefix
