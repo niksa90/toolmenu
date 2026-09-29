@@ -60,7 +60,8 @@ Options:
   --catalog           also read the operations behind a search tool (search and execute:
                       discover, search_*_tools) and keep them in the menu file for diff
   --processes <n>     server processes (stdio) or connections (HTTP) to compare,
-                      the main one included (default: 2; 1 turns the check off)
+                      the main one included (default: 2; 1 opens no second one, for
+                      session's scope check either: for servers with one session per client)
   -h, --help          show this help
   -v, --version       show the version
 

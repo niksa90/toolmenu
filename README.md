@@ -142,8 +142,12 @@ steps:
 `--init` writes a starter scenario from the live menu: it calls every read-only tool
 that needs no arguments, then repeats one. If a tool looks like it unlocks more tools
 (a `domains` or `toolset` parameter with an enum, "unlock" or "capabilities" in its
-name or description), the starter unlocks two values for real and repeats the first.
-Anything it can't fill in is left as a commented-out step. A scenario is only as good
+name, a description that says it enables or loads tools), the starter unlocks two
+values for real and repeats the first. Lookups that only describe toolsets
+(`list_toolsets`, `get_toolset_tools`) aren't unlocks, and one not marked read-only
+is suggested, never called. Anything it can't fill in is left as a commented-out step.
+An unlock nothing in the menu names, like joining a room that brings more tools,
+needs a step you write yourself. A scenario is only as good
 as its steps, so the starter is a floor, not a ceiling.
 
 | Rule | Default | Catches |
@@ -157,6 +161,7 @@ as its steps, so the starter is a floor, not a ceiling.
 | `session/untested` | warn, error if no call got through | Calls that failed before reaching the tool: authentication, something missing on this machine (no Chrome), the network. One finding for the run, not one per step, so an expired CI secret doesn't pass a run that tested nothing |
 | `session/refused`, `session/step-failed` | error | A write the scenario didn't allow, or a call that failed for another reason |
 | `session/tool-error` | warn | A tool that answered with an error for another reason (`isError`): the run tested less than it looks |
+| `session/session-lost` | error | The server ended the session after toolmenu opened a second connection with the same credentials (servers with one session per client). The run stops there; rerun with `--processes 1` |
 | `session/scope-unchecked` | info | A second server process or connection couldn't start mid-session (a server that holds a file or a port), so whether a change was global wasn't checked. Said once for the run |
 
 **No scenario? `session --auto`** builds the steps from the menu: every read-only tool
@@ -346,7 +351,8 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --env <K=V>         env var for a stdio server, repeatable (it only gets a
                     minimal environment otherwise)
 --timeout <ms>      per-request timeout (default: 30000)
---processes <n>     server processes or connections to compare (default: 2)
+--processes <n>     server processes or connections to compare (default: 2);
+                    1 opens no second one, session's scope check included
 ```
 
 Exit codes: `0` clean · `1` findings at or above `--fail-on` · `2` couldn't connect

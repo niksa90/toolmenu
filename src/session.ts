@@ -8,7 +8,7 @@ import { varianceFinding } from './rules/determinism.js';
 import { classifyFailure, FAILURE_LABELS, SETUP_FAILURES, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
-import { verbOf, WRITE_VERBS } from './words.js';
+import { LOOKUP_VERBS, verbOf, WRITE_VERBS } from './words.js';
 
 export type Step =
   | { kind: 'list' }
@@ -21,6 +21,8 @@ export interface Scenario {
 }
 
 const LIST_CHANGED = 'notifications/tools/list_changed';
+/** A server saying the session is gone: "Session not found or expired" (toolception). */
+const SESSION_LOST = /session (?:not found|(?:has )?expired|is no longer valid)|(?:unknown|invalid|no valid) session/i;
 
 /** Read and check a scenario file. Mistakes are reported before anything runs. */
 export async function loadScenario(path: string): Promise<Scenario> {
@@ -170,6 +172,24 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
 
     const steps: StepRecord[] = [];
     const scopeUnchecked: { step: number; why: string }[] = [];
+    // processes: 1 turns off every second process or connection, the scope probe too.
+    const probes = (options.processes ?? 2) > 1;
+    // The step after which toolmenu last opened a second process or connection (0:
+    // before the first step). A server that keeps one session per client can end
+    // this one when that happens.
+    let probedAfter: number | undefined = probes ? 0 : undefined;
+    const lost = (why: string, index: number): boolean => {
+      if (probedAfter === undefined || !SESSION_LOST.test(why)) return false;
+      // The server's own words, not the transport's wrapping of its JSON-RPC error.
+      const said = /"message"\s*:\s*"([^"]+)"/.exec(why)?.[1] ?? why;
+      raw.push({
+        rule: 'session/session-lost',
+        severity: 'error',
+        step: index,
+        message: `The server ended this session (“${clip(said, 100)}”) after toolmenu opened a second ${target.kind === 'stdio' ? 'process' : 'connection'} with the same credentials${probedAfter ? ` to check step ${probedAfter}'s scope` : ' to compare menus'}. A server that keeps one session per client does that, so the rest of the scenario didn't run. Run with --processes 1: toolmenu then opens no second one.`,
+      });
+      return true;
+    };
     for (const [i, step] of scenario.steps.entries()) {
       const index = i + 1;
       const label = stepLabel(step);
@@ -218,6 +238,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         } catch (error) {
           record.status = 'failed';
           record.note = error instanceof Error ? error.message.split('\n')[0] : String(error);
+          if (lost(record.note, index)) {
+            steps.push(record);
+            break;
+          }
           const code = (error as { code?: unknown }).code;
           record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
           if (!SETUP_FAILURES.has(record.failure)) raw.push({ rule: 'session/step-failed', severity: 'error', step: index, tool: step.tool, message: `Step ${index} (${label}) failed: ${record.note}` });
@@ -239,6 +263,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         const why = error instanceof Error ? error.message.split('\n')[0] : String(error);
         record.status = 'failed';
         record.note = record.note ? `${record.note}; then listing the menu failed: ${why}` : `listing the menu failed: ${why}`;
+        if (lost(why, index)) {
+          steps.push(record);
+          break;
+        }
         raw.push({ rule: 'session/step-failed', severity: 'error', step: index, message: `After step ${index} (${label}), listing the menu failed: ${why}` });
         steps.push(record);
         continue;
@@ -270,13 +298,14 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           });
         }
 
-        if (step.kind !== 'list') {
+        if (step.kind !== 'list' && probes) {
           // The main process is still running here: a server that holds a file or
           // a port can't start a second copy. That leaves the scope unknown, not
           // the run failed.
           try {
+            probedAfter = index;
             const probe = await probeMenu(mainTarget, timeoutMs);
-            record.scope = scopeOf(changes, next.tools, probe.tools, target.kind);
+            record.scope = scopeOf(changes, next.tools, probe.tools, target.kind, baseline.tools);
             raw.push(...scopeFindings(record.scope, modern, index));
           } catch (error) {
             record.scope = 'unclear';
@@ -427,9 +456,12 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
 /**
  * Does a fresh connection see this step's changes? All of them: the server's tool
  * set changed. None: the change belongs to this connection (or, on stdio, this
- * process). Reorders alone can't tell, and a mix is unclear.
+ * process). Reorders alone can't tell, and a mix is unclear. So can't a step that
+ * takes the menu back to the session's `baseline` while fresh ones still serve it:
+ * a fresh process starts there anyway (an unlock undone reads as "seen" by it).
  */
-export function scopeOf(changes: ToolChange[], next: MenuTool[], probe: MenuTool[], transport: Target['kind']): Scope {
+export function scopeOf(changes: ToolChange[], next: MenuTool[], probe: MenuTool[], transport: Target['kind'], baseline?: MenuTool[]): Scope {
+  if (baseline && compareMenus(baseline, next).length === 0 && compareMenus(baseline, probe).length === 0) return 'unclear';
   const probeByName = new Map(probe.map((t) => [t.name, t]));
   const nextByName = new Map(next.map((t) => [t.name, t]));
   const verdicts = new Set<boolean>();
@@ -515,6 +547,9 @@ const UNLOCK_NAME = /unlock|enable|activate|capabilit|toolset|load_?tools|expand
 // capabilities", "unlocks…". Whole words: "download" isn't "load", and a device's
 // capabilities alone aren't tools.
 const UNLOCK_DESC = /\b(?:unlock|enable|activate|load|expose|add)s?\b[^.]{0,60}\b(?:tools?|capabilit(?:y|ies))\b|\bmore tools\b|\btoolsets?\b|\bunlock/i;
+// Said outright: a verb that unlocks, then what it gives. Enough to keep a lookup.
+const UNLOCK_SAYS = /\b(?:unlock|enable|activate|load|expose|add)s?\b[^.]{0,60}\b(?:tools?|toolsets?|capabilit(?:y|ies))\b/i;
+const LOOKUPS = new Set([...LOOKUP_VERBS, 'describe']);
 
 interface Unlocker {
   tool: MenuTool;
@@ -538,9 +573,13 @@ export function clip(text: string, max: number): string {
 }
 
 function isWriteLike(t: MenuTool): boolean {
+  // Named as an unlock: changing the menu is its job, whatever its hints say
+  // (toolception marks enable_toolset destructive). It's still only suggested,
+  // never called without allow_writes.
+  if (UNLOCK_NAME.test(t.name)) return false;
   if (t.annotations?.destructiveHint === true) return true;
   const verb = verbOf(t.name);
-  return verb !== undefined && WRITE_VERBS.has(verb) && !UNLOCK_NAME.test(t.name);
+  return verb !== undefined && WRITE_VERBS.has(verb);
 }
 
 function enumOf(schema: MenuTool['inputSchema']): unknown[] {
@@ -554,8 +593,19 @@ export function unlockers(tools: MenuTool[]): Unlocker[] {
   const found: Unlocker[] = [];
   for (const tool of tools) {
     const props = tool.inputSchema?.properties ?? {};
-    const backed = UNLOCK_NAME.test(tool.name) || UNLOCK_DESC.test(tool.description ?? '');
-    const param = Object.keys(props).find((p) => UNLOCK_PARAM.test(p)) ?? (backed ? Object.keys(props).find((p) => WEAK_UNLOCK_PARAM.test(p)) : undefined);
+    const description = tool.description ?? '';
+    // A lookup names toolsets without changing them (GitHub's get_toolset_tools,
+    // toolception's list_toolsets, Firecrawl's find_tools), unless it says it does.
+    const verb = verbOf(tool.name);
+    if (verb && LOOKUPS.has(verb) && !UNLOCK_SAYS.test(description)) continue;
+    const backed = UNLOCK_NAME.test(tool.name) || UNLOCK_DESC.test(description);
+    const required = tool.inputSchema?.required ?? [];
+    const param =
+      Object.keys(props).find((p) => UNLOCK_PARAM.test(p)) ??
+      (backed ? Object.keys(props).find((p) => WEAK_UNLOCK_PARAM.test(p)) : undefined) ??
+      // Named like an unlock, one required parameter: that's what it takes
+      // (toolception's enable_toolset { name }).
+      (UNLOCK_NAME.test(tool.name) && required.length === 1 ? required[0] : undefined);
     let score = 0;
     if (param) score += enumOf(props[param]).length ? 3 : 2;
     if (UNLOCK_NAME.test(tool.name)) score += 2;
