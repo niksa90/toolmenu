@@ -23,6 +23,18 @@ test('a clean menu has no findings', () => {
   assert.deepEqual(ids(findings), []);
 });
 
+test('menu/duplicate-name: two tools with one name, and nothing else read into it', () => {
+  const tools = [
+    tool('search', ['query'], { annotations: { readOnlyHint: true } }),
+    tool('get_form', ['form_id'], { annotations: { readOnlyHint: true } }),
+    tool('search', ['query'], { description: 'Another search.', annotations: { readOnlyHint: true } }),
+  ];
+  const second = menuOf(tools).tools;
+  const findings = lint(tools, { secondList: second });
+  assert.deepEqual(ids(findings).filter((i) => i.startsWith('menu/')), ['menu/duplicate-name:search']);
+  assert.match(findings.find((f) => f.rule === 'menu/duplicate-name').message, /positions 0, 2/);
+});
+
 test('naming/vague-id flags params that just say "id"', () => {
   assert.deepEqual(ids(lint([tool('get_thing', ['id'], { annotations: { readOnlyHint: true } })])).filter((i) => i.startsWith('naming/vague-id')), ['naming/vague-id:get_thing']);
 });

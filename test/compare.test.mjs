@@ -25,6 +25,16 @@ test('detects added, removed, moved and edited tools', () => {
   assert.equal(changes.filter((c) => c.startsWith('moved:')).length, 1, 'one swap is one move');
 });
 
+test('a repeated name pairs occurrence by occurrence: an identical menu is no change', () => {
+  const dup = () => menuOf([tool('search'), tool('get'), tool('search', [], { description: 'Another search.' })]).tools;
+  assert.deepEqual(compareMenus(dup(), dup()), []);
+  // A real change to the second copy is still seen, as an edit, not a move.
+  const edited = menuOf([tool('search'), tool('get'), tool('search', [], { description: 'Changed.' })]).tools;
+  assert.deepEqual(kinds(compareMenus(dup(), edited)), ['description:search']);
+  // Dropping the second copy removes one search, not both.
+  assert.deepEqual(kinds(compareMenus(dup(), dup().slice(0, 2))), ['removed:search']);
+});
+
 test('an insert in the middle is not a reorder', () => {
   const before = menuOf([tool('a'), tool('b'), tool('c')]).tools;
   const after = menuOf([tool('a'), tool('x'), tool('b'), tool('c')]).tools;

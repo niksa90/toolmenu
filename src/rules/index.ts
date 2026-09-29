@@ -4,7 +4,7 @@ import { buried, cut } from './description.js';
 import { connectionVariance, nondeterministic, processVariance } from './determinism.js';
 import { authoredIds } from './ids.js';
 import { route, sharedWord, vagueId } from './naming.js';
-import { cacheHints, deprecated, discover, schema } from './spec.js';
+import { cacheHints, deprecated, discover, duplicateName, schema } from './spec.js';
 import { noDryRun, unannotated } from './write.js';
 import type { Rule, RuleContext } from './rule.js';
 
@@ -12,6 +12,7 @@ export type { Rule, RuleContext } from './rule.js';
 
 export const MENU_RULES: Rule[] = [
   nondeterministic,
+  duplicateName,
   processVariance,
   connectionVariance,
   vagueId,
