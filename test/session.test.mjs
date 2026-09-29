@@ -310,6 +310,75 @@ test('unlockers: a namespace on an ordinary read is not an unlock (Kubernetes, P
   assert.deepEqual(unlockers([loader]).map((u) => u.param), ['namespace']);
 });
 
+// Meta-tools as the live servers served them (2026-09-29): github-mcp-server 1.0.5
+// --dynamic-toolsets, and toolception 0.6.3 in DYNAMIC mode. Descriptions trimmed.
+const toolsets = { type: 'string', enum: ['actions', 'code_security', 'issues'] };
+const GITHUB_DYNAMIC = [
+  { name: 'enable_toolset', description: 'Enable one of the sets of tools the GitHub MCP server provides, use get_toolset_tools and list_available_toolsets first to see what this will enable', inputSchema: { type: 'object', properties: { toolset: toolsets }, required: ['toolset'] }, annotations: { readOnlyHint: true } },
+  { name: 'get_toolset_tools', description: 'Lists all the capabilities that are enabled with the specified toolset, use this to get clarity on whether enabling a toolset would help you to complete a task', inputSchema: { type: 'object', properties: { toolset: toolsets }, required: ['toolset'] }, annotations: { readOnlyHint: true } },
+  { name: 'list_available_toolsets', description: 'List all available toolsets this GitHub MCP server can offer, providing the enabled status of each.', inputSchema: { type: 'object', properties: {} }, annotations: { readOnlyHint: true } },
+];
+const byName = { type: 'object', properties: { name: { type: 'string', description: 'Toolset name' } }, required: ['name'] };
+const TOOLCEPTION = [
+  { name: 'enable_toolset', description: 'Enable a toolset by name', inputSchema: byName, annotations: { destructiveHint: true, idempotentHint: true } },
+  { name: 'disable_toolset', description: 'Disable a toolset by name (state only)', inputSchema: byName, annotations: { destructiveHint: true, idempotentHint: true } },
+  { name: 'list_toolsets', description: 'List available toolsets with active status and definitions', inputSchema: { type: 'object', properties: {} }, annotations: { readOnlyHint: true } },
+  { name: 'describe_toolset', description: 'Describe a toolset with definition, active status and tools', inputSchema: byName, annotations: { readOnlyHint: true } },
+];
+
+test('unlockers on live meta-tools: the unlock, not the lookups that talk about toolsets', () => {
+  const found = (tools) => unlockers(menuOf(tools).tools).map((u) => `${u.tool.name}:${u.param ?? '-'}`);
+  assert.deepEqual(found(GITHUB_DYNAMIC), ['enable_toolset:toolset']);
+  assert.deepEqual(found(TOOLCEPTION), ['enable_toolset:name', 'disable_toolset:name']);
+  // Firecrawl 3.25.5's catalog browser takes `capabilities`, and unlocks nothing.
+  const findTools = tool('firecrawl_find_tools', [], { annotations: { readOnlyHint: true }, description: 'Browse Alexandria data providers and workflows or read a selected contract.', inputSchema: { type: 'object', properties: { query: { type: 'string' }, capabilities: { type: 'array', items: { type: 'string' } } } } });
+  assert.deepEqual(found([findTools]), []);
+  // A lookup that says outright it loads tools is still one.
+  const loader = tool('get_tools', [], { annotations: { readOnlyHint: true }, description: 'Loads the tools for one category into the menu.', inputSchema: { type: 'object', properties: { category: { type: 'string', enum: ['a', 'b'] } }, required: ['category'] } });
+  assert.deepEqual(found([loader]), ['get_tools:category']);
+});
+
+test('starterScenario: an unlock annotated destructive is suggested, never called', () => {
+  const yaml = starterScenario(menuOf(TOOLCEPTION, { name: 'toolception-demo' }));
+  assert.match(yaml, /# \(not marked readOnlyHint: needs allow_writes: true\)\n {2}# - call: enable_toolset\n {2}# {3}args: \{ name: TODO \}/);
+  const calls = parseScenario(parseYaml(yaml)).steps.filter((s) => s.kind === 'call').map((s) => s.tool);
+  assert.ok(!calls.includes('enable_toolset') && !calls.includes('disable_toolset'), calls.join(', '));
+  // The GitHub lookups are lookups, not a second unlock block.
+  const github = starterScenario(menuOf(GITHUB_DYNAMIC, { name: 'github-mcp-server' }));
+  assert.equal((github.match(/looks like it unlocks tools/g) ?? []).length, 1);
+  assert.match(github, /# Read-only tools that need arguments:\n {2}# - call: get_toolset_tools/);
+});
+
+test('scopeOf: undoing an unlock back to the baseline is unclear, not global (a fresh process starts there)', () => {
+  const baseline = menuOf([tool('room_create'), tool('room_join')]).tools;
+  const joined = menuOf([tool('room_create'), tool('room_join'), tool('scene_read'), tool('room_leave')]).tools;
+  const left = compareMenus(joined, baseline);
+  assert.equal(scopeOf(left, baseline, baseline, 'stdio', baseline), 'unclear');
+  assert.equal(scopeOf(left, baseline, baseline, 'stdio'), 'global', 'without the baseline it reads as global');
+  // The unlock itself still reads as per-process.
+  assert.equal(scopeOf(compareMenus(baseline, joined), joined, baseline, 'stdio', baseline), 'per-process');
+});
+
+test('session: a server with one session per client ends ours when the probe connects; said once, clearly', async () => {
+  const server = await startRawHttp({ scope: 'local', onePerClient: true });
+  try {
+    const target = { kind: 'http', url: server.url, headers: { 'mcp-client-id': 'audit' } };
+    const scenario = parseScenario({ steps: ['list', { call: 'unlock_toolset' }, 'list', 'list'] });
+    const r = await session(target, scenario, { timeoutMs: 15_000 });
+    const rules = r.findings.map((f) => f.rule);
+    assert.deepEqual(rules.filter((x) => x === 'session/session-lost'), ['session/session-lost']);
+    assert.ok(!rules.includes('session/untested'), 'not blamed on credentials');
+    assert.ok(!rules.includes('session/step-failed'));
+    assert.match(r.findings.find((f) => f.rule === 'session/session-lost').message, /“Session not found or expired”.*--processes 1/);
+    // --processes 1 opens no second connection, the scope probe included: the run completes.
+    const one = await session(target, scenario, { timeoutMs: 15_000, processes: 1 });
+    assert.deepEqual(one.steps.map((s) => s.status), ['ok', 'ok', 'ok', 'ok']);
+    assert.ok(one.findings.some((f) => f.rule === 'session/mid-insert' && f.step === 2));
+  } finally {
+    await server.close();
+  }
+});
+
 test('no control characters in the source: a stray byte in a regex is invisible and silently breaks it', () => {
   const dir = join(ROOT, 'src');
   const bad = readdirSync(dir, { recursive: true })
