@@ -1,5 +1,6 @@
 import { compareMenus, type ToolChange } from '../compare.js';
 import { describeToolDifference } from '../difference.js';
+import { serverWords } from '../failures.js';
 import type { MenuTool, Severity } from '../types.js';
 import type { Rule, RuleFinding } from './rule.js';
 
@@ -102,7 +103,7 @@ function varianceRule(id: 'menu/process-variance' | 'menu/connection-variance', 
       const out: RuleFinding[] = [];
       for (const probe of ctx.probes) {
         if (probe.error) {
-          out.push({ severity: 'info', message: `Couldn't ${transport === 'stdio' ? 'start a second server process' : 'open a second connection'} to compare menus, so this wasn't checked: ${probe.error.split('\n')[0]}` });
+          out.push({ severity: 'info', message: `Couldn't ${transport === 'stdio' ? 'start a second server process' : 'open a second connection'} to compare menus, so this wasn't checked: ${serverWords(probe.error, 200)}` });
           continue;
         }
         const f = varianceFinding(ctx.menu.tools, probe.tools ?? [], { transport, modern: ctx.era === 'modern', wrapper: !!ctx.wrapper });

@@ -11,7 +11,7 @@ import { start as startSdkHttp } from './fixtures/http-server.mjs';
 import { start as startRawHttp } from './fixtures/raw-http-server.mjs';
 import { build } from './fixtures/session-server.mjs';
 import { build as buildRateLimited } from './fixtures/rate-limit-tools.mjs';
-import { RATE_LIMITED } from '../dist/failures.js';
+import { RATE_LIMITED, serverWords, waitsFrom } from '../dist/failures.js';
 
 const stdio = (env = {}) => ({ kind: 'stdio', command: process.execPath, args: [join(FIXTURES, 'session-server.mjs')], env });
 const UNLOCK = parseScenario({
@@ -197,7 +197,8 @@ test('http, rate limit: a limit that clears is waited out; one that stays is one
     const limited = r.findings.filter((f) => f.rule === 'session/rate-limited');
     assert.equal(limited.length, 1);
     assert.equal(limited[0].severity, 'error');
-    assert.match(limited[0].message, /at step 3 \(“Too many requests, please try again later\.”\) and still refused after toolmenu waited 0\.1 s, so steps 3–4 weren't checked/);
+    assert.match(limited[0].message, /^Rate-limited at step 3, and still after waiting 0\.1 s: “Too many requests, please try again later\.” Steps 3–4 weren't checked\./);
+    assert.equal(r.steps[2].note, 'rate-limited');
     assert.equal(r.findings.filter((f) => f.rule === 'session/step-failed' || f.rule === 'session/unlock-coverage').length, 0);
     assert.equal(r.steps.length, 3, 'nothing is sent after the limit stops the run');
     assert.equal(stays.seen.refused, 3, 'the first try and two retries, then no more');
@@ -222,7 +223,7 @@ test('http, rate limit: a tool that says it was limited is called again only if 
   const thrown = await one('send_message');
   assert.equal(thrown.ran, 1);
   assert.deepEqual(thrown.rules, ['1:session/rate-limited']);
-  assert.match(thrown.limited.message, /send_message said it was refused .*“Upstream API rate limit exceeded”.*didn't call it again: it isn't marked readOnlyHint/);
+  assert.match(thrown.limited.message, /^Rate-limited at step 1: send_message said “Upstream API rate limit exceeded”\. Not called again: it isn't marked readOnlyHint/);
   // Its result says so: once too, and the finding claims no wait.
   const said = await one('post_comment');
   assert.equal(said.ran, 1);
@@ -241,6 +242,21 @@ test('http, rate limit: a tool that says it was limited is called again only if 
   }
 });
 
+test('TOOLMENU_RATE_LIMIT_WAITS_MS: a list of milliseconds, or the defaults (a typo never turns the waiting off)', () => {
+  assert.deepEqual(waitsFrom('100,200'), [100, 200]);
+  assert.deepEqual(waitsFrom(' 0 , 50 '), [0, 50]);
+  for (const bad of [undefined, '', 'abc', '100,abc', '100,', '-5', '1.5', '1e3']) assert.equal(waitsFrom(bad), undefined, String(bad));
+});
+
+test('serverWords: the server\'s message, not the transport\'s wrapping of its body', () => {
+  const body = JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: 'Too many requests \u2014 retry later' }, id: null });
+  assert.equal(serverWords(new Error(`Error POSTing to endpoint: ${body}`)), 'Too many requests — retry later');
+  assert.equal(serverWords(new Error(`Error POSTing to endpoint (HTTP 429): ${body}`)), 'Too many requests — retry later');
+  assert.equal(serverWords(new Error('Error POSTing to endpoint: Too many requests, please try again later.')), 'Too many requests, please try again later.');
+  assert.equal(serverWords('MCP error -32602: Invalid params\nat line 2'), 'MCP error -32602: Invalid params');
+  assert.equal(serverWords('x'.repeat(150)).length, 100);
+});
+
 test('RATE_LIMITED: the words for a refusal, not every 429 or rateLimit', () => {
   for (const t of ['Too many requests, please try again later.', 'API rate limit exceeded for 1.2.3.4', 'Rate limit reached for requests', 'You are being rate-limited', 'You have exceeded your rate limit', 'Request failed with status code 429', 'HTTP 429 Too Many Requests', 'rate_limit_exceeded']) assert.ok(RATE_LIMITED.test(t), t);
   for (const t of ['Order 429 not found', 'rateLimit must be a positive number', 'Invalid rate_limit parameter', 'Item 1429 is archived', 'Set the rate limit in settings']) assert.ok(!RATE_LIMITED.test(t), t);
@@ -249,7 +265,7 @@ test('RATE_LIMITED: the words for a refusal, not every 429 or rateLimit', () => 
 test('http, rate limit: a connection refused throughout is said so, not the transport error', async () => {
   const server = await startSdkHttp({ limit: 0 });
   try {
-    await assert.rejects(session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: 15_000, rateLimitWaitsMs: [20, 40] }), /refused toolmenu's connection for being too many requests \(“Too many requests, please try again later\.”\) and still refused after it waited 0\.1 s\. A rate limit counts/);
+    await assert.rejects(session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: 15_000, rateLimitWaitsMs: [20, 40] }), /Rate-limited while connecting, and still after waiting 0\.1 s: “Too many requests, please try again later\.” The limit counts/);
   } finally {
     await server.close();
   }

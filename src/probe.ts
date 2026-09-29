@@ -2,7 +2,7 @@ import { basename } from 'node:path';
 import { connect, listTools, type Connection, type Target } from './connect.js';
 import { compareMenus } from './compare.js';
 import { buildMenu } from './menu.js';
-import { patiently, tooMany } from './failures.js';
+import { patiently, quotedSentence, RATE_LIMIT_ADVICE, serverWords, tooMany, waitedFor, whyNot } from './failures.js';
 import type { Probe } from './rules/determinism.js';
 import type { Menu, MenuTool } from './types.js';
 
@@ -35,10 +35,7 @@ export function isContainerWrapper(target: Target): boolean {
  */
 export function refusedForTooMany(error: unknown, waitedMs: number): unknown {
   if (!tooMany(error)) return error;
-  const text = error instanceof Error ? error.message.split('\n')[0].replace(/^.*?endpoint:\s*/i, '') : String(error);
-  const said = text.length > 100 ? `${text.slice(0, 99)}…` : text;
-  const seconds = waitedMs < 10_000 ? Math.round(waitedMs / 100) / 10 : Math.round(waitedMs / 1000);
-  return new Error(`The server refused toolmenu's connection for being too many requests (“${said}”) and still refused after it waited ${seconds} s. A rate limit counts toolmenu's requests together with everything else from this address: give the run its own server instance, or raise the limit for it.`);
+  return new Error(`Rate-limited while connecting, and still after waiting ${waitedFor(waitedMs)}: ${quotedSentence(serverWords(error))} ${RATE_LIMIT_ADVICE}`);
 }
 
 /** connect, with a refusal for being too many waited out (connecting is read-only). */
@@ -78,12 +75,13 @@ export async function probeVariance(target: Target, main: MenuTool[], processes:
   const probes: Probe[] = [];
   for (let i = 0; i < processes - 1; i++) {
     const seed = String(Number(PROBE_SEED) + i);
+    const waited = { ms: 0 };
     try {
-      let tools = (await probeMenu(seeded(target, seed), timeoutMs, waits)).tools;
-      if (target.kind === 'http' && compareMenus(main, tools).length) tools = (await probeMenu(target, timeoutMs, waits)).tools;
+      let tools = (await probeMenu(seeded(target, seed), timeoutMs, waits, waited)).tools;
+      if (target.kind === 'http' && compareMenus(main, tools).length) tools = (await probeMenu(target, timeoutMs, waits, waited)).tools;
       probes.push({ tools });
     } catch (error) {
-      probes.push({ error: error instanceof Error ? error.message : String(error) });
+      probes.push({ error: tooMany(error) ? whyNot(error, waited.ms) : error instanceof Error ? error.message : String(error) });
     }
   }
   return probes;

@@ -5,7 +5,7 @@ import { listTools, type Connection, type Target } from './connect.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
-import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, RATE_LIMITED, SETUP_FAILURES, tooMany, type FailureClass } from './failures.js';
+import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_ADVICE, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
@@ -140,7 +140,6 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   // a probe with a different seed would count ordering variance as a change.
   const mainTarget = seeded(target, MAIN_SEED);
   const waits = options.rateLimitWaitsMs ?? RATE_LIMIT_WAITS_MS;
-  const seconds = (ms: number) => (ms < 10_000 ? Math.round(ms / 100) / 10 : Math.round(ms / 1000));
   // Connecting and listing are read-only: a refusal for being too many is waited
   // out and they're sent again.
   const conn = await connectPatiently(mainTarget, { timeoutMs, waits });
@@ -165,17 +164,16 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     let limitedAt: number | undefined;
     const limited = (index: number, why: string, waitedMs: number, tool?: string): void => {
       limitedAt = index;
-      const said = clip(/"message"\s*:\s*"([^"]+)"/.exec(why)?.[1] ?? why.replace(/^.*?endpoint:\s*/i, ''), 100);
+      const said = serverWords(why);
       const last = scenario.steps.length;
-      const unchecked = `${index < last ? `steps ${index}–${last} weren't` : `step ${index} wasn't`} checked`;
+      const unchecked = index < last ? `Steps ${index}–${last} weren't checked.` : `Step ${index} wasn't checked.`;
       raw.push({
         rule: 'session/rate-limited',
         severity: 'error',
         step: index,
-        message:
-          (tool
-            ? `At step ${index}, ${tool} said it was refused for being too many requests (“${said}”). toolmenu didn't call it again: it isn't marked readOnlyHint, so it may have done part of the work first. ${unchecked[0].toUpperCase()}${unchecked.slice(1)}. If the limit is the server's own, give the run its own server instance or raise the limit for it; if it's an API's behind the server, run later or with a higher quota.`
-            : `The server refused requests for being too many at step ${index} (“${said}”) and still refused after toolmenu waited ${seconds(waitedMs)} s, so ${unchecked}. A rate limit counts toolmenu's requests together with everything else from this address: give the run its own server instance, or raise the limit for it.`),
+        message: tool
+          ? `Rate-limited at step ${index}: ${tool} said ${quotedSentence(said)} Not called again: it isn't marked readOnlyHint, so it may have done part of the work. ${unchecked} If the limit is the server's, give the run its own server instance or raise the limit; if it's an upstream API's, run later or with a higher quota.`
+          : `Rate-limited at step ${index}, and still after waiting ${waitedFor(waitedMs)}: ${quotedSentence(said)} ${unchecked} ${RATE_LIMIT_ADVICE}`,
       });
     };
     let current = await listPatiently();
@@ -189,7 +187,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     let connectionCheck: SessionResult['connectionCheck'];
     for (const probe of await probeVariance(target, current.tools, options.processes ?? 2, timeoutMs, waits)) {
       if (probe.error) {
-        raw.push({ rule: target.kind === 'stdio' ? 'menu/process-variance' : 'menu/connection-variance', severity: 'info', step: 0, message: `Couldn't ${target.kind === 'stdio' ? 'start a second server process' : 'open a second connection'} to compare menus, so this wasn't checked: ${probe.error.split('\n')[0]}` });
+        raw.push({ rule: target.kind === 'stdio' ? 'menu/process-variance' : 'menu/connection-variance', severity: 'info', step: 0, message: `Couldn't ${target.kind === 'stdio' ? 'start a second server process' : 'open a second connection'} to compare menus, so this wasn't checked: ${serverWords(probe.error, 200)}` });
         continue;
       }
       const f = varianceFinding(current.tools, probe.tools ?? [], { transport: target.kind, modern, wrapper: isContainerWrapper(target) });
@@ -211,12 +209,12 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     const lost = (why: string, index: number): boolean => {
       if (probedAfter === undefined || !SESSION_LOST.test(why)) return false;
       // The server's own words, not the transport's wrapping of its JSON-RPC error.
-      const said = /"message"\s*:\s*"([^"]+)"/.exec(why)?.[1] ?? why;
+      const said = serverWords(why);
       raw.push({
         rule: 'session/session-lost',
         severity: 'error',
         step: index,
-        message: `The server ended this session (“${clip(said, 100)}”) after toolmenu opened a second ${target.kind === 'stdio' ? 'process' : 'connection'} with the same credentials${probedAfter ? ` to check step ${probedAfter}'s scope` : ' to compare menus'}. A server that keeps one session per client does that, so the rest of the scenario didn't run. Run with --processes 1: toolmenu then opens no second one.`,
+        message: `The server ended this session (“${said}”) after toolmenu opened a second ${target.kind === 'stdio' ? 'process' : 'connection'} with the same credentials${probedAfter ? ` to check step ${probedAfter}'s scope` : ' to compare menus'}. A server that keeps one session per client does that, so the rest of the scenario didn't run. Run with --processes 1: toolmenu then opens no second one.`,
       });
       return true;
     };
@@ -265,7 +263,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             if (RATE_LIMITED.test(text)) {
               limited(index, text, callWaited.ms, readOnly ? undefined : step.tool);
               record.status = 'failed';
-              record.note = `the tool returned an error: ${clip(text, 120)}`;
+              record.note = 'rate-limited';
               steps.push(record);
               break;
             }
@@ -283,13 +281,14 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           }
         } catch (error) {
           record.status = 'failed';
-          record.note = error instanceof Error ? error.message.split('\n')[0] : String(error);
+          record.note = serverWords(error, 200);
           if (lost(record.note, index)) {
             steps.push(record);
             break;
           }
           if (tooMany(error)) {
             limited(index, record.note, callWaited.ms, httpStatus(error) === 429 || tool?.annotations?.readOnlyHint === true ? undefined : step.tool);
+            record.note = 'rate-limited';
             steps.push(record);
             break;
           }
@@ -312,7 +311,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         listWaited.ms = 0;
         next = await listPatiently(listWaited);
       } catch (error) {
-        const why = error instanceof Error ? error.message.split('\n')[0] : String(error);
+        const why = serverWords(error, 200);
         record.status = 'failed';
         record.note = record.note ? `${record.note}; then listing the menu failed: ${why}` : `listing the menu failed: ${why}`;
         if (lost(why, index)) {
@@ -321,6 +320,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         }
         if (tooMany(error)) {
           limited(index, why, listWaited.ms);
+          record.note = record.note?.startsWith('listing the menu failed') ? 'rate-limited listing the menu' : 'rate-limited listing the menu after the call';
           steps.push(record);
           break;
         }
@@ -359,14 +359,15 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           // The main process is still running here: a server that holds a file or
           // a port can't start a second copy. That leaves the scope unknown, not
           // the run failed.
+          const probeWaited = { ms: 0 };
           try {
             probedAfter = index;
-            const probe = await probeMenu(mainTarget, timeoutMs, waits);
+            const probe = await probeMenu(mainTarget, timeoutMs, waits, probeWaited);
             record.scope = scopeOf(changes, next.tools, probe.tools, target.kind, baseline.tools);
             raw.push(...scopeFindings(record.scope, modern, index));
           } catch (error) {
             record.scope = 'unclear';
-            scopeUnchecked.push({ step: index, why: error instanceof Error ? error.message.split('\n')[0] : String(error) });
+            scopeUnchecked.push({ step: index, why: whyNot(error, probeWaited.ms) });
           }
         }
         current = next;

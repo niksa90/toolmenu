@@ -45,11 +45,53 @@ export function tooMany(error: unknown): boolean {
 
 /**
  * How long to wait before each retry of a refused request: a per-minute limit clears
- * within them. TOOLMENU_RATE_LIMIT_WAITS_MS ("100,200") sets others (the CLI's tests).
+ * within them. TOOLMENU_RATE_LIMIT_WAITS_MS ("100,200") sets others, for the CLI's
+ * tests; a value that isn't a list of milliseconds keeps these, so a typo can't turn
+ * the waiting off.
  */
-export const RATE_LIMIT_WAITS_MS = (process.env.TOOLMENU_RATE_LIMIT_WAITS_MS?.split(',').map(Number).filter((n) => Number.isFinite(n) && n >= 0) ?? [
-  2000, 4000, 8000, 16_000, 32_000,
-]);
+export const RATE_LIMIT_WAITS_MS = waitsFrom(process.env.TOOLMENU_RATE_LIMIT_WAITS_MS) ?? [2000, 4000, 8000, 16_000, 32_000];
+
+/** What to do about a rate limit toolmenu couldn't wait out. */
+export const RATE_LIMIT_ADVICE = "The limit counts every request from this address, toolmenu's included: give the run its own server instance, or raise the limit for it.";
+
+/** Quoted words that end a sentence: “Rate limit exceeded”. but “Try again later.” (no second period). */
+export function quotedSentence(words: string): string {
+  return `“${words}”${/[.!?…]$/.test(words) ? '' : '.'}`;
+}
+
+/** Why a check was skipped, as a clause: "rate-limited, and still after waiting 0.3 s (“…”)", or the server's words. */
+export function whyNot(error: unknown, waitedMs: number): string {
+  return tooMany(error) ? `rate-limited, and still after waiting ${waitedFor(waitedMs)} (“${serverWords(error)}”)` : serverWords(error, 200);
+}
+
+/** A wait, for a message: "0.3 s", "62 s". */
+export function waitedFor(ms: number): string {
+  return `${ms < 10_000 ? Math.round(ms / 100) / 10 : Math.round(ms / 1000)} s`;
+}
+
+export function waitsFrom(value: string | undefined): number[] | undefined {
+  const parts = value?.split(',').map((p) => p.trim());
+  if (!parts?.length || !parts.every((p) => /^\d+$/.test(p))) return undefined;
+  return parts.map(Number);
+}
+
+/**
+ * What the server said, from an error: the JSON-RPC error's message when the
+ * transport quotes the response body ("Error POSTing to endpoint: {"jsonrpc":…}"),
+ * without that prefix; the first line, at most `max` characters.
+ */
+export function serverWords(error: unknown, max = 100): string {
+  let text = (error instanceof Error ? error.message : String(error)).split('\n')[0].replace(/^.*?endpoint(?: \(HTTP \d{3}\))?:\s*/i, '').trim();
+  const quoted = /"message"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(text)?.[1];
+  if (quoted !== undefined) {
+    try {
+      text = JSON.parse(`"${quoted}"`);
+    } catch {
+      text = quoted;
+    }
+  }
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
 
 /**
  * Send a request, and again after each wait while it's refused for being too many.

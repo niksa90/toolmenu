@@ -61,12 +61,13 @@ test('cli: snapshot, session --init and --auto wait out a rate limit, and say so
   }
   // Refused throughout: the explanation, not the transport's error.
   for (const args of commands) {
-    const server = await start({ limit: 0 });
+    // The refusal as a JSON-RPC body: its message is quoted, not the JSON.
+    const server = await start({ limit: 0, json: true });
     try {
       const r = await run([...args, server.url], { env });
       assert.equal(r.code, 2, `${args.join(' ')}: ${r.stderr}`);
-      assert.match(r.stderr, /refused toolmenu's connection for being too many requests \(“Too many requests, please try again later\.”\) and still refused after it waited 0\.5 s\. A rate limit counts/, args.join(' '));
-      assert.doesNotMatch(r.stderr, /Error POSTing/, args.join(' '));
+      assert.match(r.stderr, /^toolmenu: Rate-limited while connecting, and still after waiting 0\.5 s: “Too many requests — retry later”\. The limit counts every request from this address/, args.join(' '));
+      assert.doesNotMatch(r.stderr, /Error POSTing|jsonrpc/, args.join(' '));
     } finally {
       await server.close();
     }
