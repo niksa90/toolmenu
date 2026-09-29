@@ -1,5 +1,5 @@
 import { synthesizeArgs } from './args.js';
-import type { Scenario, Step } from './session.js';
+import { MAX_UNLOCKS, unlockers, type Scenario, type Step } from './session.js';
 import type { Menu, MenuTool } from './types.js';
 import { COLLECTION_VERBS, LOOKUP_VERBS, verbOf } from './words.js';
 
@@ -29,7 +29,16 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   const maxCalls = options.maxCalls ?? 20;
   const skipped: AutoPlan['skipped'] = [];
   const candidates: { tool: MenuTool; args: Record<string, unknown>; rank: number }[] = [];
+  // Read-only unlocks with every value in an enum: each value, outside the call
+  // budget, so the tools behind every toolset are seen (GitHub: 19 toolsets).
+  const unlocks = unlockers(menu.tools).filter((u) => {
+    const a = u.tool.annotations ?? {};
+    const required = u.tool.inputSchema?.required ?? [];
+    return u.param && u.values.length && a.readOnlyHint === true && (a.openWorldHint !== true || options.openWorld) && required.every((p) => p === u.param);
+  });
+  const unlocking = new Set(unlocks.map((u) => u.tool.name));
   for (const tool of menu.tools) {
+    if (unlocking.has(tool.name)) continue;
     const a = tool.annotations ?? {};
     if (a.readOnlyHint !== true) {
       skipped.push({ tool: tool.name, reason: 'not read-only' });
@@ -57,8 +66,12 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
 
   const steps: Step[] = [{ kind: 'list' }];
   for (const c of chosen) steps.push({ kind: 'call', tool: c.tool.name, args: c.args });
+  for (const u of unlocks) {
+    const array = u.tool.inputSchema?.properties?.[u.param!]?.type === 'array';
+    for (const v of u.values.slice(0, MAX_UNLOCKS)) steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [v] : v } });
+  }
   if (chosen.length) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args });
-  return { scenario: { allowWrites: false, steps }, called: chosen.map((c) => c.tool.name), skipped };
+  return { scenario: { allowWrites: false, steps }, called: [...chosen.map((c) => c.tool.name), ...unlocks.map((u) => u.tool.name)], skipped };
 }
 
 function rank(tool: MenuTool, args: Record<string, unknown>): number {

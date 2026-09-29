@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
-import { cacheBreak, compareMenus, type ToolChange } from './compare.js';
+import { cacheBreak, canonical, compareMenus, type ToolChange } from './compare.js';
 import { connect, listTools, type Connection, type Target } from './connect.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
@@ -8,7 +8,8 @@ import { varianceFinding } from './rules/determinism.js';
 import { classifyFailure, FAILURE_LABELS, SETUP_FAILURES, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
-import { LOOKUP_VERBS, verbOf, WRITE_VERBS } from './words.js';
+import { leadingJson } from './catalog.js';
+import { LOOKUP_VERBS, singular, VERBS, verbOf, words, WRITE_VERBS } from './words.js';
 
 export type Step =
   | { kind: 'list' }
@@ -120,6 +121,8 @@ export interface SessionOptions {
   scenarioName?: string;
   /** Server processes (stdio) or connections (HTTP) to compare before the first step, the main one included (default 2). */
   processes?: number;
+  /** The union menu is kept as a baseline (--union-out): an unlock never called then leaves tools out of it. */
+  unionOut?: boolean;
 }
 
 type Raw = Omit<Finding, 'severity'> & { severity: Severity };
@@ -322,6 +325,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     }
 
     raw.push(...untested(steps, target));
+    raw.push(...unlockCoverage(baseline.tools, scenario, steps, options.unionOut === true));
     if (scopeUnchecked.length) {
       const which = scopeUnchecked.map((s) => s.step);
       raw.push({
@@ -371,6 +375,41 @@ function untested(steps: StepRecord[], target: Target): Raw[] {
       detail: [...byClass].map(([c, list]) => `${c}: steps ${list.map((s) => s.index).join(', ')} (“${(list[0].note ?? '').replace(/^the tool returned an error: /, '').slice(0, 100)}”)`),
     },
   ];
+}
+
+/**
+ * Unlocks whose schema lists every value (an enum), and how many of those values
+ * the run got through. The session sees, and --union-out keeps, only the tools
+ * behind the values it unlocked: GitHub's enable_toolset has 19, the first starter
+ * unlocked 2, and 72 of 81 tools never reached the baseline.
+ */
+function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[], baselineWanted: boolean): Raw[] {
+  const out: Raw[] = [];
+  for (const u of unlockers(menu)) {
+    if (!u.param || u.values.length === 0) continue;
+    const reached = new Set<string>();
+    let last: number | undefined;
+    for (const record of steps) {
+      const step = scenario.steps[record.index - 1];
+      if (step?.kind !== 'call' || step.tool !== u.tool.name || record.status !== 'ok' || record.failure) continue;
+      last = record.index;
+      const arg = step.args[u.param];
+      for (const v of Array.isArray(arg) ? arg : [arg]) if (v !== undefined) reached.add(canonical(v));
+    }
+    const missing = u.values.filter((v) => !reached.has(canonical(v)));
+    // Never called: a scenario about something else, unless it's building the baseline.
+    if (missing.length === 0 || (reached.size === 0 && !baselineWanted)) continue;
+    const got = u.values.length - missing.length;
+    out.push({
+      rule: 'session/unlock-coverage',
+      severity: 'warn',
+      tool: u.tool.name,
+      ...(last !== undefined ? { step: last } : {}),
+      message: `${u.tool.name} looks like it unlocks tools, and the run got through ${got} of its ${u.values.length} ${u.param} values. The tools behind the other ${missing.length} were never seen: a baseline from this session (--union-out, baseline-from: session) misses them, so diff can't check them. Unlock every value (session --init writes the steps).`,
+      detail: [`not unlocked: ${missing.slice(0, 12).map((v) => JSON.stringify(v)).join(', ')}${missing.length > 12 ? `, and ${missing.length - 12} more` : ''}`],
+    });
+  }
+  return out;
 }
 
 function serverOf(c: Connection): Menu['server'] {
@@ -615,22 +654,105 @@ export function unlockers(tools: MenuTool[]): Unlocker[] {
   return found.sort((a, b) => b.score - a.score);
 }
 
+/**
+ * Unlocks whose values the schema doesn't give (no enum), each with a read-only
+ * lister that should: no required arguments, a lookup verb, and a noun in common
+ * with the unlock (toolception: enable_toolset { name } ← list_toolsets).
+ */
+export function unlockListers(tools: MenuTool[]): { unlock: string; lister: string }[] {
+  const out: { unlock: string; lister: string }[] = [];
+  const nounSet = (name: string) => new Set(words(name).map(singular).filter((w) => !VERBS.has(w)));
+  for (const u of unlockers(tools.filter((t) => t.annotations?.readOnlyHint === true || !isWriteLike(t)))) {
+    if (!u.param || u.values.length) continue;
+    const mine = new Set([...nounSet(u.tool.name), ...nounSet(u.param)]);
+    const lister = tools.find((t) => {
+      if (t === u.tool || t.annotations?.readOnlyHint !== true || (t.inputSchema?.required ?? []).length) return false;
+      const verb = verbOf(t.name);
+      return !!verb && LOOKUPS.has(verb) && [...nounSet(t.name)].some((n) => mine.has(n));
+    });
+    if (lister) out.push({ unlock: u.tool.name, lister: lister.name });
+  }
+  return out;
+}
+
+/**
+ * The values a listing offers, from its JSON (structuredContent, or text that
+ * starts with JSON): the first list of strings, or of objects with a key, id,
+ * slug or name, each item's own field first (toolception's `key: "quotes"`, not
+ * the display name "Quotes" nested under it).
+ */
+export function valuesFromListing(result: { structuredContent?: unknown; content?: unknown }): string[] {
+  const roots: unknown[] = [];
+  if (result.structuredContent) roots.push(result.structuredContent);
+  for (const part of Array.isArray(result.content) ? result.content : []) {
+    const text = (part as { text?: unknown }).text;
+    if (typeof text === 'string') {
+      const value = leadingJson(text);
+      if (value !== undefined) roots.push(value);
+    }
+  }
+  const idOf = (item: unknown): string | undefined => {
+    if (typeof item === 'string') return item;
+    if (!item || typeof item !== 'object') return undefined;
+    const o = item as Record<string, unknown>;
+    for (const k of ['key', 'id', 'slug', 'name']) if (typeof o[k] === 'string' && o[k]) return o[k] as string;
+    return undefined;
+  };
+  const walk = (v: unknown, depth: number): string[] | undefined => {
+    if (depth > 5 || !v || typeof v !== 'object') return undefined;
+    if (Array.isArray(v)) {
+      const ids = v.map(idOf).filter((x): x is string => !!x);
+      if (ids.length && ids.length === v.length) return [...new Set(ids)];
+      for (const x of v) {
+        const found = walk(x, depth + 1);
+        if (found) return found;
+      }
+      return undefined;
+    }
+    for (const x of Object.values(v)) {
+      const found = walk(x, depth + 1);
+      if (found) return found;
+    }
+    return undefined;
+  };
+  for (const r of roots) {
+    const found = walk(r, 0);
+    if (found) return found;
+  }
+  return [];
+}
+
 /** A YAML value for an unlock parameter: an array if the schema takes one. */
 function unlockValue(u: Unlocker, value: unknown): string {
   const schema = u.tool.inputSchema?.properties?.[u.param!];
   return schema?.type === 'array' || schema?.items ? `[${JSON.stringify(value)}]` : JSON.stringify(value);
 }
 
-export function starterScenario(menu: Menu): string {
+/** At most this many values of one unlock in a scenario; the rest are named in a comment. */
+export const MAX_UNLOCKS = 50;
+
+export interface StarterOptions {
+  /**
+   * Values for unlocks whose schema has no enum, by tool name: read from the
+   * server's own listing (toolception's list_toolsets), see unlockListers.
+   */
+  values?: Record<string, unknown[]>;
+}
+
+export function starterScenario(menu: Menu, options: StarterOptions = {}): string {
   const readOnly = menu.tools.filter((t) => t.annotations?.readOnlyHint === true);
   const required = (t: MenuTool) => t.inputSchema?.required ?? [];
-  const found = unlockers(menu.tools.filter((t) => t.annotations?.readOnlyHint === true || !isWriteLike(t)));
+  const found = unlockers(menu.tools.filter((t) => t.annotations?.readOnlyHint === true || !isWriteLike(t))).map((u) =>
+    u.values.length === 0 && u.param && options.values?.[u.tool.name]?.length ? { ...u, values: options.values[u.tool.name] } : u,
+  );
   const unlocking = new Set(found.filter((u) => u.param).map((u) => u.tool));
   const ready = readOnly.filter((t) => required(t).length === 0 && !unlocking.has(t)).slice(0, 12);
   const needsArgs = readOnly.filter((t) => required(t).length > 0);
-  // The best candidate with a real value runs for real: two unlocks, then a repeat.
+  // The best candidate with real values runs for real: every value, so the tools
+  // behind each are seen (a session baseline holds only what was unlocked), then a repeat.
   const live = found.find((u) => u.values.length > 0 && u.tool.annotations?.readOnlyHint === true && required(u.tool).every((p) => p === u.param));
-  const changers = found.filter((u) => u !== live).map((u) => u.tool);
+  const others = found.filter((u) => u !== live);
+  const changers = others.map((u) => u.tool);
   const example = (t: MenuTool, p: string) => {
     const schema = t.inputSchema?.properties?.[p];
     const u = found.find((x) => x.tool === t && x.param === p);
@@ -658,17 +780,25 @@ export function starterScenario(menu: Menu): string {
   ];
   for (const t of ready) lines.push(`  - call: ${t.name}`);
   if (live) {
-    const [first, second] = live.values;
-    lines.push('', `  # ${live.tool.name} looks like it unlocks tools. Unlock, list, and unlock again:`);
-    for (const v of second === undefined ? [first] : [first, second]) {
-      lines.push(`  - call: ${live.tool.name}`, `    args: { ${live.param}: ${unlockValue(live, v)} }`, '  - list');
+    const shown = live.values.slice(0, MAX_UNLOCKS);
+    lines.push('', `  # ${live.tool.name} looks like it unlocks tools. Unlock every ${live.param} (${live.values.length}), listing after each, then the first again:`);
+    for (const v of shown) lines.push(`  - call: ${live.tool.name}`, `    args: { ${live.param}: ${unlockValue(live, v)} }`, '  - list');
+    if (live.values.length > shown.length) {
+      lines.push(`  # …and ${live.values.length - shown.length} more: ${live.values.slice(shown.length).map((v) => JSON.stringify(v)).join(', ')}`);
     }
-    lines.push('  # The same unlock twice should change nothing.', `  - call: ${live.tool.name}`, `    args: { ${live.param}: ${unlockValue(live, first)} }`, '  - list');
+    lines.push('  # The same unlock twice should change nothing.', `  - call: ${live.tool.name}`, `    args: { ${live.param}: ${unlockValue(live, shown[0])} }`, '  - list');
   }
   if (changers.length) {
     lines.push('', `  # ${live ? 'These also' : 'These'} look like they could change the menu. Try them:`);
-    for (const t of changers.slice(0, 8)) {
+    for (const u of others.slice(0, 8)) {
+      const t = u.tool;
       if (t.annotations?.readOnlyHint !== true) lines.push(`  # (not marked readOnlyHint: needs allow_writes: true)`);
+      // Every known value, as with a live unlock: each may bring different tools.
+      const values = u.param && required(t).every((p) => p === u.param) ? u.values.slice(0, MAX_UNLOCKS) : [];
+      if (values.length) {
+        for (const v of values) lines.push(`  # - call: ${t.name}`, `  #   args: { ${u.param}: ${unlockValue(u, v)} }`, '  # - list');
+        continue;
+      }
       lines.push(`  # - call: ${t.name}`);
       if (argNames(t).length) lines.push(`  #   args: ${placeholder(t)}`);
       lines.push('  # - list');

@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareMenus } from '../dist/compare.js';
-import { changeFindings, clip, parseScenario, scopeOf, session, starterScenario, unlockers } from '../dist/session.js';
+import { changeFindings, clip, MAX_UNLOCKS, parseScenario, scopeOf, session, starterScenario, unlockers, unlockListers, valuesFromListing } from '../dist/session.js';
+import { autoScenario } from '../dist/auto.js';
 import { parse as parseYaml } from 'yaml';
 import { FIXTURES, ROOT, menuOf, run, tempDir, tool } from './helpers.mjs';
 import { start as startSdkHttp } from './fixtures/http-server.mjs';
@@ -156,7 +157,7 @@ test('http, SDK server with shared state: global change, and no list_changed', a
   try {
     const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }] }), { timeoutMs: 15_000 });
     assert.equal(r.steps[0].scope, 'global');
-    assert.deepEqual(byStep(r), ['1:session/mid-insert', '1:session/unannounced']);
+    assert.deepEqual(byStep(r), ['1:session/mid-insert', '1:session/unannounced', '1:session/unlock-coverage']);
   } finally {
     await server.close();
   }
@@ -167,7 +168,8 @@ test('http, SDK server with per-instance state: the unlock silently does nothing
   try {
     const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }] }), { timeoutMs: 15_000 });
     assert.equal(r.steps[0].changed, false);
-    assert.deepEqual(r.findings, []);
+    // Nothing changed; only the other toolset was never tried.
+    assert.deepEqual(byStep(r), ['1:session/unlock-coverage']);
   } finally {
     await server.close();
   }
@@ -347,6 +349,49 @@ test('starterScenario: an unlock annotated destructive is suggested, never calle
   const github = starterScenario(menuOf(GITHUB_DYNAMIC, { name: 'github-mcp-server' }));
   assert.equal((github.match(/looks like it unlocks tools/g) ?? []).length, 1);
   assert.match(github, /# Read-only tools that need arguments:\n {2}# - call: get_toolset_tools/);
+});
+
+test('starterScenario and --auto unlock every value, so the union holds the tools behind each (GitHub: 19 toolsets, 81 tools)', () => {
+  const many = { type: 'string', enum: Array.from({ length: 19 }, (_, i) => `set_${i}`) };
+  const menu = menuOf([{ ...GITHUB_DYNAMIC[0], inputSchema: { type: 'object', properties: { toolset: many }, required: ['toolset'] } }, GITHUB_DYNAMIC[2]]);
+  const calls = (yaml) => parseScenario(parseYaml(yaml)).steps.filter((s) => s.kind === 'call' && s.tool === 'enable_toolset').map((s) => s.args.toolset);
+  // Every value once, then the first again.
+  assert.deepEqual(calls(starterScenario(menu)), [...many.enum, 'set_0']);
+  const auto = autoScenario(menu).scenario.steps.filter((s) => s.kind === 'call' && s.tool === 'enable_toolset').map((s) => s.args.toolset);
+  assert.deepEqual(auto, many.enum, 'outside the call budget');
+  assert.equal(autoScenario(menu, { maxCalls: 1 }).scenario.steps.filter((s) => s.tool === 'enable_toolset').length, 19);
+  // A long enum is capped, and the rest named.
+  const huge = { type: 'string', enum: Array.from({ length: MAX_UNLOCKS + 3 }, (_, i) => `v${i}`) };
+  const capped = starterScenario(menuOf([{ ...GITHUB_DYNAMIC[0], inputSchema: { type: 'object', properties: { toolset: huge }, required: ['toolset'] } }]));
+  assert.equal(calls(capped).length, MAX_UNLOCKS + 1);
+  assert.match(capped, /…and 3 more: "v50", "v51", "v52"/);
+});
+
+test('unlock values without an enum come from the server\'s own listing (toolception)', () => {
+  assert.deepEqual(unlockListers(menuOf(TOOLCEPTION).tools), [
+    { unlock: 'enable_toolset', lister: 'list_toolsets' },
+    { unlock: 'disable_toolset', lister: 'list_toolsets' },
+  ]);
+  // What list_toolsets returned, live: the item's key, not its display name.
+  const listing = { content: [{ type: 'text', text: JSON.stringify({ toolsets: [{ key: 'quotes', active: false, definition: { name: 'Quotes', modules: ['quotes'] }, tools: [] }, { key: 'news', active: false, definition: { name: 'News' }, tools: [] }] }) }] };
+  assert.deepEqual(valuesFromListing(listing), ['quotes', 'news']);
+  assert.deepEqual(valuesFromListing({ structuredContent: { toolsets: ['a', 'b'] } }), ['a', 'b']);
+  assert.deepEqual(valuesFromListing({ content: [{ type: 'text', text: 'no JSON here' }] }), []);
+  const yaml = starterScenario(menuOf(TOOLCEPTION), { values: { enable_toolset: ['quotes', 'news'] } });
+  assert.match(yaml, /# - call: enable_toolset\n {2}# {3}args: \{ name: "quotes" \}\n {2}# - list\n {2}# - call: enable_toolset\n {2}# {3}args: \{ name: "news" \}/);
+});
+
+test('session/unlock-coverage: a partial unlock is a warning; an unlock never called only when the run builds the baseline', async () => {
+  const partial = await session(stdio(), parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }] }), { timeoutMs: 15_000, processes: 1 });
+  const cov = partial.findings.find((f) => f.rule === 'session/unlock-coverage');
+  assert.equal(cov?.severity, 'warn');
+  assert.match(cov.message, /got through 1 of its 2 toolset values/);
+  assert.deepEqual(cov.detail, ['not unlocked: "reports"']);
+  const full = await session(stdio(), parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }, { call: 'unlock_toolset', args: { toolset: 'reports' } }] }), { timeoutMs: 15_000, processes: 1 });
+  assert.ok(!full.findings.some((f) => f.rule === 'session/unlock-coverage'));
+  const never = parseScenario({ steps: ['list'] });
+  assert.ok(!(await session(stdio(), never, { timeoutMs: 15_000, processes: 1 })).findings.some((f) => f.rule === 'session/unlock-coverage'));
+  assert.ok((await session(stdio(), never, { timeoutMs: 15_000, processes: 1, unionOut: true })).findings.some((f) => f.rule === 'session/unlock-coverage'));
 });
 
 test('scopeOf: undoing an unlock back to the baseline is unclear, not global (a fresh process starts there)', () => {

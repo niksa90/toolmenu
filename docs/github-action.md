@@ -100,9 +100,17 @@ menu file. Write the first baseline the same way and commit it:
 npx toolmenu session --scenario scenario.yml --union-out menu.json -- node dist/server.js
 ```
 
-A `session --init` scenario is a good start: it finds unlock tools and unlocks for
-real. The unlock calls are real, so the server needs whatever it needs to answer them
-in CI. The same run still reports how each unlock changes the menu: where the new
+A `session --init` scenario is a good start: it finds unlock tools and unlocks every
+value for real (from the enum, or from the server's own listing such as
+`list_toolsets`), so the union holds the tools behind each. `scenario: auto` does the
+same for read-only unlocks with an enum. If a run leaves values out, for example a
+scenario you trimmed, `session/unlock-coverage` warns which ones, since the baseline
+then misses their tools. An unlock that isn't marked read-only is only suggested:
+uncomment it and set `allow_writes: true`. The unlock calls are real, so the server
+needs whatever it needs to answer them in CI.
+
+An "all tools" switch isn't always all of them: github-mcp-server 1.0.5 serves 81 tools
+with `--toolsets all`, but its dynamic mode, every toolset unlocked, reaches 23 more. The same run still reports how each unlock changes the menu: where the new
 tools land, what they cost, whether repeating an unlock changes nothing.
 
 If a switch in the environment serves every tool at once (say `UNLOCK_MODE=all`),
