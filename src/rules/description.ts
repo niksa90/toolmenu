@@ -60,10 +60,13 @@ export function instructions(text: string, otherTools: string[]): Instruction[] 
   // Naming another tool alongside use/call/instead is an instruction too:
   // "call render_html first", "use get_progress_table instead", and the
   // contrast "(get_a and get_b don't answer this)".
+  // The whole name only: a tool called `search` isn't named by "research".
+  const nameChar = /[\w-]/;
   for (const name of otherTools) {
     let at = text.indexOf(name);
     while (at !== -1) {
-      if (/\b(use|call|instead|prefer|first|rather than|don'?t|doesn'?t|do not|does not|isn'?t|aren'?t|won'?t|unlike)\b/i.test(sentenceAround(text, at))) found.set(at, name);
+      const whole = !nameChar.test(text[at - 1] ?? '') && !nameChar.test(text[at + name.length] ?? '');
+      if (whole && /\b(use|call|instead|prefer|first|rather than|don'?t|doesn'?t|do not|does not|isn'?t|aren'?t|won'?t|unlike)\b/i.test(sentenceAround(text, at))) found.set(at, name);
       at = text.indexOf(name, at + name.length);
     }
   }

@@ -8,7 +8,7 @@ function lint(tools, ctx = {}, settings = {}) {
   const menu = menuOf(tools, {}, ctx.listMeta);
   return runRules(
     MENU_RULES,
-    { menu, pages: [], capabilities: {}, usedAuth: false, protocolVersion: '2025-11-25', era: 'legacy', ...ctx },
+    { menu, pages: [], capabilities: { tools: {} }, usedAuth: false, protocolVersion: '2025-11-25', era: 'legacy', ...ctx },
     settings,
   ).filter((f) => f.rule !== 'spec/discover' && f.rule !== 'spec/schema');
 }
@@ -21,6 +21,37 @@ test('a clean menu has no findings', () => {
     tool('delete_form', ['form_id', 'dry_run'], { annotations: { destructiveHint: true } }),
   ]);
   assert.deepEqual(ids(findings), []);
+});
+
+test('menu/duplicate-name: two tools with one name, and nothing else read into it', () => {
+  const tools = [
+    tool('search', ['query'], { annotations: { readOnlyHint: true } }),
+    tool('get_form', ['form_id'], { annotations: { readOnlyHint: true } }),
+    tool('search', ['query'], { description: 'Another search.', annotations: { readOnlyHint: true } }),
+  ];
+  const second = menuOf(tools).tools;
+  const findings = lint(tools, { secondList: second });
+  assert.deepEqual(ids(findings).filter((i) => i.startsWith('menu/')), ['menu/duplicate-name:search']);
+  assert.match(findings.find((f) => f.rule === 'menu/duplicate-name').message, /positions 0, 2/);
+});
+
+test('spec/tools-capability: a server without it serves clients no tools', () => {
+  const missing = lint([], { capabilities: {} });
+  assert.deepEqual(ids(missing), ['spec/tools-capability']);
+  assert.match(missing[0].message, /that is the menu toolmenu got/);
+  assert.deepEqual(ids(lint([])), []);
+});
+
+test('description/buried: another tool\'s name counts only as a whole word', () => {
+  const padding = 'x'.repeat(2100);
+  const menu = (tail) => [
+    tool('search', ['query'], { annotations: { readOnlyHint: true } }),
+    tool('get_papers', [], { description: `${padding} ${tail}`, annotations: { readOnlyHint: true } }),
+  ];
+  const buried = (tail) => lint(menu(tail)).filter((f) => f.rule === 'description/buried');
+  assert.deepEqual(buried('Covers papers that research groups use.'), [], '"research" is not the search tool');
+  assert.equal(buried('Use search first for anything else.').length, 1);
+  assert.equal(buried('For broad queries, search_all is better; use it.').length, 0, 'search_all is another name');
 });
 
 test('naming/vague-id flags params that just say "id"', () => {
@@ -144,8 +175,8 @@ test('write/unannotated and write/no-dry-run', () => {
 test('2026-07-28 rules are skipped for 2025-era servers and run for modern ones', () => {
   const tools = [tool('ping_service', [], { annotations: { readOnlyHint: true } })];
   const listMeta = { ttlMs: 0, cacheScope: 'public' };
-  assert.deepEqual(ids(lint(tools, { listMeta, capabilities: { logging: {} } })), []);
-  const modern = ids(lint(tools, { listMeta, capabilities: { logging: {} }, protocolVersion: '2026-07-28', era: 'modern', usedAuth: true }));
+  assert.deepEqual(ids(lint(tools, { listMeta, capabilities: { tools: {}, logging: {} } })), []);
+  const modern = ids(lint(tools, { listMeta, capabilities: { tools: {}, logging: {} }, protocolVersion: '2026-07-28', era: 'modern', usedAuth: true }));
   assert.deepEqual(modern, ['spec/cache-hints', 'spec/cache-hints', 'spec/deprecated']);
 });
 

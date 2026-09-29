@@ -56,6 +56,36 @@ export const schema: Rule = {
   },
 };
 
+export const toolsCapability: Rule = {
+  id: 'spec/tools-capability',
+  severity: 'error',
+  summary: 'The server declares the tools capability',
+  run(ctx) {
+    if ('tools' in ctx.capabilities) return [];
+    return [
+      {
+        message: `The server doesn't declare the tools capability, so clients don't ask for its tools: the official MCP SDK client returns an empty list without sending tools/list${ctx.menu.tools.length ? '' : ', and that is the menu toolmenu got'}. Declare "tools": {} in the server's capabilities.`,
+      },
+    ];
+  },
+};
+
+export const duplicateName: Rule = {
+  id: 'menu/duplicate-name',
+  severity: 'error',
+  summary: 'Every tool in the menu has its own name',
+  run(ctx) {
+    const positions = new Map<string, number[]>();
+    ctx.menu.tools.forEach((t, i) => positions.set(t.name, [...(positions.get(t.name) ?? []), i]));
+    return [...positions]
+      .filter(([, at]) => at.length > 1)
+      .map(([name, at]): RuleFinding => ({
+        tool: name,
+        message: `${at.length} tools are named ${name} (positions ${at.join(', ')}). A call names the tool, so only one of them can be reached; clients may keep either, or reject the whole list (Claude's API refuses duplicate tool names).`,
+      }));
+  },
+};
+
 export const discover: Rule = {
   id: 'spec/discover',
   severity: 'info',

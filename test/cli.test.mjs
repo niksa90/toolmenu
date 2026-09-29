@@ -45,6 +45,15 @@ test('snapshot over Streamable HTTP, with a header', async () => {
   }
 });
 
+test('--json stays valid JSON when a library logs, and a missing tools capability is an error', async () => {
+  const r = await run(['snapshot', '--json', '--no-write', '--processes', '1', '--env', 'NO_TOOLS_CAPABILITY=1', ...raw('clean')]);
+  assert.equal(r.code, 1, r.stderr);
+  const report = JSON.parse(r.stdout);
+  assert.equal(report.tools, 0);
+  assert.ok(report.findings.some((f) => f.rule === 'spec/tools-capability' && f.severity === 'error'));
+  assert.match(r.stderr, /does not advertise tools capability/, 'the SDK line went to stderr');
+});
+
 test('an unstable order fails the run', async () => {
   const r = await run(['snapshot', '--no-write', ...raw('shuffle')]);
   assert.equal(r.code, 1);

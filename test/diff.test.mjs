@@ -91,7 +91,18 @@ test('token change is reported per tool, largest first', () => {
   assert.equal(d.tokens.tools.reduce((s, t) => s + t.delta, 0), d.tokens.delta);
 });
 
+test('a const is a one-value enum: changing it breaks callers, adding one narrows', () => {
+  const withMode = (mode) => menu([{ name: 'run_query', inputSchema: schema({ mode }) }]);
+  const changed = diffMenus(withMode({ type: 'string', const: 'fast' }), withMode({ type: 'string', const: 'safe' }));
+  assert.deepEqual(rules(changed), ['diff/enum-narrowed:run_query']);
+  assert.equal(changed.suggestedBump, 'major');
+  assert.deepEqual(rules(diffMenus(withMode(str), withMode({ type: 'string', const: 'fast' }))), ['diff/enum-narrowed:run_query']);
+  assert.deepEqual(rules(diffMenus(withMode({ type: 'string', const: 'fast' }), withMode({ type: 'string', enum: ['fast', 'safe'] }))), ['diff/enum-widened:run_query']);
+});
+
 test('version bump checks, including 0.x and calendar versions', () => {
+  assert.equal(versionBump('1.2.3', '1.2.3foo'), undefined, 'not semver: trailing junk');
+  assert.equal(versionBump('v1.2.3', '1.3.0+build.5'), 'minor', 'a v prefix and build metadata still parse');
   assert.equal(versionBump('1.2.3', '1.2.4'), 'patch');
   assert.equal(versionBump('1.2.3', '2.0.0'), 'major');
   assert.equal(versionBump('1.2.3', '1.2.3'), 'none');
