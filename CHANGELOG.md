@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- **`diff` compares inside parameters:** fields of object parameters and of array
+  items are compared at every depth, with the same rules and their path
+  (`gen.body.text`). Before, a breaking change nested in a parameter was a
+  "schema-other" notice and a patch bump.
+- **`diff` expands local `$ref`s** before comparing. A block moved into `$defs` read
+  as "type widened: object → any" on every parameter that used it, with a minor bump;
+  it's now one `diff/schema-equivalent` notice with the token change. A breaking
+  change inside `$defs` is breaking.
+- **Repeated blocks inside one schema:** the token breakdown fingerprints every
+  nested piece of every schema, and reports blocks repeated inside a tool (with what a
+  `$defs` entry could save) as well as across tools. `repeated` in `--json` gains
+  `count`, `within`, `withinTool`, `saving` and `where`.
+- **Unused `$defs`:** the breakdown reports definitions nothing in the tool refers to
+  (`unusedDefs` in `--json`).
+- **`diff/schema-dialect`** (notice): only the declared `$schema` changed. Said once for
+  every tool that switched: mongodb-mcp-server 3.0.0 moved 27 tools from draft-07 to
+  2020-12, which read as 27 "review it" notices.
+
 - **Fix, `init`:** only `--env` names that looked like credentials became secrets,
   so values like `DATABASE_URL` or `SENTRY_DSN` went into the workflow as text.
   Every value is a `${{ secrets.… }}` now; `GITHUB_*` names get an `MCP_` prefix

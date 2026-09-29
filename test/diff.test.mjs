@@ -91,6 +91,71 @@ test('token change is reported per tool, largest first', () => {
   assert.equal(d.tokens.tools.reduce((s, t) => s + t.delta, 0), d.tokens.delta);
 });
 
+// One block repeated in a tool's schema, inline, then moved into $defs: the refactor
+// from the review that prompted this (content_generateMessageHtml, −899 tokens).
+const block = { type: 'object', properties: { text: { type: 'string' }, size: { type: 'string', enum: ['s', 'm', 'l'] } }, required: ['text'] };
+const inlined = (b = block) => ({ type: 'object', properties: { header: b, footer: b, body: b }, required: ['body'] });
+const referenced = (b = block) => ({ type: 'object', $defs: { Block: b }, properties: { header: { $ref: '#/$defs/Block' }, footer: { $ref: '#/$defs/Block', description: 'Shown last.' }, body: { $ref: '#/$defs/Block' } }, required: ['body'] });
+const gen = (inputSchema, description = 'Generate.') => menu([{ name: 'gen', description, inputSchema }]);
+
+test('a $ref refactor that accepts the same input is one notice with its token change, not a widened type', () => {
+  const after = referenced();
+  delete after.properties.footer.description;
+  const d = diffMenus(gen(inlined()), gen(after), { release: { before: '1.0.0', after: '1.0.1' } });
+  assert.deepEqual(rules(d), ['diff/schema-equivalent:gen']);
+  assert.match(d.findings[0].message, /accepts the same input: ~\d+ tokens fewer/);
+  assert.equal(d.suggestedBump, 'patch');
+  assert.ok(d.tokens.delta < 0);
+});
+
+test('breaking changes inside $defs and inside nested objects are breaking, with their path', () => {
+  const narrower = { type: 'object', properties: { text: { type: 'integer' }, size: { type: 'string', enum: ['s'] }, lang: { type: 'string' } }, required: ['text', 'lang'] };
+  for (const [label, before, after] of [
+    ['$defs', referenced(), referenced(narrower)],
+    ['inline', inlined(), inlined(narrower)],
+  ]) {
+    const d = diffMenus(gen(before), gen(after));
+    assert.equal(d.suggestedBump, 'major', label);
+    const msgs = d.findings.map((f) => `${f.rule}: ${f.message.split(/[ :]/)[0]}`);
+    for (const expected of ['diff/param-type: gen.body.text', 'diff/enum-narrowed: gen.body.size', 'diff/param-required: gen.body.lang']) {
+      assert.ok(msgs.includes(expected), `${label}: ${expected} in ${msgs.join('; ')}`);
+    }
+    assert.ok(!d.findings.some((f) => f.rule === 'diff/type-widened'), label);
+  }
+});
+
+test('arrays of objects are compared item field by item field', () => {
+  const rows = (id) => ({ type: 'object', properties: { rows: { type: 'array', items: { type: 'object', properties: { id }, required: ['id'] } } } });
+  const d = diffMenus(gen(rows({ type: 'string' })), gen(rows({ type: 'integer' })));
+  assert.deepEqual(d.findings.map((f) => `${f.rule}: ${f.message.split(' ')[0]}`), ['diff/param-type: gen.rows[].id']);
+});
+
+test('a recursive $ref neither hangs nor hides a change', () => {
+  const tree = (label) => ({ type: 'object', $defs: { Node: { type: 'object', properties: { label, children: { type: 'array', items: { $ref: '#/$defs/Node' } } } } }, properties: { root: { $ref: '#/$defs/Node' } } });
+  assert.deepEqual(diffMenus(gen(tree({ type: 'string' })), gen(tree({ type: 'string' }))).findings, []);
+  const d = diffMenus(gen(tree({ type: 'string' })), gen(tree({ type: 'integer' })));
+  assert.ok(d.findings.some((f) => f.rule === 'diff/param-type' && f.message.startsWith('gen.root.label')), d.findings.map((f) => f.message).join('; '));
+  assert.equal(d.suggestedBump, 'major');
+});
+
+test('only the $schema dialect changing, in several tools, is one notice naming them (mongodb-mcp-server 3.0.0)', () => {
+  const s = (dialect, extra = {}) => ({ $schema: dialect, type: 'object', properties: { q: { type: 'string' } }, additionalProperties: false, ...extra });
+  const [d7, d20] = ['http://json-schema.org/draft-07/schema#', 'https://json-schema.org/draft/2020-12/schema'];
+  const names = ['connect', 'find', 'count'];
+  const d = diffMenus(menu(names.map((n) => ({ name: n, inputSchema: s(d7) }))), menu(names.map((n) => ({ name: n, inputSchema: s(d20) }))));
+  assert.deepEqual(rules(d), ['diff/schema-dialect']);
+  assert.match(d.findings[0].message, /^3 tools declare a different JSON Schema dialect/);
+  assert.deepEqual(d.findings[0].detail, ['connect, find, count']);
+  // One tool: said for it. With another change outside the parameters: still a review.
+  assert.deepEqual(rules(diffMenus(menu([{ name: 'find', inputSchema: s(d7) }]), menu([{ name: 'find', inputSchema: s(d20) }]))), ['diff/schema-dialect:find']);
+  assert.deepEqual(rules(diffMenus(menu([{ name: 'find', inputSchema: s(d7) }]), menu([{ name: 'find', inputSchema: s(d20, { additionalProperties: true }) }]))), ['diff/schema-other:find']);
+});
+
+test('a $ref to another document is left as it is', () => {
+  const remote = { type: 'object', properties: { cfg: { $ref: 'https://example.com/schema.json' } } };
+  assert.deepEqual(diffMenus(gen(remote), gen(structuredClone(remote))).findings, []);
+});
+
 test('a const is a one-value enum: changing it breaks callers, adding one narrows', () => {
   const withMode = (mode) => menu([{ name: 'run_query', inputSchema: schema({ mode }) }]);
   const changed = diffMenus(withMode({ type: 'string', const: 'fast' }), withMode({ type: 'string', const: 'safe' }));
