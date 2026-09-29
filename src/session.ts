@@ -507,10 +507,14 @@ export type { Era };
 // A parameter that names what to unlock. Strong names say so alone; weak ones
 // (`category` is also a search filter: GitHub, Firecrawl) need the tool's name or
 // description to back them up.
-const UNLOCK_PARAM = /^(?:domains?|toolsets?|tool_?sets?|capabilit(?:y|ies)|packs?|bundles?|namespaces?)$/i;
-const WEAK_UNLOCK_PARAM = /^(?:categor(?:y|ies)|modules?|features?|groups?)$/i;
+// `namespace` is weak too: Kubernetes and Pinecone take one on every read.
+const UNLOCK_PARAM = /^(?:domains?|toolsets?|tool_?sets?|capabilit(?:y|ies)|packs?|bundles?)$/i;
+const WEAK_UNLOCK_PARAM = /^(?:categor(?:y|ies)|modules?|features?|groups?|namespaces?)$/i;
 const UNLOCK_NAME = /unlock|enable|activate|capabilit|toolset|load_?tools|expand/i;
-const UNLOCK_DESC = /(?:unlock|enable|activate|load|expose|add)s?[^.]{0,60}tools?|more tools|toolsets?|capabilit(?:y|ies)|unlock/i;
+// A description about loading tools: "Adds the audit tools", "enables more
+// capabilities", "unlocks…". Whole words: "download" isn't "load", and a device's
+// capabilities alone aren't tools.
+const UNLOCK_DESC = /\b(?:unlock|enable|activate|load|expose|add)s?\b[^.]{0,60}\b(?:tools?|capabilit(?:y|ies))\b|\bmore tools\b|\btoolsets?\b|\bunlock/i;
 
 interface Unlocker {
   tool: MenuTool;
