@@ -772,3 +772,40 @@ found, so the same catalog gives the same path. Seeds are the search tool's own
 example phrases (quoted in its description), then the menu's nouns, or the config's
 queries. It stops when 20 queries in a row find nothing new, at most 200. Measured
 against Atlassian's `?tools=all` as ground truth: 154 of 154, no false operations.
+
+
+## 25. Messages: what every finding and error says
+
+Every finding and every error is read by two kinds of reader: a person skimming a PR
+comment, and an agent that has to act on it without seeing toolmenu's code. Both need
+the same four things, in this order:
+
+1. **The problem**, in the first sentence, in plain words: what is wrong and why it
+   matters ("A second server process served a different menu, so every restart misses
+   the prompt cache."). No rule jargon; the rule id is shown next to it already.
+2. **Where**: the tool, the parameter path (`list_transactions.end_date.default`), the
+   step, the file or the URL. Name it exactly, so it can be searched for.
+3. **How it happened**: the observed values, the call, the two versions compared
+   (`"…21.528Z" vs "…21.537Z"`), the server's own words. In `detail` when it's long.
+4. **The next step**, in `fix`: one instruction the reader can act on ("Build the
+   default from a fixed value, not the current time."; "Rerun with --processes 1.").
+   Shown as `→ Next:` in every format. Left out only when there is nothing to do.
+
+When toolmenu is not sure, because the finding is a heuristic (names, words) or an
+inference (a failure whose cause it can't see), the finding sets `confidence:
+'unsure'` (shown as `· unsure` next to the rule), and the message says what was seen and where, not
+what it means: "get_form needs a form_id, and no tool in the menu appears to return
+one" rather than "the agent will invent form_id". It still gives a next step when one
+is safe ("If an ID comes from a URL the user pastes, ignore this.").
+
+Errors that stop a command follow the same order: what failed, at which stage
+(starting the server, `server/discover`, `initialize`, `tools/list`, a call), what was
+seen (exit code, HTTP status, the server's last stderr lines, the first stray stdout
+line), and what to try next.
+
+Also:
+- One root cause, one finding. A finding caused by another one (a menu that changes on
+  every list also changes mid-session) points to it instead of repeating it.
+- The same change in many places is one finding that lists the places, not one per place.
+- Numbers carry their unit and whether they are estimates (`~1,240 tokens, estimate`).
+- No internal names (function names, variable names) in messages.
