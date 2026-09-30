@@ -52,7 +52,7 @@ test('a union option that is itself a union is compared as its options (Notion p
   const s = (options) => ({ type: 'object', $defs: { parentRequest: { anyOf: [page, db] } }, properties: { parent: { anyOf: options } } });
   const r = check({ name: 't', inputSchema: s([{ $ref: '#/$defs/parentRequest' }, { type: 'string' }]) }, ['properties', 'parent'], 'option-removed');
   assert.deepEqual(r.problems, []);
-  assert.deepEqual(r.findings.map((f) => f.message), ['t.parent: no longer accepts the string option. Calls that sent it can fail.']);
+  assert.deepEqual(r.findings.map((f) => f.message), ['`t.parent`: no longer accepts the `string` option. Calls that send it fail validation.']);
 });
 
 test('an option edited beyond recognition (its type, its only field) is one change, not removed plus added', () => {
@@ -72,5 +72,5 @@ test('removing all but one option compares what is left with the option it was (
     menuOf([{ name: 't', inputSchema: s([{ type: 'boolean' }, { type: 'object', properties: { typeSet: { type: 'string' } }, required: ['typeSet'] }]) }]),
     menuOf([{ name: 't', inputSchema: s([{ type: 'boolean' }]) }]),
   );
-  assert.deepEqual(d.findings.map((f) => f.message), ['t.dynamic: no longer accepts the object{typeSet} option. Calls that sent it can fail.']);
+  assert.deepEqual(d.findings.map((f) => f.message), ['`t.dynamic`: no longer accepts the `object{typeSet}` option. Calls that send it fail validation.']);
 });

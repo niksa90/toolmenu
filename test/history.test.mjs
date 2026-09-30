@@ -92,7 +92,7 @@ test('history snapshots each version, records failures and diffs the ones that w
 
   assert.equal(last.diff.from, '1.1.0', 'failed versions are skipped');
   assert.equal(last.diff.breaking, 1);
-  assert.match(last.diff.breakingChanges[0], /get_item was removed/);
+  assert.match(last.diff.breakingChanges[0], /`get_item` was removed/);
 
   assert.ok(existsSync(join(outDir, '1.0.0.json')));
   assert.ok(!existsSync(join(outDir, '1.2.0.json')));

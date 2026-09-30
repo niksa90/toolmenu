@@ -10,8 +10,14 @@ export type Bump = 'major' | 'minor' | 'patch' | 'none';
 
 export interface DiffFinding extends Finding {
   class?: ChangeClass;
-  /** Every place one change was found, when it's reached from several (a shared definition). */
+  /** Every place one change was found, when it's reached from several (a shared definition, or several tools). */
   places?: string[];
+  /**
+   * Every tool the change was found in, when it's the same change in several
+   * (same rule, same parameter path, same schema before and after). `tool` is
+   * then left out. Counts are per change: one finding, however many tools.
+   */
+  tools?: string[];
 }
 
 interface DiffRule {
@@ -46,6 +52,9 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/annotations': { severity: 'info', class: 'notice' },
   'diff/other': { severity: 'info', class: 'notice' },
   'diff/order': { severity: 'info', class: 'notice' },
+  // A tool lost a parameter and gained a required one with a close name: likely a
+  // rename. A hint next to the two breaking findings, not a change of its own.
+  'diff/param-renamed': { severity: 'warn' },
   'diff/version-bump': { severity: 'warn' },
   'diff/version-backwards': { severity: 'warn' },
   'diff/token-budget': { severity: 'error' },
@@ -65,13 +74,27 @@ export interface TokenChange {
   tools: { name: string; before: number; after: number; delta: number }[];
 }
 
+/** Per class: how many changes (findings), and how many tools they touch. */
+export type ClassCounts = Record<ChangeClass, { changes: number; tools: number }>;
+
 export interface DiffResult {
   before: Menu['server'];
   after: Menu['server'];
   findings: DiffFinding[];
   tokens: TokenChange;
+  /** Breaking, minor and notice changes: counted per change, with the tools they touch. */
+  classes: ClassCounts;
+  /** What the changes call for by semver: breaking → major, new → minor, other → patch. */
   suggestedBump: Bump;
+  /**
+   * The smallest bump the release line needs (with a release to check): the
+   * suggested one, one step lower under 1.0.0 (npm's caret: ^0.2.3 accepts
+   * 0.2.x), none under 0.1.0.
+   */
+  requiredBump?: Bump;
   actualBump?: Bump;
+  /** When the actual bump is too small: the version to release instead (2.0.0). */
+  releaseAs?: string;
   /** The versions the bump was checked against, and where they came from. */
   release?: { before: string; after: string; source: 'release' | 'server' };
   /** Why the bump wasn't checked although versions were given (calendar versions…). */
@@ -91,8 +114,45 @@ export interface DiffOptions {
   serverVersionIsRelease?: boolean;
 }
 
-/** A finding before settle. `place` and `text`: where in the schema, and what changed there (say, collapsePlaces). */
-type Raw = { rule: string; tool?: string; message: string; detail?: string[]; place?: string; text?: string; group?: string; places?: string[] };
+/**
+ * A finding before settle. `place`, `head`, `tail`: where in the schema, and what
+ * changed there, as the message's first clause and the rest (say, collapsePlaces).
+ * `across`: how to say the same change found in several tools (groupAcrossTools).
+ */
+type Raw = {
+  rule: string;
+  tool?: string;
+  message: string;
+  detail?: string[];
+  fix?: string;
+  confidence?: 'unsure';
+  place?: string;
+  head?: string;
+  tail?: string;
+  group?: string;
+  /** The schema the change is about, before and after (say). */
+  node?: unknown;
+  places?: string[];
+  tools?: string[];
+  across?: Across;
+  /** Catalog operations: the search tool they were found behind. */
+  behind?: string;
+};
+
+/** The same change in several tools, said once. */
+interface Across {
+  /** Equal for the same change in any tool. */
+  key: string;
+  /** The message for the tools it was found in ("25 of 29 tools", their names listed short). */
+  say: (count: string, list: string, members: Raw[]) => string;
+}
+
+/**
+ * In fixes: the release a breaking change should ship in. Resolved once the
+ * versions are known (resolveFixes): "release it as 2.0.0", or "ship it in a
+ * major release" when there are none to check.
+ */
+const BREAKING_RELEASE = '\u0000breaking-release\u0000';
 
 export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}): DiffResult {
   const raw: Raw[] = [];
@@ -111,13 +171,35 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   const renamedTo = new Set(renames.map((r) => r.to.name));
 
   for (const { from, to } of renames) {
-    raw.push({ rule: 'diff/tool-renamed', tool: to.name, message: `${from.name} was renamed to ${to.name} (same parameters). Agents, saved prompts and evals that call ${from.name} break.` });
+    raw.push({
+      rule: 'diff/tool-renamed',
+      tool: to.name,
+      message: `${code(from.name)} was renamed to ${code(to.name)} (same parameters). Agents, saved prompts and evals that call ${code(from.name)} now get an unknown-tool error.`,
+      fix: `Keep ${code(from.name)} as an alias for one release, or ${BREAKING_RELEASE}.`,
+    });
   }
   for (const t of removed.filter((t) => !renamedFrom.has(t.name))) {
-    raw.push({ rule: 'diff/tool-removed', tool: t.name, message: `${t.name} was removed. Anything that calls it breaks.` });
+    raw.push({
+      rule: 'diff/tool-removed',
+      tool: t.name,
+      message: `${code(t.name)} was removed. Calls to it now fail with an unknown-tool error.`,
+      fix: `Keep the removed tool (marked deprecated in its description) for one release, or ${BREAKING_RELEASE}.`,
+      across: {
+        key: 'diff/tool-removed',
+        say: (count, list) => `${count} were removed: ${list}. Calls to them now fail with an unknown-tool error.`,
+      },
+    });
   }
   for (const t of added.filter((t) => !renamedTo.has(t.name))) {
-    raw.push({ rule: 'diff/tool-added', tool: t.name, message: `${t.name} was added (~${t.tokens} tokens).` });
+    raw.push({
+      rule: 'diff/tool-added',
+      tool: t.name,
+      message: `${code(t.name)} is new (~${fmt(t.tokens)} tokens, estimate).`,
+      across: {
+        key: 'diff/tool-added',
+        say: (count, list, members) => `${count} are new (~${fmt(members.reduce((n, m) => n + (newByName.get(m.tool!)?.tokens ?? 0), 0))} tokens together, estimate): ${list}.`,
+      },
+    });
   }
 
   for (const t of newTools) {
@@ -131,9 +213,11 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
 
   const moved = compareMenus(oldTools, newTools).filter((c) => c.kind === 'moved');
   if (moved.length) {
+    const names = moved.map((m) => m.tool);
     raw.push({
       rule: 'diff/order',
-      message: `Tool order changed (${moved.map((m) => m.tool).join(', ')}). Only a notice between releases: prompt caches are short-lived, so a deploy costs roughly one rewrite. It matters within a session.`,
+      message: `The tool order changed: ${names.length === 1 ? `${code(names[0])} moved` : `${names.length} tools moved (${shortList(names)})`}. A new order rewrites the prompt cache once per deploy, so between releases it's only a notice; within a session it matters.`,
+      ...(names.length > LIST_SHORT ? { detail: [`moved: ${names.join(', ')}`] } : {}),
     });
   }
 
@@ -142,15 +226,21 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   // Ignored tools leave the token counts and the budget too.
   const tokens = tokenChange(oldTools, newTools);
   if (options.tokenBudget !== undefined && tokens.after > options.tokenBudget) {
+    const grew = tokens.tools.filter((t) => t.delta > 0).slice(0, 3);
     raw.push({
       rule: 'diff/token-budget',
-      message: `The menu is ~${fmt(tokens.after)} tokens, over the budget of ${fmt(options.tokenBudget)} (estimate).`,
+      message: `The menu is ~${fmt(tokens.after)} tokens (estimate), ~${fmt(tokens.after - options.tokenBudget)} over the budget of ${fmt(options.tokenBudget)}. Every conversation that loads it pays that before its first message.`,
+      fix: grew.length
+        ? `Trim what grew most (${grew.map((t) => code(t.name)).join(', ')}), or raise tokenBudget in the config.`
+        : 'Trim the longest tool descriptions, or raise tokenBudget in the config.',
     });
   }
 
   // Only what survives ignore and 'off' counts toward the bump. Settled once:
-  // the bump and the reported findings come from the same list.
-  const changes = settle(raw, options);
+  // the bump and the reported findings come from the same list. Grouped after
+  // settling, so an ignored tool is never listed in a group.
+  const changes = groupAcrossTools(settle(raw, options), newTools.length);
+  const classes = classCounts(changes);
   const suggestedBump = bumpFor(changes.map((f) => f.class));
   const versionRaw: Raw[] = [];
   const release = options.release
@@ -163,34 +253,146 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   if (release && notChecked === 'version went backwards') {
     versionRaw.push({
       rule: 'diff/version-backwards',
-      message:
-        release.source === 'server'
-          ? `The server-reported version went backwards: ${release.before} → ${release.after}.`
-          : `${release.before} → ${release.after}: the version went backwards. Check the --release order.`,
+      message: `The ${release.source === 'server' ? 'server-reported' : 'release'} version went backwards (${release.before} → ${release.after}), so the bump can't be checked.`,
+      fix: release.source === 'server' ? 'Pass the release versions with --release old..new.' : 'Pass --release as old..new, the older release first.',
     });
   }
-  const required = requiredBump(suggestedBump, release?.before);
-  if (release && actualBump && BUMP_RANK[actualBump] < BUMP_RANK[required]) {
-    const what = release.source === 'server' ? 'The server-reported version' : 'The release version';
-    versionRaw.push({
-      rule: 'diff/version-bump',
-      message:
-        actualBump === 'none'
-          ? `${what} stayed ${release.after} but the menu has ${suggestedBump === 'major' ? 'breaking' : suggestedBump === 'minor' ? 'new' : 'changed'} parts. Suggested: a ${required} bump.`
-          : `${release.before} → ${release.after} is a ${actualBump} bump, but the menu has ${suggestedBump === 'major' ? 'breaking changes' : 'new features'}. Suggested: a ${required} bump.`,
-    });
-  }
+  const required = release && actualBump ? requiredBump(suggestedBump, release.before) : undefined;
+  const short = release && actualBump && required && BUMP_RANK[actualBump] < BUMP_RANK[required];
+  if (short) versionRaw.push(bumpFinding(release, actualBump, required, suggestedBump, classes));
+  resolveFixes(changes, release && required ? (short ? nextVersion(release.before, required) : 'enough') : undefined);
 
   return {
     before: before.server,
     after: after.server,
-    findings: [...changes, ...settle(versionRaw, options)].sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]),
+    findings: [...changes, ...settle(versionRaw, options)].map(finished).sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]),
     tokens,
+    classes,
     suggestedBump,
+    ...(required ? { requiredBump: required } : {}),
     ...(actualBump ? { actualBump } : {}),
+    ...(short ? { releaseAs: nextVersion(release.before, required) } : {}),
     ...(release ? { release } : {}),
     ...(notChecked ? { bumpNotChecked: notChecked } : {}),
   };
+}
+
+/** A name or path as code: `click.pageId`. */
+function code(s: string): string {
+  return '`' + s + '`';
+}
+
+/** How many names a message lists before "… (+N)"; detail has them all. */
+const LIST_SHORT = 6;
+
+function shortList(names: string[]): string {
+  return names.length <= LIST_SHORT ? names.join(', ') : `${names.slice(0, LIST_SHORT).join(', ')}, … (+${names.length - LIST_SHORT})`;
+}
+
+/** "25 of 29 tools", "all 29 tools", "3 operations behind `search`". */
+function countPhrase(n: number, total: number, behind: string | undefined): string {
+  if (behind) return `${n} operations behind ${code(behind)}`;
+  return n === total && n > 2 ? `all ${n} tools` : total > n ? `${n} of ${total} tools` : `${n} tools`;
+}
+
+function acrossKey(f: DiffFinding): string | undefined {
+  const r = f as Raw;
+  return r.across && r.tool ? [f.severity, r.behind ?? '', r.across.key, f.fix ?? '', f.confidence ?? ''].join('\u0000') : undefined;
+}
+
+/**
+ * The same change in several tools (the same rule, parameter path, and schema
+ * before and after: `pageId` made required in 25 tools) as one finding that
+ * lists them. Its tools go in `tools`, and in detail when there are more than a
+ * message lists.
+ */
+function groupAcrossTools(findings: DiffFinding[], total: number): DiffFinding[] {
+  const byKey = new Map<string, DiffFinding[]>();
+  for (const f of findings) {
+    const key = acrossKey(f);
+    if (key !== undefined) byKey.set(key, [...(byKey.get(key) ?? []), f]);
+  }
+  const out: DiffFinding[] = [];
+  for (const f of findings) {
+    const key = acrossKey(f);
+    const list = key === undefined ? undefined : byKey.get(key)!;
+    if (!list || list.length < 2) {
+      out.push(f);
+      continue;
+    }
+    if (list[0] !== f) continue;
+    const names = list.map((m) => m.tool!);
+    const places = list.flatMap((m) => m.places ?? ((m as Raw).place ? [(m as Raw).place!] : []));
+    const behind = (f as Raw).behind;
+    const { tool: _tool, ...first } = f;
+    const detail = [...(f.detail ?? []), ...(names.length > LIST_SHORT ? [`${behind ? 'operations' : 'tools'}: ${names.join(', ')}`] : [])];
+    out.push({
+      ...first,
+      message: (f as Raw).across!.say(countPhrase(names.length, total, behind), shortList(names), list as Raw[]),
+      ...(detail.length ? { detail } : {}),
+      tools: names,
+      ...(places.length ? { places } : {}),
+    });
+    if (!detail.length) delete out[out.length - 1].detail;
+  }
+  return out;
+}
+
+function classCounts(findings: DiffFinding[]): ClassCounts {
+  const c: ClassCounts = { breaking: { changes: 0, tools: 0 }, minor: { changes: 0, tools: 0 }, notice: { changes: 0, tools: 0 } };
+  const tools: Record<ChangeClass, Set<string>> = { breaking: new Set(), minor: new Set(), notice: new Set() };
+  for (const f of findings) {
+    if (!f.class) continue;
+    c[f.class].changes++;
+    for (const t of f.tools ?? (f.tool ? [f.tool] : [])) tools[f.class].add(t);
+  }
+  for (const k of Object.keys(c) as ChangeClass[]) c[k].tools = tools[k].size;
+  return c;
+}
+
+/** Fill in the release a breaking change should ship in: a version, or "a major release". */
+function resolveFixes(findings: DiffFinding[], next: string | undefined): void {
+  const phrase = next === 'enough' ? 'say so in the release notes' : next ? `release it as ${next}` : 'ship it in a major release';
+  for (const f of findings) if (f.fix) f.fix = f.fix.split(BREAKING_RELEASE).join(phrase);
+}
+
+/** A finding without the fields only diff uses to build it. */
+function finished(f: DiffFinding): DiffFinding {
+  const { place: _p, head: _h, tail: _t, group: _g, node: _n, across: _a, behind: _b, ...rest } = f as DiffFinding & Raw;
+  return rest;
+}
+
+const BUMP_WORD: Record<Bump, string> = { major: 'breaking changes', minor: 'new features', patch: 'other changes', none: 'no changes' };
+
+/** The version bump is smaller than the changes call for: say by how much, and what to release instead. */
+function bumpFinding(release: { before: string; after: string; source: 'release' | 'server' }, actual: Bump, required: Bump, suggested: Bump, classes: ClassCounts): Raw {
+  const what = suggested === 'major' ? classes.breaking : suggested === 'minor' ? classes.minor : classes.notice;
+  const changes = `${BUMP_WORD[suggested]} (${what.changes} change${what.changes === 1 ? '' : 's'}${what.tools ? ` in ${what.tools} tool${what.tools === 1 ? '' : 's'}` : ''})`;
+  const whose = release.source === 'server' ? 'The server-reported version' : 'The release version';
+  const v = parseSemver(release.before)!;
+  const zero = v.nums[0] === 0 && required !== suggested
+    ? ` Under 1.0.0 each step is one lower: npm's ^${release.before} accepts any ${v.nums[0]}.${v.nums[1]}.x, so breaking changes need a minor bump and new features a patch.`
+    : '';
+  const need = `${suggested === 'major' ? 'They need' : 'That needs'} a ${required} bump.${zero}`;
+  return {
+    rule: 'diff/version-bump',
+    message:
+      actual === 'none'
+        ? `${whose} stayed ${release.after}, but the menu has ${changes}. ${need}`
+        : `${release.before} → ${release.after} is a ${actual} bump, but the menu has ${changes}. ${need}`,
+    fix:
+      suggested === 'major'
+        ? `Release it as ${nextVersion(release.before, required)}, or make the breaking changes compatible (each one's next step says how).`
+        : `Release it as ${nextVersion(release.before, required)}.`,
+  };
+}
+
+/** The first version after `version` with this bump. */
+function nextVersion(version: string, bump: Bump): string {
+  const v = parseSemver(version);
+  if (!v) return 'the next version';
+  const [M, m, p] = v.nums;
+  return bump === 'major' ? `${M + 1}.0.0` : bump === 'minor' ? `${M}.${m + 1}.0` : bump === 'patch' ? `${M}.${m}.${p + 1}` : version;
 }
 
 /** The same $schema switch in several tools is one finding that names them. */
@@ -207,8 +409,9 @@ function collapseDialects(raw: Raw[]): void {
     const names = list.map((r) => r.tool!);
     raw.splice(at, 0, {
       rule: 'diff/schema-dialect',
-      message: `${list.length} tools declare a different JSON Schema dialect ($schema ${pair}), and nothing else outside their parameters changed: most likely a schema generator upgrade.`,
-      detail: [names.slice(0, 12).join(', ') + (names.length > 12 ? `, and ${names.length - 12} more` : '')],
+      message: `${names.length} tools declare a different JSON Schema dialect ($schema ${pair}) and changed nothing else outside their parameters: most likely a schema generator upgrade. ${shortList(names)}.`,
+      ...(names.length > LIST_SHORT ? { detail: [`tools: ${names.join(', ')}`] } : {}),
+      tools: names,
     });
   }
 }
@@ -218,24 +421,31 @@ function collapseDialects(raw: Raw[]): void {
  * (zod 4 dropping additionalProperties: false from every object; a refactor
  * across tools): one line naming the tools, every place in `places`.
  */
-const MENU_WIDE: Record<string, (tools: number, places: number) => string> = {
-  'diff/properties-opened': (t, p) => `${t} tools now accept properties they don't list (additionalProperties: false removed, at ${p} places): most likely a schema generator upgrade (zod 4 writes nothing where zod 3 wrote false).`,
-  'diff/properties-closed': (t, p) => `${t} tools now reject properties they don't list (additionalProperties: false added, at ${p} places). Calls that send one can fail.`,
-  'diff/schema-equivalent': (t) => `${t} tools are restructured or spelled differently but accept the same input.`,
+const MENU_WIDE: Record<string, { say: (tools: number, places: number) => string; fix?: string }> = {
+  'diff/properties-opened': {
+    say: (t, p) => `${t} tools now accept properties they don't list (additionalProperties: false removed at ${p} places). Most likely a schema generator upgrade: zod 4 writes nothing where zod 3 wrote false.`,
+  },
+  'diff/properties-closed': {
+    say: (t, p) => `${t} tools now reject properties they don't list (additionalProperties: false added at ${p} places). Calls that send an extra property fail validation.`,
+    fix: `Leave these objects open until a breaking release, or ${BREAKING_RELEASE}.`,
+  },
+  'diff/schema-equivalent': { say: (t) => `${t} tools were restructured or respelled ($ref, $defs, key order) but accept the same input.` },
 };
 
 function collapseMenuWide(raw: Raw[]): void {
-  for (const [rule, summary] of Object.entries(MENU_WIDE)) {
+  for (const [rule, { say, fix }] of Object.entries(MENU_WIDE)) {
     const list = raw.filter((r) => r.rule === rule && r.tool);
     if (list.length < 2) continue;
     const at = raw.indexOf(list[0]);
     for (const r of list) raw.splice(raw.indexOf(r), 1);
-    const places = list.flatMap((r) => r.places ?? [r.message.split(' ')[0].replace(/:$/, '')]);
+    const places = list.flatMap((r) => r.places ?? [r.place ?? r.tool!]);
     const names = list.map((r) => r.tool!);
     raw.splice(at, 0, {
       rule,
-      message: summary(list.length, places.length),
-      detail: [names.slice(0, 12).join(', ') + (names.length > 12 ? `, and ${names.length - 12} more` : '')],
+      message: `${say(list.length, places.length)} ${shortList(names)}.`,
+      ...(names.length > LIST_SHORT ? { detail: [`tools: ${names.join(', ')}`] } : {}),
+      ...(fix ? { fix } : {}),
+      tools: names,
       places,
     });
   }
@@ -255,7 +465,17 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
   const name = t.name;
 
   if ((old.description ?? '') !== (t.description ?? '')) {
-    out.push({ rule: 'diff/description', tool: name, message: `${name}: description changed. It doesn't break the protocol, but it changes what the agent does.`, detail: textDiff(old.description ?? '', t.description ?? '') });
+    const detail = textDiff(old.description ?? '', t.description ?? '');
+    out.push({
+      rule: 'diff/description',
+      tool: name,
+      message: `${code(name)}: the description changed. Agents read it to choose the tool and its arguments.`,
+      detail,
+      across: {
+        key: `diff/description\u0000${digest(detail)}`,
+        say: (count, list) => `The description changed the same way in ${count}: ${list}. Agents read it to choose the tool and its arguments.`,
+      },
+    });
   }
 
   // Compared by what they accept, not how they're spelled: a block moved into
@@ -268,21 +488,28 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
   const a = expanded ? ea.schema : old.inputSchema;
   const b = expanded ? eb.schema : t.inputSchema;
   if (!expanded && canonical(old.inputSchema) !== canonical(t.inputSchema)) {
-    const which = ea.expanded ? 'the new inputSchema expands' : eb.expanded ? 'the old inputSchema expands' : 'the old and new inputSchemas expand';
+    const which = ea.expanded ? 'the new input schema expands' : eb.expanded ? 'the old input schema expands' : 'the old and new input schemas expand';
     out.push({
       rule: 'diff/schema-other',
       tool: name,
-      message: `${name}: ${which} past ${fmt(MAX_EXPANDED_NODES)} nodes through ${ea.expanded || eb.expanded ? 'its' : 'their'} $refs, so both are compared as written, $defs entries by name: a $ref moved to another name reads as a change. Review it.`,
+      message: `${code(name)}: ${which} past ${fmt(MAX_EXPANDED_NODES)} nodes through ${ea.expanded || eb.expanded ? 'its' : 'their'} $refs, so both are compared as written, $defs entries by name. A $ref moved to another name reads as a change.`,
+      fix: 'Review the changes reported for this tool by hand.',
     });
   }
   const oldEmpty = isEmptySchema(a);
   const newEmpty = isEmptySchema(b);
   if (oldEmpty || newEmpty) {
     if (canonical(a) !== canonical(b)) {
+      const which = oldEmpty && newEmpty ? 'old and new input schemas are' : `${oldEmpty ? 'old' : 'new'} input schema is`;
       out.push({
         rule: 'diff/schema-other',
         tool: name,
-        message: `${name}: the ${oldEmpty ? 'old' : 'new'} inputSchema is empty or invalid (no type, no properties), so parameter changes can't be classified.`,
+        message: `${code(name)}: the ${which} empty or invalid (no type, no properties), so its parameter changes can't be classified.`,
+        fix: newEmpty ? 'Check that the server still builds this schema: an empty one usually means a schema generator or SDK mismatch.' : 'Review its parameters by hand.',
+        across: {
+          key: `diff/schema-other\u0000empty\u0000${which}`,
+          say: (count, list) => `In ${count}, the ${which.replace(/ is$/, 's are')} empty or invalid (no type, no properties), so parameter changes can't be classified: ${list}.`,
+        },
       });
     }
     return out.concat(compareRest(old, t));
@@ -310,14 +537,22 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
     // for the menu, below.
     if (canonical(ra) === canonical(rb)) {
       const pair = `${show(da)} → ${show(db)}`;
-      out.push({ rule: 'diff/schema-dialect', tool: name, message: `${name}: inputSchema declares a different JSON Schema dialect ($schema ${pair}), and nothing else outside its parameters changed.`, detail: [pair] });
+      out.push({ rule: 'diff/schema-dialect', tool: name, message: `${code(name)}: the input schema declares a different JSON Schema dialect ($schema ${pair}), and nothing else outside its parameters changed.`, detail: [pair] });
+    } else {
+      const keys = changedKeys(ra, rb);
+      out.push({
+        rule: 'diff/schema-other',
+        tool: name,
+        message: `${code(name)}: the input schema changed outside its parameters, in keywords toolmenu doesn't classify: ${keys}.`,
+        fix: 'Review it: a new constraint on the whole input can reject calls that worked.',
+        across: { key: `diff/schema-other\u0000shell\u0000${digest([ra, rb])}`, say: (count, list) => `The input schema changed the same way outside its parameters in ${count}, in keywords toolmenu doesn't classify (${keys}): ${list}.` },
+      });
     }
-    else out.push({ rule: 'diff/schema-other', tool: name, message: `${name}: inputSchema changed outside its parameters (additionalProperties, $schema…). Review it.` });
   }
   // Never silent: the schemas differ, and nothing above says how. Spellings the
   // rules treat as one (a type as anyOf alternatives or a list) don't count.
   if (expanded && out.length === found && canonical(sameTypes(a)) !== canonical(sameTypes(b))) {
-    out.push({ rule: 'diff/schema-other', tool: name, message: `${name}: inputSchema changed in a way toolmenu doesn't classify. Review it.` });
+    out.push({ rule: 'diff/schema-other', tool: name, message: `${code(name)}: the input schema changed in a way toolmenu doesn't classify.`, fix: 'Review it by hand.' });
   }
   // Spelled differently, accepts the same: say so, so the refactor needs no review.
   if (canonical(a) === canonical(b) && canonical(old.inputSchema) !== canonical(t.inputSchema)) {
@@ -325,10 +560,20 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
     out.push({
       rule: 'diff/schema-equivalent',
       tool: name,
-      message: `${name}: inputSchema restructured ($ref, $defs, key order) but accepts the same input: ${delta === 0 ? 'no change in size' : `~${fmt(Math.abs(delta))} tokens ${delta < 0 ? 'fewer' : 'more'}`} (estimate).`,
+      message: `${code(name)}: the input schema was restructured ($ref, $defs, key order) but accepts the same input: ${delta === 0 ? 'no change in size' : `~${fmt(Math.abs(delta))} tokens ${delta < 0 ? 'fewer' : 'more'}`} (estimate).`,
     });
   }
   return out.concat(compareRest(old, t));
+}
+
+/** Which keywords differ between two schema fragments, with their values when short: `minProperties: (unset) → 1`. */
+function changedKeys(a: Record<string, unknown>, b: Record<string, unknown>): string {
+  const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])].filter((k) => canonical(a[k]) !== canonical(b[k])).sort();
+  const one = (k: string) => {
+    const pair = `${show(a[k])} → ${show(b[k])}`;
+    return pair.length <= 60 ? `${k} ${pair}` : k;
+  };
+  return keys.length > 5 ? `${keys.slice(0, 5).map(one).join(', ')}, and ${keys.length - 5} more` : keys.map(one).join(', ');
 }
 
 /** A schema with every type written one way: `type: [sorted]`, for anyOf/oneOf type alternatives too. */
@@ -367,10 +612,17 @@ function compareDefinitions(w: Walk, name: string, oldS: JsonSchema, newS: JsonS
     const removed = Object.keys(a).filter((k) => !(k in b));
     const added = Object.keys(b).filter((k) => !(k in a));
     // One line each for definitions only one side has: what refers to them is compared above.
-    if (removed.length) w.out.push({ rule: 'diff/schema-other', tool: w.tool, message: `${name}: ${pool} ${removed.length === 1 ? 'entry' : 'entries'} removed (${list(removed)}). Review what referred to ${removed.length === 1 ? 'it' : 'them'}.` });
-    if (added.length) w.out.push({ rule: 'diff/schema-other', tool: w.tool, message: `${name}: ${pool} ${added.length === 1 ? 'entry' : 'entries'} added (${list(added)}).` });
+    if (removed.length) {
+      w.out.push({
+        rule: 'diff/schema-other',
+        tool: w.tool,
+        message: `${code(name)}: ${pool} ${removed.length === 1 ? 'entry' : 'entries'} removed (${list(removed)}). The schema is too large to expand, so what referred to ${removed.length === 1 ? 'it' : 'them'} is compared by name only.`,
+        fix: `Review the parameters that referred to ${removed.length === 1 ? 'it' : 'them'}.`,
+      });
+    }
+    if (added.length) w.out.push({ rule: 'diff/schema-other', tool: w.tool, message: `${code(name)}: ${pool} ${added.length === 1 ? 'entry' : 'entries'} added (${list(added)}).` });
     for (const [k, def] of Object.entries(b)) {
-      if (k in a) compareSchema(w, `${name}.${pool}.${k}`, `${name}.${pool}.${k}`, a[k], def, 1);
+      if (k in a) compareSchema(w, `${name}.${pool}.${k}`, a[k], def, 1);
     }
   }
 }
@@ -416,13 +668,53 @@ function digest(value: unknown): string {
  * same schema before and after, and the same enclosing object: two independent
  * `limit` parameters removed from different objects are two findings, while one
  * definition used at five places has the same enclosing object at all five.
+ *
+ * The message is `place` + `head` + "." + `tail`: "`click.pageId` is new and
+ * required. Existing calls don't send it…". The same change in several tools
+ * (the same path inside each, the same schema before and after, descriptions
+ * aside) is said once for them all (groupAcrossTools): "`pageId` is new and
+ * required in 25 of 29 tools: click, drag, … (+19). Existing calls…".
  */
-function say(w: Walk, rule: string, place: string, text: string, node: unknown, detail?: string[], groupAs?: string): void {
-  const field = place.replace(/( \([^()]*(?:\([^()]*\)[^()]*)*\))+$/, '').split('.').pop();
+function say(w: Walk, rule: string, place: string, head: string, tail: string, node: unknown, more: { detail?: string[]; groupAs?: string; fix?: string; confidence?: 'unsure' } = {}): void {
+  const { detail, groupAs, fix, confidence } = more;
+  const field = place.replace(/(\[\]|\([^()]*(?:\([^()]*\)[^()]*)*\))+$/, '').split('.').pop();
   // groupAs: findings that are one change wherever they're found in the tool,
   // whatever the field (additionalProperties: false dropped from every object).
-  const group = groupAs ?? [rule, text, field, digest(node), w.scope ?? '', digest(detail)].join('\u0000');
-  w.out.push({ rule, tool: w.tool, message: place + text, place, text, group, ...(detail ? { detail } : {}) });
+  const group = groupAs ?? [rule, head, tail, field, digest(node), w.scope ?? '', digest(detail)].join('\u0000');
+  const rel = place.startsWith(w.tool) ? place.slice(w.tool.length).replace(/^\./, '') : place;
+  w.out.push({
+    rule,
+    tool: w.tool,
+    message: sentence(code(place) + head, tail),
+    place,
+    head,
+    tail,
+    group,
+    node,
+    ...(detail ? { detail } : {}),
+    ...(fix ? { fix } : {}),
+    ...(confidence ? { confidence } : {}),
+    across: pathAcross(rule, rel, head, tail, node, detail),
+  });
+}
+
+/** "`x` was removed." + " Calls that…" */
+function sentence(head: string, tail: string, more = ''): string {
+  return `${head}.${tail ? ' ' + tail : ''}${more ? ' ' + more : ''}`;
+}
+
+/** The same change at the same path inside several tools. */
+function pathAcross(rule: string, rel: string, head: string, tail: string, node: unknown, detail: string[] | undefined, more = '', places = ''): Across {
+  return {
+    key: [rule, rel, head, tail, digest(shape(node)), digest(detail), places].join('\u0000'),
+    say: (count, list) => sentence(`${rel ? code(rel) : 'The input schema'}${head} in ${count}: ${list}`, tail, more),
+  };
+}
+
+/** Values as code, at most eight: `news`, `d`, and 3 more. */
+function values(list: unknown[]): string {
+  const shown = list.slice(0, 8).map((v) => code(typeof v === 'string' ? v : JSON.stringify(v)));
+  return shown.join(', ') + (list.length > 8 ? `, and ${list.length - 8} more` : '');
 }
 
 /**
@@ -441,50 +733,120 @@ function compareObject(outer: Walk, path: string, oldS: JsonSchema, newS: JsonSc
   const newReq = new Set(newS.required ?? []);
   const defaulted = (schema: JsonSchema) =>
     hasDefault(schema) ? ` It has a default (${show(schema.default)}), so the server may still accept calls without it, but clients that validate arguments won't.` : '';
+  const requiredFix = (p: string, schema: JsonSchema, was: string) =>
+    hasDefault(schema)
+      ? `Take ${code(p)} out of required: its default already covers calls that leave it out.`
+      : `${was} ${code(p)} optional and fall back to a default when it's missing, or ${BREAKING_RELEASE}.`;
 
   // Removing an optional parameter only breaks callers if the new schema rejects
   // unknown properties; otherwise calls that still send it stay valid.
   const closed = newS.additionalProperties === false;
   // additionalProperties: false removed, or added (absent, true and {} are one
   // spelling after expansion). zod 4 drops it from every object: one finding for
-  // the tool (collapsePlaces), and one line for the menu (collapseOpenings).
+  // the tool (collapsePlaces), and one line for the menu (collapseMenuWide).
   const wasClosed = oldS.additionalProperties === false;
   if (wasClosed && newS.additionalProperties === undefined) {
-    say(w, 'diff/properties-opened', path, ` now accepts properties it doesn't list (additionalProperties: false removed).`, null, undefined, 'diff/properties-opened');
+    say(w, 'diff/properties-opened', path, ` now accepts properties it doesn't list (additionalProperties: false removed)`, '', null, { groupAs: 'diff/properties-opened' });
   } else if (!wasClosed && oldS.additionalProperties === undefined && closed) {
-    say(w, 'diff/properties-closed', path, ` now rejects properties it doesn't list (additionalProperties: false added). Calls that send one can fail.`, null, undefined, 'diff/properties-closed');
+    say(w, 'diff/properties-closed', path, ` now rejects properties it doesn't list (additionalProperties: false added)`, 'Calls that send an extra property fail validation.', null, {
+      groupAs: 'diff/properties-closed',
+      fix: `Leave it open until a breaking release, or ${BREAKING_RELEASE}.`,
+    });
   }
-  for (const p of Object.keys(oldProps)) {
-    if (p in newProps) continue;
-    if (oldReq.has(p) || closed) say(w, 'diff/param-removed', `${path}.${p}`, ' was removed. Calls that pass it can fail.', oldProps[p]);
-    else say(w, 'diff/param-dropped', `${path}.${p}`, ' (optional) was removed. Calls that still send it stay valid, but the server may ignore it.', oldProps[p]);
+  const gone = Object.keys(oldProps).filter((p) => !(p in newProps));
+  for (const p of gone) {
+    const fix = `Keep accepting ${code(p)} (marked deprecated) for one release, or ${BREAKING_RELEASE}.`;
+    if (oldReq.has(p)) {
+      say(w, 'diff/param-removed', `${path}.${p}`, ' was removed', `It was required, so every existing call sends it${closed ? ', and the object now rejects properties it doesn\'t list: those calls fail validation.' : ', and the server no longer reads it.'}`, oldProps[p], { fix });
+    } else if (closed) {
+      say(w, 'diff/param-removed', `${path}.${p}`, ' (optional) was removed', 'The object rejects properties it doesn\'t list, so calls that still send it fail validation.', oldProps[p], { fix });
+    } else {
+      say(w, 'diff/param-dropped', `${path}.${p}`, ' (optional) was removed', 'Calls that still send it stay valid, but the server may ignore it.', oldProps[p]);
+    }
   }
+  const fresh: string[] = [];
   for (const [p, schema] of Object.entries(newProps)) {
     const before = oldProps[p];
     const at = `${path}.${p}`;
     if (!before) {
-      if (newReq.has(p)) say(w, 'diff/param-required', at, ` is new and required. Existing calls don't send it.${defaulted(schema)}`, schema);
-      else say(w, 'diff/param-added', at, ' is a new optional parameter.', schema);
+      if (newReq.has(p)) {
+        fresh.push(p);
+        say(w, 'diff/param-required', at, ' is new and required', `Existing calls don't send it, so they fail validation.${defaulted(schema)}`, schema, { fix: requiredFix(p, schema, 'Make') });
+      } else say(w, 'diff/param-added', at, ' is a new optional parameter', '', schema);
       continue;
     }
-    if (!oldReq.has(p) && newReq.has(p)) say(w, 'diff/param-required', at, ` was optional and is now required.${defaulted(schema)}`, [before, schema]);
-    else if (oldReq.has(p) && !newReq.has(p)) say(w, 'diff/param-relaxed', at, ' was required and is now optional.', [before, schema]);
-    compareSchema(w, at, at, before, schema, depth);
+    if (!oldReq.has(p) && newReq.has(p)) {
+      say(w, 'diff/param-required', at, ' was optional and is now required', `Calls that leave it out fail validation.${defaulted(schema)}`, [before, schema], { fix: requiredFix(p, schema, 'Keep') });
+    } else if (oldReq.has(p) && !newReq.has(p)) say(w, 'diff/param-relaxed', at, ' was required and is now optional', '', [before, schema]);
+    compareSchema(w, at, before, schema, depth);
   }
+  for (const [from, to] of likelyRenames(gone, fresh, oldProps, newProps)) {
+    const [a, b] = [typeOf(oldProps[from]), typeOf(newProps[to])];
+    const types = a === b ? (a ? `both ${a}` : 'both untyped') : `${a || 'any'} → ${b === 'array' ? `array of ${typeOf(newProps[to].items ?? {}) || 'any'}` : b || 'any'}`;
+    say(w, 'diff/param-renamed', `${path}.${from}`, ` → ${code(to)} looks like a rename`, `${code(from)} was removed and ${code(to)} is new and required (${types}). Both stay breaking for existing calls.`, [oldProps[from], newProps[to]], {
+      fix: `If it is a rename, accept ${code(from)} for one more release and treat it as ${code(to)}; either way, name the rename in the release notes.`,
+      confidence: 'unsure',
+    });
+  }
+}
+
+/**
+ * Removed parameters that look renamed to a new required one next to them: a
+ * close name (case, separators, a plural, one or two letters) and the same
+ * type, or an array of it. Only one-to-one: a name close to two others is no
+ * guess.
+ */
+function likelyRenames(gone: string[], fresh: string[], oldProps: Record<string, JsonSchema>, newProps: Record<string, JsonSchema>): [string, string][] {
+  const fits = (from: string, to: string) => closeNames(from, to) && sameKind(oldProps[from], newProps[to]);
+  const pairs: [string, string][] = [];
+  for (const from of gone) {
+    const to = fresh.filter((n) => fits(from, n));
+    if (to.length === 1 && gone.filter((g) => fits(g, to[0])).length === 1) pairs.push([from, to[0]]);
+  }
+  return pairs;
+}
+
+function closeNames(a: string, b: string): boolean {
+  const norm = (s: string) => s.toLowerCase().replace(/[-_.\s]/g, '');
+  const [x, y] = [norm(a), norm(b)];
+  if (x === y) return true;
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x];
+  if (long === `${short}s` || long === `${short}es` || (short.endsWith('y') && long === `${short.slice(0, -1)}ies`)) return true;
+  if (short.length < 5) return false;
+  return editDistance(x, y) <= (long.length >= 10 ? 2 : 1);
+}
+
+function editDistance(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = row;
+  }
+  return prev[b.length];
+}
+
+/** The same type, or one side an array of the other's type. */
+function sameKind(a: JsonSchema, b: JsonSchema): boolean {
+  const [x, y] = [typeOf(a), typeOf(b)];
+  if (x === y) return true;
+  if (y === 'array') return typeOf(b.items ?? {}) === x;
+  if (x === 'array') return typeOf(a.items ?? {}) === y;
+  return false;
 }
 
 /**
  * One schema against its next version, anywhere in a tool: its type, allowed
  * values and description; array items, object fields and union options, each
- * compared the same way; and whatever's left, as one "review it". `at` is the path
- * nested fields hang off (`gen.rows[]`); `label` names this schema in messages
- * (`gen.rows (array items)`).
+ * compared the same way; and whatever's left, as one "review it". `at` is its
+ * path, and the path nested fields hang off: `gen.rows[]` for array items,
+ * `gen.block(kind="text")` for a union option.
  */
-function compareSchema(w: Walk, at: string, label: string, before: JsonSchema, after: JsonSchema, depth: number): void {
+function compareSchema(w: Walk, at: string, before: JsonSchema, after: JsonSchema, depth: number): void {
   // Past the limit, a change is said as such, not passed off as an unclassified one.
   if (depth >= MAX_DEPTH) {
     if (canonical(sameTypes(before)) !== canonical(sameTypes(after))) {
-      say(w, 'diff/schema-other', label, `: changed more than ${MAX_DEPTH} levels deep, below where toolmenu compares field by field. Review it.`, [before, after]);
+      say(w, 'diff/schema-other', at, ` changed more than ${MAX_DEPTH} levels deep, below where toolmenu compares field by field`, '', [before, after], { fix: 'Review it by hand.' });
     }
     return;
   }
@@ -498,24 +860,29 @@ function compareSchema(w: Walk, at: string, label: string, before: JsonSchema, a
   const newType = typeOf(after);
   if (union) {
     // The plain side's description is the node's, compared below, not an option's.
-    compareUnion(w, at, label, optionsOf(before), optionsOf(after), depth);
+    compareUnion(w, at, optionsOf(before), optionsOf(after), depth);
   } else {
     if (oldType !== newType) {
       // Widening (boolean → boolean|string, object → any) accepts every call that
       // worked before; only a narrower or different type breaks callers.
-      if (accepts(after, before)) say(w, 'diff/type-widened', label, ` now accepts more types: ${oldType || 'any'} → ${newType || 'any'}.`, [before, after]);
-      else say(w, 'diff/param-type', label, ` changed type: ${oldType || 'any'} → ${newType || 'any'}. Calls that worked before can fail.`, [before, after]);
+      const pair = `${oldType || 'any'} → ${newType || 'any'}`;
+      if (accepts(after, before)) say(w, 'diff/type-widened', at, ` now accepts more types: ${pair}`, '', [before, after]);
+      else {
+        say(w, 'diff/param-type', at, ` changed type: ${pair}`, `Calls that send ${oldType ? `${article(oldType)} ${oldType}` : 'any other type'} fail validation.`, [before, after], {
+          fix: oldType && newType ? `Accept both (${[...new Set([...oldType.split('|'), ...newType.split('|')])].join('|')}) for one release, or ${BREAKING_RELEASE}.` : `Restore the old type, or ${BREAKING_RELEASE}.`,
+        });
+      }
     }
     const e = enumChange(before, after);
-    if (e) say(w, e.rule, label, `: ${e.message}`, [before, after]);
+    if (e) say(w, e.rule, at, e.head, e.tail, [before, after], e.fix ? { fix: e.fix } : {});
   }
   // Array items: compared like a parameter of their own (no items schema = any element).
   const isArray = (s: JsonSchema) => typesOf(s)?.includes('array') ?? false;
   const arrays = !union && isArray(before) && isArray(after);
-  if (arrays) compareSchema(w, `${at}[]`, `${label} (array items)`, before.items ?? {}, after.items ?? {}, depth + 1);
+  if (arrays) compareSchema(w, `${at}[]`, before.items ?? {}, after.items ?? {}, depth + 1);
   const [da, db] = [describedAs(before), describedAs(after)];
   if (da !== db) {
-    say(w, 'diff/description', label, `: ${label.endsWith(')') ? 'description' : 'parameter description'} changed.`, [before, after], textDiff(da, db));
+    say(w, 'diff/description', at, ': the description changed', 'Agents read it to fill in the value.', [before, after], { detail: textDiff(da, db) });
   }
   const object = !union && hasProperties(before) && hasProperties(after);
   if (object) compareObject(w, at, before, after, depth + 1);
@@ -523,9 +890,11 @@ function compareSchema(w: Walk, at: string, label: string, before: JsonSchema, a
   // schema: no duplicate notice. A widened type can still bring new constraints.
   // A union against a plain schema is covered by its options entirely.
   if (union && !(oldOptions && newOptions)) return;
-  const rest = (s: JsonSchema) => residual(s, { object, items: arrays, union });
+  const rest = (s: JsonSchema) => residual(s, { object, items: arrays, union }) as Record<string, unknown>;
   if ((union || oldType === newType || accepts(after, before)) && canonical(rest(before)) !== canonical(rest(after))) {
-    say(w, 'diff/schema-other', label, `: changed in a way toolmenu doesn't classify (constraints, formats, combinators…). Review it.`, [before, after]);
+    say(w, 'diff/schema-other', at, ` changed in keywords toolmenu doesn't classify: ${changedKeys(rest(before), rest(after))}`, '', [before, after], {
+      fix: 'Review it: a tighter constraint (a lower maximum, a new pattern or format) rejects calls that met the old one.',
+    });
   }
 }
 
@@ -615,7 +984,7 @@ function undescribed(s: JsonSchema): JsonSchema {
  * A union's options, paired old with new (pairOptions), each pair compared like
  * any schema. An option gone is breaking; a new one widens.
  */
-function compareUnion(outer: Walk, at: string, label: string, oldOptions: JsonSchema[], newOptions: JsonSchema[], depth: number): void {
+function compareUnion(outer: Walk, at: string, oldOptions: JsonSchema[], newOptions: JsonSchema[], depth: number): void {
   // Findings about the union, and inside its options, group by the union itself:
   // one union definition shared by fields of different objects (a heading's
   // content and a table cell's) is one change, whatever the objects around it.
@@ -625,11 +994,13 @@ function compareUnion(outer: Walk, at: string, label: string, oldOptions: JsonSc
   const { pairs, gone, fresh } = pairOptions(oldOptions, newOptions, key);
   const oldLabels = optionLabels(oldOptions, key);
   const newLabels = optionLabels(newOptions, key);
-  for (const o of gone) say(w, 'diff/param-type', label, `: no longer accepts the ${oldLabels.get(o)} option. Calls that sent it can fail.`, o);
-  for (const o of fresh) say(w, 'diff/type-widened', label, ` now also accepts ${article(newLabels.get(o)!)} ${newLabels.get(o)} option.`, o);
+  for (const o of gone) {
+    say(w, 'diff/param-type', at, `: no longer accepts the ${code(oldLabels.get(o)!)} option`, 'Calls that send it fail validation.', o, { fix: `Keep accepting that option for one release, or ${BREAKING_RELEASE}.` });
+  }
+  for (const o of fresh) say(w, 'diff/type-widened', at, ` now also accepts ${article(newLabels.get(o)!)} ${code(newLabels.get(o)!)} option`, '', o);
   for (const [prev, next] of pairs) {
     const k = newLabels.get(next)!;
-    compareSchema(w, `${at}(${k})`, `${label} (${k} option)`, prev, next, depth + 1);
+    compareSchema(w, `${at}(${k})`, prev, next, depth + 1);
   }
 }
 
@@ -758,15 +1129,19 @@ function collapsePlaces(out: Raw[], from: number): void {
     const [first, ...rest] = list;
     // Same field, same schema, in identical enclosing objects: one definition,
     // reached from several places.
-    first.message = `${first.place}${first.text} The same change at ${rest.length} more place${rest.length === 1 ? '' : 's'}, in the same definition.`;
-    first.detail = [...(first.detail ?? []), ...rest.slice(0, 10).map((r) => `also at ${r.place}`), ...(rest.length > 10 ? [`…and ${rest.length - 10} more`] : [])];
+    const more = `The same change at ${rest.length} more place${rest.length === 1 ? '' : 's'}, in the same definition.`;
+    const rel = (r: Raw) => (r.place!.startsWith(r.tool!) ? r.place!.slice(r.tool!.length).replace(/^\./, '') : r.place!);
+    const original = first.detail;
+    first.message = sentence(code(first.place!) + first.head, first.tail!, more);
+    first.detail = [...(original ?? []), ...rest.slice(0, 10).map((r) => `also at ${rel(r)}`), ...(rest.length > 10 ? [`…and ${rest.length - 10} more`] : [])];
     first.places = list.map((r) => r.place!);
+    first.across = pathAcross(first.rule, rel(first), first.head!, first.tail!, first.node, original, more, list.map(rel).join('\u0000'));
     for (const r of rest) out.splice(out.indexOf(r), 1);
   }
+  // Grouping across tools goes by place (`place` stays until the finding is finished).
   for (const r of out.slice(from)) {
-    delete r.place;
-    delete r.text;
     delete r.group;
+    delete r.node;
   }
 }
 
@@ -850,32 +1225,48 @@ function expandRefs(schema: JsonSchema | undefined): { schema: JsonSchema | unde
 function compareCatalogs(before: Menu['catalog'], after: Menu['catalog'], ignored: (name: string) => boolean): Raw[] {
   if (!before && !after) return [];
   if (!before || !after) {
-    return [{ rule: 'diff/catalog-queries', message: `Only the ${before ? 'older' : 'newer'} snapshot has a catalog (snapshot --catalog), so the operations behind ${(before ?? after)!.tool} weren't compared.` }];
+    return [
+      {
+        rule: 'diff/catalog-queries',
+        message: `Only the ${before ? 'older' : 'newer'} snapshot has a catalog (snapshot --catalog), so the operations behind ${code((before ?? after)!.tool)} weren't compared.`,
+        fix: 'Snapshot both versions with --catalog.',
+      },
+    ];
   }
   const out: Raw[] = [];
-  const where = `behind ${after.tool}`;
+  const where = `behind ${code(after.tool)}`;
   if (JSON.stringify(before.queries) !== JSON.stringify(after.queries)) {
-    out.push({ rule: 'diff/catalog-queries', message: `The two catalogs were read with different queries, so operations found on one side only say little. Pin them with catalog.queries in the config.` });
+    out.push({
+      rule: 'diff/catalog-queries',
+      message: "The two catalogs were read with different queries, so an operation found on one side only may just not have matched the other side's queries.",
+      fix: 'Pin the queries with catalog.queries in the config, and snapshot both again.',
+    });
   }
   const partial = [before, after].filter((c) => c.failed?.length);
   if (partial.length) {
-    out.push({ rule: 'diff/catalog-queries', message: `${partial.length === 2 ? 'Both catalogs are' : `The ${partial[0] === before ? 'older' : 'newer'} catalog is`} partial: some queries failed (rate limits or errors), so operations found on one side only say even less.` });
+    out.push({
+      rule: 'diff/catalog-queries',
+      message: `${partial.length === 2 ? 'Both catalogs are' : `The ${partial[0] === before ? 'older' : 'newer'} catalog is`} partial: some queries failed (rate limits or errors), so operations found on one side only say even less.`,
+      fix: 'Snapshot again with --catalog once the rate limit has reset.',
+    });
   }
   const oldOps = new Map(before.operations.filter((o) => !ignored(o.name)).map((o) => [o.name, o]));
   const newOps = new Map(after.operations.filter((o) => !ignored(o.name)).map((o) => [o.name, o]));
   for (const [name, op] of newOps) {
     const old = oldOps.get(name);
     if (!old) {
-      out.push({ rule: 'diff/catalog-added', tool: name, message: `${name} (${where}) is new, or newly found by the same queries.` });
+      out.push({ rule: 'diff/catalog-added', tool: name, message: `${code(name)} (${where}) is new, or newly found by the same queries.` });
       continue;
     }
-    for (const r of compareTool(old, op)) out.push({ ...r, message: `${r.message.replace(/\.$/, '')} (an operation ${where}).` });
+    for (const r of compareTool(old, op)) out.push({ ...r, message: `Behind ${code(after.tool)}: ${r.message}`, behind: after.tool });
   }
   const missing = [...oldOps.keys()].filter((n) => !newOps.has(n));
   if (missing.length) {
     out.push({
       rule: 'diff/catalog-missing',
-      message: `${missing.length} operation${missing.length === 1 ? '' : 's'} ${where} weren't returned by the same queries this time: removed, renamed, or ranked lower. Check before relying on them: ${missing.slice(0, 8).join(', ')}${missing.length > 8 ? ', …' : ''}.`,
+      message: `${missing.length} operation${missing.length === 1 ? '' : 's'} ${where} weren't returned by the same queries this time: removed, renamed, or ranked lower. ${shortList(missing)}.`,
+      ...(missing.length > LIST_SHORT ? { detail: [`operations: ${missing.join(', ')}`] } : {}),
+      fix: 'Search for them by name before relying on them.',
     });
   }
   return out;
@@ -887,9 +1278,18 @@ const TOOL_FIELDS = new Set(['name', 'description', 'inputSchema', 'outputSchema
 function compareRest(old: MenuTool, t: MenuTool): Raw[] {
   const out: Raw[] = [];
   const name = t.name;
+  // Tool-level changes that read the same in any tool: said once for all of them.
+  const same = (key: string, say: Across['say']): Across => ({ key, say });
   if (canonical(old.outputSchema) !== canonical(t.outputSchema)) {
-    const what = old.outputSchema === undefined ? 'now declares an outputSchema' : t.outputSchema === undefined ? 'no longer declares an outputSchema' : 'outputSchema changed';
-    out.push({ rule: 'diff/schema-other', tool: name, message: `${name}: ${what}. Clients that validate structured output may notice.` });
+    const what = old.outputSchema === undefined ? 'now declares an outputSchema' : t.outputSchema === undefined ? 'no longer declares an outputSchema' : 'changed its outputSchema';
+    const why = old.outputSchema === undefined ? 'Clients that validate structured output will check results against it.' : t.outputSchema === undefined ? 'Clients that relied on structured output get none described.' : 'Clients that validate structured output check results against the new one.';
+    out.push({
+      rule: 'diff/schema-other',
+      tool: name,
+      message: `${code(name)} ${what}. ${why}`,
+      ...(t.outputSchema !== undefined ? { fix: 'Check that what the tool returns matches it.' } : {}),
+      across: same(`output\u0000${what}`, (count, list) => `${count[0].toUpperCase()}${count.slice(1)} ${what.replace(/^now declares/, 'now declare').replace(/^no longer declares/, 'no longer declare').replace(/^changed its/, 'changed their')}: ${list}. ${why}`),
+    });
   }
 
   const a = old.annotations ?? {};
@@ -898,22 +1298,47 @@ function compareRest(old: MenuTool, t: MenuTool): Raw[] {
   // destructiveHint true (meaningful only when not read-only).
   let safety = false;
   if (readOnly(a) && !readOnly(b)) {
-    out.push({ rule: 'diff/safety-hint', tool: name, message: `${name} is no longer read-only. Clients and agents that auto-approve read-only tools will now call something that writes.` });
+    out.push({
+      rule: 'diff/safety-hint',
+      tool: name,
+      message: `${code(name)} is no longer marked read-only (readOnlyHint ${show(a.readOnlyHint)} → ${show(b.readOnlyHint)}). Clients that auto-approve read-only tools will now ask first, or, if set to trust the server, call something that may write.`,
+      fix: 'If the tool still only reads, restore readOnlyHint: true; if it writes now, say so in the release notes.',
+    });
     safety = true;
   } else if (!readOnly(b) && !destructive(a) && destructive(b)) {
-    out.push({ rule: 'diff/safety-hint', tool: name, message: `${name} was additive-only and is now destructive.` });
+    out.push({
+      rule: 'diff/safety-hint',
+      tool: name,
+      message: `${code(name)} was marked additive-only and is now destructive (destructiveHint ${show(a.destructiveHint)} → ${show(b.destructiveHint)}; unset means destructive). Clients that auto-approve additive tools may now ask first.`,
+      fix: 'If the tool still never deletes or overwrites, set destructiveHint: false; if it does now, say so in the release notes.',
+    });
     safety = true;
   }
   const changed = [...new Set([...Object.keys(a), ...Object.keys(b)])]
     .filter((k) => canonical(a[k]) !== canonical(b[k]))
-    .map((k) => `${k}: ${show(a[k])} → ${show(b[k])}`);
+    .map((k) => `${k} ${show(a[k])} → ${show(b[k])}`);
   if (changed.length && !safety) {
-    out.push({ rule: 'diff/annotations', tool: name, message: `${name}: annotations changed (${changed.join(', ')}).` });
+    const what = changed.join(', ');
+    out.push({
+      rule: 'diff/annotations',
+      tool: name,
+      message: `${code(name)}: annotations changed (${what}).`,
+      across: same(`annotations\u0000${what}`, (count, list) => `Annotations changed the same way (${what}) in ${count}: ${list}.`),
+    });
   }
 
-  const others = [...new Set([...Object.keys(old), ...Object.keys(t)])].filter((k) => !TOOL_FIELDS.has(k) && canonical(old[k]) !== canonical(t[k]));
+  const others = [...new Set([...Object.keys(old), ...Object.keys(t)])].filter((k) => !TOOL_FIELDS.has(k) && canonical(old[k]) !== canonical(t[k])).sort();
   if (others.length) {
-    out.push({ rule: 'diff/other', tool: name, message: `${name}: ${others.join(', ')} changed.` });
+    const what = others.map((k) => {
+      const pair = `${show(old[k])} → ${show(t[k])}`;
+      return pair.length <= 60 ? `${k} ${pair}` : k;
+    }).join(', ');
+    out.push({
+      rule: 'diff/other',
+      tool: name,
+      message: `${code(name)}: ${what} changed. Clients may show these; the agent may read them.`,
+      across: same(`other\u0000${what}`, (count, list) => `The same fields changed (${what}) in ${count}: ${list}. Clients may show these; the agent may read them.`),
+    });
   }
   return out;
 }
@@ -1029,22 +1454,53 @@ function allowedValues(schema: JsonSchema): unknown[] | undefined {
   return 'const' in schema ? [schema.const] : undefined;
 }
 
-function enumChange(before: JsonSchema, after: JsonSchema): { rule: string; message: string } | undefined {
+function enumChange(before: JsonSchema, after: JsonSchema): { rule: string; head: string; tail: string; fix?: string } | undefined {
   const a = allowedValues(before);
   const b = allowedValues(after);
   if (!a && !b) return undefined;
-  if (!a && b) return { rule: 'diff/enum-narrowed', message: `now limited to ${b.map(String).join(', ')}.` };
-  if (a && !b) return { rule: 'diff/enum-widened', message: `no longer limited to a fixed set of values.` };
+  if (!a && b) {
+    return { rule: 'diff/enum-narrowed', head: `: now limited to ${values(b)}`, tail: 'Calls that send any other value fail validation.', fix: `Accept other values for one more release, or ${BREAKING_RELEASE}.` };
+  }
+  if (a && !b) return { rule: 'diff/enum-widened', head: ': no longer limited to a fixed set of values', tail: '' };
   const gone = a!.filter((v) => !b!.some((w) => canonical(w) === canonical(v)));
   const fresh = b!.filter((v) => !a!.some((w) => canonical(w) === canonical(v)));
-  if (gone.length) return { rule: 'diff/enum-narrowed', message: `no longer accepts ${gone.map(String).join(', ')}.` };
-  if (fresh.length) return { rule: 'diff/enum-widened', message: `now also accepts ${fresh.map(String).join(', ')}.` };
+  if (gone.length) {
+    return {
+      rule: 'diff/enum-narrowed',
+      head: `: no longer accepts ${values(gone)}`,
+      tail: `Calls that send ${gone.length === 1 ? 'it' : 'them'} fail validation.`,
+      fix: `Restore ${gone.length === 1 ? values(gone) : 'them'}, or ${BREAKING_RELEASE}.`,
+    };
+  }
+  if (fresh.length) return { rule: 'diff/enum-widened', head: `: now also accepts ${values(fresh)}`, tail: '' };
   return undefined;
 }
 
+/**
+ * A text change as two lines, whitespace flattened (a description's line breaks
+ * would break the report's layout). A long text shows only where it changed,
+ * with a few words around it: "- …for the currently selected page since…".
+ */
 function textDiff(before: string, after: string): string[] {
   const cut = (s: string) => (s.length > 240 ? s.slice(0, 237) + '…' : s);
-  return [`- ${cut(before) || '(none)'}`, `+ ${cut(after) || '(none)'}`];
+  const flat = (s: string) => s.replace(/\s+/g, ' ').trim();
+  const [a, b] = [flat(before), flat(after)];
+  // Only whitespace changed: show it.
+  if (a === b) return [`- ${cut(JSON.stringify(before))}`, `+ ${cut(JSON.stringify(after))}`];
+  if (a.length <= 160 && b.length <= 160) return [`- ${a || '(none)'}`, `+ ${b || '(none)'}`];
+  const [wa, wb] = [a.split(' '), b.split(' ')];
+  let start = 0;
+  while (start < wa.length && start < wb.length && wa[start] === wb[start]) start++;
+  let end = 0;
+  while (end < wa.length - start && end < wb.length - start && wa[wa.length - 1 - end] === wb[wb.length - 1 - end]) end++;
+  const context = 4;
+  const from = Math.max(0, start - context);
+  const excerpt = (words: string[]) => {
+    const to = Math.min(words.length, words.length - end + context);
+    const text = words.slice(from, to).join(' ');
+    return `${from > 0 ? '…' : ''}${text || '(nothing)'}${to < words.length ? '…' : ''}`;
+  };
+  return [`- ${cut(a ? excerpt(wa) : '(none)')}`, `+ ${cut(b ? excerpt(wb) : '(none)')}`];
 }
 
 function tokenChange(before: MenuTool[], after: MenuTool[]): TokenChange {
@@ -1072,13 +1528,17 @@ function bumpFor(classes: (ChangeClass | undefined)[]): Bump {
   return 'none';
 }
 
-/** Under 1.0.0, semver lets a minor bump carry breaking changes. */
+/**
+ * The smallest bump a release line needs for these changes. From 1.0.0, what
+ * semver says. Under 1.0.0 each step is one lower, as npm's caret reads it
+ * (^0.2.3 accepts any 0.2.x, never 0.3.0): breaking changes need a minor bump,
+ * new features a patch. Under 0.1.0 (^0.0.3 accepts only 0.0.3) anything goes.
+ */
 function requiredBump(suggested: Bump, version: string | undefined): Bump {
   const v = parseSemver(version);
-  // 0.0.x promises nothing; 0.x lets a minor bump break.
-  if (v && v.nums[0] === 0 && v.nums[1] === 0) return 'none';
-  if (v && v.nums[0] === 0 && suggested === 'major') return 'minor';
-  return suggested;
+  if (!v || v.nums[0] !== 0) return suggested;
+  if (v.nums[1] === 0) return 'none';
+  return suggested === 'major' ? 'minor' : suggested === 'minor' ? 'patch' : suggested;
 }
 
 /** Why a bump can't be judged: not semver, calendar, prerelease, or backwards. */
