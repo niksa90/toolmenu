@@ -7,6 +7,7 @@
  */
 import type { ChildProcess } from 'node:child_process';
 import { ProtocolError, SdkError, SdkErrorCode } from '@modelcontextprotocol/client';
+import { LoginNeededError } from './auth.js';
 
 /** What connect() saw on the way to an error. */
 export class Trace {
@@ -201,6 +202,9 @@ export interface ExplainContext {
  */
 export function explain(error: unknown, trace: Trace, context: ExplainContext): unknown {
   if (error instanceof ConnectError || !(error instanceof Error)) return error;
+  // A stored OAuth login that can't be used already says why, and what to run.
+  const login = causes(error).find((e) => e instanceof LoginNeededError);
+  if (login) return login;
   return context.target.kind === 'stdio' ? explainStdio(error, trace, context, context.target) : explainHttp(error, trace, context, context.target);
 }
 
