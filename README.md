@@ -50,6 +50,14 @@ Every value you pass with `--env` or `--header` goes into the workflow as
 `${{ secrets.… }}`, never as text (a name like `DATABASE_URL` doesn't say it holds a
 password); `init` says which secrets to add. It never overwrites a file.
 
+Run it anywhere in the repository. `.github/workflows/toolmenu.yml` goes to the git
+root, and the server starts in CI from the folder you ran `init` in, which is also
+where `menu.json` is saved. That's how a monorepo package works: run `init` in
+`packages/server`. Paths to files in the repository are made relative, so they work on
+the runner. `init` lists anything that won't work there (a file outside the
+repository, a `localhost` URL, a virtualenv the runner doesn't have), each with what
+to do.
+
 By hand:
 
 ```sh
@@ -75,6 +83,11 @@ dynamic registration needs a pre-registered app: `--client-id` (and
 Both protocol generations are supported: 2026-07-28 (`server/discover`, stateless)
 and the 2025 `initialize` handshake, through the official TypeScript SDK.
 
+Every finding and error says what's wrong, where, what toolmenu saw, and ends in a
+`→ Next:` step. Findings marked `· unsure` are heuristics (names and words): they say
+what was seen, not what it means. Every command has its own help:
+`toolmenu history --help`.
+
 ## In CI: one PR comment
 
 ```yaml
@@ -91,7 +104,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.12.0
+      - uses: niksa90/toolmenu@v0.13.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -166,7 +179,9 @@ serves, and 23 issue and pull-request tools that only the dynamic mode has.
 | `session/unannounced` | warn | The menu changed without `notifications/tools/list_changed`, although the server declared `listChanged` |
 | `session/untested` | warn, error if no call got through | Calls that failed before reaching the tool: authentication, something missing on this machine (no Chrome), the network. One finding for the run, not one per step, so an expired CI secret doesn't pass a run that tested nothing |
 | `session/refused`, `session/step-failed` | error | A write the scenario didn't allow, or a call that failed for another reason |
-| `session/tool-error` | warn | A tool that answered with an error for another reason (`isError`): the run tested less than it looks |
+| `session/tool-error` | warn | A tool that answered with an error for another reason (`isError`): the run tested less than it looks. The same error at several steps is one finding that names them |
+| `session/known-variance` | info | A mid-session change only in values that already vary from one tools/list to the next: same cause as the finding it names, not counted again |
+| `session/assumed-read-only` | info | Tools called on your word (`--assume-read-only`, `assume_read_only`) although the server doesn't mark them readOnlyHint |
 | `session/unlock-coverage` | warn | An unlock whose enum lists its values, called with only some of them: the tools behind the rest were never seen, so a baseline from the session misses them. With `--union-out` or `--auto`, an unlock never called at all too, with why `--auto` skipped it |
 | `session/nothing-called` | warn | `--auto` called no tools (all open-world, missing values, or not read-only): the run only listed the menu |
 | `session/session-lost` | error | The server ended the session after toolmenu opened a second connection with the same credentials (servers with one session per client). The run stops there; rerun with `--processes 1` |
@@ -177,10 +192,17 @@ serves, and 23 issue and pull-request tools that only the dynamic mode has.
 whose required arguments the schema itself gives (a `default`, `examples`, an `enum`,
 a type or format), cheapest first, then every value of each read-only unlock (outside
 `--max-calls`, and the first value twice: a second identical unlock should change
-nothing), then the first call again. It never guesses an ID:
-a tool that needs `owner`, `repo` or an issue key is skipped, and the report says
-which values were missing (`--save-scenario auto.yml` writes the steps, with the
-skipped tools commented out, to fill in). Tools marked `openWorldHint: true` (web
+nothing), then the first call again. It never guesses an ID: a tool that needs
+`owner`, `repo` or an issue key is skipped, and the report names the flag that fills
+it: `--value repo_path=/src/app` fills that parameter on every tool that requires it,
+`--value get_issue.issue_key=ABC-1` on one tool, `--values-file values.yml` takes a map
+of either. Servers that don't mark their tools `readOnlyHint` (DeepWiki, every
+2024-11-05 server) get nothing called unless you vouch for them by name:
+`--assume-read-only read_wiki_structure,ask_wiki_question`. Only exact names are
+accepted: a pattern would also cover tools a later release adds. A tool marked or
+named as a write is never called, and the report says which tools ran on your word.
+`--save-scenario auto.yml` writes the steps, with the skipped tools commented out, for
+you to fill in. Tools marked `openWorldHint: true` (web
 search, fetch, scraping, which can cost API credits) are called only with
 `--open-world`, except unlocks: changing the menu is what a session watches, and an
 unlock spends no search credits, so it runs even on a server that marks every tool
@@ -200,11 +222,16 @@ npx toolmenu diff menu.json new-menu.json
 ```
 $ npx toolmenu diff --release 2026.1.14..2026.8.31 fs-2026.1.14.json fs-2026.8.31.json
 toolmenu diff  secure-filesystem-server 2026.1.14 → 2026.8.31
-  14 → 14 tools · ~1,640 → ~1,664 tokens (+24, estimate): this release adds ~24 tokens to every conversation that loads the menu
-  1 breaking · 0 minor · 15 notice · suggested bump: major · actual: not checked (calendar version)
+  changes  1 breaking (1 tool) · 0 minor · 3 notice (13 tools)
+  version  suggested bump: major · not checked (calendar version)
+  tokens   ~1,640 → ~1,664 (+24, estimate): this release adds ~24 tokens to every conversation that loads the menu
+  tools    14 → 14
 
 ERROR  diff/safety-hint
-       move_file was additive-only and is now destructive.
+       `move_file` was marked additive-only and is now destructive (destructiveHint false → true; unset means destructive). Clients that auto-approve additive tools may now ask first.
+       → Next: If the tool still never deletes or overwrites, set destructiveHint: false; if it does now, say so in the release notes.
+INFO   diff/annotations
+       Annotations changed the same way (openWorldHint (unset) → false) in 13 of 14 tools: read_file, read_text_file, read_media_file, read_multiple_files, write_file, edit_file, … (+7).
 …
 ```
 
@@ -245,11 +272,19 @@ field that became required, the patterns zod 4 adds to `email` and `uuid`) plus 
 `diff/properties-opened` line ("27 tools now accept properties they don't list … most
 likely a schema generator upgrade"), not a "review it" per object.
 
+The same change in many tools is reported once, with the tools it touches (`pageId`
+is new and required in 25 of 29 tools, on chrome-devtools-mcp 1.8.0); counts are per
+change. When a tool loses a parameter and gains a required one with a close name,
+`diff/param-renamed` (warn, unsure) points out the likely rename; both changes stay
+breaking. Every breaking finding's next step names the version to release when the
+bump is too small.
+
 It also reports the token change per tool and suggests a semver bump. To check the
 bump, pass the **release** versions: `--release 1.4.0..1.5.0` (npm, a git tag).
-`diff/version-bump` then warns when the release's bump is smaller (`0.0.x` promises
-nothing and `0.x` may break in a minor), and `diff/version-backwards` when the version
-goes down. Calendar versions and prereleases aren't judged. The version in the snapshot is what the
+`diff/version-bump` then warns when the release's bump is smaller. Under 1.0.0 it
+reads versions as npm's caret does (`^0.2.3` accepts any 0.2.x): breaking changes need
+a minor bump, new features a patch, and under 0.1.0 anything goes.
+`diff/version-backwards` warns when the version goes down. Calendar versions and prereleases aren't judged. The version in the snapshot is what the
 server reports (`serverInfo.version`), which is often not the release: the filesystem
 server has said `0.2.0` for 19 releases (FINDINGS F5). It's shown, and only checked
 with `--server-version-is-release`. `diff` also enforces an optional `tokenBudget`
@@ -285,6 +320,17 @@ A crawl through search is a lower bound, not a proof: an operation that nothing 
 catalog names, and whose words no query uses, stays unfound. On `@sentry/mcp-server`
 0.42 (stdio) it finds 63 of the 64 operations in the package's catalog; `whoami` comes
 back only when asked for by name. Add queries like that to `catalog.queries`.
+
+**Command routers.** Some servers put their operations behind router tools instead:
+one tool per area that takes a `command` and its `parameters`, and lists its commands
+when called with `learn: true` (Azure's MCP server serves 71 such tools in front of
+~410 operations). `--catalog` detects them (a `command` parameter, an arguments
+object, a boolean listing flag, and a description that says "router" or "sub
+commands") and calls each once in its listing mode, never with a command, so nothing
+runs. Routers whose command is required aren't called. Detection missed one? Name
+them: `"catalog": { "routers": ["keyvault", "storage"] }`. A router lists everything
+it has, so unlike a search the catalog is complete except for routers that failed
+(`catalog/failed` says which, and why).
 
 ## `history`: a package's releases, researched
 
@@ -330,10 +376,11 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `menu/duplicate-name` | error | Two tools with the same name: only one can be called, and some clients reject the list |
 | `naming/route` | error | A `routes.yml` expectation broke: a keyword now matches the wrong tool at least as well as the right one |
 | `description/buried` | warn | Instructions to the agent ("use X instead", "don't retry", "never guess one") past the point where your client cuts descriptions: 2,048 characters in Claude Code, or your `descriptionLimit`. From a real failure: a client cut at 280 characters, and the line that decided routing was at 1,222 |
-| `description/cut` | info | Descriptions longer than the client sends, with nothing that reads as an instruction past the cut, as one summary. The model gets a prefix that can read as complete |
-| `naming/vague-id` | warn | A parameter called just `id` that doesn't say *which* thing |
+| `description/cut` | info | Descriptions longer than the client sends, with nothing that reads as an instruction past the cut, as one summary that shows where each one is cut. The model gets a prefix that can read as complete |
+| `description/late-instruction` | info | With the default cut: instructions after character 280, which a client that cuts descriptions short would hide, as one summary. Set `descriptionLimit` and `description/buried` checks your real cut instead. (Before 0.13 this was part of `description/cut`; that id's setting still applies.) |
+| `naming/vague-id` | warn | Parameters called just `id` that don't say *which* thing, as one summary with a suggested name |
 | `ids/authored` | info | An ID the agent must supply that no tool appears to return, so the agent may invent it, one finding per kind of ID (heuristic: IDs from a URL or another tool's text output look the same) |
-| `write/unannotated` | warn | A tool named like a write (`delete_`, `send_`…) with no annotations |
+| `write/unannotated` | warn | Tools named like writes (`delete_`, `send_`…) with no annotations, as one summary grouped by the annotation each name suggests |
 | `naming/shared-word` | info | Nouns that name different things across tools (`list_team_audits` vs `get_audit_trail`), as one summary |
 | `write/no-dry-run` | info | Destructive tools with no dry-run parameter or preview tool, as one summary |
 | `spec/discover` | info | The server only speaks the 2025 protocol, so 2026-07-28 rules are skipped |
@@ -416,7 +463,7 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 ```
 
 Exit codes: `0` clean · `1` findings at or above `--fail-on` · `2` couldn't connect
-or bad usage. `toolmenu --help` lists the `session` and `history` options.
+or bad usage. `toolmenu <command> --help` lists that command's own options.
 
 ## Limitations
 

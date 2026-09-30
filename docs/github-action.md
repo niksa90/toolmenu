@@ -17,6 +17,14 @@ only, unless the scenario sets `allow_writes`).
 `headers` only applies to a `url` server and `env` only to a `command` server; the
 Action warns if one is set for the other.
 
+## Servers in a subfolder
+
+`init` run in `packages/server` writes `command: "sh -c 'cd packages/server && exec node dist/server.js'"`
+and `baseline: packages/server/menu.json`. The Action runs the command from the
+repository root with `exec`, so the change of folder goes inside its own `sh -c`. The
+build steps get `working-directory: packages/server`, and `release` is `'off'`, since
+`auto` reads the version at the repo root (see "The version check").
+
 ## The version check (`release: auto`)
 
 Projects versioned only by git tags (Go, setuptools-scm) have no next version in a
@@ -65,7 +73,7 @@ jobs:
       - run: npm ci && npm run build
       - run: npm start &                # the PR's version, in the background (it keeps running for later steps)
       - run: npx --yes wait-on --timeout 60000 tcp:localhost:3000   # fail after 60 s instead of hanging
-      - uses: niksa90/toolmenu@v0.12.0
+      - uses: niksa90/toolmenu@v0.13.0
         with:
           url: http://localhost:3000/mcp
           headers: "x-mcp-api-key: ${{ env.MCP_API_KEY }}"
@@ -84,7 +92,7 @@ tools behind an unlock: a renamed, removed or no-longer-read-only one never reac
 the report. Let the scenario build the baseline instead:
 
 ```yaml
-      - uses: niksa90/toolmenu@v0.12.0
+      - uses: niksa90/toolmenu@v0.13.0
         with:
           command: node dist/server.js
           scenario: scenario.yml       # unlocks each toolset, lists after each
@@ -116,7 +124,7 @@ tools land, what they cost, whether repeating an unlock changes nothing.
 If a switch in the environment serves every tool at once (say `UNLOCK_MODE=all`),
 snapshotting that works too: `env: UNLOCK_MODE=all` with the default
 `baseline-from: snapshot`. Then run the session on the default menu as its own step
-(`npx --yes toolmenu@0.12.0 session --scenario scenario.yml --format github -- …`):
+(`npx --yes toolmenu@0.13.0 session --scenario scenario.yml --format github -- …`):
 the Action runs its snapshot and scenario with the same settings.
 
 Expect `session/append` warnings: an append invalidates the cached conversation for
@@ -147,7 +155,7 @@ check even though nothing was checked. The PR comment and a notice say so, and t
 `skipped` output is `'true'`. To make a skip fail instead, gate on it:
 
 ```yaml
-      - uses: niksa90/toolmenu@v0.12.0
+      - uses: niksa90/toolmenu@v0.13.0
         id: toolmenu
         with:
           url: https://mcp.example.com/mcp   # a remote server that needs a key
