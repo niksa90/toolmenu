@@ -18,7 +18,7 @@ import { snapshot } from './snapshot.js';
 import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded } from './probe.js';
 import { autoScenario, scenarioYaml } from './auto.js';
 import { authDir, listLogins, login, logout } from './auth.js';
-import { detectProject, secretsNeeded, workflowYaml } from './init.js';
+import { existingMessage, initReport, planInit, writeInit } from './init.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
 import { VERSION } from './version.js';
 
@@ -266,30 +266,12 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   if (sub === 'init') {
-    const workflow = join('.github', 'workflows', 'toolmenu.yml');
-    const baseline = values.out ?? 'menu.json';
-    for (const f of [workflow, baseline]) if (existsSync(f)) throw new UsageError(`${f} already exists; init never overwrites. Remove it, or set things up by hand (README: "In CI").`);
     const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
+    const plan = planInit({ cwd: process.cwd(), target, out: values.out, session: values['with-session'] });
+    if (plan.existing.length) throw new UsageError(existingMessage(plan));
     const { menu, findings } = await snapshot(target, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
-    await writeFile(baseline, JSON.stringify(menu, null, 2) + '\n');
-    await mkdir(dirname(workflow), { recursive: true });
-    const project = detectProject('.');
-    await writeFile(workflow, workflowYaml({ target, project, session: values['with-session'], baseline }));
-    const c = counts(findings);
-    const secrets = secretsNeeded(target);
-    const lines = [
-      `toolmenu init  ${menu.server.name ?? 'server'} · ${menu.tools.length} tools · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)`,
-      `  wrote ${baseline}: the baseline every pull request is compared with`,
-      `  wrote ${workflow}${project.kind === 'unknown' ? ' (fill in the TODO: how CI builds your server)' : ` (${project.kind} project)`}`,
-      `  today's menu: ${c.error} errors, ${c.warn} warnings, ${c.info} info (run toolmenu snapshot to see them)`,
-      ...(secrets.length ? ['', `Add these repository secrets (Settings → Secrets and variables → Actions): ${secrets.join(', ')}`] : []),
-      '',
-      'Next:',
-      `  git add ${baseline} ${workflow} && git commit -m "Check the MCP tool menu on every PR"`,
-      '  Then open a pull request: toolmenu comments on it. Refresh the baseline when a change is intended:',
-      `  toolmenu snapshot --out ${baseline} ${target.kind === 'stdio' ? '-- ' + [target.command, ...target.args].join(' ') : target.url}`,
-    ];
-    process.stdout.write(lines.join('\n') + '\n');
+    await writeInit(plan, JSON.stringify(menu, null, 2) + '\n');
+    process.stdout.write(initReport(plan, { server: menu.server.name, version: menu.server.version, tools: menu.tools.length, tokens: menu.totalTokens, counts: counts(findings) }, target));
     return 0;
   }
 
