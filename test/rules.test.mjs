@@ -487,6 +487,30 @@ test('naming/vague-id is one finding per menu, with a name to try where the tool
   assert.match(camel.fix, /get_form\.id → formId/);
 });
 
+test('naming/vague-id: no rename on collection verbs, where a bare id is usually the parent\'s', () => {
+  for (const name of ['list_comments', 'search_comments', 'find_comments', 'query_comments', 'browse_comments']) {
+    const f = lint([tool(name, ['id'])]).find((x) => x.rule === 'naming/vague-id');
+    assert.equal(f.tool, name);
+    assert.doesNotMatch(f.fix, /→/, name);
+    assert.match(f.fix, /\(form_id, not id\)/, name);
+  }
+  for (const name of ['get_comment', 'update_comment', 'delete_comment']) {
+    assert.match(lint([tool(name, ['id'])]).find((x) => x.rule === 'naming/vague-id').fix, new RegExp(`${name}\\.id → comment_id`), name);
+  }
+});
+
+test('ids/authored: the article follows the sound: a user ID, a UUID, an order ID', () => {
+  const said = (param) => lint([tool('send_message', [param])]).find((f) => f.rule === 'ids/authored')?.message ?? '';
+  assert.match(said('user_id'), / takes a user ID, and no tool .* with a user ID\./);
+  assert.match(said('order_id'), / takes an order ID/);
+});
+
+test('article: by sound, not by letter', async () => {
+  const { article } = await import('../dist/words.js');
+  for (const w of ['user', 'uuid', 'url', 'unique', 'usage', 'unit', 'one', 'one-time', 'team']) assert.equal(article(w), 'a', w);
+  for (const w of ['order', 'upload', 'update', 'umbrella', 'hour', 'honest', 'item', 'api', 'id']) assert.equal(article(w), 'an', w);
+});
+
 test('certainty: guesses from words are marked unsure, observed facts are not', () => {
   const pad = 'Returns the record with every field it has. '.repeat(50);
   const tools = [
@@ -550,5 +574,24 @@ test('menu/process-variance: the same cause as menu/nondeterministic points to i
   const hashed = runRules(MENU_RULES, { menu: menuOf([fields('labels,status,updated')]), pages: [], capabilities: {}, usedAuth: false, transport: 'stdio', probes: [{ tools: menuOf([fields('status,updated,labels')]).tools }] }).find((f) => f.rule === 'menu/process-variance');
   assert.match(hashed.message, /Likely a set or a map iterated in hash order/);
   assert.match(hashed.fix, /so every process lists them in the same order/);
+});
+
+test('menu/process-variance: a second cause behind the same tool is reported, not merged into the first', () => {
+  // A timestamp default (changes every call) and a Python set (changes only between processes) in one tool.
+  const both = (time, v) => tool('jira_search', [], { inputSchema: { type: 'object', properties: { end_date: { type: 'string', default: time }, fields: { type: 'string', default: v } } } });
+  const found = runRules(MENU_RULES, {
+    menu: menuOf([both('2026-09-29T22:11:21.528Z', 'labels,status,updated')]),
+    secondList: menuOf([both('2026-09-29T22:11:21.537Z', 'labels,status,updated')]).tools,
+    probes: [{ tools: menuOf([both('2026-09-29T22:11:23.440Z', 'status,updated,labels')]).tools }],
+    pages: [], capabilities: {}, usedAuth: false, transport: 'stdio',
+  });
+  const f = found.find((x) => x.rule === 'menu/process-variance');
+  assert.doesNotMatch(f.message, /Same cause, same fix/);
+  assert.match(f.message, /jira_search\.end_date\.default is what menu\/nondeterministic reports/);
+  assert.match(f.message, /jira_search\.fields\.default holds the same items in a different order/);
+  assert.match(f.message, /Likely a set or a map iterated in hash order/);
+  assert.match(f.fix, /^Sort the items of jira_search\.fields\.default when building the menu/);
+  assert.ok(f.detail.some((l) => /fields\.default/.test(l)), f.detail.join('\n'));
+  assert.equal(found.find((x) => x.rule === 'menu/nondeterministic').fix.startsWith('Build jira_search.end_date.default'), true);
 });
 

@@ -1,5 +1,5 @@
 import type { MenuTool } from '../types.js';
-import { LOOKUP_VERBS, WRITE_VERBS, commonWords, nouns, singular, verbOf, words } from '../words.js';
+import { COLLECTION_VERBS, LOOKUP_VERBS, WRITE_VERBS, commonWords, nouns, singular, verbOf, words } from '../words.js';
 import { missingWords, negatedMention, routeScores } from '../routes.js';
 import { kept, names, type Rule, type RuleFinding } from './rule.js';
 
@@ -41,9 +41,10 @@ export const vagueId: Rule = {
 /** thing_id for get_thing.id, when the tool name has exactly one subject noun. */
 function betterName(tool: string, param: string, params: string[], common: Set<string>): string | undefined {
   // Only where the verb acts on the thing itself: get_monitor.id is a monitor's,
-  // check_crawl_status.id is a crawl job's, not a status's.
+  // check_crawl_status.id is a crawl job's, not a status's. Not on collection
+  // verbs: list_comments.id is usually the post's, not a comment's.
   const verb = verbOf(tool);
-  if (!verb || !(LOOKUP_VERBS.has(verb) || WRITE_VERBS.has(verb))) return undefined;
+  if (!verb || COLLECTION_VERBS.has(verb) || !(LOOKUP_VERBS.has(verb) || WRITE_VERBS.has(verb))) return undefined;
   const subject = [...new Set(nouns(tool).filter((n) => !common.has(n)))];
   if (subject.length !== 1) return undefined;
   const lower = param.toLowerCase();

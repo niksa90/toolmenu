@@ -1,5 +1,5 @@
 import type { JsonSchema, MenuTool } from '../types.js';
-import { COLLECTION_VERBS, LOOKUP_VERBS, VERBS, commonWords, nouns, singular, words } from '../words.js';
+import { COLLECTION_VERBS, LOOKUP_VERBS, VERBS, article, commonWords, nouns, singular, words } from '../words.js';
 import { kept, type Rule, type RuleFinding } from './rule.js';
 
 interface IdParam {
@@ -139,7 +139,7 @@ export const authoredIds: Rule = {
       const tools = [...new Set(uses.map((u) => u.tool))];
       const where = uses.map((u) => `${u.tool}.${u.param}`);
       const one = where.length === 1;
-      const a = /^[aeiou]/.test(kind) ? 'an' : 'a';
+      const a = article(kind);
       return {
         ...(tools.length === 1 ? { tool: tools[0] } : {}),
         confidence: 'unsure',

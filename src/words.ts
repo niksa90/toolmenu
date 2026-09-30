@@ -42,6 +42,19 @@ export const WRITE_VERBS = new Set([
   'send', 'post', 'publish', 'submit', 'write', 'save', 'upload', 'move', 'rename', 'assign', 'invite', 'approve',
 ]);
 
+/**
+ * "a" or "an" for a word, by how it sounds, not its first letter: a user, a UUID,
+ * a URL, a one-time code; an order, an update, an hour.
+ */
+export function article(word: string): 'a' | 'an' {
+  const w = word.toLowerCase();
+  // u said "you" (user, uuid, url, unique, usage, unit), and "one" said "won".
+  if (/^(uu|url|uri|uni(?!n)|u[bcfgklmrstvz][aeiouy]|one\b|one[-_]|once)/.test(w)) return 'a';
+  // A silent h: an hour, an honest answer.
+  if (/^(hour|honest|honor|honour|heir)/.test(w)) return 'an';
+  return /^[aeiou]/.test(w) ? 'an' : 'a';
+}
+
 /** Words too generic to tell tools apart. */
 const GENERIC = new Set(['tool', 'mcp', 'api', 'data', 'info', 'item', 'object', 'value', 'result', 'detail', 'all', 'by', 'for', 'of', 'to', 'from', 'with', 'and', 'or', 'the', 'a', 'an', 'my']);
 

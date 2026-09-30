@@ -1,5 +1,5 @@
 import { compareMenus, type ToolChange } from '../compare.js';
-import { describeToolDifference, firstDifference } from '../difference.js';
+import { allDifferences, describeToolDifference, firstDifference } from '../difference.js';
 import { serverWords } from '../failures.js';
 import { toolDefinition } from '../menu.js';
 import type { MenuTool, Severity } from '../types.js';
@@ -41,6 +41,26 @@ function spots(before: MenuTool[], after: MenuTool[], changes: ToolChange[]): Sp
     out.push({ tool: t.name, where: path ? `${t.name}.${path}` : t.name, before: d?.before, after: d?.after, reordered: !!d?.reordered });
   }
   return out;
+}
+
+/** Every value that differs inside each edited tool, not only the first. */
+function everySpot(before: MenuTool[], after: MenuTool[], changes: ToolChange[]): Spot[] {
+  const byName = new Map(before.map((t) => [t.name, t]));
+  const edited = new Set(changes.filter((c) => EDITS.has(c.kind)).map((c) => c.tool));
+  return after
+    .filter((x) => edited.has(x.name))
+    .flatMap((t) =>
+      allDifferences(toolDefinition(byName.get(t.name)!), toolDefinition(t)).map((d) => {
+        const path = d.path.replace(/^inputSchema\.properties\./, '');
+        return { tool: t.name, where: path ? `${t.name}.${path}` : t.name, before: d.before, after: d.after, reordered: d.reordered };
+      }),
+    );
+}
+
+/** Every place two menus differ: whole-tool changes, and each differing value. */
+function places(before: MenuTool[], after: MenuTool[]): string[] {
+  const changes = compareMenus(before, after);
+  return [...changes.filter((c) => !EDITS.has(c.kind)).map((c) => `${c.kind}:${c.tool}`), ...everySpot(before, after, changes).map((s) => s.where)];
 }
 
 const isTime = (s: Spot) => TIMESTAMP.test(String(s.before)) && TIMESTAMP.test(String(s.after));
@@ -128,19 +148,41 @@ export interface Probe {
 export function varianceFinding(
   main: MenuTool[],
   other: MenuTool[],
-  opts: { transport: 'stdio' | 'http'; modern: boolean; wrapper: boolean },
+  opts: {
+    transport: 'stdio' | 'http';
+    modern: boolean;
+    wrapper: boolean;
+    /** Places menu/nondeterministic already reports: said once, and left out of the explanation and fix. */
+    explained?: Set<string>;
+  },
 ): (RuleFinding & { rule: string; severity: Severity }) | undefined {
   const changes = compareMenus(main, other);
   if (changes.length === 0) return undefined;
-  const detail = detailFor(main, other, changes);
-  const found = spots(main, other, changes);
-  const reordered = found.some((s) => s.reordered);
   const stdio = opts.transport === 'stdio';
+  let why = changes;
+  let found = spots(main, other, changes);
+  let detail = detailFor(main, other, changes);
+  let lead = '';
+  if (opts.explained) {
+    const known = opts.explained;
+    const all = everySpot(main, other, changes);
+    const same = all.filter((s) => known.has(s.where));
+    found = all.filter((s) => !known.has(s.where));
+    why = changes.filter((c) => (EDITS.has(c.kind) ? found.some((s) => s.tool === c.tool) : !known.has(`${c.kind}:${c.tool}`)));
+    lead = `${same.length ? `${placesOf(same)} ${same.length === 1 ? 'is' : 'are'}` : 'Part of it is'} what menu/nondeterministic reports, and goes away with that fix. The rest differs only between ${stdio ? 'processes' : 'connections'}, so it has a cause of its own:`;
+    const lines = [
+      ...why.filter((c) => !EDITS.has(c.kind)).map((c) => `${LABELS[c.kind]}: ${c.tool} (position ${c.position})`),
+      ...found.map((f) => `${f.where}: ${f.reordered ? 'same items, different order' : 'differs'} (${short(f.before)} vs ${short(f.after)})`),
+    ];
+    detail = lines.slice(0, 10).concat(lines.length > 10 ? [`…and ${lines.length - 10} more`] : []);
+  }
+  const reordered = found.some((s) => s.reordered);
   const message = [
     stdio
       ? 'A second server process, started the same way, served a different menu, so every restart, and every client that starts its own copy, gets a tool list that no cached prompt matches.'
       : `A second connection with the same credentials got a different menu, so clients can't share a cached tool list.${opts.modern ? ' On 2026-07-28 the tool set MUST NOT vary per connection.' : ''}`,
-    whatDiffers(changes, found),
+    lead,
+    whatDiffers(why, found),
     reordered
       ? 'Likely a set or a map iterated in hash order.' +
         (stdio ? ' (toolmenu runs the first process with PYTHONHASHSEED=0 and the second with 1, so a Python set shows up every time; Go and Rust maps vary per process on their own.)' : '')
@@ -154,7 +196,7 @@ export function varianceFinding(
     severity: stdio || opts.modern ? 'error' : 'warn',
     message,
     detail,
-    fix: fixFor(changes, found, stdio ? 'process' : 'connection'),
+    fix: fixFor(why, found, stdio ? 'process' : 'connection'),
   };
 }
 
@@ -165,9 +207,14 @@ export function varianceFinding(
  */
 function listSpots(ctx: RuleContext): Set<string> | undefined {
   if (!ctx.secondList) return undefined;
-  const changes = compareMenus(ctx.menu.tools, ctx.secondList);
-  if (changes.length === 0) return undefined;
-  return new Set([...changes.filter((c) => !EDITS.has(c.kind)).map((c) => `${c.kind}:${c.tool}`), ...spots(ctx.menu.tools, ctx.secondList, changes).map((s) => s.where)]);
+  const found = places(ctx.menu.tools, ctx.secondList);
+  return found.length ? new Set(found) : undefined;
+}
+
+/** A value for a detail line, cut short. */
+function short(v: unknown): string {
+  const s = JSON.stringify(v) ?? String(v);
+  return s.length > 60 ? `${s.slice(0, 57)}…` : s;
 }
 
 function varianceRule(id: 'menu/process-variance' | 'menu/connection-variance', transport: 'stdio' | 'http'): Rule {
@@ -195,15 +242,20 @@ function varianceRule(id: 'menu/process-variance' | 'menu/connection-variance', 
         if (f) {
           const { rule: _r, ...rest } = f;
           // Same places as the second tools/list call: one cause, reported by menu/nondeterministic.
+          // Every differing value is compared, not only the first in each tool: a
+          // timestamp that changes every call can hide a set that changes per process.
           const same = listSpots(ctx);
-          const changes = compareMenus(ctx.menu.tools, probe.tools ?? []);
-          const here = [...changes.filter((c) => !EDITS.has(c.kind)).map((c) => `${c.kind}:${c.tool}`), ...spots(ctx.menu.tools, probe.tools ?? [], changes).map((s) => s.where)];
+          const here = places(ctx.menu.tools, probe.tools ?? []);
           if (same && here.every((w) => same.has(w))) {
             out.push({
               ...rest,
               message: `A second ${other} served a different menu too, in the same ${here.length === 1 ? 'place' : 'places'} menu/nondeterministic reports: a menu that changes on every call changes on every ${transport === 'stdio' ? 'restart' : 'connection'} as well. Same cause, same fix.`,
               fix: 'Fix menu/nondeterministic; this goes away with it.',
             });
+          } else if (same && here.some((w) => same.has(w))) {
+            // Partly the same cause: say that once, and explain and fix the rest.
+            const { rule: _r2, ...partial } = varianceFinding(ctx.menu.tools, probe.tools ?? [], { transport, modern: ctx.era === 'modern', wrapper: !!ctx.wrapper, explained: same })!;
+            out.push(partial);
           } else {
             out.push(rest);
           }

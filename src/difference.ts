@@ -13,20 +13,21 @@ export interface Difference {
 
 /** The first leaf where two values differ, depth first, keys in sorted order. Undefined when equal. */
 export function firstDifference(a: unknown, b: unknown, path = ''): Difference | undefined {
-  if (canonical(a) === canonical(b)) return undefined;
+  return allDifferences(a, b, path)[0];
+}
+
+/** Every leaf where two values differ, in the order firstDifference finds them. */
+export function allDifferences(a: unknown, b: unknown, path = '', out: Difference[] = []): Difference[] {
+  if (canonical(a) === canonical(b)) return out;
+  const before = out.length;
   if (isObject(a) && isObject(b)) {
-    for (const key of [...new Set([...Object.keys(a), ...Object.keys(b)])].sort()) {
-      const found = firstDifference(a[key], b[key], join(path, key));
-      if (found) return found;
-    }
+    for (const key of [...new Set([...Object.keys(a), ...Object.keys(b)])].sort()) allDifferences(a[key], b[key], join(path, key), out);
   }
   if (Array.isArray(a) && Array.isArray(b) && a.length === b.length && !samePermutation(a, b)) {
-    for (let i = 0; i < a.length; i++) {
-      const found = firstDifference(a[i], b[i], `${path}[${i}]`);
-      if (found) return found;
-    }
+    for (let i = 0; i < a.length; i++) allDifferences(a[i], b[i], `${path}[${i}]`, out);
   }
-  return { path, before: a, after: b, reordered: samePermutation(a, b) };
+  if (out.length === before) out.push({ path, before: a, after: b, reordered: samePermutation(a, b) });
+  return out;
 }
 
 /** Different order, same items: arrays, or strings that are comma-separated lists. */
