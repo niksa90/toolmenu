@@ -1,5 +1,10 @@
 // A tool that changes the menu and then takes longer than the client waits:
 // the call fails with a timeout, but the server has already applied the change.
+//
+// The call answers only once the client has given up on it (a timeout makes the
+// client cancel the request), not after a fixed delay: a delay has to sit between
+// the client's timeout and the time the server takes to start, and on a busy
+// machine starting can take longer than any delay short enough for a test.
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 
@@ -12,10 +17,15 @@ export function build() {
   server.registerTool('list_forms', { description: 'List forms.', annotations: ro }, async () => text('[]'));
   const extra = server.registerTool('export_report', { description: 'Export a report.', annotations: ro }, async () => text(''));
   if (!state.unlocked) extra.disable();
-  server.registerTool('slow_unlock', { description: 'Unlock reports, slowly.', annotations: ro }, async () => {
+  server.registerTool('slow_unlock', { description: 'Unlock reports, slowly.', annotations: ro }, async (ctx) => {
     state.unlocked = true;
     extra.enable();
-    await new Promise((r) => setTimeout(r, 3000));
+    const signal = ctx?.mcpReq?.signal ?? ctx?.signal;
+    await new Promise((resolve) => {
+      signal?.addEventListener('abort', resolve, { once: true });
+      // A backstop that doesn't keep the process alive once stdin closes.
+      setTimeout(resolve, 600_000).unref();
+    });
     return text('unlocked');
   });
   return server;

@@ -30,6 +30,12 @@ interface Stored {
    * server's token endpoint.
    */
   discoveryState?: OAuthDiscoveryState;
+  /**
+   * Set when the SDK dropped the tokens because the server refused them: 'refresh' for
+   * a refused refresh (invalid_grant), 'client' for a rejected client (invalid_client).
+   * Without it, a file with no tokens is a login that never finished.
+   */
+  rejected?: 'refresh' | 'client';
   savedAt?: string;
 }
 
@@ -60,7 +66,7 @@ async function save(data: Stored): Promise<void> {
   await chmod(path, 0o600);
 }
 
-/** Is there a stored login for this server? */
+/** Is there a stored file for this server (a login, or what's left of one)? Why a login is needed reads its contents. */
 export function hasLogin(serverUrl: string): boolean {
   return existsSync(storePath(serverUrl));
 }
@@ -84,6 +90,8 @@ export interface ProviderOptions {
 export class StoredOAuthProvider implements OAuthClientProvider {
   private data: Stored | undefined;
   private expectedState: string | undefined;
+  /** invalidateCredentials('all') deleted a file that held tokens, in this run. */
+  private removedLogin = false;
 
   constructor(
     private readonly serverUrl: string,
@@ -164,12 +172,12 @@ export class StoredOAuthProvider implements OAuthClientProvider {
   }
 
   async saveTokens(tokens: StoredOAuthTokens, ctx?: OAuthClientInformationContext): Promise<void> {
-    await this.update({ tokens, ...(ctx?.issuer ? { issuer: ctx.issuer } : {}) });
+    await this.update({ tokens, rejected: undefined, ...(ctx?.issuer ? { issuer: ctx.issuer } : {}) });
   }
 
   async redirectToAuthorization(authorizationUrl: URL): Promise<void> {
     if (!this.options.interactive) {
-      throw new LoginNeededError(this.serverUrl);
+      throw new LoginNeededError(this.serverUrl, whyLoginNeeded(await this.stored(), this.removedLogin));
     }
     await this.options.onRedirect?.(authorizationUrl);
   }
@@ -180,7 +188,7 @@ export class StoredOAuthProvider implements OAuthClientProvider {
 
   async codeVerifier(): Promise<string> {
     const v = (await this.stored()).codeVerifier;
-    if (!v) throw new Error('No PKCE code verifier saved for this login.');
+    if (!v) throw new Error(`No PKCE code verifier is saved for ${this.serverUrl}: the stored login changed while this one ran (another login at the same time?).\n→ Next: Run toolmenu auth login ${this.serverUrl} again.`);
     return v;
   }
 
@@ -195,22 +203,46 @@ export class StoredOAuthProvider implements OAuthClientProvider {
   async invalidateCredentials(scope: 'all' | 'client' | 'tokens' | 'verifier' | 'discovery'): Promise<void> {
     const s = await this.stored();
     if (scope === 'all') {
+      this.removedLogin ||= Boolean(s.tokens) || Boolean(s.rejected);
       this.data = { serverUrl: s.serverUrl };
       await rm(storePath(this.serverUrl), { force: true });
       return;
     }
     const patch: Partial<Stored> = {};
-    if (scope === 'client') patch.clientInformation = undefined;
-    if (scope === 'tokens') patch.tokens = undefined;
+    if (scope === 'client') {
+      patch.clientInformation = undefined;
+      if (s.tokens) patch.rejected = 'client';
+    }
+    if (scope === 'tokens') {
+      patch.tokens = undefined;
+      if (s.tokens) patch.rejected ??= s.rejected ?? 'refresh';
+    }
     if (scope === 'verifier') patch.codeVerifier = undefined;
     if (scope === 'discovery') patch.discoveryState = undefined;
     await this.update(patch);
   }
 }
 
+/**
+ * Why snapshot or session needs a login, from what's stored: nothing, a registration
+ * from a login that never finished, tokens the server refused, or a login the server
+ * rejected and toolmenu removed (removedLogin: in this run).
+ */
+function whyLoginNeeded(s: Stored, removedLogin: boolean): string {
+  if (removedLogin) return 'the server rejected the stored login for it, so toolmenu removed it';
+  if (s.rejected === 'client') return "the stored login no longer works: the server doesn't accept the client toolmenu registered (it may have been deleted), so its tokens were dropped";
+  if (s.rejected === 'refresh') return 'the stored login no longer works: its token expired or was revoked and the server refused to refresh it';
+  if (s.tokens) return 'the stored login no longer works: the server refused its token';
+  if (s.clientInformation) return "there's no stored login for it: an earlier toolmenu auth login registered a client but didn't finish";
+  return `there's no stored login for it (stored in ${authDir()})`;
+}
+
 export class LoginNeededError extends Error {
-  constructor(serverUrl: string) {
-    super(`${serverUrl} needs an OAuth login, and toolmenu can't open a browser here. Run: toolmenu auth login ${serverUrl}`);
+  constructor(serverUrl: string, why = `there's no stored login for it (stored in ${authDir()})`) {
+    super(
+      `${serverUrl} asks for an OAuth login, and ${why}. snapshot and session don't open a browser.\n` +
+        `→ Next: Log in once in a terminal with a browser: toolmenu auth login ${serverUrl}. Or pass a token: --header "Authorization: Bearer <token>".`,
+    );
   }
 }
 
@@ -244,8 +276,16 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
     } catch (error) {
       if (!(error instanceof UnauthorizedError)) throw error;
       const params = await callback.params;
-      if (params.get('error')) throw new Error(`The authorization server refused the login: ${params.get('error')}`);
-      if (!provider.lastState || params.get('state') !== provider.lastState) throw new Error('The login callback carried the wrong state, so it was ignored. Try again.');
+      if (params.get('error')) {
+        const described = params.get('error_description');
+        throw new Error(
+          `The authorization server refused the login for ${serverUrl}: ${params.get('error')}${described ? ` (“${described}”)` : ''}.\n` +
+            `→ Next: Try again. If it repeats, ask for fewer scopes with --scope, or check the account may use this server.`,
+        );
+      }
+      if (!provider.lastState || params.get('state') !== provider.lastState) {
+        throw new Error(`The login callback for ${serverUrl} carried the wrong state (not the one this login sent), so it was ignored (an old browser tab, or a second login at once).\n→ Next: Run toolmenu auth login ${serverUrl} again and use the tab it opens.`);
+      }
       await transport.finishAuth(params);
       await client.close().catch(() => {});
     }
@@ -255,10 +295,10 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
     // register itself. Say what works instead.
     if (error instanceof Error && /does not support dynamic client registration/i.test(error.message) && !options.clientId) {
       error.message =
-        `${serverUrl} doesn't let clients register themselves (no dynamic client registration). Two ways in:\n` +
-        `  - register an OAuth app with the provider, with the callback URL http://127.0.0.1:${port}/callback, then:\n` +
+        `${serverUrl} doesn't let clients register themselves (its authorization server has no dynamic client registration), so toolmenu can't log in without a client of its own.\n` +
+        `→ Next: Register an OAuth app with the provider, with the callback URL http://127.0.0.1:${port}/callback, then:\n` +
         `      toolmenu auth login ${serverUrl} --client-id <id> --client-secret <secret>\n` +
-        `  - or skip OAuth and pass a token the server accepts: toolmenu snapshot ${serverUrl} --header "Authorization: Bearer <token>"`;
+        `  Or skip OAuth and pass a token the server accepts: toolmenu snapshot ${serverUrl} --header "Authorization: Bearer <token>"`;
     }
     throw error;
   } finally {
@@ -319,9 +359,25 @@ function listenForCallback(port: number, timeoutMs: number): Promise<{ params: P
       res.end('<!doctype html><title>toolmenu</title><p>Logged in. You can close this tab and go back to the terminal.</p>');
       resolveParams(url.searchParams);
     });
-    const timer = setTimeout(() => rejectParams(new Error(`No login came back within ${Math.round(timeoutMs / 1000)} s.`)), timeoutMs);
+    const timer = setTimeout(
+      () =>
+        rejectParams(
+          new Error(
+            `The browser login didn't come back within ${Math.round(timeoutMs / 1000)} s: nothing reached http://127.0.0.1:${port}/callback.\n` +
+              `→ Next: Run toolmenu auth login again and finish it in the browser. The browser has to run on this machine (127.0.0.1); over SSH, log in on your own machine and copy ${authDir()}, or pass a token with --header.`,
+          ),
+        ),
+      timeoutMs,
+    );
     server.on('error', (error: NodeJS.ErrnoException) =>
-      fail(error.code === 'EADDRINUSE' ? new Error(`Port ${port} is in use: pick another with --port (the login registers that redirect).`) : error),
+      fail(
+        error.code === 'EADDRINUSE'
+          ? new Error(
+              `Couldn't wait for the login's redirect: port ${port} on 127.0.0.1 is in use (another toolmenu login, or another program).\n` +
+                `→ Next: Close it, or pick another port with --port <n>. The login registers http://127.0.0.1:<n>/callback, so use the same port the next time too.`,
+            )
+          : error,
+      ),
     );
     server.listen(port, '127.0.0.1', () =>
       ready({

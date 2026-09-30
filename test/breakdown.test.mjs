@@ -53,6 +53,7 @@ test('breakdown: $defs nothing refers to, followed through $defs that refer to o
   const tokensOf = (o) => countTokens(JSON.stringify(o));
   assert.equal(b.unusedDefs.tokens, tokensOf({ used: $defs.used }) + tokensOf({ usedByUsed: $defs.usedByUsed }) + 2 * tokensOf({ dead: $defs.dead }));
   assert.match(breakdownLines(b, 2).join('\n'), /unused \$defs: ~\d+ tokens \(\d+% of the menu\) in 2 tools \(get_user, create_page\)/);
+  assert.match(breakdownLines(b, 2).join('\n'), /→ Next: Remove the unreferenced \$defs entries/);
 });
 
 test('cli: snapshot shows where the tokens go', async () => {
