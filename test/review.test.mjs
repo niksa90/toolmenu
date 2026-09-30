@@ -25,11 +25,11 @@ test('review 2: a classified change on one parameter no longer hides a breaking 
   const before = menu([withProps({ a: { type: 'string', description: 'old' }, b: { type: 'array', items: { type: 'string', enum: ['p', 'q'] } } })]);
   const after = menu([withProps({ a: { type: 'string', description: 'new' }, b: { type: 'array', items: { type: 'string', enum: ['p'] } } })], '1.0.1');
   const d = diffMenus(before, after, { release: { before: '1.0.0', after: '1.0.1' } });
-  assert.ok(d.findings.some((f) => f.rule === 'diff/enum-narrowed' && /array items/.test(f.message)));
+  assert.ok(d.findings.some((f) => f.rule === 'diff/enum-narrowed' && f.message.startsWith('`t.b[]`')));
   assert.equal(d.suggestedBump, 'major');
   const nested = diffMenus(menu([withProps({ a: { type: 'object', properties: { x: { type: 'string' } } } })]), menu([withProps({ a: { type: 'object', properties: { y: { type: 'string' } } } })]));
   // Nested fields are classified like parameters, with their path.
-  assert.deepEqual(nested.findings.map((f) => `${f.rule}: ${f.message.split(' ')[0]}`).sort(), ['diff/param-added: t.a.y', 'diff/param-dropped: t.a.x']);
+  assert.deepEqual(nested.findings.map((f) => `${f.rule}: ${f.message.split(' ')[0]}`).sort(), ['diff/param-added: `t.a.y`', 'diff/param-dropped: `t.a.x`']);
 });
 
 test('review 4: ignored tools and rules set to off do not force a bump', () => {

@@ -106,46 +106,56 @@ function tokenSentence(d: DiffResult): string {
   return 'no change in menu size';
 }
 
+/** "3 breaking (25 tools) · 2 minor (2 tools) · 11 notice (10 tools)": changes, and the tools they touch. */
+function classLine(d: DiffResult): string {
+  const part = (c: 'breaking' | 'minor' | 'notice') => {
+    const { changes, tools } = d.classes[c];
+    return `${changes} ${c}${changes && tools ? ` (${plural(tools, 'tool')})` : ''}`;
+  };
+  return `${part('breaking')} · ${part('minor')} · ${part('notice')}`;
+}
+
+/**
+ * The version verdict: the bump these changes suggest, then whether the release's
+ * bump is enough (and what to release instead), or why it wasn't checked.
+ */
+function bumpVerdict(d: DiffResult, md = false): { line: string; short: boolean } {
+  const b = (s: string) => (md ? `**${s}**` : s);
+  const suggested = `suggested bump: ${b(d.suggestedBump)}`;
+  if (!d.actualBump || !d.release) return { line: `${suggested} · not checked (${d.bumpNotChecked ?? 'pass --release old..new'})`, short: false };
+  const pair = `${d.release.before} → ${d.release.after} is a ${d.actualBump} bump`;
+  const required = d.requiredBump ?? d.suggestedBump;
+  const below1 = required !== d.suggestedBump ? ` (under 1.0.0 ${required === 'none' ? 'anything goes' : `a ${required} is enough`})` : '';
+  const rank = { none: 0, patch: 1, minor: 2, major: 3 } as const;
+  if (rank[d.actualBump] >= rank[required]) return { line: `${suggested} · ${pair}: enough${below1}`, short: false };
+  return { line: `${suggested} · ${pair}: ${b(`too small, release ${d.releaseAs ?? `a ${required}`}`)}${below1}`, short: true };
+}
+
+function releasePair(d: DiffResult): string {
+  // Name the release versions when there are some; otherwise say whose version this is.
+  return d.release?.source === 'release' ? `${d.release.before} → ${d.release.after}` : `${d.before.version ?? '?'} → ${d.after.version ?? '?'} (server-reported)`;
+}
+
 export function formatDiff(d: DiffResult, beforeTools: number, afterTools: number, format: Format): string {
   if (format === 'json') {
     return JSON.stringify({ command: 'diff', ...d, counts: counts(d.findings) }, null, 2);
   }
-  const classes = { breaking: 0, minor: 0, notice: 0 };
-  for (const f of d.findings) if (f.class) classes[f.class]++;
-  // Name the release versions when there are some; otherwise say whose version this is.
-  const pair = d.release?.source === 'release'
-    ? `${d.release.before} → ${d.release.after}`
-    : `${d.before.version ?? '?'} → ${d.after.version ?? '?'} (server-reported)`;
-  const actual = d.actualBump ?? `not checked (${d.bumpNotChecked ?? 'pass --release'})`;
-  const headline = `${d.after.name ?? d.before.name ?? 'server'} ${pair}`;
-  const tokenLine = `~${d.tokens.before.toLocaleString('en-US')} → ~${d.tokens.after.toLocaleString('en-US')} tokens (${signed(d.tokens.delta)}, estimate): ${tokenSentence(d)}`;
-  const bumpLine = `suggested bump: ${d.suggestedBump} · actual: ${actual}`;
+  const name = d.after.name ?? d.before.name ?? 'server';
+  const pair = releasePair(d);
+  const verdict = bumpVerdict(d);
+  const tokenLine = `~${d.tokens.before.toLocaleString('en-US')} → ~${d.tokens.after.toLocaleString('en-US')} (${signed(d.tokens.delta)}, estimate): ${tokenSentence(d)}`;
 
   if (format === 'github') {
-    return [...githubLines(d.findings), `::notice title=toolmenu diff::${headline}. ${tokenLine}. ${bumpLine}.`].join('\n');
+    return [...githubLines(d.findings), `::notice title=toolmenu diff::${name} ${pair}. Changes: ${classLine(d)}. Tokens: ${tokenLine}. Version: ${verdict.line}.`].join('\n');
   }
-  if (format === 'markdown') {
-    const lines = [
-      `### toolmenu diff: \`${d.after.name ?? d.before.name ?? 'server'}\` ${pair}`,
-      '',
-      `**${signed(d.tokens.delta)} tokens** (~${d.tokens.before.toLocaleString('en-US')} → ~${d.tokens.after.toLocaleString('en-US')}, estimate): ${tokenSentence(d)}.`,
-      '',
-      `**${classes.breaking} breaking** · ${classes.minor} minor · ${classes.notice} notice · suggested bump: **${d.suggestedBump}** (actual: ${actual}) · ${beforeTools} → ${afterTools} tools`,
-      '',
-      ...mdFindings(d.findings),
-    ];
-    if (d.tokens.tools.length) {
-      lines.push('', '<details><summary>Token change by tool (estimate)</summary>', '', '| Tool | Before | After | Change |', '|---|---:|---:|---:|');
-      for (const t of d.tokens.tools.slice(0, 30)) lines.push(`| \`${t.name}\` | ${t.before.toLocaleString('en-US')} | ${t.after.toLocaleString('en-US')} | ${signed(t.delta)} |`);
-      if (d.tokens.tools.length > 30) lines.push(`| …and ${d.tokens.tools.length - 30} more | | | |`);
-      lines.push('', '</details>');
-    }
-    return lines.join('\n');
-  }
+  if (format === 'markdown') return mdDiff(d, beforeTools, afterTools);
+
   const lines = [
-    `toolmenu diff  ${headline}`,
-    `  ${beforeTools} → ${afterTools} tools · ${tokenLine}`,
-    `  ${classes.breaking} breaking · ${classes.minor} minor · ${classes.notice} notice · ${bumpLine}`,
+    `toolmenu diff  ${name} ${pair}`,
+    `  changes  ${classLine(d)}`,
+    `  version  ${verdict.line}`,
+    `  tokens   ${tokenLine}`,
+    `  tools    ${beforeTools} → ${afterTools}`,
     '',
     ...findingLines(d.findings),
   ];
@@ -157,6 +167,56 @@ export function formatDiff(d: DiffResult, beforeTools: number, afterTools: numbe
   }
   lines.push(summaryLine(d.findings));
   return lines.join('\n');
+}
+
+/** The diff as a PR comment: the verdict first, then the changes by class, notices folded. */
+function mdDiff(d: DiffResult, beforeTools: number, afterTools: number): string {
+  const name = d.after.name ?? d.before.name ?? 'server';
+  const verdict = bumpVerdict(d, true);
+  const c = d.classes;
+  const headline = [
+    c.breaking.changes ? `**${plural(c.breaking.changes, 'breaking change')}** in ${plural(c.breaking.tools, 'tool')}` : 'No breaking changes',
+    `${c.minor.changes} minor`,
+    `${c.notice.changes} notice${c.notice.changes === 1 ? '' : 's'}`,
+    `**${signed(d.tokens.delta)} tokens** (~${d.tokens.before.toLocaleString('en-US')} → ~${d.tokens.after.toLocaleString('en-US')}, estimate)`,
+    `${beforeTools} → ${afterTools} tools`,
+  ].join(' · ');
+  const lines = [`### toolmenu diff: \`${name}\` ${releasePair(d)}`, '', headline, '', `> **Version:** ${verdict.line}`, ''];
+  if (d.tokens.delta !== 0) lines.splice(lines.length - 1, 0, '>', `> **Tokens:** ${tokenSentence(d)}.`);
+
+  const table = (findings: typeof d.findings) => ['| | Rule | Change |', '|---|---|---|', ...findings.map(mdDiffRow)];
+  // Sections follow the severity the user's rules set, not only the class: a
+  // notice raised to error fails CI, so it's shown, never folded; a breaking
+  // rule lowered to info is folded with the notices.
+  const loud = (f: (typeof d.findings)[number]) => f.severity !== 'info';
+  const breaking = d.findings.filter((f) => f.class === 'breaking' && loud(f));
+  const checks = d.findings.filter((f) => f.class !== 'breaking' && f.class !== 'minor' && loud(f));
+  const minor = d.findings.filter((f) => f.class === 'minor');
+  const quiet = d.findings.filter((f) => f.class !== 'minor' && !loud(f));
+  if (breaking.length) lines.push(`#### Breaking (${breaking.length})`, '', ...table(breaking), '');
+  if (checks.length) lines.push(`#### To check (${checks.length})`, '', ...table(checks), '');
+  if (minor.length) lines.push(`#### New (${minor.length}, minor)`, '', ...table(minor), '');
+  if (quiet.length) lines.push(`<details><summary>Notices (${quiet.length})</summary>`, '', ...table(quiet), '', '</details>', '');
+  if (!d.findings.length) lines.push('No findings.', '');
+  if (d.tokens.tools.length) {
+    lines.push('<details><summary>Token change by tool (estimate)</summary>', '', '| Tool | Before | After | Change |', '|---|---:|---:|---:|');
+    for (const t of d.tokens.tools.slice(0, 30)) lines.push(`| \`${t.name}\` | ${t.before.toLocaleString('en-US')} | ${t.after.toLocaleString('en-US')} | ${signed(t.delta)} |`);
+    if (d.tokens.tools.length > 30) lines.push(`| …and ${d.tokens.tools.length - 30} more | | | |`);
+    lines.push('', '</details>', '');
+  }
+  lines.push(summaryLine(d.findings));
+  return lines.join('\n');
+}
+
+/** One diff finding as a table row: a long tool list folds, a text change shows as -/+ lines. */
+function mdDiffRow(f: DiffResult['findings'][number]): string {
+  const detail = (f.detail ?? []).map((line) => {
+    const list = /^(tools|operations|moved): (.*)$/.exec(line);
+    if (list) return `<details><summary>all ${list[2].split(', ').length} ${list[1] === 'moved' ? 'moved tools' : list[1]}</summary>${mdCell(list[2])}</details>`;
+    return `<br><sub>${mdCell(line).replace(/</g, '&lt;')}</sub>`;
+  });
+  const sev = f.severity === 'error' ? '**error**' : f.severity;
+  return `| ${sev} | \`${f.rule}\`${f.confidence === 'unsure' ? ' · _unsure_' : ''} | ${mdCell(f.message)}${detail.join('')}${f.fix ? `<br>**→ Next:** ${mdCell(f.fix)}` : ''} |`;
 }
 
 export function formatHistory(h: HistoryResult, format: Format, outDir: string): string {

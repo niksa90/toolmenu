@@ -438,9 +438,26 @@ Things building `snapshot` settled or changed. The spec above is updated to matc
   produced 17 false breaking changes on real data. Reported as `diff/schema-other`.
 - **Renames:** one removed + one added tool with the same non-empty parameter names,
   types and required set, and only when exactly one candidate matches.
-- **Version checks:** under 1.0.0 a minor bump may carry breaking changes. Calendar
+- **Version checks:** under 1.0.0 a minor bump may carry breaking changes (see below). Calendar
   versions (major ≥ 1000) are skipped. `diff` uses `server.version` from the
   snapshots; see below for `history`.
+- **Under 1.0.0 both steps shift** (npm's caret: `^0.2.3` accepts any 0.2.x):
+  breaking changes need a minor bump, new features a patch; under 0.1.0 anything
+  goes. `requiredBump` in the JSON says which applied. Found on Tavily 0.2.16,
+  0.2.19 and HubSpot 0.3.3, whose features in a patch were flagged as too small.
+- **The same change in many tools is one finding** (§25): the same rule, the same
+  path inside each tool, and the same schema before and after (descriptions
+  aside). It lists the tools (`tools`, and the full list in `detail` past six) and
+  every place (`places`); `tool` is left out. chrome-devtools-mcp 1.8.0 made
+  `pageId` required in 25 tools: one finding, not 25. **Counts are per change**:
+  `classes.breaking.changes` counts findings, `classes.breaking.tools` the tools
+  they touch; the bump is the same either way.
+- **Paths in messages** are written as they nest: `a.b` for a field, `a[]` for
+  array items, `a(kind="x")` or `a(object{p,q})` for a union option.
+- **Likely renames** (`diff/param-renamed`, warn, unsure, no class): a tool loses
+  a parameter and gains a required one next to it with a close name (case,
+  separators, a plural, an edit or two) and the same type or an array of it,
+  one to one. A hint for the author; both changes stay breaking.
 - **All published protocol schemas are bundled** (2024-11-05 → 2026-07-28), draft-07
   and draft 2020-12, pinned to the commit in §12.
 
