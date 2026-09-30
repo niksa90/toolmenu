@@ -6,7 +6,7 @@ import { compareMenus } from '../dist/compare.js';
 import { changeFindings, clip, MAX_UNLOCKS, parseScenario, scopeOf, session, starterScenario, unlockers, unlockListers, valuesFromListing } from '../dist/session.js';
 import { autoScenario } from '../dist/auto.js';
 import { parse as parseYaml } from 'yaml';
-import { FIXTURES, ROOT, menuOf, run, tempDir, tool } from './helpers.mjs';
+import { FIXTURES, ROOT, menuOf, run, tempDir, TIMEOUT_MS, tool } from './helpers.mjs';
 import { start as startSdkHttp } from './fixtures/http-server.mjs';
 import { start as startRawHttp } from './fixtures/raw-http-server.mjs';
 import { build } from './fixtures/session-server.mjs';
@@ -74,7 +74,7 @@ test('scopeOf: does a fresh connection see this step\'s changes?', () => {
 });
 
 test('session over stdio (2026-07-28): each change is pinned to the step that caused it', async () => {
-  const r = await session(stdio(), UNLOCK, { timeoutMs: 15_000 });
+  const r = await session(stdio(), UNLOCK, { timeoutMs: TIMEOUT_MS });
   assert.equal(r.server.protocolVersion, '2026-07-28');
   assert.equal(r.listening, true);
   assert.equal(r.connectionCheck, 'same');
@@ -95,7 +95,7 @@ test('session over stdio (2026-07-28): each change is pinned to the step that ca
 
 test('session: a server that holds a lock still gets its report, with the scope left unchecked', async () => {
   const lock = join(tempDir(), 'db.lock');
-  const r = await session(stdio({ LOCKFILE: lock }), UNLOCK, { timeoutMs: 15_000 });
+  const r = await session(stdio({ LOCKFILE: lock }), UNLOCK, { timeoutMs: TIMEOUT_MS });
   assert.deepEqual(byStep(r).filter((f) => f !== '3:session/scope-unchecked'), ['0:menu/process-variance', '3:session/mid-insert', '4:session/append', '5:session/edit', '7:session/refused']);
   const unchecked = r.findings.filter((f) => f.rule === 'session/scope-unchecked');
   assert.equal(unchecked.length, 1, 'said once for the run');
@@ -107,31 +107,31 @@ test('session: a server that holds a lock still gets its report, with the scope 
 });
 
 test('session over stdio (2025 protocol): cache findings, but no 2026-07-28 side-effect rule', async () => {
-  const r = await session(stdio({ LEGACY: '1' }), UNLOCK, { timeoutMs: 15_000 });
+  const r = await session(stdio({ LEGACY: '1' }), UNLOCK, { timeoutMs: TIMEOUT_MS });
   assert.equal(r.server.protocolVersion, '2025-11-25');
   assert.deepEqual(byStep(r), ['3:session/mid-insert', '4:session/append', '5:session/edit', '7:session/refused']);
 });
 
 test('allow_writes lets the scenario call a destructive tool', async () => {
-  const r = await session(stdio(), parseScenario({ allow_writes: true, steps: [{ call: 'delete_form', args: { form_id: 'f_1', dry_run: true } }] }), { timeoutMs: 15_000 });
+  const r = await session(stdio(), parseScenario({ allow_writes: true, steps: [{ call: 'delete_form', args: { form_id: 'f_1', dry_run: true } }] }), { timeoutMs: TIMEOUT_MS });
   assert.deepEqual(byStep(r), []);
   assert.equal(r.steps[0].status, 'ok');
 });
 
 test('a tool that returns an error is a warning, not a clean step', async () => {
-  const r = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'broken' } }, { call: 'get_form', args: { form_id: 'f_1' } }] }), { timeoutMs: 15_000 });
+  const r = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'broken' } }, { call: 'get_form', args: { form_id: 'f_1' } }] }), { timeoutMs: TIMEOUT_MS });
   assert.deepEqual(byStep(r), ['1:session/tool-error']);
   assert.equal(r.findings[0].severity, 'warn');
   assert.match(r.findings[0].message, /The form definition is corrupt/);
 });
 
 test('calls that fail on credentials are one session/untested finding: warn if some got through, error if none did', async () => {
-  const some = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'expired' } }, { call: 'get_form', args: { form_id: 'f_1' } }] }), { timeoutMs: 15_000 });
+  const some = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'expired' } }, { call: 'get_form', args: { form_id: 'f_1' } }] }), { timeoutMs: TIMEOUT_MS });
   assert.deepEqual(byStep(some), ['undefined:session/untested']);
   assert.equal(some.findings[0].severity, 'warn');
   assert.match(some.findings[0].message, /^1 of 2 tool calls failed before reaching the tool: 1 on authentication/);
   assert.equal(some.steps[0].failure, 'auth');
-  const none = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'expired' } }] }), { timeoutMs: 15_000 });
+  const none = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'expired' } }] }), { timeoutMs: TIMEOUT_MS });
   assert.equal(none.findings.find((f) => f.rule === 'session/untested').severity, 'error');
   assert.match(none.findings[0].message, /^All 1 tool calls failed/);
 });
@@ -149,7 +149,7 @@ test('clip: never splits a character, drops a server\'s broken tail', () => {
 });
 
 test('a tool that isn\'t in the menu yet fails its step', async () => {
-  const r = await session(stdio(), parseScenario({ steps: [{ call: 'list_team_audits', args: { team: 't' } }] }), { timeoutMs: 15_000 });
+  const r = await session(stdio(), parseScenario({ steps: [{ call: 'list_team_audits', args: { team: 't' } }] }), { timeoutMs: TIMEOUT_MS });
   assert.deepEqual(byStep(r), ['1:session/step-failed']);
 });
 
@@ -157,7 +157,7 @@ test('http, SDK server with shared state: global change, and no list_changed', a
   const shared = {};
   const server = await startSdkHttp({ factory: () => build(shared) });
   try {
-    const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }] }), { timeoutMs: 15_000 });
+    const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }] }), { timeoutMs: TIMEOUT_MS });
     assert.equal(r.steps[0].scope, 'global');
     assert.deepEqual(byStep(r), ['1:session/mid-insert', '1:session/unannounced', '1:session/unlock-coverage']);
   } finally {
@@ -173,7 +173,7 @@ test('http, rate limit: a limit that clears is waited out; one that stays is one
   const clean = await startSdkHttp({ factory: sharedState() });
   let expected, total;
   try {
-    expected = byStep(await session({ kind: 'http', url: clean.url }, parseScenario({ steps }), { timeoutMs: 15_000 }));
+    expected = byStep(await session({ kind: 'http', url: clean.url }, parseScenario({ steps }), { timeoutMs: TIMEOUT_MS }));
     total = clean.seen.posts;
   } finally {
     await clean.close();
@@ -183,7 +183,7 @@ test('http, rate limit: a limit that clears is waited out; one that stays is one
   for (let limit = 0; limit < total; limit++) {
     const clears = await startSdkHttp({ factory: sharedState(), limit, resetAfterMs: 100 });
     try {
-      const r = await session({ kind: 'http', url: clears.url }, parseScenario({ steps }), { timeoutMs: 15_000, rateLimitWaitsMs: [150, 300] });
+      const r = await session({ kind: 'http', url: clears.url }, parseScenario({ steps }), { timeoutMs: TIMEOUT_MS, rateLimitWaitsMs: [150, 300] });
       assert.ok(clears.seen.refused > 0, `limit ${limit}`);
       assert.deepEqual(byStep(r), expected, `limit ${limit}: refused requests sent again, the same run as with no limit`);
     } finally {
@@ -193,7 +193,7 @@ test('http, rate limit: a limit that clears is waited out; one that stays is one
   // It trips on step 3, the second unlock: the "reports" value isn't also unlock-coverage.
   const stays = await startSdkHttp({ factory: () => build({}), limit: 8 });
   try {
-    const r = await session({ kind: 'http', url: stays.url }, parseScenario({ steps }), { timeoutMs: 15_000, rateLimitWaitsMs: [20, 40] });
+    const r = await session({ kind: 'http', url: stays.url }, parseScenario({ steps }), { timeoutMs: TIMEOUT_MS, rateLimitWaitsMs: [20, 40] });
     const limited = r.findings.filter((f) => f.rule === 'session/rate-limited');
     assert.equal(limited.length, 1);
     assert.equal(limited[0].severity, 'error');
@@ -213,7 +213,7 @@ test('http, rate limit: a tool that says it was limited is called again only if 
     const server = await startSdkHttp({ factory: () => buildRateLimited(ran) });
     try {
       const started = Date.now();
-      const r = await session({ kind: 'http', url: server.url }, parseScenario({ allow_writes: true, steps: [{ call: name, args: {} }, 'list'] }), { timeoutMs: 15_000, rateLimitWaitsMs: [300, 300] });
+      const r = await session({ kind: 'http', url: server.url }, parseScenario({ allow_writes: true, steps: [{ call: name, args: {} }, 'list'] }), { timeoutMs: TIMEOUT_MS, rateLimitWaitsMs: [300, 300] });
       return { ran: ran[name], ms: Date.now() - started, rules: byStep(r), limited: r.findings.find((f) => f.rule === 'session/rate-limited') };
     } finally {
       await server.close();
@@ -265,7 +265,7 @@ test('RATE_LIMITED: the words for a refusal, not every 429 or rateLimit', () => 
 test('http, rate limit: a connection refused throughout is said so, not the transport error', async () => {
   const server = await startSdkHttp({ limit: 0 });
   try {
-    await assert.rejects(session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: 15_000, rateLimitWaitsMs: [20, 40] }), /Rate-limited while connecting, and still after waiting 0\.1 s: “Too many requests, please try again later\.” The limit counts/);
+    await assert.rejects(session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: TIMEOUT_MS, rateLimitWaitsMs: [20, 40] }), /Rate-limited while connecting, and still after waiting 0\.1 s: “Too many requests, please try again later\.” The limit counts/);
   } finally {
     await server.close();
   }
@@ -274,7 +274,7 @@ test('http, rate limit: a connection refused throughout is said so, not the tran
 test('http, SDK server with per-instance state: the unlock silently does nothing', async () => {
   const server = await startSdkHttp({ factory: () => build() });
   try {
-    const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }] }), { timeoutMs: 15_000 });
+    const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }] }), { timeoutMs: TIMEOUT_MS });
     assert.equal(r.steps[0].changed, false);
     // Nothing changed; only the other toolset was never tried.
     assert.deepEqual(byStep(r), ['1:session/unlock-coverage']);
@@ -286,7 +286,7 @@ test('http, SDK server with per-instance state: the unlock silently does nothing
 test('http with sessions: a change only this connection sees is connection-local', async () => {
   const server = await startRawHttp({ scope: 'local' });
   try {
-    const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: [{ call: 'unlock_toolset' }] }), { timeoutMs: 15_000 });
+    const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: [{ call: 'unlock_toolset' }] }), { timeoutMs: TIMEOUT_MS });
     assert.equal(r.steps[0].scope, 'connection-local');
     assert.deepEqual(byStep(r), ['1:session/mid-insert', '1:session/connection-local']);
     assert.equal(r.findings[1].severity, 'info', '2025-era: allowed, but noted');
@@ -298,7 +298,7 @@ test('http with sessions: a change only this connection sees is connection-local
 test('http with sessions: a global change is global', async () => {
   const server = await startRawHttp({ scope: 'global' });
   try {
-    const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: [{ call: 'unlock_toolset' }] }), { timeoutMs: 15_000 });
+    const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: [{ call: 'unlock_toolset' }] }), { timeoutMs: TIMEOUT_MS });
     assert.equal(r.steps[0].scope, 'global');
     assert.deepEqual(byStep(r), ['1:session/mid-insert']);
   } finally {
@@ -309,7 +309,7 @@ test('http with sessions: a global change is global', async () => {
 test('http: menus that differ per connection are caught before the first step', async () => {
   const server = await startRawHttp({ vary: true });
   try {
-    const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: 15_000 });
+    const r = await session({ kind: 'http', url: server.url }, parseScenario({ steps: ['list'] }), { timeoutMs: TIMEOUT_MS });
     assert.equal(r.connectionCheck, 'different');
     assert.deepEqual(byStep(r), ['0:menu/connection-variance']);
   } finally {
@@ -498,7 +498,7 @@ test('--auto: calling nothing is a warning that says why; an unlock skipped as o
   const plan = autoScenario(menuOf([search, fetchPage]));
   assert.deepEqual(plan.called, []);
   // The session fixture's own menu doesn't matter: what counts is the plan it was given.
-  const r = await session(stdio(), plan.scenario, { timeoutMs: 15_000, processes: 1, auto: { called: plan.called, skipped: plan.skipped } });
+  const r = await session(stdio(), plan.scenario, { timeoutMs: TIMEOUT_MS, processes: 1, auto: { called: plan.called, skipped: plan.skipped } });
   const nothing = r.findings.find((f) => f.rule === 'session/nothing-called');
   assert.equal(nothing?.severity, 'warn');
   assert.match(nothing.message, /--auto called no tools: 2 marked openWorldHint \(call them with --open-world/);
@@ -517,22 +517,22 @@ test('--auto: a read-only unlock runs even when marked openWorldHint, every valu
 test('--auto: an unlock it can\'t call (not read-only) is named, with the reason', async () => {
   const menu = menuOf([{ name: 'unlock_toolset', description: 'Unlock more tools.', inputSchema: { type: 'object', properties: { toolset: { type: 'string', enum: ['audits', 'reports'] } }, required: ['toolset'] }, annotations: { readOnlyHint: false } }]);
   const plan = autoScenario(menu);
-  const r = await session(stdio(), plan.scenario, { timeoutMs: 15_000, processes: 1, auto: { called: plan.called, skipped: plan.skipped } });
+  const r = await session(stdio(), plan.scenario, { timeoutMs: TIMEOUT_MS, processes: 1, auto: { called: plan.called, skipped: plan.skipped } });
   const cov = r.findings.find((f) => f.rule === 'session/unlock-coverage');
   assert.match(cov?.message ?? '', /got through 0 of its 2 toolset values.*--auto skipped it: it isn't marked readOnlyHint/);
 });
 
 test('session/unlock-coverage: a partial unlock is a warning; an unlock never called only when the run builds the baseline', async () => {
-  const partial = await session(stdio(), parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }] }), { timeoutMs: 15_000, processes: 1 });
+  const partial = await session(stdio(), parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }] }), { timeoutMs: TIMEOUT_MS, processes: 1 });
   const cov = partial.findings.find((f) => f.rule === 'session/unlock-coverage');
   assert.equal(cov?.severity, 'warn');
   assert.match(cov.message, /got through 1 of its 2 toolset values/);
   assert.deepEqual(cov.detail, ['not unlocked: "reports"']);
-  const full = await session(stdio(), parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }, { call: 'unlock_toolset', args: { toolset: 'reports' } }] }), { timeoutMs: 15_000, processes: 1 });
+  const full = await session(stdio(), parseScenario({ steps: [{ call: 'unlock_toolset', args: { toolset: 'audits' } }, { call: 'unlock_toolset', args: { toolset: 'reports' } }] }), { timeoutMs: TIMEOUT_MS, processes: 1 });
   assert.ok(!full.findings.some((f) => f.rule === 'session/unlock-coverage'));
   const never = parseScenario({ steps: ['list'] });
-  assert.ok(!(await session(stdio(), never, { timeoutMs: 15_000, processes: 1 })).findings.some((f) => f.rule === 'session/unlock-coverage'));
-  assert.ok((await session(stdio(), never, { timeoutMs: 15_000, processes: 1, unionOut: true })).findings.some((f) => f.rule === 'session/unlock-coverage'));
+  assert.ok(!(await session(stdio(), never, { timeoutMs: TIMEOUT_MS, processes: 1 })).findings.some((f) => f.rule === 'session/unlock-coverage'));
+  assert.ok((await session(stdio(), never, { timeoutMs: TIMEOUT_MS, processes: 1, unionOut: true })).findings.some((f) => f.rule === 'session/unlock-coverage'));
 });
 
 test('scopeOf: undoing an unlock back to the baseline is unclear, not global (a fresh process starts there)', () => {
@@ -550,14 +550,14 @@ test('session: a server with one session per client ends ours when the probe con
   try {
     const target = { kind: 'http', url: server.url, headers: { 'mcp-client-id': 'audit' } };
     const scenario = parseScenario({ steps: ['list', { call: 'unlock_toolset' }, 'list', 'list'] });
-    const r = await session(target, scenario, { timeoutMs: 15_000 });
+    const r = await session(target, scenario, { timeoutMs: TIMEOUT_MS });
     const rules = r.findings.map((f) => f.rule);
     assert.deepEqual(rules.filter((x) => x === 'session/session-lost'), ['session/session-lost']);
     assert.ok(!rules.includes('session/untested'), 'not blamed on credentials');
     assert.ok(!rules.includes('session/step-failed'));
     assert.match(r.findings.find((f) => f.rule === 'session/session-lost').message, /“Session not found or expired”.*--processes 1/);
     // --processes 1 opens no second connection, the scope probe included: the run completes.
-    const one = await session(target, scenario, { timeoutMs: 15_000, processes: 1 });
+    const one = await session(target, scenario, { timeoutMs: TIMEOUT_MS, processes: 1 });
     assert.deepEqual(one.steps.map((s) => s.status), ['ok', 'ok', 'ok', 'ok']);
     assert.ok(one.findings.some((f) => f.rule === 'session/mid-insert' && f.step === 2));
   } finally {

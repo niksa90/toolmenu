@@ -286,9 +286,15 @@ test('a union option that is an unexpanded $ref doesn\'t hide the others\' discr
 
 test('a wide union where every option changed stays fast (review of #15: 36 s at 1,500)', () => {
   const u = (last) => ({ type: 'object', properties: { v: { anyOf: Array.from({ length: 1500 }, (_, i) => ({ type: 'object', properties: { [`f${i}`]: { type: 'string' }, [`g${i}`]: { type: 'integer', enum: last } } })) } } });
-  const t = performance.now();
-  const d = diffMenus(gen(u([1, 2, 3])), gen(u([1, 2])));
-  assert.ok(performance.now() - t < 10_000, `${Math.round(performance.now() - t)} ms`);
+  // The diff alone (about 1 s here), not building the menus: counting their tokens took
+  // most of the time and none of the regression. And CPU time, not wall time: on a
+  // busy machine the wall clock also counts the wait for a CPU (12–20 s with three
+  // suites running at once).
+  const [before, after] = [gen(u([1, 2, 3])), gen(u([1, 2]))];
+  const cpu = process.cpuUsage();
+  const d = diffMenus(before, after);
+  const { user, system } = process.cpuUsage(cpu);
+  assert.ok((user + system) / 1000 < 10_000, `${Math.round((user + system) / 1000)} ms of CPU`);
   assert.equal(d.suggestedBump, 'major');
 });
 

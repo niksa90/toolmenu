@@ -37,7 +37,15 @@ export const npmSource: PackageSource = {
     await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'toolmenu-history-install', private: true }));
     const args = ['install', `${pkg}@${version}`, '--no-audit', '--no-fund', '--loglevel=error'];
     if (!allowScripts) args.push('--ignore-scripts');
-    await run(npm, args, { cwd: dir, timeout: timeoutMs, maxBuffer: 64 * 1024 * 1024, shell: process.platform === 'win32' });
+    try {
+      await run(npm, args, { cwd: dir, timeout: timeoutMs, maxBuffer: 64 * 1024 * 1024, shell: process.platform === 'win32' });
+    } catch (error) {
+      // execFile's own message is the command line; what npm said is on stderr.
+      const e = error as { killed?: boolean; signal?: string; code?: number | string; stderr?: string };
+      if (e.killed || e.signal) throw new Error(`npm install timed out after ${Math.round(timeoutMs / 1000)} s (stopped with ${e.signal ?? 'a signal'}).`);
+      const said = (e.stderr ?? '').trim();
+      throw new Error(`npm install exited with ${e.code ?? 'an error'}${said ? `:\n${said}` : ', and said nothing on stderr.'}`);
+    }
   },
 };
 
@@ -57,7 +65,14 @@ export interface HistoryRow {
   published?: string;
   status: 'ok' | 'failed';
   reason?: FailureReason;
+  /** The server's or npm's own words, the lines that say what went wrong. */
   error?: string;
+  /** A failed version: what went wrong and at which stage, in a sentence (SPEC §25). */
+  message?: string;
+  /** A failed version: what to try next. */
+  fix?: string;
+  /** Set when the reason is read from error text, not seen directly. */
+  confidence?: 'unsure';
   /** What the package asks for (its package.json). */
   declared?: Record<string, string>;
   /** What npm actually installed today, every copy in the tree. */
@@ -154,7 +169,7 @@ async function inspectVersion(
     try {
       await source.install(pkg, v.version, dir, { allowScripts: options.allowScripts ?? false, timeoutMs: options.installTimeoutMs ?? 180_000 });
     } catch (error) {
-      return { row: fail(row, 'install-failed', error) };
+      return { row: fail(row, 'install-failed', error, pkg) };
     }
 
     const pkgDir = join(dir, 'node_modules', ...pkg.split('/'));
@@ -166,7 +181,7 @@ async function inspectVersion(
     row.resolved = await resolvedDependencies(dir);
 
     const command = commandFor(pkg, pkgDir, dir, manifest.bin, options);
-    if (!command) return { row: fail(row, 'no-bin', new Error('The package has no bin to start, and no --cmd was given.')) };
+    if (!command) return { row: fail(row, 'no-bin', new Error('The package has no bin to start, and no --cmd was given.'), pkg) };
 
     let result;
     try {
@@ -176,7 +191,7 @@ async function inspectVersion(
         { timeoutMs: options.timeoutMs ?? 30_000, processes: 1 },
       );
     } catch (error) {
-      return { row: fail(row, classifyFailure(error), error) };
+      return { row: fail(row, classifyFailure(error), error, pkg) };
     }
 
     const { menu, findings } = result;
@@ -237,8 +252,80 @@ export function classifyFailure(error: unknown): FailureReason {
   return 'crashed';
 }
 
-function fail(row: HistoryRow, reason: FailureReason, error: unknown): HistoryRow {
-  return Object.assign(row, { status: 'failed' as const, reason, error: summarizeError(error) });
+function fail(row: HistoryRow, reason: FailureReason, error: unknown, pkg: string): HistoryRow {
+  const summary = summarizeError(error);
+  return Object.assign(row, { status: 'failed' as const, reason, error: summary, ...failureAdvice(reason, summary, pkg, row.version) });
+}
+
+/** The first line of an error that reads as the cause: "HubSpot access token is required". */
+function causeLine(error: string): string {
+  const lines = error.split('\n').map((l) => l.replace(/^(Uncaught )?(\w*Error( \[\w+\])?:\s*)/, '').trim()).filter((l) => l && !/^throw\b|^code:|^server stderr:?$/i.test(l));
+  const line = lines.find((l) => /required|missing|not set|must|cannot|can't|not found|usage|invalid|denied/i.test(l)) ?? lines[0] ?? '';
+  return line.length > 160 ? `${line.slice(0, 159)}…` : line;
+}
+
+/**
+ * What a failed version's row says (SPEC §25): what failed and at which stage, the
+ * words that show it, and what to try next. Reasons read from the server's words
+ * (needs-env, needs-args, crashed) are marked unsure: toolmenu sees the text, not the cause.
+ */
+export function failureAdvice(reason: FailureReason, error: string, pkg: string, version: string): Pick<HistoryRow, 'message' | 'fix' | 'confidence'> {
+  // "Connection closed" is the transport's words, not the server's: say nothing rather than that.
+  const said = /^connection closed\.?$/i.test(causeLine(error)) ? '' : causeLine(error);
+  const quoted = said ? `: “${said}”` : '';
+  const end = /[.!?…]$/.test(said) ? '' : '.';
+  const at = `${pkg}@${version}`;
+  switch (reason) {
+    case 'install-failed':
+      return {
+        // npm's own words, not its "npm error" prefix.
+        message: `npm couldn't install ${at}${quoted}${end}`,
+        fix: /timed out|ETIMEDOUT|SIGTERM/i.test(error)
+          ? 'Rerun with a longer --install-timeout, or check the container reaches the registry.'
+          : `Try it by hand: npm install ${at}. If it needs its install scripts, rerun with --allow-scripts (they run third-party code).`,
+      };
+    case 'no-bin':
+      return {
+        message: `${at} has no bin to start: its package.json names none, or the file isn't there.`,
+        fix: `Name the entry point with --cmd, e.g. --cmd "node {dir}/node_modules/${pkg}/dist/index.js".`,
+      };
+    case 'needs-env': {
+      const name = /\b([A-Z][A-Z0-9]*_[A-Z0-9_]+)\b/.exec(error)?.[1];
+      return {
+        message: `The server exited at startup, asking for configuration${quoted}${end}`,
+        fix: name
+          ? `Pass it: --env ${name}=dummy (a dummy value is enough to list tools on most servers).`
+          : "Pass the variable it reads with --env NAME=dummy (the package's README names it; a dummy value is enough to list tools on most servers).",
+        confidence: 'unsure',
+      };
+    }
+    case 'needs-args':
+      return {
+        message: `The server exited at startup with a usage message${quoted}${end}`,
+        fix: 'Pass the arguments it asks for with --arg, one per value (e.g. --arg /tmp for a directory).',
+        confidence: 'unsure',
+      };
+    case 'timeout':
+      return {
+        message: `The server started but didn't answer within --timeout${quoted}${end}`,
+        fix: 'Rerun with a longer --timeout. If it waits for a flag to serve stdio, pass it with --arg.',
+      };
+    case 'crashed': {
+      const missing = /Cannot find (?:package|module) '([^']+)'/.exec(error)?.[1];
+      if (missing) {
+        return {
+          message: `The server couldn't start: it imports ${missing}, and npm didn't install that with it (ERR_MODULE_NOT_FOUND).`,
+          fix: `Usually a dependency the release doesn't declare, so nothing to change in the run. To confirm: npm install ${at}, then start its bin by hand.`,
+          confidence: 'unsure',
+        };
+      }
+      return {
+        message: `The server exited or closed the connection before listing its tools${quoted}${end}`,
+        fix: `Start it by hand to see why: npx -y ${at}. If it needs flags or variables, pass them with --arg and --env.`,
+        confidence: 'unsure',
+      };
+    }
+  }
 }
 
 /** The lines that say what went wrong, not the stack trace. */

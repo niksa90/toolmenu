@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { hasLogin, listLogins, login, logout } from '../dist/auth.js';
 import { snapshot } from '../dist/snapshot.js';
 import { start } from './fixtures/oauth-server.mjs';
-import { run, tempDir } from './helpers.mjs';
+import { run, tempDir, TIMEOUT_MS } from './helpers.mjs';
 
 // Every test stores its logins in its own directory, never the user's.
 const isolated = () => (process.env.TOOLMENU_AUTH_DIR = tempDir());
@@ -44,7 +44,7 @@ test('auth login: register, authorize, exchange, and snapshot uses the login', a
     const params = server.seen.authorizeParams[0];
     assert.equal(params.code_challenge_method, 'S256');
     assert.ok(params.state);
-    const { menu, findings } = await snapshot({ kind: 'http', url: server.url }, { timeoutMs: 15_000 });
+    const { menu, findings } = await snapshot({ kind: 'http', url: server.url }, { timeoutMs: TIMEOUT_MS });
     assert.ok(menu.tools.length > 0);
     assert.equal(findings.some((f) => f.rule === 'menu/connection-variance'), false);
     // A second login reuses the registered client.
@@ -61,11 +61,11 @@ test('auth: an expired token is refreshed; a revoked login says to log in again'
   try {
     await login(server.url, { port: port(), open: browser() });
     server.expireTokens();
-    const { menu } = await snapshot({ kind: 'http', url: server.url }, { timeoutMs: 15_000, processes: 1 });
+    const { menu } = await snapshot({ kind: 'http', url: server.url }, { timeoutMs: TIMEOUT_MS, processes: 1 });
     assert.ok(menu.tools.length > 0);
     assert.equal(server.seen.refreshes, 1);
     server.revokeAll();
-    await assert.rejects(snapshot({ kind: 'http', url: server.url }, { timeoutMs: 15_000, processes: 1 }), /toolmenu auth login/);
+    await assert.rejects(snapshot({ kind: 'http', url: server.url }, { timeoutMs: TIMEOUT_MS, processes: 1 }), /toolmenu auth login/);
   } finally {
     await server.close();
   }
@@ -89,9 +89,9 @@ test('auth: without a login, a 401 says how to log in; logout removes it; --no-a
   isolated();
   const server = await start();
   try {
-    await assert.rejects(snapshot({ kind: 'http', url: server.url }, { timeoutMs: 15_000, processes: 1 }), /toolmenu auth login/);
+    await assert.rejects(snapshot({ kind: 'http', url: server.url }, { timeoutMs: TIMEOUT_MS, processes: 1 }), /toolmenu auth login/);
     await login(server.url, { port: port(), open: browser() });
-    await assert.rejects(snapshot({ kind: 'http', url: server.url, noAuth: true }, { timeoutMs: 15_000, processes: 1 }), /401|nauthorized/);
+    await assert.rejects(snapshot({ kind: 'http', url: server.url, noAuth: true }, { timeoutMs: TIMEOUT_MS, processes: 1 }), /401|nauthorized/);
     assert.equal(await logout(server.url), true);
     assert.equal(hasLogin(server.url), false);
     assert.equal(await logout(server.url), false);
@@ -116,7 +116,7 @@ test('auth: a server without dynamic registration says how to get in (GitHub\'s 
   isolated();
   const server = await start({ registration: false });
   try {
-    await assert.rejects(login(server.url, { port: port(), open: browser() }), (e) => /register an OAuth app/.test(e.message) && /--client-id/.test(e.message) && /Authorization: Bearer/.test(e.message));
+    await assert.rejects(login(server.url, { port: port(), open: browser() }), (e) => /register an OAuth app/i.test(e.message) && /--client-id/.test(e.message) && /Authorization: Bearer/.test(e.message));
   } finally {
     await server.close();
   }
@@ -138,7 +138,7 @@ test('auth: a pre-registered app (--client-id, --client-secret) logs in without 
     assert.equal(server.seen.registrations, 0);
     // Later commands refresh with the stored app, no --client-id needed.
     server.expireTokens();
-    const { menu } = await snapshot({ kind: 'http', url: server.url }, { timeoutMs: 15_000, processes: 1 });
+    const { menu } = await snapshot({ kind: 'http', url: server.url }, { timeoutMs: TIMEOUT_MS, processes: 1 });
     assert.ok(menu.tools.length > 0);
     assert.equal(server.seen.refreshes, 1);
     // A wrong secret fails the exchange (after the stored login is revoked, so there is one).

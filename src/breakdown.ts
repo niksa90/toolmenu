@@ -183,29 +183,84 @@ function enumValues(schema: JsonSchema): unknown[] {
   return [];
 }
 
-/** The breakdown as report lines, or none for a menu too small to need one. */
-export function breakdownLines(b: Breakdown, tools: number): string[] {
-  const n = (x: number) => `~${x.toLocaleString('en-US')}`;
-  const repeated = b.repeated.map((r) => {
-    const inside = r.within > 1 ? `${r.tools === 1 ? '' : ', '}×${r.within} inside ${r.withinTool}${r.saving > 0 ? `: a $defs entry there could save ${n(r.saving)}` : ''}` : '';
-    if (r.tools === 1) return `  repeated: one ${n(r.tokens)}-token block ×${r.count} in ${r.withinTool} (${r.where.map((w) => w.slice(r.withinTool.length + 1)).join(', ')}${r.count > r.where.length ? ', …' : ''})${r.saving > 0 ? `: a $defs entry could save ${n(r.saving)}` : ''}`;
-    return `  repeated: ${r.param} (${n(r.tokens)}) in ${r.tools} tools, ${n(r.total)} in all${inside}`;
-  });
-  const pct = (x: number) => `${Math.round(x * 100)}%`;
+/** One item of the breakdown, format-neutral: what it is, why it costs, what to do. */
+interface Item {
+  kind: 'top' | 'unused' | 'enum' | 'repeated' | 'note';
+  /** The line itself: the numbers and where. */
+  text: string;
+  /** Why it matters, when the line alone doesn't say. */
+  why?: string;
+  /** The next step (SPEC §25), when there is one. */
+  fix?: string;
+}
+
+const tok = (x: number) => `~${x.toLocaleString('en-US')}`;
+const pct = (x: number) => `${Math.round(x * 100)}%`;
+const list = (names: string[], total: number) => `${names.join(', ')}${total > names.length ? ', …' : ''}`;
+
+/** A tool's schema can't refer to another tool's: said once, after the repeated blocks that span tools. */
+const ACROSS_TOOLS = "A tool's schema can't $ref another tool's, so a block shared across tools is paid once per tool: only a smaller block saves tokens there.";
+
+function items(b: Breakdown, tools: number): { title: string; items: Item[] } | undefined {
   const u = b.unusedDefs;
-  const unused = u.tokens
-    ? [`  unused $defs: ${n(u.tokens)} tokens${b.total ? ` (${pct(u.tokens / b.total)} of the menu)` : ''} in ${u.tools} tool${u.tools === 1 ? '' : 's'} (${u.examples.join(', ')}${u.tools > u.examples.length ? ', …' : ''}): definitions nothing in the tool refers to`]
+  const unused: Item[] = u.tokens
+    ? [{
+        kind: 'unused',
+        text: `unused $defs: ${tok(u.tokens)} tokens${b.total ? ` (${pct(u.tokens / b.total)} of the menu)` : ''} in ${u.tools} tool${u.tools === 1 ? '' : 's'} (${list(u.examples, u.tools)})`,
+        why: 'Definitions nothing in their tool refers to: sent with every conversation, read by no one.',
+        fix: "Remove the unreferenced $defs entries from each tool's inputSchema.",
+      }]
     : [];
+  const repeated: Item[] = b.repeated.map((r) => {
+    if (r.tools === 1) {
+      const places = list(r.where.map((w) => w.slice(r.withinTool.length + 1)), r.count);
+      return { kind: 'repeated', text: `repeated: one ${tok(r.tokens)}-token block ×${r.count} in ${r.withinTool} (${places})${r.saving > 0 ? `: a $defs entry could save ${tok(r.saving)}` : ''}`, ...(r.saving > 0 ? { fix: `Move the block into ${r.withinTool}'s $defs once and $ref it.` } : {}) };
+    }
+    const inside = r.within > 1 ? `, ×${r.within} inside ${r.withinTool}${r.saving > 0 ? `: a $defs entry there could save ${tok(r.saving)}` : ''}` : '';
+    return { kind: 'repeated', text: `repeated: ${r.param} (${tok(r.tokens)} tokens) in ${r.tools} tools, ${tok(r.total)} in all${inside}` };
+  });
   // A small menu gets no breakdown, but waste inside one tool is worth a line anyway.
   if (tools < 5) {
     const within = [...unused, ...repeated.filter((_, i) => b.repeated[i].within > 1)];
-    return within.length ? ['Where the tokens go (estimate):', ...within] : [];
+    return within.length ? { title: 'Where the tokens go (estimate):', items: within } : undefined;
   }
   const topShare = b.top.reduce((s, t) => s + t.share, 0);
-  const lines = [`Where the tokens go (estimate): the top ${b.top.length} tools are ${pct(topShare)} of the menu`];
-  for (const t of b.top) lines.push(`  ${pct(t.share).padStart(4)}  ${t.name} ${n(t.tokens)} (description ${n(t.description)}, schema ${n(t.schema)})`);
-  lines.push(...unused);
-  for (const e of b.enums) lines.push(`  enum: ${e.tool}.${e.param} has ${e.values} values, ${n(e.tokens)} tokens`);
-  lines.push(...repeated);
+  const width = Math.min(40, Math.max(...b.top.map((t) => t.name.length)));
+  const top: Item[] = b.top.map((t) => ({ kind: 'top', text: `${pct(t.share).padStart(4)}  ${t.name.padEnd(width)}  ${tok(t.tokens).padStart(7)} tokens (description ${tok(t.description)}, schema ${tok(t.schema)})` }));
+  const enums: Item[] = b.enums.map((e) => ({ kind: 'enum', text: `enum: ${e.tool}.${e.param} has ${e.values} values, ${tok(e.tokens)} tokens` }));
+  const note: Item[] = b.repeated.some((r) => r.tools > 1) ? [{ kind: 'note', text: ACROSS_TOOLS }] : [];
+  return { title: `Where the tokens go (estimate): the top ${b.top.length} tools are ${pct(topShare)} of the menu`, items: [...top, ...unused, ...enums, ...repeated, ...note] };
+}
+
+/** The breakdown as report lines, or none for a menu too small to need one. */
+export function breakdownLines(b: Breakdown, tools: number): string[] {
+  const found = items(b, tools);
+  if (!found) return [];
+  const lines = [found.title];
+  for (const item of found.items) {
+    lines.push(item.kind === 'note' ? `  (${item.text})` : `  ${item.text}`);
+    if (item.why) lines.push(`      ${item.why}`);
+    if (item.fix) lines.push(`      → Next: ${item.fix}`);
+  }
+  return lines;
+}
+
+/** The breakdown for a PR comment: a fold, the biggest tools as a table, the waste as a list. */
+export function breakdownMarkdown(b: Breakdown, tools: number): string[] {
+  const found = items(b, tools);
+  if (!found) return [];
+  const cell = (t: string) => t.replace(/\|/g, '\\|');
+  const code = (t: string) => t.replace(/\$defs/g, '`$defs`');
+  const lines = ['', `<details><summary>${found.title}</summary>`, ''];
+  if (tools >= 5) {
+    lines.push('| Share | Tool | Tokens | Description | Schema |', '|---:|---|---:|---:|---:|');
+    for (const t of b.top) lines.push(`| ${pct(t.share)} | \`${cell(t.name)}\` | ${tok(t.tokens)} | ${tok(t.description)} | ${tok(t.schema)} |`);
+    lines.push('');
+  }
+  for (const item of found.items.filter((i) => i.kind !== 'top' && i.kind !== 'note')) {
+    lines.push(`- ${code(item.text)}${item.why ? `. ${code(item.why)}` : ''}${item.fix ? `<br>**→ Next:** ${code(item.fix)}` : ''}`);
+  }
+  for (const item of found.items.filter((i) => i.kind === 'note')) lines.push('', `_${code(item.text)}_`);
+  lines.push('', '</details>');
   return lines;
 }

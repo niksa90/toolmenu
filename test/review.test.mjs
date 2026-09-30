@@ -60,7 +60,10 @@ test('review 6: a version that goes backwards is flagged; a prerelease is not ju
 
 test('review 7: a call that times out but changed the menu is reported at its own step', async () => {
   const target = { kind: 'stdio', command: process.execPath, args: [join(FIXTURES, 'slow-unlock-server.mjs')], env: {} };
-  const r = await session(target, parseScenario({ steps: [{ call: 'slow_unlock' }, 'list'] }), { timeoutMs: 1000 });
+  // The call never answers in time, whatever the timeout (the fixture waits for the
+  // client to give up), so the timeout can leave room for a busy machine to start
+  // the server: 1 s was shorter than a start under load (initialize timed out).
+  const r = await session(target, parseScenario({ steps: [{ call: 'slow_unlock' }, 'list'] }), { timeoutMs: 10_000 });
   const rules = r.findings.map((f) => `${f.step}:${f.rule}`);
   assert.ok(rules.includes('1:session/step-failed'), rules.join(', '));
   assert.ok(rules.includes('1:session/mid-insert'), rules.join(', '));
