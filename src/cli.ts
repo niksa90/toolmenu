@@ -328,7 +328,7 @@ export async function main(argv: string[]): Promise<number> {
     }
     const auto = { called: plan.called, skipped: plan.skipped, assumed: plan.assumed, withValues: plan.withValues, ignored: plan.ignored, maxCalls };
     const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'], auto });
-    result.auto = auto;
+    result.auto ??= auto;
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
     if (output) process.stdout.write(output + '\n');

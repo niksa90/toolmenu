@@ -265,10 +265,13 @@ export function formatSession(s: SessionResult, format: Format): string {
   };
   block(at(0));
   if (at(0).length) lines.push('');
+  let before = s.baseline.tools;
   for (const step of s.steps) {
+    const delta = step.tools - before;
+    before = step.tools;
     const facts = [
       step.status !== 'ok' ? step.status : '',
-      step.changed ? 'menu changed' : step.status === 'ok' ? 'no change' : '',
+      step.changed ? `menu changed${delta ? ` · ${delta > 0 ? '+' : '−'}${plural(Math.abs(delta), 'tool')}` : ''}` : step.status === 'ok' ? 'no change' : '',
       step.changed ? (step.listChanged ? 'list_changed received' : 'no list_changed') : '',
       step.scope ? `scope: ${step.scope}` : '',
       step.note ?? '',

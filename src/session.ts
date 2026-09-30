@@ -15,7 +15,16 @@ import { LOOKUP_VERBS, singular, VERBS, verbOf, words, WRITE_VERBS } from './wor
 
 export type Step =
   | { kind: 'list' }
-  | { kind: 'call'; tool: string; args: Record<string, unknown> }
+  | {
+      kind: 'call';
+      tool: string;
+      args: Record<string, unknown>;
+      /**
+       * --auto only, never from a scenario file: an unlock guessed from its schema
+       * alone. If its first such call changes nothing, the rest aren't made.
+       */
+      tentative?: boolean;
+    }
   | { kind: 'wait_for'; event: 'tools_list_changed'; timeoutMs: number };
 
 export interface Scenario {
@@ -141,7 +150,8 @@ export interface SessionOptions {
   rateLimitWaitsMs?: number[];
 }
 
-type Raw = Omit<Finding, 'severity'> & { severity: Severity };
+/** `each`: this step's line when findings of one rule are said once for several steps. */
+type Raw = Omit<Finding, 'severity'> & { severity: Severity; each?: string };
 
 /** Observe the menu while a scripted session runs. No LLM: the scenario is the agent. */
 export async function session(target: Target, scenario: Scenario, options: SessionOptions = {}): Promise<SessionResult> {
@@ -264,12 +274,27 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       const key = `${rule}\0${step.tool}\0${text}`;
       const before = failures.get(key);
       if (before) before.steps.push(index);
-      else failures.set(key, { rule, severity, tool: step.tool, text, steps: [index], args: step.args, failure });
+      else {
+        const params = Object.keys(current.tools.find((t) => t.name === step.tool)?.inputSchema?.properties ?? {});
+        failures.set(key, { rule, severity, tool: step.tool, text, steps: [index], args: step.args, failure, takesParams: params.length > 0 });
+      }
     };
     // Steps whose change touched only values already known to vary on their own.
     const explained: Explained[] = [];
+    // --auto's guessed unlocks: tried once, and those whose first call changed nothing.
+    const tried = new Set<string>();
+    const quiet = new Set<string>();
+    const stopped = new Map<string, number>();
     for (const [i, step] of scenario.steps.entries()) {
       const index = i + 1;
+      if (step.kind === 'call' && step.tentative) {
+        if (quiet.has(step.tool)) {
+          stopped.set(step.tool, (stopped.get(step.tool) ?? 0) + 1);
+          continue;
+        }
+      }
+      const firstTry = step.kind === 'call' && step.tentative === true && !tried.has(step.tool);
+      if (firstTry) tried.add(step.tool);
       const label = stepLabel(step);
       const record: StepRecord = { index, label, status: 'ok', changed: false, listChanged: 0, tools: current.tools.length, tokens: current.totalTokens };
       const mark = conn.wire.notifications.length;
@@ -461,15 +486,19 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       record.listChanged = conn.wire.notificationsSince(mark, LIST_CHANGED);
       record.tools = current.tools.length;
       record.tokens = current.totalTokens;
+      if (firstTry && !record.changed && record.status === 'ok' && !record.failure) quiet.add((step as { tool: string }).tool);
       done();
     }
 
-    raw.push(...failureFindings([...failures.values()], options.auto));
+    raw.push(...failureFindings(sameError([...failures.values()]), options.auto));
     if (explained.length) raw.push(knownVariance(explained));
     if (onWord.length) raw.push(onTheirWord(onWord, options.auto !== undefined));
     raw.push(...untested(steps, target));
     // --auto means "find what you can": an unlock it skipped is a gap too.
-    raw.push(...unlockCoverage(baseline.tools, scenario, steps, options.unionOut === true || options.auto !== undefined, options.auto?.skipped, limitedAt));
+    const leftOut = [...stopped].map(([tool, calls]) => ({ tool, calls }));
+    // An unlock --auto stopped trying isn't charged for the values it then left out.
+    const covered = baseline.tools.filter((t) => !stopped.has(t.name));
+    raw.push(...unlockCoverage(covered, scenario, steps, options.unionOut === true || options.auto !== undefined, options.auto?.skipped, limitedAt));
     if (options.auto && !scenario.steps.some((s) => s.kind === 'call')) raw.push(nothingCalled(options.auto));
     if (scopeUnchecked.length) {
       const which = scopeUnchecked.map((s) => s.step);
@@ -490,7 +519,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       final: { tools: current.tools.length, tokens: current.totalTokens },
       connectionCheck,
       steps,
-      findings: settle(mergeSideEffects(raw), options),
+      findings: settle(mergeRepeats(raw), options),
+      ...(options.auto ? { auto: { ...options.auto, ...(leftOut.length ? { stopped: leftOut } : {}) } } : {}),
       union: buildMenu([...seen.values()].map(toolDefinition), baseline.server),
     };
   } finally {
@@ -632,7 +662,36 @@ interface Failure {
   steps: number[];
   args: Record<string, unknown>;
   failure: FailureClass;
+  /** The tool has parameters in its schema. */
+  takesParams: boolean;
+  /** The same error in the same words from other tools too, with their calls. */
+  others?: { tool: string; args: Record<string, unknown>; takesParams: boolean }[];
 }
+
+/**
+ * The same error text from different tools is one finding (two tools of a feature
+ * that "isn't set up on this deployment"). An empty text says nothing in common.
+ */
+function sameError(failures: Failure[]): Failure[] {
+  const out: Failure[] = [];
+  const byText = new Map<string, Failure>();
+  for (const f of failures) {
+    const key = `${f.rule}\0${f.text}`;
+    const first = f.text ? byText.get(key) : undefined;
+    if (!first) {
+      out.push({ ...f, steps: [...f.steps] });
+      if (f.text) byText.set(key, out[out.length - 1]);
+      continue;
+    }
+    first.steps = [...first.steps, ...f.steps].sort((a, b) => a - b);
+    first.others = [...(first.others ?? []), { tool: f.tool, args: f.args, takesParams: f.takesParams }];
+  }
+  return out;
+}
+
+// The server says the feature isn't there, or isn't for this account: no argument
+// fixes that. A guess from its words.
+const UNAVAILABLE = /\b(?:isn't|is not|not|aren't|are not)\s+(?:set up|enabled|configured|available|activated|licensed|provisioned)\b|\bdisabled\b|\bpermission\b|\bforbidden\b|\bnot allowed\b|\brole\b/i;
 
 /** A step whose change was only in values known to vary on their own. */
 interface Explained {
@@ -663,28 +722,50 @@ function stepsText(steps: number[]): string {
 function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Raw[] {
   return failures.map((f) => {
     const many = f.steps.length > 1;
-    const call = `${f.tool} ${JSON.stringify(f.args)}`;
+    const calls = [f, ...(f.others ?? [])];
+    const tools = [...new Set(calls.map((c) => c.tool))];
+    const who = tools.length === 1 ? f.tool : `${tools.slice(0, -1).join(', ')} and ${tools[tools.length - 1]}`;
     const said = f.text ? quotedSentence(clip(f.text, 160)) : 'no error text.';
     const firstArg = Object.keys(f.args)[0];
-    const fix =
-      f.failure === 'invalid-arguments' || f.failure === 'other'
-        ? auto?.withValues?.includes(f.tool)
-          ? `Check the values you gave ${f.tool} (--value) against what the server says above.`
-          : auto
-            ? `If the arguments are what it refused, give it real ones: --value ${f.tool}.${firstArg ?? '<param>'}=…${firstArg ? ' (--auto made these up from the schema).' : ''}`
-            : `Check the arguments of the call at ${stepsText([f.steps[0]])} in the scenario against what ${f.tool} expects.`
-        : undefined;
+    const argsCan = f.failure === 'invalid-arguments' || f.failure === 'other';
+    // No argument can fix a call to a tool that takes none, or a feature the server
+    // says isn't there. From the server's words: a guess.
+    const unavailable = argsCan && f.failure !== 'invalid-arguments' && UNAVAILABLE.test(f.text);
+    const them = tools.length === 1 ? 'its' : 'their';
+    const leaveOut = auto ? `save the steps with --save-scenario, drop ${them} calls and run that with --scenario` : `drop ${them} calls from the scenario`;
+    const noParams = calls.every((c) => !c.takesParams && Object.keys(c.args).length === 0);
+    const fix = !argsCan
+      ? undefined
+      : unavailable
+        ? `The server says this feature isn't available here: nothing to change in the call. Test ${tools.length === 1 ? 'it' : 'them'} on a deployment that has it, or leave ${tools.length === 1 ? 'it' : 'them'} out: ${leaveOut}.`
+        : noParams
+          ? `${tools.length === 1 ? `${f.tool} takes` : 'These tools take'} no arguments, so nothing in the call can fix this: the error is the server's. Check it on the server side, or leave ${tools.length === 1 ? 'it' : 'them'} out: ${leaveOut}.`
+          : auto?.withValues?.includes(f.tool)
+            ? `Check the values you gave ${f.tool} (--value) against what the server says above.`
+            : auto
+              ? `If the arguments are what it refused, give it real ones: --value ${f.tool}.${firstArg ?? '<param>'}=…${firstArg ? ' (--auto made these up from the schema).' : ''}`
+              : `Check the arguments of the call at ${stepsText([f.steps[0]])} in the scenario against what ${f.tool} expects.`;
     const lead = many ? `${stepsText(f.steps).replace(/^s/, 'S')}: ` : '';
+    const detail = calls.slice(0, 8).map((c) => {
+      const call = `${c.tool} ${JSON.stringify(c.args)}`;
+      return `call: ${call.length > 200 ? call.slice(0, 199) + '…' : call}`;
+    });
     return {
       rule: f.rule,
       severity: f.severity,
       step: f.steps[0],
+      ...(many ? { steps: f.steps } : {}),
       tool: f.tool,
+      ...(unavailable || (noParams && argsCan) ? { confidence: 'unsure' as const } : {}),
       message:
         f.rule === 'session/tool-error'
-          ? `${lead}${f.tool} returned an error${many ? ', the same one each time' : ''}: ${said} A call that fails tests less than it looks: the menu was checked after it, the tool's own work wasn't.`
-          : `${lead}Calling ${f.tool} failed${many ? ', the same way each time' : ''}: ${said}`,
-      detail: [`call: ${call.length > 200 ? call.slice(0, 199) + '…' : call}`],
+          ? tools.length > 1
+            ? `${lead}${who} returned the same error: ${said} A call that fails tests less than it looks: the menu was checked after it, the tool's own work wasn't.`
+            : `${lead}${f.tool} returned an error${many ? ', the same one each time' : ''}: ${said} A call that fails tests less than it looks: the menu was checked after it, the tool's own work wasn't.`
+          : tools.length > 1
+            ? `${lead}Calling ${who} failed the same way: ${said}`
+            : `${lead}Calling ${f.tool} failed${many ? ', the same way each time' : ''}: ${said}`,
+      detail: [...new Set(detail)],
       ...(fix ? { fix } : {}),
     };
   });
@@ -798,6 +879,9 @@ function waitFor(done: () => boolean, ms: number): Promise<boolean> {
   });
 }
 
+const APPEND_WHY =
+  " The end of the tool list isn't the end of the prompt: most clients send tools first (Claude's Messages API does), so any change to them, an append too, invalidates the cached conversation after them. Appends are cache-safe only if your client adds new tools after the cached content, as tool search (deferred loading) does.";
+
 const EDIT_KINDS = new Set<ToolChange['kind']>(['description', 'inputSchema', 'outputSchema', 'annotations', 'other', 'serialization']);
 
 /** Turn a menu change into findings, with the cost of each. */
@@ -828,8 +912,9 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
         rule: 'session/append',
         severity: 'warn',
         step,
-        message: `+${names.length} tool${names.length === 1 ? '' : 's'} appended at the end of the list (${names.join(', ')}). The end of the tool list isn't the end of the prompt: most clients send tools first (Claude's Messages API does), so any change to them, an append too, invalidates the cached conversation after them. Appends are cache-safe only if your client adds new tools after the cached content, as tool search (deferred loading) does.`,
+        message: `+${names.length} tool${names.length === 1 ? '' : 's'} appended at the end of the list (${names.join(', ')}).${APPEND_WHY}`,
         detail: [`~${tokens.toLocaleString('en-US')} new tokens (estimate)`, ...why],
+        each: `step ${step}: +${names.length} tool${names.length === 1 ? '' : 's'} (~${tokens.toLocaleString('en-US')} tokens): ${names.slice(0, 8).join(', ')}${names.length > 8 ? ` and ${names.length - 8} more` : ''}`,
         fix: 'If clients should keep their cache, list these tools from the start, or have clients load them through tool search.',
       });
     } else {
@@ -941,14 +1026,34 @@ function scopeFindings(scope: Scope, modern: boolean, step: number): Raw[] {
   return [];
 }
 
-/** stdio's side-effect warning is the same for every step: say it once, name the steps. */
-function mergeSideEffects(raw: Raw[]): Raw[] {
-  const side = raw.filter((f) => f.rule === 'session/side-effect');
-  if (side.length < 2) return raw;
-  const steps = side.map((f) => f.step);
-  return raw
-    .filter((f) => f.rule !== 'session/side-effect' || f === side[0])
-    .map((f) => (f === side[0] ? { ...f, message: `Steps ${steps.join(', ')}: ${f.message}` } : f));
+/**
+ * Findings that say the same thing at every step are said once, naming the steps:
+ * stdio's side-effect warning, and an unlock per domain, where each value appends
+ * tools for this connection only (9 steps made 18 near-identical blocks). What
+ * differs per step, the tools and their cost, goes in the detail. Mid-inserts,
+ * removals and edits stay per step: each is its own change.
+ */
+const REPEATS = ['session/side-effect', 'session/append', 'session/connection-local'];
+function mergeRepeats(raw: Raw[]): Raw[] {
+  let out = raw;
+  for (const rule of REPEATS) {
+    const same = out.filter((f) => f.rule === rule);
+    if (same.length < 2) continue;
+    const steps = same.map((f) => f.step!);
+    const lead = rule === 'session/side-effect' ? `Steps ${steps.join(', ')}` : stepsText(steps).replace(/^s/, 'S');
+    let message = `${lead}: ${same[0].message}`;
+    let detail = same[0].detail;
+    if (rule === 'session/append') {
+      const added = same.reduce((n, f) => n + Number(/^\+(\d+)/.exec(f.message)?.[1] ?? 0), 0);
+      message = `${lead}: +${added} tools appended at the end of the list, over ${same.length} steps.${APPEND_WHY}`;
+      const each = same.map((f) => f.each!).filter(Boolean);
+      const why = [...new Set(same.flatMap((f) => (f.detail ?? []).filter((d) => !d.endsWith('new tokens (estimate)'))))];
+      detail = [...each, ...why];
+    }
+    const merged: Raw = { ...same[0], message, steps, ...(detail ? { detail } : {}) };
+    out = out.filter((f) => f.rule !== rule || f === same[0]).map((f) => (f === same[0] ? merged : f));
+  }
+  return out;
 }
 
 function describe(changes: ToolChange[]): string[] {
@@ -959,7 +1064,7 @@ function settle(raw: Raw[], options: SessionOptions): Finding[] {
   const ignore = (options.ignore ?? []).map((g) => new RegExp('^' + g.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
   return raw
     .filter((f) => options.rules?.[f.rule] !== 'off' && !(f.tool && ignore.some((re) => re.test(f.tool!))))
-    .map((f) => ({ ...f, severity: (options.rules?.[f.rule] as Severity | undefined) ?? f.severity }))
+    .map(({ each: _each, ...f }) => ({ ...f, severity: (options.rules?.[f.rule] as Severity | undefined) ?? f.severity }))
     .sort((a, b) => (a.step ?? 0) - (b.step ?? 0) || SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
 }
 
@@ -984,7 +1089,25 @@ const UNLOCK_NAME = /unlock|enable|activate|capabilit|toolset|load_?tools|expand
 // capabilities alone aren't tools.
 const UNLOCK_DESC = /\b(?:unlock|enable|activate|load|expose|add)s?\b[^.]{0,60}\b(?:tools?|capabilit(?:y|ies))\b|\bmore tools\b|\btoolsets?\b|\bunlock/i;
 // Said outright: a verb that unlocks, then what it gives. Enough to keep a lookup.
-const UNLOCK_SAYS = /\b(?:unlock|enable|activate|load|expose|add)s?\b[^.]{0,60}\b(?:tools?|toolsets?|capabilit(?:y|ies))\b/i;
+// "exposes"/"adds" aren't: a lookup's text uses them for what it lists.
+const UNLOCK_SAYS = /\b(?:unlock|enable|activate|load)s?\b[^.]{0,60}\b(?:tools?|toolsets?|capabilit(?:y|ies))\b/i;
+
+/**
+ * Does the tool say that `param` unlocks tools? Its name does, or a sentence of
+ * its description that says it unlocks tools and doesn't pin that on another
+ * parameter ("A query match also enables the tools…" is about `query`, not the
+ * `domain` filter next to it).
+ */
+function claimsUnlock(tool: MenuTool, param: string | undefined): boolean {
+  if (UNLOCK_NAME.test(tool.name)) return true;
+  const stem = (p: string) => p.toLowerCase().replace(/_?ids?$/, '').replace(/(?:ies)$/, 'y').replace(/s$/, '');
+  const mentions = (sentence: string, p: string) => stem(p).length > 1 && new RegExp(`\\b${stem(p).replace(/[^a-z0-9]/g, '.?')}`, 'i').test(sentence);
+  const others = Object.keys(tool.inputSchema?.properties ?? {}).filter((p) => p !== param);
+  return (tool.description ?? '')
+    .split(/(?<=[.!?])\s+/)
+    .filter((s) => UNLOCK_SAYS.test(s))
+    .some((s) => (param && mentions(s, param)) || !others.some((p) => mentions(s, p)));
+}
 const LOOKUPS = new Set([...LOOKUP_VERBS, 'describe']);
 
 interface Unlocker {
@@ -994,6 +1117,8 @@ interface Unlocker {
   param?: string;
   /** Values to try for it, from the schema's enum. */
   values: unknown[];
+  /** Its name or description says it unlocks tools (for this parameter); otherwise a guess from its schema. */
+  claims: boolean;
 }
 
 /**
@@ -1033,7 +1158,8 @@ export function unlockers(tools: MenuTool[]): Unlocker[] {
     // A lookup names toolsets without changing them (GitHub's get_toolset_tools,
     // toolception's list_toolsets, Firecrawl's find_tools), unless it says it does.
     const verb = verbOf(tool.name);
-    if (verb && LOOKUPS.has(verb) && !UNLOCK_SAYS.test(description)) continue;
+    const lookup = verb !== undefined && LOOKUPS.has(verb);
+    if (lookup && !UNLOCK_SAYS.test(description)) continue;
     const backed = UNLOCK_NAME.test(tool.name) || UNLOCK_DESC.test(description);
     const required = tool.inputSchema?.required ?? [];
     const param =
@@ -1042,11 +1168,14 @@ export function unlockers(tools: MenuTool[]): Unlocker[] {
       // Named like an unlock, one required parameter: that's what it takes
       // (toolception's enable_toolset { name }).
       (UNLOCK_NAME.test(tool.name) && required.length === 1 ? required[0] : undefined);
+    const claims = claimsUnlock(tool, param);
+    // A lookup that says a *different* parameter unlocks: its enum is a filter.
+    if (lookup && !claims) continue;
     let score = 0;
     if (param) score += enumOf(props[param]).length ? 3 : 2;
     if (UNLOCK_NAME.test(tool.name)) score += 2;
     if (UNLOCK_DESC.test(tool.description ?? '')) score += 1;
-    if (score >= 2) found.push({ tool, score, param, values: param ? enumOf(props[param]) : [] });
+    if (score >= 2) found.push({ tool, score, param, values: param ? enumOf(props[param]) : [], claims });
   }
   return found.sort((a, b) => b.score - a.score);
 }

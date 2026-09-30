@@ -48,7 +48,12 @@ export interface AutoPlan {
 }
 
 /** What a session report shows about an --auto plan. */
-export type AutoSummary = Pick<AutoPlan, 'called' | 'skipped'> & Partial<Pick<AutoPlan, 'assumed' | 'withValues' | 'ignored'>> & { maxCalls?: number };
+export type AutoSummary = Pick<AutoPlan, 'called' | 'skipped'> &
+  Partial<Pick<AutoPlan, 'assumed' | 'withValues' | 'ignored'>> & {
+    maxCalls?: number;
+    /** Guessed unlocks whose first value changed nothing, and how many calls to them were left out. */
+    stopped?: { tool: string; calls: number }[];
+  };
 
 /** Marked or named as a write: never called on the user's word. Says why, or undefined. */
 export function writeSign(tool: MenuTool): string | undefined {
@@ -133,9 +138,12 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   for (const u of unlocks) {
     const array = u.tool.inputSchema?.properties?.[u.param!]?.type === 'array';
     const values = u.values.slice(0, MAX_UNLOCKS);
-    for (const v of values) steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [v] : v } });
+    // Guessed from its schema alone (nothing says it unlocks tools): if the first
+    // value changes nothing, the session doesn't spend a call on every other one.
+    const tentative = u.claims ? {} : { tentative: true };
+    for (const v of values) steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [v] : v }, ...tentative });
     // The same unlock again should change nothing, as in the --init starter.
-    steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [values[0]] : values[0] } });
+    steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [values[0]] : values[0] }, ...tentative });
   }
   if (chosen.length) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args });
   const called = [...chosen.map((c) => c.tool.name), ...unlocks.map((u) => u.tool.name)];
@@ -321,6 +329,8 @@ export function autoSummary(auto: AutoSummary): string[] {
   // Unlocks run outside the budget, so called.length would overshoot.
   if (over.length) rows.push(`${over.length} over the call budget → --max-calls ${(auto.maxCalls ?? 20) + over.length}`);
   rows.forEach((r, i) => lines.push(`${i === 0 ? 'not called: ' : '            '}${r}`));
+  for (const x of auto.stopped ?? [])
+    lines.push(`stopped: ${x.tool}: its first value changed nothing and it doesn't say it unlocks tools, so the other ${x.calls} call${x.calls === 1 ? ' was' : 's were'} left out (a scenario can still make them)`);
   for (const x of auto.ignored ?? []) lines.push(`ignored: ${x.input}: ${x.why}`);
   return lines;
 }
