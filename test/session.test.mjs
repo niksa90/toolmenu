@@ -9,6 +9,9 @@ import { parse as parseYaml } from 'yaml';
 import { FIXTURES, ROOT, menuOf, run, tempDir, tool } from './helpers.mjs';
 import { start as startSdkHttp } from './fixtures/http-server.mjs';
 import { start as startRawHttp } from './fixtures/raw-http-server.mjs';
+import { start as startDomains } from './fixtures/domains-http-server.mjs';
+import { probeMenu } from '../dist/probe.js';
+import { formatSession } from '../dist/report.js';
 import { build } from './fixtures/session-server.mjs';
 import { build as buildRateLimited } from './fixtures/rate-limit-tools.mjs';
 import { RATE_LIMITED, serverWords, waitsFrom } from '../dist/failures.js';
@@ -325,7 +328,7 @@ test('cli: session output, --plan and usage errors', async () => {
 
   const r = await run(['session', '--scenario', scenario, ...server], { cwd: dir });
   assert.equal(r.code, 1, r.stderr);
-  assert.match(r.stdout, /^step 3: call unlock_toolset \{"toolset":"audits"\} · menu changed · list_changed received · scope: per-process$/m);
+  assert.match(r.stdout, /^step 3: call unlock_toolset \{"toolset":"audits"\} · menu changed · \+2 tools · list_changed received · scope: per-process$/m);
   assert.match(r.stdout, /ERROR  session\/mid-insert\n\s+\+2 tools inserted at position 1 \(list_team_audits, get_team_audit\)/);
   assert.match(r.stdout, /the change starts at position 1; any change to the tool list invalidates the cached prompt/);
 
@@ -501,7 +504,8 @@ test('--auto: calling nothing is a warning that says why; an unlock skipped as o
   const r = await session(stdio(), plan.scenario, { timeoutMs: 15_000, processes: 1, auto: { called: plan.called, skipped: plan.skipped } });
   const nothing = r.findings.find((f) => f.rule === 'session/nothing-called');
   assert.equal(nothing?.severity, 'warn');
-  assert.match(nothing.message, /--auto called no tools: 2 marked openWorldHint \(call them with --open-world/);
+  assert.match(nothing.message, /--auto called no tools: 2 marked openWorldHint \(they may cost API credits\)/);
+  assert.match(nothing.fix, /^Rerun with --open-world/);
 });
 
 test('--auto: a read-only unlock runs even when marked openWorldHint, every value then the first again', () => {
@@ -555,7 +559,9 @@ test('session: a server with one session per client ends ours when the probe con
     assert.deepEqual(rules.filter((x) => x === 'session/session-lost'), ['session/session-lost']);
     assert.ok(!rules.includes('session/untested'), 'not blamed on credentials');
     assert.ok(!rules.includes('session/step-failed'));
-    assert.match(r.findings.find((f) => f.rule === 'session/session-lost').message, /“Session not found or expired”.*--processes 1/);
+    const lost = r.findings.find((f) => f.rule === 'session/session-lost');
+    assert.match(lost.message, /“Session not found or expired”/);
+    assert.equal(lost.fix, 'Rerun with --processes 1: toolmenu then opens no second one.');
     // --processes 1 opens no second connection, the scope probe included: the run completes.
     const one = await session(target, scenario, { timeoutMs: 15_000, processes: 1 });
     assert.deepEqual(one.steps.map((s) => s.status), ['ok', 'ok', 'ok', 'ok']);
@@ -587,5 +593,74 @@ test('the union menu holds every tool the session saw, first-seen order, and dif
   assert.ok(names.indexOf('unlock_toolset') < names.findIndex((n) => /audit/.test(n)));
   const d = await run(['diff', 'union.json', 'union.json'], { cwd });
   assert.equal(d.code, 0);
+});
+
+// A server that unlocks tools per domain, for this connection only (see the fixture).
+const domainsRun = async () => {
+  const server = await startDomains();
+  try {
+    const target = { kind: 'http', url: server.url };
+    const plan = autoScenario(await probeMenu(target, 15_000));
+    const auto = { called: plan.called, skipped: plan.skipped };
+    const r = await session(target, plan.scenario, { timeoutMs: 15_000, scenarioName: 'auto', auto });
+    const calls = (name) => plan.scenario.steps.filter((s) => s.kind === 'call' && s.tool === name).length;
+    const ran = (name) => r.steps.filter((s) => s.label.startsWith(`call ${name}`)).length;
+    return { r, calls, ran };
+  } finally {
+    await server.close();
+  }
+};
+
+test('session --auto, unlock per domain: one append and one connection-local finding for every unlock step, each step in the detail', async () => {
+  const { r } = await domainsRun();
+  const of = (rule) => r.findings.filter((f) => f.rule === rule);
+  assert.equal(of('session/append').length, 1);
+  assert.equal(of('session/connection-local').length, 1);
+  const append = of('session/append')[0];
+  const unlocked = r.steps.filter((s) => s.label.startsWith('call search_capabilities') && s.changed).map((s) => s.index);
+  assert.equal(unlocked.length, 3);
+  assert.deepEqual(append.steps, unlocked);
+  assert.equal(append.step, unlocked[0]);
+  assert.equal(append.severity, 'warn');
+  assert.match(append.message, /^Steps \d+–\d+: /);
+  assert.deepEqual(append.detail.slice(0, 3).map((d) => d.replace(/~\d+/, '~T')), [
+    `step ${unlocked[0]}: +3 tools (~T tokens): billing_findTypes, billing_getSummary, billing_listInvoices`,
+    `step ${unlocked[1]}: +2 tools (~T tokens): reports_list, reports_get`,
+    `step ${unlocked[2]}: +1 tool (~T tokens): alerts_list`,
+  ]);
+  assert.deepEqual(of('session/connection-local')[0].steps, unlocked);
+  assert.equal(of('session/connection-local')[0].severity, 'info');
+  const text = formatSession(r, 'text');
+  assert.equal(text.match(/The end of the tool list isn't the end of the prompt/g).length, 1);
+  assert.match(text, /step \d+: call search_capabilities \{"domains":\["billing"\]\} · menu changed · \+3 tools/);
+});
+
+test('unlockers: a lookup counts only when it says its parameter unlocks tools; a claim about another parameter is not one', () => {
+  const lookup = (name, description) => ({ ...tool(name), description, inputSchema: { type: 'object', properties: { query: { type: 'string' }, domain: { type: 'string', enum: ['a', 'b'] } } } });
+  assert.deepEqual(unlockers([lookup('list_recipes', 'Lists recipes. Recipes found by a query enable the tools they use.')]).map((u) => u.tool.name), []);
+  assert.deepEqual(unlockers([lookup('search_capabilities', 'Finds workflows and loads the tools of the chosen domain.')]).map((u) => u.tool.name), ['search_capabilities']);
+  assert.deepEqual(unlockers([lookup('list_things', 'List things that expose tools.')]).map((u) => u.tool.name), [], '"expose" or "add" is no claim to unlock');
+});
+
+test('session --auto: a lookup is called once; an unlock that never says so and changed nothing on its first value stops there', async () => {
+  const { r, calls, ran } = await domainsRun();
+  assert.equal(calls('list_recipes'), 1, 'list_recipes is a lookup: one call, not one per domain');
+  assert.equal(ran('summarize_domain'), 1, 'its first value changed nothing: the other values are not called');
+  assert.equal(ran('search_capabilities'), 4, 'the real unlock runs every value, and once again');
+  assert.deepEqual(r.auto?.stopped, [{ tool: 'summarize_domain', calls: 3 }]);
+  assert.ok(!r.findings.some((f) => f.rule === 'session/unlock-coverage'), 'not charged for values it chose not to call');
+  assert.match(formatSession(r, 'text'), /summarize_domain: its first value changed nothing and it doesn't say it unlocks tools, so the other 3 calls were left out/);
+});
+
+test('session: the same error from different tools is one tool-error finding; a feature not set up here is not a --value problem', async () => {
+  const { r } = await domainsRun();
+  const errors = r.findings.filter((f) => f.rule === 'session/tool-error');
+  assert.equal(errors.length, 1);
+  const [e] = errors;
+  assert.deepEqual(e.steps, [3, 4]);
+  assert.match(e.message, /^Steps 3 and 4: audits_findTypes and audits_getSummary returned the same error: /);
+  assert.doesNotMatch(e.fix, /--value/);
+  assert.match(e.fix, /isn't available here/);
+  assert.equal(e.confidence, 'unsure');
 });
 

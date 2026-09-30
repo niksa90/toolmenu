@@ -12,6 +12,8 @@ export interface Finding {
   detail?: string[];
   /** For `session`: the scenario step that caused it (0 = before the first step). */
   step?: number;
+  /** For `session`: every step it happened at, when one finding stands for several (`step` is the first). */
+  steps?: number[];
   /**
    * The next step, as one instruction the reader can act on ("Sort the values",
    * "Rerun with --processes 1"). Shown as "Next:" in every format. Omitted only when
