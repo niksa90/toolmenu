@@ -501,7 +501,8 @@ test('--auto: calling nothing is a warning that says why; an unlock skipped as o
   const r = await session(stdio(), plan.scenario, { timeoutMs: 15_000, processes: 1, auto: { called: plan.called, skipped: plan.skipped } });
   const nothing = r.findings.find((f) => f.rule === 'session/nothing-called');
   assert.equal(nothing?.severity, 'warn');
-  assert.match(nothing.message, /--auto called no tools: 2 marked openWorldHint \(call them with --open-world/);
+  assert.match(nothing.message, /--auto called no tools: 2 marked openWorldHint \(they may cost API credits\)/);
+  assert.match(nothing.fix, /^Rerun with --open-world/);
 });
 
 test('--auto: a read-only unlock runs even when marked openWorldHint, every value then the first again', () => {
@@ -555,7 +556,9 @@ test('session: a server with one session per client ends ours when the probe con
     assert.deepEqual(rules.filter((x) => x === 'session/session-lost'), ['session/session-lost']);
     assert.ok(!rules.includes('session/untested'), 'not blamed on credentials');
     assert.ok(!rules.includes('session/step-failed'));
-    assert.match(r.findings.find((f) => f.rule === 'session/session-lost').message, /“Session not found or expired”.*--processes 1/);
+    const lost = r.findings.find((f) => f.rule === 'session/session-lost');
+    assert.match(lost.message, /“Session not found or expired”/);
+    assert.equal(lost.fix, 'Rerun with --processes 1: toolmenu then opens no second one.');
     // --processes 1 opens no second connection, the scope probe included: the run completes.
     const one = await session(target, scenario, { timeoutMs: 15_000, processes: 1 });
     assert.deepEqual(one.steps.map((s) => s.status), ['ok', 'ok', 'ok', 'ok']);

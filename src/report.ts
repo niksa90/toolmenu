@@ -3,6 +3,7 @@ import type { HistoryResult, HistoryRow } from './history.js';
 import { stepLabel, type Scenario, type SessionResult } from './session.js';
 import type { Finding, Menu, Severity } from './types.js';
 import { breakdown, breakdownLines } from './breakdown.js';
+import { autoSummary } from './auto.js';
 
 export type Format = 'text' | 'json' | 'github' | 'markdown';
 
@@ -235,7 +236,7 @@ export function formatSession(s: SessionResult, format: Format): string {
       '',
       `\`${s.server.name ?? 'server'}\` ${s.server.version ?? ''} · protocol ${s.server.protocolVersion ?? '?'} · ${s.transport} · ${s.baseline.tools} → ${s.final.tools} tools · ~${s.baseline.tokens.toLocaleString('en-US')} → ~${s.final.tokens.toLocaleString('en-US')} tokens (estimate)`,
       '',
-      ...(autoLine(s) ? [autoLine(s)!, ''] : []),
+      ...(s.auto ? [...autoSummary(s.auto).map((l, i) => (i === 0 ? `**${l.replace(/^auto: /, 'auto:** ')}` : `- ${l.trim()}`)), ''] : []),
       '| Step | Menu | list_changed | Scope |',
       '|---|---|---|---|',
       ...s.steps.map((st) => `| ${st.index}. ${mdCell(st.label)} | ${st.status !== 'ok' ? st.status : st.changed ? `changed (${st.tools} tools)` : 'no change'} | ${st.changed ? (st.listChanged ? 'received' : '**missing**') : ''} | ${st.scope ?? ''} |`),
@@ -249,7 +250,7 @@ export function formatSession(s: SessionResult, format: Format): string {
     `toolmenu session  ${s.scenario}`,
     `  ${s.server.name ?? 'server'} ${s.server.version ?? ''} · protocol ${s.server.protocolVersion ?? '?'} · ${s.transport}`,
     `  baseline: ${plural(s.baseline.tools, 'tool')} · ${tok(s.baseline.tokens)} tokens (estimate) · listening for list_changed: ${s.listening ? 'yes' : 'no'}`,
-    ...(autoLine(s) ? [`  ${autoLine(s)}`] : []),
+    ...(s.auto ? autoSummary(s.auto).map((l, i) => (i === 0 ? `  ${l}` : `    ${l}`)) : []),
     `  fresh-${s.transport === 'stdio' ? 'process' : 'connection'} check: ${s.connectionCheck === undefined ? 'not checked' : s.connectionCheck === 'same' ? 'the same menu' : 'a DIFFERENT menu'}`,
     '',
   ];
@@ -292,21 +293,6 @@ export function formatPlan(scenario: Scenario, name: string): string {
   scenario.steps.forEach((step, i) => lines.push(`step ${i + 1}: ${stepLabel(step)}${step.kind === 'wait_for' ? ` (up to ${step.timeoutMs} ms)` : ''}`));
   lines.push('', 'After every step the menu is listed and compared with the one before. Nothing was run.');
   return lines.join('\n');
-}
-
-/** One line on what --auto called and what it left out, and how to reach more. */
-function autoLine(s: SessionResult): string | undefined {
-  if (!s.auto) return undefined;
-  const by = (r: string) => s.auto!.skipped.filter((x) => x.reason === r);
-  const needs = by('needs values');
-  const params = [...new Set(needs.flatMap((x) => x.missing ?? []))];
-  const parts = [
-    by('not read-only').length && `${by('not read-only').length} not read-only`,
-    by('open world').length && `${by('open world').length} marked openWorldHint: true (--open-world to call them)`,
-    needs.length && `${needs.length} need values the schema doesn't give (${params.slice(0, 6).join(', ')}${params.length > 6 ? ', …' : ''}: write a scenario, or --save-scenario and fill them in)`,
-    by('over the call budget').length && `${by('over the call budget').length} over --max-calls`,
-  ].filter(Boolean);
-  return `auto: called ${s.auto.called.length} tool${s.auto.called.length === 1 ? '' : 's'}${parts.length ? ` · skipped ${parts.join(', ')}` : ''}`;
 }
 
 /** " · unsure" after the rule, for findings that are a heuristic or an inference. */

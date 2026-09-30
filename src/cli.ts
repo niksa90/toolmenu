@@ -16,7 +16,7 @@ import { existsSync } from 'node:fs';
 import { loadRoutes } from './routes.js';
 import { snapshot } from './snapshot.js';
 import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded } from './probe.js';
-import { autoScenario, scenarioYaml } from './auto.js';
+import { autoScenario, loadValuesFile, parseAssumeReadOnly, parseValueFlag, scenarioYaml, type GivenValue } from './auto.js';
 import { authDir, listLogins, login, logout } from './auth.js';
 import { detectProject, secretsNeeded, workflowYaml } from './init.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
@@ -159,6 +159,9 @@ export async function main(argv: string[]): Promise<number> {
       'open-world': { type: 'boolean' },
       'max-calls': { type: 'string' },
       'save-scenario': { type: 'string' },
+      value: { type: 'string', multiple: true },
+      'values-file': { type: 'string' },
+      'assume-read-only': { type: 'string', multiple: true },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
     },
@@ -299,19 +302,33 @@ export async function main(argv: string[]): Promise<number> {
     if (!Number.isInteger(maxCalls) || maxCalls < 1) throw new UsageError('--max-calls must be a whole number, 1 or more');
     const savePath = values['save-scenario'];
     if (savePath && existsSync(savePath)) throw new UsageError(`${savePath} already exists. Pick another path for --save-scenario.`);
+    // Values and vouched-for tools are checked before anything starts.
+    let given: Record<string, GivenValue> = {};
+    let assumeReadOnly: string[] = [];
+    try {
+      if (values['values-file']) given = await loadValuesFile(values['values-file']);
+      for (const v of values.value ?? []) {
+        const [key, value] = parseValueFlag(v);
+        given[key] = value;
+      }
+      assumeReadOnly = parseAssumeReadOnly(values['assume-read-only'] ?? []);
+    } catch (error) {
+      throw new UsageError(error instanceof Error ? error.message : String(error));
+    }
     const autoTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
     const waited = { ms: 0 };
     const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
       throw refusedForTooMany(error, waited.ms);
     });
-    const plan = autoScenario(menu, { openWorld: values['open-world'], maxCalls });
+    const plan = autoScenario(menu, { openWorld: values['open-world'], maxCalls, values: given, assumeReadOnly });
     if (savePath) await writeFile(savePath, scenarioYaml(plan, menu.server.name));
     if (values.plan) {
       process.stdout.write(formatPlan(plan.scenario, 'auto') + '\n');
       return 0;
     }
-    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'], auto: { called: plan.called, skipped: plan.skipped } });
-    result.auto = { called: plan.called, skipped: plan.skipped };
+    const auto = { called: plan.called, skipped: plan.skipped, assumed: plan.assumed, withValues: plan.withValues, ignored: plan.ignored };
+    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'], auto });
+    result.auto = auto;
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
     if (output) process.stdout.write(output + '\n');
@@ -319,6 +336,7 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   if (sub === 'session') {
+    if (values.value || values['values-file'] || values['assume-read-only']) throw new UsageError('--value, --values-file and --assume-read-only go with --auto. In a scenario, write the values into the steps\' args, and list tools under assume_read_only.');
     if (!values.scenario) throw new UsageError('session needs --scenario <file>. Run session --init for a starter, or see https://github.com/niksa90/toolmenu#session-the-menu-changing-while-the-agent-works for the format.');
     let scenario;
     try {
