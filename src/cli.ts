@@ -59,7 +59,8 @@ Options:
   --no-auth           don't use a stored OAuth login for this server
   --timeout <ms>      per-request timeout (default: 30000)
   --catalog           also read the operations behind a search tool (search and execute:
-                      discover, search_*_tools) and keep them in the menu file for diff
+                      discover, search_*_tools) or command routers (listed with
+                      learn: true, never run) and keep them in the menu file for diff
   --processes <n>     server processes (stdio) or connections (HTTP) to compare,
                       the main one included (default: 2; 1 opens no second one, for
                       session's scope check either: for servers with one session per client)

@@ -809,3 +809,55 @@ Also:
 - The same change in many places is one finding that lists the places, not one per place.
 - Numbers carry their unit and whether they are estimates (`~1,240 tokens, estimate`).
 - No internal names (function names, variable names) in messages.
+
+
+## 26. The catalog behind command routers
+
+Search and execute isn't the only way to keep operations out of the menu. Azure's
+server (`@azure/mcp`, default "namespace" mode) serves 71 tools, 65 of them command
+routers: `{ intent, command, parameters, learn }`, one per area, each running the
+command it's given and listing its commands when called with `learn: true`. The same
+server with `--mode all` serves them as 418 plain tools, which makes it a ground truth.
+
+- **Detection**, all four, never by server name: a string `command` (or
+  `subcommand`, `operation`); an object for its arguments (`parameters`, `params`,
+  `arguments`, `args`); a boolean listing flag (`learn`, `discover`, `help`,
+  `list_commands`); and the words, in the tool's or the flag's description ("router",
+  "sub commands", "child tools"). `catalog.routers` names routers detection misses
+  (then the words aren't needed) and turns detection off. A search tool, when there
+  is one, wins; a menu file keeps one catalog.
+- **Only the listing call.** Each router is called once with `{ <flag>: true }` plus
+  a fixed "List the available commands and their parameters." in any other required
+  free-text parameter (Azure's `intent`). Never the command, never its arguments, so
+  there is nothing to run. That is why annotations don't decide it: a router's hints
+  describe the commands behind it (Azure's routers carry none), not its listing
+  mode. A router that requires a parameter named like a command or its arguments
+  (whatever its type: a string `args`, a `subcommand` beside `command`), or that
+  requires something toolmenu would have to guess (an enum, a number), is not
+  called: `catalog/skipped` when detected, an error with a next step when
+  `catalog.routers` names it. The arguments are checked again just before sending;
+  that check can't fail for a router that got past the first.
+- **Same shape.** Operations are read from JSON anywhere in the answer (Azure's
+  follows a line of prose) as objects with a `command` or `name` (`command` first:
+  it's what an agent passes) and a schema, and kept in `catalog.operations` like
+  the search crawl's, so `diff` compares them with the same rules. `catalog.tool`
+  is the router, or "the command routers"; `catalog.queries` is empty;
+  `catalog.routers` records each call's exact arguments and count.
+- **Stable names.** Every operation is kept as `router.command`, with one router or
+  many, whichever answered. Naming it only when two routers clash would rename an
+  operation the run a clashing router fails, and `diff` would read that as one
+  operation gone and another added. A command one router lists twice with
+  different definitions is kept twice, the second as `router.command#2`, and
+  `catalog/read` says so (`catalog.routers[].duplicates`); the same definition
+  twice is kept once.
+- **What the read says**: `catalog/read` (what was called, what came back),
+  `catalog/failed` (one finding per cause: credentials, something missing on this
+  machine, an error, an answer with no command list toolmenu could read; `unsure`
+  where the cause is read from the server's words) and `catalog/skipped`. A router
+  that answers with an empty list (`[]`) lists nothing; it hasn't failed and the
+  catalog isn't partial. All info; `rules` and `ignore` apply.
+- **Measured** on `@azure/mcp` 3.0.0-beta.47 without Azure credentials: 412
+  operations from 62 of 65 routers (`acr.acr_registry_list` and so on), all 412 in `--mode all` with identical schemas
+  and descriptions, none invented; the other 6 of the 418 are the menu's plain tools.
+  `azd` (binary not installed) and `foundry`, `arm` (credentials) didn't list. Two
+  crawls gave identical catalogs.
