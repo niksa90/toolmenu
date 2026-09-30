@@ -37,19 +37,33 @@ export const schema: Rule = {
     if (!ctx.protocolVersion) return [];
     const validate = listToolsValidator(ctx.protocolVersion);
     if (!validate) {
-      return [{ severity: 'info', message: `No official schema bundled for protocol ${ctx.protocolVersion}; schema check skipped.` }];
+      return [
+        {
+          severity: 'info',
+          message: `This toolmenu has no official schema for protocol ${ctx.protocolVersion}, so the tools/list result wasn't checked against one.`,
+          fix: 'Nothing to change on the server; a newer toolmenu may bundle this version\'s schema.',
+        },
+      ];
     }
     const findings: RuleFinding[] = [];
     if (ctx.clientError && ctx.pages.every((page) => validate(page))) {
-      findings.push({ message: `The official MCP SDK client rejected the tools/list result: ${ctx.clientError.split('\n')[0]}` });
+      findings.push({
+        message: `The official MCP SDK client rejected the tools/list result, so clients built on it list no tools. The result does match the ${ctx.protocolVersion} schema; the SDK said: ${ctx.clientError.split('\n')[0]}`,
+        fix: 'Fix what the SDK names above, then list the tools with the official client to confirm.',
+      });
     }
     ctx.pages.forEach((page, i) => {
       if (validate(page)) return;
       const errors = validate.errors ?? [];
+      const missing = [...new Set(errors.filter((e) => !e.instancePath && e.params && 'missingProperty' in e.params).map((e) => String(e.params.missingProperty)))];
+      const first = errors[0];
       findings.push({
-        message: `tools/list result${ctx.pages.length > 1 ? ` (page ${i + 1})` : ''} doesn't match the ${ctx.protocolVersion} schema.`,
-        detail: (ctx.clientError ? ['The official MCP SDK client rejects this result, so real clients will fail to list tools.'] : []).concat(errors.slice(0, 5).map((e) => `${e.instancePath || '(result)'} ${e.message}${e.params && 'missingProperty' in e.params ? `: ${e.params.missingProperty}` : ''}`)
-          .concat(errors.length > 5 ? [`…and ${errors.length - 5} more`] : [])),
+        message: `The tools/list result${ctx.pages.length > 1 ? ` (page ${i + 1})` : ''} doesn't match the official ${ctx.protocolVersion} schema${ctx.clientError ? ', and the official MCP SDK client rejects it, so clients built on it list no tools' : ', so a strict client may refuse it'}.`,
+        detail: errors.slice(0, 5).map((e) => `${e.instancePath || '(result)'} ${e.message}${e.params && 'missingProperty' in e.params ? `: ${e.params.missingProperty}` : ''}`)
+          .concat(errors.length > 5 ? [`…and ${errors.length - 5} more`] : []),
+        fix: missing.length
+          ? `Add ${missing.join(', ')} to the tools/list result${missing.some((m) => m === 'ttlMs' || m === 'cacheScope') ? ` (${ctx.protocolVersion} requires cache hints on it, SEP-2549)` : ''}.`
+          : `Fix ${first?.instancePath || 'the result'} first (${first?.message ?? 'see above'}), then rerun.`,
       });
     });
     return findings;
@@ -64,7 +78,8 @@ export const toolsCapability: Rule = {
     if ('tools' in ctx.capabilities) return [];
     return [
       {
-        message: `The server doesn't declare the tools capability, so clients don't ask for its tools: the official MCP SDK client returns an empty list without sending tools/list${ctx.menu.tools.length ? '' : ', and that is the menu toolmenu got'}. Declare "tools": {} in the server's capabilities.`,
+        message: `The server doesn't declare the tools capability, so clients don't ask for its tools: the official MCP SDK client returns an empty list without sending tools/list${ctx.menu.tools.length ? '' : ', and that is the menu toolmenu got'}.`,
+        fix: 'Declare "tools": {} in the capabilities the server sends at initialize.',
       },
     ];
   },
@@ -82,6 +97,7 @@ export const duplicateName: Rule = {
       .map(([name, at]): RuleFinding => ({
         tool: name,
         message: `${at.length} tools are named ${name} (positions ${at.join(', ')}). A call names the tool, so only one of them can be reached; clients may keep either, or reject the whole list (Claude's API refuses duplicate tool names).`,
+        fix: `Give each ${name} its own name, or drop the copy if it's the same tool listed twice.`,
       }));
   },
 };
@@ -95,6 +111,7 @@ export const discover: Rule = {
     return [
       {
         message: `The server answered with protocol ${ctx.protocolVersion} and no working server/discover, so it isn't on 2026-07-28 yet. Rules for 2026-07-28 were skipped.`,
+        fix: 'Nothing to do on 2025; when the server moves to 2026-07-28, implement server/discover and rerun for the 2026 checks.',
       },
     ];
   },
@@ -107,7 +124,12 @@ export const deprecated: Rule = {
   summary: 'Deprecated features still advertised',
   run(ctx) {
     if ('logging' in ctx.capabilities) {
-      return [{ message: 'Advertises the logging capability, which 2026-07-28 deprecates (SEP-2577). Log to stderr or use OpenTelemetry instead.' }];
+      return [
+        {
+          message: 'The server advertises the logging capability, which 2026-07-28 deprecates (SEP-2577), so clients may stop asking for its logs.',
+          fix: 'Stop advertising logging; log to stderr or through OpenTelemetry instead.',
+        },
+      ];
     }
     return [];
   },
@@ -123,12 +145,14 @@ export const cacheHints: Rule = {
     const meta = ctx.menu.listMeta ?? {};
     if (meta.ttlMs === 0) {
       findings.push({
-        message: 'tools/list has ttlMs: 0, so clients treat the list as immediately stale and may re-fetch it every time. Valid per spec (and the default in the official TypeScript SDK v2). If the tool set is stable, a positive ttlMs saves the polling.',
+        message: 'tools/list says ttlMs: 0, so clients treat the list as stale the moment it arrives and may fetch it again before every use. Valid per spec, and the default in the official TypeScript SDK v2.',
+        fix: 'If the tool set is stable, set a positive ttlMs on tools/list (3600000 is an hour).',
       });
     }
     if (meta.cacheScope === 'public' && ctx.usedAuth) {
       findings.push({
-        message: 'tools/list is cacheScope "public" on a server that took credentials. Public means shared caches may serve it across authorization contexts. Fine only if the tool set never depends on the caller.',
+        message: 'tools/list says cacheScope: "public" on a server that took credentials. Public lets shared caches serve the list to other callers, across authorization contexts. Fine only if the tool set never depends on who is asking.',
+        fix: 'If tools depend on the caller\'s account or scopes, set cacheScope: "private" on tools/list.',
       });
     }
     return findings;
