@@ -6,6 +6,7 @@
  * "fetch failed", an HTML page) into a ConnectError that says it in full.
  */
 import type { ChildProcess } from 'node:child_process';
+import { ProtocolError, SdkError, SdkErrorCode } from '@modelcontextprotocol/client';
 
 /** What connect() saw on the way to an error. */
 export class Trace {
@@ -19,7 +20,12 @@ export class Trace {
   /** HTTP: the last response to each method (status, content type, final URL). */
   readonly http = new Map<string, { status: number; statusText: string; contentType: string; url: string }>();
   process?: ChildProcess;
-  exit?: { code: number | null; signal: string | null };
+  /** How the process ended. `afterStop`: it ended after toolmenu sent it SIGTERM, so the exit may be toolmenu's doing. */
+  exit?: { code: number | null; signal: string | null; afterStop?: boolean };
+  /** When connecting failed, before toolmenu stopped the server and read the rest of its stderr. */
+  failedAt?: number;
+  /** toolmenu sent the process SIGTERM (connecting had already failed). */
+  stopped = false;
   /** stdout lines that aren't JSON-RPC: the first few, and how many in all. */
   readonly stray: string[] = [];
   strayCount = 0;
@@ -198,8 +204,31 @@ export function explain(error: unknown, trace: Trace, context: ExplainContext): 
   return context.target.kind === 'stdio' ? explainStdio(error, trace, context, context.target) : explainHttp(error, trace, context, context.target);
 }
 
-function timedOut(error: Error): boolean {
-  return /timed out|timeout/i.test(error.message) || (error as { code?: unknown }).code === 'REQUEST_TIMEOUT';
+/**
+ * What kind of failure this is. The SDK's own types come first: a JSON-RPC error
+ * response is the server's answer, whatever its words say ("upstream request
+ * timed out"). The words are read only for errors that aren't typed.
+ */
+function failureKind(error: Error): 'server' | 'timeout' | 'closed' | undefined {
+  for (const e of causes(error)) {
+    if (e instanceof ProtocolError) return 'server';
+    if (e instanceof SdkError) {
+      if (e.code === SdkErrorCode.RequestTimeout) return 'timeout';
+      if (e.code === SdkErrorCode.ConnectionClosed) return 'closed';
+      return undefined;
+    }
+  }
+  if (/connection closed/i.test(error.message)) return 'closed';
+  if (/timed out|timeout/i.test(error.message)) return 'timeout';
+  return undefined;
+}
+
+/** The server's JSON-RPC error answer, said as such: its words and its code. */
+function serverAnswered(error: Error, stage: string, facts: [string, string][], next: string): ConnectError {
+  const protocol = causes(error).find((e) => e instanceof ProtocolError) as (Error & { code?: unknown }) | undefined;
+  const words = firstLine((protocol ?? error).message.replace(/^MCP error -?\d+:\s*/, ''));
+  const code = typeof protocol?.code === 'number' ? ` (${protocol.code})` : '';
+  return new ConnectError(`The server answered ${stage} with an error: “${words}”${code}.`, facts, next, stage, { cause: error });
 }
 
 function explainStdio(error: Error, trace: Trace, context: ExplainContext, target: { command: string; args: string[] }): unknown {
@@ -228,11 +257,24 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
     return new ConnectError(`Couldn't start the server: ${error.message}.`, [['command', command]], `Run the command yourself to check it starts: ${command}`, 'starting the server', { cause: error });
   }
 
+  const kind = failureKind(error);
   const pending = trace.pending();
-  const stage = context.stage ?? pending?.method ?? (trace.sessionStartedAt ? 'initialize' : 'server/discover');
   const facts: [string, string][] = [['server', command]];
-  const exit = trace.exit;
-  const closed = /connection closed/i.test(error.message) || (error as { code?: unknown }).code === 'CONNECTION_CLOSED';
+
+  if (kind === 'server') {
+    // Its answer is the last request sent, so not pending any more.
+    const stage = context.stage ?? trace.sent.at(-1)?.method ?? (trace.sessionStartedAt ? 'initialize' : 'server/discover');
+    if (trace.strayCount) facts.push(strayFact(trace));
+    facts.push(stderrFact(trace));
+    return serverAnswered(error, stage, facts, `That's the server's own error, not the connection: fix what it says (its stderr may say more), or retry if the cause upstream has passed. To see it yourself, run: ${command}`);
+  }
+
+  const stage = context.stage ?? pending?.method ?? (trace.sessionStartedAt ? 'initialize' : 'server/discover');
+  // An exit after toolmenu's own SIGTERM is toolmenu's doing, not the server's, when
+  // the request had already timed out or the process died of that very signal.
+  const ours = trace.exit?.afterStop && (kind === 'timeout' || trace.exit.signal === 'SIGTERM' || trace.exit.code === 143);
+  const exit = ours ? undefined : trace.exit;
+  const closed = kind === 'closed';
 
   if (exit || closed) {
     const how = !exit
@@ -257,8 +299,8 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
     return new ConnectError(`The server ${how} ${when}.`, facts, next, stage, { cause: error });
   }
 
-  if (timedOut(error)) {
-    const now = Date.now();
+  if (kind === 'timeout') {
+    const now = trace.failedAt ?? Date.now();
     const waitedHere = pending ? now - pending.at : context.timeoutMs ?? 0;
     const probeMs = trace.sessionStartedAt !== undefined ? trace.sessionStartedAt - trace.startedAt : undefined;
     const limit = context.timeoutMs;
@@ -450,7 +492,16 @@ function explainHttp(error: Error, trace: Trace, context: ExplainContext, target
     );
   }
 
-  if (timedOut(error)) {
+  const kind = failureKind(error);
+  if (kind === 'server') {
+    return serverAnswered(
+      error,
+      stage,
+      [['url', target.url]],
+      "That's the server's own error, not the connection: fix what it says, or retry if the cause upstream has passed. If it persists, its operator's logs or status page may say more.",
+    );
+  }
+  if (kind === 'timeout') {
     const got = response ? `${host} answered (HTTP ${response.status}) but sent no JSON-RPC reply` : `no response from ${host}`;
     return new ConnectError(
       `${stage} timed out after ${seconds(context.timeoutMs ?? 0)}: ${got}.`,

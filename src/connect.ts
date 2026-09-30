@@ -124,8 +124,13 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
   try {
     await client.connect(transport, { timeout: options.timeoutMs });
   } catch (error) {
+    // What failed is fixed now: the exit that follows toolmenu's own SIGTERM isn't the server's doing.
+    trace.failedAt = Date.now();
     // A server that never answered is stopped now, not after close()'s grace period for a clean exit.
-    if (trace.process && !trace.exit) trace.process.kill('SIGTERM');
+    if (trace.process && !trace.exit) {
+      trace.stopped = true;
+      trace.process.kill('SIGTERM');
+    }
     // Read stderr to its end (at most a second): the last lines usually say why the server exited.
     await stderrEnded(stdioStderr, target.kind === 'stdio' ? 1000 : 0);
     await client.close().catch(() => {});
@@ -196,7 +201,7 @@ function watchProcess(stdio: StdioClientTransport, trace: Trace): void {
     const child = (stdio as unknown as { _process?: ChildProcess })._process;
     if (child) {
       trace.process = child;
-      child.once('exit', (code, signal) => (trace.exit = { code, signal }));
+      child.once('exit', (code, signal) => (trace.exit = { code, signal, afterStop: trace.stopped }));
       child.stdout?.on('data', (chunk: Buffer) => trace.stdout(chunk.toString()));
     }
   };

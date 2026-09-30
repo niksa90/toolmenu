@@ -5,6 +5,7 @@
 //   longerr  300 lines of noise on stderr, the real error last, exit 1
 //   signal   killed by SIGKILL
 //   missing  a Node "Cannot find module" crash
+//   rpcerror answers initialize with its own error, whose words say "timed out"
 const mode = process.env.MODE;
 if (mode === 'stray') {
   process.stdout.write('hello I am not json\nServer listening on stdio\n');
@@ -23,4 +24,17 @@ if (mode === 'stray') {
 } else if (mode === 'missing') {
   console.error("Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/node_modules/left-pad/index.js'");
   process.exit(1);
+} else if (mode === 'rpcerror') {
+  let buffer = '';
+  process.stdin.on('data', (chunk) => {
+    buffer += chunk;
+    let at;
+    while ((at = buffer.indexOf('\n')) >= 0) {
+      const message = JSON.parse(buffer.slice(0, at));
+      buffer = buffer.slice(at + 1);
+      if (message.id === undefined) continue;
+      const error = message.method === 'initialize' ? { code: -32603, message: 'upstream API request timed out' } : { code: -32601, message: 'Method not found' };
+      process.stdout.write(`${JSON.stringify({ jsonrpc: '2.0', id: message.id, error })}\n`);
+    }
+  });
 }

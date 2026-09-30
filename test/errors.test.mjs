@@ -34,6 +34,22 @@ test('errors: a crash gives the exit code, the stage and the stderr', async () =
   assert.match(killed.stderr, /^toolmenu: The server was killed by SIGKILL/);
 });
 
+test('errors: a wrapper that keeps stderr open: the timeout is the cause, not toolmenu stopping it', async () => {
+  const r = await run(['snapshot', '--no-write', '--timeout', '800', '--env', 'MODE=silent', '--', 'sh', '-c', `${process.execPath} ${join(FIXTURES, 'broken-server.mjs')}; true`]);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /^toolmenu: initialize timed out after [\d.]+ s: the server is running but never answered\./);
+  assert.doesNotMatch(r.stderr, /killed by SIGTERM/);
+  assert.match(r.stderr, /→ Next: Check the command starts an MCP server on stdio/);
+});
+
+test('errors: the server\'s own error answer is its words, even when they say "timed out"', async () => {
+  const r = await run(broken('rpcerror'));
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /^toolmenu: The server answered initialize with an error: “upstream API request timed out” \(-32603\)\./);
+  assert.doesNotMatch(r.stderr, /never answered|closed its stdout/);
+  assert.match(r.stderr, /→ Next: /);
+});
+
 test('errors: a long stderr shows its last lines, and says how many were cut', async () => {
   const r = await run(broken('longerr'));
   assert.equal(r.code, 2);
@@ -120,6 +136,27 @@ test('errors: an HTTP server that never answers', async () => {
     assert.match(r.stderr, /^toolmenu: server\/discover timed out after 0\.5 s: no response from 127\.0\.0\.1\./);
   } finally {
     s.close();
+  }
+});
+
+test('errors: an HTTP server\'s own error answer is its words, not a timeout', async () => {
+  const s = await serve((req, res) => {
+    let body = '';
+    req.on('data', (c) => (body += c));
+    req.on('end', () => {
+      const message = JSON.parse(body);
+      if (message.id === undefined) return res.writeHead(202).end();
+      const error = message.method === 'initialize' ? { code: -32603, message: 'upstream API request timed out' } : { code: -32601, message: 'Method not found' };
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ jsonrpc: '2.0', id: message.id, error }));
+    });
+  });
+  try {
+    const r = await run(['snapshot', '--no-write', '--timeout', '3000', `${s.url}/mcp`]);
+    assert.equal(r.code, 2);
+    assert.match(r.stderr, /^toolmenu: The server answered initialize with an error: “upstream API request timed out” \(-32603\)\./);
+    assert.doesNotMatch(r.stderr, /no JSON-RPC reply|no response from/);
+  } finally {
+    await s.close();
   }
 });
 
