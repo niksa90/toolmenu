@@ -78,6 +78,8 @@ export interface Connection {
   close: () => Promise<void>;
   /** An error from a request on this connection, said with what the connection saw (exit code, stderr, stray stdout). */
   explain?: (error: unknown, stage: string) => unknown;
+  /** Resolves once a server that just failed a request has had its say on stderr (all of it, if it exited). */
+  stderrSettled?: () => Promise<void>;
 }
 
 export interface ConnectOptions {
@@ -160,6 +162,12 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     stderr: () => stderrText,
     close: () => client.close(),
     explain: (error, stage) => explain(error, trace, { ...context, stage }),
+    stderrSettled: async () => {
+      if (target.kind !== 'stdio') return;
+      // A server still running gets a moment to exit; one that exited is read to the end of its stderr.
+      if (!trace.exit) await exited(trace, 200);
+      if (trace.exit) await stderrEnded(stdioStderr, STDERR_AFTER_EXIT_MS);
+    },
   };
 }
 
@@ -274,8 +282,8 @@ export async function listTools(connection: Connection, options: ConnectOptions 
   const responses = connection.wire.since(mark, 'tools/list');
   const pages = responses.flatMap((r) => (r.result ? [r.result] : []));
   if (clientError && pages.length === 0) {
-    // Give stderr a moment to arrive, as for connect.
-    if (connection.explain) await new Promise((resolve) => setTimeout(resolve, 200));
+    // Let stderr arrive first, as for connect: the reason is usually its last lines.
+    await connection.stderrSettled?.();
     throw connection.explain?.(caught, 'tools/list') ?? new Error(clientError);
   }
   const first = pages[0] ?? {};

@@ -285,9 +285,12 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
     if (trace.strayCount) facts.push(strayFact(trace));
     facts.push(stderrFact(trace));
     const stderrText = trace.stderrExcerpt().lines.join('\n');
+    const rejected = rejectedCredentials(stderrText);
     let next: string;
     if (/cannot find (module|package)|ERR_MODULE_NOT_FOUND|ModuleNotFoundError|No module named/i.test(stderrText)) {
       next = "The server is missing one of its own dependencies (see stderr): reinstall it, or try another version. It's a packaging problem, not your setup.";
+    } else if (rejected) {
+      next = REJECTED_NEXT;
     } else if (trace.strayCount) {
       next = `${LOG_TO_STDERR} Then fix what stderr says.`;
     } else if (trace.stderrLines) {
@@ -296,7 +299,8 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
       next = `Run the command yourself to see why it stops: ${command}`;
     }
     const when = stage === 'tools/list' || stage === 'initialize' || stage === 'server/discover' ? `before it answered ${stage}` : `during ${stage}`;
-    return new ConnectError(`The server ${how} ${when}.`, facts, next, stage, { cause: error });
+    const why = next === REJECTED_NEXT ? `; its stderr looks like rejected credentials (“${rejected}”)` : '';
+    return new ConnectError(`The server ${how} ${when}${why}.`, facts, next, stage, { cause: error });
   }
 
   if (kind === 'timeout') {
@@ -316,12 +320,17 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
     }
     if (trace.strayCount) facts.push(strayFact(trace));
     facts.push(stderrFact(trace));
+    const rejected = trace.strayCount ? undefined : rejectedCredentials(trace.stderrExcerpt().lines.join('\n'));
     const headline = trace.strayCount
       ? `${stage} timed out after ${seconds(waitedHere)}: the server wrote lines that aren't JSON-RPC to stdout, and never answered.`
-      : `${stage} timed out after ${seconds(waitedHere)}: the server is running but never answered.`;
+      : rejected
+        ? `${stage} timed out after ${seconds(waitedHere)}: the server is running but never answered; its stderr looks like rejected credentials (“${rejected}”).`
+        : `${stage} timed out after ${seconds(waitedHere)}: the server is running but never answered.`;
     const next = trace.strayCount
       ? LOG_TO_STDERR
-      : stage === 'tools/list'
+      : rejected
+        ? REJECTED_NEXT
+        : stage === 'tools/list'
         ? 'The server answered initialize, then hung on tools/list: check its logs (stderr above). If building the list is just slow, raise --timeout.'
         : 'Check the command starts an MCP server on stdio (some need an argument such as "stdio" or "--stdio"). If it is only slow to start (npx downloading, a first build), raise --timeout.';
     return new ConnectError(headline, facts, next, stage, { cause: error });
@@ -332,6 +341,16 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
   facts.push(['stage', stage], stderrFact(trace));
   return new ConnectError(`${firstLine(error.message)}`, facts, trace.strayCount ? LOG_TO_STDERR : undefined, stage, { cause: error });
 }
+
+/** Words in a server's stderr that usually mean its API key or token was refused upstream. */
+const REJECTED = /\b401\b(?:\s+Unauthori[sz]ed)?|\bUnauthori[sz]ed\b|invalid[_ -]api[_ -]key|invalid[_ -](?:access[_ -])?token|authentication failed|do not pass authentication/i;
+
+/** The phrase in stderr that looks like rejected credentials, if any: a guess, so it's said as one. */
+function rejectedCredentials(stderrText: string): string | undefined {
+  return REJECTED.exec(stderrText)?.[0];
+}
+
+const REJECTED_NEXT = "Check the API key or token the server was given (--env, or its config): it's likely wrong, expired or for another account. This is a reading of the server's log, not certain: read its stderr above.";
 
 function firstLine(text: string): string {
   return clean(text.split('\n')[0], 300);

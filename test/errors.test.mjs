@@ -59,6 +59,24 @@ test('errors: a long stderr shows its last lines, and says how many were cut', a
   assert.ok(r.stderr.split('\n').length < 25, r.stderr);
 });
 
+test('errors: a server whose stderr says its key was rejected: the headline says so, as a guess', async () => {
+  const hung = await run(broken('badkey', 800));
+  assert.equal(hung.code, 2);
+  assert.match(hung.stderr, /^toolmenu: initialize timed out after [\d.]+ s: the server is running but never answered; its stderr looks like rejected credentials \(“401 Unauthorized”\)\./);
+  assert.match(hung.stderr, /→ Next: .*API key or token.*not certain/);
+  const exited = await run(broken('badkeyexit'));
+  assert.equal(exited.code, 2);
+  assert.match(exited.stderr, /^toolmenu: The server exited with code 1 before it answered initialize; its stderr looks like rejected credentials \(“401”\)\./);
+  assert.match(exited.stderr, /→ Next: .*API key or token/);
+});
+
+test('errors: a server that dies on tools/list: its stderr is read to the end, reason included', async () => {
+  const r = await run(broken('listcrash'));
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /^toolmenu: The server exited with code 1 before it answered tools\/list\./);
+  assert.match(r.stderr, /│ Error: the tool registry failed to load/);
+});
+
 test('errors: a missing module is called a packaging problem', async () => {
   const r = await run(broken('missing'));
   assert.match(r.stderr, /missing one of its own dependencies/);
