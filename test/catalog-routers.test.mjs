@@ -75,7 +75,7 @@ test('cli: snapshot --catalog lists the commands behind routers without running 
   const d = await run(['diff', '--json', 'v1.json', 'v2.json'], { cwd });
   const diff = JSON.parse(d.stdout).findings;
   const breaking = diff.find((f) => f.rule === 'diff/param-required');
-  assert.match(breaking.message, /files_delete\.force .*behind the command routers/);
+  assert.match(breaking.message, /^Behind the command routers: `files\.files_delete\.force` is new and required/);
   assert.ok(diff.some((f) => f.rule === 'diff/catalog-missing' && /files_copy/.test(f.message)));
   assert.equal(d.code, 1);
 

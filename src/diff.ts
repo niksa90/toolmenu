@@ -1224,6 +1224,11 @@ function expandRefs(schema: JsonSchema | undefined): { schema: JsonSchema | unde
   }
 }
 
+/** What the operations are behind: the search tool or router by name, or "the command routers" as words. */
+function catalogSource(c: NonNullable<Menu['catalog']>): string {
+  return (c.routers?.length ?? 0) > 1 ? c.tool : code(c.tool);
+}
+
 /** Operations behind a search tool, compared like tools where both runs found them. */
 function compareCatalogs(before: Menu['catalog'], after: Menu['catalog'], ignored: (name: string) => boolean): Raw[] {
   if (!before && !after) return [];
@@ -1231,13 +1236,13 @@ function compareCatalogs(before: Menu['catalog'], after: Menu['catalog'], ignore
     return [
       {
         rule: 'diff/catalog-queries',
-        message: `Only the ${before ? 'older' : 'newer'} snapshot has a catalog (snapshot --catalog), so the operations behind ${code((before ?? after)!.tool)} weren't compared.`,
+        message: `Only the ${before ? 'older' : 'newer'} snapshot has a catalog (snapshot --catalog), so the operations behind ${catalogSource((before ?? after)!)} weren't compared.`,
         fix: 'Snapshot both versions with --catalog.',
       },
     ];
   }
   const out: Raw[] = [];
-  const where = `behind ${code(after.tool)}`;
+  const where = `behind ${catalogSource(after)}`;
   if (JSON.stringify(before.queries) !== JSON.stringify(after.queries)) {
     out.push({
       rule: 'diff/catalog-queries',
@@ -1261,7 +1266,7 @@ function compareCatalogs(before: Menu['catalog'], after: Menu['catalog'], ignore
       out.push({ rule: 'diff/catalog-added', tool: name, message: `${code(name)} (${where}) is new, or newly found by the same queries.` });
       continue;
     }
-    for (const r of compareTool(old, op)) out.push({ ...r, message: `Behind ${code(after.tool)}: ${r.message}`, behind: after.tool });
+    for (const r of compareTool(old, op)) out.push({ ...r, message: `Behind ${catalogSource(after)}: ${r.message}`, behind: after.tool });
   }
   const missing = [...oldOps.keys()].filter((n) => !newOps.has(n));
   if (missing.length) {
