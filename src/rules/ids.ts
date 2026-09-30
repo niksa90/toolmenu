@@ -1,6 +1,6 @@
 import type { JsonSchema, MenuTool } from '../types.js';
 import { COLLECTION_VERBS, LOOKUP_VERBS, VERBS, commonWords, nouns, singular, words } from '../words.js';
-import type { Rule, RuleFinding } from './rule.js';
+import { kept, type Rule, type RuleFinding } from './rule.js';
 
 interface IdParam {
   param: string;
@@ -123,7 +123,7 @@ export const authoredIds: Rule = {
   run(ctx) {
     const byKind = new Map<string, { tool: string; param: string }[]>();
     const common = commonWords(ctx.menu.tools.map((t) => t.name));
-    for (const tool of ctx.menu.tools) {
+    for (const tool of kept(ctx.menu.tools, ctx)) {
       for (const { param, kind } of idParams(tool)) {
         if (!kind || isReturnedBySomeTool(kind, tool, ctx.menu.tools, common)) continue;
         const schema = tool.inputSchema?.properties?.[param];
@@ -138,10 +138,14 @@ export const authoredIds: Rule = {
     return [...byKind].map(([kind, uses]): RuleFinding => {
       const tools = [...new Set(uses.map((u) => u.tool))];
       const where = uses.map((u) => `${u.tool}.${u.param}`);
+      const one = where.length === 1;
+      const a = /^[aeiou]/.test(kind) ? 'an' : 'a';
       return {
         ...(tools.length === 1 ? { tool: tools[0] } : {}),
-        message: `${where.length === 1 ? `${where[0]} looks like` : `${where.length} parameters look like`} a ${kind} ID the agent must supply, but no tool appears to return one (no list/search/get tool for "${kind}", no output schema with a ${kind} ID). The agent may invent it, unless it comes from somewhere toolmenu can't see (a URL, another tool's text output). Heuristic.`,
-        ...(where.length > 1 ? { detail: [where.slice(0, 8).join(', ') + (where.length > 8 ? `, and ${where.length - 8} more` : '')] } : {}),
+        confidence: 'unsure',
+        message: `${one ? `${where[0]} takes` : `${where.length} parameters take`} ${a} ${kind} ID, and no tool in the menu appears to return one: no list, search, get or create tool for "${kind}", and no output schema with ${a} ${kind} ID. If the agent can't find one anywhere, it has to guess.`,
+        ...(one ? {} : { detail: [where.join(', ')] }),
+        fix: `If ${kind} IDs come from somewhere the agent can see (a URL the user pastes, another tool's text output), say so in the parameter's description; if not, add a tool that lists or finds them.`,
       };
     });
   },
