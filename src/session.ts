@@ -270,13 +270,13 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     const onWord: { tool: string; step: number }[] = [];
     // The same failure from the same tool at several steps is one finding that lists them.
     const failures = new Map<string, Failure>();
-    const fail = (rule: string, severity: Severity, index: number, step: { tool: string; args: Record<string, unknown> }, text: string, failure: FailureClass) => {
+    const fail = (rule: string, severity: Severity, index: number, step: { tool: string; args: Record<string, unknown> }, text: string, failure: FailureClass, timedOutMs?: number) => {
       const key = `${rule}\0${step.tool}\0${text}`;
       const before = failures.get(key);
       if (before) before.steps.push(index);
       else {
         const params = Object.keys(current.tools.find((t) => t.name === step.tool)?.inputSchema?.properties ?? {});
-        failures.set(key, { rule, severity, tool: step.tool, text, steps: [index], args: step.args, failure, takesParams: params.length > 0 });
+        failures.set(key, { rule, severity, tool: step.tool, text, steps: [index], args: step.args, failure, takesParams: params.length > 0, ...(timedOutMs ? { timedOutMs } : {}) });
       }
     };
     // Steps whose change touched only values already known to vary on their own.
@@ -385,7 +385,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           }
           const code = (error as { code?: unknown }).code;
           record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
-          if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure);
+          // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
+          const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
+          if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);
         }
       } else if (step.kind === 'wait_for') {
         const arrived = await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, step.timeoutMs);
@@ -664,6 +666,8 @@ interface Failure {
   failure: FailureClass;
   /** The tool has parameters in its schema. */
   takesParams: boolean;
+  /** toolmenu's own request timeout ran out (ms): the server didn't answer in time, which isn't an argument or server error. */
+  timedOutMs?: number;
   /** The same error in the same words from other tools too, with their calls. */
   others?: { tool: string; args: Record<string, unknown>; takesParams: boolean }[];
 }
@@ -734,7 +738,10 @@ function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Ra
     const them = tools.length === 1 ? 'its' : 'their';
     const leaveOut = auto ? `save the steps with --save-scenario, drop ${them} calls and run that with --scenario` : `drop ${them} calls from the scenario`;
     const noParams = calls.every((c) => !c.takesParams && Object.keys(c.args).length === 0);
-    const fix = !argsCan
+    const secs = f.timedOutMs ? `${Math.round(f.timedOutMs / 1000)} s` : '';
+    const fix = f.timedOutMs
+      ? `${who} didn't answer within toolmenu's ${secs} request timeout: the call may just be slow (fetching or searching a lot). Rerun with a longer --timeout (e.g. --timeout ${f.timedOutMs * 4}); if it still times out, the server hangs on this call.`
+      : !argsCan
       ? undefined
       : unavailable
         ? `The server says this feature isn't available here: nothing to change in the call. Test ${tools.length === 1 ? 'it' : 'them'} on a deployment that has it, or leave ${tools.length === 1 ? 'it' : 'them'} out: ${leaveOut}.`
@@ -756,7 +763,7 @@ function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Ra
       step: f.steps[0],
       ...(many ? { steps: f.steps } : {}),
       tool: f.tool,
-      ...(unavailable || (noParams && argsCan) ? { confidence: 'unsure' as const } : {}),
+      ...(!f.timedOutMs && (unavailable || (noParams && argsCan)) ? { confidence: 'unsure' as const } : {}),
       message:
         f.rule === 'session/tool-error'
           ? tools.length > 1

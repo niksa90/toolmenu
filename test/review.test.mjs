@@ -69,6 +69,17 @@ test('review 7: a call that times out but changed the menu is reported at its ow
   assert.ok(change.detail.some((d) => /the call failed, but the menu changed/.test(d)));
 });
 
+test('a call that runs out toolmenu\'s own timeout says so and suggests --timeout, not the server or the arguments', async () => {
+  const target = { kind: 'stdio', command: process.execPath, args: [join(FIXTURES, 'slow-unlock-server.mjs')], env: {} };
+  const r = await session(target, parseScenario({ steps: [{ call: 'slow_unlock' }] }), { timeoutMs: 1000 });
+  const failed = r.findings.find((f) => f.rule === 'session/step-failed');
+  assert.ok(failed, r.findings.map((f) => f.rule).join(', '));
+  assert.match(failed.fix, /didn't answer within toolmenu's 1 s request timeout/);
+  assert.match(failed.fix, /--timeout 4000/);
+  assert.doesNotMatch(failed.fix, /the error is the server's|--value/);
+  assert.equal(failed.confidence, undefined);
+});
+
 test('review 8: tools removed from the end give a sensible cost line', () => {
   const before = menuOf([tool('a'), tool('b')]).tools;
   const after = menuOf([tool('a')]).tools;
