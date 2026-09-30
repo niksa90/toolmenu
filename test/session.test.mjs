@@ -134,6 +134,8 @@ test('calls that fail on credentials are one session/untested finding: warn if s
   assert.equal(some.findings[0].severity, 'warn');
   assert.match(some.findings[0].message, /^1 of 2 tool calls failed before reaching the tool: 1 on authentication/);
   assert.equal(some.steps[0].failure, 'auth');
+  assert.match(some.findings[0].fix, /rerun with real ones \(--env KEY=…\)/);
+  assert.equal(some.findings[0].confidence, 'unsure');
   const none = await session(stdio(), parseScenario({ steps: [{ call: 'get_form', args: { form_id: 'expired' } }] }), { timeoutMs: TIMEOUT_MS });
   assert.equal(none.findings.find((f) => f.rule === 'session/untested').severity, 'error');
   assert.match(none.findings[0].message, /^All 1 tool calls failed/);
@@ -604,9 +606,9 @@ const domainsRun = async () => {
   const server = await startDomains();
   try {
     const target = { kind: 'http', url: server.url };
-    const plan = autoScenario(await probeMenu(target, 15_000));
+    const plan = autoScenario(await probeMenu(target, TIMEOUT_MS));
     const auto = { called: plan.called, skipped: plan.skipped };
-    const r = await session(target, plan.scenario, { timeoutMs: 15_000, scenarioName: 'auto', auto });
+    const r = await session(target, plan.scenario, { timeoutMs: TIMEOUT_MS, scenarioName: 'auto', auto });
     const calls = (name) => plan.scenario.steps.filter((s) => s.kind === 'call' && s.tool === name).length;
     const ran = (name) => r.steps.filter((s) => s.label.startsWith(`call ${name}`)).length;
     return { r, calls, ran };

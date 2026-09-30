@@ -5,7 +5,7 @@ import { listTools, type Connection, type Target } from './connect.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
-import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
+import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
@@ -543,13 +543,8 @@ function untested(steps: StepRecord[], target: Target): Raw[] {
   const byClass = new Map<FailureClass, StepRecord[]>();
   for (const s of setup) byClass.set(s.failure!, [...(byClass.get(s.failure!) ?? []), s]);
   const all = setup.length === calls.length;
-  const how = target.kind === 'http' ? 'real credentials (--header "Authorization: …")' : 'real credentials (--env KEY=…)';
-  const fix =
-    byClass.has('auth') || byClass.has('not-found')
-      ? `Rerun with ${how}.`
-      : byClass.has('environment')
-        ? 'Install what the server says is missing on this machine (or run it where it is), then rerun.'
-        : 'Check the network between this machine and the service the server calls, then rerun.';
+  // One step per class seen, not just the first: a run can fail on credentials and a missing browser at once.
+  const { fix } = setupFailureAdvice(byClass.keys(), target.kind);
   return [
     {
       rule: 'session/untested',
