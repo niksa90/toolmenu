@@ -17,7 +17,7 @@ test('help: every command has usage, options, examples and exit codes; the overv
   assert.match(commandHelp('diff'), /--release <old>\.\.<new>/);
   assert.match(commandHelp('history'), /--install-timeout/);
   assert.doesNotMatch(commandHelp('snapshot'), /--install-timeout|--scenario/);
-  assert.match(commandHelp('session'), /--assume-read-only/);
+  assert.match(commandHelp('session'), /--max-calls/);
   assert.ok(overview().split('\n').length < 30, 'the overview stays short');
 });
 
@@ -65,4 +65,32 @@ test('history: the report shows each failure with its next step, in text and mar
   const json = JSON.parse(formatHistory(h, 'json', 'out', 'h.csv'));
   assert.deepEqual(json.written, { dir: 'out', csv: 'h.csv' });
   assert.equal(json.rows[0].reason, 'needs-env', 'the fields it had are kept');
+});
+
+test('help: every option any help names is one the CLI parses, and every parsed option is in some help', async () => {
+  const { CLI_OPTIONS } = await import('../dist/options.js');
+  const parsed = new Set(Object.keys(CLI_OPTIONS));
+  const texts = [overview(), ...COMMANDS.map((c) => commandHelp(c))];
+  // --arg=--flag is how a server's own flag is passed, not a toolmenu option.
+  const named = new Set(texts.flatMap((t) => [...t.matchAll(/--([a-z][a-z-]*)/g)].map((m) => m[1])).filter((n) => n !== 'flag'));
+  for (const n of named) assert.ok(parsed.has(n), `help names --${n}, which the CLI doesn't parse`);
+  for (const p of parsed) assert.ok(named.has(p), `the CLI parses --${p}, which no help names`);
+});
+
+test('history: versions failing the same install-failed or no-bin way are one entry, whatever their version', () => {
+  const versions = ['0.2.0', '0.3.0', '0.4.0', '0.5.0', '0.6.0', '0.7.0', '0.8.0', '0.9.0', '0.10.0', '0.11.0'];
+  const npm = (v) => `npm error code ETARGET\nnpm error notarget No matching version found for left-pad@^9 (needed by fx-mcp@${v}).`;
+  const rows = [
+    ...versions.map((v) => ({ version: v, status: 'failed', reason: 'install-failed', error: npm(v), ...failureAdvice('install-failed', npm(v), 'fx-mcp', v) })),
+    ...['1.0.0', '1.1.0'].map((v) => ({ version: v, status: 'failed', reason: 'no-bin', error: 'no bin', ...failureAdvice('no-bin', 'no bin', 'fx-mcp', v) })),
+  ];
+  const h = { package: 'fx-mcp', installedAt: '2026-09-30T00:00:00Z', totalVersions: rows.length, rows };
+  const text = formatHistory(h, 'text', 'out');
+  assert.match(text, /^ {2}0\.2\.0, 0\.3\.0 … 0\.11\.0 \(10 versions\) {2}install-failed$/m);
+  assert.match(text, /^ {2}1\.0\.0, 1\.1\.0 {2}no-bin$/m);
+  assert.equal(text.match(/install-failed$/gm).length, 1, text);
+  assert.match(text, /npm couldn't install fx-mcp@<version>/, 'a grouped entry names no one version');
+  assert.doesNotMatch(text, /fx-mcp@0\.2\.0/);
+  const md = formatHistory(h, 'markdown', 'out');
+  assert.equal(md.match(/· install-failed/g).length, 1);
 });

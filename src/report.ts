@@ -220,7 +220,7 @@ export function formatHistory(h: HistoryResult, format: Format, outDir: string, 
     }
     if (failed.length) {
       lines.push('', `**Failed** (${failed.length} of ${h.rows.length})`, '');
-      for (const g of failureGroups(failed, failure)) lines.push(`- \`${g.versions}\` · ${g.row.reason}${g.row.confidence === 'unsure' ? ' · _unsure_' : ''}: ${mdCell(failure(g.row))}${g.row.fix ? `<br>**→ Next:** ${mdCell(g.row.fix)}` : ''}`);
+      for (const g of failureGroups(failed, failure)) lines.push(`- \`${g.versions}\` · ${g.row.reason}${g.row.confidence === 'unsure' ? ' · _unsure_' : ''}: ${mdCell(g.message)}${g.fix ? `<br>**→ Next:** ${mdCell(g.fix)}` : ''}`);
     }
     lines.push('', `**${summary}**`, '', `<sub>${saved.charAt(0).toUpperCase()}${saved.slice(1)}.</sub>`);
     return lines.join('\n');
@@ -247,8 +247,8 @@ export function formatHistory(h: HistoryResult, format: Format, outDir: string, 
     lines.push(`Failed (${failed.length} of ${h.rows.length}):`);
     for (const g of failureGroups(failed, failure)) {
       lines.push(`  ${g.versions}  ${g.row.reason}${g.row.confidence === 'unsure' ? ' · unsure' : ''}`);
-      lines.push(`      ${failure(g.row)}`);
-      if (g.row.fix) lines.push(`      → Next: ${g.row.fix}`);
+      lines.push(`      ${g.message}`);
+      if (g.fix) lines.push(`      → Next: ${g.fix}`);
     }
     lines.push('');
   }
@@ -259,17 +259,28 @@ export function formatHistory(h: HistoryResult, format: Format, outDir: string, 
 /** Breaking changes listed per release in history's text and markdown; the rest are in history.json. */
 const BREAKING_SHOWN = 5;
 
-/** Failed versions with the same words and next step, as one entry naming them: "0.2.0, 0.3.0 … 0.4.0 (6 versions)". */
-function failureGroups(failed: HistoryRow[], failure: (r: HistoryRow) => string): { versions: string; row: HistoryRow }[] {
+/**
+ * Failed versions with the same words and next step, as one entry naming them: "0.2.0, 0.3.0 … 0.4.0 (6 versions)".
+ * The words name the version (npm couldn't install pkg@0.2.0), so they're compared, and a
+ * group of several shown, with "@<version>" in its place.
+ */
+function failureGroups(failed: HistoryRow[], failure: (r: HistoryRow) => string): { versions: string; row: HistoryRow; message: string; fix?: string }[] {
+  const bare = (text: string, version: string) => text.split(`@${version}`).join('@<version>');
   const groups = new Map<string, HistoryRow[]>();
   for (const r of failed) {
-    const key = `${r.reason}\n${failure(r)}\n${(r.fix ?? '').replace(r.version, '')}`;
+    const key = `${r.reason}\n${bare(failure(r), r.version)}\n${bare(r.fix ?? '', r.version)}`;
     groups.set(key, [...(groups.get(key) ?? []), r]);
   }
-  return [...groups.values()].map((rows) => ({
-    row: rows[0],
-    versions: rows.length === 1 ? rows[0].version : rows.length <= 3 ? rows.map((r) => r.version).join(', ') : `${rows[0].version}, ${rows[1].version} … ${rows[rows.length - 1].version} (${rows.length} versions)`,
-  }));
+  return [...groups.values()].map((rows) => {
+    const row = rows[0];
+    const shown = (text: string) => (rows.length === 1 ? text : bare(text, row.version));
+    return {
+      row,
+      message: shown(failure(row)),
+      fix: row.fix === undefined ? undefined : shown(row.fix),
+      versions: rows.length === 1 ? row.version : rows.length <= 3 ? rows.map((r) => r.version).join(', ') : `${rows[0].version}, ${rows[1].version} … ${rows[rows.length - 1].version} (${rows.length} versions)`,
+    };
+  });
 }
 
 function ghEscape(text: string): string {

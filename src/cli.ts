@@ -21,6 +21,7 @@ import { authDir, listLogins, login, logout } from './auth.js';
 import { detectProject, secretsNeeded, workflowYaml } from './init.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
 import { VERSION } from './version.js';
+import { CLI_OPTIONS } from './options.js';
 import { commandHelp, isCommand, overview, unknownCommand } from './help.js';
 
 class UsageError extends Error {}
@@ -33,47 +34,7 @@ export async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: before,
     allowPositionals: true,
-    options: {
-      out: { type: 'string' },
-      'no-write': { type: 'boolean' },
-      routes: { type: 'string' },
-      config: { type: 'string' },
-      format: { type: 'string' },
-      json: { type: 'boolean' },
-      'fail-on': { type: 'string' },
-      header: { type: 'string', multiple: true },
-      env: { type: 'string', multiple: true },
-      timeout: { type: 'string' },
-      'no-auth': { type: 'boolean' },
-      port: { type: 'string' },
-      scope: { type: 'string' },
-      'client-id': { type: 'string' },
-      'client-secret': { type: 'string' },
-      processes: { type: 'string' },
-      versions: { type: 'string' },
-      release: { type: 'string' },
-      'server-version-is-release': { type: 'boolean' },
-      'include-prereleases': { type: 'boolean' },
-      arg: { type: 'string', multiple: true },
-      bin: { type: 'string' },
-      cmd: { type: 'string' },
-      'allow-scripts': { type: 'boolean' },
-      'install-timeout': { type: 'string' },
-      csv: { type: 'string' },
-      'keep-installs': { type: 'boolean' },
-      scenario: { type: 'string' },
-      plan: { type: 'boolean' },
-      init: { type: 'boolean' },
-      'union-out': { type: 'string' },
-      auto: { type: 'boolean' },
-      'with-session': { type: 'boolean' },
-      catalog: { type: 'boolean' },
-      'open-world': { type: 'boolean' },
-      'max-calls': { type: 'string' },
-      'save-scenario': { type: 'string' },
-      help: { type: 'boolean', short: 'h' },
-      version: { type: 'boolean', short: 'v' },
-    },
+    options: CLI_OPTIONS,
   });
 
   if (values.version) {

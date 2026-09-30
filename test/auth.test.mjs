@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { hasLogin, listLogins, login, logout } from '../dist/auth.js';
+import { hasLogin, listLogins, login, LoginNeededError, logout, StoredOAuthProvider } from '../dist/auth.js';
 import { snapshot } from '../dist/snapshot.js';
 import { start } from './fixtures/oauth-server.mjs';
 import { run, tempDir, TIMEOUT_MS } from './helpers.mjs';
@@ -149,3 +149,46 @@ test('auth: a pre-registered app (--client-id, --client-secret) logs in without 
   }
 });
 
+
+test('auth: a login abandoned after registration is no login, not an expired one', async () => {
+  isolated();
+  const server = await start();
+  try {
+    // The browser never comes back: the client is registered, no token is ever issued.
+    await assert.rejects(login(server.url, { port: port(), open: () => {}, timeoutMs: 300 }));
+    assert.equal(hasLogin(server.url), true, 'the registration is on disk');
+    const e = await snapshot({ kind: 'http', url: server.url }, { timeoutMs: TIMEOUT_MS, processes: 1 }).catch((x) => x);
+    assert.match(e.message, /no stored login for it: an earlier toolmenu auth login registered a client but didn't finish/);
+    assert.doesNotMatch(e.message, /refresh was refused|no longer works/);
+    assert.match(e.message, /→ Next: .*toolmenu auth login/);
+  } finally {
+    await server.close();
+  }
+});
+
+test('auth: a refused refresh is said so on this run and the next; a login the server rejected and removed is said so', async () => {
+  isolated();
+  const server = await start();
+  try {
+    await login(server.url, { port: port(), open: browser() });
+    server.revokeAll();
+    for (let i = 0; i < 2; i++) {
+      const e = await snapshot({ kind: 'http', url: server.url }, { timeoutMs: TIMEOUT_MS, processes: 1 }).catch((x) => x);
+      assert.match(e.message, /the server refused to refresh it/, `run ${i + 1}`);
+      assert.doesNotMatch(e.message, /didn't finish|no stored login/, `run ${i + 1}`);
+    }
+    // invalidateCredentials('all') deletes the file: the message says the login was
+    // rejected and removed, not that there never was one.
+    await login(server.url, { port: port(), open: browser() });
+    const provider = new StoredOAuthProvider(server.url);
+    assert.ok(await provider.tokens());
+    await provider.invalidateCredentials('all');
+    assert.equal(hasLogin(server.url), false);
+    const e = await provider.redirectToAuthorization(new URL(server.url)).catch((x) => x);
+    assert.ok(e instanceof LoginNeededError);
+    assert.match(e.message, /the server rejected the stored login for it, so toolmenu removed it/);
+    assert.doesNotMatch(e.message, /no stored login/);
+  } finally {
+    await server.close();
+  }
+});

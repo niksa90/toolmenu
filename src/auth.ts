@@ -30,6 +30,12 @@ interface Stored {
    * server's token endpoint.
    */
   discoveryState?: OAuthDiscoveryState;
+  /**
+   * Set when the SDK dropped the tokens because the server refused them: 'refresh' for
+   * a refused refresh (invalid_grant), 'client' for a rejected client (invalid_client).
+   * Without it, a file with no tokens is a login that never finished.
+   */
+  rejected?: 'refresh' | 'client';
   savedAt?: string;
 }
 
@@ -60,7 +66,7 @@ async function save(data: Stored): Promise<void> {
   await chmod(path, 0o600);
 }
 
-/** Is there a stored login for this server? */
+/** Is there a stored file for this server (a login, or what's left of one)? Why a login is needed reads its contents. */
 export function hasLogin(serverUrl: string): boolean {
   return existsSync(storePath(serverUrl));
 }
@@ -84,6 +90,8 @@ export interface ProviderOptions {
 export class StoredOAuthProvider implements OAuthClientProvider {
   private data: Stored | undefined;
   private expectedState: string | undefined;
+  /** invalidateCredentials('all') deleted a file that held tokens, in this run. */
+  private removedLogin = false;
 
   constructor(
     private readonly serverUrl: string,
@@ -164,12 +172,12 @@ export class StoredOAuthProvider implements OAuthClientProvider {
   }
 
   async saveTokens(tokens: StoredOAuthTokens, ctx?: OAuthClientInformationContext): Promise<void> {
-    await this.update({ tokens, ...(ctx?.issuer ? { issuer: ctx.issuer } : {}) });
+    await this.update({ tokens, rejected: undefined, ...(ctx?.issuer ? { issuer: ctx.issuer } : {}) });
   }
 
   async redirectToAuthorization(authorizationUrl: URL): Promise<void> {
     if (!this.options.interactive) {
-      throw new LoginNeededError(this.serverUrl);
+      throw new LoginNeededError(this.serverUrl, whyLoginNeeded(await this.stored(), this.removedLogin));
     }
     await this.options.onRedirect?.(authorizationUrl);
   }
@@ -195,26 +203,42 @@ export class StoredOAuthProvider implements OAuthClientProvider {
   async invalidateCredentials(scope: 'all' | 'client' | 'tokens' | 'verifier' | 'discovery'): Promise<void> {
     const s = await this.stored();
     if (scope === 'all') {
+      this.removedLogin ||= Boolean(s.tokens) || Boolean(s.rejected);
       this.data = { serverUrl: s.serverUrl };
       await rm(storePath(this.serverUrl), { force: true });
       return;
     }
     const patch: Partial<Stored> = {};
-    if (scope === 'client') patch.clientInformation = undefined;
-    if (scope === 'tokens') patch.tokens = undefined;
+    if (scope === 'client') {
+      patch.clientInformation = undefined;
+      if (s.tokens) patch.rejected = 'client';
+    }
+    if (scope === 'tokens') {
+      patch.tokens = undefined;
+      if (s.tokens) patch.rejected ??= s.rejected ?? 'refresh';
+    }
     if (scope === 'verifier') patch.codeVerifier = undefined;
     if (scope === 'discovery') patch.discoveryState = undefined;
     await this.update(patch);
   }
 }
 
+/**
+ * Why snapshot or session needs a login, from what's stored: nothing, a registration
+ * from a login that never finished, tokens the server refused, or a login the server
+ * rejected and toolmenu removed (removedLogin: in this run).
+ */
+function whyLoginNeeded(s: Stored, removedLogin: boolean): string {
+  if (removedLogin) return 'the server rejected the stored login for it, so toolmenu removed it';
+  if (s.rejected === 'client') return "the stored login no longer works: the server doesn't accept the client toolmenu registered (it may have been deleted), so its tokens were dropped";
+  if (s.rejected === 'refresh') return 'the stored login no longer works: its token expired or was revoked and the server refused to refresh it';
+  if (s.tokens) return 'the stored login no longer works: the server refused its token';
+  if (s.clientInformation) return "there's no stored login for it: an earlier toolmenu auth login registered a client but didn't finish";
+  return `there's no stored login for it (stored in ${authDir()})`;
+}
+
 export class LoginNeededError extends Error {
-  constructor(serverUrl: string) {
-    // A stored login that didn't work: its tokens expired and the refresh was refused
-    // (the SDK then drops them and asks for a new login).
-    const why = hasLogin(serverUrl)
-      ? `the stored login for it no longer works (its token expired and the refresh was refused)`
-      : `there's no stored login for it (stored in ${authDir()})`;
+  constructor(serverUrl: string, why = `there's no stored login for it (stored in ${authDir()})`) {
     super(
       `${serverUrl} asks for an OAuth login, and ${why}. snapshot and session don't open a browser.\n` +
         `→ Next: Log in once in a terminal with a browser: toolmenu auth login ${serverUrl}. Or pass a token: --header "Authorization: Bearer <token>".`,
