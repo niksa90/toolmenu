@@ -131,8 +131,14 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
       trace.stopped = true;
       trace.process.kill('SIGTERM');
     }
-    // Read stderr to its end (at most a second): the last lines usually say why the server exited.
-    await stderrEnded(stdioStderr, target.kind === 'stdio' ? 1000 : 0);
+    // Read stderr to its end: the last lines usually say why the server exited. A
+    // process that has exited closes its end of the pipe, so wait for all of it (a
+    // loaded CI runner took over a second for 300 lines, and the reason is last);
+    // one toolmenu just stopped gets a moment to exit first.
+    if (target.kind === 'stdio') {
+      if (!trace.exit) await exited(trace, 1000);
+      await stderrEnded(stdioStderr, trace.exit ? STDERR_AFTER_EXIT_MS : 1000);
+    }
     await client.close().catch(() => {});
     throw explain(error, trace, context);
   }
@@ -155,6 +161,23 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     close: () => client.close(),
     explain: (error, stage) => explain(error, trace, { ...context, stage }),
   };
+}
+
+/** How long to wait for an exited server's stderr to end: its pipe is closing, so this is only a ceiling for a stuck one. */
+const STDERR_AFTER_EXIT_MS = 10_000;
+
+/** Resolves when the traced process has exited, or after `maxMs`. */
+function exited(trace: Trace, maxMs: number): Promise<void> {
+  const child = trace.process;
+  if (!child || trace.exit) return Promise.resolve();
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, maxMs);
+    child.once('exit', () => {
+      clearTimeout(timer);
+      // The exit listener that records trace.exit runs first: it was added at spawn.
+      resolve();
+    });
+  });
 }
 
 /** Resolves when `stream` has ended, or after `maxMs`. */
