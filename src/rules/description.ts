@@ -1,5 +1,5 @@
 import type { MenuTool } from '../types.js';
-import type { Rule, RuleFinding } from './rule.js';
+import { clip, kept, num, type Rule, type RuleFinding } from './rule.js';
 
 /*
  * Clients that cut tool descriptions, and where. Only reported cuts, with sources:
@@ -12,13 +12,20 @@ import type { Rule, RuleFinding } from './rule.js';
 export const CLIENT_LIMITS: Record<string, number> = { 'claude-code': 2048, 'amazon-q': 10024 };
 export const DEFAULT_CLIENT = 'claude-code';
 
-/** The cut in characters, and how to name it in a message. */
-export function resolveLimit(setting: number | string | undefined): { limit: number; who: string } {
-  if (typeof setting === 'number') return { limit: setting, who: `your client (descriptionLimit ${setting.toLocaleString('en-US')})` };
+/**
+ * The cut in characters, the client to name in a message ("Claude Code", "your
+ * client"), and whether it's toolmenu's assumption rather than the user's setting.
+ */
+export function resolveLimit(setting: number | string | undefined): { limit: number; who: string; assumed: boolean } {
+  if (typeof setting === 'number') return { limit: setting, who: 'your client', assumed: false };
   const client = setting ?? DEFAULT_CLIENT;
   const limit = CLIENT_LIMITS[client] ?? CLIENT_LIMITS[DEFAULT_CLIENT];
-  const name = client === 'amazon-q' ? 'Amazon Q CLI' : 'Claude Code';
-  return { limit, who: `${name} (${limit.toLocaleString('en-US')} characters${setting === undefined ? ', the default: set descriptionLimit for your client' : ''})` };
+  return { limit, who: client === 'amazon-q' ? 'Amazon Q CLI' : 'Claude Code', assumed: setting === undefined };
+}
+
+/** The fix's last words when the cut is assumed, not set. */
+function unlessOtherClient(assumed: boolean): string {
+  return assumed ? ' If your client isn\'t Claude Code, set descriptionLimit to its cut.' : '';
 }
 
 /*
@@ -102,25 +109,26 @@ export const buried: Rule = {
   lesson: 'truncated description',
   summary: 'Instructions to the agent sit past the point where your client cuts descriptions',
   run(ctx) {
-    const { limit, who } = resolveLimit(ctx.descriptionLimit);
-    const names = ctx.menu.tools.map((t) => t.name);
+    const { limit, who, assumed } = resolveLimit(ctx.descriptionLimit);
+    const all = ctx.menu.tools.map((t) => t.name);
     const findings: RuleFinding[] = [];
     for (const tool of ctx.menu.tools) {
       const text = tool.description ?? '';
       if (text.length <= limit || sentInFull(tool, ctx.fullDescriptions)) continue;
-      const past = pastTheCut(text, names.filter((n) => n !== tool.name), limit);
+      const past = pastTheCut(text, all.filter((n) => n !== tool.name), limit);
       if (past.length === 0) continue;
       const one = past.length === 1;
+      const first = past[0];
       findings.push({
         tool: tool.name,
-        message: `${tool.name}: the description is ${text.length.toLocaleString('en-US')} characters, and ${who} cuts it at ${limit.toLocaleString('en-US')}. ${one ? 'An instruction to the agent is' : `${past.length} instructions to the agent are`} past the cut${past[0].straddles ? `, the first cut mid-instruction (it starts at ${past[0].at.toLocaleString('en-US')})` : `, the first at ${past[0].at.toLocaleString('en-US')}`}, so the model never sees ${one ? 'it' : 'them'}. Move ${one ? 'it' : 'them'} into the first ${limit.toLocaleString('en-US')} characters, or list the tool in fullDescriptions if your client sends it uncut.`,
+        // Which sentences are instructions is read from the words: a guess.
+        confidence: 'unsure',
+        message: `${tool.name}: ${one ? 'a sentence that reads as an instruction to the agent sits' : `${past.length} sentences that read as instructions to the agent sit`} past character ${num(limit)}, where ${who} cuts the description, so the model never sees ${one ? 'it' : 'them'}. The description is ${num(text.length)} characters; the ${one ? '' : 'first '}instruction ${first.straddles ? `starts at ${num(first.at)} and is cut in the middle` : `is at ${num(first.at)}`}.`,
         detail: past
-          .slice(0, 3)
-          .map((i) => {
-            const sentence = sentenceAround(text, i.at);
-            return `char ${i.at.toLocaleString('en-US')}${i.straddles ? ' (cut mid-instruction)' : ''}: “${sentence.length > 200 ? sentence.slice(0, 197) + '…' : sentence}”`;
-          })
-          .concat(past.length > 3 ? [`…and ${past.length - 3} more`] : []),
+          .slice(0, 5)
+          .map((i) => `char ${num(i.at)}${i.straddles ? ' (cut mid-instruction)' : ''}: “${clip(sentenceAround(text, i.at), 200)}”`)
+          .concat(past.length > 5 ? [`…and ${past.length - 5} more`] : []),
+        fix: `Move “${clip(sentenceAround(text, first.at), 70)}”${one ? '' : ' and the rest above'} into the first ${num(limit)} characters of the ${tool.name} description, or list ${tool.name} in fullDescriptions if your client sends it uncut.${unlessOtherClient(assumed)}`,
       });
     }
     return findings;
@@ -130,42 +138,72 @@ export const buried: Rule = {
 /** A short cut to check against when the client's own cut isn't set: one real client cut at 280. */
 const SHORT_CUT = 280;
 
+/** “…the last words before ✂ the first words after…”, to find the cut in the text. */
+function aroundTheCut(text: string, at: number): string {
+  const before = text.slice(Math.max(0, at - 30), at).replace(/\s+/g, ' ');
+  const after = text.slice(at, at + 30).replace(/\s+/g, ' ');
+  return `“…${before}✂${after}…”`;
+}
+
 export const cut: Rule = {
   id: 'description/cut',
   severity: 'info',
   lesson: 'truncated description',
-  summary: 'Descriptions longer than your client sends, and instructions a shorter cut would hide',
+  summary: 'Descriptions longer than your client sends',
   run(ctx) {
-    const { limit, who } = resolveLimit(ctx.descriptionLimit);
-    const names = ctx.menu.tools.map((t) => t.name);
-    const others = (tool: MenuTool) => names.filter((n) => n !== tool.name);
-    const tools = ctx.menu.tools.filter((t) => !sentInFull(t, ctx.fullDescriptions));
-    const findings: RuleFinding[] = [];
-    const long = tools.filter((tool) => {
+    const { limit, who, assumed } = resolveLimit(ctx.descriptionLimit);
+    const all = ctx.menu.tools.map((t) => t.name);
+    const long = kept(ctx.menu.tools, ctx).filter((tool) => {
       const text = tool.description ?? '';
-      return text.length > limit && pastTheCut(text, others(tool), limit).length === 0;
+      return !sentInFull(tool, ctx.fullDescriptions) && text.length > limit && pastTheCut(text, all.filter((n) => n !== tool.name), limit).length === 0;
     });
-    if (long.length) {
-      findings.push({
-        message: `${long.length === 1 ? '1 description is' : `${long.length} descriptions are`} longer than ${who} sends, so the model gets a prefix that can read as complete: ${list(long, (t) => `${t.name} (${(t.description ?? '').length.toLocaleString('en-US')})`)}. Nothing past the cut reads as an instruction, but check what's there.`,
-      });
-    }
-    // With the default cut, say what a shorter client cut would hide.
-    if (ctx.descriptionLimit === undefined && limit > SHORT_CUT) {
-      const hidden = tools.filter((tool) => {
-        const text = tool.description ?? '';
-        return text.length > SHORT_CUT && pastTheCut(text, others(tool), SHORT_CUT).some((i) => i.at < limit);
-      });
-      if (hidden.length) {
-        findings.push({
-          message: `${hidden.length === 1 ? '1 description gives' : `${hidden.length} descriptions give`} the agent instructions after character ${SHORT_CUT}: ${list(hidden, (t) => t.name)}. ${who.split(' (')[0]} sends ${limit.toLocaleString('en-US')} characters, so they arrive there, but a client that cuts shorter never shows them (one real client cut at ${SHORT_CUT}). If yours cuts descriptions, set descriptionLimit to its cut.`,
-        });
-      }
-    }
-    return findings;
+    if (long.length === 0) return [];
+    const one = long.length === 1;
+    // One summary: a long description is a question for its author, not a defect.
+    return [
+      {
+        ...(one ? { tool: long[0].name } : {}),
+        message: `${one ? `The ${long[0].name} description is` : `${long.length} descriptions are`} longer than the ${num(limit)} characters ${who} sends. The model gets the start, with no sign that anything is missing, so a cut list or example can read as complete. Nothing past the cut reads as an instruction to the agent, so this is a check, not a bug.`,
+        detail: long.map((t) => {
+          const text = t.description ?? '';
+          return `${t.name}: ${num(text.length)} characters, ${num(text.length - limit)} past the cut, which falls at ${aroundTheCut(text, limit)}`;
+        }),
+        fix: `Check that what's past the cut ${one ? 'in' : 'in each of'} ${one ? long[0].name : 'these'} can be lost, and move anything the agent needs into the first ${num(limit)} characters.${unlessOtherClient(assumed)}`,
+      },
+    ];
   },
 };
 
-function list(tools: MenuTool[], show: (t: MenuTool) => string): string {
-  return tools.slice(0, 5).map(show).join(', ') + (tools.length > 5 ? `, and ${tools.length - 5} more` : '');
-}
+export const lateInstruction: Rule = {
+  id: 'description/late-instruction',
+  severity: 'info',
+  lesson: 'truncated description',
+  summary: 'Instructions to the agent that a client cutting descriptions short would hide',
+  run(ctx) {
+    // Only with the default cut: once descriptionLimit is set, description/buried checks the real one.
+    if (ctx.descriptionLimit !== undefined) return [];
+    const { limit, who } = resolveLimit(undefined);
+    if (limit <= SHORT_CUT) return [];
+    const all = ctx.menu.tools.map((t) => t.name);
+    const late: { tool: MenuTool; at: number; sentence: string; more: number }[] = [];
+    for (const tool of kept(ctx.menu.tools, ctx)) {
+      const text = tool.description ?? '';
+      if (text.length <= SHORT_CUT || sentInFull(tool, ctx.fullDescriptions)) continue;
+      // Past the default cut is description/buried's.
+      const hidden = pastTheCut(text, all.filter((n) => n !== tool.name), SHORT_CUT).filter((i) => i.at < limit);
+      if (hidden.length) late.push({ tool, at: hidden[0].at, sentence: sentenceAround(text, hidden[0].at), more: hidden.length - 1 });
+    }
+    if (late.length === 0) return [];
+    const one = late.length === 1;
+    const client = who;
+    return [
+      {
+        ...(one ? { tool: late[0].tool.name } : {}),
+        confidence: 'unsure',
+        message: `${one ? `The ${late[0].tool.name} description gives` : `${late.length} descriptions give`} the agent instructions after character ${SHORT_CUT}, where a client that cuts descriptions short never shows them (one real client cut at ${SHORT_CUT}). ${client} sends ${num(limit)} characters, so there they arrive.`,
+        detail: late.map((l) => `${l.tool.name}: char ${num(l.at)}: “${clip(l.sentence, 120)}”${l.more ? ` (and ${l.more} more after it)` : ''}`),
+        fix: `If your client cuts descriptions, set descriptionLimit to its cut and toolmenu checks against that. Otherwise, moving ${one ? 'the instruction' : 'each instruction'} into the first sentences is cheap insurance.`,
+      },
+    ];
+  },
+};

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="852" height="838" viewBox="0 0 852 838" role="img" aria-label="toolmenu session output: tools inserted mid-list, a description edited, each pinned to the step that caused it">
-  <rect width="852" height="838" rx="10" fill="#0d1117"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="883" height="1000" viewBox="0 0 883 1000" role="img" aria-label="toolmenu session output: tools inserted mid-list, a description edited, each pinned to the step that caused it, with the next step to fix it">
+  <rect width="883" height="1000" rx="10" fill="#0d1117"/>
   <circle cx="22" cy="18" r="6" fill="#ff5f57"/><circle cx="42" cy="18" r="6" fill="#febc2e"/><circle cx="62" cy="18" r="6" fill="#28c840"/>
   <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">
   <text x="20" y="44" fill="#9fb3c8" xml:space="preserve">$ npx toolmenu session --scenario examples/unlock.scenario.yml -- node test/fixtures/session-server.mjs</text>
@@ -10,40 +10,49 @@
   <text x="20" y="134" fill="#c9d1d9" xml:space="preserve"></text>
   <text x="20" y="152" fill="#f0f6fc" xml:space="preserve">step 1: list · no change</text>
   <text x="20" y="170" fill="#f0f6fc" xml:space="preserve">step 2: call search_forms {"query":"onboarding"} · no change</text>
-  <text x="20" y="188" fill="#f0f6fc" xml:space="preserve">step 3: call unlock_toolset {"toolset":"audits"} · menu changed · list_changed received · scope:</text>
-  <text x="20" y="206" fill="#c9d1d9" xml:space="preserve">per-process</text>
+  <text x="20" y="188" fill="#f0f6fc" xml:space="preserve">step 3: call unlock_toolset {"toolset":"audits"} · menu changed · +2 tools · list_changed received</text>
+  <text x="20" y="206" fill="#f0f6fc" xml:space="preserve">    · scope: per-process</text>
   <text x="20" y="224" fill="#ff7b72" xml:space="preserve">  ERROR  session/mid-insert</text>
-  <text x="20" y="242" fill="#c9d1d9" xml:space="preserve">         +2 tools inserted at position 1 (list_team_audits, get_team_audit). Invalidates the cached</text>
-  <text x="20" y="260" fill="#c9d1d9" xml:space="preserve">         prompt: the tool list and the conversation after it are processed again.</text>
-  <text x="20" y="278" fill="#c9d1d9" xml:space="preserve">           the change starts at position 1; any change to the tool list invalidates the cached prompt,</text>
-  <text x="20" y="296" fill="#c9d1d9" xml:space="preserve">           so the whole tool list (this server's part: ~406 tokens, estimate) and the conversation after</text>
-  <text x="20" y="314" fill="#c9d1d9" xml:space="preserve">           it are processed again</text>
-  <text x="20" y="332" fill="#e3b341" xml:space="preserve">  WARN   session/side-effect</text>
-  <text x="20" y="350" fill="#c9d1d9" xml:space="preserve">         Steps 3, 4, 5: A freshly started server doesn't show this change. On stdio every connection is</text>
-  <text x="20" y="368" fill="#c9d1d9" xml:space="preserve">         its own process, so toolmenu can't tell a per-connection change from a global one. On</text>
-  <text x="20" y="386" fill="#c9d1d9" xml:space="preserve">         2026-07-28 the tool set MUST NOT change as a side effect of requests on the connection.</text>
-  <text x="20" y="404" fill="#f0f6fc" xml:space="preserve">step 4: call unlock_toolset {"toolset":"reports"} · menu changed · list_changed received · scope:</text>
-  <text x="20" y="422" fill="#c9d1d9" xml:space="preserve">per-process</text>
-  <text x="20" y="440" fill="#e3b341" xml:space="preserve">  WARN   session/append</text>
-  <text x="20" y="458" fill="#c9d1d9" xml:space="preserve">         +1 tool appended at the end of the list (export_report). The end of the tool list isn't the end</text>
-  <text x="20" y="476" fill="#c9d1d9" xml:space="preserve">         of the prompt: most clients send tools first (Claude's Messages API does), so any change to</text>
-  <text x="20" y="494" fill="#c9d1d9" xml:space="preserve">         them, an append too, invalidates the cached conversation after them. Appends are cache-safe</text>
-  <text x="20" y="512" fill="#c9d1d9" xml:space="preserve">         only if your client adds new tools after the cached content, as tool search (deferred loading)</text>
-  <text x="20" y="530" fill="#c9d1d9" xml:space="preserve">         does.</text>
-  <text x="20" y="548" fill="#c9d1d9" xml:space="preserve">           ~54 new tokens (estimate)</text>
-  <text x="20" y="566" fill="#f0f6fc" xml:space="preserve">step 5: call touch_descriptions · menu changed · list_changed received · scope: per-process</text>
-  <text x="20" y="584" fill="#ff7b72" xml:space="preserve">  ERROR  session/edit</text>
-  <text x="20" y="602" fill="#c9d1d9" xml:space="preserve">         get_form: description changed mid-session.</text>
-  <text x="20" y="620" fill="#c9d1d9" xml:space="preserve">           the change starts at position 3; any change to the tool list invalidates the cached prompt,</text>
-  <text x="20" y="638" fill="#c9d1d9" xml:space="preserve">           so the whole tool list (this server's part: ~469 tokens, estimate) and the conversation after</text>
-  <text x="20" y="656" fill="#c9d1d9" xml:space="preserve">           it are processed again</text>
-  <text x="20" y="674" fill="#f0f6fc" xml:space="preserve">step 6: list · no change</text>
-  <text x="20" y="692" fill="#f0f6fc" xml:space="preserve">step 7: call delete_form {"form_id":"f_1","dry_run":true} · refused · not marked readOnlyHint</text>
-  <text x="20" y="710" fill="#ff7b72" xml:space="preserve">  ERROR  session/refused</text>
-  <text x="20" y="728" fill="#c9d1d9" xml:space="preserve">         Refused to call delete_form: it isn't marked readOnlyHint, and session calls tools for real.</text>
-  <text x="20" y="746" fill="#c9d1d9" xml:space="preserve">         Set "allow_writes: true" in the scenario if that's intended.</text>
-  <text x="20" y="764" fill="#c9d1d9" xml:space="preserve"></text>
-  <text x="20" y="782" fill="#c9d1d9" xml:space="preserve">final: 8 tools · ~469 tokens (estimate)</text>
-  <text x="20" y="800" fill="#c9d1d9" xml:space="preserve">3 errors, 2 warnings, 0 info</text>
+  <text x="20" y="242" fill="#c9d1d9" xml:space="preserve">         +2 tools inserted at position 1 (list_team_audits, get_team_audit). Invalidates the cached prompt:</text>
+  <text x="20" y="260" fill="#c9d1d9" xml:space="preserve">         the tool list and the conversation after it are processed again.</text>
+  <text x="20" y="278" fill="#8b949e" xml:space="preserve">           the change starts at position 1; any change to the tool list invalidates the cached prompt, so</text>
+  <text x="20" y="296" fill="#8b949e" xml:space="preserve">           the whole tool list (this server's part: ~406 tokens, estimate) and the conversation after it are</text>
+  <text x="20" y="314" fill="#8b949e" xml:space="preserve">           processed again</text>
+  <text x="20" y="332" fill="#7ee787" xml:space="preserve">         → Next: Add new tools at the end of the list, not in the middle; better, list them from the start.</text>
+  <text x="20" y="350" fill="#e3b341" xml:space="preserve">  WARN   session/side-effect</text>
+  <text x="20" y="368" fill="#c9d1d9" xml:space="preserve">         Steps 3, 4, 5: A freshly started server doesn't show this change. On stdio every connection is its</text>
+  <text x="20" y="386" fill="#c9d1d9" xml:space="preserve">         own process, so toolmenu can't tell a per-connection change from a global one. On 2026-07-28 the</text>
+  <text x="20" y="404" fill="#c9d1d9" xml:space="preserve">         tool set MUST NOT change as a side effect of requests on the connection.</text>
+  <text x="20" y="422" fill="#7ee787" xml:space="preserve">         → Next: List the same tools whatever the calls before; to let a conversation reach more tools, list</text>
+  <text x="20" y="440" fill="#7ee787" xml:space="preserve">                 them all and let clients load them through tool search.</text>
+  <text x="20" y="458" fill="#f0f6fc" xml:space="preserve">step 4: call unlock_toolset {"toolset":"reports"} · menu changed · +1 tool · list_changed received</text>
+  <text x="20" y="476" fill="#f0f6fc" xml:space="preserve">    · scope: per-process</text>
+  <text x="20" y="494" fill="#e3b341" xml:space="preserve">  WARN   session/append</text>
+  <text x="20" y="512" fill="#c9d1d9" xml:space="preserve">         +1 tool appended at the end of the list (export_report). The end of the tool list isn't the end of</text>
+  <text x="20" y="530" fill="#c9d1d9" xml:space="preserve">         the prompt: most clients send tools first (Claude's Messages API does), so any change to them, an</text>
+  <text x="20" y="548" fill="#c9d1d9" xml:space="preserve">         append too, invalidates the cached conversation after them. Appends are cache-safe only if your</text>
+  <text x="20" y="566" fill="#c9d1d9" xml:space="preserve">         client adds new tools after the cached content, as tool search (deferred loading) does.</text>
+  <text x="20" y="584" fill="#8b949e" xml:space="preserve">           ~54 new tokens (estimate)</text>
+  <text x="20" y="602" fill="#7ee787" xml:space="preserve">         → Next: If clients should keep their cache, list these tools from the start, or have clients load</text>
+  <text x="20" y="620" fill="#7ee787" xml:space="preserve">                 them through tool search.</text>
+  <text x="20" y="638" fill="#f0f6fc" xml:space="preserve">step 5: call touch_descriptions · menu changed · list_changed received · scope: per-process</text>
+  <text x="20" y="656" fill="#ff7b72" xml:space="preserve">  ERROR  session/edit</text>
+  <text x="20" y="674" fill="#c9d1d9" xml:space="preserve">         get_form: description changed mid-session. Invalidates the cached prompt: the tool list and the</text>
+  <text x="20" y="692" fill="#c9d1d9" xml:space="preserve">         conversation after it are processed again.</text>
+  <text x="20" y="710" fill="#8b949e" xml:space="preserve">           description: "Get one form by form_id." vs "Get one form by form_id. Updated at</text>
+  <text x="20" y="728" fill="#8b949e" xml:space="preserve">           2026-09-30T09:41:00Z."</text>
+  <text x="20" y="746" fill="#8b949e" xml:space="preserve">           the change starts at position 3; any change to the tool list invalidates the cached prompt, so</text>
+  <text x="20" y="764" fill="#8b949e" xml:space="preserve">           the whole tool list (this server's part: ~477 tokens, estimate) and the conversation after it are</text>
+  <text x="20" y="782" fill="#8b949e" xml:space="preserve">           processed again</text>
+  <text x="20" y="800" fill="#7ee787" xml:space="preserve">         → Next: Keep get_form's definition fixed for the session; if it has to change, change it between</text>
+  <text x="20" y="818" fill="#7ee787" xml:space="preserve">                 conversations.</text>
+  <text x="20" y="836" fill="#f0f6fc" xml:space="preserve">step 6: list · no change</text>
+  <text x="20" y="854" fill="#f0f6fc" xml:space="preserve">step 7: call delete_form {"form_id":"f_1","dry_run":true} · refused · not marked readOnlyHint</text>
+  <text x="20" y="872" fill="#ff7b72" xml:space="preserve">  ERROR  session/refused</text>
+  <text x="20" y="890" fill="#c9d1d9" xml:space="preserve">         Refused to call delete_form: it isn't marked readOnlyHint, and session calls tools for real.</text>
+  <text x="20" y="908" fill="#7ee787" xml:space="preserve">         → Next: Set "allow_writes: true" in the scenario if calling it is intended.</text>
+  <text x="20" y="926" fill="#c9d1d9" xml:space="preserve"></text>
+  <text x="20" y="944" fill="#f0f6fc" xml:space="preserve">final: 8 tools · ~477 tokens (estimate)</text>
+  <text x="20" y="962" fill="#ff7b72" xml:space="preserve">✗ 3 errors, 2 warnings, 0 info</text>
   </g>
 </svg>

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { classifyFailure, history, historyCsv, summarizeError } from '../dist/history.js';
-import { run, tempDir } from './helpers.mjs';
+import { run, tempDir, TIMEOUT_MS } from './helpers.mjs';
 
 const str = { type: 'string' };
 const tool = (name, params = []) => ({
@@ -70,7 +70,7 @@ test('history snapshots each version, records failures and diffs the ones that w
   const root = tempDir();
   const outDir = join(root, 'out');
   const source = fakeSource(join(root, 'packages'));
-  const h = await history('fx-mcp', { outDir, source, versions: 10, timeoutMs: 10_000 });
+  const h = await history('fx-mcp', { outDir, source, versions: 10, timeoutMs: TIMEOUT_MS });
 
   assert.deepEqual(h.rows.map((r) => r.version), ['1.0.0', '1.1.0', '1.2.0', '1.3.0', '1.4.0', '2.0.0'], 'oldest first, prereleases left out');
   assert.equal(h.totalVersions, 7);
@@ -92,7 +92,7 @@ test('history snapshots each version, records failures and diffs the ones that w
 
   assert.equal(last.diff.from, '1.1.0', 'failed versions are skipped');
   assert.equal(last.diff.breaking, 1);
-  assert.match(last.diff.breakingChanges[0], /get_item was removed/);
+  assert.match(last.diff.breakingChanges[0], /`get_item` was removed/);
 
   assert.ok(existsSync(join(outDir, '1.0.0.json')));
   assert.ok(!existsSync(join(outDir, '1.2.0.json')));
@@ -103,28 +103,28 @@ test('history snapshots each version, records failures and diffs the ones that w
 test('history: --versions keeps the most recent, prereleases on request', async () => {
   const root = tempDir();
   const source = fakeSource(join(root, 'packages'));
-  const h = await history('fx-mcp', { outDir: join(root, 'out'), source, versions: 2, includePrereleases: true, timeoutMs: 10_000 });
+  const h = await history('fx-mcp', { outDir: join(root, 'out'), source, versions: 2, includePrereleases: true, timeoutMs: TIMEOUT_MS });
   assert.deepEqual(h.rows.map((r) => r.version), ['2.0.0', '2.1.0-beta.1']);
 });
 
 test('history: versions: Infinity takes every release', async () => {
   const root = tempDir();
   const source = fakeSource(join(root, 'packages'));
-  const h = await history('fx-mcp', { outDir: join(root, 'out'), source, versions: Infinity, timeoutMs: 10_000 });
+  const h = await history('fx-mcp', { outDir: join(root, 'out'), source, versions: Infinity, timeoutMs: TIMEOUT_MS });
   assert.equal(h.rows.length, 6, 'all six non-prerelease versions');
 });
 
 test('history: --cmd template runs a custom command', async () => {
   const root = tempDir();
   const source = fakeSource(join(root, 'packages'));
-  const h = await history('fx-mcp', { outDir: join(root, 'out'), source, versions: 1, cmd: `"${process.execPath}" {dir}/node_modules/fx-mcp/server.mjs`, timeoutMs: 10_000 });
+  const h = await history('fx-mcp', { outDir: join(root, 'out'), source, versions: 1, cmd: `"${process.execPath}" {dir}/node_modules/fx-mcp/server.mjs`, timeoutMs: TIMEOUT_MS });
   assert.equal(h.rows[0].status, 'ok');
 });
 
 test('history: csv has one row per version', async () => {
   const root = tempDir();
   const source = fakeSource(join(root, 'packages'));
-  const csv = historyCsv(await history('fx-mcp', { outDir: join(root, 'out'), source, versions: 3, timeoutMs: 10_000 }));
+  const csv = historyCsv(await history('fx-mcp', { outDir: join(root, 'out'), source, versions: 3, timeoutMs: TIMEOUT_MS }));
   const lines = csv.trim().split('\n');
   assert.equal(lines[0].split(',')[0], 'version');
   assert.equal(lines.length, 4);

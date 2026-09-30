@@ -46,7 +46,7 @@ for (const fixture of ['catalog', 'catalog-inputs']) {
     assert.ok(rules.includes('diff/param-required'), rules.join(','));
     assert.ok(rules.includes('diff/catalog-missing'));
     const breaking = findings.find((f) => f.rule === 'diff/param-required');
-    assert.match(breaking.message, /get_release\.region .*behind search_ops_tools/);
+    assert.match(breaking.message, /^Behind `search_ops_tools`: `get_release\.region` is new and required/);
     assert.equal(breaking.severity, 'error');
     assert.equal(findings.find((f) => f.rule === 'diff/catalog-missing').severity, 'info');
     assert.equal(d.code, 1);

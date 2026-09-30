@@ -16,100 +16,13 @@ import { existsSync } from 'node:fs';
 import { loadRoutes } from './routes.js';
 import { snapshot } from './snapshot.js';
 import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded } from './probe.js';
-import { autoScenario, scenarioYaml } from './auto.js';
+import { autoScenario, loadValuesFile, parseAssumeReadOnly, parseValueFlag, scenarioYaml, type GivenValue } from './auto.js';
 import { authDir, listLogins, login, logout } from './auth.js';
-import { detectProject, secretsNeeded, workflowYaml } from './init.js';
+import { existingMessage, initReport, planInit, writeInit } from './init.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
 import { VERSION } from './version.js';
-
-const HELP = `toolmenu ${VERSION}
-Lint your MCP server's tool menu for changes that confuse agents or break caches.
-
-Usage:
-  toolmenu init [options] -- <command> | <url>          set up CI: a baseline and a workflow
-  toolmenu snapshot [options] -- <command> [args...]   stdio server
-  toolmenu snapshot [options] <url>                    Streamable HTTP server
-  toolmenu diff [options] <old.json> <new.json>        compare two snapshots
-  toolmenu history [options] <npm-package>             snapshot and diff published versions
-  toolmenu auth login <url> | logout <url> | list      OAuth logins for HTTP servers
-  toolmenu session --scenario <file> [options] -- <command> | <url>
-                                                       run a scripted session, watch the menu
-  toolmenu session --auto [options] -- <command> | <url>
-                                                       the same, with steps built from the menu
-
-Commands:
-  init       snapshot the server into menu.json and write .github/workflows/toolmenu.yml
-  snapshot   establish the menu: list tools twice, write menu.json, run the menu rules
-  diff       compare releases: breaking changes, token change, semver bump
-  session    observe the menu changing while a scripted session runs
-  history    research release history: install, snapshot and diff published npm versions
-  auth       log in to an OAuth-protected server once; snapshot and session then use it
-
-Options:
-  --out <path>        where to write the menu (default: menu.json)
-  --no-write          don't write the menu file
-  --routes <path>     routes.yml: pin which words route to which tools
-  --config <path>     config file (default: toolmenu.config.json, if present)
-  --format <fmt>      text (default), json, github (annotations) or markdown (PR comments)
-  --json              same as --format json
-  --fail-on <level>   error (default), warn or info
-  --header <k: v>     HTTP header, repeatable (e.g. "Authorization: Bearer ...")
-  --env <K=V>         environment variable for a stdio server, repeatable. The server
-                      only gets a minimal environment (PATH, HOME, ...) plus these
-  --no-auth           don't use a stored OAuth login for this server
-  --timeout <ms>      per-request timeout (default: 30000)
-  --catalog           also read the operations behind a search tool (search and execute:
-                      discover, search_*_tools) and keep them in the menu file for diff
-  --processes <n>     server processes (stdio) or connections (HTTP) to compare,
-                      the main one included (default: 2; 1 opens no second one, for
-                      session's scope check either: for servers with one session per client)
-  -h, --help          show this help
-  -v, --version       show the version
-
-diff options:
-  --release <old>..<new>        the release versions (npm, git tag) to check the bump
-                                against, e.g. 1.4.0..1.5.0. Without it, the bump isn't
-                                checked: serverInfo.version is often not the release
-  --server-version-is-release   check the bump against serverInfo.version instead
-
-session options:
-  --scenario <path>     scenario.yml: the steps to run (list, call, wait_for)
-  --plan                print the steps without connecting or running anything
-  --init                write a starter scenario from the server's menu (to --scenario,
-                        default scenario.yml; never overwrites)
-  --auto                build the steps from the menu: every read-only tool whose
-                        required arguments the schema can fill (const, default,
-                        examples, enum, type), then the first call again
-  --open-world          with --auto, also call read-only tools marked openWorldHint:
-                        true (web search, fetch, scraping): they may cost API credits
-  --max-calls <n>       with --auto, at most n calls (default: 20)
-  --save-scenario <p>   with --auto, write the steps it ran as a scenario file
-  --union-out <path>    write every tool the session saw as a menu file, to commit as
-                        the baseline for diff (tools behind unlocks included)
-
-history options (best effort; installs and runs third-party code, so use a container):
-  --versions <n|all>    number of published versions to inspect (default: 10)
-  --include-prereleases include versions like 1.2.0-beta.1
-  --arg <value>         argument for the server's bin, repeatable (use --arg=--flag for flags)
-  --bin <name>          which bin to run when the package has several
-  --cmd <template>      command instead of the bin; {bin} and {dir} are filled in
-  --allow-scripts       run install scripts (off by default)
-  --install-timeout <ms> per-version install timeout (default: 180000)
-  --csv <path>          also write the dataset as CSV
-  --keep-installs       keep each version's install directory
-  --out <dir>           where menus and history.json go (default: toolmenu-history/<package>)
-
-init options:
-  --with-session        the workflow also runs session --auto (calls read-only tools)
-
-auth options:
-  --port <n>            loopback port for the login redirect (default: 33418)
-  --scope <scopes>      scopes to ask for (default: the server's)
-  --client-id <id>      a pre-registered client, for servers without dynamic registration
-  --client-secret <s>   its secret, if it has one
-
-Exit codes: 0 clean · 1 findings at or above --fail-on · 2 couldn't connect or bad usage
-`;
+import { CLI_OPTIONS } from './options.js';
+import { commandHelp, isCommand, overview, unknownCommand } from './help.js';
 
 class UsageError extends Error {}
 
@@ -121,47 +34,7 @@ export async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: before,
     allowPositionals: true,
-    options: {
-      out: { type: 'string' },
-      'no-write': { type: 'boolean' },
-      routes: { type: 'string' },
-      config: { type: 'string' },
-      format: { type: 'string' },
-      json: { type: 'boolean' },
-      'fail-on': { type: 'string' },
-      header: { type: 'string', multiple: true },
-      env: { type: 'string', multiple: true },
-      timeout: { type: 'string' },
-      'no-auth': { type: 'boolean' },
-      port: { type: 'string' },
-      scope: { type: 'string' },
-      'client-id': { type: 'string' },
-      'client-secret': { type: 'string' },
-      processes: { type: 'string' },
-      versions: { type: 'string' },
-      release: { type: 'string' },
-      'server-version-is-release': { type: 'boolean' },
-      'include-prereleases': { type: 'boolean' },
-      arg: { type: 'string', multiple: true },
-      bin: { type: 'string' },
-      cmd: { type: 'string' },
-      'allow-scripts': { type: 'boolean' },
-      'install-timeout': { type: 'string' },
-      csv: { type: 'string' },
-      'keep-installs': { type: 'boolean' },
-      scenario: { type: 'string' },
-      plan: { type: 'boolean' },
-      init: { type: 'boolean' },
-      'union-out': { type: 'string' },
-      auto: { type: 'boolean' },
-      'with-session': { type: 'boolean' },
-      catalog: { type: 'boolean' },
-      'open-world': { type: 'boolean' },
-      'max-calls': { type: 'string' },
-      'save-scenario': { type: 'string' },
-      help: { type: 'boolean', short: 'h' },
-      version: { type: 'boolean', short: 'v' },
-    },
+    options: CLI_OPTIONS,
   });
 
   if (values.version) {
@@ -169,11 +42,17 @@ export async function main(argv: string[]): Promise<number> {
     return 0;
   }
   const [sub, ...rest] = positionals;
+  // toolmenu help [command] reads like toolmenu [command] --help.
+  if (sub === 'help' && rest.length <= 1) {
+    if (rest[0] && !isCommand(rest[0])) throw new UsageError(unknownCommand(rest[0]));
+    process.stdout.write(rest[0] && isCommand(rest[0]) ? commandHelp(rest[0]) : overview());
+    return 0;
+  }
+  if (sub && !isCommand(sub)) throw new UsageError(unknownCommand(sub));
   if (values.help || !sub) {
-    process.stdout.write(HELP);
+    process.stdout.write(sub && isCommand(sub) ? commandHelp(sub) : overview());
     return sub || values.help ? 0 : 2;
   }
-  if (!['init', 'snapshot', 'diff', 'history', 'session', 'auth'].includes(sub)) throw new UsageError(`Unknown command "${sub}". Try --help.`);
 
   const format = (values.json ? 'json' : values.format ?? 'text') as Format;
   if (!['text', 'json', 'github', 'markdown'].includes(format)) throw new UsageError(`--format must be text, json, github or markdown`);
@@ -229,7 +108,7 @@ export async function main(argv: string[]): Promise<number> {
       onProgress: format === 'text' ? (m) => process.stderr.write(m + '\n') : undefined,
     });
     if (values.csv) await writeFile(values.csv, historyCsv(result));
-    process.stdout.write(formatHistory(result, format, outDir) + '\n');
+    process.stdout.write(formatHistory(result, format, outDir, values.csv) + '\n');
     return result.rows.length > 0 && result.rows.every((r) => r.status === 'failed') ? 1 : 0;
   }
 
@@ -266,30 +145,12 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   if (sub === 'init') {
-    const workflow = join('.github', 'workflows', 'toolmenu.yml');
-    const baseline = values.out ?? 'menu.json';
-    for (const f of [workflow, baseline]) if (existsSync(f)) throw new UsageError(`${f} already exists; init never overwrites. Remove it, or set things up by hand (README: "In CI").`);
     const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
+    const plan = planInit({ cwd: process.cwd(), target, out: values.out, session: values['with-session'] });
+    if (plan.existing.length) throw new UsageError(existingMessage(plan));
     const { menu, findings } = await snapshot(target, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
-    await writeFile(baseline, JSON.stringify(menu, null, 2) + '\n');
-    await mkdir(dirname(workflow), { recursive: true });
-    const project = detectProject('.');
-    await writeFile(workflow, workflowYaml({ target, project, session: values['with-session'], baseline }));
-    const c = counts(findings);
-    const secrets = secretsNeeded(target);
-    const lines = [
-      `toolmenu init  ${menu.server.name ?? 'server'} · ${menu.tools.length} tools · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)`,
-      `  wrote ${baseline}: the baseline every pull request is compared with`,
-      `  wrote ${workflow}${project.kind === 'unknown' ? ' (fill in the TODO: how CI builds your server)' : ` (${project.kind} project)`}`,
-      `  today's menu: ${c.error} errors, ${c.warn} warnings, ${c.info} info (run toolmenu snapshot to see them)`,
-      ...(secrets.length ? ['', `Add these repository secrets (Settings → Secrets and variables → Actions): ${secrets.join(', ')}`] : []),
-      '',
-      'Next:',
-      `  git add ${baseline} ${workflow} && git commit -m "Check the MCP tool menu on every PR"`,
-      '  Then open a pull request: toolmenu comments on it. Refresh the baseline when a change is intended:',
-      `  toolmenu snapshot --out ${baseline} ${target.kind === 'stdio' ? '-- ' + [target.command, ...target.args].join(' ') : target.url}`,
-    ];
-    process.stdout.write(lines.join('\n') + '\n');
+    await writeInit(plan, JSON.stringify(menu, null, 2) + '\n');
+    process.stdout.write(initReport(plan, { server: menu.server.name, version: menu.server.version, tools: menu.tools.length, tokens: menu.totalTokens, counts: counts(findings) }, target));
     return 0;
   }
 
@@ -299,19 +160,33 @@ export async function main(argv: string[]): Promise<number> {
     if (!Number.isInteger(maxCalls) || maxCalls < 1) throw new UsageError('--max-calls must be a whole number, 1 or more');
     const savePath = values['save-scenario'];
     if (savePath && existsSync(savePath)) throw new UsageError(`${savePath} already exists. Pick another path for --save-scenario.`);
+    // Values and vouched-for tools are checked before anything starts.
+    let given: Record<string, GivenValue> = {};
+    let assumeReadOnly: string[] = [];
+    try {
+      if (values['values-file']) given = await loadValuesFile(values['values-file']);
+      for (const v of values.value ?? []) {
+        const [key, value] = parseValueFlag(v);
+        given[key] = value;
+      }
+      assumeReadOnly = parseAssumeReadOnly(values['assume-read-only'] ?? []);
+    } catch (error) {
+      throw new UsageError(error instanceof Error ? error.message : String(error));
+    }
     const autoTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
     const waited = { ms: 0 };
     const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
       throw refusedForTooMany(error, waited.ms);
     });
-    const plan = autoScenario(menu, { openWorld: values['open-world'], maxCalls });
+    const plan = autoScenario(menu, { openWorld: values['open-world'], maxCalls, values: given, assumeReadOnly });
     if (savePath) await writeFile(savePath, scenarioYaml(plan, menu.server.name));
     if (values.plan) {
       process.stdout.write(formatPlan(plan.scenario, 'auto') + '\n');
       return 0;
     }
-    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'], auto: { called: plan.called, skipped: plan.skipped } });
-    result.auto = { called: plan.called, skipped: plan.skipped };
+    const auto = { called: plan.called, skipped: plan.skipped, assumed: plan.assumed, withValues: plan.withValues, ignored: plan.ignored, maxCalls };
+    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'], auto });
+    result.auto ??= auto;
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
     if (output) process.stdout.write(output + '\n');
@@ -319,6 +194,7 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   if (sub === 'session') {
+    if (values.value || values['values-file'] || values['assume-read-only']) throw new UsageError('--value, --values-file and --assume-read-only go with --auto. In a scenario, write the values into the steps\' args, and list tools under assume_read_only.');
     if (!values.scenario) throw new UsageError('session needs --scenario <file>. Run session --init for a starter, or see https://github.com/niksa90/toolmenu#session-the-menu-changing-while-the-agent-works for the format.');
     let scenario;
     try {
@@ -369,21 +245,26 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
   const [action, url, ...extra] = args;
   if (action === 'list') {
     const logins = await listLogins();
-    process.stdout.write(logins.length ? logins.map((l) => `${l.serverUrl}  (issuer ${l.issuer ?? '?'}, saved ${l.savedAt?.slice(0, 10) ?? '?'})`).join('\n') + '\n' : `No logins. Stored in ${authDir()}.\n`);
+    const width = Math.max(0, ...logins.map((l) => l.serverUrl.length));
+    process.stdout.write(
+      logins.length
+        ? [`${logins.length} login${logins.length === 1 ? '' : 's'}, stored in ${authDir()}:`, ...logins.map((l) => `  ${l.serverUrl.padEnd(width)}  issuer ${l.issuer ?? 'not recorded'} · saved ${l.savedAt?.slice(0, 10) ?? '?'}`)].join('\n') + '\n'
+        : `No logins stored in ${authDir()}.\n→ Next: toolmenu auth login <url> for a server that asks for OAuth.\n`,
+    );
     return 0;
   }
-  if (action !== 'login' && action !== 'logout') throw new UsageError('auth takes login <url>, logout <url> or list.');
+  if (action !== 'login' && action !== 'logout') throw new UsageError(`${action ? `auth has no action "${action}"` : 'auth needs an action'}: login <url>, logout <url> or list. See toolmenu auth --help.`);
   if (!url || extra.length) throw new UsageError(`auth ${action} needs one server URL: toolmenu auth ${action} https://example.com/mcp`);
   if (!/^https?:\/\//.test(url)) throw new UsageError(`"${url}" isn't an http(s) URL.`);
   if (action === 'logout') {
-    process.stdout.write((await logout(url)) ? `Logged out of ${url}.\n` : `No login stored for ${url}.\n`);
+    process.stdout.write((await logout(url)) ? `Logged out of ${url}: its tokens and client registration are removed from ${authDir()}.\n` : `No login stored for ${url} (in ${authDir()}), so nothing to remove. toolmenu auth list shows the stored ones.\n`);
     return 0;
   }
   const port = values.port ? Number(values.port) : undefined;
   if (port !== undefined && !(Number.isInteger(port) && port > 0 && port < 65536)) throw new UsageError('--port must be a port number');
   if (values['client-secret'] && !values['client-id']) throw new UsageError('--client-secret goes with --client-id');
   const result = await login(url, { port, scope: values.scope, clientId: values['client-id'], clientSecret: values['client-secret'] });
-  process.stdout.write(`Logged in to ${result.name ?? url}: ${result.tools} tools. snapshot and session use this login from now on (--no-auth to skip it).\n`);
+  process.stdout.write(`Logged in to ${result.name ?? url} (${url}): it lists ${result.tools} tool${result.tools === 1 ? '' : 's'} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`);
   return 0;
 }
 
@@ -417,10 +298,38 @@ for (const method of ['log', 'info', 'debug'] as const) {
 }
 
 main(process.argv.slice(2)).then(exitWhenFlushed, (error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`toolmenu: ${message}\n`);
+  process.stderr.write(`toolmenu: ${failureMessage(error)}\n`);
   exitWhenFlushed(2);
 });
+
+/** What stopped the command. A mistyped option gets the nearest real one. */
+function failureMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const code = (error as { code?: unknown } | null)?.code;
+  if (code === 'ERR_PARSE_ARGS_UNKNOWN_OPTION') {
+    const option = /Unknown option '([^']+)'/.exec(message)?.[1] ?? '';
+    const known = Object.keys(CLI_OPTIONS).map((name) => `--${name}`);
+    const guess = known.map((k) => [k, editDistance(option, k)] as const).sort((a, b) => a[1] - b[1])[0];
+    const hint = guess && guess[1] <= 2 ? ` Did you mean ${guess[0]}?` : '';
+    return `Unknown option ${option}.${hint}\n  → Next: toolmenu --help lists every option. (A server's own flags go after "--".)`;
+  }
+  if (typeof code === 'string' && code.startsWith('ERR_PARSE_ARGS_')) return `${message}\n  → Next: toolmenu --help lists every option.`;
+  return message;
+}
+
+function editDistance(a: string, b: string): number {
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let diagonal = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const above = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+      diagonal = above;
+    }
+  }
+  return row[b.length];
+}
 
 function parseRelease(value: string): { before: string; after: string } {
   const m = /^(.+?)\.\.(.+)$/.exec(value);

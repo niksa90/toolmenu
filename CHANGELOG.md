@@ -1,5 +1,104 @@
 # Changelog
 
+## 0.13.0
+
+Every finding and error now says what's wrong, where, what toolmenu saw, and what to
+do next. Checked on 70 server setups against 0.12.0: the same menus and tokens on all
+61 that started, findings 406 → 291 with no real finding lost, and every one of the
+291 with a next step.
+
+- **Messages (SPEC §25):** findings gain `fix`, shown as `→ Next:` in text, markdown
+  and GitHub annotations, and `confidence: "unsure"`, shown as `· unsure`, for
+  heuristics and inferences, whose messages say what was seen rather than what it
+  means. One root cause is one finding; the same change in many places is one finding
+  that lists them. Text summaries lead with ✗ / ! / ✓.
+- **Connection errors** say what failed, at which stage, what was seen and what to do:
+  - stray stdout lines are quoted;
+  - timeouts name the stage and each wait, and why stdio waits twice
+    (`server/discover`, then `initialize`);
+  - crashes give the exit code or signal and the last stderr lines, read to the end;
+  - a server whose stderr says its key was rejected (401, Unauthorized,
+    invalid_api_key) gets that in the headline, as a reading of its log;
+  - a page that isn't an MCP endpoint gives its status, type and title, not its HTML;
+  - DNS, refused, TLS and blocked-port failures are unwrapped from "fetch failed".
+
+  A server that never answered is stopped at once. A mistyped option suggests the
+  nearest one, and an unreadable menu file says why.
+- **Per-command help:** `toolmenu <command> --help` (or `toolmenu help <command>`)
+  shows that command's usage, options, examples and exit codes. `--help` is a short
+  overview, and an unknown command lists the commands.
+- **`init` makes a workflow that works on the runner:**
+  - Paths in the command that are inside the repository become relative to where the
+    server starts. An absolute program on PATH (node from nvm) is called by name.
+    Paths outside the repository, `localhost` URLs, `--env` values that are local
+    paths, and a virtualenv the runner lacks are listed under "Won't work in CI as
+    written", each with what to do.
+  - It can be run from a subfolder: `.github/` goes to the git root, the project file
+    is found in a parent folder, and the server starts in CI where `init` ran. In a
+    monorepo, packages install where their lockfile is and build in their folder, and
+    `release` is off there.
+  - The printed refresh command keeps `--env` and `--header`, with values as shell
+    variables. Files the server needs that git doesn't have yet join the `git add`
+    line.
+- **`session --auto` reaches more tools:**
+  - `--value name=value` (or `tool.param=value`, or `--values-file`) fills required
+    parameters the schema has no value for.
+  - `--assume-read-only a,b` calls named tools a server doesn't mark readOnlyHint.
+    It takes exact names only, never a tool marked or named as a write, and is loud in
+    the report (`session/assumed-read-only`).
+  - On mcp-server-git 0 → 4 tools called, on DeepWiki 0 → 3.
+  - A required list with no fillable item is "needs values", not `[]`, and a default
+    that doesn't fit its type isn't used.
+  - A call that runs out of toolmenu's `--timeout` says so and suggests a longer one,
+    rather than blaming the server.
+- **One finding per cause in `session`:**
+  - The same tool error at several steps is one finding.
+  - A mid-session change only in values that vary on every tools/list (PayPal 1.8.1's
+    clock-built defaults) is `session/known-variance` (info), pointing to the finding
+    that reported it.
+  - `session/untested` gives a step for each failure class it saw.
+- **`snapshot --catalog` reads command routers:** tools that take a `command` and its
+  `parameters` and list their commands with a flag like `learn: true` (Azure's
+  namespace mode).
+  - Each router is called once in its listing mode, never with a command. Its
+    operations land in the same catalog, so `diff` compares them.
+  - On `@azure/mcp` 3.0.0-beta.47 that's 412 operations behind 65 routers, all real.
+  - `catalog.routers` names routers that detection misses.
+  - `catalog/read`, `catalog/failed` and `catalog/skipped` (info) say what was called,
+    what came back and what failed.
+- **`diff`:**
+  - The same change in several tools is one finding that lists them (`tools`,
+    `places`): chrome-devtools-mcp 1.8.0's 25 "pageId is new and required" rows are
+    one. Counts are per change, and `classes` gives changes and tools touched per
+    class.
+  - Under 1.0.0 the bump check reads versions as npm's caret does: breaking changes
+    need a minor bump, new features a patch. `requiredBump` and `releaseAs` are new in
+    the JSON.
+  - New `diff/param-renamed` (warn, unsure) flags a likely rename; both changes stay
+    breaking.
+  - Paths are code as they nest (`tool.param[](kind="x")`), also in `places`.
+  - Reports lead with the changes and the version verdict, and markdown groups
+    findings by class.
+- **Snapshot rules:**
+  - `write/unannotated` and `naming/vague-id` are one finding per menu (Miro's 53
+    warnings become one), the latter with a suggested name.
+  - New `description/late-instruction` (info) takes over the "instructions after
+    character 280" hint from `description/cut`, and a setting for `description/cut`
+    still applies to it.
+  - Determinism findings name the value that differs and what kind of change it is,
+    and variance findings with the same cause point to `menu/nondeterministic`.
+  - `ignore`d tools are left out of summaries.
+- **`history`:**
+  - A failed version says what happened and what to try, and identical failures are
+    one entry.
+  - npm install failures show npm's own words.
+  - `--format markdown` is a table; JSON rows gain `message`, `fix` and `confidence`,
+    and the report gains `written`.
+- **`auth`** messages say what failed and what to try. A stored login that can't be
+  used says whether it never finished, expired, or was removed.
+- **The token breakdown** gives units and a next step for unused `$defs`.
+- **JSON:** new fields only. `places` in `diff` uses the path form above.
+
 ## 0.12.0
 
 - **`diff` is tested by mutation, on real menus:** `test/mutation.test.mjs` edits the

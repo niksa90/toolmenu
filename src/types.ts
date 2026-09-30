@@ -12,6 +12,20 @@ export interface Finding {
   detail?: string[];
   /** For `session`: the scenario step that caused it (0 = before the first step). */
   step?: number;
+  /** For `session`: every step it happened at, when one finding stands for several (`step` is the first). */
+  steps?: number[];
+  /**
+   * The next step, as one instruction the reader can act on ("Sort the values",
+   * "Rerun with --processes 1"). Shown as "Next:" in every format. Omitted only when
+   * there is nothing to do.
+   */
+  fix?: string;
+  /**
+   * 'unsure': a heuristic or an inference that can be wrong (a guess from names,
+   * a failure whose cause isn't known). The message then says what was seen and
+   * where, not what it means. Absent: toolmenu observed it directly.
+   */
+  confidence?: 'unsure';
 }
 
 /** A tool exactly as the server returned it, plus toolmenu's token estimate. */

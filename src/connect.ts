@@ -1,7 +1,10 @@
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import type { Transport } from '@modelcontextprotocol/client';
+import type { ChildProcess } from 'node:child_process';
+import type { Stream } from 'node:stream';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/client/stdio';
 import { hasLogin, StoredOAuthProvider } from './auth.js';
+import { explain, Trace } from './explain.js';
 import { eraOf } from './menu.js';
 import type { Era } from './types.js';
 import { VERSION } from './version.js';
@@ -73,6 +76,10 @@ export interface Connection {
   usedAuth: boolean;
   stderr: () => string;
   close: () => Promise<void>;
+  /** An error from a request on this connection, said with what the connection saw (exit code, stderr, stray stdout). */
+  explain?: (error: unknown, stage: string) => unknown;
+  /** Resolves once a server that just failed a request has had its say on stderr (all of it, if it exited). */
+  stderrSettled?: () => Promise<void>;
 }
 
 export interface ConnectOptions {
@@ -84,6 +91,8 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
   let transport: Transport;
   let stderrText = '';
   let oauth = false;
+  const trace = new Trace();
+  let stdioStderr: Stream | null = null;
 
   if (target.kind === 'stdio') {
     const stdio = new StdioClientTransport({
@@ -94,8 +103,12 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
       stderr: 'pipe',
     });
     stdio.stderr?.on('data', (chunk: Buffer) => {
-      stderrText = (stderrText + chunk.toString()).slice(-4000);
+      const text = chunk.toString();
+      stderrText = (stderrText + text).slice(-4000);
+      trace.stderr(text);
     });
+    stdioStderr = stdio.stderr;
+    watchProcess(stdio, trace);
     transport = stdio;
   } else {
     // A stored OAuth login (toolmenu auth login) is used unless the request brings
@@ -104,22 +117,32 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     oauth = !target.noAuth && !ownAuth && hasLogin(target.url);
     transport = new StreamableHTTPClientTransport(new URL(target.url), {
       requestInit: { headers: target.headers ?? {} },
+      fetch: tracedFetch(trace),
       ...(oauth ? { authProvider: new StoredOAuthProvider(target.url) } : {}),
     });
   }
+  const context = { target, timeoutMs: options.timeoutMs, oauth };
 
   try {
     await client.connect(transport, { timeout: options.timeoutMs });
   } catch (error) {
-    // Give stderr a moment to arrive: it usually says why the server exited.
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const stderr = stderrText.trim();
-    if (stderr && error instanceof Error) error.message += `\nserver stderr:\n${stderr}`;
-    if (target.kind === 'http' && !oauth && error instanceof Error && /\b401\b|unauthori[sz]ed/i.test(error.message)) {
-      error.message += `\nIf the server uses OAuth, log in once with: toolmenu auth login ${target.url}`;
+    // What failed is fixed now: the exit that follows toolmenu's own SIGTERM isn't the server's doing.
+    trace.failedAt = Date.now();
+    // A server that never answered is stopped now, not after close()'s grace period for a clean exit.
+    if (trace.process && !trace.exit) {
+      trace.stopped = true;
+      trace.process.kill('SIGTERM');
+    }
+    // Read stderr to its end: the last lines usually say why the server exited. A
+    // process that has exited closes its end of the pipe, so wait for all of it (a
+    // loaded CI runner took over a second for 300 lines, and the reason is last);
+    // one toolmenu just stopped gets a moment to exit first.
+    if (target.kind === 'stdio') {
+      if (!trace.exit) await exited(trace, 1000);
+      await stderrEnded(stdioStderr, trace.exit ? STDERR_AFTER_EXIT_MS : 1000);
     }
     await client.close().catch(() => {});
-    throw error;
+    throw explain(error, trace, context);
   }
   const wire = new WireLog();
   wire.tap(transport);
@@ -138,6 +161,101 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
       (oauth || Object.keys(target.headers ?? {}).some((h) => /^(authorization|x-api-key|api-key|cookie)$/i.test(h))),
     stderr: () => stderrText,
     close: () => client.close(),
+    explain: (error, stage) => explain(error, trace, { ...context, stage }),
+    stderrSettled: async () => {
+      if (target.kind !== 'stdio') return;
+      // A server still running gets a moment to exit; one that exited is read to the end of its stderr.
+      if (!trace.exit) await exited(trace, 200);
+      if (trace.exit) await stderrEnded(stdioStderr, STDERR_AFTER_EXIT_MS);
+    },
+  };
+}
+
+/** How long to wait for an exited server's stderr to end: its pipe is closing, so this is only a ceiling for a stuck one. */
+const STDERR_AFTER_EXIT_MS = 10_000;
+
+/** Resolves when the traced process has exited, or after `maxMs`. */
+function exited(trace: Trace, maxMs: number): Promise<void> {
+  const child = trace.process;
+  if (!child || trace.exit) return Promise.resolve();
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, maxMs);
+    child.once('exit', () => {
+      clearTimeout(timer);
+      // The exit listener that records trace.exit runs first: it was added at spawn.
+      resolve();
+    });
+  });
+}
+
+/** Resolves when `stream` has ended, or after `maxMs`. */
+function stderrEnded(stream: Stream | null, maxMs: number): Promise<void> {
+  if (!stream || maxMs <= 0 || (stream as { readableEnded?: boolean }).readableEnded) return Promise.resolve();
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, maxMs);
+    stream.once('end', () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+}
+
+/**
+ * Watch the stdio process toolmenu keeps (not the throwaway one the SDK starts
+ * for the server/discover probe): when it started, what it was asked, what it
+ * answered, its exit, and stdout lines that aren't JSON-RPC. The hooks go on this
+ * instance only: the SDK clones the transport's class for the probe.
+ */
+function watchProcess(stdio: StdioClientTransport, trace: Trace): void {
+  const start = stdio.start.bind(stdio);
+  stdio.start = async () => {
+    trace.sessionStartedAt = Date.now();
+    const onmessage = (stdio as Transport).onmessage;
+    const ids = new Map<string | number, string>();
+    const t: Transport = stdio;
+    t.onmessage = (message, extra) => {
+      if (!('method' in message) && 'id' in message && message.id !== undefined) {
+        const method = ids.get(message.id);
+        if (method) trace.answered.add(method);
+      }
+      onmessage?.(message, extra);
+    };
+    const send = t.send.bind(stdio);
+    t.send = (message, options) => {
+      if ('method' in message && 'id' in message && message.id !== undefined) {
+        ids.set(message.id, message.method);
+        trace.send(message.method);
+      }
+      return send(message, options);
+    };
+    await start();
+    const child = (stdio as unknown as { _process?: ChildProcess })._process;
+    if (child) {
+      trace.process = child;
+      child.once('exit', (code, signal) => (trace.exit = { code, signal, afterStop: trace.stopped }));
+      child.stdout?.on('data', (chunk: Buffer) => trace.stdout(chunk.toString()));
+    }
+  };
+}
+
+/** fetch, noting each JSON-RPC request's method and the answer's status, content type and final URL. */
+function tracedFetch(trace: Trace): typeof fetch {
+  return async (input, init) => {
+    let method: string | undefined;
+    if (typeof init?.body === 'string') {
+      try {
+        const body = JSON.parse(init.body) as { method?: unknown; id?: unknown };
+        if (typeof body.method === 'string' && body.id !== undefined) method = body.method;
+      } catch {
+        // Not JSON: not a request to trace.
+      }
+    }
+    if (method) trace.send(method);
+    const response = await fetch(input, init);
+    if (method) {
+      trace.http.set(method, { status: response.status, statusText: response.statusText, contentType: response.headers.get('content-type') ?? '', url: response.url });
+    }
+    return response;
   };
 }
 
@@ -154,14 +272,20 @@ export interface ToolList {
 export async function listTools(connection: Connection, options: ConnectOptions = {}): Promise<ToolList> {
   const mark = connection.wire.responses.length;
   let clientError: string | undefined;
+  let caught: unknown;
   try {
     await connection.client.listTools(undefined, { cacheMode: 'bypass', timeout: options.timeoutMs });
   } catch (error) {
+    caught = error;
     clientError = error instanceof Error ? error.message : String(error);
   }
   const responses = connection.wire.since(mark, 'tools/list');
   const pages = responses.flatMap((r) => (r.result ? [r.result] : []));
-  if (clientError && pages.length === 0) throw new Error(clientError);
+  if (clientError && pages.length === 0) {
+    // Let stderr arrive first, as for connect: the reason is usually its last lines.
+    await connection.stderrSettled?.();
+    throw connection.explain?.(caught, 'tools/list') ?? new Error(clientError);
+  }
   const first = pages[0] ?? {};
   return {
     tools: pages.flatMap((p) => (Array.isArray(p.tools) ? (p.tools as Record<string, unknown>[]) : [])),

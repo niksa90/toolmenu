@@ -5,20 +5,37 @@ import { listTools, type Connection, type Target } from './connect.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
-import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_ADVICE, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
+import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
+import { describeToolDifference } from './difference.js';
+import { autoNextStep, neededValues, writeSign, type AutoSummary } from './auto.js';
 import { LOOKUP_VERBS, singular, VERBS, verbOf, words, WRITE_VERBS } from './words.js';
 
 export type Step =
   | { kind: 'list' }
-  | { kind: 'call'; tool: string; args: Record<string, unknown> }
+  | {
+      kind: 'call';
+      tool: string;
+      args: Record<string, unknown>;
+      /**
+       * --auto only, never from a scenario file: an unlock guessed from its schema
+       * alone. If its first such call changes nothing, the rest aren't made.
+       */
+      tentative?: boolean;
+    }
   | { kind: 'wait_for'; event: 'tools_list_changed'; timeoutMs: number };
 
 export interface Scenario {
   allowWrites: boolean;
   steps: Step[];
+  /**
+   * Tools the user says only read, although the server doesn't mark them
+   * readOnlyHint (`assume_read_only`, --assume-read-only). Called without
+   * allow_writes; a tool marked destructiveHint or readOnlyHint: false never is.
+   */
+  assumeReadOnly?: string[];
 }
 
 const LIST_CHANGED = 'notifications/tools/list_changed';
@@ -37,12 +54,16 @@ export async function loadScenario(path: string): Promise<Scenario> {
 }
 
 export function parseScenario(data: unknown, where = 'scenario'): Scenario {
-  const doc = data as { allow_writes?: unknown; steps?: unknown };
+  const doc = data as { allow_writes?: unknown; steps?: unknown; assume_read_only?: unknown };
   if (!doc || typeof doc !== 'object' || !Array.isArray(doc.steps) || doc.steps.length === 0) {
     throw new Error(`${where}: expected "steps:" with at least one step`);
   }
   if (doc.allow_writes !== undefined && typeof doc.allow_writes !== 'boolean') {
     throw new Error(`${where}: allow_writes must be true or false`);
+  }
+  const assumed = doc.assume_read_only;
+  if (assumed !== undefined && (!Array.isArray(assumed) || !assumed.every((x) => typeof x === 'string' && x && !/[*?[\]]/.test(x)))) {
+    throw new Error(`${where}: assume_read_only must be a list of exact tool names (no patterns)`);
   }
   const steps = doc.steps.map((raw, i): Step => {
     const at = `${where}: step ${i + 1}`;
@@ -65,7 +86,7 @@ export function parseScenario(data: unknown, where = 'scenario'): Scenario {
     }
     throw new Error(`${at}: expected "list", "call: <tool>" or "wait_for: tools_list_changed"`);
   });
-  return { allowWrites: doc.allow_writes === true, steps };
+  return { allowWrites: doc.allow_writes === true, steps, ...(Array.isArray(assumed) && assumed.length ? { assumeReadOnly: assumed as string[] } : {}) };
 }
 
 export function stepLabel(step: Step): string {
@@ -109,7 +130,7 @@ export interface SessionResult {
    */
   union: Menu;
   /** With --auto: which tools were called, and which weren't and why. */
-  auto?: { called: string[]; skipped: import('./auto.js').AutoPlan['skipped'] };
+  auto?: AutoSummary;
 }
 
 export interface SessionOptions {
@@ -124,12 +145,13 @@ export interface SessionOptions {
   /** The union menu is kept as a baseline (--union-out): an unlock never called then leaves tools out of it. */
   unionOut?: boolean;
   /** session --auto: what the plan called and skipped, so a run that called nothing isn't a clean one. */
-  auto?: { called: string[]; skipped: import('./auto.js').AutoPlan['skipped'] };
+  auto?: AutoSummary;
   /** Waits before retrying a request refused for being too many (default 2, 4, 8, 16, 32 s: a per-minute limit clears within them). */
   rateLimitWaitsMs?: number[];
 }
 
-type Raw = Omit<Finding, 'severity'> & { severity: Severity };
+/** `each`: this step's line when findings of one rule are said once for several steps. */
+type Raw = Omit<Finding, 'severity'> & { severity: Severity; each?: string };
 
 /** Observe the menu while a scripted session runs. No LLM: the scenario is the agent. */
 export async function session(target: Target, scenario: Scenario, options: SessionOptions = {}): Promise<SessionResult> {
@@ -171,9 +193,13 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         rule: 'session/rate-limited',
         severity: 'error',
         step: index,
+        ...(tool ? { tool } : {}),
         message: tool
-          ? `Rate-limited at step ${index}: ${tool} said ${quotedSentence(said)} Not called again: it isn't marked readOnlyHint, so it may have done part of the work. ${unchecked} If the limit is the server's, give the run its own server instance or raise the limit; if it's an upstream API's, run later or with a higher quota.`
-          : `Rate-limited at step ${index}, and still after waiting ${waitedFor(waitedMs)}: ${quotedSentence(said)} ${unchecked} ${RATE_LIMIT_ADVICE}`,
+          ? `Rate-limited at step ${index}: ${tool} said ${quotedSentence(said)} Not called again: it isn't marked readOnlyHint, so it may have done part of the work. ${unchecked}`
+          : `Rate-limited at step ${index}, and still after waiting ${waitedFor(waitedMs)}: ${quotedSentence(said)} ${unchecked} The limit counts every request from this address, toolmenu's included.`,
+        fix: tool
+          ? "If the limit is the server's, give the run its own server instance or raise the limit; if it's an upstream API's, run later or with a higher quota."
+          : 'Give the run its own server instance, or raise the limit for it.',
       });
     };
     let current = await listPatiently();
@@ -183,17 +209,34 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     see(current);
     const baseline = current;
 
+    // Values that differ from one tools/list to the next on their own (a default
+    // computed from the clock: PayPal's list_transactions.end_date), by tool and
+    // path, with the finding that reported them first. A later change only there
+    // has the same cause and points to it (SPEC §25: one root cause, one finding).
+    const varying = new Map<string, { rule: string; step: number }>();
+    const learn = (before: MenuTool[], after: MenuTool[], changes: ToolChange[], source: { rule: string; step: number }) => {
+      for (const [key] of variedPaths(before, after, changes)) if (!varying.has(key)) varying.set(key, source);
+    };
+
     // Fresh processes or connections, same credentials, must see the same menu.
     let connectionCheck: SessionResult['connectionCheck'];
     for (const probe of await probeVariance(target, current.tools, options.processes ?? 2, timeoutMs, waits)) {
       if (probe.error) {
-        raw.push({ rule: target.kind === 'stdio' ? 'menu/process-variance' : 'menu/connection-variance', severity: 'info', step: 0, message: `Couldn't ${target.kind === 'stdio' ? 'start a second server process' : 'open a second connection'} to compare menus, so this wasn't checked: ${serverWords(probe.error, 200)}` });
+        raw.push({
+          rule: target.kind === 'stdio' ? 'menu/process-variance' : 'menu/connection-variance',
+          severity: 'info',
+          step: 0,
+          message: `Couldn't ${target.kind === 'stdio' ? 'start a second server process' : 'open a second connection'} to compare menus, so this wasn't checked: ${serverWords(probe.error, 200)}`,
+          fix: `If the server can only run ${target.kind === 'stdio' ? 'once at a time' : 'one connection at a time'}, rerun with --processes 1: the check is then skipped on purpose.`,
+        });
         continue;
       }
       const f = varianceFinding(current.tools, probe.tools ?? [], { transport: target.kind, modern, wrapper: isContainerWrapper(target) });
       connectionCheck = f ? 'different' : connectionCheck ?? 'same';
       if (f) {
-        raw.push({ ...f, step: 0 });
+        const changes = compareMenus(current.tools, probe.tools ?? []);
+        raw.push({ ...f, step: 0, ...(f.fix ? {} : varianceFix(current.tools, probe.tools ?? [], changes)) });
+        learn(current.tools, probe.tools ?? [], changes, { rule: f.rule, step: 0 });
         break;
       }
     }
@@ -214,26 +257,72 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         rule: 'session/session-lost',
         severity: 'error',
         step: index,
-        message: `The server ended this session (“${said}”) after toolmenu opened a second ${target.kind === 'stdio' ? 'process' : 'connection'} with the same credentials${probedAfter ? ` to check step ${probedAfter}'s scope` : ' to compare menus'}. A server that keeps one session per client does that, so the rest of the scenario didn't run. Run with --processes 1: toolmenu then opens no second one.`,
+        confidence: 'unsure',
+        message: `The server ended this session at step ${index} (“${said}”), after toolmenu opened a second ${target.kind === 'stdio' ? 'process' : 'connection'} with the same credentials${probedAfter ? ` to check step ${probedAfter}'s scope` : ' to compare menus'}. A server that keeps one session per client does that; the rest of the scenario didn't run.`,
+        fix: 'Rerun with --processes 1: toolmenu then opens no second one.',
       });
       return true;
     };
     const callWaited = { ms: 0 };
     const listWaited = { ms: 0 };
+    const assumed = new Set(scenario.assumeReadOnly ?? []);
+    // Called on the user's word (assume_read_only), by step.
+    const onWord: { tool: string; step: number }[] = [];
+    // The same failure from the same tool at several steps is one finding that lists them.
+    const failures = new Map<string, Failure>();
+    const fail = (rule: string, severity: Severity, index: number, step: { tool: string; args: Record<string, unknown> }, text: string, failure: FailureClass, timedOutMs?: number) => {
+      const key = `${rule}\0${step.tool}\0${text}`;
+      const before = failures.get(key);
+      if (before) before.steps.push(index);
+      else {
+        const params = Object.keys(current.tools.find((t) => t.name === step.tool)?.inputSchema?.properties ?? {});
+        failures.set(key, { rule, severity, tool: step.tool, text, steps: [index], args: step.args, failure, takesParams: params.length > 0, ...(timedOutMs ? { timedOutMs } : {}) });
+      }
+    };
+    // Steps whose change touched only values already known to vary on their own.
+    const explained: Explained[] = [];
+    // --auto's guessed unlocks: tried once, and those whose first call changed nothing.
+    const tried = new Set<string>();
+    const quiet = new Set<string>();
+    const stopped = new Map<string, number>();
     for (const [i, step] of scenario.steps.entries()) {
       const index = i + 1;
+      if (step.kind === 'call' && step.tentative) {
+        if (quiet.has(step.tool)) {
+          stopped.set(step.tool, (stopped.get(step.tool) ?? 0) + 1);
+          continue;
+        }
+      }
+      const firstTry = step.kind === 'call' && step.tentative === true && !tried.has(step.tool);
+      if (firstTry) tried.add(step.tool);
       const label = stepLabel(step);
       const record: StepRecord = { index, label, status: 'ok', changed: false, listChanged: 0, tools: current.tools.length, tokens: current.totalTokens };
       const mark = conn.wire.notifications.length;
+      let word = false;
+      const done = () => {
+        if (word) record.note = record.note ? `on your word (not marked readOnlyHint); ${record.note}` : 'on your word (not marked readOnlyHint)';
+        steps.push(record);
+      };
 
       if (step.kind === 'call') {
         const tool = current.tools.find((t) => t.name === step.tool);
+        const write = tool ? writeSign(tool) : undefined;
+        word = !!tool && tool.annotations?.readOnlyHint !== true && assumed.has(step.tool) && !write && !scenario.allowWrites;
         if (!tool) {
           record.status = 'failed';
           record.reason = 'missing';
           record.note = `${step.tool} isn't in the menu at this point`;
-          raw.push({ rule: 'session/step-failed', severity: 'error', step: index, message: `Step ${index} calls ${step.tool}, which isn't in the menu at this point.` });
-        } else if (!scenario.allowWrites && tool.annotations?.readOnlyHint !== true) {
+          const squash = (n: string) => n.toLowerCase().replace(/[-_.\s]/g, '');
+          const close = current.tools.find((t) => squash(t.name) === squash(step.tool));
+          raw.push({
+            rule: 'session/step-failed',
+            severity: 'error',
+            step: index,
+            tool: step.tool,
+            message: `${step.tool} isn't in the menu at step ${index}, so it wasn't called.`,
+            fix: close ? `Did you mean ${close.name}? Fix the name in the scenario.` : `Check the name, or move the call after the step that adds ${step.tool}.`,
+          });
+        } else if (!scenario.allowWrites && tool.annotations?.readOnlyHint !== true && !word) {
           record.status = 'refused';
           record.reason = 'refused';
           record.note = 'not marked readOnlyHint';
@@ -242,14 +331,22 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             severity: 'error',
             step: index,
             tool: step.tool,
-            message: `Refused to call ${step.tool}: it isn't marked readOnlyHint, and session calls tools for real. Set "allow_writes: true" in the scenario if that's intended.`,
+            message:
+              assumed.has(step.tool) && write
+                ? `Refused to call ${step.tool}: ${write}, and assume_read_only doesn't override the server's own marking. Session calls tools for real.`
+                : `Refused to call ${step.tool}: it isn't marked readOnlyHint, and session calls tools for real.`,
+            fix:
+              write || tool.annotations?.readOnlyHint === false
+                ? 'Set "allow_writes: true" in the scenario if calling it is intended.'
+                : `If it only reads, list it under assume_read_only in the scenario; if it writes and that's intended, set "allow_writes: true".`,
           });
         }
+        if (word) onWord.push({ tool: step.tool, step: index });
         if (record.status === 'ok') try {
           // Sent again after a refusal only when that repeats nothing: the transport's
           // 429 means the server never ran it; a tool that says it was rate-limited,
           // thrown or as its result, may have done part of the work first, so only a
-          // read-only one is asked again.
+          // read-only one is asked again. On the server's word, not the user's.
           const readOnly = tool?.annotations?.readOnlyHint === true;
           callWaited.ms = 0;
           const result = await patiently(() => conn.client.callTool({ name: step.tool, arguments: step.args }, { timeout: timeoutMs }), {
@@ -264,37 +361,33 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
               limited(index, text, callWaited.ms, readOnly ? undefined : step.tool);
               record.status = 'failed';
               record.note = 'rate-limited';
-              steps.push(record);
+              done();
               break;
             }
             const short = clip(text, 120);
             record.note = text ? `the tool returned an error: ${short}` : 'the tool returned an error';
             record.failure = classifyFailure(text, { hadArguments: Object.keys(step.args).length > 0 });
             // A setup failure is reported once, for the whole run (session/untested).
-            if (!SETUP_FAILURES.has(record.failure)) raw.push({
-              rule: 'session/tool-error',
-              severity: 'warn',
-              step: index,
-              tool: step.tool,
-              message: `Step ${index} (${label}) returned an error${text ? ` (“${short}”)` : ''}. A step that fails tests less than it looks, so a clean run can hide a broken setup: check credentials and arguments.`,
-            });
+            if (!SETUP_FAILURES.has(record.failure)) fail('session/tool-error', 'warn', index, step, text, record.failure);
           }
         } catch (error) {
           record.status = 'failed';
           record.note = serverWords(error, 200);
           if (lost(record.note, index)) {
-            steps.push(record);
+            done();
             break;
           }
           if (tooMany(error)) {
             limited(index, record.note, callWaited.ms, httpStatus(error) === 429 || tool?.annotations?.readOnlyHint === true ? undefined : step.tool);
             record.note = 'rate-limited';
-            steps.push(record);
+            done();
             break;
           }
           const code = (error as { code?: unknown }).code;
           record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
-          if (!SETUP_FAILURES.has(record.failure)) raw.push({ rule: 'session/step-failed', severity: 'error', step: index, tool: step.tool, message: `Step ${index} (${label}) failed: ${record.note}` });
+          // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
+          const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
+          if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);
         }
       } else if (step.kind === 'wait_for') {
         const arrived = await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, step.timeoutMs);
@@ -315,59 +408,78 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         record.status = 'failed';
         record.note = record.note ? `${record.note}; then listing the menu failed: ${why}` : `listing the menu failed: ${why}`;
         if (lost(why, index)) {
-          steps.push(record);
+          done();
           break;
         }
         if (tooMany(error)) {
           limited(index, why, listWaited.ms);
           record.note = record.note?.startsWith('listing the menu failed') ? 'rate-limited listing the menu' : 'rate-limited listing the menu after the call';
-          steps.push(record);
+          done();
           break;
         }
-        raw.push({ rule: 'session/step-failed', severity: 'error', step: index, message: `After step ${index} (${label}), listing the menu failed: ${why}` });
-        steps.push(record);
+        raw.push({
+          rule: 'session/step-failed',
+          severity: 'error',
+          step: index,
+          message: `After step ${index} (${label}), listing the menu failed: ${why}. The menu after this step wasn't checked.`,
+          fix: "Check whether the step crashed or disconnected the server (its stderr), then rerun.",
+        });
+        done();
         continue;
       }
       const changes = compareMenus(current.tools, next.tools);
       if (changes.length) {
         record.changed = true;
-        if (conn.wire.notificationsSince(mark, LIST_CHANGED) === 0) {
-          await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, grace);
-        }
-        const origin =
-          step.kind === 'list'
-            ? 'no tool call in between'
-            : record.reason === 'missing'
-              ? 'no tool call made (the tool wasn\'t in the menu)'
-              : record.reason === 'refused'
-                ? 'no tool call made (refused)'
-                : record.status === 'failed'
-                  ? 'the call failed, but the menu changed: the server may have applied it anyway'
-                  : undefined;
-        raw.push(...changeFindings(current.tools, next.tools, changes, index, origin));
+        const paths = variedPaths(current.tools, next.tools, changes);
+        const onItsOwn = paths.size > 0 && changes.every((c) => EDIT_KINDS.has(c.kind)) && [...paths.keys()].every((k) => varying.has(k));
+        if (onItsOwn) {
+          // Same cause as a finding already made: said once, after the steps.
+          explained.push({ step: index, source: varying.get([...paths.keys()][0])!, seen: [...paths].map(([k, d]) => `${k.replace('\0', ': ')}: ${show(d.before)} vs ${show(d.after)}`) });
+          const cause = `only where it varies on its own, see ${explained[explained.length - 1].source.rule}`;
+          record.note = record.note ? `${record.note}; ${cause}` : cause;
+        } else {
+          if (conn.wire.notificationsSince(mark, LIST_CHANGED) === 0) {
+            await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, grace);
+          }
+          const origin =
+            step.kind === 'list'
+              ? 'no tool call in between'
+              : record.reason === 'missing'
+                ? 'no tool call made (the tool wasn\'t in the menu)'
+                : record.reason === 'refused'
+                  ? 'no tool call made (refused)'
+                  : record.status === 'failed'
+                    ? 'the call failed, but the menu changed: the server may have applied it anyway'
+                    : undefined;
+          raw.push(...changeFindings(current.tools, next.tools, changes, index, origin));
+          // With no call in between, whatever changed varies on its own: a later
+          // change only there has the same cause.
+          if (step.kind === 'list' || record.reason !== undefined) learn(current.tools, next.tools, changes, { rule: 'session/edit', step: index });
 
-        if (declared && listening && conn.wire.notificationsSince(mark, LIST_CHANGED) === 0) {
-          raw.push({
-            rule: 'session/unannounced',
-            severity: 'warn',
-            step: index,
-            message: `The menu changed without a notifications/tools/list_changed, although the server declared listChanged. Clients that cache the list won't know to re-fetch it. The spec says servers SHOULD send it.`,
-          });
-        }
+          if (declared && listening && conn.wire.notificationsSince(mark, LIST_CHANGED) === 0) {
+            raw.push({
+              rule: 'session/unannounced',
+              severity: 'warn',
+              step: index,
+              message: `The menu changed without a notifications/tools/list_changed, although the server declared listChanged. Clients that cache the list won't know to fetch it again; the spec says servers SHOULD send it.`,
+              fix: 'Send notifications/tools/list_changed whenever the tool list changes.',
+            });
+          }
 
-        if (step.kind !== 'list' && probes) {
-          // The main process is still running here: a server that holds a file or
-          // a port can't start a second copy. That leaves the scope unknown, not
-          // the run failed.
-          const probeWaited = { ms: 0 };
-          try {
-            probedAfter = index;
-            const probe = await probeMenu(mainTarget, timeoutMs, waits, probeWaited);
-            record.scope = scopeOf(changes, next.tools, probe.tools, target.kind, baseline.tools);
-            raw.push(...scopeFindings(record.scope, modern, index));
-          } catch (error) {
-            record.scope = 'unclear';
-            scopeUnchecked.push({ step: index, why: whyNot(error, probeWaited.ms) });
+          if (step.kind !== 'list' && probes) {
+            // The main process is still running here: a server that holds a file or
+            // a port can't start a second copy. That leaves the scope unknown, not
+            // the run failed.
+            const probeWaited = { ms: 0 };
+            try {
+              probedAfter = index;
+              const probe = await probeMenu(mainTarget, timeoutMs, waits, probeWaited);
+              record.scope = scopeOf(changes, next.tools, probe.tools, target.kind, baseline.tools);
+              raw.push(...scopeFindings(record.scope, modern, index));
+            } catch (error) {
+              record.scope = 'unclear';
+              scopeUnchecked.push({ step: index, why: whyNot(error, probeWaited.ms) });
+            }
           }
         }
         current = next;
@@ -376,13 +488,20 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       record.listChanged = conn.wire.notificationsSince(mark, LIST_CHANGED);
       record.tools = current.tools.length;
       record.tokens = current.totalTokens;
-      steps.push(record);
+      if (firstTry && !record.changed && record.status === 'ok' && !record.failure) quiet.add((step as { tool: string }).tool);
+      done();
     }
 
+    raw.push(...failureFindings(sameError([...failures.values()]), options.auto));
+    if (explained.length) raw.push(knownVariance(explained));
+    if (onWord.length) raw.push(onTheirWord(onWord, options.auto !== undefined));
     raw.push(...untested(steps, target));
     // --auto means "find what you can": an unlock it skipped is a gap too.
-    raw.push(...unlockCoverage(baseline.tools, scenario, steps, options.unionOut === true || options.auto !== undefined, options.auto?.skipped, limitedAt));
-    if (options.auto && !scenario.steps.some((s) => s.kind === 'call')) raw.push(nothingCalled(options.auto.skipped));
+    const leftOut = [...stopped].map(([tool, calls]) => ({ tool, calls }));
+    // An unlock --auto stopped trying isn't charged for the values it then left out.
+    const covered = baseline.tools.filter((t) => !stopped.has(t.name));
+    raw.push(...unlockCoverage(covered, scenario, steps, options.unionOut === true || options.auto !== undefined, options.auto?.skipped, limitedAt));
+    if (options.auto && !scenario.steps.some((s) => s.kind === 'call')) raw.push(nothingCalled(options.auto));
     if (scopeUnchecked.length) {
       const which = scopeUnchecked.map((s) => s.step);
       raw.push({
@@ -402,7 +521,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       final: { tools: current.tools.length, tokens: current.totalTokens },
       connectionCheck,
       steps,
-      findings: settle(mergeSideEffects(raw), options),
+      findings: settle(mergeRepeats(raw), options),
+      ...(options.auto ? { auto: { ...options.auto, ...(leftOut.length ? { stopped: leftOut } : {}) } } : {}),
       union: buildMenu([...seen.values()].map(toolDefinition), baseline.server),
     };
   } finally {
@@ -423,13 +543,17 @@ function untested(steps: StepRecord[], target: Target): Raw[] {
   const byClass = new Map<FailureClass, StepRecord[]>();
   for (const s of setup) byClass.set(s.failure!, [...(byClass.get(s.failure!) ?? []), s]);
   const all = setup.length === calls.length;
-  const how = target.kind === 'http' ? 'real credentials (--header "Authorization: …")' : 'real credentials (--env KEY=…)';
+  // One step per class seen, not just the first: a run can fail on credentials and a missing browser at once.
+  const { fix } = setupFailureAdvice(byClass.keys(), target.kind);
   return [
     {
       rule: 'session/untested',
       severity: all ? 'error' : 'warn',
-      message: `${all ? `All ${calls.length}` : `${setup.length} of ${calls.length}`} tool calls failed before reaching the tool: ${[...byClass].map(([c, list]) => `${list.length} on ${FAILURE_LABELS[c]}`).join(', ')}. Those steps only tested whether a failed call changes the menu.${byClass.has('auth') || byClass.has('not-found') ? ` Run with ${how}.` : ''}`,
+      // Classified from the error's words: a guess, if a good one.
+      confidence: 'unsure',
+      message: `${all ? `All ${calls.length}` : `${setup.length} of ${calls.length}`} tool calls failed before reaching the tool: ${[...byClass].map(([c, list]) => `${list.length} on ${FAILURE_LABELS[c]}`).join(', ')}. Those steps only tested whether a failed call changes the menu.`,
       detail: [...byClass].map(([c, list]) => `${c}: steps ${list.map((s) => s.index).join(', ')} (“${(list[0].note ?? '').replace(/^the tool returned an error: /, '').slice(0, 100)}”)`),
+      fix,
     },
   ];
 }
@@ -469,14 +593,26 @@ function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[
         ? ` --auto skipped it: it's marked openWorldHint, so it's called only with --open-world.`
         : skip === 'not read-only'
           ? ` --auto skipped it: it isn't marked readOnlyHint, and --auto calls only tools that are.`
-          : '';
+          : skip === 'unmarked'
+            ? ` --auto skipped it: the server doesn't mark it readOnlyHint.`
+            : '';
     out.push({
       rule: 'session/unlock-coverage',
       severity: 'warn',
       tool: u.tool.name,
+      // "Looks like it unlocks": from its name, parameter and description.
+      confidence: 'unsure',
       ...(last !== undefined ? { step: last } : {}),
-      message: `${u.tool.name} looks like it unlocks tools, and the run got through ${got} of its ${u.values.length} ${u.param} values. The tools behind the other ${missing.length} were never seen: this session didn't check them, and a baseline from it (--union-out, baseline-from: session) misses them, so diff can't either.${why}${why ? '' : ' Unlock every value (session --init puts every one in the starter).'}`,
+      message: `${u.tool.name} looks like it unlocks tools, and the run got through ${got} of its ${u.values.length} ${u.param} values. The tools behind the other ${missing.length} were never seen: this session didn't check them, and a baseline from it (--union-out, baseline-from: session) misses them, so diff can't either.${why}`,
       detail: [`not unlocked: ${missing.slice(0, 12).map((v) => JSON.stringify(v)).join(', ')}${missing.length > 12 ? `, and ${missing.length - 12} more` : ''}`],
+      fix:
+        skip === 'open world'
+          ? 'Rerun with --open-world.'
+          : skip === 'unmarked'
+            ? `If it only changes which tools are listed, rerun with --assume-read-only ${u.tool.name}.`
+            : skip === 'not read-only'
+              ? `Write a scenario that unlocks every value (session --init puts each one in the starter) and set allow_writes: true.`
+              : 'Unlock every value: session --init puts each one in the starter.',
     });
   }
   return out;
@@ -484,27 +620,236 @@ function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[
 
 /**
  * --auto that called nothing: the run only listed the menu, so a clean result
- * says nothing about what the tools do to it. Why each tool was left out.
+ * says nothing about what the tools do to it. Why each tool was left out, and the
+ * flag that reaches the most of them.
  */
-function nothingCalled(skipped: { tool: string; reason: string }[]): Raw {
-  const by = (reason: string) => skipped.filter((s) => s.reason === reason).map((s) => s.tool);
+function nothingCalled(auto: AutoSummary): Raw {
+  const by = (reason: string) => auto.skipped.filter((s) => s.reason === reason).map((s) => s.tool);
   const parts: string[] = [];
   const openWorld = by('open world');
   const needs = by('needs values');
+  const unmarked = by('unmarked');
   const writes = by('not read-only');
-  if (openWorld.length) parts.push(`${openWorld.length} marked openWorldHint (call them with --open-world: they may cost API credits)`);
-  if (needs.length) parts.push(`${needs.length} need values the schema doesn't give (--save-scenario puts them in a scenario to fill in)`);
-  if (writes.length) parts.push(`${writes.length} not marked readOnlyHint`);
+  if (needs.length) parts.push(`${needs.length} need values the schema doesn't give`);
+  if (unmarked.length) parts.push(`${unmarked.length} aren't marked readOnlyHint`);
+  if (openWorld.length) parts.push(`${openWorld.length} marked openWorldHint (they may cost API credits)`);
+  if (writes.length) parts.push(`${writes.length} marked or named as writes`);
   const list = (names: string[]) => names.slice(0, 8).join(', ') + (names.length > 8 ? `, and ${names.length - 8} more` : '');
+  const params = neededValues(auto.skipped);
+  const fix = autoNextStep(auto);
   return {
     rule: 'session/nothing-called',
     severity: 'warn',
     message: `--auto called no tools${parts.length ? `: ${parts.join('; ')}` : ''}. The run only listed the menu, so a clean result says nothing about what calls do to it.`,
     detail: [
+      ...(needs.length ? [`need values: ${params.slice(0, 6).map((p) => `${p.param} (${list(p.tools)})`).join('; ')}${params.length > 6 ? `; and ${params.length - 6} more` : ''}`] : []),
+      ...(unmarked.length ? [`not marked readOnlyHint: ${list(unmarked)}`] : []),
       ...(openWorld.length ? [`open world: ${list(openWorld)}`] : []),
-      ...(needs.length ? [`need values: ${list(needs)}`] : []),
     ],
+    ...(fix ? { fix } : {}),
   };
+}
+
+/** A tool error or failed call, and every step it happened at. */
+interface Failure {
+  rule: string;
+  severity: Severity;
+  tool: string;
+  text: string;
+  steps: number[];
+  args: Record<string, unknown>;
+  failure: FailureClass;
+  /** The tool has parameters in its schema. */
+  takesParams: boolean;
+  /** toolmenu's own request timeout ran out (ms): the server didn't answer in time, which isn't an argument or server error. */
+  timedOutMs?: number;
+  /** The same error in the same words from other tools too, with their calls. */
+  others?: { tool: string; args: Record<string, unknown>; takesParams: boolean }[];
+}
+
+/**
+ * The same error text from different tools is one finding (two tools of a feature
+ * that "isn't set up on this deployment"). An empty text says nothing in common.
+ */
+function sameError(failures: Failure[]): Failure[] {
+  const out: Failure[] = [];
+  const byText = new Map<string, Failure>();
+  for (const f of failures) {
+    const key = `${f.rule}\0${f.text}`;
+    const first = f.text ? byText.get(key) : undefined;
+    if (!first) {
+      out.push({ ...f, steps: [...f.steps] });
+      if (f.text) byText.set(key, out[out.length - 1]);
+      continue;
+    }
+    first.steps = [...first.steps, ...f.steps].sort((a, b) => a - b);
+    first.others = [...(first.others ?? []), { tool: f.tool, args: f.args, takesParams: f.takesParams }];
+  }
+  return out;
+}
+
+// The server says the feature isn't there, or isn't for this account: no argument
+// fixes that. A guess from its words.
+const UNAVAILABLE = /\b(?:isn't|is not|not|aren't|are not)\s+(?:set up|enabled|configured|available|activated|licensed|provisioned)\b|\bdisabled\b|\bpermission\b|\bforbidden\b|\bnot allowed\b|\brole\b/i;
+
+/** A step whose change was only in values known to vary on their own. */
+interface Explained {
+  step: number;
+  source: { rule: string; step: number };
+  seen: string[];
+}
+
+/** "step 2", "steps 2 and 3", "steps 2, 3 and 5", "steps 1–7 and 9". */
+function stepsText(steps: number[]): string {
+  if (steps.length === 1) return `step ${steps[0]}`;
+  const runs: string[] = [];
+  for (let i = 0; i < steps.length; ) {
+    let j = i;
+    while (j + 1 < steps.length && steps[j + 1] === steps[j] + 1) j++;
+    if (j - i >= 2) runs.push(`${steps[i]}–${steps[j]}`);
+    else for (let k = i; k <= j; k++) runs.push(String(steps[k]));
+    i = j + 1;
+  }
+  return runs.length === 1 ? `steps ${runs[0]}` : `steps ${runs.slice(0, -1).join(', ')} and ${runs[runs.length - 1]}`;
+}
+
+/**
+ * The same error from the same tool is one finding that names every step it
+ * happened at (Exa: one bad argument, steps 2 and 3). The error in the server's
+ * words, the call that got it, and what to try.
+ */
+function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Raw[] {
+  return failures.map((f) => {
+    const many = f.steps.length > 1;
+    const calls = [f, ...(f.others ?? [])];
+    const tools = [...new Set(calls.map((c) => c.tool))];
+    const who = tools.length === 1 ? f.tool : `${tools.slice(0, -1).join(', ')} and ${tools[tools.length - 1]}`;
+    const said = f.text ? quotedSentence(clip(f.text, 160)) : 'no error text.';
+    const firstArg = Object.keys(f.args)[0];
+    const argsCan = f.failure === 'invalid-arguments' || f.failure === 'other';
+    // No argument can fix a call to a tool that takes none, or a feature the server
+    // says isn't there. From the server's words: a guess.
+    const unavailable = argsCan && f.failure !== 'invalid-arguments' && UNAVAILABLE.test(f.text);
+    const them = tools.length === 1 ? 'its' : 'their';
+    const leaveOut = auto ? `save the steps with --save-scenario, drop ${them} calls and run that with --scenario` : `drop ${them} calls from the scenario`;
+    const noParams = calls.every((c) => !c.takesParams && Object.keys(c.args).length === 0);
+    const secs = f.timedOutMs ? `${Math.round(f.timedOutMs / 1000)} s` : '';
+    const fix = f.timedOutMs
+      ? `${who} didn't answer within toolmenu's ${secs} request timeout: the call may just be slow (fetching or searching a lot). Rerun with a longer --timeout (e.g. --timeout ${f.timedOutMs * 4}); if it still times out, the server hangs on this call.`
+      : !argsCan
+      ? undefined
+      : unavailable
+        ? `The server says this feature isn't available here: nothing to change in the call. Test ${tools.length === 1 ? 'it' : 'them'} on a deployment that has it, or leave ${tools.length === 1 ? 'it' : 'them'} out: ${leaveOut}.`
+        : noParams
+          ? `${tools.length === 1 ? `${f.tool} takes` : 'These tools take'} no arguments, so nothing in the call can fix this: the error is the server's. Check it on the server side, or leave ${tools.length === 1 ? 'it' : 'them'} out: ${leaveOut}.`
+          : auto?.withValues?.includes(f.tool)
+            ? `Check the values you gave ${f.tool} (--value) against what the server says above.`
+            : auto
+              ? `If the arguments are what it refused, give it real ones: --value ${f.tool}.${firstArg ?? '<param>'}=…${firstArg ? ' (--auto made these up from the schema).' : ''}`
+              : `Check the arguments of the call at ${stepsText([f.steps[0]])} in the scenario against what ${f.tool} expects.`;
+    const lead = many ? `${stepsText(f.steps).replace(/^s/, 'S')}: ` : '';
+    const detail = calls.slice(0, 8).map((c) => {
+      const call = `${c.tool} ${JSON.stringify(c.args)}`;
+      return `call: ${call.length > 200 ? call.slice(0, 199) + '…' : call}`;
+    });
+    return {
+      rule: f.rule,
+      severity: f.severity,
+      step: f.steps[0],
+      ...(many ? { steps: f.steps } : {}),
+      tool: f.tool,
+      ...(!f.timedOutMs && (unavailable || (noParams && argsCan)) ? { confidence: 'unsure' as const } : {}),
+      message:
+        f.rule === 'session/tool-error'
+          ? tools.length > 1
+            ? `${lead}${who} returned the same error: ${said} A call that fails tests less than it looks: the menu was checked after it, the tool's own work wasn't.`
+            : `${lead}${f.tool} returned an error${many ? ', the same one each time' : ''}: ${said} A call that fails tests less than it looks: the menu was checked after it, the tool's own work wasn't.`
+          : tools.length > 1
+            ? `${lead}Calling ${who} failed the same way: ${said}`
+            : `${lead}Calling ${f.tool} failed${many ? ', the same way each time' : ''}: ${said}`,
+      detail: [...new Set(detail)],
+      ...(fix ? { fix } : {}),
+    };
+  });
+}
+
+/**
+ * Changes that touched only values already seen to vary on their own: one info
+ * finding for the run, pointing to the one that reported the cause.
+ */
+function knownVariance(explained: Explained[]): Raw {
+  const steps = explained.map((e) => e.step);
+  const src = explained[0].source;
+  const where = src.step === 0 ? 'before step 1' : `at step ${src.step}`;
+  // The values at the first such step; the rest only repeat the pattern.
+  const seen = explained[0].seen;
+  return {
+    rule: 'session/known-variance',
+    severity: 'info',
+    step: steps[0],
+    message: `${steps.length > 1 ? `${stepsText(steps).replace(/^s/, 'S')}: the` : 'The'} menu changed again, only in values that already differ from one tools/list to the next. Same cause as ${src.rule} (${where}), so it isn't counted again.`,
+    detail: [...seen.slice(0, 4), ...(seen.length > 4 ? [`…and ${seen.length - 4} more`] : [])],
+    fix: `Fix the ${src.rule} finding (${where}); these changes go away with it.`,
+  };
+}
+
+/** Tools called because the user said they only read: said once, loudly. */
+function onTheirWord(calls: { tool: string; step: number }[], auto: boolean): Raw {
+  const tools = [...new Set(calls.map((c) => c.tool))];
+  return {
+    rule: 'session/assumed-read-only',
+    severity: 'info',
+    step: calls[0].step,
+    message: `Called ${tools.length === 1 ? `${tools[0]}, which the server doesn't mark readOnlyHint,` : `${tools.length} tools the server doesn't mark readOnlyHint`} on your word (${auto ? '--assume-read-only' : 'assume_read_only'}). If ${tools.length === 1 ? 'it writes, it wrote' : 'one of them writes, it wrote'}.`,
+    detail: [`${stepsText([...new Set(calls.map((c) => c.step))])}: ${tools.join(', ')}`],
+    fix: `Ask the server's authors to mark ${tools.length === 1 ? 'it' : 'them'} readOnlyHint: true; then ${auto ? `--auto calls ${tools.length === 1 ? 'it' : 'them'} without --assume-read-only` : 'drop assume_read_only'}.`,
+  };
+}
+
+/**
+ * Every leaf value that differs between the old and new definition of each edited
+ * tool, keyed `tool\0path` (`list_transactions\0inputSchema.properties.end_date.default`).
+ */
+function variedPaths(before: MenuTool[], after: MenuTool[], changes: ToolChange[]): Map<string, { before: unknown; after: unknown }> {
+  const out = new Map<string, { before: unknown; after: unknown }>();
+  const old = new Map(before.map((t) => [t.name, t]));
+  for (const name of new Set(changes.filter((c) => EDIT_KINDS.has(c.kind)).map((c) => c.tool))) {
+    const a = old.get(name);
+    const b = after.find((t) => t.name === name);
+    if (!a || !b) continue;
+    for (const [path, d] of leafDiffs(toolDefinition(a), toolDefinition(b))) out.set(`${name}\0${path}`, d);
+  }
+  return out;
+}
+
+function leafDiffs(a: unknown, b: unknown, path = '', out = new Map<string, { before: unknown; after: unknown }>()): Map<string, { before: unknown; after: unknown }> {
+  if (canonical(a) === canonical(b)) return out;
+  const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+  if (obj(a) && obj(b)) {
+    for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) leafDiffs(a[key], b[key], path ? `${path}.${key}` : key, out);
+  } else if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) {
+    a.forEach((x, i) => leafDiffs(x, b[i], `${path}[${i}]`, out));
+  } else out.set(path, { before: a, after: b });
+  return out;
+}
+
+function show(value: unknown): string {
+  if (value === undefined) return '(absent)';
+  const text = JSON.stringify(value);
+  return text.length > 60 ? text.slice(0, 57) + '…' : text;
+}
+
+const TIMESTAMP = /^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}/;
+
+/** The next step for a menu that differs between processes, from what differs. */
+function varianceFix(main: MenuTool[], other: MenuTool[], changes: ToolChange[]): { fix?: string } {
+  const diffs = [...variedPaths(main, other, changes)];
+  if (diffs.length === 0) return changes.every((c) => c.kind === 'moved') ? { fix: 'Return the tools in a fixed order (sorted, or as registered).' } : {};
+  const where = diffs.slice(0, 2).map(([k]) => k.replace('\0', '.')).join(', ');
+  if (diffs.every(([, d]) => typeof d.before === 'string' && typeof d.after === 'string' && TIMESTAMP.test(d.before) && TIMESTAMP.test(d.after))) {
+    return { fix: `Build ${where}${diffs.length > 2 ? ' and the rest' : ''} from a fixed value, not the current time (or leave the default out and say it in the description).` };
+  }
+  return { fix: `Make ${where}${diffs.length > 2 ? ' and the rest' : ''} the same on every tools/list: sort what comes from a set or a map, and build nothing from the clock or a random value.` };
 }
 
 function serverOf(c: Connection): Menu['server'] {
@@ -536,6 +881,9 @@ function waitFor(done: () => boolean, ms: number): Promise<boolean> {
   });
 }
 
+const APPEND_WHY =
+  " The end of the tool list isn't the end of the prompt: most clients send tools first (Claude's Messages API does), so any change to them, an append too, invalidates the cached conversation after them. Appends are cache-safe only if your client adds new tools after the cached content, as tool search (deferred loading) does.";
+
 const EDIT_KINDS = new Set<ToolChange['kind']>(['description', 'inputSchema', 'outputSchema', 'annotations', 'other', 'serialization']);
 
 /** Turn a menu change into findings, with the cost of each. */
@@ -566,8 +914,10 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
         rule: 'session/append',
         severity: 'warn',
         step,
-        message: `+${names.length} tool${names.length === 1 ? '' : 's'} appended at the end of the list (${names.join(', ')}). The end of the tool list isn't the end of the prompt: most clients send tools first (Claude's Messages API does), so any change to them, an append too, invalidates the cached conversation after them. Appends are cache-safe only if your client adds new tools after the cached content, as tool search (deferred loading) does.`,
+        message: `+${names.length} tool${names.length === 1 ? '' : 's'} appended at the end of the list (${names.join(', ')}).${APPEND_WHY}`,
         detail: [`~${tokens.toLocaleString('en-US')} new tokens (estimate)`, ...why],
+        each: `step ${step}: +${names.length} tool${names.length === 1 ? '' : 's'} (~${tokens.toLocaleString('en-US')} tokens): ${names.slice(0, 8).join(', ')}${names.length > 8 ? ` and ${names.length - 8} more` : ''}`,
+        fix: 'If clients should keep their cache, list these tools from the start, or have clients load them through tool search.',
       });
     } else {
       const first = Math.min(...added.map((a) => a.position));
@@ -577,21 +927,49 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
         step,
         message: `+${names.length} tool${names.length === 1 ? '' : 's'} inserted at position ${first} (${names.join(', ')}). Invalidates the cached prompt: the tool list and the conversation after it are processed again.`,
         detail: [...cost, ...why],
+        fix: 'Add new tools at the end of the list, not in the middle; better, list them from the start.',
       });
     }
   }
   const moved = changes.filter((c) => c.kind === 'moved');
   if (moved.length) {
-    out.push({ rule: 'session/reorder', severity: 'error', step, message: `Tool order changed mid-session (${moved.map((m) => m.tool).join(', ')}).`, detail: [...cost, ...why] });
+    out.push({
+      rule: 'session/reorder',
+      severity: 'error',
+      step,
+      message: `Tool order changed mid-session (${moved.map((m) => m.tool).join(', ')}). Invalidates the cached prompt, although no tool changed.`,
+      detail: [...cost, ...why],
+      fix: 'Return the tools in one fixed order (sorted, or as registered) on every tools/list.',
+    });
   }
   const removed = changes.filter((c) => c.kind === 'removed');
   if (removed.length) {
-    out.push({ rule: 'session/remove', severity: 'error', step, message: `${removed.map((r) => r.tool).join(', ')} disappeared from the menu mid-session.`, detail: [...cost, ...why] });
+    out.push({
+      rule: 'session/remove',
+      severity: 'error',
+      step,
+      message: `${removed.map((r) => r.tool).join(', ')} disappeared from the menu mid-session. Invalidates the cached prompt, and a model that already saw ${removed.length === 1 ? 'it' : 'them'} may still call ${removed.length === 1 ? 'it' : 'them'}.`,
+      detail: [...cost, ...why],
+      fix: `Keep ${removed.length === 1 ? 'the tool' : 'the tools'} listed for the whole session; refuse the call with an error that says why instead.`,
+    });
   }
   const edits = new Map<string, string[]>();
   for (const c of changes.filter((c) => EDIT_KINDS.has(c.kind))) edits.set(c.tool, [...(edits.get(c.tool) ?? []), c.kind === 'other' ? 'definition' : c.kind === 'serialization' ? 'key order (same content, different bytes)' : c.kind]);
+  const old = new Map(before.map((t) => [t.name, t]));
   for (const [tool, fields] of edits) {
-    out.push({ rule: 'session/edit', severity: 'error', step, tool, message: `${tool}: ${fields.join(', ')} changed mid-session.`, detail: [...cost, ...why] });
+    const a = old.get(tool);
+    const b = after.find((t) => t.name === tool);
+    // What differs, down to the value: `inputSchema.properties.end_date.default: "…21.5Z" vs "…40.2Z"`.
+    const seen = a && b ? [describeToolDifference(a, b).replace(/^[^:]*: /, '')] : [];
+    out.push({
+      rule: 'session/edit',
+      severity: 'error',
+      step,
+      tool,
+      message: `${tool}: ${fields.join(', ')} changed mid-session. Invalidates the cached prompt: the tool list and the conversation after it are processed again.`,
+      detail: [...seen, ...cost, ...why],
+      fix: origin === 'no tool call in between' ? `Make ${tool}'s definition the same on every tools/list: nothing built from the clock, a random value, or a set's order.` : `Keep ${tool}'s definition fixed for the session; if it has to change, change it between conversations.`,
+    });
   }
   return out;
 }
@@ -632,6 +1010,7 @@ function scopeFindings(scope: Scope, modern: boolean, step: number): Raw[] {
         message: modern
           ? `The change is local to this connection: a fresh connection with the same credentials still sees the old menu. On 2026-07-28 the tool set MUST NOT vary per-connection or as a side effect of other requests on the connection.`
           : `The change is local to this connection: a fresh connection still sees the old menu. Allowed before 2026-07-28; ruled out from 2026-07-28 on.`,
+        fix: 'Serve every connection the same tool set; to let a conversation reach more tools, list them all and let clients load them through tool search.',
       },
     ];
   }
@@ -642,20 +1021,41 @@ function scopeFindings(scope: Scope, modern: boolean, step: number): Raw[] {
         severity: 'warn',
         step,
         message: `A freshly started server doesn't show this change. On stdio every connection is its own process, so toolmenu can't tell a per-connection change from a global one. On 2026-07-28 the tool set MUST NOT change as a side effect of requests on the connection.`,
+        fix: 'List the same tools whatever the calls before; to let a conversation reach more tools, list them all and let clients load them through tool search.',
       },
     ];
   }
   return [];
 }
 
-/** stdio's side-effect warning is the same for every step: say it once, name the steps. */
-function mergeSideEffects(raw: Raw[]): Raw[] {
-  const side = raw.filter((f) => f.rule === 'session/side-effect');
-  if (side.length < 2) return raw;
-  const steps = side.map((f) => f.step);
-  return raw
-    .filter((f) => f.rule !== 'session/side-effect' || f === side[0])
-    .map((f) => (f === side[0] ? { ...f, message: `Steps ${steps.join(', ')}: ${f.message}` } : f));
+/**
+ * Findings that say the same thing at every step are said once, naming the steps:
+ * stdio's side-effect warning, and an unlock per domain, where each value appends
+ * tools for this connection only (9 steps made 18 near-identical blocks). What
+ * differs per step, the tools and their cost, goes in the detail. Mid-inserts,
+ * removals and edits stay per step: each is its own change.
+ */
+const REPEATS = ['session/side-effect', 'session/append', 'session/connection-local'];
+function mergeRepeats(raw: Raw[]): Raw[] {
+  let out = raw;
+  for (const rule of REPEATS) {
+    const same = out.filter((f) => f.rule === rule);
+    if (same.length < 2) continue;
+    const steps = same.map((f) => f.step!);
+    const lead = rule === 'session/side-effect' ? `Steps ${steps.join(', ')}` : stepsText(steps).replace(/^s/, 'S');
+    let message = `${lead}: ${same[0].message}`;
+    let detail = same[0].detail;
+    if (rule === 'session/append') {
+      const added = same.reduce((n, f) => n + Number(/^\+(\d+)/.exec(f.message)?.[1] ?? 0), 0);
+      message = `${lead}: +${added} tools appended at the end of the list, over ${same.length} steps.${APPEND_WHY}`;
+      const each = same.map((f) => f.each!).filter(Boolean);
+      const why = [...new Set(same.flatMap((f) => (f.detail ?? []).filter((d) => !d.endsWith('new tokens (estimate)'))))];
+      detail = [...each, ...why];
+    }
+    const merged: Raw = { ...same[0], message, steps, ...(detail ? { detail } : {}) };
+    out = out.filter((f) => f.rule !== rule || f === same[0]).map((f) => (f === same[0] ? merged : f));
+  }
+  return out;
 }
 
 function describe(changes: ToolChange[]): string[] {
@@ -666,7 +1066,7 @@ function settle(raw: Raw[], options: SessionOptions): Finding[] {
   const ignore = (options.ignore ?? []).map((g) => new RegExp('^' + g.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
   return raw
     .filter((f) => options.rules?.[f.rule] !== 'off' && !(f.tool && ignore.some((re) => re.test(f.tool!))))
-    .map((f) => ({ ...f, severity: (options.rules?.[f.rule] as Severity | undefined) ?? f.severity }))
+    .map(({ each: _each, ...f }) => ({ ...f, severity: (options.rules?.[f.rule] as Severity | undefined) ?? f.severity }))
     .sort((a, b) => (a.step ?? 0) - (b.step ?? 0) || SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
 }
 
@@ -691,7 +1091,25 @@ const UNLOCK_NAME = /unlock|enable|activate|capabilit|toolset|load_?tools|expand
 // capabilities alone aren't tools.
 const UNLOCK_DESC = /\b(?:unlock|enable|activate|load|expose|add)s?\b[^.]{0,60}\b(?:tools?|capabilit(?:y|ies))\b|\bmore tools\b|\btoolsets?\b|\bunlock/i;
 // Said outright: a verb that unlocks, then what it gives. Enough to keep a lookup.
-const UNLOCK_SAYS = /\b(?:unlock|enable|activate|load|expose|add)s?\b[^.]{0,60}\b(?:tools?|toolsets?|capabilit(?:y|ies))\b/i;
+// "exposes"/"adds" aren't: a lookup's text uses them for what it lists.
+const UNLOCK_SAYS = /\b(?:unlock|enable|activate|load)s?\b[^.]{0,60}\b(?:tools?|toolsets?|capabilit(?:y|ies))\b/i;
+
+/**
+ * Does the tool say that `param` unlocks tools? Its name does, or a sentence of
+ * its description that says it unlocks tools and doesn't pin that on another
+ * parameter ("A query match also enables the tools…" is about `query`, not the
+ * `domain` filter next to it).
+ */
+function claimsUnlock(tool: MenuTool, param: string | undefined): boolean {
+  if (UNLOCK_NAME.test(tool.name)) return true;
+  const stem = (p: string) => p.toLowerCase().replace(/_?ids?$/, '').replace(/(?:ies)$/, 'y').replace(/s$/, '');
+  const mentions = (sentence: string, p: string) => stem(p).length > 1 && new RegExp(`\\b${stem(p).replace(/[^a-z0-9]/g, '.?')}`, 'i').test(sentence);
+  const others = Object.keys(tool.inputSchema?.properties ?? {}).filter((p) => p !== param);
+  return (tool.description ?? '')
+    .split(/(?<=[.!?])\s+/)
+    .filter((s) => UNLOCK_SAYS.test(s))
+    .some((s) => (param && mentions(s, param)) || !others.some((p) => mentions(s, p)));
+}
 const LOOKUPS = new Set([...LOOKUP_VERBS, 'describe']);
 
 interface Unlocker {
@@ -701,6 +1119,8 @@ interface Unlocker {
   param?: string;
   /** Values to try for it, from the schema's enum. */
   values: unknown[];
+  /** Its name or description says it unlocks tools (for this parameter); otherwise a guess from its schema. */
+  claims: boolean;
 }
 
 /**
@@ -740,7 +1160,8 @@ export function unlockers(tools: MenuTool[]): Unlocker[] {
     // A lookup names toolsets without changing them (GitHub's get_toolset_tools,
     // toolception's list_toolsets, Firecrawl's find_tools), unless it says it does.
     const verb = verbOf(tool.name);
-    if (verb && LOOKUPS.has(verb) && !UNLOCK_SAYS.test(description)) continue;
+    const lookup = verb !== undefined && LOOKUPS.has(verb);
+    if (lookup && !UNLOCK_SAYS.test(description)) continue;
     const backed = UNLOCK_NAME.test(tool.name) || UNLOCK_DESC.test(description);
     const required = tool.inputSchema?.required ?? [];
     const param =
@@ -749,11 +1170,14 @@ export function unlockers(tools: MenuTool[]): Unlocker[] {
       // Named like an unlock, one required parameter: that's what it takes
       // (toolception's enable_toolset { name }).
       (UNLOCK_NAME.test(tool.name) && required.length === 1 ? required[0] : undefined);
+    const claims = claimsUnlock(tool, param);
+    // A lookup that says a *different* parameter unlocks: its enum is a filter.
+    if (lookup && !claims) continue;
     let score = 0;
     if (param) score += enumOf(props[param]).length ? 3 : 2;
     if (UNLOCK_NAME.test(tool.name)) score += 2;
     if (UNLOCK_DESC.test(tool.description ?? '')) score += 1;
-    if (score >= 2) found.push({ tool, score, param, values: param ? enumOf(props[param]) : [] });
+    if (score >= 2) found.push({ tool, score, param, values: param ? enumOf(props[param]) : [], claims });
   }
   return found.sort((a, b) => b.score - a.score);
 }

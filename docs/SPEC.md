@@ -266,6 +266,14 @@ Keyword matching only in v1: deterministic, free and reproducible in CI.
 | `write/no-dry-run` | info | A `destructiveHint: true` or `readOnlyHint: false` tool with no `dry_run`/`preview`-style parameter and no matching preview tool |
 | `write/unannotated` | warn | A tool whose name suggests writing (`delete_`, `send_`, `update_`…) has no annotations |
 
+**Descriptions the client cuts (§19)**
+
+| id | sev | check |
+|---|---|---|
+| `description/buried` | warn | A sentence that reads as an instruction to the agent sits past the point where the client cuts descriptions, so the model never sees it. Read from the words, so marked unsure |
+| `description/cut` | info | Descriptions longer than the client sends, with where the cut falls. Nothing past it reads as an instruction, so it's a check, not a bug |
+| `description/late-instruction` | info | Only with the default cut: an instruction past 280 characters, where one real client cut, but inside the default cut. Split out of `description/cut` in 0.13; a setting for `description/cut` still applies to it unless it's set itself (`RULE_ALIASES`) |
+
 **Spec** (not observed failures: protocol requirements, kept minimal)
 
 | id | sev | check |
@@ -438,9 +446,26 @@ Things building `snapshot` settled or changed. The spec above is updated to matc
   produced 17 false breaking changes on real data. Reported as `diff/schema-other`.
 - **Renames:** one removed + one added tool with the same non-empty parameter names,
   types and required set, and only when exactly one candidate matches.
-- **Version checks:** under 1.0.0 a minor bump may carry breaking changes. Calendar
+- **Version checks:** under 1.0.0 a minor bump may carry breaking changes (see below). Calendar
   versions (major ≥ 1000) are skipped. `diff` uses `server.version` from the
   snapshots; see below for `history`.
+- **Under 1.0.0 both steps shift** (npm's caret: `^0.2.3` accepts any 0.2.x):
+  breaking changes need a minor bump, new features a patch; under 0.1.0 anything
+  goes. `requiredBump` in the JSON says which applied. Found on Tavily 0.2.16,
+  0.2.19 and HubSpot 0.3.3, whose features in a patch were flagged as too small.
+- **The same change in many tools is one finding** (§25): the same rule, the same
+  path inside each tool, and the same schema before and after (descriptions
+  aside). It lists the tools (`tools`, and the full list in `detail` past six) and
+  every place (`places`); `tool` is left out. chrome-devtools-mcp 1.8.0 made
+  `pageId` required in 25 tools: one finding, not 25. **Counts are per change**:
+  `classes.breaking.changes` counts findings, `classes.breaking.tools` the tools
+  they touch; the bump is the same either way.
+- **Paths in messages** are written as they nest: `a.b` for a field, `a[]` for
+  array items, `a(kind="x")` or `a(object{p,q})` for a union option.
+- **Likely renames** (`diff/param-renamed`, warn, unsure, no class): a tool loses
+  a parameter and gains a required one next to it with a close name (case,
+  separators, a plural, an edit or two) and the same type or an array of it,
+  one to one. A hint for the author; both changes stay breaking.
 - **All published protocol schemas are bundled** (2024-11-05 → 2026-07-28), draft-07
   and draft 2020-12, pinned to the commit in §12.
 
@@ -772,3 +797,92 @@ found, so the same catalog gives the same path. Seeds are the search tool's own
 example phrases (quoted in its description), then the menu's nouns, or the config's
 queries. It stops when 20 queries in a row find nothing new, at most 200. Measured
 against Atlassian's `?tools=all` as ground truth: 154 of 154, no false operations.
+
+
+## 25. Messages: what every finding and error says
+
+Every finding and every error is read by two kinds of reader: a person skimming a PR
+comment, and an agent that has to act on it without seeing toolmenu's code. Both need
+the same four things, in this order:
+
+1. **The problem**, in the first sentence, in plain words: what is wrong and why it
+   matters ("A second server process served a different menu, so every restart misses
+   the prompt cache."). No rule jargon; the rule id is shown next to it already.
+2. **Where**: the tool, the parameter path (`list_transactions.end_date.default`), the
+   step, the file or the URL. Name it exactly, so it can be searched for.
+3. **How it happened**: the observed values, the call, the two versions compared
+   (`"…21.528Z" vs "…21.537Z"`), the server's own words. In `detail` when it's long.
+4. **The next step**, in `fix`: one instruction the reader can act on ("Build the
+   default from a fixed value, not the current time."; "Rerun with --processes 1.").
+   Shown as `→ Next:` in every format. Left out only when there is nothing to do.
+
+When toolmenu is not sure, because the finding is a heuristic (names, words) or an
+inference (a failure whose cause it can't see), the finding sets `confidence:
+'unsure'` (shown as `· unsure` next to the rule), and the message says what was seen and where, not
+what it means: "get_form needs a form_id, and no tool in the menu appears to return
+one" rather than "the agent will invent form_id". It still gives a next step when one
+is safe ("If an ID comes from a URL the user pastes, ignore this.").
+
+Errors that stop a command follow the same order: what failed, at which stage
+(starting the server, `server/discover`, `initialize`, `tools/list`, a call), what was
+seen (exit code, HTTP status, the server's last stderr lines, the first stray stdout
+line), and what to try next.
+
+Also:
+- One root cause, one finding. A finding caused by another one (a menu that changes on
+  every list also changes mid-session) points to it instead of repeating it.
+- The same change in many places is one finding that lists the places, not one per place.
+- Numbers carry their unit and whether they are estimates (`~1,240 tokens, estimate`).
+- No internal names (function names, variable names) in messages.
+
+
+## 26. The catalog behind command routers
+
+Search and execute isn't the only way to keep operations out of the menu. Azure's
+server (`@azure/mcp`, default "namespace" mode) serves 71 tools, 65 of them command
+routers: `{ intent, command, parameters, learn }`, one per area, each running the
+command it's given and listing its commands when called with `learn: true`. The same
+server with `--mode all` serves them as 418 plain tools, which makes it a ground truth.
+
+- **Detection**, all four, never by server name: a string `command` (or
+  `subcommand`, `operation`); an object for its arguments (`parameters`, `params`,
+  `arguments`, `args`); a boolean listing flag (`learn`, `discover`, `help`,
+  `list_commands`); and the words, in the tool's or the flag's description ("router",
+  "sub commands", "child tools"). `catalog.routers` names routers detection misses
+  (then the words aren't needed) and turns detection off. A search tool, when there
+  is one, wins; a menu file keeps one catalog.
+- **Only the listing call.** Each router is called once with `{ <flag>: true }` plus
+  a fixed "List the available commands and their parameters." in any other required
+  free-text parameter (Azure's `intent`). Never the command, never its arguments, so
+  there is nothing to run. That is why annotations don't decide it: a router's hints
+  describe the commands behind it (Azure's routers carry none), not its listing
+  mode. A router that requires a parameter named like a command or its arguments
+  (whatever its type: a string `args`, a `subcommand` beside `command`), or that
+  requires something toolmenu would have to guess (an enum, a number), is not
+  called: `catalog/skipped` when detected, an error with a next step when
+  `catalog.routers` names it. The arguments are checked again just before sending;
+  that check can't fail for a router that got past the first.
+- **Same shape.** Operations are read from JSON anywhere in the answer (Azure's
+  follows a line of prose) as objects with a `command` or `name` (`command` first:
+  it's what an agent passes) and a schema, and kept in `catalog.operations` like
+  the search crawl's, so `diff` compares them with the same rules. `catalog.tool`
+  is the router, or "the command routers"; `catalog.queries` is empty;
+  `catalog.routers` records each call's exact arguments and count.
+- **Stable names.** Every operation is kept as `router.command`, with one router or
+  many, whichever answered. Naming it only when two routers clash would rename an
+  operation the run a clashing router fails, and `diff` would read that as one
+  operation gone and another added. A command one router lists twice with
+  different definitions is kept twice, the second as `router.command#2`, and
+  `catalog/read` says so (`catalog.routers[].duplicates`); the same definition
+  twice is kept once.
+- **What the read says**: `catalog/read` (what was called, what came back),
+  `catalog/failed` (one finding per cause: credentials, something missing on this
+  machine, an error, an answer with no command list toolmenu could read; `unsure`
+  where the cause is read from the server's words) and `catalog/skipped`. A router
+  that answers with an empty list (`[]`) lists nothing; it hasn't failed and the
+  catalog isn't partial. All info; `rules` and `ignore` apply.
+- **Measured** on `@azure/mcp` 3.0.0-beta.47 without Azure credentials: 412
+  operations from 62 of 65 routers (`acr.acr_registry_list` and so on), all 412 in `--mode all` with identical schemas
+  and descriptions, none invented; the other 6 of the 418 are the menu's plain tools.
+  `azd` (binary not installed) and `foundry`, `arm` (credentials) didn't list. Two
+  crawls gave identical catalogs.

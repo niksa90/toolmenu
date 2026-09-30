@@ -1,11 +1,12 @@
 import { listTools, type Target } from './connect.js';
 import { patiently, tooMany } from './failures.js';
+import { ConnectError } from './explain.js';
 import { buildMenu } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeVariance, seeded } from './probe.js';
 import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
-import { readCatalog, type CatalogOptions } from './catalog.js';
+import { catalogFindings, readCatalog, type CatalogOptions } from './catalog.js';
 import type { Routes } from './routes.js';
-import type { Finding, Menu } from './types.js';
+import { SEVERITY_RANK, type Finding, type Menu } from './types.js';
 
 export interface SnapshotOptions extends RuleSettings {
   routes?: Routes;
@@ -17,7 +18,7 @@ export interface SnapshotOptions extends RuleSettings {
    * included. Default 2; 1 turns the check off.
    */
   processes?: number;
-  /** Also read the operations behind a catalog search tool (true, or which tool and queries). */
+  /** Also read the operations behind a catalog search tool or command routers (true, or which ones and how). */
   catalog?: boolean | CatalogOptions;
 }
 
@@ -50,7 +51,8 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
     }
   } catch (error) {
     const stderr = connection.stderr().trim();
-    if (stderr && error instanceof Error) error.message += `\nserver stderr:\n${stderr}`;
+    // A ConnectError already shows the stderr lines that matter.
+    if (stderr && error instanceof Error && !(error instanceof ConnectError)) error.message += `\nserver stderr:\n${stderr}`;
     throw error;
   } finally {
     await connection.close().catch(() => {});
@@ -80,5 +82,16 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
     },
     options,
   );
+  // What --catalog called and what it got, under the same settings as the rules
+  // (rules: { "catalog/read": "off" }, ignore).
+  if (menu.catalog) {
+    const ignore = (options.ignore ?? []).map((g) => new RegExp('^' + g.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
+    for (const f of catalogFindings(menu.catalog)) {
+      const configured = options.rules?.[f.rule];
+      if (configured === 'off' || (f.tool && ignore.some((re) => re.test(f.tool!)))) continue;
+      findings.push({ ...f, severity: configured ?? f.severity });
+    }
+    findings.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
+  }
   return { menu, findings };
 }
