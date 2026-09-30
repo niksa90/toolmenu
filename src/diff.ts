@@ -239,7 +239,7 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   // Only what survives ignore and 'off' counts toward the bump. Settled once:
   // the bump and the reported findings come from the same list. Grouped after
   // settling, so an ignored tool is never listed in a group.
-  const changes = groupAcrossTools(settle(raw, options), newTools.length);
+  const changes = groupAcrossTools(settle(raw, options), oldTools.length, newTools.length);
   const classes = classCounts(changes);
   const suggestedBump = bumpFor(changes.map((f) => f.class));
   const versionRaw: Raw[] = [];
@@ -304,9 +304,9 @@ function acrossKey(f: DiffFinding): string | undefined {
  * The same change in several tools (the same rule, parameter path, and schema
  * before and after: `pageId` made required in 25 tools) as one finding that
  * lists them. Its tools go in `tools`, and in detail when there are more than a
- * message lists.
+ * message lists. "n of total": removals count against the old menu's tools.
  */
-function groupAcrossTools(findings: DiffFinding[], total: number): DiffFinding[] {
+function groupAcrossTools(findings: DiffFinding[], oldTotal: number, newTotal: number): DiffFinding[] {
   const byKey = new Map<string, DiffFinding[]>();
   for (const f of findings) {
     const key = acrossKey(f);
@@ -324,6 +324,9 @@ function groupAcrossTools(findings: DiffFinding[], total: number): DiffFinding[]
     const names = list.map((m) => m.tool!);
     const places = list.flatMap((m) => m.places ?? ((m as Raw).place ? [(m as Raw).place!] : []));
     const behind = (f as Raw).behind;
+    // Removed tools are counted against the old menu (they're not in the new one);
+    // everything else is about tools in the new menu.
+    const total = f.rule === 'diff/tool-removed' ? oldTotal : newTotal;
     const { tool: _tool, ...first } = f;
     const detail = [...(f.detail ?? []), ...(names.length > LIST_SHORT ? [`${behind ? 'operations' : 'tools'}: ${names.join(', ')}`] : [])];
     out.push({

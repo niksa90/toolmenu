@@ -184,10 +184,14 @@ function mdDiff(d: DiffResult, beforeTools: number, afterTools: number): string 
   if (d.tokens.delta !== 0) lines.splice(lines.length - 1, 0, '>', `> **Tokens:** ${tokenSentence(d)}.`);
 
   const table = (findings: typeof d.findings) => ['| | Rule | Change |', '|---|---|---|', ...findings.map(mdDiffRow)];
-  const breaking = d.findings.filter((f) => f.class === 'breaking');
-  const checks = d.findings.filter((f) => !f.class && f.severity !== 'info');
+  // Sections follow the severity the user's rules set, not only the class: a
+  // notice raised to error fails CI, so it's shown, never folded; a breaking
+  // rule lowered to info is folded with the notices.
+  const loud = (f: (typeof d.findings)[number]) => f.severity !== 'info';
+  const breaking = d.findings.filter((f) => f.class === 'breaking' && loud(f));
+  const checks = d.findings.filter((f) => f.class !== 'breaking' && f.class !== 'minor' && loud(f));
   const minor = d.findings.filter((f) => f.class === 'minor');
-  const quiet = d.findings.filter((f) => f.class === 'notice' || (!f.class && f.severity === 'info'));
+  const quiet = d.findings.filter((f) => f.class !== 'minor' && !loud(f));
   if (breaking.length) lines.push(`#### Breaking (${breaking.length})`, '', ...table(breaking), '');
   if (checks.length) lines.push(`#### To check (${checks.length})`, '', ...table(checks), '');
   if (minor.length) lines.push(`#### New (${minor.length}, minor)`, '', ...table(minor), '');

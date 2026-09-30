@@ -710,3 +710,23 @@ test('cli: diff markdown groups by class, folds notices and long tool lists', as
   assert.match(text.stdout, /changes {2}3 breaking \(9 tools\) · 0 minor · 0 notice/);
   assert.match(text.stdout, /WARN   diff\/param-renamed · unsure/);
 });
+
+test('grouped removals count against the old menu: 3 of 6 tools, not "all 3"', () => {
+  const six = ['a', 'b', 'c', 'x', 'y', 'z'].map((n) => tool(n, ['q']));
+  const removed = (d) => plain(d.findings.find((f) => f.rule === 'diff/tool-removed').message);
+  assert.equal(removed(diffMenus(menu(six), menu(six.slice(3), '2.0.0'))), '3 of 6 tools were removed: a, b, c. Calls to them now fail with an unknown-tool error.');
+  assert.match(removed(diffMenus(menu(six), menu([tool('n', ['r', 's'])], '2.0.0'))), /^all 6 tools were removed: /);
+  const added = diffMenus(menu(six.slice(3)), menu(six, '1.1.0')).findings.find((f) => f.rule === 'diff/tool-added');
+  assert.match(plain(added.message), /^3 of 6 tools are new /);
+});
+
+test('cli: diff markdown sections follow severity: a notice raised to error is shown, a breaking rule lowered to info is folded', async () => {
+  const dir = tempDir();
+  writeFileSync(join(dir, 'old.json'), JSON.stringify(menu([tool('a', ['x'], { description: 'Old words.' }), tool('b', ['y'])])));
+  writeFileSync(join(dir, 'new.json'), JSON.stringify(menu([tool('a', ['x'], { description: 'New words.' })], '2.0.0')));
+  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ rules: { 'diff/description': 'error', 'diff/tool-removed': 'info' } }));
+  const r = await run(['diff', '--format', 'markdown', 'old.json', 'new.json'], { cwd: dir });
+  assert.doesNotMatch(r.stdout, /#### Breaking/);
+  assert.match(r.stdout, /#### To check \(1\)\n\n\| \| Rule \| Change \|\n\|---\|---\|---\|\n\| \*\*error\*\* \| `diff\/description`/);
+  assert.match(r.stdout, /<details><summary>Notices \(1\)<\/summary>\n\n\| \| Rule \| Change \|\n\|---\|---\|---\|\n\| info \| `diff\/tool-removed`/);
+});
