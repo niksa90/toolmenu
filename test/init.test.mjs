@@ -159,7 +159,7 @@ test('planInit: from a subfolder, .github goes to the repository root and the se
 });
 
 test('planInit: a monorepo package builds in its folder and installs where the lockfile is', () => {
-  const root = repo({ 'package.json': '{"private":true}', 'pnpm-lock.yaml': '', 'packages/server/package.json': '{"scripts":{"build":"tsc"}}', 'packages/server/dist/index.js': '' });
+  const root = repo({ 'package.json': '{"private":true}', 'pnpm-lock.yaml': '', 'pnpm-workspace.yaml': "packages:\n  - 'packages/*'\n", 'packages/server/package.json': '{"scripts":{"build":"tsc"}}', 'packages/server/dist/index.js': '' });
   const cwd = join(root, 'packages/server');
   const plan = planInit({ cwd, target: stdio('node', [join(cwd, 'dist/index.js')], { API_KEY: 'k-secret' }) });
   assert.deepEqual(plan.ciTarget.args, ['dist/index.js']);
@@ -176,6 +176,79 @@ test('planInit: a monorepo package builds in its folder and installs where the l
   assert.ok(detectProject(join(root2, 'a/b'), root2).setup.some((l) => l.includes('cache-dependency-path: a/b/yarn.lock')));
   const root3 = repo({ 'svc/go.mod': 'module x' });
   assert.ok(detectProject(join(root3, 'svc'), root3).setup.some((l) => l.includes('go-version-file: svc/go.mod')));
+});
+
+test('planInit: a lockfile in a parent folder counts only when that folder is the workspace the package belongs to', () => {
+  // Tooling at the root, the server in its own folder with no lockfile: installing at
+  // the root would leave server/node_modules empty and the build would fail.
+  const files = { 'package-lock.json': '{}', 'server/package.json': '{"scripts":{"build":"tsc"}}', 'server/index.js': '' };
+  const root = repo({ ...files, 'package.json': '{"devDependencies":{"prettier":"3"}}' });
+  const plan = planInit({ cwd: join(root, 'server'), target: stdio('node', ['index.js']) });
+  const steps = yamlOf(plan).jobs.toolmenu.steps;
+  assert.ok(steps.some((s) => s.run === 'npm install && npm run build' && s['working-directory'] === 'server'), JSON.stringify(steps));
+  assert.equal(steps.some((s) => s.run === 'npm ci'), false);
+  // Its own lockfile: npm ci there.
+  const own = repo({ ...files, 'package.json': '{}', 'server/package-lock.json': '{}' });
+  assert.ok(detectProject(join(own, 'server'), own).setup.includes('- run: npm ci && npm run build'));
+  // A root that declares the folder a workspace: one install at the root, the build in the folder.
+  for (const workspaces of ['["server"]', '["*"]', '{"packages":["serv*"]}']) {
+    const ws = repo({ ...files, 'package.json': `{"workspaces":${workspaces}}` });
+    const s = yamlOf(planInit({ cwd: join(ws, 'server'), target: stdio('node', ['index.js']) })).jobs.toolmenu.steps;
+    assert.ok(s.some((x) => x.run === 'npm ci' && !x['working-directory']), workspaces);
+    assert.ok(s.some((x) => x.run === 'npm run build' && x['working-directory'] === 'server'), workspaces);
+  }
+  // Declared, but not this folder.
+  const other = repo({ ...files, 'package.json': '{"workspaces":["packages/*","!server"]}' });
+  assert.ok(detectProject(join(other, 'server'), other).setup.includes('- run: npm install && npm run build'));
+  // pnpm without a pnpm-workspace.yaml that lists the folder: not its workspace either.
+  const pnpm = repo({ 'package.json': '{}', 'pnpm-lock.yaml': '', 'server/package.json': '{}' });
+  assert.ok(detectProject(join(pnpm, 'server'), pnpm).setup.includes('- run: npm install'));
+});
+
+test('planInit: a gitignored interpreter the workflow never creates is said, for every kind of project', { skip: !hasGit() }, () => {
+  const root = realpathSync(tempDir());
+  execFileSync('git', ['init', '-q', root]);
+  writeFileSync(join(root, 'requirements.txt'), 'mcp\n');
+  writeFileSync(join(root, '.gitignore'), '.venv/\n');
+  writeFileSync(join(root, 'server.py'), '');
+  mkdirSync(join(root, '.venv/bin'), { recursive: true });
+  writeFileSync(join(root, '.venv/pyvenv.cfg'), 'home = /usr/bin\n');
+  writeFileSync(join(root, '.venv/bin/python'), '');
+  execFileSync('git', ['-C', root, 'add', 'requirements.txt', '.gitignore', 'server.py']);
+  const target = stdio(join(root, '.venv/bin/python'), ['server.py']);
+  const plan = planInit({ cwd: root, target });
+  assert.equal(plan.ciTarget.command, '.venv/bin/python');
+  assert.equal(plan.problems.length, 1, JSON.stringify(plan.problems));
+  const [p] = plan.problems;
+  assert.match(p.what, /The command is \.venv\/bin\/python, which git ignores/);
+  assert.match(p.why, /pip install -r requirements\.txt/);
+  assert.match(p.next, /Call python \(the workflow's own\) in place of \.venv\/bin\/python/);
+  assert.match(p.next, /python -m venv \.venv && \.venv\/bin\/pip install -r requirements\.txt/);
+  assert.match(initReport(plan, summary, target), /✗ Won't work in CI as written \(1\)/);
+  // Not ignored, not committed: a virtualenv still doesn't go in the commit.
+  writeFileSync(join(root, '.gitignore'), '');
+  const untracked = planInit({ cwd: root, target });
+  assert.deepEqual(untracked.uncommitted, []);
+  assert.equal(untracked.problems.length, 1);
+  // uv sync creates .venv on the runner: nothing to say.
+  writeFileSync(join(root, '.gitignore'), '.venv/\n');
+  writeFileSync(join(root, 'uv.lock'), '');
+  assert.equal(planInit({ cwd: root, target }).problems.length, 0);
+});
+
+test('planInit: an ignored file the build step makes is fine; one no step makes is said', { skip: !hasGit() }, () => {
+  const root = realpathSync(tempDir());
+  execFileSync('git', ['init', '-q', root]);
+  writeFileSync(join(root, '.gitignore'), 'dist/\n');
+  mkdirSync(join(root, 'dist'));
+  writeFileSync(join(root, 'dist/server.js'), '');
+  writeFileSync(join(root, 'package.json'), '{"scripts":{"build":"tsc"}}');
+  assert.equal(planInit({ cwd: root, target: stdio('node', ['dist/server.js']) }).problems.length, 0);
+  writeFileSync(join(root, 'package.json'), '{}');
+  const plan = planInit({ cwd: root, target: stdio('node', ['dist/server.js']) });
+  assert.equal(plan.problems.length, 1);
+  assert.match(plan.problems[0].what, /Argument 1 is dist\/server\.js, which git ignores/);
+  assert.equal(plan.problems[0].unsure, true);
 });
 
 test('planInit: outside a git repository, the folder stands in for the root, and init says so', () => {

@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { accessSync, constants, existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { basename, delimiter, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { parse as parseYaml } from 'yaml';
 import type { Target } from './connect.js';
 import { VERSION } from './version.js';
 
@@ -17,6 +18,12 @@ export interface Project {
   dir: string;
   /** The commands the setup runs, for the summary. */
   runs: string[];
+  /**
+   * The folders the setup fills on the runner, relative to the root: an ignored file
+   * under one is made there. A build's output can be anywhere in its folder, so a
+   * build step adds the folder itself ('' is the whole repository).
+   */
+  creates: string[];
 }
 
 /**
@@ -45,7 +52,15 @@ export function detectProject(dir: string, root: string = dir): Project {
     } catch {
       // an unreadable package.json still means node
     }
-    const lock = findUp(['pnpm-lock.yaml', 'yarn.lock', 'package-lock.json']);
+    // A lockfile above the package counts only for a workspace that includes it:
+    // a root package.json for tooling has its own, and installing there leaves
+    // this package's node_modules empty.
+    let lock: { dir: string; file: string } | undefined;
+    for (let d = dir; !lock; d = dirname(d)) {
+      const file = ['pnpm-lock.yaml', 'yarn.lock', 'package-lock.json'].find((f) => existsSync(join(d, f)));
+      if (file && (d === dir || inWorkspace(d, posix(relative(d, dir)), file))) lock = { dir: posix(relative(root, d)), file };
+      if (d === root || dirname(d) === d || !isInside(root, d)) break;
+    }
     const pm = lock?.file === 'pnpm-lock.yaml' ? 'pnpm' : lock?.file === 'yarn.lock' ? 'yarn' : 'npm';
     const install = pm === 'pnpm' ? 'pnpm install --frozen-lockfile' : pm === 'yarn' ? 'yarn install --frozen-lockfile' : lock ? 'npm ci' : 'npm install';
     const build = scripts.build ? `${pm === 'npm' ? 'npm run' : pm} build` : undefined;
@@ -58,6 +73,7 @@ export function detectProject(dir: string, root: string = dir): Project {
       file: at(rel, 'package.json'),
       dir: rel,
       runs,
+      creates: [...new Set([at(installDir, 'node_modules'), at(rel, 'node_modules'), ...(build ? [rel] : [])])],
       setup: [
         ...(pm === 'pnpm' ? ['- uses: pnpm/action-setup@v6'] : []),
         '- uses: actions/setup-node@v7',
@@ -68,13 +84,16 @@ export function detectProject(dir: string, root: string = dir): Project {
   }
   if (has('pyproject.toml') || has('requirements.txt')) {
     // A uv workspace keeps one uv.lock at its root; uv sync in a member finds it.
-    const uv = !!findUp(['uv.lock']);
+    const uvLock = findUp(['uv.lock']);
+    const uv = !!uvLock;
     const run = uv ? 'uv sync' : `pip install ${has('pyproject.toml') ? '.' : '-r requirements.txt'}`;
     return {
       kind: 'python',
       file: at(rel, has('pyproject.toml') ? 'pyproject.toml' : 'requirements.txt'),
       dir: rel,
       runs: [run],
+      // uv sync makes the workspace's .venv; pip installs into the runner's Python.
+      creates: uvLock ? [at(uvLock.dir, '.venv')] : [],
       // setup-uv has no floating major tag (v10): only full versions resolve.
       setup: uv
         ? ['- uses: astral-sh/setup-uv@v10.2.0', ...step(run, rel)]
@@ -82,10 +101,55 @@ export function detectProject(dir: string, root: string = dir): Project {
     };
   }
   if (has('go.mod')) {
-    return { kind: 'go', file: at(rel, 'go.mod'), dir: rel, runs: ['go build ./...'], setup: ['- uses: actions/setup-go@v7', `  with: { go-version-file: ${at(rel, 'go.mod')} }`, ...step('go build ./...', rel)] };
+    // go build ./... keeps no binary unless it matches one main package: nothing counted.
+    return { kind: 'go', file: at(rel, 'go.mod'), dir: rel, runs: ['go build ./...'], creates: [], setup: ['- uses: actions/setup-go@v7', `  with: { go-version-file: ${at(rel, 'go.mod')} }`, ...step('go build ./...', rel)] };
   }
-  if (has('Cargo.toml')) return { kind: 'rust', file: at(rel, 'Cargo.toml'), dir: rel, runs: ['cargo build --release'], setup: step('cargo build --release', rel) };
-  return { kind: 'unknown', file: '', dir: rel, runs: [], setup: [`# TODO: install and build your server here${rel ? ` (it lives in ${rel})` : ''}`] };
+  if (has('Cargo.toml')) return { kind: 'rust', file: at(rel, 'Cargo.toml'), dir: rel, runs: ['cargo build --release'], creates: [at(rel, 'target')], setup: step('cargo build --release', rel) };
+  return { kind: 'unknown', file: '', dir: rel, runs: [], creates: [], setup: [`# TODO: install and build your server here${rel ? ` (it lives in ${rel})` : ''}`] };
+}
+
+/**
+ * Whether the package at `pkg` (relative to `wsDir`, never '') is a member of the
+ * workspace at `wsDir`: pnpm-workspace.yaml for pnpm's lockfile, the root
+ * package.json's "workspaces" for npm's and yarn's.
+ */
+function inWorkspace(wsDir: string, pkg: string, lockfile: string): boolean {
+  let globs: unknown;
+  try {
+    globs =
+      lockfile === 'pnpm-lock.yaml'
+        ? (parseYaml(readFileSync(join(wsDir, 'pnpm-workspace.yaml'), 'utf8')) as { packages?: unknown } | null)?.packages
+        : (({ workspaces: w }) => (Array.isArray(w) ? w : (w as { packages?: unknown } | undefined)?.packages))(
+            JSON.parse(readFileSync(join(wsDir, 'package.json'), 'utf8')) as { workspaces?: unknown },
+          );
+  } catch {
+    return false;
+  }
+  if (!Array.isArray(globs)) return false;
+  let member = false;
+  for (const g of globs) {
+    if (typeof g !== 'string') continue;
+    const neg = g.startsWith('!');
+    if (globToRegExp(neg ? g.slice(1) : g).test(pkg)) member = !neg;
+  }
+  return member;
+}
+
+/** A workspace glob (`packages/*`, `apps/**`, `./server`) as a whole-path RegExp. */
+function globToRegExp(glob: string): RegExp {
+  const g = glob.replace(/^\.\//, '').replace(/\/+$/, '');
+  let re = '';
+  for (let i = 0; i < g.length; i++) {
+    const c = g[i];
+    if (c === '*' && g[i + 1] === '*') {
+      re += '.*';
+      i++;
+      if (g[i + 1] === '/') i++;
+    } else if (c === '*') re += '[^/]*';
+    else if (c === '?') re += '[^/]';
+    else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp(`^${re}$`);
 }
 
 /**
@@ -404,16 +468,49 @@ function trackStatus(abs: string, plan: InitPlan, git: GitStatus | undefined, wh
   if (!git || !statSync(abs).isFile()) return;
   const rel = posix(relative(plan.root, abs));
   if (git.tracked(rel)) return;
-  if (!git.ignored(rel)) {
+  const ignored = git.ignored(rel);
+  // A virtualenv never goes in a commit, ignored or not.
+  const venv = venvOf(abs, plan.root);
+  if (!ignored && !venv) {
     if (!plan.uncommitted.includes(rel)) plan.uncommitted.push(rel);
-  } else if (plan.project.kind === 'unknown') {
+    return;
+  }
+  const p = plan.project;
+  const under = (dir: string) => rel === dir || rel.startsWith(`${dir}/`);
+  // A build's output can be anything in its folder, but not a virtualenv.
+  if (p.creates.some((c) => (c === '' ? !venv : under(c)))) return;
+  const what = `${capitalize(where)} is ${rel}, which ${ignored ? 'git ignores' : "isn't in git"}.`;
+  const steps = p.runs.length ? `the workflow's ${p.runs.join(', then ')}` : 'no workflow step';
+  if (venv) {
+    const pip = p.kind !== 'python' ? '<your dependencies>' : p.file.endsWith('requirements.txt') ? `-r ${p.file}` : `./${p.dir}`;
     plan.problems.push({
-      what: `${capitalize(where)} is ${rel}, which git ignores.`,
+      what,
+      why: `It's in the virtualenv ${venv}/: the runner only has the checkout, and ${steps} ${p.kind === 'python' ? "installs into the runner's own Python, not" : "doesn't make"} ${venv}/.`,
+      next: `${where === 'the command' ? `Call python (the workflow's own) in place of ${rel}` : `Use the file from the workflow's own Python in place of ${rel}`} in "command" in ${plan.workflowPath}; or create the venv in a workflow step before the toolmenu step: python -m venv ${venv} && ${venv}/bin/pip install ${pip}`,
+    });
+  } else if (p.kind === 'unknown') {
+    plan.problems.push({
+      what,
       why: 'A build output, probably: the runner starts from a clean checkout, and this workflow has no build step yet.',
       next: `Build it in the TODO step in ${plan.workflowPath}.`,
       unsure: true,
     });
+  } else {
+    plan.problems.push({
+      what,
+      why: `The runner starts from a clean checkout, and ${steps} ${p.runs.length ? "doesn't make it, as far as init can tell" : 'makes it'}.`,
+      next: `Add a workflow step that builds or fetches ${rel} before the toolmenu step in ${plan.workflowPath}, or commit it.`,
+      unsure: true,
+    });
   }
+}
+
+/** The virtualenv (relative to the root) a file inside the repository is in: the folder with pyvenv.cfg. */
+function venvOf(abs: string, root: string): string | undefined {
+  for (let d = dirname(abs); isInside(root, d) && d !== root; d = dirname(d)) {
+    if (existsSync(join(d, 'pyvenv.cfg'))) return posix(relative(root, d));
+  }
+  return undefined;
 }
 
 /** Write the baseline and the workflow where the plan says. */
