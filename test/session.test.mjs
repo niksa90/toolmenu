@@ -208,12 +208,16 @@ test('http, rate limit: a limit that clears is waited out; one that stays is one
 });
 
 test('http, rate limit: a tool that says it was limited is called again only if it is read-only', async () => {
-  const one = async (name) => {
+  // Where no wait is expected, the waits are a minute long: a retry would show as a
+  // run that long, while a run on a busy machine can take far more than 300 ms
+  // without ever waiting (a 300 ms bound failed under load).
+  const NO_WAIT = [60_000, 60_000];
+  const one = async (name, waits = [300, 300]) => {
     const ran = {};
     const server = await startSdkHttp({ factory: () => buildRateLimited(ran) });
     try {
       const started = Date.now();
-      const r = await session({ kind: 'http', url: server.url }, parseScenario({ allow_writes: true, steps: [{ call: name, args: {} }, 'list'] }), { timeoutMs: TIMEOUT_MS, rateLimitWaitsMs: [300, 300] });
+      const r = await session({ kind: 'http', url: server.url }, parseScenario({ allow_writes: true, steps: [{ call: name, args: {} }, 'list'] }), { timeoutMs: TIMEOUT_MS, rateLimitWaitsMs: waits });
       return { ran: ran[name], ms: Date.now() - started, rules: byStep(r), limited: r.findings.find((f) => f.rule === 'session/rate-limited') };
     } finally {
       await server.close();
@@ -225,20 +229,20 @@ test('http, rate limit: a tool that says it was limited is called again only if 
   assert.deepEqual(thrown.rules, ['1:session/rate-limited']);
   assert.match(thrown.limited.message, /^Rate-limited at step 1: send_message said “Upstream API rate limit exceeded”\. Not called again: it isn't marked readOnlyHint/);
   // Its result says so: once too, and the finding claims no wait.
-  const said = await one('post_comment');
+  const said = await one('post_comment', NO_WAIT);
   assert.equal(said.ran, 1);
   assert.doesNotMatch(said.limited.message, /waited/);
-  assert.ok(said.ms < 300, `no wait: ${said.ms} ms`);
+  assert.ok(said.ms < NO_WAIT[0], `no wait: ${said.ms} ms`);
   // Read-only, limited twice then fine: waited out.
   const reads = await one('list_items');
   assert.equal(reads.ran, 3);
   assert.deepEqual(reads.rules, []);
   // Errors that only mention a 429 or a rateLimit: no wait, not a rate limit.
   for (const name of ['get_order', 'set_quota']) {
-    const r = await one(name);
+    const r = await one(name, NO_WAIT);
     assert.equal(r.ran, 1, name);
     assert.equal(r.limited, undefined, name);
-    assert.ok(r.ms < 300, `${name}: ${r.ms} ms`);
+    assert.ok(r.ms < NO_WAIT[0], `${name}: ${r.ms} ms`);
   }
 });
 
