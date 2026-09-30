@@ -1,5 +1,6 @@
 import { listTools, type Target } from './connect.js';
 import { patiently, tooMany } from './failures.js';
+import { ConnectError } from './explain.js';
 import { buildMenu } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeVariance, seeded } from './probe.js';
 import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
@@ -50,7 +51,8 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
     }
   } catch (error) {
     const stderr = connection.stderr().trim();
-    if (stderr && error instanceof Error) error.message += `\nserver stderr:\n${stderr}`;
+    // A ConnectError already shows the stderr lines that matter.
+    if (stderr && error instanceof Error && !(error instanceof ConnectError)) error.message += `\nserver stderr:\n${stderr}`;
     throw error;
   } finally {
     await connection.close().catch(() => {});

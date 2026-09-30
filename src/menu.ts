@@ -54,10 +54,17 @@ export function eraOf(protocolVersion: string | undefined): Era | undefined {
 export async function loadMenu(path: string): Promise<Menu> {
   const { readFile } = await import('node:fs/promises');
   let data: unknown;
+  let text: string;
   try {
-    data = JSON.parse(await readFile(path, 'utf8'));
+    text = await readFile(path, 'utf8');
   } catch (error) {
-    throw new Error(`${path}: ${error instanceof Error ? error.message : String(error)}`);
+    const code = (error as NodeJS.ErrnoException).code;
+    throw new Error(code === 'ENOENT' ? `${path}: no such file. Write a menu file with \`toolmenu snapshot --out ${path}\`.` : `${path}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`${path} isn't valid JSON: ${error instanceof Error ? error.message : String(error)}. If it was cut short or edited by hand, write it again with \`toolmenu snapshot\`.`);
   }
   const menu = data as Partial<Menu>;
   if (menu?.toolmenu !== 1 || !Array.isArray(menu.tools)) {

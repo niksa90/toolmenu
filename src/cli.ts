@@ -417,10 +417,38 @@ for (const method of ['log', 'info', 'debug'] as const) {
 }
 
 main(process.argv.slice(2)).then(exitWhenFlushed, (error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`toolmenu: ${message}\n`);
+  process.stderr.write(`toolmenu: ${failureMessage(error)}\n`);
   exitWhenFlushed(2);
 });
+
+/** What stopped the command. A mistyped option gets the nearest real one, from the help text. */
+function failureMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const code = (error as { code?: unknown } | null)?.code;
+  if (code === 'ERR_PARSE_ARGS_UNKNOWN_OPTION') {
+    const option = /Unknown option '([^']+)'/.exec(message)?.[1] ?? '';
+    const known = [...new Set(HELP.match(/--[a-z][a-z-]*/g) ?? [])];
+    const guess = known.map((k) => [k, editDistance(option, k)] as const).sort((a, b) => a[1] - b[1])[0];
+    const hint = guess && guess[1] <= 2 ? ` Did you mean ${guess[0]}?` : '';
+    return `Unknown option ${option}.${hint}\n  → Next: toolmenu --help lists every option. (A server's own flags go after "--".)`;
+  }
+  if (typeof code === 'string' && code.startsWith('ERR_PARSE_ARGS_')) return `${message}\n  → Next: toolmenu --help lists every option.`;
+  return message;
+}
+
+function editDistance(a: string, b: string): number {
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let diagonal = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const above = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+      diagonal = above;
+    }
+  }
+  return row[b.length];
+}
 
 function parseRelease(value: string): { before: string; after: string } {
   const m = /^(.+?)\.\.(.+)$/.exec(value);
