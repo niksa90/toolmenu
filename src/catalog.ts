@@ -27,7 +27,7 @@ export interface Catalog {
   /** Queries (or routers, by name) that failed: the catalog is partial where they would have looked. */
   failed?: { query: string; error: string }[];
   /** Routers only: each router called, in menu order, the exact arguments sent, and how many operations it listed. */
-  routers?: { tool: string; arguments: Record<string, unknown>; operations: number }[];
+  routers?: { tool: string; arguments: Record<string, unknown>; operations: number; duplicates?: { command: string; kept: string[] }[] }[];
   /** Routers only: tools that look like routers but weren't called, and why. */
   skipped?: { tool: string; reason: string }[];
 }
@@ -223,7 +223,9 @@ export function routerShape(tool: MenuTool, named = false): Shape | undefined {
   const arguments_: Record<string, unknown> = { [flag]: true };
   for (const r of required) {
     if (r === flag) continue;
-    if (r === command || r === args) return { reason: `its ${r} parameter is required, so even a listing call would have to name ${r === command ? 'a command' : 'arguments for one'}` };
+    // By name, whatever the type: a required `args` string or a second command
+    // (`subcommand` beside `command`) is still a command or its arguments.
+    if (COMMAND_PARAM.test(r) || ARGS_PARAM.test(r)) return { reason: `its ${r} parameter is required, so even a listing call would have to name ${COMMAND_PARAM.test(r) ? 'a command' : 'arguments for one'}` };
     const p = props[r];
     if (!p || !hasType(p, 'string') || p.enum || p.const !== undefined || p.pattern || p.format) {
       return { reason: `it requires ${r}, which isn't free text, and toolmenu won't guess a value in a call to a tool that runs commands` };
@@ -263,35 +265,44 @@ function namedRouters(tools: MenuTool[], names: string[]): RouterCall[] {
  */
 async function readRouters(conn: Connection, routers: RouterCall[], skipped: { tool: string; reason: string }[], options: CatalogOptions): Promise<Catalog> {
   const pause = options.pauseMs ?? 300;
-  const listed: { router: string; ops: MenuTool[] }[] = [];
+  const found = new Map<string, MenuTool>();
   const failed: { query: string; error: string }[] = [];
   const called: NonNullable<Catalog['routers']> = [];
   for (const [i, { tool, arguments: args }] of routers.entries()) {
     if (i > 0) await sleep(pause);
-    // The listing call. Checked here too, so no change above can make it run a command.
+    // The listing call. Checked here too, so no change above can make it run a
+    // command: routerShape never lets such a call through, so reaching this is a bug.
     const carried = Object.keys(args).find((k) => COMMAND_PARAM.test(k) || ARGS_PARAM.test(k) || (args[k] !== true && args[k] !== LISTING_PHRASE));
     if (carried) throw new Error(`--catalog: stopped before calling ${tool.name}: its listing call would have carried ${carried}, and a listing call only ever carries the flag and the fixed phrase. Nothing was sent. This is a toolmenu bug.\n→ Next: Report it at https://github.com/niksa90/toolmenu/issues with the tool's inputSchema.`);
     const answer = await callPatiently(conn, tool.name, args, options.timeoutMs);
     let ops: MenuTool[] = [];
     if ('error' in answer) failed.push({ query: tool.name, error: answer.error });
     else {
-      ops = operationsIn(answer.result, { nameKeys: ['name', 'command'], embedded: true });
-      if (!ops.length) failed.push({ query: tool.name, error: `answered without a command list toolmenu could read: ${quote(resultText(answer.result))}` });
+      // Keyed by command first: it's what an agent passes. Every definition is
+      // kept, even two under one name.
+      ops = operationsIn(answer.result, { nameKeys: ['command', 'name'], embedded: true, keepAll: true });
+      if (!ops.length && !listsNothing(answer.result)) failed.push({ query: tool.name, error: `${UNREADABLE} toolmenu could read: ${quote(resultText(answer.result))}` });
     }
-    called.push({ tool: tool.name, arguments: args, operations: ops.length });
-    listed.push({ router: tool.name, ops });
-  }
-  // A name two routers both list is kept once per router, as router.name, so
-  // neither hides the other. Operation names are otherwise kept as the router
-  // gives them, which is what an agent passes as the command.
-  const count = new Map<string, number>();
-  for (const { ops } of listed) for (const op of new Set(ops.map((o) => o.name))) count.set(op, (count.get(op) ?? 0) + 1);
-  const found = new Map<string, MenuTool>();
-  for (const { router, ops } of listed) {
+    // Every operation is kept as router.command, however many routers there are
+    // and whichever answered this run, so its name is the same from run to run
+    // and a router that fails doesn't rename another's operations. A command a
+    // router lists twice with different definitions is kept twice, the second
+    // as router.command#2, and said so.
+    const seen = new Map<string, number>();
+    const duplicates = new Map<string, string[]>();
     for (const op of ops) {
-      const name = (count.get(op.name) ?? 0) > 1 ? `${router}.${op.name}` : op.name;
-      if (!found.has(name)) found.set(name, name === op.name ? op : { ...op, name, tokens: toolTokens({ ...op, name }) });
+      let name = `${tool.name}.${op.name}`;
+      const n = (seen.get(op.name) ?? 0) + 1;
+      seen.set(op.name, n);
+      if (n > 1) {
+        let k = n;
+        while (found.has(`${name}#${k}`)) k++;
+        name = `${name}#${k}`;
+        duplicates.set(op.name, [...(duplicates.get(op.name) ?? [`${tool.name}.${op.name}`]), name]);
+      }
+      found.set(name, { ...op, name, tokens: toolTokens({ ...op, name }) });
     }
+    called.push({ tool: tool.name, arguments: args, operations: ops.length, ...(duplicates.size ? { duplicates: [...duplicates].map(([command, kept]) => ({ command, kept })) } : {}) });
   }
   const operations = [...found.values()].sort((a, b) => a.name.localeCompare(b.name));
   return {
@@ -328,7 +339,8 @@ async function callPatiently(conn: Connection, name: string, args: Record<string
 // ── What the read says ─────────────────────────────────────────────────────────
 
 // How a router's failure reads, by what its words suggest: [one router, several].
-const FAILED_AS: Record<FailureClass, { what: [string, string]; fix: string }> = {
+type RouterFailure = FailureClass | 'unreadable';
+const FAILED_AS: Record<RouterFailure, { what: [string, string]; fix: string }> = {
   auth: {
     what: ['wanted credentials before it would list its commands', 'wanted credentials before they would list their commands'],
     fix: "Rerun with the server's credentials (--env for a stdio server, --header for HTTP); if these routers aren't yours to watch, ignore this.",
@@ -349,6 +361,10 @@ const FAILED_AS: Record<FailureClass, { what: [string, string]; fix: string }> =
     what: ["rejected the listing call's arguments", "rejected the listing call's arguments"],
     fix: "Read the router's own words above; if it lists its commands another way, name the right tool in catalog.tool or catalog.routers.",
   },
+  unreadable: {
+    what: ['answered, but not with a command list toolmenu could read', 'answered, but not with a command list toolmenu could read'],
+    fix: 'If the router lists its commands in another format, open an issue at https://github.com/niksa90/toolmenu/issues with its answer; toolmenu reads JSON objects with a name or command and an inputSchema.',
+  },
   other: {
     what: ['answered the listing call with an error', 'answered the listing call with an error'],
     fix: "Read the server's words above and rerun; each failure leaves out only that router's part of the catalog.",
@@ -360,8 +376,8 @@ const FAILED_AS: Record<FailureClass, { what: [string, string]; fix: string }> =
 const CREDENTIALS = /\bcredentials?\b|failed to (retrieve|acquire|get|obtain) (a |an )?(access )?token|\b(sign|log)[ -]?in (is )?required\b|az(ure)? login/i;
 const UNREADABLE = 'answered without a command list';
 
-function failureClass(error: string): FailureClass {
-  if (error.startsWith(UNREADABLE)) return 'other';
+function failureClass(error: string): RouterFailure {
+  if (error.startsWith(UNREADABLE)) return 'unreadable';
   const c = classifyFailure(error);
   return c === 'other' && CREDENTIALS.test(error) ? 'auth' : c;
 }
@@ -410,25 +426,25 @@ export function catalogFindings(catalog: Catalog): Finding[] {
     detail: [
       oneCall ? `Called with ${listing[0]}` : `Called with: ${routers.map((r, i) => `${r.tool} ${listing[i]}`).join('; ')}`,
       listedLine(routers),
+      ...routers.flatMap((r) => (r.duplicates ?? []).map((d) => `${r.tool} listed ${d.command} ${d.kept.length === 2 ? 'twice' : `${d.kept.length} times`}, with different definitions; kept each, as ${d.kept.join(', ')}`)),
     ],
   });
-  const byClass = new Map<FailureClass, { query: string; error: string }[]>();
+  const byClass = new Map<RouterFailure, { query: string; error: string }[]>();
   for (const f of failed) {
     const c = failureClass(f.error);
     byClass.set(c, [...(byClass.get(c) ?? []), f]);
   }
   for (const [c, fs] of byClass) {
-    const unreadable = fs.every((f) => f.error.startsWith(UNREADABLE));
-    const verb = unreadable ? 'answered, but not with a command list toolmenu could read' : FAILED_AS[c].what[fs.length === 1 ? 0 : 1];
+    const verb = FAILED_AS[c].what[fs.length === 1 ? 0 : 1];
     out.push({
       rule: 'catalog/failed',
       severity: 'info',
       ...(fs.length === 1 ? { tool: fs[0].query } : {}),
       message: `${plural(fs.length, 'router')} ${verb}: ${fs.map((f) => f.query).join(', ')}. ${fs.length === 1 ? 'Its' : 'Their'} operations aren't in the catalog, so diff can't see them.`,
       detail: fs.map((f) => `${f.query}: ${oneLine(f.error)}`),
-      fix: unreadable ? 'If the router lists its commands in another format, open an issue with its answer; toolmenu reads JSON objects with a name or command and an inputSchema.' : FAILED_AS[c].fix,
+      fix: FAILED_AS[c].fix,
       // The cause is read from the server's words, which can mislead.
-      ...(c === 'other' ? {} : { confidence: 'unsure' as const }),
+      ...(c === 'other' || c === 'unreadable' ? {} : { confidence: 'unsure' as const }),
     });
   }
   if (catalog.skipped?.length) {
@@ -519,29 +535,42 @@ function limitArg(schema: JsonSchema | undefined): Record<string, number> {
  * `inputs` (Atlassian), found anywhere in structuredContent or in text that
  * parses as JSON.
  */
-export function operationsIn(result: { structuredContent?: unknown; content?: unknown }, options: { nameKeys?: string[]; embedded?: boolean } = {}): MenuTool[] {
+export function operationsIn(result: { structuredContent?: unknown; content?: unknown }, options: { nameKeys?: string[]; embedded?: boolean; keepAll?: boolean } = {}): MenuTool[] {
   const nameKeys = options.nameKeys ?? ['name'];
-  const roots: unknown[] = [];
-  if (result.structuredContent) roots.push(result.structuredContent);
-  for (const part of Array.isArray(result.content) ? result.content : []) {
-    const text = (part as { text?: unknown }).text;
-    if (typeof text !== 'string') continue;
-    const value = options.embedded ? embeddedJson(text) : leadingJson(text);
-    if (value !== undefined) roots.push(value);
-  }
+  const roots = jsonRoots(result, options.embedded);
+  // keepAll: two definitions under one name are both kept (the same one twice, once).
   const out = new Map<string, MenuTool>();
   const walk = (v: unknown, depth: number) => {
     if (depth > 6 || !v || typeof v !== 'object') return;
     if (Array.isArray(v)) return v.forEach((x) => walk(x, depth + 1));
     const op = asOperation(v as Record<string, unknown>, nameKeys);
     if (op) {
-      out.set(op.name, op);
+      out.set(options.keepAll ? JSON.stringify(op) : op.name, op);
       return;
     }
     for (const x of Object.values(v)) walk(x, depth + 1);
   };
   roots.forEach((r) => walk(r, 0));
   return [...out.values()];
+}
+
+/** The JSON in a result: its structuredContent, and each text part's. */
+function jsonRoots(result: { structuredContent?: unknown; content?: unknown }, embedded = false): unknown[] {
+  const roots: unknown[] = [];
+  if (result.structuredContent) roots.push(result.structuredContent);
+  for (const part of Array.isArray(result.content) ? result.content : []) {
+    const text = (part as { text?: unknown }).text;
+    if (typeof text !== 'string') continue;
+    const value = embedded ? embeddedJson(text) : leadingJson(text);
+    if (value !== undefined) roots.push(value);
+  }
+  return roots;
+}
+
+/** A router's answer that is a readable, empty command list: `[]`, or `{ "commands": [] }`. */
+export function listsNothing(result: { structuredContent?: unknown; content?: unknown }): boolean {
+  const empty = (v: unknown) => Array.isArray(v) && v.length === 0;
+  return jsonRoots(result, true).some((r) => empty(r) || (!!r && typeof r === 'object' && !Array.isArray(r) && Object.keys(r).length > 0 && Object.values(r).every(empty)));
 }
 
 /**

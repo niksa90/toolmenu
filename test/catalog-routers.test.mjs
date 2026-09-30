@@ -49,7 +49,7 @@ test('cli: snapshot --catalog lists the commands behind routers without running 
   assert.equal(menu.toolmenu, 1);
   assert.equal(menu.catalog.tool, 'the command routers');
   assert.deepEqual(menu.catalog.queries, []);
-  assert.deepEqual(menu.catalog.operations.map((o) => o.name), ['files_copy', 'files_delete', 'files_list', 'vault_secret_get', 'vault_secret_set']);
+  assert.deepEqual(menu.catalog.operations.map((o) => o.name), ['files.files_copy', 'files.files_delete', 'files.files_list', 'vault.vault_secret_get', 'vault.vault_secret_set']);
   assert.deepEqual(menu.catalog.routers.map((r) => [r.tool, r.operations]), [['files', 3], ['vault', 2]]);
   assert.deepEqual(menu.catalog.skipped.map((s) => s.tool), ['locked']);
 
@@ -93,7 +93,7 @@ test('cli: a router that wants credentials leaves its part out, with a next step
   assert.equal(a.code, 0, a.stderr);
   const catalog = JSON.parse(readFileSync(join(cwd, 'm.json'), 'utf8')).catalog;
   assert.deepEqual(catalog.failed.map((f) => f.query), ['vault']);
-  assert.deepEqual(catalog.operations.map((o) => o.name), ['files_copy', 'files_delete', 'files_list']);
+  assert.deepEqual(catalog.operations.map((o) => o.name), ['files.files_copy', 'files.files_delete', 'files.files_list']);
   const failed = JSON.parse(a.stdout).findings.find((f) => f.rule === 'catalog/failed');
   assert.match(failed.message, /^1 router wanted credentials before it would list its commands: vault\./);
   assert.equal(failed.confidence, 'unsure');
@@ -113,7 +113,7 @@ test('cli: catalog.routers names routers detection misses; a bad name stops with
   assert.equal(named.code, 0, named.stderr);
   const catalog = JSON.parse(readFileSync(join(cwd, 'm.json'), 'utf8')).catalog;
   assert.equal(catalog.tool, 'vault');
-  assert.deepEqual(catalog.operations.map((o) => o.name), ['vault_secret_get', 'vault_secret_set']);
+  assert.deepEqual(catalog.operations.map((o) => o.name), ['vault.vault_secret_get', 'vault.vault_secret_set']);
 
   writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ catalog: { routers: ['Vault'] } }));
   const typo = await run(['snapshot', '--catalog', '--out', 'm.json', ...routerServer()], { cwd });
@@ -128,4 +128,85 @@ test('cli: catalog.routers names routers detection misses; a bad name stops with
   writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ catalog: { routers: 'vault' } }));
   const shape = await run(['snapshot', '--catalog', '--out', 'm.json', ...routerServer()], { cwd });
   assert.match(shape.stderr, /catalog\.routers must be a list of tool names/);
+});
+
+test('an oddly shaped router is skipped, or stops the run only when the config named it; nothing is sent', async () => {
+  // Required params named like a command or its arguments are never filled in,
+  // whatever their type.
+  const odd = { name: 'odd', inputSchema: { type: 'object', properties: { command: { type: 'string' }, args: { type: 'string' }, help: { type: 'boolean' } }, required: ['args'] } };
+  assert.match(routerShape(odd, true).reason, /its args parameter is required/);
+  const twin = routerTool('twin', undefined, ['intent', 'subcommand']);
+  twin.inputSchema.properties.subcommand = { type: 'string' };
+  assert.match(routerShape(twin).reason, /its subcommand parameter is required/);
+
+  const cwd = tempDir();
+  const log = join(cwd, 'calls.jsonl');
+  writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ catalog: { pauseMs: 0 } }));
+  const a = await run(['snapshot', '--catalog', '--json', '--out', 'm.json', ...routerServer({ ODD: '1', CALL_LOG: log })], { cwd });
+  assert.equal(a.code, 0, a.stderr);
+  const catalog = JSON.parse(readFileSync(join(cwd, 'm.json'), 'utf8')).catalog;
+  assert.deepEqual(catalog.skipped.map((s) => s.tool), ['locked', 'twin']);
+  assert.match(catalog.skipped[1].reason, /subcommand parameter is required/);
+  assert.ok(!readFileSync(log, 'utf8').includes('"twin"'));
+
+  writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ catalog: { pauseMs: 0, routers: ['odd'] } }));
+  const named = await run(['snapshot', '--catalog', '--out', 'm.json', ...routerServer({ ODD: '1', CALL_LOG: log })], { cwd });
+  assert.equal(named.code, 2);
+  assert.match(named.stderr, /won't call it: its args parameter is required/);
+  assert.doesNotMatch(named.stderr, /toolmenu bug/);
+  assert.ok(!readFileSync(log, 'utf8').includes('"odd"'));
+});
+
+test('router operation names stay the same when another router fails', async () => {
+  const cwd = tempDir();
+  writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ catalog: { pauseMs: 0 } }));
+  await run(['snapshot', '--catalog', '--out', 'v1.json', ...routerServer({ ANSWER: 'files:shared,vault:shared' })], { cwd });
+  await run(['snapshot', '--catalog', '--out', 'v2.json', ...routerServer({ ANSWER: 'files:shared,vault:error' })], { cwd });
+  const names = (f) => JSON.parse(readFileSync(join(cwd, f), 'utf8')).catalog.operations.map((o) => o.name);
+  assert.ok(names('v1.json').includes('files.list') && names('v1.json').includes('vault.list'));
+  assert.deepEqual(names('v2.json'), names('v1.json').filter((n) => n.startsWith('files.')));
+  const d = JSON.parse((await run(['diff', '--json', 'v1.json', 'v2.json'], { cwd })).stdout).findings;
+  assert.ok(!d.some((f) => /\bfiles\./.test(f.message)), JSON.stringify(d.map((f) => f.message)));
+});
+
+test('same-named commands in one router are all kept, keyed by command, and said so', async () => {
+  const cwd = tempDir();
+  writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ catalog: { pauseMs: 0, routers: ['vault'] } }));
+  const a = await run(['snapshot', '--catalog', '--json', '--out', 'm.json', ...routerServer({ DUPES: '1' })], { cwd });
+  assert.equal(a.code, 0, a.stderr);
+  const catalog = JSON.parse(readFileSync(join(cwd, 'm.json'), 'utf8')).catalog;
+  assert.deepEqual(catalog.operations.map((o) => o.name), [
+    'vault.vault key list',
+    'vault.vault secret list',
+    'vault.vault_purge',
+    'vault.vault_rotate',
+    'vault.vault_rotate#2',
+    'vault.vault_secret_get',
+    'vault.vault_secret_set',
+  ]);
+  assert.equal(catalog.operations.find((o) => o.name === 'vault.vault_rotate#2').description, 'Rotate a key.');
+  const read = JSON.parse(a.stdout).findings.find((f) => f.rule === 'catalog/read');
+  assert.ok(read.detail.some((d) => /vault listed vault_rotate twice.*vault\.vault_rotate#2/.test(d)), JSON.stringify(read.detail));
+});
+
+test('an unreadable answer is told apart from an error, and an empty list is not a failure', async () => {
+  const cwd = tempDir();
+  writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ catalog: { pauseMs: 0 } }));
+  const a = await run(['snapshot', '--catalog', '--json', '--out', 'm.json', ...routerServer({ ANSWER: 'files:garbled,vault:error,empty:empty' })], { cwd });
+  assert.equal(a.code, 0, a.stderr);
+  const catalog = JSON.parse(readFileSync(join(cwd, 'm.json'), 'utf8')).catalog;
+  assert.deepEqual(catalog.failed.map((f) => f.query), ['files', 'vault']);
+  assert.equal(catalog.routers.find((r) => r.tool === 'empty').operations, 0);
+  const failed = JSON.parse(a.stdout).findings.filter((f) => f.rule === 'catalog/failed');
+  assert.equal(failed.length, 2);
+  const [unreadable, error] = [failed.find((f) => f.tool === 'files'), failed.find((f) => f.tool === 'vault')];
+  assert.match(unreadable.message, /^1 router answered, but not with a command list toolmenu could read: files\./);
+  assert.match(unreadable.fix, /another format/);
+  assert.match(error.message, /^1 router answered the listing call with an error: vault\./);
+
+  // Only an empty list: nothing failed.
+  const b = await run(['snapshot', '--catalog', '--json', '--out', 'e.json', ...routerServer({ ANSWER: 'empty:empty' })], { cwd });
+  const eCatalog = JSON.parse(readFileSync(join(cwd, 'e.json'), 'utf8')).catalog;
+  assert.equal(eCatalog.failed, undefined);
+  assert.ok(!JSON.parse(b.stdout).findings.some((f) => f.rule === 'catalog/failed'));
 });
