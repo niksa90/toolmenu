@@ -20,8 +20,11 @@ export interface Config {
   fullDescriptions?: string[];
   /** Server processes (stdio) or connections (HTTP) to compare, the main one included (default 2). */
   processes?: number;
-  /** snapshot --catalog: which search tool and which queries (default: detected, derived from the menu). */
-  catalog?: { tool?: string; queries?: string[]; pauseMs?: number; crawl?: boolean; maxQueries?: number; stopAfter?: number };
+  /**
+   * snapshot --catalog: which search tool and which queries (default: detected,
+   * derived from the menu), or which command routers to list (default: detected).
+   */
+  catalog?: { tool?: string; routers?: string[]; queries?: string[]; pauseMs?: number; crawl?: boolean; maxQueries?: number; stopAfter?: number };
 }
 
 const DEFAULT_PATH = 'toolmenu.config.json';
@@ -47,6 +50,15 @@ export async function loadConfig(path?: string): Promise<Config> {
   }
   if (config.processes !== undefined && !(Number.isInteger(config.processes) && config.processes >= 1)) {
     throw new Error(`${file}: processes must be a whole number, 1 or more`);
+  }
+  const catalog = config.catalog;
+  if (catalog !== undefined) {
+    const names = (v: unknown) => Array.isArray(v) && v.length > 0 && v.every((x) => typeof x === 'string' && x.length > 0);
+    if (typeof catalog !== 'object' || catalog === null || Array.isArray(catalog)) throw new Error(`${file}: catalog must be an object, like { "routers": ["keyvault"] } or { "tool": "search_tools" }`);
+    if (catalog.tool !== undefined && !(typeof catalog.tool === 'string' && catalog.tool)) throw new Error(`${file}: catalog.tool must be the name of the search tool, a string`);
+    if (catalog.routers !== undefined && !names(catalog.routers)) throw new Error(`${file}: catalog.routers must be a list of tool names, like ["keyvault", "storage"]`);
+    if (catalog.tool !== undefined && catalog.routers !== undefined) throw new Error(`${file}: catalog names both a search tool (tool) and routers (routers); a menu file keeps one catalog, so keep the one the operations are behind`);
+    if (catalog.queries !== undefined && !names(catalog.queries)) throw new Error(`${file}: catalog.queries must be a list of search phrases, like ["list issues"]`);
   }
   return config;
 }
