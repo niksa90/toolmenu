@@ -266,6 +266,14 @@ Keyword matching only in v1: deterministic, free and reproducible in CI.
 | `write/no-dry-run` | info | A `destructiveHint: true` or `readOnlyHint: false` tool with no `dry_run`/`preview`-style parameter and no matching preview tool |
 | `write/unannotated` | warn | A tool whose name suggests writing (`delete_`, `send_`, `update_`…) has no annotations |
 
+**Descriptions the client cuts (§19)**
+
+| id | sev | check |
+|---|---|---|
+| `description/buried` | warn | A sentence that reads as an instruction to the agent sits past the point where the client cuts descriptions, so the model never sees it. Read from the words, so marked unsure |
+| `description/cut` | info | Descriptions longer than the client sends, with where the cut falls. Nothing past it reads as an instruction, so it's a check, not a bug |
+| `description/late-instruction` | info | Only with the default cut: an instruction past 280 characters, where one real client cut, but inside the default cut. Split out of `description/cut` in 0.13; a setting for `description/cut` still applies to it unless it's set itself (`RULE_ALIASES`) |
+
 **Spec** (not observed failures: protocol requirements, kept minimal)
 
 | id | sev | check |
