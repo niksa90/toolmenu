@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { parse } from 'yaml';
 import { detectProject, findGitRoot, initReport, planInit, secretsNeeded, workflowYaml } from '../dist/init.js';
@@ -203,6 +203,25 @@ test('planInit: a lockfile in a parent folder counts only when that folder is th
   // pnpm without a pnpm-workspace.yaml that lists the folder: not its workspace either.
   const pnpm = repo({ 'package.json': '{}', 'pnpm-lock.yaml': '', 'server/package.json': '{}' });
   assert.ok(detectProject(join(pnpm, 'server'), pnpm).setup.includes('- run: npm install'));
+});
+
+test('planInit: a relative venv interpreter, a symlink to a Python outside the repository, gets the venv advice', { skip: !hasGit() }, () => {
+  const root = realpathSync(tempDir());
+  execFileSync('git', ['init', '-q', root]);
+  writeFileSync(join(root, 'requirements.txt'), 'mcp\n');
+  writeFileSync(join(root, '.gitignore'), '.venv/\n');
+  writeFileSync(join(root, 'server.py'), '');
+  mkdirSync(join(root, '.venv/bin'), { recursive: true });
+  writeFileSync(join(root, '.venv/pyvenv.cfg'), 'home = /usr/bin\n');
+  // What python -m venv makes: bin/python links to the system's interpreter.
+  symlinkSync(process.execPath, join(root, '.venv/bin/python'));
+  execFileSync('git', ['-C', root, 'add', 'requirements.txt', '.gitignore', 'server.py']);
+  const plan = planInit({ cwd: root, target: stdio('.venv/bin/python', ['server.py']) });
+  assert.equal(plan.problems.length, 1, JSON.stringify(plan.problems));
+  const [p] = plan.problems;
+  assert.doesNotMatch(p.what, /outside the repository/);
+  assert.match(p.what, /The command is \.venv\/bin\/python, which git ignores/);
+  assert.match(p.next, /python -m venv \.venv/);
 });
 
 test('planInit: a gitignored interpreter the workflow never creates is said, for every kind of project', { skip: !hasGit() }, () => {

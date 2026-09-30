@@ -424,7 +424,8 @@ function portableWord(word: string, index: number, plan: InitPlan, git: GitStatu
   if (!/[/\\]/.test(value) && value !== '..' && index === 0) return word;
   const abs = resolve(plan.cwd, value);
   if (!existsSync(abs)) return word;
-  if (!isInside(plan.root, abs) || !isInside(plan.root, real(abs))) {
+  // A venv's bin/python links to the system's Python: the venv itself is what the runner lacks.
+  if (!isInside(plan.root, abs) || (!isInside(plan.root, real(abs)) && !venvOf(abs, plan.root))) {
     plan.problems.push({
       what: `${capitalize(where)} is outside the repository: ${value}, which is ${real(abs)}`,
       why: `It exists on this machine, but the runner only has the checkout of ${plan.root}.`,
