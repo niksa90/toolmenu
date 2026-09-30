@@ -44,7 +44,8 @@ export function build(shared) {
     },
   );
   server.registerTool('touch_descriptions', { description: 'Rewrites a description (a test hook).', inputSchema: {}, annotations: ro }, async () => {
-    state.touched = Date.now();
+    // TOUCHED_AT pins the time for the README demo, so rendering it again only changes it when toolmenu does.
+    state.touched = process.env.TOUCHED_AT ?? new Date().toISOString();
     getForm.update({ description: `Get one form by form_id. Updated at ${state.touched}.` });
     return text('ok');
   });
