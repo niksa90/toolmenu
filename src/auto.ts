@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { parse } from 'yaml';
+import { isMap, isNode, isScalar, parseDocument, type Document } from 'yaml';
 import { synthesizeArgs } from './args.js';
 import { MAX_UNLOCKS, unlockers, type Scenario, type Step } from './session.js';
 import type { Menu, MenuTool } from './types.js';
@@ -7,8 +7,11 @@ import { COLLECTION_VERBS, LOOKUP_VERBS, verbOf, WRITE_VERBS } from './words.js'
 
 /** A value the user gave: `raw` is the text as typed on the command line, when it was typed. */
 export interface GivenValue {
+  /** The text as typed, for fitValue: `42` for a string parameter is "42". */
   raw?: string;
   value: unknown;
+  /** A values file's map grouped by tool: each field with its own text. */
+  fields?: Record<string, GivenValue>;
 }
 
 export interface AutoOptions {
@@ -162,7 +165,7 @@ function resolveValues(menu: Menu, values: Record<string, GivenValue>): { perToo
     if (byName.has(key) && v.raw === undefined && v.value && typeof v.value === 'object' && !Array.isArray(v.value)) {
       for (const [param, pv] of Object.entries(v.value)) {
         if (!byName.get(key)!.inputSchema?.properties?.[param]) ignored.push({ input: `${key}.${param}`, why: `${key} has no parameter ${param}` });
-        else targeted.push([key, param, { value: pv, ...(typeof pv === 'string' ? { raw: pv } : {}) }]);
+        else targeted.push([key, param, v.fields?.[param] ?? { value: pv, ...(typeof pv === 'string' ? { raw: pv } : {}) }]);
       }
       continue;
     }
@@ -210,19 +213,35 @@ export function parseValueFlag(text: string): [string, GivenValue] {
 
 /** A values file: a YAML or JSON map, keys as in --value (`repo_path`, `get_issue.issue_key`). */
 export async function loadValuesFile(path: string): Promise<Record<string, GivenValue>> {
-  let data: unknown;
+  let doc: Document.Parsed;
   try {
-    data = parse(await readFile(path, 'utf8'));
+    doc = parseDocument(await readFile(path, 'utf8'));
+    if (doc.errors.length) throw doc.errors[0];
   } catch (error) {
     throw new Error(`${path}: ${error instanceof Error ? error.message : String(error)}`);
   }
-  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error(`${path}: expected a map of parameter names to values (repo_path: /src/app)`);
+  if (!isMap(doc.contents)) throw new Error(`${path}: expected a map of parameter names to values (repo_path: /src/app)`);
+  const data = doc.toJS() as Record<string, unknown>;
   const out: Record<string, GivenValue> = {};
-  for (const [key, value] of Object.entries(data)) {
+  for (const pair of doc.contents.items) {
+    const key = String(isScalar(pair.key) ? pair.key.value : pair.key);
     // Grouped per tool (`get_issue: { issue_key: ABC-1 }`) is sorted out against the menu.
-    out[key] = { value, ...(typeof value === 'string' ? { raw: value } : {}) };
+    const fields = isMap(pair.value)
+      ? Object.fromEntries(pair.value.items.map((p) => [String(isScalar(p.key) ? p.key.value : p.key), given(p.value)]))
+      : undefined;
+    out[key] = { ...given(pair.value, data[key]), ...(fields ? { fields } : {}) };
   }
   return out;
+}
+
+/**
+ * One value from a values file, with the text a scalar was written as: YAML reads
+ * `42` as a number and `02134` as 2134, but for a string parameter the user meant
+ * the text, as with --value.
+ */
+function given(node: unknown, value: unknown = isNode(node) ? node.toJSON() : node): GivenValue {
+  const raw = isScalar(node) ? (node.source ?? (typeof node.value === 'string' ? node.value : undefined)) : undefined;
+  return { value, ...(raw !== undefined ? { raw } : {}) };
 }
 
 /** --assume-read-only a,b --assume-read-only c: exact names, no patterns. */
@@ -299,7 +318,8 @@ export function autoSummary(auto: AutoSummary): string[] {
   const openWorld = skip('open world');
   if (openWorld.length) rows.push(`${openWorld.length} marked openWorldHint → --open-world (may cost API credits)`);
   const over = skip('over the call budget');
-  if (over.length) rows.push(`${over.length} over the call budget → --max-calls ${n + over.length}`);
+  // Unlocks run outside the budget, so called.length would overshoot.
+  if (over.length) rows.push(`${over.length} over the call budget → --max-calls ${(auto.maxCalls ?? 20) + over.length}`);
   rows.forEach((r, i) => lines.push(`${i === 0 ? 'not called: ' : '            '}${r}`));
   for (const x of auto.ignored ?? []) lines.push(`ignored: ${x.input}: ${x.why}`);
   return lines;

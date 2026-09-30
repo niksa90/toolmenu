@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { synthesize, synthesizeArgs } from '../dist/args.js';
-import { autoScenario, loadValuesFile, parseAssumeReadOnly, parseValueFlag } from '../dist/auto.js';
+import { autoScenario, autoSummary, loadValuesFile, parseAssumeReadOnly, parseValueFlag } from '../dist/auto.js';
 import { probeMenu } from '../dist/probe.js';
 import { parseScenario, session } from '../dist/session.js';
 import { FIXTURES, menuOf, run, tempDir, tool } from './helpers.mjs';
@@ -120,6 +120,42 @@ test('values file: a map of names, tool.param keys, or values grouped by tool; a
   await assert.rejects(loadValuesFile(path), /expected a map/);
   assert.deepEqual(parseScenario({ assume_read_only: ['read_wiki'], steps: ['list'] }).assumeReadOnly, ['read_wiki']);
   assert.throws(() => parseScenario({ assume_read_only: ['read_*'], steps: ['list'] }), /exact tool names/);
+});
+
+test('values file: every scalar is fitted to the parameter type from its text, as --value is', async () => {
+  const ro = { annotations: { readOnlyHint: true } };
+  const schema = (props) => ({ type: 'object', properties: props, required: Object.keys(props) });
+  const menu = menuOf([
+    tool('get_issue', [], { ...ro, inputSchema: schema({ issue_number: { type: 'string' } }) }),
+    tool('find_town', [], { ...ro, inputSchema: schema({ zip: { type: 'string' } }) }),
+    tool('get_flag', [], { ...ro, inputSchema: schema({ flag: { type: 'string' } }) }),
+    tool('list_page', [], { ...ro, inputSchema: schema({ page: { type: 'integer' } }) }),
+  ]);
+  const argsOf = (plan) => Object.fromEntries(plan.scenario.steps.filter((s) => s.kind === 'call').map((s) => [s.tool, s.args]));
+  const expected = { get_issue: { issue_number: '42' }, find_town: { zip: '02134' }, get_flag: { flag: 'true' }, list_page: { page: 3 } };
+  const path = join(tempDir(), 'values.yml');
+  // By name, and grouped per tool: both paths keep the text.
+  writeFileSync(path, 'issue_number: 42\nzip: 02134\nflag: true\npage: 3\n');
+  assert.deepEqual(argsOf(autoScenario(menu, { values: await loadValuesFile(path) })), expected);
+  writeFileSync(path, 'get_issue:\n  issue_number: 42\nfind_town:\n  zip: 02134\nget_flag:\n  flag: true\nlist_page:\n  page: 3\n');
+  assert.deepEqual(argsOf(autoScenario(menu, { values: await loadValuesFile(path) })), expected);
+  // The same as --value.
+  const flags = Object.fromEntries(['issue_number=42', 'zip=02134', 'flag=true', 'page=3'].map(parseValueFlag));
+  assert.deepEqual(argsOf(autoScenario(menu, { values: flags })), expected);
+});
+
+test('autoSummary: over the call budget suggests the budget that fits them, unlocks aside', () => {
+  const ro = { annotations: { readOnlyHint: true } };
+  const menu = menuOf([
+    ...Array.from({ length: 25 }, (_, i) => tool(`get_thing_${i}`, [], ro)),
+    tool('enable_toolset', [], { ...ro, inputSchema: { type: 'object', properties: { toolset: { type: 'string', enum: ['a', 'b', 'c'] } }, required: ['toolset'] } }),
+  ]);
+  const plan = autoScenario(menu);
+  assert.ok(plan.called.includes('enable_toolset'), 'the unlock runs outside the budget');
+  assert.equal(plan.skipped.filter((s) => s.reason === 'over the call budget').length, 5);
+  const text = autoSummary({ ...plan, maxCalls: 20 }).join('\n');
+  assert.match(text, /5 over the call budget → --max-calls 25\b/);
+  assert.match(autoSummary({ ...plan, maxCalls: 10 }).join('\n'), /--max-calls 15\b/);
 });
 
 test('autoScenario: --assume-read-only calls the named unmarked tools, never a write', async () => {
