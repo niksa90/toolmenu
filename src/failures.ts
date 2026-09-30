@@ -138,3 +138,18 @@ export const FAILURE_LABELS: Record<FailureClass, string> = {
   'invalid-arguments': 'the arguments',
   other: 'other errors',
 };
+
+/**
+ * The next step for calls that failed before reaching the tool, per SPEC §25.
+ * The class is read from the error's words, so it's a guess: `confidence` is
+ * 'unsure', and the step says what to check rather than what's wrong.
+ */
+export function setupFailureAdvice(classes: Iterable<FailureClass>, transport: 'stdio' | 'http'): { fix: string; confidence: 'unsure' } {
+  const set = new Set(classes);
+  const credentials = transport === 'http' ? '--header "Authorization: …"' : '--env KEY=…';
+  const steps: string[] = [];
+  if (set.has('auth') || set.has('not-found')) steps.push(`If the errors are about credentials, rerun with real ones (${credentials}); a test account is enough.`);
+  if (set.has('environment')) steps.push('If something is missing on this machine (a browser, a binary, a module), install it where the server runs, or run the server in its own container image.');
+  if (set.has('network')) steps.push('If the server calls an upstream API, check this machine can reach it (DNS, proxy, firewall).');
+  return { fix: steps.join(' ') || 'Check the quoted errors: they came from before the tool ran.', confidence: 'unsure' };
+}
