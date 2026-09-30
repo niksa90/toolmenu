@@ -6,7 +6,7 @@ import { synthesize, synthesizeArgs } from '../dist/args.js';
 import { autoScenario, autoSummary, loadValuesFile, parseAssumeReadOnly, parseValueFlag } from '../dist/auto.js';
 import { probeMenu } from '../dist/probe.js';
 import { parseScenario, session } from '../dist/session.js';
-import { FIXTURES, menuOf, run, tempDir, tool } from './helpers.mjs';
+import { FIXTURES, menuOf, run, tempDir, TIMEOUT_MS, tool } from './helpers.mjs';
 
 test('synthesize: only values the schema vouches for', () => {
   const v = (schema, name) => synthesize(schema, name);
@@ -73,7 +73,7 @@ test('cli: session --auto runs, reports what it skipped, and saves its steps', a
 });
 
 const autoServer = (env = {}) => ({ kind: 'stdio', command: process.execPath, args: [join(FIXTURES, 'auto-server.mjs')], env });
-const probe = (env = {}) => probeMenu(autoServer(env), 15_000);
+const probe = (env = {}) => probeMenu(autoServer(env), TIMEOUT_MS);
 
 test('autoScenario: --value fills required params by name or for one tool; values no tool takes are reported', async () => {
   const menu = await probe();
@@ -202,7 +202,7 @@ test('cli: session --auto with values and assumed tools: one finding per repeate
 
 test('session: a menu that varies on every list is one root cause, not an edit per step (PayPal list_transactions.end_date)', async () => {
   const scenario = parseScenario({ steps: ['list', { call: 'git_status', args: { repo_path: '/x' } }, 'list'] });
-  const r = await session(autoServer({ CLOCK: '1' }), scenario, { timeoutMs: 15_000 });
+  const r = await session(autoServer({ CLOCK: '1' }), scenario, { timeoutMs: TIMEOUT_MS });
   const rules = r.findings.map((f) => f.rule);
   assert.deepEqual(rules.filter((x) => x === 'menu/process-variance'), ['menu/process-variance']);
   assert.ok(!rules.includes('session/edit'), rules.join(','));
@@ -213,10 +213,10 @@ test('session: a menu that varies on every list is one root cause, not an edit p
   assert.match(known.detail[0], /^list_transactions: inputSchema\.properties\.end_date\.default: "/);
   assert.match(r.findings.find((f) => f.rule === 'menu/process-variance').fix, /not the current time/);
   // With one process, the first list that differs is the finding; later ones point to it.
-  const one = await session(autoServer({ CLOCK: '1' }), scenario, { timeoutMs: 15_000, processes: 1 });
+  const one = await session(autoServer({ CLOCK: '1' }), scenario, { timeoutMs: TIMEOUT_MS, processes: 1 });
   assert.deepEqual(one.findings.filter((f) => f.rule === 'session/edit').map((f) => f.step), [1]);
   assert.match(one.findings.find((f) => f.rule === 'session/known-variance').message, /^Steps 2 and 3: the menu changed again.*session\/edit \(at step 1\)/);
   // A menu that doesn't vary on its own: nothing of the kind.
-  const still = await session(autoServer(), scenario, { timeoutMs: 15_000 });
+  const still = await session(autoServer(), scenario, { timeoutMs: TIMEOUT_MS });
   assert.deepEqual(still.findings.map((f) => f.rule), []);
 });
