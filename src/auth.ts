@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { Client, StreamableHTTPClientTransport, UnauthorizedError } from '@modelcontextprotocol/client';
 import type { OAuthClientInformationContext, OAuthClientMetadata, OAuthClientProvider, OAuthDiscoveryState, StoredOAuthClientInformation, StoredOAuthTokens } from '@modelcontextprotocol/client';
 import { VERSION } from './version.js';
+import { endSession } from './close.js';
 
 /**
  * The redirect port. Fixed, not random: dynamic registration records the exact
@@ -272,7 +273,7 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
     try {
       await client.connect(transport);
       // Already logged in with a valid (or refreshed) token.
-      await client.close();
+      await endSession(client, transport);
     } catch (error) {
       if (!(error instanceof UnauthorizedError)) throw error;
       const params = await callback.params;
@@ -287,7 +288,7 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
         throw new Error(`The login callback for ${serverUrl} carried the wrong state (not the one this login sent), so it was ignored (an old browser tab, or a second login at once).\n→ Next: Run toolmenu auth login ${serverUrl} again and use the tab it opens.`);
       }
       await transport.finishAuth(params);
-      await client.close().catch(() => {});
+      await endSession(client, transport);
     }
     return await check(serverUrl);
   } catch (error) {
@@ -309,12 +310,13 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
 /** Connect with the stored login and list tools: the login works. */
 async function check(serverUrl: string): Promise<{ name?: string; tools: number }> {
   const client = new Client({ name: 'toolmenu', version: VERSION });
-  await client.connect(new StreamableHTTPClientTransport(new URL(serverUrl), { authProvider: new StoredOAuthProvider(serverUrl) }));
+  const transport = new StreamableHTTPClientTransport(new URL(serverUrl), { authProvider: new StoredOAuthProvider(serverUrl) });
+  await client.connect(transport);
   try {
     const { tools } = await client.listTools();
     return { name: client.getServerVersion()?.name, tools: tools.length };
   } finally {
-    await client.close().catch(() => {});
+    await endSession(client, transport);
   }
 }
 
