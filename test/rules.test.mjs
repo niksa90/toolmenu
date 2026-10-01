@@ -248,6 +248,22 @@ test('write/no-dry-run is one finding per server, listing the tools', () => {
   assert.deepEqual(findings[0].detail, ['browser_close, browser_resize, browser_click']);
 });
 
+test('menu/host-specific: a container or machine ID in a description is flagged', () => {
+  const docker = tool('start_process', ['command'], { description: 'Start a process.\nDOCKER CONTAINER ENVIRONMENT DETECTED:\nContainer: 47d516a481f8\nUse read_process_output.' });
+  const f = lint([docker]).find((x) => x.rule === 'menu/host-specific');
+  assert.equal(f.severity, 'info');
+  assert.equal(f.confidence, 'unsure');
+  assert.equal(f.tool, 'start_process');
+  assert.match(f.message, /start_process's description contains 47d516a481f8, which looks like a container or machine ID/);
+  assert.match(f.fix, /Leave host details out of the description/);
+  const fine = [
+    tool('get_item', ['id'], { description: 'Example ID: 3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90 (a UUID).' }),
+    tool('decode', [], { description: 'Accepts deadbeefcafe and other hex words.' }),
+    tool('get_commit', ['sha'], { description: 'Takes a commit SHA like a1b2c3d.' }),
+  ];
+  assert.equal(lint(fine).find((x) => x.rule === 'menu/host-specific'), undefined);
+});
+
 test('spec/server-info: a server that sends no name or version is told so', () => {
   const tools = [tool('get_form', ['form_id'], { annotations: { readOnlyHint: true } })];
   const none = lint(tools, { serverInfo: {} }).find((f) => f.rule === 'spec/server-info');
