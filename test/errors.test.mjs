@@ -206,6 +206,13 @@ test('errors: an unknown option is matched against the command\'s own options', 
   assert.match(r.stderr, /Unknown option --relase\. Did you mean --release\?\n +→ Next: toolmenu diff --help lists its options/);
 });
 
+test('errors: a mistyped --help or --version is still suggested within a command', async () => {
+  const help = await run(['snapshot', '--hlep']);
+  assert.match(help.stderr, /Unknown option --hlep\. Did you mean --help\?/);
+  const version = await run(['diff', '--verison']);
+  assert.match(version.stderr, /Unknown option --verison\. Did you mean --version\?/);
+});
+
 test('errors: an unknown option with no command points to the overview and command help', async () => {
   const r = await run(['--bogus']);
   assert.equal(r.code, 2);

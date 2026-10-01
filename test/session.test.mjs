@@ -709,9 +709,11 @@ test('session: the text report leads with one line per cause, before the step lo
   const r = await run(['session', '--auto', '--', process.execPath, join(FIXTURES, 'session-server.mjs')]);
   const head = r.stdout.split('\nstep 1:')[0];
   assert.match(head, /\n2 errors, 2 warnings:\n/);
-  assert.match(head, /\n  ERROR  session\/edit · steps 2 and 7 · get_form: description changed mid-session\.\n/);
-  assert.match(head, /\n  ERROR  session\/mid-insert · step 4 · \+2 tools inserted at position 1 \(list_team_audits, get_team_audit\)\.\n/);
-  assert.match(head, /\n  WARN   session\/side-effect · steps 2, 4, 5 and 7 · A freshly started server doesn't show this change\.\n/);
+  assert.match(head, /\n  ERROR  session\/edit · steps 2 and 7 · get_form: description changed mid-session\. Invalidates/);
+  assert.match(head, /\n  ERROR  session\/mid-insert · step 4 · \+2 tools inserted at position 1 \(list_team_audits, get_team_audit\)\./);
+  assert.match(head, /\n  WARN   session\/side-effect · steps 2, 4, 5 and 7 · A freshly started server doesn't show this change\./);
+  // One line each, cut at 100 characters.
+  for (const l of head.split('\n').filter((l) => /^  (ERROR|WARN )  /.test(l))) assert.ok(l.split(' · ').slice(2).join(' · ').length <= 100, l);
   const labels = head.split('\n').filter((l) => /^  (ERROR|WARN )  /.test(l)).map((l) => l.trim().split(/\s+/)[0]);
   assert.deepEqual(labels, ['ERROR', 'ERROR', 'WARN', 'WARN']);
 });
@@ -721,7 +723,7 @@ test('session: the markdown report has the same summary above the step table', a
   const at = r.stdout.indexOf('**2 errors, 2 warnings:**');
   assert.ok(at > -1, r.stdout);
   assert.ok(at < r.stdout.indexOf('| Step |'));
-  assert.match(r.stdout, /\n- \*\*error\*\* `session\/edit` · steps 2 and 7 · get_form: description changed mid-session\.\n/);
+  assert.match(r.stdout, /\n- \*\*error\*\* `session\/edit` · steps 2 and 7 · get_form: description changed mid-session\. Invalidates/);
 });
 
 test('session: a clean run has no summary block', async () => {
@@ -745,5 +747,34 @@ test('session: the summary says "before step 1" for what was found before the fi
   const text = formatSession(result, 'text');
   assert.match(text, /\n  ERROR  menu\/process-variance · before step 1 · A second server process served a different menu\.\n/);
   assert.match(text, /\n  WARN   session\/nothing-called · the whole run · --auto called no tools\.\n/);
+});
+
+test('session: the summary keeps a quoted sentence whole and marks unsure findings', async () => {
+  const { formatSession } = await import('../dist/report.js');
+  const result = {
+    scenario: 's', server: { name: 'x' }, transport: 'stdio', listening: true,
+    baseline: { tools: 1, tokens: 10 }, final: { tools: 1, tokens: 10 }, steps: [],
+    findings: [{ rule: 'session/session-lost', severity: 'error', step: 3, confidence: 'unsure', message: 'The server ended this session at step 3 (“Session not found. Please reinitialize.”) after toolmenu opened a second process.' }],
+    union: { toolmenu: 1, server: {}, capturedAt: '', tools: [], totalTokens: 0 },
+  };
+  const line = formatSession(result, 'text').split('\n').find((l) => l.startsWith('  ERROR  session/session-lost · '));
+  assert.match(line, /^  ERROR  session\/session-lost · unsure · step 3 · The server ended this session at step 3 \(“Session not found\. Please reinitialize\.”\) after t/);
+});
+
+test('session: an edit that changes more than the earlier one is its own finding', () => {
+  const props = (extra) => ({ type: 'object', properties: { end: { type: 'string', default: extra.end }, ...(extra.foo ? { foo: { type: 'string' } } : {}) } });
+  const a = { name: 't', inputSchema: props({ end: '1' }), tokens: 10 };
+  const b = { name: 't', inputSchema: props({ end: '2' }), tokens: 10 };
+  const c = { name: 't', inputSchema: props({ end: '3', foo: true }), tokens: 12 };
+  const s2 = changeFindings([a], [b], [{ kind: 'inputSchema', tool: 't', position: 0 }], 2);
+  const s7 = changeFindings([b], [c], [{ kind: 'inputSchema', tool: 't', position: 0 }], 7);
+  assert.equal(mergeRepeats([...s2, ...s7]).filter((f) => f.rule === 'session/edit').length, 2);
+});
+
+test('session: the same edit from different origins is not merged', () => {
+  const a = { name: 't', description: 'x', tokens: 10 };
+  const s2 = changeFindings([a], [{ ...a, description: 'y' }], [{ kind: 'description', tool: 't', position: 0 }], 2, 'no tool call in between');
+  const s7 = changeFindings([a], [{ ...a, description: 'z' }], [{ kind: 'description', tool: 't', position: 0 }], 7, 'after calling get_x');
+  assert.equal(mergeRepeats([...s2, ...s7]).filter((f) => f.rule === 'session/edit').length, 2);
 });
 

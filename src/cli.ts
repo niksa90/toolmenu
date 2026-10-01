@@ -322,7 +322,7 @@ function failureMessage(error: unknown): string {
     : 'toolmenu --help lists the commands; toolmenu <command> --help lists its options.';
   if (code === 'ERR_PARSE_ARGS_UNKNOWN_OPTION') {
     const option = /Unknown option '([^']+)'/.exec(message)?.[1] ?? '';
-    const known = (command ? commandOptions(command) : Object.keys(CLI_OPTIONS)).map((name) => `--${name}`);
+    const known = (command ? [...commandOptions(command), 'help', 'version'] : Object.keys(CLI_OPTIONS)).map((name) => `--${name}`);
     const guess = known.map((k) => [k, editDistance(option, k)] as const).sort((a, b) => a[1] - b[1])[0];
     const hint = guess && guess[1] <= 2 ? ` Did you mean ${guess[0]}?` : '';
     return `Unknown option ${option}.${hint}\n  → Next: ${next}`;

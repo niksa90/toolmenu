@@ -436,9 +436,10 @@ function causes(findings: Finding[], line: (count: string | undefined, f?: Findi
   const out = [line(count)];
   for (const f of loud) {
     const where = f.steps?.length ? stepsText(f.steps) : f.step === 0 ? 'before step 1' : f.step ? `step ${f.step}` : 'the whole run';
-    // The first sentence, without the "Steps 2 and 7: " the line already says.
-    const text = clip(f.message.replace(/^Steps? [\d–, and]+: /, '').split(/(?<=\.)\s/)[0], 100);
-    out.push(line(undefined, f, where, text));
+    // Without the "Steps 2 and 7: " the line already says. Cut at a length, not a
+    // sentence: a quoted server message or "vs." would cut a sentence short.
+    const text = clip(f.message.replace(/^Steps? [\d–, and]+: /, ''), 100);
+    out.push(line(undefined, f, `${f.confidence === 'unsure' ? 'unsure · ' : ''}${where}`, text));
   }
   return [...out, ''];
 }

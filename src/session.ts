@@ -9,7 +9,7 @@ import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAIT
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
-import { describeToolDifference, firstDifference } from './difference.js';
+import { allDifferences, describeToolDifference } from './difference.js';
 import { autoNextStep, neededValues, writeSign, type AutoSummary } from './auto.js';
 import { LOOKUP_VERBS, singular, VERBS, verbOf, words, WRITE_VERBS } from './words.js';
 
@@ -962,15 +962,16 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
     const b = after.find((t) => t.name === tool);
     // What differs, down to the value: `inputSchema.properties.end_date.default: "…21.5Z" vs "…40.2Z"`.
     const seen = a && b ? [describeToolDifference(a, b).replace(/^[^:]*: /, '')] : [];
-    // One cause: the same tool, fields and first changed value (a timestamp in a
-    // description, rewritten at every call). Anything else is a change of its own.
-    const path = a && b ? firstDifference(toolDefinition(a), toolDefinition(b))?.path ?? '' : '';
+    // One cause: the same tool, the same changed values and the same origin (a
+    // timestamp in a description, rewritten at every call). A change that touches
+    // anything more is a change of its own.
+    const paths = a && b ? allDifferences(toolDefinition(a), toolDefinition(b)).map((d) => d.path).sort().join(',') : '';
     out.push({
       rule: 'session/edit',
       severity: 'error',
       step,
       tool,
-      cause: `${tool}|${fields.join(',')}|${path}`,
+      cause: `${tool}|${fields.join(',')}|${paths}|${origin ?? ''}`,
       each: `step ${step}: position ${brk?.position ?? '?'} · ~${total.toLocaleString('en-US')} tokens (estimate)${seen[0] ? ` · ${seen[0]}` : ''}`,
       message: `${tool}: ${fields.join(', ')} changed mid-session. Invalidates the cached prompt: the tool list and the conversation after it are processed again.`,
       detail: [...seen, ...cost, ...why],
@@ -1040,7 +1041,7 @@ function scopeFindings(scope: Scope, modern: boolean, step: number): Raw[] {
  * tools for this connection only (9 steps made 18 near-identical blocks). What
  * differs per step, the tools and their cost, goes in the detail. Mid-inserts
  * and removals stay per step: each is its own change. Edits merge only when the
- * tool, the fields and the first changed value are the same: one cause.
+ * tool, the changed values and their origin are the same: one cause.
  */
 const REPEATS = ['session/side-effect', 'session/append', 'session/connection-local'];
 export function mergeRepeats(raw: Raw[]): Raw[] {
