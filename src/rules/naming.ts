@@ -1,5 +1,5 @@
 import type { MenuTool } from '../types.js';
-import { COLLECTION_VERBS, LOOKUP_VERBS, WRITE_VERBS, commonWords, nouns, singular, verbOf, words } from '../words.js';
+import { COLLECTION_VERBS, LOOKUP_VERBS, VERBS, WRITE_VERBS, commonWords, nouns, singular, verbOf, words } from '../words.js';
 import { missingWords, negatedMention, routeScores } from '../routes.js';
 import { kept, names, type Rule, type RuleFinding } from './rule.js';
 
@@ -59,10 +59,25 @@ export const sharedWord: Rule = {
   summary: 'The same noun used for different things across tools',
   run(ctx) {
     const byNoun = new Map<string, MenuTool[]>();
-    const common = commonWords(ctx.menu.tools.map((t) => t.name));
-    const subject = (name: string) => nouns(name).filter((n) => !common.has(n));
+    // Compared in the singular: "maps" in every name is as common as "map".
+    const common = new Set([...commonWords(ctx.menu.tools.map((t) => t.name))].map(singular));
+    const subject = (name: string) => nouns(name).filter((n) => !common.has(singular(n)));
+    // A word that opens two or more tool names is a namespace (content_*, maps_*):
+    // where it opens the name it isn't the tool's subject, so it isn't compared as
+    // a shared word there. It still tells qualifiers apart (content_get_entry vs
+    // context_get_entry both say "entry").
+    const opens = new Map<string, number>();
+    for (const tool of ctx.menu.tools) {
+      const first = singular(words(tool.name)[0] ?? '');
+      if (first) opens.set(first, (opens.get(first) ?? 0) + 1);
+    }
+    const namespace = (name: string) => {
+      const first = singular(words(name)[0] ?? '');
+      return (opens.get(first) ?? 0) >= 2 && !VERBS.has(first) ? first : undefined;
+    };
     for (const tool of ctx.menu.tools) {
       for (const noun of new Set(subject(tool.name))) {
+        if (noun === namespace(tool.name)) continue;
         byNoun.set(noun, [...(byNoun.get(noun) ?? []), tool]);
       }
     }
@@ -72,6 +87,11 @@ export const sharedWord: Rule = {
     const groups: { noun: string; tools: string[] }[] = [];
     for (const [noun, tools] of byNoun) {
       if (tools.length > 1 && tools.every((t) => singular(firstWord(t.name) ?? '') === noun)) continue;
+      // In every tool's name of a menu of three or more, it's the server's one subject
+      // (DeepWiki: ask_wiki_question, read_wiki_contents, read_wiki_structure), not two
+      // things sharing a word. Two tools are too few to tell: list_team_audits and
+      // get_audit_trail are the clash this rule exists for.
+      if (tools.length >= 3 && tools.length === ctx.menu.tools.length) continue;
       // Tools where the noun is qualified differently and neither qualifier set
       // contains the other: list_team_audits vs get_audit_trail.
       const qualifiers = tools.map((t) => ({ tool: t.name, rest: new Set(subject(t.name).filter((n) => n !== noun)) }));

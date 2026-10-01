@@ -524,7 +524,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       steps,
       findings: settle(mergeRepeats(raw), options),
       ...(options.auto ? { auto: { ...options.auto, ...(leftOut.length ? { stopped: leftOut } : {}) } } : {}),
-      union: buildMenu([...seen.values()].map(toolDefinition), baseline.server),
+      // Marked: its order is the order tools were first seen (unlock order), so diff doesn't compare it.
+      union: { ...buildMenu([...seen.values()].map(toolDefinition), baseline.server), from: 'session' },
     };
   } finally {
     await conn.close().catch(() => {});

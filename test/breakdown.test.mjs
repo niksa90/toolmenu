@@ -60,3 +60,15 @@ test('cli: snapshot shows where the tokens go', async () => {
   const r = await run(['snapshot', '--no-write', '--env', 'FIXTURE=smells', '--', process.execPath, join(FIXTURES, 'raw-server.mjs')]);
   assert.match(r.stdout, /Where the tokens go \(estimate\)/);
 });
+
+test('breakdown: two different blocks under the same name say where each one is', () => {
+  const block = (word) => ({ type: 'object', description: `The ${word} to fill in, with every field it has and the order they go in.`, properties: { title: { type: 'string', description: `The ${word} title.` }, fields: { type: 'array', items: { type: 'string' } } } });
+  const tools = [
+    ...['a', 'b', 'c'].map((n) => tool(`survey_${n}`, [], { inputSchema: { type: 'object', properties: { form: block('survey') } } })),
+    ...['a', 'b', 'c'].map((n) => tool(`signup_${n}`, [], { inputSchema: { type: 'object', properties: { form: block('signup') } } })),
+  ];
+  const lines = breakdownLines(breakdown(menuOf(tools)), tools.length).filter((l) => /repeated: form/.test(l));
+  assert.equal(lines.length, 2, lines.join('\n'));
+  assert.match(lines.join('\n'), /repeated: form at survey_a\.form /);
+  assert.match(lines.join('\n'), /repeated: form at signup_a\.form /);
+});

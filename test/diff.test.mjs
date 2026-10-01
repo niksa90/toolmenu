@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { diffMenus, versionBump } from '../dist/diff.js';
 import { buildMenu, loadMenu } from '../dist/menu.js';
@@ -735,4 +735,19 @@ test('cli: diff markdown sections follow severity: a notice raised to error is s
   assert.doesNotMatch(r.stdout, /#### Breaking/);
   assert.match(r.stdout, /#### To check \(1\)\n\n\| \| Rule \| Change \|\n\|---\|---\|---\|\n\| \*\*error\*\* \| `diff\/description`/);
   assert.match(r.stdout, /<details><summary>Notices \(1\)<\/summary>\n\n\| \| Rule \| Change \|\n\|---\|---\|---\|\n\| info \| `diff\/tool-removed`/);
+});
+
+test('diff: a session union menu has no order to compare, so no diff/order notice', () => {
+  const t = (name) => ({ name, description: `${name}.`, inputSchema: { type: 'object', properties: {} } });
+  const listed = buildMenu([t('a'), t('b'), t('c')], { name: 's' });
+  const union = { ...buildMenu([t('b'), t('a'), t('c')], { name: 's' }), from: 'session' };
+  assert.ok(diffMenus(listed, buildMenu([t('b'), t('a'), t('c')], { name: 's' })).findings.some((f) => f.rule === 'diff/order'), 'two snapshots: order compared');
+  assert.ok(!diffMenus(listed, union).findings.some((f) => f.rule === 'diff/order'));
+  assert.ok(!diffMenus(union, listed).findings.some((f) => f.rule === 'diff/order'));
+});
+
+test('session --union-out marks the menu as a session union', async () => {
+  const dir = tempDir();
+  await run(['session', '--auto', '--union-out', 'union.json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')], { cwd: dir });
+  assert.equal(JSON.parse(readFileSync(join(dir, 'union.json'), 'utf8')).from, 'session');
 });

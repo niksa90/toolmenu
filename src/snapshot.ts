@@ -7,6 +7,7 @@ import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
 import { catalogFindings, readCatalog, type CatalogOptions } from './catalog.js';
 import type { Routes } from './routes.js';
 import { SEVERITY_RANK, type Finding, type Menu } from './types.js';
+import { shellWord } from './init.js';
 
 export interface SnapshotOptions extends RuleSettings {
   routes?: Routes;
@@ -79,6 +80,7 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
       transport: target.kind,
       probes,
       wrapper: isContainerWrapper(target),
+      server: target.kind === 'stdio' ? `-- ${[target.command, ...target.args].map(shellWord).join(' ')}` : shellWord(target.url),
     },
     options,
   );

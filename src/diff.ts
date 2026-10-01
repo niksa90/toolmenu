@@ -211,7 +211,9 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   collapseDialects(raw);
   collapseMenuWide(raw);
 
-  const moved = compareMenus(oldTools, newTools).filter((c) => c.kind === 'moved');
+  // A session's union menu is in unlock order, which no client was served: no order to compare.
+  const unordered = before.from === 'session' || after.from === 'session';
+  const moved = unordered ? [] : compareMenus(oldTools, newTools).filter((c) => c.kind === 'moved');
   if (moved.length) {
     const names = moved.map((m) => m.tool);
     raw.push({
