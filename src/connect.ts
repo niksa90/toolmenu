@@ -4,7 +4,7 @@ import type { ChildProcess } from 'node:child_process';
 import type { Stream } from 'node:stream';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/client/stdio';
 import { hasLogin, StoredOAuthProvider } from './auth.js';
-import { explain, Trace } from './explain.js';
+import { explain, isCredentialHeader, Trace } from './explain.js';
 import { endSession } from './close.js';
 import { eraOf } from './menu.js';
 import type { Era } from './types.js';
@@ -159,7 +159,7 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     capabilities: (client.getServerCapabilities() ?? {}) as Record<string, unknown>,
     usedAuth:
       target.kind === 'http' &&
-      (oauth || Object.keys(target.headers ?? {}).some((h) => /^(authorization|x-api-key|api-key|cookie)$/i.test(h))),
+      (oauth || Object.keys(target.headers ?? {}).some(isCredentialHeader)),
     stderr: () => stderrText,
     close: () => endSession(client, transport),
     explain: (error, stage) => explain(error, trace, { ...context, stage }),
