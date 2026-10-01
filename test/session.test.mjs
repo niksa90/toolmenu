@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareMenus } from '../dist/compare.js';
 import { changeFindings, clip, MAX_UNLOCKS, mergeRepeats, parseScenario, scopeOf, session, starterScenario, unlockers, unlockListers, valuesFromListing } from '../dist/session.js';
-import { autoScenario } from '../dist/auto.js';
+import { autoScenario, autoSummary } from '../dist/auto.js';
 import { parse as parseYaml } from 'yaml';
 import { FIXTURES, ROOT, menuOf, run, tempDir, TIMEOUT_MS, tool } from './helpers.mjs';
 import { start as startSdkHttp } from './fixtures/http-server.mjs';
@@ -512,6 +512,18 @@ test('--auto: calling nothing is a warning that says why; an unlock skipped as o
   assert.equal(nothing?.severity, 'warn');
   assert.match(nothing.message, /--auto called no tools: 2 marked openWorldHint \(they may cost API credits\)/);
   assert.match(nothing.fix, /^Rerun with --open-world/);
+});
+
+test('--auto: one skipped tool is counted in the singular', async () => {
+  const unmarked = tool('search_docs', []);
+  const needs = tool('get_page', [], { annotations: { readOnlyHint: true }, inputSchema: { type: 'object', properties: { page_id: { type: 'string' } }, required: ['page_id'] } });
+  const web = tool('search_web', [], { annotations: { readOnlyHint: true, openWorldHint: true } });
+  const plan = autoScenario(menuOf([unmarked, needs, web]));
+  const r = await session(stdio(), plan.scenario, { timeoutMs: TIMEOUT_MS, processes: 1, auto: { called: plan.called, skipped: plan.skipped } });
+  const nothing = r.findings.find((f) => f.rule === 'session/nothing-called');
+  assert.match(nothing.message, /--auto called no tools: 1 needs values the schema doesn't give; 1 isn't marked readOnlyHint; 1 marked openWorldHint \(it may cost API credits\)\./);
+  const header = autoSummary({ called: plan.called, skipped: plan.skipped }).join('\n');
+  assert.match(header, /1 needs values the schema doesn't give/);
 });
 
 test('--auto: a read-only unlock runs even when marked openWorldHint, every value then the first again', () => {
