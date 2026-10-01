@@ -195,9 +195,33 @@ test('errors: a 401 keeps the OAuth hint and the status the action looks for', a
 test('errors: a mistyped option gets the nearest one; a broken menu file says what to do', async () => {
   const r = await run(['snapshot', '--timout', '5', 'https://x']);
   assert.equal(r.code, 2);
-  assert.match(r.stderr, /^toolmenu: Unknown option --timout\. Did you mean --timeout\?\n +→ Next: toolmenu --help/);
+  assert.match(r.stderr, /^toolmenu: Unknown option --timout\. Did you mean --timeout\?\n +→ Next: toolmenu snapshot --help lists its options/);
   const missing = await run(['diff', 'nope.json', 'nope.json']);
   assert.match(missing.stderr, /nope\.json: no such file/);
+});
+
+test('errors: an unknown option is matched against the command\'s own options', async () => {
+  const r = await run(['diff', '--relase', '1..2', 'a.json', 'b.json']);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /Unknown option --relase\. Did you mean --release\?\n +→ Next: toolmenu diff --help lists its options/);
+});
+
+test('errors: an unknown option with no command points to the overview and command help', async () => {
+  const r = await run(['--bogus']);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /→ Next: toolmenu --help lists the commands; toolmenu <command> --help lists its options/);
+});
+
+test('errors: snapshot without a server shows both forms', async () => {
+  const r = await run(['snapshot']);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /→ Next: toolmenu snapshot -- node dist\/server\.js \(stdio\) or toolmenu snapshot https:\/\/example\.com\/mcp \(HTTP\)/);
+});
+
+test('errors: session without a server keeps --auto in the example', async () => {
+  const r = await run(['session', '--auto']);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /→ Next: toolmenu session --auto -- node dist\/server\.js \(stdio\)/);
 });
 
 test('explain: the pieces', () => {

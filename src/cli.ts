@@ -22,7 +22,7 @@ import { existingMessage, initReport, planInit, writeInit } from './init.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
 import { VERSION } from './version.js';
 import { CLI_OPTIONS } from './options.js';
-import { commandHelp, isCommand, overview, unknownCommand } from './help.js';
+import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type Command } from './help.js';
 
 class UsageError extends Error {}
 
@@ -31,11 +31,16 @@ export async function main(argv: string[]): Promise<number> {
   const before = dash === -1 ? argv : argv.slice(0, dash);
   const command = dash === -1 ? undefined : argv.slice(dash + 1);
 
-  const { values, positionals } = parseArgs({
-    args: before,
-    allowPositionals: true,
-    options: CLI_OPTIONS,
-  });
+  let parsed;
+  try {
+    parsed = parseArgs({ args: before, allowPositionals: true, options: CLI_OPTIONS });
+  } catch (error) {
+    // Which command was meant, so the hint can name its help and its options.
+    const meant = before.find((a) => isCommand(a));
+    if (meant && error && typeof error === 'object') (error as { command?: Command }).command = meant;
+    throw error;
+  }
+  const { values, positionals } = parsed;
 
   if (values.version) {
     process.stdout.write(`${VERSION}\n`);
@@ -62,6 +67,11 @@ export async function main(argv: string[]): Promise<number> {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new UsageError(`--timeout must be a positive number of milliseconds`);
 
   if (sub === 'auth') return authCommand(rest, values);
+
+  // The invocation up to the server, for examples in messages: a session example
+  // without --auto or --scenario wouldn't run.
+  const mode = sub !== 'session' ? '' : values.init ? ' --init' : values.auto ? ' --auto' : values.scenario ? ` --scenario ${values.scenario}` : '';
+  const prefix = `${sub}${mode}`;
 
   const config = await loadConfig(values.config);
   const processes = values.processes !== undefined ? Number(values.processes) : config.processes ?? 2;
@@ -115,7 +125,7 @@ export async function main(argv: string[]): Promise<number> {
   if (sub === 'session' && values.init) {
     const path = values.scenario ?? 'scenario.yml';
     if (existsSync(path)) throw new UsageError(`${path} already exists. Pick another path with --scenario.`);
-    const initTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
+    const initTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix);
     const conn = await connectPatiently(seeded(initTarget, MAIN_SEED), { timeoutMs });
     try {
       const list = await patiently(() => listTools(conn, { timeoutMs }), { error: tooMany });
@@ -145,7 +155,7 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   if (sub === 'init') {
-    const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
+    const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix);
     const plan = planInit({ cwd: process.cwd(), target, out: values.out, session: values['with-session'] });
     if (plan.existing.length) throw new UsageError(existingMessage(plan));
     const { menu, findings } = await snapshot(target, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
@@ -173,7 +183,7 @@ export async function main(argv: string[]): Promise<number> {
     } catch (error) {
       throw new UsageError(error instanceof Error ? error.message : String(error));
     }
-    const autoTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
+    const autoTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix);
     const waited = { ms: 0 };
     const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
       throw refusedForTooMany(error, waited.ms);
@@ -206,7 +216,7 @@ export async function main(argv: string[]): Promise<number> {
       process.stdout.write(formatPlan(scenario, values.scenario) + '\n');
       return 0;
     }
-    const sessionTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
+    const sessionTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix);
     const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario, unionOut: !!values['union-out'] });
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
@@ -214,7 +224,7 @@ export async function main(argv: string[]): Promise<number> {
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
-  const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth']);
+  const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix);
   const routesPath = values.routes ?? config.routes;
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
@@ -228,14 +238,14 @@ export async function main(argv: string[]): Promise<number> {
   return findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
 }
 
-function parseTarget(positionals: string[], command: string[] | undefined, headers: string[], env: string[], noAuth = false): Target {
+function parseTarget(positionals: string[], command: string[] | undefined, headers: string[], env: string[], noAuth: boolean | undefined, prefix: string): Target {
   if (command) {
     if (command.length === 0) throw new UsageError('Nothing after "--": give the command that starts the server.');
     if (positionals.length) throw new UsageError(`Unexpected "${positionals[0]}" before "--".`);
     return { kind: 'stdio', command: command[0], args: command.slice(1), env: parsePairs(env, '=', '--env') };
   }
   const [url, ...extra] = positionals;
-  if (!url) throw new UsageError('Give a server URL, or "-- <command>" for a stdio server.');
+  if (!url) throw new UsageError(`Give a server: a URL, or the command that starts it after "--".\n  → Next: toolmenu ${prefix} -- node dist/server.js (stdio) or toolmenu ${prefix} https://example.com/mcp (HTTP)`);
   if (extra.length) throw new UsageError(`Unexpected "${extra[0]}". For a stdio server, put the command after "--".`);
   if (!/^https?:\/\//.test(url)) throw new UsageError(`"${url}" isn't an http(s) URL. For a stdio server, put the command after "--".`);
   return { kind: 'http', url, headers: parsePairs(headers, ':', '--header'), ...(noAuth ? { noAuth } : {}) };
@@ -306,14 +316,18 @@ main(process.argv.slice(2)).then(exitWhenFlushed, (error: unknown) => {
 function failureMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   const code = (error as { code?: unknown } | null)?.code;
+  const command = (error as { command?: Command } | null)?.command;
+  const next = command
+    ? `toolmenu ${command} --help lists its options. (A server's own flags go after "--".)`
+    : 'toolmenu --help lists the commands; toolmenu <command> --help lists its options.';
   if (code === 'ERR_PARSE_ARGS_UNKNOWN_OPTION') {
     const option = /Unknown option '([^']+)'/.exec(message)?.[1] ?? '';
-    const known = Object.keys(CLI_OPTIONS).map((name) => `--${name}`);
+    const known = (command ? commandOptions(command) : Object.keys(CLI_OPTIONS)).map((name) => `--${name}`);
     const guess = known.map((k) => [k, editDistance(option, k)] as const).sort((a, b) => a[1] - b[1])[0];
     const hint = guess && guess[1] <= 2 ? ` Did you mean ${guess[0]}?` : '';
-    return `Unknown option ${option}.${hint}\n  → Next: toolmenu --help lists every option. (A server's own flags go after "--".)`;
+    return `Unknown option ${option}.${hint}\n  → Next: ${next}`;
   }
-  if (typeof code === 'string' && code.startsWith('ERR_PARSE_ARGS_')) return `${message}\n  → Next: toolmenu --help lists every option.`;
+  if (typeof code === 'string' && code.startsWith('ERR_PARSE_ARGS_')) return `${message}\n  → Next: ${next}`;
   return message;
 }
 
