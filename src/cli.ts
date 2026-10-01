@@ -19,7 +19,7 @@ import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded } fro
 import { autoScenario, loadValuesFile, parseAssumeReadOnly, parseValueFlag, scenarioYaml, type GivenValue } from './auto.js';
 import { authDir, listLogins, login, logout } from './auth.js';
 import { existingMessage, initReport, planInit, shellWord, writeInit } from './init.js';
-import { SEVERITY_RANK, type Severity } from './types.js';
+import { SEVERITY_RANK, type MenuTool, type Severity } from './types.js';
 import { VERSION } from './version.js';
 import { CLI_OPTIONS } from './options.js';
 import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type Command } from './help.js';
@@ -167,8 +167,10 @@ export async function main(argv: string[]): Promise<number> {
 
   if (sub === 'session' && values.auto) {
     if (values.scenario) throw new UsageError('--auto builds the steps itself; drop --scenario (or drop --auto).');
-    const maxCalls = values['max-calls'] ? Number(values['max-calls']) : 20;
-    if (!Number.isInteger(maxCalls) || maxCalls < 1) throw new UsageError('--max-calls must be a whole number, 1 or more');
+    const givenMax = values['max-calls'] ? Number(values['max-calls']) : undefined;
+    if (givenMax !== undefined && !(Number.isInteger(givenMax) && givenMax >= 1)) throw new UsageError('--max-calls must be a whole number, 1 or more');
+    const perUnlock = values['max-calls-per-unlock'] ? Number(values['max-calls-per-unlock']) : 5;
+    if (!Number.isInteger(perUnlock) || perUnlock < 1) throw new UsageError('--max-calls-per-unlock must be a whole number, 1 or more');
     const savePath = values['save-scenario'];
     if (savePath && existsSync(savePath)) throw new UsageError(`${savePath} already exists. Pick another path for --save-scenario.`);
     // Values and vouched-for tools are checked before anything starts.
@@ -189,15 +191,45 @@ export async function main(argv: string[]): Promise<number> {
     const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
       throw refusedForTooMany(error, waited.ms);
     });
-    const plan = autoScenario(menu, { openWorld: values['open-world'], maxCalls, values: given, assumeReadOnly });
+    const options = { openWorld: values['open-world'], values: given, assumeReadOnly };
+    let plan = autoScenario(menu, { ...options, maxCalls: givenMax ?? 20 });
+    // Each unlock value gets its own budget for the tools it brings, so the first
+    // toolsets can't use up the calls the last ones need. --max-calls, when given,
+    // caps every call, and the starting menu leaves up to half of it for the unlocks.
+    const reserve = givenMax === undefined ? 0 : Math.min(perUnlock * plan.unlockValues, Math.floor(givenMax / 2));
+    if (reserve) plan = autoScenario(menu, { ...options, maxCalls: givenMax! - reserve });
+    const maxCalls = givenMax ?? 20 + perUnlock * plan.unlockValues;
     if (savePath) await writeFile(savePath, scenarioYaml(plan, menu.server.name));
     if (values.plan) {
       process.stdout.write(formatPlan(plan.scenario, 'auto') + '\n');
       return 0;
     }
-    const auto = { called: plan.called, skipped: plan.skipped, assumed: plan.assumed, withValues: plan.withValues, ignored: plan.ignored, maxCalls };
-    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'], auto });
-    result.auto ??= auto;
+    const auto = { called: plan.called, skipped: plan.skipped, assumed: plan.assumed, withValues: plan.withValues, ignored: plan.ignored, maxCalls, maxCallsPerUnlock: perUnlock };
+    // Tools that appear mid-session (behind an unlock) are planned when they appear,
+    // under the same rules and what's left of --max-calls. Each tool once.
+    const planned = new Set([...plan.called, ...plan.skipped.map((s) => s.tool)]);
+    let spent = plan.spent;
+    const replan = (added: MenuTool[]) => {
+      const fresh = added.filter((t) => !planned.has(t.name));
+      for (const t of fresh) planned.add(t.name);
+      if (!fresh.length) return [];
+      const left = maxCalls - spent;
+      const more = autoScenario({ ...menu, tools: fresh }, { ...options, maxCalls: Math.min(perUnlock, left), callsOnly: true });
+      // Left out by this unlock's own budget, not by the total: say which, for the right flag.
+      if (perUnlock < left) for (const s of more.skipped) if (s.reason === 'over the call budget') s.reason = 'over the per-unlock budget';
+      spent += more.spent;
+      auto.called.push(...more.called);
+      auto.skipped.push(...more.skipped);
+      auto.assumed.push(...more.assumed);
+      auto.withValues.push(...more.withValues);
+      if (more.assumed.length) plan.scenario.assumeReadOnly = [...(plan.scenario.assumeReadOnly ?? []), ...more.assumed];
+      return more.scenario.steps;
+    };
+    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'], auto, replan });
+    // A --value or --assume-read-only for a tool behind an unlock isn't unused: check
+    // them against every tool the session saw, not just the starting menu.
+    auto.ignored = autoScenario(result.union, { values: given, assumeReadOnly }).ignored;
+    result.auto = { ...result.auto, ...auto };
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
     if (output) process.stdout.write(output + '\n');

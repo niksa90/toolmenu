@@ -364,6 +364,8 @@ export function formatSession(s: SessionResult, format: Format): string {
       `\`${s.server.name ?? 'server'}\` ${s.server.version ?? ''} · protocol ${s.server.protocolVersion ?? '?'} · ${s.transport} · ${s.baseline.tools} → ${s.final.tools} tools · ~${s.baseline.tokens.toLocaleString('en-US')} → ~${s.final.tokens.toLocaleString('en-US')} tokens (estimate)`,
       '',
       ...(s.auto ? [...autoSummary(s.auto).map((l, i) => (i === 0 ? `**${l.replace(/^auto: /, 'auto:** ')}` : `- ${l.trim()}`)), ''] : []),
+      ...(callCounts(s) ? [`**Calls:** ${callCounts(s)}`, ''] : []),
+      ...(menuChange(s) ? [`**Menu:** ${menuChange(s)}`, ''] : []),
       ...causes(s.findings, (count, f, where, text) =>
         count ? `**${count}:**` : `- ${f!.severity === 'error' ? '**ERROR**' : LABEL[f!.severity].trim()} \`${f!.rule}\` · ${where} · ${mdCell(text!)}`,
       ),
@@ -381,8 +383,11 @@ export function formatSession(s: SessionResult, format: Format): string {
     `  ${s.server.name ?? 'server'} ${s.server.version ?? ''} · protocol ${s.server.protocolVersion ?? '?'} · ${s.transport}`,
     `  baseline: ${plural(s.baseline.tools, 'tool')} · ${tok(s.baseline.tokens)} tokens (estimate) · listening for list_changed: ${s.listening ? 'yes' : 'no'}`,
     ...(s.auto ? autoSummary(s.auto).map((l, i) => (i === 0 ? `  ${l}` : `    ${l}`)) : []),
-    `  fresh-${s.transport === 'stdio' ? 'process' : 'connection'} check: ${s.connectionCheck === undefined ? 'not checked' : s.connectionCheck === 'same' ? 'the same menu' : 'a DIFFERENT menu'}`,
+    ...(callCounts(s) ? [`  calls: ${callCounts(s)}`] : []),
+    // Before the first step only: what a fresh one sees after a change is each step's scope.
+    `  fresh-${s.transport === 'stdio' ? 'process' : 'connection'} check of the starting menu: ${s.connectionCheck === undefined ? 'not checked' : s.connectionCheck === 'same' ? 'the same' : 'DIFFERENT'}`,
     '',
+    ...(menuChange(s) ? [`menu: ${menuChange(s)}`] : []),
     ...causes(s.findings, (count, f, where, text) => (count ? `${count}:` : `  ${LABEL[f!.severity]}  ${f!.rule} · ${where} · ${text}`)),
   ];
   const at = (step: number) => s.findings.filter((f) => f.step === step);
@@ -402,6 +407,8 @@ export function formatSession(s: SessionResult, format: Format): string {
     before = step.tools;
     const facts = [
       step.status !== 'ok' ? step.status : '',
+      // A tool error or a failure is said in the step's note; an answer otherwise wouldn't be said at all.
+      step.outcome === 'answered' ? 'answered' : '',
       step.changed ? `menu changed${delta ? ` · ${delta > 0 ? '+' : '−'}${plural(Math.abs(delta), 'tool')}` : ''}` : step.status === 'ok' ? 'no change' : '',
       step.changed ? (step.listChanged ? 'list_changed received' : 'no list_changed') : '',
       step.scope ? `scope: ${step.scope}` : '',
@@ -428,20 +435,56 @@ export function formatSession(s: SessionResult, format: Format): string {
  * finding. Empty when there's nothing at warn or above.
  */
 function causes(findings: Finding[], line: (count: string | undefined, f?: Finding, where?: string, text?: string) => string): string[] {
-  // Errors first; the step order within each (the sort is stable).
-  const loud = findings.filter((f) => f.severity !== 'info').sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
-  if (!loud.length) return [];
+  // Errors first, info last; the step order within each (the sort is stable).
+  const all = [...findings].sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
+  if (!all.length) return [];
   const c = counts(findings);
-  const count = [c.error ? plural(c.error, 'error') : '', c.warn ? plural(c.warn, 'warning') : ''].filter(Boolean).join(', ');
+  const count = [c.error ? plural(c.error, 'error') : '', c.warn ? plural(c.warn, 'warning') : '', c.info ? `${c.info} info` : ''].filter(Boolean).join(', ');
   const out = [line(count)];
-  for (const f of loud) {
+  for (const f of all) {
     const where = f.steps?.length ? stepsText(f.steps) : f.step === 0 ? 'before step 1' : f.step ? `step ${f.step}` : 'the whole run';
-    // Without the "Steps 2 and 7: " the line already says. Cut at a length, not a
-    // sentence: a quoted server message or "vs." would cut a sentence short.
-    const text = clip(f.message.replace(/^Steps? [\d–, and]+: /, ''), 100);
+    // Without the "Steps 2 and 7: " the line already says.
+    const text = lead(f.message.replace(/^Steps? [\d–, and]+: /, ''), 100);
     out.push(line(undefined, f, `${f.confidence === 'unsure' ? 'unsure · ' : ''}${where}`, text));
   }
   return [...out, ''];
+}
+
+/**
+ * The start of a message, at most `max` characters: up to the last sentence end
+ * that fits, or cut with an ellipsis when none does. A sentence end inside quotes
+ * or brackets, or after "vs." or "e.g.", isn't one (a server's quoted words).
+ */
+function lead(text: string, max: number): string {
+  if (text.length <= max) return text;
+  let depth = 0;
+  let end = -1;
+  for (let i = 0; i < max; i++) {
+    const ch = text[i];
+    if ('“(["'.includes(ch)) depth++;
+    else if ('”)]'.includes(ch)) depth = Math.max(0, depth - 1);
+    else if (ch === '.' && depth === 0 && text[i + 1] === ' ' && /[A-Z+~]/.test(text[i + 2] ?? '') && !/\b(vs|e\.g|i\.e|etc)$/i.test(text.slice(0, i))) end = i;
+  }
+  return end > 0 ? text.slice(0, end + 1) : clip(text, max);
+}
+
+/** "menu: 5 → 8 tools (+3) · ~290 → ~479 tokens (+189, estimate) · changed at steps 2, 4, 5 and 7", or nothing when it never changed. */
+function menuChange(s: SessionResult): string | undefined {
+  const changed = s.steps.filter((st) => st.changed).map((st) => st.index);
+  if (!changed.length) return undefined;
+  const signed = (n: number) => (n >= 0 ? `+${n.toLocaleString('en-US')}` : `−${Math.abs(n).toLocaleString('en-US')}`);
+  const tools = s.final.tools - s.baseline.tools;
+  const tokens = s.final.tokens - s.baseline.tokens;
+  return `${s.baseline.tools} → ${s.final.tools} tools${tools ? ` (${signed(tools)})` : ''} · ~${s.baseline.tokens.toLocaleString('en-US')} → ~${s.final.tokens.toLocaleString('en-US')} tokens (${signed(tokens)}, estimate) · changed at ${stepsText(changed)}`;
+}
+
+/** "calls: 6 · 6 answered, 0 tool errors, 0 failed" (and how many weren't sent), or nothing without call steps. */
+function callCounts(s: SessionResult): string | undefined {
+  const calls = s.steps.filter((st) => st.outcome);
+  if (!calls.length) return undefined;
+  const n = (o: string) => calls.filter((st) => st.outcome === o).length;
+  const notSent = n('not-sent');
+  return `${calls.length} · ${n('answered')} answered, ${plural(n('tool-error'), 'tool error')}, ${n('failed')} failed${notSent ? `, ${notSent} not sent` : ''}`;
 }
 
 export function formatPlan(scenario: Scenario, name: string): string {
