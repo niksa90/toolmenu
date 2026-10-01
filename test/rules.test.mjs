@@ -628,11 +628,34 @@ test('menu/gated: a server that unlocks tools and says its list changes may have
   assert.equal(lint(all, { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined, 'every value has its tools listed');
   // Only some listed: the finding names the values whose tools aren't there.
   const some = lint(all.slice(0, 3), { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated');
-  assert.match(some.message, /no tool in this menu matches reports/);
+  assert.match(some.message, /1 of 2 values \(reports\) match no tool by name/);
   assert.doesNotMatch(some.message, /audits/);
+  // A partial match is only a hint: half or fewer of the values unmatched may just be named differently.
+  assert.equal(some.severity, 'info');
   // "Enables Cross-Region Restore on a vault" turns on a feature, not tools: no parameter names what to unlock.
   const enable = tool('backup_enable_crr', ['vault'], { description: 'Enables Cross-Region Restore on a vault.' });
   assert.equal(lint([tools[0], enable], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined, 'a feature switch is not an unlock');
+});
+
+test('menu/gated: in a namespaced menu a domain matches by namespace; a mostly complete menu is only a hint', () => {
+  const domains = ['content', 'tasks', 'users', 'groups', 'insights', 'engagement'];
+  const unlockDomains = tool('enable_domains', [], {
+    description: 'Unlock more tools for a domain.',
+    inputSchema: { type: 'object', properties: { domains: { type: 'array', items: { type: 'string', enum: domains } } }, required: ['domains'] },
+    annotations: { readOnlyHint: true },
+  });
+  const always = [tool('home_getContentPools'), tool('home_getGroups'), tool('home_listUsers'), tool('search_groups'), tool('home_getTasks')];
+  const ctx = { capabilities: { tools: { listChanged: true } } };
+  // Starting set: the always-on tools mention content, groups, users and tasks, but no domain's own tools are there.
+  const primary = lint([...always, unlockDomains], ctx).find((f) => f.rule === 'menu/gated');
+  assert.equal(primary.severity, 'warn');
+  assert.match(primary.message, /no tool in this menu matches content, tasks, users, groups and 2 more|no tool in this menu matches content, tasks, users, groups, insights and 1 more/);
+  assert.match(primary.detail[0], /no tool named for: content, tasks, users, groups, insights and engagement/);
+  // Everything listed, but two domains' tools are named for something else (report_get, comment_add).
+  const everything = [...always, tool('content_get'), tool('content_list'), tool('task_get'), tool('user_get'), tool('group_list'), tool('report_get'), tool('comment_add'), unlockDomains];
+  const all = lint(everything, ctx).find((f) => f.rule === 'menu/gated');
+  assert.equal(all.severity, 'info');
+  assert.match(all.message, /2 of 6 values \(insights and engagement\) match no tool by name/);
 });
 
 test('naming/shared-word: a word that opens several tool names is a namespace, not a shared noun', () => {
