@@ -274,10 +274,12 @@ export const connectionVariance = varianceRule('menu/connection-variance', 'http
  * A container or machine ID written into a description: two processes on one
  * host serve the same menu, so menu/process-variance can't see it, but every
  * install serves a different one (desktop-commander: "Container: 47d516a481f8").
- * A standalone run of 12–64 hex characters with a digit and a letter; a UUID's
- * last group, a short SHA or a hex word doesn't count.
+ * A run of 12–64 hex characters with a digit and a letter, right after a host word
+ * (container, host, hostname, machine, instance, pod, optionally "ID"): a fixed
+ * example ID ("Page ID, e.g. 1429989f…", an ObjectId, a pinned SHA) is the same on
+ * every install, so a hex value alone isn't enough.
  */
-const HOST_ID = /(?<![\w-])(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{12,64}(?![\w-])/;
+const HOST_ID = /\b(?:container|host(?:name)?|machine|instance|pod)(?:[ _-]?id)?\b[\s:=#'"(]{1,4}((?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{12,64})(?![\w-])/i;
 
 export const hostSpecific: Rule = {
   id: 'menu/host-specific',
@@ -286,7 +288,7 @@ export const hostSpecific: Rule = {
   run(ctx) {
     const findings: RuleFinding[] = [];
     for (const tool of ctx.menu.tools) {
-      const id = HOST_ID.exec(tool.description ?? '')?.[0];
+      const id = HOST_ID.exec(tool.description ?? '')?.[1];
       if (!id) continue;
       findings.push({
         tool: tool.name,
