@@ -701,7 +701,7 @@ interface Explained {
 }
 
 /** "step 2", "steps 2 and 3", "steps 2, 3 and 5", "steps 1–7 and 9". */
-function stepsText(steps: number[]): string {
+export function stepsText(steps: number[]): string {
   if (steps.length === 1) return `step ${steps[0]}`;
   const runs: string[] = [];
   for (let i = 0; i < steps.length; ) {

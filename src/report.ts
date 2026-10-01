@@ -1,7 +1,7 @@
 import type { DiffResult } from './diff.js';
 import type { HistoryResult, HistoryRow } from './history.js';
-import { stepLabel, type Scenario, type SessionResult } from './session.js';
-import type { Finding, Menu, Severity } from './types.js';
+import { clip, stepLabel, stepsText, type Scenario, type SessionResult } from './session.js';
+import { SEVERITY_RANK, type Finding, type Menu, type Severity } from './types.js';
 import { breakdown, breakdownLines, breakdownMarkdown } from './breakdown.js';
 import { autoSummary } from './auto.js';
 
@@ -364,6 +364,9 @@ export function formatSession(s: SessionResult, format: Format): string {
       `\`${s.server.name ?? 'server'}\` ${s.server.version ?? ''} · protocol ${s.server.protocolVersion ?? '?'} · ${s.transport} · ${s.baseline.tools} → ${s.final.tools} tools · ~${s.baseline.tokens.toLocaleString('en-US')} → ~${s.final.tokens.toLocaleString('en-US')} tokens (estimate)`,
       '',
       ...(s.auto ? [...autoSummary(s.auto).map((l, i) => (i === 0 ? `**${l.replace(/^auto: /, 'auto:** ')}` : `- ${l.trim()}`)), ''] : []),
+      ...causes(s.findings, (count, f, where, text) =>
+        count ? `**${count}:**` : `- ${f!.severity === 'error' ? '**error**' : f!.severity} \`${f!.rule}\` · ${where} · ${mdCell(text!)}`,
+      ),
       '| Step | Menu | list_changed | Scope |',
       '|---|---|---|---|',
       ...s.steps.map((st) => `| ${st.index}. ${mdCell(st.label)} | ${st.status !== 'ok' ? st.status : st.changed ? `changed (${st.tools} tools)` : 'no change'} | ${st.changed ? (st.listChanged ? 'received' : '**missing**') : ''} | ${st.scope ?? ''} |`),
@@ -380,6 +383,7 @@ export function formatSession(s: SessionResult, format: Format): string {
     ...(s.auto ? autoSummary(s.auto).map((l, i) => (i === 0 ? `  ${l}` : `    ${l}`)) : []),
     `  fresh-${s.transport === 'stdio' ? 'process' : 'connection'} check: ${s.connectionCheck === undefined ? 'not checked' : s.connectionCheck === 'same' ? 'the same menu' : 'a DIFFERENT menu'}`,
     '',
+    ...causes(s.findings, (count, f, where, text) => (count ? `${count}:` : `  ${LABEL[f!.severity]}  ${f!.rule} · ${where} · ${text}`)),
   ];
   const at = (step: number) => s.findings.filter((f) => f.step === step);
   const block = (findings: Finding[]) => {
@@ -416,6 +420,27 @@ export function formatSession(s: SessionResult, format: Format): string {
   lines.push(`final: ${plural(s.final.tools, 'tool')} · ${tok(s.final.tokens)} tokens (estimate)`);
   lines.push(summaryLine(s.findings));
   return lines.join('\n');
+}
+
+/**
+ * A session's errors and warnings, one line each, before the step log: what to fix
+ * without reading every step. `line` renders the count heading (count set) or one
+ * finding. Empty when there's nothing at warn or above.
+ */
+function causes(findings: Finding[], line: (count: string | undefined, f?: Finding, where?: string, text?: string) => string): string[] {
+  // Errors first; the step order within each (the sort is stable).
+  const loud = findings.filter((f) => f.severity !== 'info').sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
+  if (!loud.length) return [];
+  const c = counts(findings);
+  const count = [c.error ? plural(c.error, 'error') : '', c.warn ? plural(c.warn, 'warning') : ''].filter(Boolean).join(', ');
+  const out = [line(count)];
+  for (const f of loud) {
+    const where = f.steps?.length ? stepsText(f.steps) : f.step ? `step ${f.step}` : 'the whole run';
+    // The first sentence, without the "Steps 2 and 7: " the line already says.
+    const text = clip(f.message.replace(/^Steps? [\d–, and]+: /, '').split(/(?<=\.)\s/)[0], 100);
+    out.push(line(undefined, f, where, text));
+  }
+  return [...out, ''];
 }
 
 export function formatPlan(scenario: Scenario, name: string): string {

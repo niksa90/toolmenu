@@ -705,3 +705,29 @@ test('session: edits at different paths of one tool stay separate; the same path
   assert.equal(mergeRepeats([...s2, ...s6]).filter((f) => f.rule === 'session/edit').length, 1);
 });
 
+test('session: the text report leads with one line per cause, before the step log', async () => {
+  const r = await run(['session', '--auto', '--', process.execPath, join(FIXTURES, 'session-server.mjs')]);
+  const head = r.stdout.split('\nstep 1:')[0];
+  assert.match(head, /\n2 errors, 2 warnings:\n/);
+  assert.match(head, /\n  ERROR  session\/edit · steps 2 and 7 · get_form: description changed mid-session\.\n/);
+  assert.match(head, /\n  ERROR  session\/mid-insert · step 4 · \+2 tools inserted at position 1 \(list_team_audits, get_team_audit\)\.\n/);
+  assert.match(head, /\n  WARN   session\/side-effect · steps 2, 4, 5 and 7 · A freshly started server doesn't show this change\.\n/);
+  const labels = head.split('\n').filter((l) => /^  (ERROR|WARN )  /.test(l)).map((l) => l.trim().split(/\s+/)[0]);
+  assert.deepEqual(labels, ['ERROR', 'ERROR', 'WARN', 'WARN']);
+});
+
+test('session: the markdown report has the same summary above the step table', async () => {
+  const r = await run(['session', '--auto', '--format', 'markdown', '--', process.execPath, join(FIXTURES, 'session-server.mjs')]);
+  const at = r.stdout.indexOf('**2 errors, 2 warnings:**');
+  assert.ok(at > -1, r.stdout);
+  assert.ok(at < r.stdout.indexOf('| Step |'));
+  assert.match(r.stdout, /\n- \*\*error\*\* `session\/edit` · steps 2 and 7 · get_form: description changed mid-session\.\n/);
+});
+
+test('session: a clean run has no summary block', async () => {
+  const dir = tempDir();
+  writeFileSync(join(dir, 's.yml'), 'steps:\n  - list\n');
+  const r = await run(['session', '--scenario', 's.yml', '--', process.execPath, join(FIXTURES, 'sdk-server.mjs')], { cwd: dir });
+  assert.doesNotMatch(r.stdout, /^\d+ errors?, /m);
+});
+
