@@ -658,6 +658,23 @@ test('menu/gated: in a namespaced menu a domain matches by namespace; a mostly c
   assert.match(all.message, /2 of 6 values \(insights and engagement\) match no tool by name/);
 });
 
+test('naming/shared-word: a word in every tool name is the server\'s subject, not a clash', () => {
+  const words = (tools) => lint(tools).find((f) => f.rule === 'naming/shared-word')?.words.map((w) => w.noun) ?? [];
+  assert.deepEqual(words([tool('ask_wiki_question'), tool('read_wiki_contents'), tool('read_wiki_structure')]), []);
+  // one tool without it: still compared
+  assert.deepEqual(words([tool('ask_wiki_question'), tool('read_wiki_contents'), tool('search_repos')]), ['wiki']);
+});
+
+test('description/late-instruction: a mix of instructions past and across the cut is said as both', () => {
+  const pad = 'Returns the record with every field it has. '.repeat(6); // 264 characters
+  const tools = [
+    tool('get_record', ['record_id'], { description: `${pad}Note this: Never guess a record ID.` }), // across: starts at 275
+    tool('get_other', ['other_id'], { description: `${'Returns the other thing with every field. '.repeat(10)}Never guess an other ID.` }), // after: 420
+  ];
+  const hint = lint(tools).find((f) => f.rule === 'description/late-instruction');
+  assert.match(hint.message, /^2 descriptions give the agent instructions after character 280 or running past it/);
+});
+
 test('naming/shared-word: a word that opens several tool names is a namespace, not a shared noun', () => {
   const words = (tools) => lint(tools).find((f) => f.rule === 'naming/shared-word')?.words.map((w) => w.noun) ?? [];
   assert.deepEqual(words([tool('content_get_page'), tool('content_update_page'), tool('export_content_report'), tool('list_team_audits'), tool('get_audit_trail')]), ['audit']);
