@@ -29,7 +29,7 @@ No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
 (`history` installs old versions with today's dependencies, so it records what they
 serve now, which can differ from what they shipped with: FINDINGS F4.)
 
-> **Status: 0.12, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
+> **Status: 0.13, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
 > real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 ## Start here
@@ -360,6 +360,9 @@ into description and schema), large enums, and waste you can remove:
   block is named, not the pieces inside it.
 - **Unused `$defs`**: definitions nothing in the tool refers to. Notion's server 2.5.2
   ships the same 9 in all 24 tools, 72% of its menu.
+
+Every tool's estimate is in the menu file, for the ones the summary leaves out:
+`jq -r '.tools[] | "\(.tokens)\t\(.name)"' menu.json | sort -rn`.
 
 ## `snapshot` rules
 

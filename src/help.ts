@@ -215,3 +215,9 @@ export function unknownCommand(name: string): string {
 export function isCommand(name: string): name is Command {
   return (COMMANDS as readonly string[]).includes(name);
 }
+
+/** The options a command takes, as spelled on the command line (no "--"). */
+export function commandOptions(command: Command): string[] {
+  const { own, shared } = HELP[command];
+  return [...own, ...shared].map((k) => (k === 'init-out' || k === 'history-out' ? 'out' : k));
+}

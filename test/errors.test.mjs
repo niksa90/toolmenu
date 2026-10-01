@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
-import { FIXTURES, run } from './helpers.mjs';
+import { FIXTURES, run, tempDir } from './helpers.mjs';
 import { bodyExcerpt, formatBlock, stderrFact, Trace } from '../dist/explain.js';
 import { setupFailureAdvice } from '../dist/failures.js';
 
@@ -195,9 +196,57 @@ test('errors: a 401 keeps the OAuth hint and the status the action looks for', a
 test('errors: a mistyped option gets the nearest one; a broken menu file says what to do', async () => {
   const r = await run(['snapshot', '--timout', '5', 'https://x']);
   assert.equal(r.code, 2);
-  assert.match(r.stderr, /^toolmenu: Unknown option --timout\. Did you mean --timeout\?\n +→ Next: toolmenu --help/);
+  assert.match(r.stderr, /^toolmenu: Unknown option --timout\. Did you mean --timeout\?\n +→ Next: toolmenu snapshot --help lists its options/);
   const missing = await run(['diff', 'nope.json', 'nope.json']);
   assert.match(missing.stderr, /nope\.json: no such file/);
+});
+
+test('errors: an unknown option is matched against the command\'s own options', async () => {
+  const r = await run(['diff', '--relase', '1..2', 'a.json', 'b.json']);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /Unknown option --relase\. Did you mean --release\?\n +→ Next: toolmenu diff --help lists its options/);
+});
+
+test('errors: a mistyped --help or --version is still suggested within a command', async () => {
+  const help = await run(['snapshot', '--hlep']);
+  assert.match(help.stderr, /Unknown option --hlep\. Did you mean --help\?/);
+  const version = await run(['diff', '--verison']);
+  assert.match(version.stderr, /Unknown option --verison\. Did you mean --version\?/);
+});
+
+test('errors: an option value that is a command name isn\'t taken for the command', async () => {
+  const r = await run(['--out', 'diff', 'snapshot', '--bogus']);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /→ Next: toolmenu snapshot --help lists its options/);
+});
+
+test('errors: the no-server example keeps the scenario path, quoted when it has spaces', async () => {
+  const init = await run(['session', '--init', '--scenario', 'my scen.yml']);
+  assert.equal(init.code, 2);
+  assert.match(init.stderr, /→ Next: toolmenu session --init --scenario 'my scen\.yml' -- node dist\/server\.js \(stdio\)/);
+  const dir = tempDir();
+  writeFileSync(join(dir, 'my scen.yml'), 'steps:\n  - list\n');
+  const scripted = await run(['session', '--scenario', 'my scen.yml'], { cwd: dir });
+  assert.equal(scripted.code, 2);
+  assert.match(scripted.stderr, /→ Next: toolmenu session --scenario 'my scen\.yml' -- node dist\/server\.js \(stdio\)/);
+});
+
+test('errors: an unknown option with no command points to the overview and command help', async () => {
+  const r = await run(['--bogus']);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /→ Next: toolmenu --help lists the commands; toolmenu <command> --help lists its options/);
+});
+
+test('errors: snapshot without a server shows both forms', async () => {
+  const r = await run(['snapshot']);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /→ Next: toolmenu snapshot -- node dist\/server\.js \(stdio\) or toolmenu snapshot https:\/\/example\.com\/mcp \(HTTP\)/);
+});
+
+test('errors: session without a server keeps --auto in the example', async () => {
+  const r = await run(['session', '--auto']);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /→ Next: toolmenu session --auto -- node dist\/server\.js \(stdio\)/);
 });
 
 test('explain: the pieces', () => {

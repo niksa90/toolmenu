@@ -241,7 +241,7 @@ function secretName(header: string): string {
   return 'MCP_' + header.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
 }
 
-function shellWord(w: string): string {
+export function shellWord(w: string): string {
   return /^[\w./:=@%+,-]+$/.test(w) ? w : `'${w.replace(/'/g, `'\\''`)}'`;
 }
 
