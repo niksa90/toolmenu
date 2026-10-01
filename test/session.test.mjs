@@ -345,7 +345,7 @@ test('cli: session output, --plan and usage errors', async () => {
 
   const r = await run(['session', '--scenario', scenario, ...server], { cwd: dir });
   assert.equal(r.code, 1, r.stderr);
-  assert.match(r.stdout, /^step 3: call unlock_toolset \{"toolset":"audits"\} · menu changed · \+2 tools · list_changed received · scope: per-process$/m);
+  assert.match(r.stdout, /^step 3: call unlock_toolset \{"toolset":"audits"\} · answered · menu changed · \+2 tools · list_changed received · scope: per-process$/m);
   assert.match(r.stdout, /ERROR  session\/mid-insert\n\s+\+2 tools inserted at position 1 \(list_team_audits, get_team_audit\)/);
   assert.match(r.stdout, /cost: the whole tool list \(this server's part: ~\d+ tokens, estimate\) and the conversation after it; the change starts at position 1/);
 
@@ -661,7 +661,7 @@ test('session --auto, unlock per domain: one append and one connection-local fin
   assert.equal(of('session/connection-local')[0].severity, 'info');
   const text = formatSession(r, 'text');
   assert.equal(text.match(/The end of the tool list isn't the end of the prompt/g).length, 1);
-  assert.match(text, /step \d+: call search_capabilities \{"domains":\["billing"\]\} · menu changed · \+3 tools/);
+  assert.match(text, /step \d+: call search_capabilities \{"domains":\["billing"\]\} · answered · menu changed · \+3 tools/);
 });
 
 test('unlockers: a lookup counts only when it says its parameter unlocks tools; a claim about another parameter is not one', () => {
@@ -732,7 +732,7 @@ test('session: the text report leads with one line per cause, before the step lo
   const r = await run(['session', '--auto', '--', process.execPath, join(FIXTURES, 'session-server.mjs')]);
   const head = r.stdout.split('\nstep 1:')[0];
   assert.match(head, /\n2 errors, 2 warnings:\n/);
-  assert.match(head, /\n  ERROR  session\/edit · steps 2 and 7 · get_form: description changed mid-session\. Invalidates/);
+  assert.match(head, /\n  ERROR  session\/edit · steps 2 and 7 · get_form: description changed mid-session\.\n/);
   assert.match(head, /\n  ERROR  session\/mid-insert · step 4 · \+2 tools inserted at position 1 \(list_team_audits, get_team_audit\)\./);
   assert.match(head, /\n  WARN   session\/side-effect · steps 2, 4, 5 and 7 · A freshly started server doesn't show this change\./);
   // One line each, cut at 100 characters.
@@ -746,7 +746,7 @@ test('session: the markdown report has the same summary above the step table', a
   const at = r.stdout.indexOf('**2 errors, 2 warnings:**');
   assert.ok(at > -1, r.stdout);
   assert.ok(at < r.stdout.indexOf('| Step |'));
-  assert.match(r.stdout, /\n- \*\*ERROR\*\* `session\/edit` · steps 2 and 7 · get_form: description changed mid-session\. Invalidates/);
+  assert.match(r.stdout, /\n- \*\*ERROR\*\* `session\/edit` · steps 2 and 7 · get_form: description changed mid-session\.\n/);
 });
 
 test('session: a clean run has no summary block', async () => {
@@ -828,5 +828,66 @@ test('http: snapshot and session end every session they open', async () => {
   } finally {
     await server.close();
   }
+
+const SESSION_SERVER = ['--', process.execPath, join(FIXTURES, 'session-server.mjs')];
+
+test('session: the report counts what the calls did, and each call step says how it went', async () => {
+  const r = await run(['session', '--auto', ...SESSION_SERVER]);
+  assert.match(r.stdout, /\n  calls: 6 · 6 answered, 0 tool errors, 0 failed\n/);
+  assert.match(r.stdout, /\nstep 3: call search_forms \{"query":"test"\} · answered · no change\n/);
+  const json = JSON.parse((await run(['session', '--auto', '--json', ...SESSION_SERVER])).stdout);
+  assert.equal(json.steps[2].outcome, 'answered');
+  assert.equal(json.steps[0].outcome, undefined, 'a list step has no call outcome');
+  const dir = tempDir();
+  writeFileSync(join(dir, 's.yml'), 'steps:\n  - call: get_form\n    args: { form_id: broken }\n');
+  const broken = await run(['session', '--scenario', 's.yml', ...SESSION_SERVER], { cwd: dir });
+  assert.match(broken.stdout, /\n  calls: 1 · 0 answered, 1 tool error, 0 failed\n/);
+});
+
+test('session --auto calls the tools an unlock brings, right after it', async () => {
+  const r = await run(['session', '--auto', '--json', '--value', 'team=platform', ...SESSION_SERVER]);
+  const out = JSON.parse(r.stdout);
+  const labels = out.steps.map((s) => s.label);
+  const unlock = labels.indexOf('call unlock_toolset {"toolset":"audits"}');
+  assert.equal(labels[unlock + 1], 'call list_team_audits {"team":"platform"}', labels.join('\n'));
+  assert.ok(out.auto.called.includes('list_team_audits'));
+  assert.ok(out.auto.skipped.some((s) => s.tool === 'get_team_audit' && s.reason === 'needs values'));
+  assert.ok(out.auto.skipped.some((s) => s.tool === 'export_report' && s.reason === 'needs values'));
+  assert.ok(!(out.auto.ignored ?? []).some((x) => /team/.test(x.input)), JSON.stringify(out.auto.ignored));
+});
+
+test('session --auto keeps tools an unlock brings within --max-calls', async () => {
+  const out = JSON.parse((await run(['session', '--auto', '--json', '--max-calls', '2', '--value', 'team=platform', ...SESSION_SERVER])).stdout);
+  assert.ok(!out.steps.some((s) => s.label.startsWith('call list_team_audits')));
+  assert.ok(out.auto.skipped.some((s) => s.tool === 'list_team_audits' && s.reason === 'over the call budget'));
+});
+
+test('session: the header says the fresh-connection check is of the starting menu', async () => {
+  const r = await run(['session', '--auto', ...SESSION_SERVER]);
+  assert.match(r.stdout, /\n  fresh-process check of the starting menu: the same\n/);
+});
+
+test('session: the summary leads with the menu change and its cost, and lists info findings', async () => {
+  const r = await run(['session', '--auto', ...SESSION_SERVER]);
+  const head = r.stdout.split('\nstep 1:')[0];
+  assert.match(head, /\nmenu: 5 → 8 tools \(\+3\) · ~290 → ~479 tokens \(\+189, estimate\) · changed at steps 2, 4, 5 and 7\n/);
+  const md = (await run(['session', '--auto', '--format', 'markdown', ...SESSION_SERVER])).stdout;
+  assert.match(md, /\*\*Menu:\*\* 5 → 8 tools \(\+3\) · ~290 → ~479 tokens \(\+189, estimate\) · changed at steps 2, 4, 5 and 7/);
+});
+
+test('session: the summary cuts at a sentence end when one is near, never inside a quote', async () => {
+  const { formatSession } = await import('../dist/report.js');
+  const base = { scenario: 's', server: { name: 'x' }, transport: 'stdio', listening: true, baseline: { tools: 1, tokens: 10 }, final: { tools: 1, tokens: 10 }, steps: [], union: { toolmenu: 1, server: {}, capturedAt: '', tools: [], totalTokens: 0 } };
+  const findings = [
+    { rule: 'session/append', severity: 'warn', step: 2, message: '+97 tools appended at the end of the list, over 9 steps. The end of the tool list isn\'t the end of the prompt: most clients send tools first.' },
+    { rule: 'session/known-variance', severity: 'info', step: 1, message: 'The menu changed again, only in values that already differ.' },
+    { rule: 'session/session-lost', severity: 'error', step: 3, message: 'The server ended this session at step 3 (“Session not found. Please reinitialize now or later.”) after toolmenu opened a second process with the same credentials.' },
+  ];
+  const text = formatSession({ ...base, findings }, 'text');
+  assert.match(text, /\n  WARN   session\/append · step 2 · \+97 tools appended at the end of the list, over 9 steps\.\n/);
+  assert.match(text, /\n  INFO   session\/known-variance · step 1 · The menu changed again, only in values that already differ\.\n/);
+  // No sentence end outside the quote fits in 100 characters: cut at the length, after the quote's own period.
+  assert.match(text, /\n  ERROR  session\/session-lost · step 3 · The server ended this session at step 3 \(“Session not found\. Please reinitialize now or later\.”\)…\n/);
+  assert.match(text, /\n1 error, 1 warning, 1 info:\n/);
 });
 

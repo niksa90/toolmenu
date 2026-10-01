@@ -20,6 +20,11 @@ export interface AutoOptions {
   /** At most this many calls (default 20). */
   maxCalls?: number;
   /**
+   * Only the calls: no list first, no repeat of the first call at the end. For
+   * tools that appear mid-session, planned into a session already running.
+   */
+  callsOnly?: boolean;
+  /**
    * Values for required parameters, by name (`repo_path`) or for one tool
    * (`get_issue.issue_key`). Used before anything is synthesized.
    */
@@ -45,6 +50,8 @@ export interface AutoPlan {
   skipped: { tool: string; reason: SkipReason; missing?: string[]; why?: string }[];
   /** --value and --assume-read-only entries that did nothing, and why. */
   ignored: { input: string; why: string }[];
+  /** Calls counted against --max-calls (unlocks aren't). */
+  spent: number;
 }
 
 /** What a session report shows about an --auto plan. */
@@ -133,7 +140,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   const chosen = candidates.slice(0, maxCalls);
   for (const c of candidates.slice(maxCalls)) skipped.push({ tool: c.tool.name, reason: 'over the call budget' });
 
-  const steps: Step[] = [{ kind: 'list' }];
+  const steps: Step[] = options.callsOnly ? [] : [{ kind: 'list' }];
   for (const c of chosen) steps.push({ kind: 'call', tool: c.tool.name, args: c.args });
   for (const u of unlocks) {
     const array = u.tool.inputSchema?.properties?.[u.param!]?.type === 'array';
@@ -145,7 +152,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     // The same unlock again should change nothing, as in the --init starter.
     steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [values[0]] : values[0] }, ...tentative });
   }
-  if (chosen.length) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args });
+  if (chosen.length && !options.callsOnly) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args });
   const called = [...chosen.map((c) => c.tool.name), ...unlocks.map((u) => u.tool.name)];
   return {
     scenario: { allowWrites: false, steps, ...(assumed.size ? { assumeReadOnly: [...assumed] } : {}) },
@@ -154,6 +161,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     withValues: chosen.filter((c) => c.valued).map((c) => c.tool.name),
     skipped,
     ignored,
+    spent: chosen.length,
   };
 }
 
