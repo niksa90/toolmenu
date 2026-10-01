@@ -79,6 +79,7 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
       transport: target.kind,
       probes,
       wrapper: isContainerWrapper(target),
+      serverInfo: connection.server,
     },
     options,
   );

@@ -248,6 +248,50 @@ test('write/no-dry-run is one finding per server, listing the tools', () => {
   assert.deepEqual(findings[0].detail, ['browser_close, browser_resize, browser_click']);
 });
 
+test('menu/host-specific: a container or machine ID in a description is flagged', () => {
+  const docker = tool('start_process', ['command'], { description: 'Start a process.\nDOCKER CONTAINER ENVIRONMENT DETECTED:\nContainer: 47d516a481f8\nUse read_process_output.' });
+  const f = lint([docker]).find((x) => x.rule === 'menu/host-specific');
+  assert.equal(f.severity, 'info');
+  assert.equal(f.confidence, 'unsure');
+  assert.equal(f.tool, 'start_process');
+  assert.match(f.message, /start_process's description contains 47d516a481f8, which looks like a container or machine ID/);
+  assert.match(f.fix, /Leave host details out of the description/);
+  const fine = [
+    tool('get_item', ['id'], { description: 'Example ID: 3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90 (a UUID).' }),
+    tool('decode', [], { description: 'Accepts deadbeefcafe and other hex words.' }),
+    tool('get_commit', ['sha'], { description: 'Takes a commit SHA like a1b2c3d.' }),
+    // Fixed example IDs, the same on every install
+    tool('get_page', ['page_id'], { description: 'Page ID, e.g. 1429989fe8ac4effbc8f57f56486db54.' }),
+    tool('find_doc', ['id'], { description: 'An ObjectId like 507f1f77bcf86cd799439011.' }),
+    tool('pin_commit', ['sha'], { description: 'Pinned to 2fd4e1c67a2d28fced849ee1bb76e7391b93eb12; sha256 digest e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.' }),
+  ];
+  assert.equal(lint(fine).find((x) => x.rule === 'menu/host-specific'), undefined);
+});
+
+test('spec/server-info: a server that sends no name or version is told so', () => {
+  const tools = [tool('get_form', ['form_id'], { annotations: { readOnlyHint: true } })];
+  const none = lint(tools, { serverInfo: {} }).find((f) => f.rule === 'spec/server-info');
+  assert.equal(none.severity, 'warn');
+  assert.match(none.message, /^The server's handshake has no serverInfo name or version, which the spec requires/);
+  assert.match(none.fix, /Set serverInfo \{ name, version \}/);
+  const emptyVersion = lint(tools, { serverInfo: { name: 'docs-server', version: '' } }).find((f) => f.rule === 'spec/server-info');
+  assert.match(emptyVersion.message, /^The server's handshake has no serverInfo version/);
+  assert.equal(lint(tools, { serverInfo: { name: 'docs-server', version: '1.0.0' } }).find((f) => f.rule === 'spec/server-info'), undefined);
+  assert.equal(lint(tools).find((f) => f.rule === 'spec/server-info'), undefined, 'no handshake info, no finding');
+});
+
+test('write/no-dry-run tells annotated-destructive tools from destructive-by-default ones', () => {
+  const byDefault = { annotations: { readOnlyHint: false } };
+  const mixed = lint([tool('delete_page', [], { annotations: { destructiveHint: true } }), tool('hover', [], byDefault), tool('get_network_request', [], byDefault)]).find((f) => f.rule === 'write/no-dry-run');
+  assert.match(mixed.message, /^delete_page is annotated as destructive/);
+  assert.ok(mixed.detail.some((d) => d === 'Destructive only by default (readOnlyHint: false and no destructiveHint): hover, get_network_request'), mixed.detail.join('\n'));
+  assert.match(mixed.fix, /set destructiveHint: false on the ones that don't delete or overwrite/);
+  const only = lint([tool('hover', [], byDefault), tool('get_network_request', [], byDefault)]).find((f) => f.rule === 'write/no-dry-run');
+  assert.match(only.message, /^2 tools are destructive only by default: they say readOnlyHint: false and nothing about destructiveHint/);
+  assert.doesNotMatch(only.message, /annotated as destructive/);
+  assert.match(only.fix, /Set destructiveHint on each/);
+});
+
 test('real-menu regressions: qualifiers, "don\'t invent" and group prefixes (a 115-tool server)', () => {
   const ro = { annotations: { readOnlyHint: true } };
   const authored = (tools) => lint(tools).filter((f) => f.rule === 'ids/authored').flatMap((f) => (f.detail ? f.detail[0].split(', ') : [f.message.split(' takes')[0]]));

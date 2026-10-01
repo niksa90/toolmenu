@@ -1,10 +1,10 @@
 import type { Finding, Severity } from '../types.js';
 import { SEVERITY_RANK } from '../types.js';
 import { buried, cut, lateInstruction } from './description.js';
-import { connectionVariance, nondeterministic, processVariance } from './determinism.js';
+import { connectionVariance, hostSpecific, nondeterministic, processVariance } from './determinism.js';
 import { authoredIds } from './ids.js';
 import { route, sharedWord, vagueId } from './naming.js';
-import { cacheHints, deprecated, discover, duplicateName, schema, toolsCapability } from './spec.js';
+import { cacheHints, deprecated, discover, duplicateName, schema, serverInfo, toolsCapability } from './spec.js';
 import { noDryRun, unannotated } from './write.js';
 import type { Rule, RuleContext } from './rule.js';
 
@@ -15,6 +15,7 @@ export const MENU_RULES: Rule[] = [
   duplicateName,
   processVariance,
   connectionVariance,
+  hostSpecific,
   vagueId,
   sharedWord,
   route,
@@ -29,6 +30,7 @@ export const MENU_RULES: Rule[] = [
   discover,
   deprecated,
   cacheHints,
+  serverInfo,
 ];
 
 /**

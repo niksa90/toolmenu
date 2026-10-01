@@ -42,6 +42,7 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/description': { severity: 'info', class: 'notice' },
   'diff/param-dropped': { severity: 'info', class: 'notice' },
   'diff/schema-other': { severity: 'info', class: 'notice' },
+  'diff/param-default': { severity: 'info', class: 'notice' },
   // Restructured ($ref, $defs) but accepts the same input: bytes and tokens changed.
   'diff/schema-equivalent': { severity: 'info', class: 'notice' },
   // Only the declared $schema dialect changed: one finding for the menu.
@@ -893,7 +894,19 @@ function compareSchema(w: Walk, at: string, before: JsonSchema, after: JsonSchem
   // schema: no duplicate notice. A widened type can still bring new constraints.
   // A union against a plain schema is covered by its options entirely.
   if (union && !(oldOptions && newOptions)) return;
-  const rest = (s: JsonSchema) => residual(s, { object, items: arrays, union }) as Record<string, unknown>;
+  // A default is the value a call that leaves the parameter out gets: said with both
+  // values, not as an unclassified keyword (a date default built from the clock).
+  const shown = (v: unknown) => (v === undefined ? '(none)' : JSON.stringify(v));
+  if (canonical(before.default) !== canonical(after.default)) {
+    say(w, 'diff/param-default', at, `: the default changed: ${shown(before.default)} → ${shown(after.default)}`, 'Calls that leave it out now get the new value.', [before, after], {
+      fix: 'If the default is built from the clock or the environment, give a fixed one or none, and say in the description what an absent value means.',
+    });
+  }
+  const rest = (s: JsonSchema) => {
+    const r = residual(s, { object, items: arrays, union }) as Record<string, unknown>;
+    delete r.default;
+    return r;
+  };
   if ((union || oldType === newType || accepts(after, before)) && canonical(rest(before)) !== canonical(rest(after))) {
     say(w, 'diff/schema-other', at, ` changed in keywords toolmenu doesn't classify: ${changedKeys(rest(before), rest(after))}`, '', [before, after], {
       fix: 'Review it: a tighter constraint (a lower maximum, a new pattern or format) rejects calls that met the old one.',
