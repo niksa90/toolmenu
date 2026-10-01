@@ -856,10 +856,29 @@ test('session --auto calls the tools an unlock brings, right after it', async ()
   assert.ok(!(out.auto.ignored ?? []).some((x) => /team/.test(x.input)), JSON.stringify(out.auto.ignored));
 });
 
-test('session --auto keeps tools an unlock brings within --max-calls', async () => {
-  const out = JSON.parse((await run(['session', '--auto', '--json', '--max-calls', '2', '--value', 'team=platform', ...SESSION_SERVER])).stdout);
-  assert.ok(!out.steps.some((s) => s.label.startsWith('call list_team_audits')));
-  assert.ok(out.auto.skipped.some((s) => s.tool === 'list_team_audits' && s.reason === 'over the call budget'));
+const UNLOCKED_VALUES = ['--value', 'team=platform', '--value', 'team_audit_id=a1', '--value', 'report_id=r1'];
+const calledBesidesUnlock = (out) => out.auto.called.filter((t) => t !== 'unlock_toolset');
+
+test('session --auto gives each unlock its own call budget, so every toolset gets calls', async () => {
+  const out = JSON.parse((await run(['session', '--auto', '--json', ...UNLOCKED_VALUES, ...SESSION_SERVER])).stdout);
+  for (const t of ['list_team_audits', 'get_team_audit', 'export_report']) assert.ok(out.auto.called.includes(t), `${t} called`);
+});
+
+test('session --auto: --max-calls-per-unlock caps the calls for the tools one unlock brings', async () => {
+  const r = await run(['session', '--auto', '--max-calls-per-unlock', '1', ...UNLOCKED_VALUES, ...SESSION_SERVER]);
+  assert.match(r.stdout, /1 over the per-unlock budget → --max-calls-per-unlock 2/);
+  const out = JSON.parse((await run(['session', '--auto', '--json', '--max-calls-per-unlock', '1', ...UNLOCKED_VALUES, ...SESSION_SERVER])).stdout);
+  const audits = ['list_team_audits', 'get_team_audit'].filter((t) => out.auto.called.includes(t));
+  assert.equal(audits.length, 1, 'one of the two audit tools');
+  assert.ok(out.auto.called.includes('export_report'), 'the next unlock has its own budget');
+  assert.ok(out.auto.skipped.some((s) => s.reason === 'over the per-unlock budget'));
+});
+
+test('session --auto: --max-calls caps every call, unlocked tools included, and keeps room for them', async () => {
+  const out = JSON.parse((await run(['session', '--auto', '--json', '--max-calls', '2', ...UNLOCKED_VALUES, ...SESSION_SERVER])).stdout);
+  assert.ok(calledBesidesUnlock(out).length <= 2, calledBesidesUnlock(out).join(', '));
+  assert.ok(calledBesidesUnlock(out).some((t) => ['list_team_audits', 'get_team_audit'].includes(t)), 'the starting menu left room for the unlock');
+  assert.ok(out.auto.skipped.some((s) => s.reason === 'over the call budget'));
 });
 
 test('session: the header says the fresh-connection check is of the starting menu', async () => {
