@@ -658,6 +658,26 @@ test('menu/gated: in a namespaced menu a domain matches by namespace; a mostly c
   assert.match(all.message, /2 of 6 values \(insights and engagement\) match no tool by name/);
 });
 
+test('menu/gated: camelCase namespaces and multi-word values match by their leading words', () => {
+  const unlockOf = (values) =>
+    tool('enable_toolsets', [], {
+      description: 'Unlock more tools for a toolset.',
+      inputSchema: { type: 'object', properties: { toolsets: { type: 'array', items: { type: 'string', enum: values } } }, required: ['toolsets'] },
+      annotations: { readOnlyHint: true },
+    });
+  const ctx = { capabilities: { tools: { listChanged: true } } };
+  // camelCase, every toolset listed: complete, no finding
+  const camel = [tool('contentGetEntry'), tool('contentList'), tool('assetUpload'), tool('assetGet'), unlockOf(['content', 'asset'])];
+  assert.equal(lint(camel, ctx).find((f) => f.rule === 'menu/gated'), undefined);
+  // multi-word values against snake_case namespaces, every toolset listed
+  const multi = [tool('pull_requests_list'), tool('pull_requests_get'), tool('issues_list'), tool('issues_get'), unlockOf(['pull_requests', 'issues'])];
+  assert.equal(lint(multi, ctx).find((f) => f.rule === 'menu/gated'), undefined);
+  // and a locked one is still missed: only issues listed
+  const partial = lint([tool('issues_list'), tool('issues_get'), tool('home_getPullRequests'), unlockOf(['pull_requests', 'issues', 'actions'])], ctx).find((f) => f.rule === 'menu/gated');
+  assert.equal(partial.severity, 'warn');
+  assert.match(partial.message, /no tool in this menu matches pull_requests and actions/);
+});
+
 test('naming/shared-word: a word in every tool name is the server\'s subject, not a clash', () => {
   const words = (tools) => lint(tools).find((f) => f.rule === 'naming/shared-word')?.words.map((w) => w.noun) ?? [];
   assert.deepEqual(words([tool('ask_wiki_question'), tool('read_wiki_contents'), tool('read_wiki_structure')]), []);

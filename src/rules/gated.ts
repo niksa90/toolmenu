@@ -21,20 +21,23 @@ export const gated: Rule = {
     if (!found.length) return [];
     // A value whose tools are already listed adds nothing: the same server started
     // with every toolset still has its unlock. Where the tools are named
-    // namespace-first (content_get, group_list), a value matches a tool whose first
-    // name part is the value: an always-on home_getGroups or search_groups isn't
-    // the groups domain's. Where they're named verb-first (list_team_audits), every
-    // word of the value in the tool's name will do.
+    // namespace-first (content_get, group_list, contentGetEntry), a value matches a
+    // tool whose name starts with the value's words (pull_requests → pull_requests_list):
+    // an always-on home_getGroups or search_groups isn't the groups domain's. Where
+    // they're named verb-first (list_team_audits), every word of the value in the
+    // tool's name will do.
     const unlocking = new Set(found.map((u) => u.tool.name));
     const tools = ctx.menu.tools.filter((t) => !unlocking.has(t.name));
-    const firstPart = (name: string) => words(name.split(/[_\-.\s]/)[0] ?? '').map(singular);
     const namespaced = tools.filter((t) => !VERBS.has(singular(words(t.name)[0] ?? ''))).length * 2 > tools.length;
-    const same = (a: string[], b: string[]) => a.length === b.length && a.every((w, i) => w === b[i]);
+    const startsWith = (name: string, want: string[]) => {
+      const have = words(name).map(singular);
+      return want.every((w, i) => have[i] === w);
+    };
     const missing = (value: unknown) => {
       const want = words(String(value)).map(singular);
       if (!want.length) return false;
       return namespaced
-        ? !tools.some((t) => same(firstPart(t.name), want))
+        ? !tools.some((t) => startsWith(t.name, want))
         : !tools.some((t) => {
             const have = new Set(words(t.name).map(singular));
             return want.every((w) => have.has(w));
