@@ -793,3 +793,17 @@ test('session: the same edit from different origins is not merged', () => {
   assert.equal(mergeRepeats([...s2, ...s7]).filter((f) => f.rule === 'session/edit').length, 2);
 });
 
+test('http: snapshot and session end every session they open', async () => {
+  const server = await startRawHttp({ scope: 'local' });
+  try {
+    const snap = await run(['snapshot', '--no-write', server.url]);
+    assert.equal(snap.code, 0, snap.stderr);
+    assert.equal(server.open(), 0, 'snapshot left sessions open');
+    const auto = await run(['session', '--auto', server.url]);
+    assert.ok(auto.code <= 1, auto.stderr);
+    assert.equal(server.open(), 0, 'session left sessions open');
+  } finally {
+    await server.close();
+  }
+});
+
