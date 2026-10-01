@@ -106,6 +106,11 @@ export interface StepRecord {
   note?: string;
   /** Why the call failed, when it did (a tool error or a failed request). */
   failure?: FailureClass;
+  /**
+   * What a call step's call did: the tool answered, answered with an error
+   * (isError), the request failed, or it wasn't sent (refused, not in the menu).
+   */
+  outcome?: 'answered' | 'tool-error' | 'failed' | 'not-sent';
   changed: boolean;
   listChanged: number;
   scope?: Scope;
@@ -135,6 +140,11 @@ export interface SessionResult {
 
 export interface SessionOptions {
   timeoutMs?: number;
+  /**
+   * --auto: steps for tools that appear mid-session, run right after the step
+   * that brought them. Called once per change, with only the new tools.
+   */
+  replan?: (added: MenuTool[]) => Step[];
   /** How long to wait for a list_changed notification after a change. */
   noticeGraceMs?: number;
   rules?: Record<string, Severity | 'off'>;
@@ -266,7 +276,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     };
     const callWaited = { ms: 0 };
     const listWaited = { ms: 0 };
-    const assumed = new Set(scenario.assumeReadOnly ?? []);
+    // Read live: --auto vouches for tools that appear mid-session too.
+    const assumed = { has: (tool: string) => (scenario.assumeReadOnly ?? []).includes(tool) };
     // Called on the user's word (assume_read_only), by step.
     const onWord: { tool: string; step: number }[] = [];
     // The same failure from the same tool at several steps is one finding that lists them.
@@ -312,6 +323,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         if (!tool) {
           record.status = 'failed';
           record.reason = 'missing';
+          record.outcome = 'not-sent';
           record.note = `${step.tool} isn't in the menu at this point`;
           const squash = (n: string) => n.toLowerCase().replace(/[-_.\s]/g, '');
           const close = current.tools.find((t) => squash(t.name) === squash(step.tool));
@@ -326,6 +338,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         } else if (!scenario.allowWrites && tool.annotations?.readOnlyHint !== true && !word) {
           record.status = 'refused';
           record.reason = 'refused';
+          record.outcome = 'not-sent';
           record.note = 'not marked readOnlyHint';
           raw.push({
             rule: 'session/refused',
@@ -356,6 +369,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             error: (e) => httpStatus(e) === 429 || (readOnly && tooMany(e)),
             result: (r) => readOnly && r.isError === true && RATE_LIMITED.test(errorText(r)),
           });
+          record.outcome = result.isError ? 'tool-error' : 'answered';
           if (result.isError) {
             const text = errorText(result);
             if (RATE_LIMITED.test(text)) {
@@ -373,6 +387,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           }
         } catch (error) {
           record.status = 'failed';
+          record.outcome = 'failed';
           record.note = serverWords(error, 200);
           if (lost(record.note, index)) {
             done();
@@ -483,6 +498,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             }
           }
         }
+        // --auto: the tools this step brought get their calls now, while they're listed.
+        const added = new Set(changes.filter((c) => c.kind === 'added').map((c) => c.tool));
+        if (options.replan && added.size) scenario.steps.splice(i + 1, 0, ...options.replan(next.tools.filter((t) => added.has(t.name))));
         current = next;
         see(next);
       }
