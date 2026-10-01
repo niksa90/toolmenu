@@ -361,6 +361,9 @@ into description and schema), large enums, and waste you can remove:
 - **Unused `$defs`**: definitions nothing in the tool refers to. Notion's server 2.5.2
   ships the same 9 in all 24 tools, 72% of its menu.
 
+Every tool's estimate is in the menu file, for the ones the summary leaves out:
+`jq -r '.tools[] | "\(.tokens)\t\(.name)"' menu.json | sort -rn`.
+
 ## `snapshot` rules
 
 Every rule comes from a failure I actually hit building 115 tools for one MCP
