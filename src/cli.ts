@@ -18,7 +18,7 @@ import { snapshot } from './snapshot.js';
 import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded } from './probe.js';
 import { autoScenario, loadValuesFile, parseAssumeReadOnly, parseValueFlag, scenarioYaml, type GivenValue } from './auto.js';
 import { authDir, listLogins, login, logout } from './auth.js';
-import { existingMessage, initReport, planInit, writeInit } from './init.js';
+import { existingMessage, initReport, planInit, shellWord, writeInit } from './init.js';
 import { SEVERITY_RANK, type Severity } from './types.js';
 import { VERSION } from './version.js';
 import { CLI_OPTIONS } from './options.js';
@@ -36,7 +36,7 @@ export async function main(argv: string[]): Promise<number> {
     parsed = parseArgs({ args: before, allowPositionals: true, options: CLI_OPTIONS });
   } catch (error) {
     // Which command was meant, so the hint can name its help and its options.
-    const meant = before.find((a) => isCommand(a));
+    const meant = commandIn(before);
     if (meant && error && typeof error === 'object') (error as { command?: Command }).command = meant;
     throw error;
   }
@@ -70,7 +70,8 @@ export async function main(argv: string[]): Promise<number> {
 
   // The invocation up to the server, for examples in messages: a session example
   // without --auto or --scenario wouldn't run.
-  const mode = sub !== 'session' ? '' : values.init ? ' --init' : values.auto ? ' --auto' : values.scenario ? ` --scenario ${values.scenario}` : '';
+  const scenarioFlag = values.scenario ? ` --scenario ${shellWord(values.scenario)}` : '';
+  const mode = sub !== 'session' ? '' : values.init ? ` --init${scenarioFlag}` : values.auto ? ' --auto' : scenarioFlag;
   const prefix = `${sub}${mode}`;
 
   const config = await loadConfig(values.config);
@@ -329,6 +330,20 @@ function failureMessage(error: unknown): string {
   }
   if (typeof code === 'string' && code.startsWith('ERR_PARSE_ARGS_')) return `${message}\n  → Next: ${next}`;
   return message;
+}
+
+/** The command in arguments parseArgs refused: the first command name that isn't an option's value (--out diff). */
+function commandIn(args: string[]): Command | undefined {
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a.startsWith('--')) {
+      const option = CLI_OPTIONS[a.slice(2) as keyof typeof CLI_OPTIONS] as { type: string } | undefined;
+      if (option?.type === 'string' && !a.includes('=')) i++;
+      continue;
+    }
+    if (isCommand(a)) return a;
+  }
+  return undefined;
 }
 
 function editDistance(a: string, b: string): number {

@@ -365,7 +365,7 @@ export function formatSession(s: SessionResult, format: Format): string {
       '',
       ...(s.auto ? [...autoSummary(s.auto).map((l, i) => (i === 0 ? `**${l.replace(/^auto: /, 'auto:** ')}` : `- ${l.trim()}`)), ''] : []),
       ...causes(s.findings, (count, f, where, text) =>
-        count ? `**${count}:**` : `- ${f!.severity === 'error' ? '**error**' : f!.severity} \`${f!.rule}\` · ${where} · ${mdCell(text!)}`,
+        count ? `**${count}:**` : `- ${f!.severity === 'error' ? '**ERROR**' : LABEL[f!.severity].trim()} \`${f!.rule}\` · ${where} · ${mdCell(text!)}`,
       ),
       '| Step | Menu | list_changed | Scope |',
       '|---|---|---|---|',

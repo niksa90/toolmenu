@@ -723,7 +723,7 @@ test('session: the markdown report has the same summary above the step table', a
   const at = r.stdout.indexOf('**2 errors, 2 warnings:**');
   assert.ok(at > -1, r.stdout);
   assert.ok(at < r.stdout.indexOf('| Step |'));
-  assert.match(r.stdout, /\n- \*\*error\*\* `session\/edit` · steps 2 and 7 · get_form: description changed mid-session\. Invalidates/);
+  assert.match(r.stdout, /\n- \*\*ERROR\*\* `session\/edit` · steps 2 and 7 · get_form: description changed mid-session\. Invalidates/);
 });
 
 test('session: a clean run has no summary block', async () => {
@@ -759,6 +759,21 @@ test('session: the summary keeps a quoted sentence whole and marks unsure findin
   };
   const line = formatSession(result, 'text').split('\n').find((l) => l.startsWith('  ERROR  session/session-lost · '));
   assert.match(line, /^  ERROR  session\/session-lost · unsure · step 3 · The server ended this session at step 3 \(“Session not found\. Please reinitialize\.”\) after t/);
+});
+
+test('session: a tool-error summary line names its step once', async () => {
+  const dir = tempDir();
+  writeFileSync(join(dir, 's.yml'), 'steps:\n  - call: get_form\n    args: { form_id: broken }\n');
+  const r = await run(['session', '--scenario', 's.yml', '--', process.execPath, join(FIXTURES, 'session-server.mjs')], { cwd: dir });
+  const line = r.stdout.split('\n').find((l) => l.startsWith('  WARN   session/tool-error · '));
+  assert.match(line, /^  WARN   session\/tool-error · step 1 · get_form returned an error/);
+  assert.doesNotMatch(line, / · step 1 · Step 1/);
+});
+
+test('session: the markdown summary uses the same labels as the text summary', async () => {
+  const r = await run(['session', '--auto', '--format', 'markdown', '--', process.execPath, join(FIXTURES, 'session-server.mjs')]);
+  assert.match(r.stdout, /\n- \*\*ERROR\*\* `session\/edit` · steps 2 and 7 · /);
+  assert.match(r.stdout, /\n- WARN `session\/side-effect` · steps 2, 4, 5 and 7 · /);
 });
 
 test('session: an edit that changes more than the earlier one is its own finding', () => {

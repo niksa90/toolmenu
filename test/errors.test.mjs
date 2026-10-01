@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
-import { FIXTURES, run } from './helpers.mjs';
+import { FIXTURES, run, tempDir } from './helpers.mjs';
 import { bodyExcerpt, formatBlock, stderrFact, Trace } from '../dist/explain.js';
 import { setupFailureAdvice } from '../dist/failures.js';
 
@@ -211,6 +212,23 @@ test('errors: a mistyped --help or --version is still suggested within a command
   assert.match(help.stderr, /Unknown option --hlep\. Did you mean --help\?/);
   const version = await run(['diff', '--verison']);
   assert.match(version.stderr, /Unknown option --verison\. Did you mean --version\?/);
+});
+
+test('errors: an option value that is a command name isn\'t taken for the command', async () => {
+  const r = await run(['--out', 'diff', 'snapshot', '--bogus']);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /→ Next: toolmenu snapshot --help lists its options/);
+});
+
+test('errors: the no-server example keeps the scenario path, quoted when it has spaces', async () => {
+  const init = await run(['session', '--init', '--scenario', 'my scen.yml']);
+  assert.equal(init.code, 2);
+  assert.match(init.stderr, /→ Next: toolmenu session --init --scenario 'my scen\.yml' -- node dist\/server\.js \(stdio\)/);
+  const dir = tempDir();
+  writeFileSync(join(dir, 'my scen.yml'), 'steps:\n  - list\n');
+  const scripted = await run(['session', '--scenario', 'my scen.yml'], { cwd: dir });
+  assert.equal(scripted.code, 2);
+  assert.match(scripted.stderr, /→ Next: toolmenu session --scenario 'my scen\.yml' -- node dist\/server\.js \(stdio\)/);
 });
 
 test('errors: an unknown option with no command points to the overview and command help', async () => {
