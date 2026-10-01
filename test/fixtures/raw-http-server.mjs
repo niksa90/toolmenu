@@ -13,6 +13,8 @@ export async function start({ scope = 'local', vary = false, onePerClient = fals
   const byClient = new Map();
   const global = { unlocked: false };
   let sessionCount = 0;
+  // server/discover probes received (a 2025 server answers them with an error).
+  let discovers = 0;
   const obj = (properties) => ({ type: 'object', properties, required: Object.keys(properties) });
   const ro = { readOnlyHint: true };
   const menu = (session) => {
@@ -32,6 +34,7 @@ export async function start({ scope = 'local', vary = false, onePerClient = fals
     const chunks = [];
     for await (const c of req) chunks.push(c);
     const msg = JSON.parse(Buffer.concat(chunks).toString());
+    if (msg.method === 'server/discover') discovers++;
     const headers = { 'content-type': 'application/json' };
     let session = sessions.get(req.headers['mcp-session-id']);
     if (msg.method === 'initialize') {
@@ -71,6 +74,7 @@ export async function start({ scope = 'local', vary = false, onePerClient = fals
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   return {
     url: `http://127.0.0.1:${server.address().port}/mcp`,
+    discovers: () => discovers,
     close: async () => {
       server.closeAllConnections();
       await new Promise((resolve) => server.close(resolve));

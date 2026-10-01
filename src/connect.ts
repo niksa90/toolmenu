@@ -124,7 +124,10 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
   const context = { target, timeoutMs: options.timeoutMs, oauth };
 
   try {
-    await client.connect(transport, { timeout: options.timeoutMs });
+    // A URL that answered as a 2025 server earlier in this run isn't probed again:
+    // each server/discover gets a 400 there, one line in its log per connection.
+    const prior = target.kind === 'http' && LEGACY_URLS.has(target.url) ? { prior: { kind: 'legacy' as const } } : {};
+    await client.connect(transport, { timeout: options.timeoutMs, ...prior });
   } catch (error) {
     // What failed is fixed now: the exit that follows toolmenu's own SIGTERM isn't the server's doing.
     trace.failedAt = Date.now();
@@ -148,6 +151,7 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
   wire.tap(transport);
 
   const protocolVersion = client.getNegotiatedProtocolVersion();
+  if (target.kind === 'http' && eraOf(protocolVersion) === 'legacy') LEGACY_URLS.add(target.url);
   const server: { name?: string; version?: string } = client.getServerVersion() ?? {};
   return {
     client,
@@ -170,6 +174,12 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     },
   };
 }
+
+/**
+ * HTTP servers that answered with the 2025 handshake in this process. Kept for the
+ * run only: a server upgraded between runs is probed afresh next time.
+ */
+const LEGACY_URLS = new Set<string>();
 
 /** How long to wait for an exited server's stderr to end: its pipe is closing, so this is only a ceiling for a stuck one. */
 const STDERR_AFTER_EXIT_MS = 10_000;

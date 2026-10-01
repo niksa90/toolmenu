@@ -304,6 +304,17 @@ test('http with sessions: a change only this connection sees is connection-local
   }
 });
 
+test('http: a 2025 server is probed with server/discover once per run, not once per connection', async () => {
+  const server = await startRawHttp({ scope: 'local' });
+  try {
+    const r = await run(['session', '--auto', server.url]);
+    assert.ok(r.code <= 1, r.stderr);
+    assert.equal(server.discovers(), 1);
+  } finally {
+    await server.close();
+  }
+});
+
 test('http with sessions: a global change is global', async () => {
   const server = await startRawHttp({ scope: 'global' });
   try {
