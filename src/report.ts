@@ -435,7 +435,7 @@ function causes(findings: Finding[], line: (count: string | undefined, f?: Findi
   const count = [c.error ? plural(c.error, 'error') : '', c.warn ? plural(c.warn, 'warning') : ''].filter(Boolean).join(', ');
   const out = [line(count)];
   for (const f of loud) {
-    const where = f.steps?.length ? stepsText(f.steps) : f.step ? `step ${f.step}` : 'the whole run';
+    const where = f.steps?.length ? stepsText(f.steps) : f.step === 0 ? 'before step 1' : f.step ? `step ${f.step}` : 'the whole run';
     // The first sentence, without the "Steps 2 and 7: " the line already says.
     const text = clip(f.message.replace(/^Steps? [\d–, and]+: /, '').split(/(?<=\.)\s/)[0], 100);
     out.push(line(undefined, f, where, text));

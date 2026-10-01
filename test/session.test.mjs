@@ -731,3 +731,19 @@ test('session: a clean run has no summary block', async () => {
   assert.doesNotMatch(r.stdout, /^\d+ errors?, /m);
 });
 
+test('session: the summary says "before step 1" for what was found before the first step', async () => {
+  const { formatSession } = await import('../dist/report.js');
+  const result = {
+    scenario: 's', server: { name: 'x' }, transport: 'stdio', listening: true, connectionCheck: 'different',
+    baseline: { tools: 1, tokens: 10 }, final: { tools: 1, tokens: 10 }, steps: [],
+    findings: [
+      { rule: 'menu/process-variance', severity: 'error', step: 0, message: 'A second server process served a different menu.' },
+      { rule: 'session/nothing-called', severity: 'warn', message: '--auto called no tools.' },
+    ],
+    union: { toolmenu: 1, server: {}, capturedAt: '', tools: [], totalTokens: 0 },
+  };
+  const text = formatSession(result, 'text');
+  assert.match(text, /\n  ERROR  menu\/process-variance · before step 1 · A second server process served a different menu\.\n/);
+  assert.match(text, /\n  WARN   session\/nothing-called · the whole run · --auto called no tools\.\n/);
+});
+
