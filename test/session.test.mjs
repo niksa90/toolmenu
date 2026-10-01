@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareMenus } from '../dist/compare.js';
-import { changeFindings, clip, MAX_UNLOCKS, parseScenario, scopeOf, session, starterScenario, unlockers, unlockListers, valuesFromListing } from '../dist/session.js';
+import { changeFindings, clip, MAX_UNLOCKS, mergeRepeats, parseScenario, scopeOf, session, starterScenario, unlockers, unlockListers, valuesFromListing } from '../dist/session.js';
 import { autoScenario } from '../dist/auto.js';
 import { parse as parseYaml } from 'yaml';
 import { FIXTURES, ROOT, menuOf, run, tempDir, TIMEOUT_MS, tool } from './helpers.mjs';
@@ -57,7 +57,7 @@ test('changeFindings: append is a warning (tools come first in the prompt), ever
   const inserted = find(menuOf([tool('a'), tool('x'), tool('b'), tool('c')]).tools);
   assert.deepEqual(inserted.map((f) => f.rule), ['session/mid-insert']);
   assert.match(inserted[0].message, /position 1 \(x\)/);
-  assert.match(inserted[0].detail[0], /change starts at position 1; .*this server's part: ~\d+ tokens/);
+  assert.match(inserted[0].detail[0], /^cost: the whole tool list \(this server's part: ~\d+ tokens, estimate\) .*; the change starts at position 1$/);
 
   assert.deepEqual(find(menuOf([tool('b'), tool('a'), tool('c')]).tools).map((f) => f.rule), ['session/reorder']);
   assert.deepEqual(find(menuOf([tool('a'), tool('c')]).tools).map((f) => f.rule), ['session/remove']);
@@ -336,7 +336,7 @@ test('cli: session output, --plan and usage errors', async () => {
   assert.equal(r.code, 1, r.stderr);
   assert.match(r.stdout, /^step 3: call unlock_toolset \{"toolset":"audits"\} · menu changed · \+2 tools · list_changed received · scope: per-process$/m);
   assert.match(r.stdout, /ERROR  session\/mid-insert\n\s+\+2 tools inserted at position 1 \(list_team_audits, get_team_audit\)/);
-  assert.match(r.stdout, /the change starts at position 1; any change to the tool list invalidates the cached prompt/);
+  assert.match(r.stdout, /cost: the whole tool list \(this server's part: ~\d+ tokens, estimate\) and the conversation after it; the change starts at position 1/);
 
   const gh = await run(['session', '--format', 'github', '--scenario', scenario, ...server], { cwd: dir });
   assert.match(gh.stdout, /^::error title=toolmenu session\/mid-insert::step 3 \(call unlock_toolset/m);
@@ -668,5 +668,40 @@ test('session: the same error from different tools is one tool-error finding; a 
   assert.doesNotMatch(e.fix, /--value/);
   assert.match(e.fix, /isn't available here/);
   assert.equal(e.confidence, 'unsure');
+});
+
+test('session: a mid-session finding says the cache cost once', async () => {
+  const scenario = join(ROOT, 'examples/unlock.scenario.yml');
+  const r = await run(['session', '--scenario', scenario, '--json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')]);
+  const changes = JSON.parse(r.stdout).findings.filter((f) => /^session\/(mid-insert|edit|reorder|remove)$/.test(f.rule));
+  assert.ok(changes.length > 0);
+  for (const f of changes) {
+    const text = [f.message, ...(f.detail ?? [])].join(' ');
+    assert.equal(text.match(/invalidates the cached prompt/gi)?.length, 1, text);
+  }
+});
+
+test("session: the same edit at two steps is one finding with each step's cost", async () => {
+  const r = await run(['session', '--auto', '--json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')]);
+  const edits = JSON.parse(r.stdout).findings.filter((f) => f.rule === 'session/edit' && f.tool === 'get_form');
+  assert.equal(edits.length, 1);
+  assert.deepEqual(edits[0].steps, [2, 7]);
+  assert.equal(edits[0].step, 2);
+  assert.match(edits[0].message, /^Steps 2 and 7: get_form: description changed mid-session/);
+  assert.ok(edits[0].detail.some((d) => /^step 2: position 1 · ~\d+ tokens \(estimate\)/.test(d)), edits[0].detail.join('\n'));
+  assert.ok(edits[0].detail.some((d) => /^step 7: position 3 · ~\d+ tokens \(estimate\)/.test(d)), edits[0].detail.join('\n'));
+  assert.match(edits[0].fix, /Keep get_form's definition fixed/);
+  assert.equal(edits[0].cause, undefined);
+});
+
+test('session: edits at different paths of one tool stay separate; the same path merges', () => {
+  const a = { name: 't', description: 'x', inputSchema: { type: 'object', properties: { d: { type: 'string', default: '1' } } }, tokens: 10 };
+  const b1 = { ...a, description: 'y' };
+  const b2 = { ...b1, inputSchema: { type: 'object', properties: { d: { type: 'string', default: '2' } } } };
+  const s2 = changeFindings([a], [b1], [{ kind: 'description', tool: 't', position: 0 }], 2);
+  const s5 = changeFindings([b1], [b2], [{ kind: 'inputSchema', tool: 't', position: 0 }], 5);
+  assert.equal(mergeRepeats([...s2, ...s5]).filter((f) => f.rule === 'session/edit').length, 2);
+  const s6 = changeFindings([b1], [{ ...b1, description: 'z' }], [{ kind: 'description', tool: 't', position: 0 }], 6);
+  assert.equal(mergeRepeats([...s2, ...s6]).filter((f) => f.rule === 'session/edit').length, 1);
 });
 

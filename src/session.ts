@@ -9,7 +9,7 @@ import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAIT
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
-import { describeToolDifference } from './difference.js';
+import { describeToolDifference, firstDifference } from './difference.js';
 import { autoNextStep, neededValues, writeSign, type AutoSummary } from './auto.js';
 import { LOOKUP_VERBS, singular, VERBS, verbOf, words, WRITE_VERBS } from './words.js';
 
@@ -151,7 +151,8 @@ export interface SessionOptions {
 }
 
 /** `each`: this step's line when findings of one rule are said once for several steps. */
-type Raw = Omit<Finding, 'severity'> & { severity: Severity; each?: string };
+/** `each`: this step's line when repeats merge. `cause`: what makes two edits one cause. Neither is reported. */
+export type Raw = Omit<Finding, 'severity'> & { severity: Severity; each?: string; cause?: string };
 
 /** Observe the menu while a scripted session runs. No LLM: the scenario is the agent. */
 export async function session(target: Target, scenario: Scenario, options: SessionOptions = {}): Promise<SessionResult> {
@@ -897,7 +898,7 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
   const cost = !brk
     ? []
     : [
-        `the change starts at position ${brk.position}${brk.position >= after.length ? ' (tools removed from the end)' : ''}; any change to the tool list invalidates the cached prompt, so the whole tool list (this server's part: ~${total.toLocaleString('en-US')} tokens, estimate) and the conversation after it are processed again`,
+        `cost: the whole tool list (this server's part: ~${total.toLocaleString('en-US')} tokens, estimate) and the conversation after it; the change starts at position ${brk.position}${brk.position >= after.length ? ' (tools removed from the end)' : ''}`,
       ];
   const why = origin ? [origin] : [];
 
@@ -961,11 +962,16 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
     const b = after.find((t) => t.name === tool);
     // What differs, down to the value: `inputSchema.properties.end_date.default: "…21.5Z" vs "…40.2Z"`.
     const seen = a && b ? [describeToolDifference(a, b).replace(/^[^:]*: /, '')] : [];
+    // One cause: the same tool, fields and first changed value (a timestamp in a
+    // description, rewritten at every call). Anything else is a change of its own.
+    const path = a && b ? firstDifference(toolDefinition(a), toolDefinition(b))?.path ?? '' : '';
     out.push({
       rule: 'session/edit',
       severity: 'error',
       step,
       tool,
+      cause: `${tool}|${fields.join(',')}|${path}`,
+      each: `step ${step}: position ${brk?.position ?? '?'} · ~${total.toLocaleString('en-US')} tokens (estimate)${seen[0] ? ` · ${seen[0]}` : ''}`,
       message: `${tool}: ${fields.join(', ')} changed mid-session. Invalidates the cached prompt: the tool list and the conversation after it are processed again.`,
       detail: [...seen, ...cost, ...why],
       fix: origin === 'no tool call in between' ? `Make ${tool}'s definition the same on every tools/list: nothing built from the clock, a random value, or a set's order.` : `Keep ${tool}'s definition fixed for the session; if it has to change, change it between conversations.`,
@@ -1032,11 +1038,12 @@ function scopeFindings(scope: Scope, modern: boolean, step: number): Raw[] {
  * Findings that say the same thing at every step are said once, naming the steps:
  * stdio's side-effect warning, and an unlock per domain, where each value appends
  * tools for this connection only (9 steps made 18 near-identical blocks). What
- * differs per step, the tools and their cost, goes in the detail. Mid-inserts,
- * removals and edits stay per step: each is its own change.
+ * differs per step, the tools and their cost, goes in the detail. Mid-inserts
+ * and removals stay per step: each is its own change. Edits merge only when the
+ * tool, the fields and the first changed value are the same: one cause.
  */
 const REPEATS = ['session/side-effect', 'session/append', 'session/connection-local'];
-function mergeRepeats(raw: Raw[]): Raw[] {
+export function mergeRepeats(raw: Raw[]): Raw[] {
   let out = raw;
   for (const rule of REPEATS) {
     const same = out.filter((f) => f.rule === rule);
@@ -1055,6 +1062,18 @@ function mergeRepeats(raw: Raw[]): Raw[] {
     const merged: Raw = { ...same[0], message, steps, ...(detail ? { detail } : {}) };
     out = out.filter((f) => f.rule !== rule || f === same[0]).map((f) => (f === same[0] ? merged : f));
   }
+  // The same edit at several steps is one cause: one finding naming the steps,
+  // with each step's position and cost.
+  const byCause = new Map<string, Raw[]>();
+  for (const f of out) if (f.rule === 'session/edit' && f.cause) byCause.set(f.cause, [...(byCause.get(f.cause) ?? []), f]);
+  for (const same of byCause.values()) {
+    if (same.length < 2) continue;
+    const steps = same.map((f) => f.step!);
+    // The per-step value and cost are in each step's line; keep the rest (the origin) once.
+    const why = [...new Set(same.flatMap((f) => (f.detail ?? []).filter((d) => !d.startsWith('cost: ') && !f.each!.endsWith(` · ${d}`))))];
+    const merged: Raw = { ...same[0], steps, message: `${stepsText(steps).replace(/^s/, 'S')}: ${same[0].message}`, detail: [...same.map((f) => f.each!), ...why] };
+    out = out.filter((f) => !same.includes(f) || f === same[0]).map((f) => (f === same[0] ? merged : f));
+  }
   return out;
 }
 
@@ -1066,7 +1085,7 @@ function settle(raw: Raw[], options: SessionOptions): Finding[] {
   const ignore = (options.ignore ?? []).map((g) => new RegExp('^' + g.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
   return raw
     .filter((f) => options.rules?.[f.rule] !== 'off' && !(f.tool && ignore.some((re) => re.test(f.tool!))))
-    .map(({ each: _each, ...f }) => ({ ...f, severity: (options.rules?.[f.rule] as Severity | undefined) ?? f.severity }))
+    .map(({ each: _each, cause: _cause, ...f }) => ({ ...f, severity: (options.rules?.[f.rule] as Severity | undefined) ?? f.severity }))
     .sort((a, b) => (a.step ?? 0) - (b.step ?? 0) || SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
 }
 
