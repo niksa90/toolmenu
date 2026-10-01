@@ -200,7 +200,7 @@ export const lateInstruction: Rule = {
       {
         ...(one ? { tool: late[0].tool.name } : {}),
         confidence: 'unsure',
-        message: `${one ? `The ${late[0].tool.name} description gives` : `${late.length} descriptions give`} the agent instructions ${late.some((l) => l.straddles) ? 'that run past' : 'after'} character ${SHORT_CUT}, where a client that cuts descriptions short never shows them (one real client cut at ${SHORT_CUT}). ${client} sends ${num(limit)} characters, so there they arrive.`,
+        message: `${one ? `The ${late[0].tool.name} description gives` : `${late.length} descriptions give`} the agent instructions ${late.every((l) => l.straddles) ? `that run past character ${SHORT_CUT}` : late.some((l) => l.straddles) ? `after character ${SHORT_CUT} or running past it` : `after character ${SHORT_CUT}`}, where a client that cuts descriptions short never shows them (one real client cut at ${SHORT_CUT}). ${client} sends ${num(limit)} characters, so there they arrive.`,
         // One that starts before the cut and runs past it is cut in the middle: say so, or "char 264" reads as before the cut.
         detail: late.map((l) => `${l.tool.name}: char ${num(l.at)}${l.straddles ? ` (runs past ${SHORT_CUT})` : ''}: “${clip(l.sentence, 120)}”${l.more ? ` (and ${l.more} more after it)` : ''}`),
         fix: `If your client cuts descriptions, set descriptionLimit to its cut and toolmenu checks against that. Otherwise, moving ${one ? 'the instruction' : 'each instruction'} into the first sentences is cheap insurance.`,

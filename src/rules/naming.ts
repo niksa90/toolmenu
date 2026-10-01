@@ -87,6 +87,11 @@ export const sharedWord: Rule = {
     const groups: { noun: string; tools: string[] }[] = [];
     for (const [noun, tools] of byNoun) {
       if (tools.length > 1 && tools.every((t) => singular(firstWord(t.name) ?? '') === noun)) continue;
+      // In every tool's name of a menu of three or more, it's the server's one subject
+      // (DeepWiki: ask_wiki_question, read_wiki_contents, read_wiki_structure), not two
+      // things sharing a word. Two tools are too few to tell: list_team_audits and
+      // get_audit_trail are the clash this rule exists for.
+      if (tools.length >= 3 && tools.length === ctx.menu.tools.length) continue;
       // Tools where the noun is qualified differently and neither qualifier set
       // contains the other: list_team_audits vs get_audit_trail.
       const qualifiers = tools.map((t) => ({ tool: t.name, rest: new Set(subject(t.name).filter((n) => n !== noun)) }));
