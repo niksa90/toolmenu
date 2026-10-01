@@ -30,7 +30,8 @@ const OPTIONS: Record<string, [string, string[]]> = {
   init: ['--init', ["write a starter scenario from the server's menu (to --scenario,", 'default scenario.yml; never overwrites)']],
   auto: ['--auto', ['build the steps from the menu: every read-only tool whose required', 'arguments the schema can fill (const, default, examples, enum, type),', 'then the first call again']],
   'open-world': ['--open-world', ['with --auto, also call read-only tools marked openWorldHint: true', '(web search, fetch, scraping): they may cost API credits']],
-  'max-calls': ['--max-calls <n>', ['with --auto, at most n calls (default: 20)']],
+  'max-calls': ['--max-calls <n>', ['with --auto, at most n calls in all, the tools unlocks bring', 'included (default: 20, plus --max-calls-per-unlock for each unlock value)']],
+  'max-calls-per-unlock': ['--max-calls-per-unlock <n>', ['with --auto, at most n calls for the tools each unlock value', 'brings (default: 5), so every toolset gets some']],
   value: ['--value <k=v>', ['with --auto, a value for a required parameter, by name', '(repo_path=/src) or for one tool (get_issue.key=ABC-1);', 'repeatable; JSON values allowed']],
   'values-file': ['--values-file <path>', ['with --auto, the same as a YAML/JSON map']],
   'assume-read-only': ['--assume-read-only <tools>', ["with --auto, call these tools although the server doesn't", 'mark them readOnlyHint (exact names, comma-separated; tools', 'marked or named as writes are still never called)']],
@@ -119,7 +120,7 @@ const HELP: Record<Command, CommandHelp> = {
       'prompt cache, a different menu in a fresh process.',
       SERVER_NOTE,
     ],
-    own: ['scenario', 'auto', 'init', 'plan', 'value', 'values-file', 'assume-read-only', 'open-world', 'max-calls', 'save-scenario', 'union-out'],
+    own: ['scenario', 'auto', 'init', 'plan', 'value', 'values-file', 'assume-read-only', 'open-world', 'max-calls', 'max-calls-per-unlock', 'save-scenario', 'union-out'],
     shared: ['config', 'format', 'json', 'fail-on', 'header', 'env', 'no-auth', 'timeout', 'processes'],
     examples: [
       'toolmenu session --auto -- node dist/index.js',
