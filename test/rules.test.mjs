@@ -248,6 +248,18 @@ test('write/no-dry-run is one finding per server, listing the tools', () => {
   assert.deepEqual(findings[0].detail, ['browser_close, browser_resize, browser_click']);
 });
 
+test('write/no-dry-run tells annotated-destructive tools from destructive-by-default ones', () => {
+  const byDefault = { annotations: { readOnlyHint: false } };
+  const mixed = lint([tool('delete_page', [], { annotations: { destructiveHint: true } }), tool('hover', [], byDefault), tool('get_network_request', [], byDefault)]).find((f) => f.rule === 'write/no-dry-run');
+  assert.match(mixed.message, /^delete_page is annotated as destructive/);
+  assert.ok(mixed.detail.some((d) => d === 'Destructive only by default (readOnlyHint: false and no destructiveHint): hover, get_network_request'), mixed.detail.join('\n'));
+  assert.match(mixed.fix, /set destructiveHint: false on the ones that don't delete or overwrite/);
+  const only = lint([tool('hover', [], byDefault), tool('get_network_request', [], byDefault)]).find((f) => f.rule === 'write/no-dry-run');
+  assert.match(only.message, /^2 tools are destructive only by default: they say readOnlyHint: false and nothing about destructiveHint/);
+  assert.doesNotMatch(only.message, /annotated as destructive/);
+  assert.match(only.fix, /Set destructiveHint on each/);
+});
+
 test('real-menu regressions: qualifiers, "don\'t invent" and group prefixes (a 115-tool server)', () => {
   const ro = { annotations: { readOnlyHint: true } };
   const authored = (tools) => lint(tools).filter((f) => f.rule === 'ids/authored').flatMap((f) => (f.detail ? f.detail[0].split(', ') : [f.message.split(' takes')[0]]));

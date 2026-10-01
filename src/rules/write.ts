@@ -63,11 +63,16 @@ export const noDryRun: Rule = {
   lesson: '02',
   summary: 'Destructive tools offer a way to look before leaping',
   run(ctx) {
+    // Annotated destructive (destructiveHint: true), or destructive only because the
+    // spec says so when a tool says readOnlyHint: false and nothing more: told apart,
+    // since "hover" counted as destructive is a missing annotation, not a missing dry run.
     const missing: string[] = [];
+    const byDefault: string[] = [];
     for (const tool of kept(ctx.menu.tools, ctx)) {
       const a = tool.annotations ?? {};
-      const destructive = a.destructiveHint === true || (a.readOnlyHint === false && a.destructiveHint !== false);
-      if (!destructive) continue;
+      const annotated = a.destructiveHint === true;
+      const defaulted = !annotated && a.readOnlyHint === false && a.destructiveHint === undefined;
+      if (!annotated && !defaulted) continue;
       const hasParam = Object.keys(tool.inputSchema?.properties ?? {}).some((p) => DRY_RUN_PARAMS.test(p));
       const subject = new Set(nouns(tool.name));
       const hasPreviewTool = ctx.menu.tools.some(
@@ -76,18 +81,31 @@ export const noDryRun: Rule = {
           words(other.name).some((w) => PREVIEW_WORDS.has(w)) &&
           nouns(other.name).some((n) => subject.has(n)),
       );
-      if (!hasParam && !hasPreviewTool) missing.push(tool.name);
+      if (!hasParam && !hasPreviewTool) (annotated ? missing : byDefault).push(tool.name);
     }
-    if (missing.length === 0) return [];
+    if (missing.length === 0 && byDefault.length === 0) return [];
+    const defaultLine = `Destructive only by default (readOnlyHint: false and no destructiveHint): ${byDefault.join(', ')}`;
+    if (missing.length === 0) {
+      const one = byDefault.length === 1;
+      return [
+        {
+          ...(one ? { tool: byDefault[0] } : {}),
+          confidence: 'unsure',
+          message: `${one ? `${byDefault[0]} is` : `${count(byDefault.length, 'tool')} are`} destructive only by default: ${one ? 'it says' : 'they say'} readOnlyHint: false and nothing about destructiveHint, which the spec reads as destructive, and toolmenu found no dry_run/preview-style parameter or preview tool. Clients then confirm ${one ? 'it' : 'them'} like a delete.`,
+          ...(one ? {} : { detail: [byDefault.join(', ')] }),
+          fix: `Set destructiveHint on each: false where it only reads, adds or changes something cheap to undo, true where it deletes or overwrites (and then consider a dry_run parameter).`,
+        },
+      ];
+    }
     const one = missing.length === 1;
     // One finding, not one per tool: it's a design note, not a list of defects.
     return [
       {
-        ...(one ? { tool: missing[0] } : {}),
+        ...(one && !byDefault.length ? { tool: missing[0] } : {}),
         confidence: 'unsure',
         message: `${one ? `${missing[0]} is` : `${count(missing.length, 'tool')} are`} annotated as destructive, and toolmenu found no dry_run/preview-style parameter and no preview tool for the same thing. Where a mistake is costly to undo, a dry run lets the agent see what would change while it can still back out.`,
-        ...(one ? {} : { detail: [missing.join(', ')] }),
-        fix: `Where the effect is hard to undo, add a dry_run parameter${one ? ` to ${missing[0]}` : ''} that returns what would change without changing it. If it's cheap to undo, or a preview exists under another name, ignore this.`,
+        ...(one && !byDefault.length ? {} : { detail: [...(one ? [] : [missing.join(', ')]), ...(byDefault.length ? [defaultLine] : [])] }),
+        fix: `Where the effect is hard to undo, add a dry_run parameter${one ? ` to ${missing[0]}` : ''} that returns what would change without changing it. If it's cheap to undo, or a preview exists under another name, ignore this.${byDefault.length ? ` For the tools destructive only by default, set destructiveHint: false on the ones that don't delete or overwrite.` : ''}`,
       },
     ];
   },
