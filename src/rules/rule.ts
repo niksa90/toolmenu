@@ -20,6 +20,8 @@ export interface RuleContext {
   probes?: import('./determinism.js').Probe[];
   /** The stdio command is a container wrapper (docker run …): env vars may not reach the server. */
   wrapper?: boolean;
+  /** serverInfo as the handshake sent it, when there was one (snapshot): spec/server-info. */
+  serverInfo?: { name?: string; version?: string };
   /** Where clients are assumed to cut tool descriptions (description/buried). */
   descriptionLimit?: number | string;
   /** Tools (names or globs) the client sends uncut, so description/buried skips them. */

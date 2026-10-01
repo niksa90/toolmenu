@@ -135,6 +135,28 @@ export const deprecated: Rule = {
   },
 };
 
+/**
+ * serverInfo { name, version } is required in the handshake (both protocol
+ * generations). Without them reports say "unknown server", and clients and logs
+ * can't tell which server or release answered (Netlify sends neither).
+ */
+export const serverInfo: Rule = {
+  id: 'spec/server-info',
+  severity: 'warn',
+  summary: 'The handshake names the server and its version',
+  run(ctx) {
+    if (!ctx.serverInfo) return [];
+    const missing = [!ctx.serverInfo.name ? 'name' : '', !ctx.serverInfo.version ? 'version' : ''].filter(Boolean);
+    if (!missing.length) return [];
+    return [
+      {
+        message: `The server's handshake has no serverInfo ${missing.join(' or ')}, which the spec requires. Clients, logs and this report can't tell which ${missing.length === 2 ? 'server or release' : missing[0] === 'name' ? 'server' : 'release'} answered${ctx.serverInfo.name ? ` (${ctx.serverInfo.name})` : ''}.`,
+        fix: 'Set serverInfo { name, version } where the server is created, the version from its package.',
+      },
+    ];
+  },
+};
+
 export const cacheHints: Rule = {
   id: 'spec/cache-hints',
   severity: 'info',
