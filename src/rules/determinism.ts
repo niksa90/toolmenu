@@ -269,3 +269,32 @@ function varianceRule(id: 'menu/process-variance' | 'menu/connection-variance', 
 
 export const processVariance = varianceRule('menu/process-variance', 'stdio');
 export const connectionVariance = varianceRule('menu/connection-variance', 'http');
+
+/**
+ * A container or machine ID written into a description: two processes on one
+ * host serve the same menu, so menu/process-variance can't see it, but every
+ * install serves a different one (desktop-commander: "Container: 47d516a481f8").
+ * A standalone run of 12–64 hex characters with a digit and a letter; a UUID's
+ * last group, a short SHA or a hex word doesn't count.
+ */
+const HOST_ID = /(?<![\w-])(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{12,64}(?![\w-])/;
+
+export const hostSpecific: Rule = {
+  id: 'menu/host-specific',
+  severity: 'info',
+  summary: 'A description holds a value that differs per host',
+  run(ctx) {
+    const findings: RuleFinding[] = [];
+    for (const tool of ctx.menu.tools) {
+      const id = HOST_ID.exec(tool.description ?? '')?.[0];
+      if (!id) continue;
+      findings.push({
+        tool: tool.name,
+        confidence: 'unsure',
+        message: `${tool.name}'s description contains ${id}, which looks like a container or machine ID. A value that differs per host gives every install a different menu, so no two share a prompt cache, and a restart on the same host won't show it.`,
+        fix: `Leave host details out of the description; if the agent needs them, return them from a tool call.`,
+      });
+    }
+    return findings;
+  },
+};
