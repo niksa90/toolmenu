@@ -667,6 +667,13 @@ test('menu/gated: a server that unlocks tools and says its list changes may have
   assert.equal(lint(tools).find((f) => f.rule === 'menu/gated'), undefined, 'no listChanged, no finding');
   assert.equal(lint([tools[0]], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined, 'no unlock, no finding');
   assert.match(lint(tools, { capabilities: { tools: { listChanged: true } }, server: '-- node server.js' }).find((f) => f.rule === 'menu/gated').fix, /toolmenu session --auto --union-out menu\.json -- node server\.js /);
+  // Everything already listed (a server started with every toolset): the unlock would add nothing.
+  const all = [...tools, tool('list_team_audits', ['team'], { annotations: { readOnlyHint: true } }), tool('export_report', ['report_id'], { annotations: { readOnlyHint: true } })];
+  assert.equal(lint(all, { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined, 'every value has its tools listed');
+  // Only some listed: the finding names the values whose tools aren't there.
+  const some = lint(all.slice(0, 3), { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated');
+  assert.match(some.message, /no tool in this menu matches reports/);
+  assert.doesNotMatch(some.message, /audits/);
   // "Enables Cross-Region Restore on a vault" turns on a feature, not tools: no parameter names what to unlock.
   const enable = tool('backup_enable_crr', ['vault'], { description: 'Enables Cross-Region Restore on a vault.' });
   assert.equal(lint([tools[0], enable], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined, 'a feature switch is not an unlock');
