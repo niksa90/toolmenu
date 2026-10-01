@@ -211,13 +211,15 @@ function items(b: Breakdown, tools: number): { title: string; items: Item[] } | 
         fix: "Remove the unreferenced $defs entries from each tool's inputSchema.",
       }]
     : [];
+  // Two different blocks under the same name ("form") are told apart by where the first one is.
+  const label = (r: Repeated) => (b.repeated.filter((x) => x.tools > 1 && x.param === r.param).length > 1 && r.where[0] ? `${r.param} at ${r.where[0]}` : r.param);
   const repeated: Item[] = b.repeated.map((r) => {
     if (r.tools === 1) {
       const places = list(r.where.map((w) => w.slice(r.withinTool.length + 1)), r.count);
       return { kind: 'repeated', text: `repeated: one ${tok(r.tokens)}-token block ×${r.count} in ${r.withinTool} (${places})${r.saving > 0 ? `: a $defs entry could save ${tok(r.saving)}` : ''}`, ...(r.saving > 0 ? { fix: `Move the block into ${r.withinTool}'s $defs once and $ref it.` } : {}) };
     }
     const inside = r.within > 1 ? `, ×${r.within} inside ${r.withinTool}${r.saving > 0 ? `: a $defs entry there could save ${tok(r.saving)}` : ''}` : '';
-    return { kind: 'repeated', text: `repeated: ${r.param} (${tok(r.tokens)} tokens) in ${r.tools} tools, ${tok(r.total)} in all${inside}` };
+    return { kind: 'repeated', text: `repeated: ${label(r)} (${tok(r.tokens)} tokens) in ${r.tools} tools, ${tok(r.total)} in all${inside}` };
   });
   // A small menu gets no breakdown, but waste inside one tool is worth a line anyway.
   if (tools < 5) {

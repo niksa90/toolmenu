@@ -185,13 +185,13 @@ export const lateInstruction: Rule = {
     const { limit, who } = resolveLimit(undefined);
     if (limit <= SHORT_CUT) return [];
     const all = ctx.menu.tools.map((t) => t.name);
-    const late: { tool: MenuTool; at: number; sentence: string; more: number }[] = [];
+    const late: { tool: MenuTool; at: number; straddles: boolean; sentence: string; more: number }[] = [];
     for (const tool of kept(ctx.menu.tools, ctx)) {
       const text = tool.description ?? '';
       if (text.length <= SHORT_CUT || sentInFull(tool, ctx.fullDescriptions)) continue;
       // Past the default cut is description/buried's.
       const hidden = pastTheCut(text, all.filter((n) => n !== tool.name), SHORT_CUT).filter((i) => i.at < limit);
-      if (hidden.length) late.push({ tool, at: hidden[0].at, sentence: sentenceAround(text, hidden[0].at), more: hidden.length - 1 });
+      if (hidden.length) late.push({ tool, at: hidden[0].at, straddles: hidden[0].straddles, sentence: sentenceAround(text, hidden[0].at), more: hidden.length - 1 });
     }
     if (late.length === 0) return [];
     const one = late.length === 1;
@@ -200,8 +200,9 @@ export const lateInstruction: Rule = {
       {
         ...(one ? { tool: late[0].tool.name } : {}),
         confidence: 'unsure',
-        message: `${one ? `The ${late[0].tool.name} description gives` : `${late.length} descriptions give`} the agent instructions after character ${SHORT_CUT}, where a client that cuts descriptions short never shows them (one real client cut at ${SHORT_CUT}). ${client} sends ${num(limit)} characters, so there they arrive.`,
-        detail: late.map((l) => `${l.tool.name}: char ${num(l.at)}: “${clip(l.sentence, 120)}”${l.more ? ` (and ${l.more} more after it)` : ''}`),
+        message: `${one ? `The ${late[0].tool.name} description gives` : `${late.length} descriptions give`} the agent instructions ${late.some((l) => l.straddles) ? 'that run past' : 'after'} character ${SHORT_CUT}, where a client that cuts descriptions short never shows them (one real client cut at ${SHORT_CUT}). ${client} sends ${num(limit)} characters, so there they arrive.`,
+        // One that starts before the cut and runs past it is cut in the middle: say so, or "char 264" reads as before the cut.
+        detail: late.map((l) => `${l.tool.name}: char ${num(l.at)}${l.straddles ? ` (runs past ${SHORT_CUT})` : ''}: “${clip(l.sentence, 120)}”${l.more ? ` (and ${l.more} more after it)` : ''}`),
         fix: `If your client cuts descriptions, set descriptionLimit to its cut and toolmenu checks against that. Otherwise, moving ${one ? 'the instruction' : 'each instruction'} into the first sentences is cheap insurance.`,
       },
     ];

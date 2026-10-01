@@ -7,6 +7,7 @@ import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
 import { catalogFindings, readCatalog, type CatalogOptions } from './catalog.js';
 import type { Routes } from './routes.js';
 import { SEVERITY_RANK, type Finding, type Menu } from './types.js';
+import { shellWord } from './init.js';
 
 export interface SnapshotOptions extends RuleSettings {
   routes?: Routes;
@@ -80,6 +81,7 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
       probes,
       wrapper: isContainerWrapper(target),
       serverInfo: connection.server,
+      server: serverArgs(target),
     },
     options,
   );
@@ -95,4 +97,18 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
     findings.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
   }
   return { menu, findings };
+}
+
+/**
+ * How this run reached the server, as the end of a command line, for next steps:
+ * the options that got it past the door (names only; values are the user's) and
+ * then `-- command args` or the URL.
+ */
+function serverArgs(target: Target): string {
+  if (target.kind === 'stdio') {
+    const env = Object.keys(target.env ?? {}).map((k) => `--env ${k}=<value>`);
+    return [...env, `-- ${[target.command, ...target.args].map(shellWord).join(' ')}`].join(' ');
+  }
+  const headers = Object.keys(target.headers ?? {}).map((k) => `--header "${k}: <value>"`);
+  return [...headers, ...(target.noAuth ? ['--no-auth'] : []), shellWord(target.url)].join(' ');
 }

@@ -22,6 +22,8 @@ export interface RuleContext {
   wrapper?: boolean;
   /** serverInfo as the handshake sent it, when there was one (snapshot): spec/server-info. */
   serverInfo?: { name?: string; version?: string };
+  /** How this run reached the server, as the command line ends: `-- node server.js` or the URL. For next steps. */
+  server?: string;
   /** Where clients are assumed to cut tool descriptions (description/buried). */
   descriptionLimit?: number | string;
   /** Tools (names or globs) the client sends uncut, so description/buried skips them. */

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { diffMenus, versionBump } from '../dist/diff.js';
 import { buildMenu, loadMenu } from '../dist/menu.js';
@@ -748,4 +748,19 @@ test('diff: a changed default is its own notice, with both values', () => {
   assert.equal(d.suggestedBump, 'patch');
   const added = diffMenus(buildMenu([t(undefined)], { name: 's' }), buildMenu([t('now')], { name: 's' })).findings.find((x) => x.rule === 'diff/param-default');
   assert.match(added.message, /default changed: \(none\) → "now"/);
+});
+
+test('diff: a session union menu has no order to compare, so no diff/order notice', () => {
+  const t = (name) => ({ name, description: `${name}.`, inputSchema: { type: 'object', properties: {} } });
+  const listed = buildMenu([t('a'), t('b'), t('c')], { name: 's' });
+  const union = { ...buildMenu([t('b'), t('a'), t('c')], { name: 's' }), from: 'session' };
+  assert.ok(diffMenus(listed, buildMenu([t('b'), t('a'), t('c')], { name: 's' })).findings.some((f) => f.rule === 'diff/order'), 'two snapshots: order compared');
+  assert.ok(!diffMenus(listed, union).findings.some((f) => f.rule === 'diff/order'));
+  assert.ok(!diffMenus(union, listed).findings.some((f) => f.rule === 'diff/order'));
+});
+
+test('session --union-out marks the menu as a session union', async () => {
+  const dir = tempDir();
+  await run(['session', '--auto', '--union-out', 'union.json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')], { cwd: dir });
+  assert.equal(JSON.parse(readFileSync(join(dir, 'union.json'), 'utf8')).from, 'session');
 });
