@@ -248,6 +248,18 @@ test('write/no-dry-run is one finding per server, listing the tools', () => {
   assert.deepEqual(findings[0].detail, ['browser_close, browser_resize, browser_click']);
 });
 
+test('spec/server-info: a server that sends no name or version is told so', () => {
+  const tools = [tool('get_form', ['form_id'], { annotations: { readOnlyHint: true } })];
+  const none = lint(tools, { serverInfo: {} }).find((f) => f.rule === 'spec/server-info');
+  assert.equal(none.severity, 'warn');
+  assert.match(none.message, /^The server's handshake has no serverInfo name or version, which the spec requires/);
+  assert.match(none.fix, /Set serverInfo \{ name, version \}/);
+  const emptyVersion = lint(tools, { serverInfo: { name: 'docs-server', version: '' } }).find((f) => f.rule === 'spec/server-info');
+  assert.match(emptyVersion.message, /^The server's handshake has no serverInfo version/);
+  assert.equal(lint(tools, { serverInfo: { name: 'docs-server', version: '1.0.0' } }).find((f) => f.rule === 'spec/server-info'), undefined);
+  assert.equal(lint(tools).find((f) => f.rule === 'spec/server-info'), undefined, 'no handshake info, no finding');
+});
+
 test('write/no-dry-run tells annotated-destructive tools from destructive-by-default ones', () => {
   const byDefault = { annotations: { readOnlyHint: false } };
   const mixed = lint([tool('delete_page', [], { annotations: { destructiveHint: true } }), tool('hover', [], byDefault), tool('get_network_request', [], byDefault)]).find((f) => f.rule === 'write/no-dry-run');
