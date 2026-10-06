@@ -485,9 +485,9 @@ or bad usage. `toolmenu <command> --help` lists that command's own options.
 
 ## About
 
-Built by [Niksa](https://niksa.me) while running a 115-tool MCP server and watching
+Built by [Nikša Perović](https://niksa.me) while running a 115-tool MCP server and watching
 agents trip over its menu. Every rule started as one of those failures, and the
-research behind them is in [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
+research behind them is in [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md). The story of building it, and where it was wrong, is [on niksa.me](https://niksa.me/toolmenu).
 
 Found a false positive, or a failure toolmenu should catch?
 [Open an issue](https://github.com/niksa90/toolmenu/issues) with the menu (a

@@ -2,7 +2,7 @@
   "name": "toolmenu",
   "version": "0.13.0",
   "description": "Lint your MCP server's tool menu for changes that confuse agents or break caches.",
-  "author": "Niksa (https://niksa.me)",
+  "author": "Nikša Perović (https://niksa.me)",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
