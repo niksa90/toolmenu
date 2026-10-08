@@ -13,6 +13,7 @@ test('classifyFailure on real servers\' errors', () => {
     ['auth', "NetlifyUnauthError: You're not logged into Netlify on this computer. Use the netlify cli to login. `netlify login`"],
     ['auth', 'The API key you provided was rejected while calling https://api.pinecone.io/indexes. Please check your configuration values and try again.'],
     ['auth', 'Your access token was refused by the server.'],
+    ['auth', 'Error: not logged in'],
     ['environment', "Could not find Google Chrome executable for channel 'stable' at: - /opt/google/chrome/chrome."],
     ['environment', "Error: async initializeServer: Chromium distribution 'chrome' is not found at /opt/google/chrome/chrome"],
     ['invalid-arguments', "Error calling tool 'get_page': Either 'page_id' OR both 'title' and 'space_key' must be provided."],
