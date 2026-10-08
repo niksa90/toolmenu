@@ -749,3 +749,12 @@ test('naming/shared-word: a word that opens several tool names is a namespace, n
   assert.deepEqual(words([tool('context_get_entry'), tool('context_search'), tool('content_get_entry'), tool('content_publish')]), ['entry']);
 });
 
+
+test('menu/gated: the suggested command keeps the headers, env names and --no-auth the run used', async () => {
+  const { serverArgs } = await import('../dist/snapshot.js');
+  assert.equal(serverArgs({ kind: 'stdio', command: 'node', args: ['s.js'], env: { API_KEY: 'secret-value' } }), '--env API_KEY=<value> -- node s.js');
+  assert.equal(serverArgs({ kind: 'stdio', command: 'node', args: ['s.js'] }), '-- node s.js');
+  const http = serverArgs({ kind: 'http', url: 'https://example.test/mcp', headers: { 'X-Api-Key': 'secret-value' }, noAuth: true });
+  assert.equal(http, '--header "X-Api-Key: <value>" --no-auth https://example.test/mcp');
+  assert.doesNotMatch(http, /secret-value/);
+});

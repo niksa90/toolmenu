@@ -104,7 +104,7 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
  * the options that got it past the door (names only; values are the user's) and
  * then `-- command args` or the URL.
  */
-function serverArgs(target: Target): string {
+export function serverArgs(target: Target): string {
   if (target.kind === 'stdio') {
     const env = Object.keys(target.env ?? {}).map((k) => `--env ${k}=<value>`);
     return [...env, `-- ${[target.command, ...target.args].map(shellWord).join(' ')}`].join(' ');
