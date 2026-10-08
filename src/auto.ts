@@ -20,6 +20,11 @@ export interface AutoOptions {
   /** At most this many calls (default 20). */
   maxCalls?: number;
   /**
+   * Only the calls: no list first, no repeat of the first call at the end. For
+   * tools that appear mid-session, planned into a session already running.
+   */
+  callsOnly?: boolean;
+  /**
    * Values for required parameters, by name (`repo_path`) or for one tool
    * (`get_issue.issue_key`). Used before anything is synthesized.
    */
@@ -33,7 +38,7 @@ export interface AutoOptions {
   assumeReadOnly?: string[];
 }
 
-export type SkipReason = 'not read-only' | 'unmarked' | 'open world' | 'needs values' | 'over the call budget';
+export type SkipReason = 'not read-only' | 'unmarked' | 'open world' | 'needs values' | 'over the call budget' | 'over the per-unlock budget';
 
 export interface AutoPlan {
   scenario: Scenario;
@@ -45,12 +50,17 @@ export interface AutoPlan {
   skipped: { tool: string; reason: SkipReason; missing?: string[]; why?: string }[];
   /** --value and --assume-read-only entries that did nothing, and why. */
   ignored: { input: string; why: string }[];
+  /** Calls counted against --max-calls (unlocks aren't). */
+  spent: number;
+  /** Unlock calls the plan makes, one per value (not the repeat): each gets its own budget for the tools it brings. */
+  unlockValues: number;
 }
 
 /** What a session report shows about an --auto plan. */
 export type AutoSummary = Pick<AutoPlan, 'called' | 'skipped'> &
   Partial<Pick<AutoPlan, 'assumed' | 'withValues' | 'ignored'>> & {
     maxCalls?: number;
+    maxCallsPerUnlock?: number;
     /** Guessed unlocks whose first value changed nothing, and how many calls to them were left out. */
     stopped?: { tool: string; calls: number }[];
   };
@@ -133,7 +143,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   const chosen = candidates.slice(0, maxCalls);
   for (const c of candidates.slice(maxCalls)) skipped.push({ tool: c.tool.name, reason: 'over the call budget' });
 
-  const steps: Step[] = [{ kind: 'list' }];
+  const steps: Step[] = options.callsOnly ? [] : [{ kind: 'list' }];
   for (const c of chosen) steps.push({ kind: 'call', tool: c.tool.name, args: c.args });
   for (const u of unlocks) {
     const array = u.tool.inputSchema?.properties?.[u.param!]?.type === 'array';
@@ -145,7 +155,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     // The same unlock again should change nothing, as in the --init starter.
     steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [values[0]] : values[0] }, ...tentative });
   }
-  if (chosen.length) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args });
+  if (chosen.length && !options.callsOnly) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args });
   const called = [...chosen.map((c) => c.tool.name), ...unlocks.map((u) => u.tool.name)];
   return {
     scenario: { allowWrites: false, steps, ...(assumed.size ? { assumeReadOnly: [...assumed] } : {}) },
@@ -154,6 +164,8 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     withValues: chosen.filter((c) => c.valued).map((c) => c.tool.name),
     skipped,
     ignored,
+    spent: chosen.length,
+    unlockValues: unlocks.reduce((n, u) => n + Math.min(u.values.length, MAX_UNLOCKS), 0),
   };
 }
 
@@ -328,6 +340,8 @@ export function autoSummary(auto: AutoSummary): string[] {
   const over = skip('over the call budget');
   // Unlocks run outside the budget, so called.length would overshoot.
   if (over.length) rows.push(`${over.length} over the call budget → --max-calls ${(auto.maxCalls ?? 20) + over.length}`);
+  const overUnlock = skip('over the per-unlock budget');
+  if (overUnlock.length) rows.push(`${overUnlock.length} over the per-unlock budget → --max-calls-per-unlock ${(auto.maxCallsPerUnlock ?? 5) + overUnlock.length}`);
   rows.forEach((r, i) => lines.push(`${i === 0 ? 'not called: ' : '            '}${r}`));
   for (const x of auto.stopped ?? [])
     lines.push(`stopped: ${x.tool}: its first value changed nothing and it doesn't say it unlocks tools, so the other ${x.calls} call${x.calls === 1 ? ' was' : 's were'} left out (a scenario can still make them)`);

@@ -6,7 +6,7 @@
   <text x="20" y="62" fill="#f5c451" xml:space="preserve">toolmenu session  examples/unlock.scenario.yml</text>
   <text x="20" y="80" fill="#c9d1d9" xml:space="preserve">  session-fixture 1.0.0 · protocol 2026-07-28 · stdio</text>
   <text x="20" y="98" fill="#c9d1d9" xml:space="preserve">  baseline: 5 tools · ~290 tokens (estimate) · listening for list_changed: yes</text>
-  <text x="20" y="116" fill="#c9d1d9" xml:space="preserve">  fresh-process check: the same menu</text>
+  <text x="20" y="116" fill="#c9d1d9" xml:space="preserve">  fresh-process check of the starting menu: the same</text>
   <text x="20" y="134" fill="#c9d1d9" xml:space="preserve"></text>
   <text x="20" y="152" fill="#f0f6fc" xml:space="preserve">step 1: list · no change</text>
   <text x="20" y="170" fill="#f0f6fc" xml:space="preserve">step 2: call search_forms {"query":"onboarding"} · no change</text>

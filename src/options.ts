@@ -39,6 +39,7 @@ export const CLI_OPTIONS = {
   catalog: { type: 'boolean' },
   'open-world': { type: 'boolean' },
   'max-calls': { type: 'string' },
+  'max-calls-per-unlock': { type: 'string' },
   'save-scenario': { type: 'string' },
   value: { type: 'string', multiple: true },
   'values-file': { type: 'string' },
