@@ -173,6 +173,26 @@ const STATUS_TEXT: Record<number, string> = {
   503: 'Service Unavailable', 504: 'Gateway Timeout',
 };
 
+const CREDENTIAL_WORDS = new Set(['authorization', 'cookie', 'key', 'apikey', 'token', 'secret', 'auth', 'password']);
+
+/** A request header that carries credentials: Authorization, a cookie, or a name with key, token, secret or auth in it (x-mcp-api-key). */
+export function isCredentialHeader(name: string): boolean {
+  return name.toLowerCase().split(/[-_]/).some((w) => CREDENTIAL_WORDS.has(w));
+}
+
+/**
+ * The header a refusal names ("missing or invalid x-mcp-api-key header",
+ * "header 'X-Api-Key' required"), lower-cased. Only Authorization, or a hyphenated name
+ * that carries credentials (x-api-key): "the header" and "content-type header" aren't asked for.
+ */
+export function namedHeader(body: string | undefined): string | undefined {
+  if (!body) return undefined;
+  const name = /\b([A-Za-z][\w-]*)["'`]?\s+header\b/i.exec(body)?.[1] ?? /\bheader\s*[:(]?\s*["'`]?([A-Za-z][\w-]*)/i.exec(body)?.[1];
+  if (!name) return undefined;
+  const lower = name.toLowerCase();
+  return lower === 'authorization' || (/-/.test(lower) && isCredentialHeader(lower)) ? lower : undefined;
+}
+
 /** A short, readable excerpt of a response body: an HTML page's title or first words, JSON's message. Never the whole body. */
 export function bodyExcerpt(body: string | undefined, max = 100): string | undefined {
   if (!body?.trim()) return undefined;
@@ -464,14 +484,17 @@ function explainHttp(error: Error, trace: Trace, context: ExplainContext, target
     if (excerpt) facts.push([/html/i.test(shortType) || /<html|<!doctype/i.test(body ?? '') ? 'page' : 'body', `“${excerpt}”`]);
 
     if (status === 401 || status === 403) {
-      const ownAuth = Object.keys(target.headers ?? {}).some((h) => /^(authorization|x-api-key|api-key|cookie)$/i.test(h));
+      const named = namedHeader(body);
+      const ownAuth = Object.keys(target.headers ?? {}).some((h) => isCredentialHeader(h) || h.toLowerCase() === named);
       const next = context.oauth
         ? `The stored login was refused: log in again with toolmenu auth login ${target.url} (or skip it with --no-auth).`
         : ownAuth
           ? status === 401
             ? 'The credentials you sent were refused: check the token is current and meant for this server.'
             : "The credentials were accepted but don't grant access: check the account's permissions or the token's scopes."
-          : `If the server uses OAuth, log in once with: toolmenu auth login ${target.url} (if it takes an API key instead, pass it with --header "Authorization: Bearer …").`;
+          : named && named !== 'authorization'
+            ? `The server asks for ${/^[aeiox]/.test(named) ? 'an' : 'a'} ${named} header: pass it with --header "${named}: <key>".`
+            : `If the server uses OAuth, log in once with: toolmenu auth login ${target.url} (if it takes an API key instead, pass it with --header "Authorization: Bearer …").`;
       return new ConnectError(
         status === 401 ? `${host} wants credentials: ${stage} got HTTP 401 Unauthorized.` : `${host} refused access: ${stage} got HTTP 403 Forbidden.`,
         facts.filter(([l]) => l !== 'answer'),

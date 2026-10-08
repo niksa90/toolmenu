@@ -4,7 +4,7 @@ import { writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
 import { FIXTURES, run, tempDir } from './helpers.mjs';
-import { bodyExcerpt, formatBlock, stderrFact, Trace } from '../dist/explain.js';
+import { bodyExcerpt, formatBlock, isCredentialHeader, namedHeader, stderrFact, Trace } from '../dist/explain.js';
 import { setupFailureAdvice } from '../dist/failures.js';
 
 const broken = (mode, timeout = 5000) => ['snapshot', '--no-write', '--timeout', String(timeout), '--env', `MODE=${mode}`, '--', process.execPath, join(FIXTURES, 'broken-server.mjs')];
@@ -177,6 +177,36 @@ test('errors: an HTTP server\'s own error answer is its words, not a timeout', a
   } finally {
     await s.close();
   }
+});
+
+test('errors: a 401 that names its header gets a hint with that header', async () => {
+  const s = await serve((req, res) =>
+    req.headers['x-mcp-api-key'] === 'good'
+      ? res.writeHead(500).end()
+      : res.writeHead(401, { 'content-type': 'application/json' }).end('{"error":"missing or invalid x-mcp-api-key header"}'),
+  );
+  try {
+    const none = await run(['snapshot', '--no-write', `${s.url}/mcp`]);
+    assert.equal(none.code, 2);
+    assert.match(none.stderr, /→ Next: The server asks for an x-mcp-api-key header: pass it with --header "x-mcp-api-key: <key>"\./);
+    assert.doesNotMatch(none.stderr, /Authorization: Bearer/);
+    const bad = await run(['snapshot', '--no-write', '--header', 'x-mcp-api-key: wrong', `${s.url}/mcp`]);
+    assert.match(bad.stderr, /The credentials you sent were refused/);
+  } finally {
+    await s.close();
+  }
+});
+
+test('errors: the header a refusal names, and which headers carry credentials', () => {
+  assert.equal(namedHeader('{"error":"missing or invalid x-mcp-api-key header"}'), 'x-mcp-api-key');
+  assert.equal(namedHeader("header 'X-Api-Key' is required"), 'x-api-key');
+  assert.equal(namedHeader('Missing Authorization header'), 'authorization');
+  assert.equal(namedHeader('check the header and try again'), undefined);
+  assert.equal(namedHeader('unauthorized'), undefined);
+  assert.equal(namedHeader('invalid content-type header'), undefined);
+  assert.equal(namedHeader(undefined), undefined);
+  for (const h of ['Authorization', 'cookie', 'x-mcp-api-key', 'X-Auth-Token', 'api-secret']) assert.ok(isCredentialHeader(h), h);
+  for (const h of ['accept', 'x-request-id', 'user-agent', 'x-monkey', 'x-author']) assert.ok(!isCredentialHeader(h), h);
 });
 
 test('errors: a 401 keeps the OAuth hint and the status the action looks for', async () => {

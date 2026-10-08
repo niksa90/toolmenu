@@ -25,6 +25,11 @@ export async function start({ scope = 'local', vary = false, onePerClient = fals
     ];
   };
   const server = createServer(async (req, res) => {
+    // DELETE ends a session (what a client sends when it's done with one).
+    if (req.method === 'DELETE') {
+      res.writeHead(sessions.delete(req.headers['mcp-session-id']) ? 200 : 404).end();
+      return;
+    }
     if (req.method !== 'POST') {
       res.writeHead(405).end();
       return;
@@ -71,6 +76,8 @@ export async function start({ scope = 'local', vary = false, onePerClient = fals
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   return {
     url: `http://127.0.0.1:${server.address().port}/mcp`,
+    /** Sessions opened and not ended. */
+    open: () => sessions.size,
     close: async () => {
       server.closeAllConnections();
       await new Promise((resolve) => server.close(resolve));

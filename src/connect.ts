@@ -4,7 +4,8 @@ import type { ChildProcess } from 'node:child_process';
 import type { Stream } from 'node:stream';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/client/stdio';
 import { hasLogin, StoredOAuthProvider } from './auth.js';
-import { explain, Trace } from './explain.js';
+import { explain, isCredentialHeader, Trace } from './explain.js';
+import { endSession } from './close.js';
 import { eraOf } from './menu.js';
 import type { Era } from './types.js';
 import { VERSION } from './version.js';
@@ -141,7 +142,7 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
       if (!trace.exit) await exited(trace, 1000);
       await stderrEnded(stdioStderr, trace.exit ? STDERR_AFTER_EXIT_MS : 1000);
     }
-    await client.close().catch(() => {});
+    await endSession(client, transport);
     throw explain(error, trace, context);
   }
   const wire = new WireLog();
@@ -158,9 +159,9 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     capabilities: (client.getServerCapabilities() ?? {}) as Record<string, unknown>,
     usedAuth:
       target.kind === 'http' &&
-      (oauth || Object.keys(target.headers ?? {}).some((h) => /^(authorization|x-api-key|api-key|cookie)$/i.test(h))),
+      (oauth || Object.keys(target.headers ?? {}).some(isCredentialHeader)),
     stderr: () => stderrText,
-    close: () => client.close(),
+    close: () => endSession(client, transport),
     explain: (error, stage) => explain(error, trace, { ...context, stage }),
     stderrSettled: async () => {
       if (target.kind !== 'stdio') return;
