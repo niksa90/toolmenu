@@ -58,6 +58,11 @@ export interface Menu {
   tools: MenuTool[];
   totalTokens: number;
   listMeta?: { ttlMs?: number; cacheScope?: string };
+  /**
+   * 'session': every tool a session saw (session --union-out), in the order first
+   * seen, which is the unlock order, not an order any client was served.
+   */
+  from?: 'session';
   /** Operations behind a search tool (snapshot --catalog). Not part of the menu or its tokens. */
   catalog?: import('./catalog.js').Catalog;
 }

@@ -639,3 +639,113 @@ test('menu/process-variance: a second cause behind the same tool is reported, no
   assert.equal(found.find((x) => x.rule === 'menu/nondeterministic').fix.startsWith('Build jira_search.end_date.default'), true);
 });
 
+test('description/late-instruction: an instruction that starts before 280 and runs past it is said to run past it', () => {
+  const pad = 'Returns the record with every field it has. '.repeat(6); // 264 characters
+  // "Never guess" starts at 275 and ends at 286: across the cut.
+  const tools = [tool('get_record', ['record_id'], { description: `${pad}Note this: Never guess a record ID.` })];
+  const hint = lint(tools).find((f) => f.rule === 'description/late-instruction');
+  assert.match(hint.message, /^The get_record description gives the agent instructions that run past character 280/);
+  assert.equal(hint.detail.length, 1);
+  assert.match(hint.detail[0], /^get_record: char 275 \(runs past 280\): “.*Never guess a record ID\.”$/);
+});
+
+const unlock = () =>
+  tool('unlock_toolset', [], {
+    description: 'Unlock more tools.',
+    inputSchema: { type: 'object', properties: { toolset: { type: 'string', enum: ['audits', 'reports'] } }, required: ['toolset'] },
+    annotations: { readOnlyHint: true },
+  });
+
+test('menu/gated: a server that unlocks tools and says its list changes may have served only the starting set', () => {
+  const tools = [tool('get_form', ['form_id'], { annotations: { readOnlyHint: true } }), unlock()];
+  const gated = lint(tools, { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated');
+  assert.equal(gated.severity, 'warn');
+  assert.equal(gated.confidence, 'unsure');
+  assert.equal(gated.tool, 'unlock_toolset');
+  assert.match(gated.message, /unlock_toolset looks like it unlocks more tools, and the server says its tool list can change/);
+  assert.match(gated.fix, /toolmenu session --auto --union-out menu\.json/);
+  assert.equal(lint(tools).find((f) => f.rule === 'menu/gated'), undefined, 'no listChanged, no finding');
+  assert.equal(lint([tools[0]], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined, 'no unlock, no finding');
+  assert.match(lint(tools, { capabilities: { tools: { listChanged: true } }, server: '-- node server.js' }).find((f) => f.rule === 'menu/gated').fix, /toolmenu session --auto --union-out menu\.json -- node server\.js /);
+  // The command keeps what got the run in, by name: a header needs its value filled in.
+  assert.match(lint(tools, { capabilities: { tools: { listChanged: true } }, server: '--header "X-Api-Key: <value>" https://example.test/mcp' }).find((f) => f.rule === 'menu/gated').fix, /--union-out menu\.json --header "X-Api-Key: <value>" https:/);
+  // Everything already listed (a server started with every toolset): the unlock would add nothing.
+  const all = [...tools, tool('list_team_audits', ['team'], { annotations: { readOnlyHint: true } }), tool('export_report', ['report_id'], { annotations: { readOnlyHint: true } })];
+  assert.equal(lint(all, { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined, 'every value has its tools listed');
+  // Only some listed: the finding names the values whose tools aren't there.
+  const some = lint(all.slice(0, 3), { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated');
+  assert.match(some.message, /1 of 2 values \(reports\) match no tool by name/);
+  assert.doesNotMatch(some.message, /audits/);
+  // A partial match is only a hint: half or fewer of the values unmatched may just be named differently.
+  assert.equal(some.severity, 'info');
+  // "Enables Cross-Region Restore on a vault" turns on a feature, not tools: no parameter names what to unlock.
+  const enable = tool('backup_enable_crr', ['vault'], { description: 'Enables Cross-Region Restore on a vault.' });
+  assert.equal(lint([tools[0], enable], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined, 'a feature switch is not an unlock');
+});
+
+test('menu/gated: in a namespaced menu a domain matches by namespace; a mostly complete menu is only a hint', () => {
+  const domains = ['content', 'tasks', 'users', 'groups', 'insights', 'engagement'];
+  const unlockDomains = tool('enable_domains', [], {
+    description: 'Unlock more tools for a domain.',
+    inputSchema: { type: 'object', properties: { domains: { type: 'array', items: { type: 'string', enum: domains } } }, required: ['domains'] },
+    annotations: { readOnlyHint: true },
+  });
+  const always = [tool('home_getContentPools'), tool('home_getGroups'), tool('home_listUsers'), tool('search_groups'), tool('home_getTasks')];
+  const ctx = { capabilities: { tools: { listChanged: true } } };
+  // Starting set: the always-on tools mention content, groups, users and tasks, but no domain's own tools are there.
+  const primary = lint([...always, unlockDomains], ctx).find((f) => f.rule === 'menu/gated');
+  assert.equal(primary.severity, 'warn');
+  assert.match(primary.message, /no tool in this menu matches content, tasks, users, groups and 2 more|no tool in this menu matches content, tasks, users, groups, insights and 1 more/);
+  assert.match(primary.detail[0], /no tool named for: content, tasks, users, groups, insights and engagement/);
+  // Everything listed, but two domains' tools are named for something else (report_get, comment_add).
+  const everything = [...always, tool('content_get'), tool('content_list'), tool('task_get'), tool('user_get'), tool('group_list'), tool('report_get'), tool('comment_add'), unlockDomains];
+  const all = lint(everything, ctx).find((f) => f.rule === 'menu/gated');
+  assert.equal(all.severity, 'info');
+  assert.match(all.message, /2 of 6 values \(insights and engagement\) match no tool by name/);
+});
+
+test('menu/gated: camelCase namespaces and multi-word values match by their leading words', () => {
+  const unlockOf = (values) =>
+    tool('enable_toolsets', [], {
+      description: 'Unlock more tools for a toolset.',
+      inputSchema: { type: 'object', properties: { toolsets: { type: 'array', items: { type: 'string', enum: values } } }, required: ['toolsets'] },
+      annotations: { readOnlyHint: true },
+    });
+  const ctx = { capabilities: { tools: { listChanged: true } } };
+  // camelCase, every toolset listed: complete, no finding
+  const camel = [tool('contentGetEntry'), tool('contentList'), tool('assetUpload'), tool('assetGet'), unlockOf(['content', 'asset'])];
+  assert.equal(lint(camel, ctx).find((f) => f.rule === 'menu/gated'), undefined);
+  // multi-word values against snake_case namespaces, every toolset listed
+  const multi = [tool('pull_requests_list'), tool('pull_requests_get'), tool('issues_list'), tool('issues_get'), unlockOf(['pull_requests', 'issues'])];
+  assert.equal(lint(multi, ctx).find((f) => f.rule === 'menu/gated'), undefined);
+  // and a locked one is still missed: only issues listed
+  const partial = lint([tool('issues_list'), tool('issues_get'), tool('home_getPullRequests'), unlockOf(['pull_requests', 'issues', 'actions'])], ctx).find((f) => f.rule === 'menu/gated');
+  assert.equal(partial.severity, 'warn');
+  assert.match(partial.message, /no tool in this menu matches pull_requests and actions/);
+});
+
+test('naming/shared-word: a word in every tool name is the server\'s subject, not a clash', () => {
+  const words = (tools) => lint(tools).find((f) => f.rule === 'naming/shared-word')?.words.map((w) => w.noun) ?? [];
+  assert.deepEqual(words([tool('ask_wiki_question'), tool('read_wiki_contents'), tool('read_wiki_structure')]), []);
+  // one tool without it: still compared
+  assert.deepEqual(words([tool('ask_wiki_question'), tool('read_wiki_contents'), tool('search_repos')]), ['wiki']);
+});
+
+test('description/late-instruction: a mix of instructions past and across the cut is said as both', () => {
+  const pad = 'Returns the record with every field it has. '.repeat(6); // 264 characters
+  const tools = [
+    tool('get_record', ['record_id'], { description: `${pad}Note this: Never guess a record ID.` }), // across: starts at 275
+    tool('get_other', ['other_id'], { description: `${'Returns the other thing with every field. '.repeat(10)}Never guess an other ID.` }), // after: 420
+  ];
+  const hint = lint(tools).find((f) => f.rule === 'description/late-instruction');
+  assert.match(hint.message, /^2 descriptions give the agent instructions after character 280 or running past it/);
+});
+
+test('naming/shared-word: a word that opens several tool names is a namespace, not a shared noun', () => {
+  const words = (tools) => lint(tools).find((f) => f.rule === 'naming/shared-word')?.words.map((w) => w.noun) ?? [];
+  assert.deepEqual(words([tool('content_get_page'), tool('content_update_page'), tool('export_content_report'), tool('list_team_audits'), tool('get_audit_trail')]), ['audit']);
+  assert.deepEqual(words([tool('maps_geocode'), tool('maps_search_places'), tool('maps_place_details'), tool('maps_directions')]), []);
+  // the namespace still tells qualifiers apart: "entry" in two namespaces is a real clash
+  assert.deepEqual(words([tool('context_get_entry'), tool('context_search'), tool('content_get_entry'), tool('content_publish')]), ['entry']);
+});
+
