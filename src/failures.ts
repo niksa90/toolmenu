@@ -15,8 +15,10 @@ export const SETUP_FAILURES = new Set<FailureClass>(['auth', 'environment', 'net
 const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b/i;
 // "401 Bad credentials" (GitHub), "Authorization Expired" (Sentry), "Invalid
 // token" (Firecrawl), "authentication token is not valid" (Apify), "Please provide
-// a valid access token" (Supabase). Not a bare "token": plenty of errors mention one.
-const AUTH = /\b(401|403)\b|unauthori[sz]ed|forbidden|bad credentials|authori[sz]ation expired|re-?authori[sz]e|not authenticated|authentication (token|failed|required|error)|(invalid|expired|revoked) (api[ _-]?key|access token|token|credentials)|(token|api[ _-]?key|credentials) (is |are )?(not valid|invalid|expired)|valid (access )?token/i;
+// a valid access token" (Supabase), "NetlifyUnauthError: You're not logged into
+// Netlify" (Netlify), "The API key you provided was rejected" (Pinecone). Not a
+// bare "token": plenty of errors mention one.
+const AUTH = /\b(401|403)\b|unauthori[sz]ed|unauth(enticated|error)|forbidden|bad credentials|authori[sz]ation expired|re-?authori[sz]e|not authenticated|not logged (?:in|into)\b(?! to the browser)|authentication (token|failed|required|error)|(invalid|expired|revoked) (api[ _-]?key|access token|token|credentials)|(token|api[ _-]?key|credentials) (is |are )?(not valid|invalid|expired)|(api[ _-]?key|access token|credentials)\b[^.]{0,30}\b(was|were|is|are) (rejected|refused|revoked)|valid (access )?token/i;
 const NETWORK = /\b(ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|EHOSTUNREACH)\b|socket hang up|getaddrinfo|network error/i;
 // "Either 'page_id' OR both 'title' and 'space_key' must be provided" (Atlassian),
 // "**Input Error**" (Sentry), JSON-RPC's invalid params.

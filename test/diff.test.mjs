@@ -736,3 +736,16 @@ test('cli: diff markdown sections follow severity: a notice raised to error is s
   assert.match(r.stdout, /#### To check \(1\)\n\n\| \| Rule \| Change \|\n\|---\|---\|---\|\n\| \*\*error\*\* \| `diff\/description`/);
   assert.match(r.stdout, /<details><summary>Notices \(1\)<\/summary>\n\n\| \| Rule \| Change \|\n\|---\|---\|---\|\n\| info \| `diff\/tool-removed`/);
 });
+
+test('diff: a changed default is its own notice, with both values', () => {
+  const t = (end) => ({ name: 'list_transactions', description: 'List transactions.', inputSchema: { type: 'object', properties: { end_date: { type: 'string', default: end } } } });
+  const d = diffMenus(buildMenu([t('2026-09-29T22:11:21.528Z')], { name: 's' }), buildMenu([t('2026-10-01T11:54:51.571Z')], { name: 's' }));
+  const f = d.findings.find((x) => x.rule === 'diff/param-default');
+  assert.ok(f, d.findings.map((x) => x.rule).join(', '));
+  assert.equal(f.severity, 'info');
+  assert.match(f.message, /list_transactions\.end_date.*default changed: "2026-09-29T22:11:21\.528Z" → "2026-10-01T11:54:51\.571Z"/);
+  assert.ok(!d.findings.some((x) => x.rule === 'diff/schema-other'), 'no longer "keywords toolmenu doesn\'t classify"');
+  assert.equal(d.suggestedBump, 'patch');
+  const added = diffMenus(buildMenu([t(undefined)], { name: 's' }), buildMenu([t('now')], { name: 's' })).findings.find((x) => x.rule === 'diff/param-default');
+  assert.match(added.message, /default changed: \(none\) → "now"/);
+});

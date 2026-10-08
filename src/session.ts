@@ -631,9 +631,9 @@ function nothingCalled(auto: AutoSummary): Raw {
   const needs = by('needs values');
   const unmarked = by('unmarked');
   const writes = by('not read-only');
-  if (needs.length) parts.push(`${needs.length} need values the schema doesn't give`);
-  if (unmarked.length) parts.push(`${unmarked.length} aren't marked readOnlyHint`);
-  if (openWorld.length) parts.push(`${openWorld.length} marked openWorldHint (they may cost API credits)`);
+  if (needs.length) parts.push(`${needs.length} ${needs.length === 1 ? 'needs' : 'need'} values the schema doesn't give`);
+  if (unmarked.length) parts.push(`${unmarked.length} ${unmarked.length === 1 ? "isn't" : "aren't"} marked readOnlyHint`);
+  if (openWorld.length) parts.push(`${openWorld.length} marked openWorldHint (${openWorld.length === 1 ? 'it' : 'they'} may cost API credits)`);
   if (writes.length) parts.push(`${writes.length} marked or named as writes`);
   const list = (names: string[]) => names.slice(0, 8).join(', ') + (names.length > 8 ? `, and ${names.length - 8} more` : '');
   const params = neededValues(auto.skipped);

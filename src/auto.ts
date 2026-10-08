@@ -317,7 +317,7 @@ export function autoSummary(auto: AutoSummary): string[] {
   if (needs.length) {
     const params = neededValues(auto.skipped);
     const shown = params.slice(0, 4).map((p) => `--value ${p.param}=… (${p.tools.length})`);
-    rows.push(`${needs.length} need values the schema doesn't give → ${shown.join(', ')}${params.length > 4 ? `, and ${params.length - 4} more (--save-scenario lists them)` : ''}`);
+    rows.push(`${needs.length} ${needs.length === 1 ? 'needs' : 'need'} values the schema doesn't give → ${shown.join(', ')}${params.length > 4 ? `, and ${params.length - 4} more (--save-scenario lists them)` : ''}`);
   }
   const unmarked = skip('unmarked');
   if (unmarked.length) rows.push(`${unmarked.length} not marked read-only → --assume-read-only ${list(unmarked.map((s) => s.tool), 4, ',')} if they only read`);
