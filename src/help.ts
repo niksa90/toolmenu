@@ -35,7 +35,7 @@ const OPTIONS: Record<string, [string, string[]]> = {
   value: ['--value <k=v>', ['with --auto, a value for a required parameter, by name', '(repo_path=/src) or for one tool (get_issue.key=ABC-1);', 'repeatable; JSON values allowed']],
   'values-file': ['--values-file <path>', ['with --auto, the same as a YAML/JSON map']],
   'assume-read-only': ['--assume-read-only <tools>', ["with --auto, call these tools although the server doesn't", 'mark them readOnlyHint (exact names, comma-separated; tools', 'marked or named as writes are still never called)']],
-  'save-scenario': ['--save-scenario <path>', ['with --auto, write the steps it ran as a scenario file']],
+  'save-scenario': ['--save-scenario <path>', ['with --auto, write the plan made before the run as a scenario file', '(calls planned later for tools an unlock brings are not in it)']],
   'union-out': ['--union-out <path>', ['write every tool the session saw as a menu file, to commit as the', 'baseline for diff (tools behind unlocks included)']],
   versions: ['--versions <n|all>', ['how many of the most recent versions to inspect (default: 10), or all']],
   'include-prereleases': ['--include-prereleases', ['include versions like 1.2.0-beta.1']],

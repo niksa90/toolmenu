@@ -432,7 +432,7 @@ export function formatSession(s: SessionResult, format: Format): string {
 /**
  * A session's errors and warnings, one line each, before the step log: what to fix
  * without reading every step. `line` renders the count heading (count set) or one
- * finding. Empty when there's nothing at warn or above.
+ * finding, info included. Empty when there are no findings.
  */
 function causes(findings: Finding[], line: (count: string | undefined, f?: Finding, where?: string, text?: string) => string): string[] {
   // Errors first, info last; the step order within each (the sort is stable).
@@ -458,12 +458,14 @@ function causes(findings: Finding[], line: (count: string | undefined, f?: Findi
 function lead(text: string, max: number): string {
   if (text.length <= max) return text;
   let depth = 0;
+  let straight = false;
   let end = -1;
   for (let i = 0; i < max; i++) {
     const ch = text[i];
-    if ('“(["'.includes(ch)) depth++;
+    if (ch === '"') straight = !straight;
+    else if ('“(['.includes(ch)) depth++;
     else if ('”)]'.includes(ch)) depth = Math.max(0, depth - 1);
-    else if (ch === '.' && depth === 0 && text[i + 1] === ' ' && /[A-Z+~]/.test(text[i + 2] ?? '') && !/\b(vs|e\.g|i\.e|etc)$/i.test(text.slice(0, i))) end = i;
+    else if (ch === '.' && depth === 0 && !straight && text[i + 1] === ' ' && /[A-Z+~]/.test(text[i + 2] ?? '') && !/\b(vs|e\.g|i\.e|etc)$/i.test(text.slice(0, i))) end = i;
   }
   return end > 0 ? text.slice(0, end + 1) : clip(text, max);
 }

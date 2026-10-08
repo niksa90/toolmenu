@@ -828,6 +828,7 @@ test('http: snapshot and session end every session they open', async () => {
   } finally {
     await server.close();
   }
+});
 
 const SESSION_SERVER = ['--', process.execPath, join(FIXTURES, 'session-server.mjs')];
 
@@ -908,5 +909,7 @@ test('session: the summary cuts at a sentence end when one is near, never inside
   // No sentence end outside the quote fits in 100 characters: cut at the length, after the quote's own period.
   assert.match(text, /\n  ERROR  session\/session-lost · step 3 · The server ended this session at step 3 \(“Session not found\. Please reinitialize now or later\.”\)…\n/);
   assert.match(text, /\n1 error, 1 warning, 1 info:\n/);
+  const quoted = { ...base, findings: [{ rule: 'session/edit', severity: 'warn', step: 2, message: 'get_form: the server said "Description changed. Please reload now or later." and then went on. Invalidates the prompt cache from there.' }] };
+  assert.match(formatSession(quoted, 'text'), /session\/edit · step 2 · get_form: the server said "Description changed\. Please reload now or later\." and then went on\.\n/);
 });
 
