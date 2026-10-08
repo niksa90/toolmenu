@@ -667,6 +667,8 @@ test('menu/gated: a server that unlocks tools and says its list changes may have
   assert.equal(lint(tools).find((f) => f.rule === 'menu/gated'), undefined, 'no listChanged, no finding');
   assert.equal(lint([tools[0]], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined, 'no unlock, no finding');
   assert.match(lint(tools, { capabilities: { tools: { listChanged: true } }, server: '-- node server.js' }).find((f) => f.rule === 'menu/gated').fix, /toolmenu session --auto --union-out menu\.json -- node server\.js /);
+  // The command keeps what got the run in, by name: a header needs its value filled in.
+  assert.match(lint(tools, { capabilities: { tools: { listChanged: true } }, server: '--header "X-Api-Key: <value>" https://example.test/mcp' }).find((f) => f.rule === 'menu/gated').fix, /--union-out menu\.json --header "X-Api-Key: <value>" https:/);
   // Everything already listed (a server started with every toolset): the unlock would add nothing.
   const all = [...tools, tool('list_team_audits', ['team'], { annotations: { readOnlyHint: true } }), tool('export_report', ['report_id'], { annotations: { readOnlyHint: true } })];
   assert.equal(lint(all, { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined, 'every value has its tools listed');
