@@ -11,6 +11,11 @@ const END_SESSION_MS = 3000;
  * few dozen runs. A server that doesn't allow the DELETE (405) is fine.
  */
 export async function endSession(client: Client, transport: Transport): Promise<void> {
-  if (transport instanceof StreamableHTTPClientTransport && transport.sessionId) await Promise.race([transport.terminateSession().catch(() => {}), new Promise<void>((done) => setTimeout(done, END_SESSION_MS).unref())]);
+  if (transport instanceof StreamableHTTPClientTransport && transport.sessionId) {
+    let timer: NodeJS.Timeout | undefined;
+    const gaveUp = new Promise<void>((done) => (timer = setTimeout(done, END_SESSION_MS)));
+    await Promise.race([transport.terminateSession().catch(() => {}), gaveUp]);
+    clearTimeout(timer);
+  }
   await client.close().catch(() => {});
 }

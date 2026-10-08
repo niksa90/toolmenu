@@ -913,3 +913,19 @@ test('session: the summary cuts at a sentence end when one is near, never inside
   assert.match(formatSession(quoted, 'text'), /session\/edit · step 2 · get_form: the server said "Description changed\. Please reload now or later\." and then went on\.\n/);
 });
 
+
+test('session --auto: --max-calls and --max-calls-per-unlock together never exceed the total, and each unlock still gets a call', async () => {
+  const out = JSON.parse((await run(['session', '--auto', '--json', '--max-calls', '4', '--max-calls-per-unlock', '1', ...UNLOCKED_VALUES, ...SESSION_SERVER])).stdout);
+  const others = calledBesidesUnlock(out);
+  assert.ok(others.length <= 4, others.join(', '));
+  assert.ok(others.filter((t) => ['list_team_audits', 'get_team_audit'].includes(t)).length <= 1, 'one unlock value brings at most 1');
+  assert.ok(others.includes('export_report'), 'the second unlock has its own budget');
+});
+
+test('session --auto: --max-calls-per-unlock must be a whole number, 1 or more', async () => {
+  for (const bad of ['0', '1.5', 'x']) {
+    const r = await run(['session', '--auto', '--max-calls-per-unlock', bad, ...SESSION_SERVER]);
+    assert.equal(r.code, 2, bad);
+    assert.match(r.stderr, /--max-calls-per-unlock must be a whole number, 1 or more/);
+  }
+});
