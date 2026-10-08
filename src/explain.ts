@@ -173,22 +173,24 @@ const STATUS_TEXT: Record<number, string> = {
   503: 'Service Unavailable', 504: 'Gateway Timeout',
 };
 
+const CREDENTIAL_WORDS = new Set(['authorization', 'cookie', 'key', 'apikey', 'token', 'secret', 'auth', 'password']);
+
 /** A request header that carries credentials: Authorization, a cookie, or a name with key, token, secret or auth in it (x-mcp-api-key). */
 export function isCredentialHeader(name: string): boolean {
-  return /^(authorization|cookie)$/i.test(name) || /(key|token|secret|auth)/i.test(name);
+  return name.toLowerCase().split(/[-_]/).some((w) => CREDENTIAL_WORDS.has(w));
 }
 
 /**
  * The header a refusal names ("missing or invalid x-mcp-api-key header",
- * "header 'X-Api-Key' required"), lower-cased. Only a name with a hyphen, or
- * Authorization: plain words before "header" ("the header") aren't names.
+ * "header 'X-Api-Key' required"), lower-cased. Only Authorization, or a hyphenated name
+ * that carries credentials (x-api-key): "the header" and "content-type header" aren't asked for.
  */
 export function namedHeader(body: string | undefined): string | undefined {
   if (!body) return undefined;
   const name = /\b([A-Za-z][\w-]*)["'`]?\s+header\b/i.exec(body)?.[1] ?? /\bheader\s*[:(]?\s*["'`]?([A-Za-z][\w-]*)/i.exec(body)?.[1];
   if (!name) return undefined;
   const lower = name.toLowerCase();
-  return lower === 'authorization' || /-/.test(lower) ? lower : undefined;
+  return lower === 'authorization' || (/-/.test(lower) && isCredentialHeader(lower)) ? lower : undefined;
 }
 
 /** A short, readable excerpt of a response body: an HTML page's title or first words, JSON's message. Never the whole body. */

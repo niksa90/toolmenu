@@ -203,9 +203,10 @@ test('errors: the header a refusal names, and which headers carry credentials', 
   assert.equal(namedHeader('Missing Authorization header'), 'authorization');
   assert.equal(namedHeader('check the header and try again'), undefined);
   assert.equal(namedHeader('unauthorized'), undefined);
+  assert.equal(namedHeader('invalid content-type header'), undefined);
   assert.equal(namedHeader(undefined), undefined);
   for (const h of ['Authorization', 'cookie', 'x-mcp-api-key', 'X-Auth-Token', 'api-secret']) assert.ok(isCredentialHeader(h), h);
-  for (const h of ['accept', 'x-request-id', 'user-agent']) assert.ok(!isCredentialHeader(h), h);
+  for (const h of ['accept', 'x-request-id', 'user-agent', 'x-monkey', 'x-author']) assert.ok(!isCredentialHeader(h), h);
 });
 
 test('errors: a 401 keeps the OAuth hint and the status the action looks for', async () => {
