@@ -29,7 +29,7 @@ No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
 (`history` installs old versions with today's dependencies, so it records what they
 serve now, which can differ from what they shipped with: FINDINGS F4.)
 
-> **Status: 0.13, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
+> **Status: 0.14, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
 > real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
 ## Start here
@@ -104,7 +104,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.13.0
+      - uses: niksa90/toolmenu@v0.14.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -461,6 +461,8 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --env <K=V>         env var for a stdio server, repeatable (it only gets a
                     minimal environment otherwise)
 --timeout <ms>      per-request timeout (default: 30000)
+--protocol <p>      auto (default), legacy (2025 handshake only) or modern
+                    (2026-07-28 only; an error if the server lacks it)
 --processes <n>     server processes or connections to compare (default: 2);
                     1 opens no second one, session's scope check included
 ```
