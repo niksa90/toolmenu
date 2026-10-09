@@ -26,6 +26,8 @@ export interface Finding {
    * where, not what it means. Absent: toolmenu observed it directly.
    */
   confidence?: 'unsure';
+  /** For `session` tool errors: the tool's whole error text, when the message shows only part of it. */
+  serverText?: string;
 }
 
 /** A tool exactly as the server returned it, plus toolmenu's token estimate. */

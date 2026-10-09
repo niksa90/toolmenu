@@ -929,3 +929,15 @@ test('session --auto: --max-calls-per-unlock must be a whole number, 1 or more',
     assert.match(r.stderr, /--max-calls-per-unlock must be a whole number, 1 or more/);
   }
 });
+
+test('session: a tool error shows the server\'s reason, keeps its whole text in --json, and is not called "unavailable" for a hedge in its advice', async () => {
+  const dir = tempDir();
+  writeFileSync(join(dir, 's.yml'), 'steps:\n  - call: get_form\n    args: { form_id: mandatory }\n');
+  const r = await run(['session', '--scenario', 's.yml', '--json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')], { cwd: dir });
+  const [e] = JSON.parse(r.stdout).findings.filter((f) => f.rule === 'session/tool-error');
+  assert.match(e.message, /“400 Bad Request: Filter by folder is mandatory If this keeps happening/);
+  assert.doesNotMatch(e.message, /"message"|\{/);
+  assert.doesNotMatch(e.fix, /isn't available here/);
+  assert.notEqual(e.confidence, 'unsure');
+  assert.match(e.serverText, /^400 Bad Request: \{"error":\{"message":"Filter by folder is mandatory","code":"FILTER"\}\} If this keeps happening/);
+});

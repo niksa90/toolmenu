@@ -5,7 +5,7 @@ import { listTools, type Connection, type Target } from './connect.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
-import { classifyFailure, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
+import { classifyFailure, errorWords, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
@@ -710,7 +710,10 @@ function sameError(failures: Failure[]): Failure[] {
 
 // The server says the feature isn't there, or isn't for this account: no argument
 // fixes that. A guess from its words.
-const UNAVAILABLE = /\b(?:isn't|is not|not|aren't|are not)\s+(?:set up|enabled|configured|available|activated|licensed|provisioned)\b|\bdisabled\b|\bpermission\b|\bforbidden\b|\bnot allowed\b|\brole\b/i;
+// Only definite statements: a hedge in the server's own advice ("the account may lack
+// permission") says nothing about this call, and a bare "permission" or "role" turns up in
+// ordinary validation messages.
+const UNAVAILABLE = /\b(?:isn't|is not|not|aren't|are not)\s+(?:set up|enabled|configured|available|activated|licensed|provisioned)\b|\bdisabled\b|\b(?:permission|access)s? denied\b|\binsufficient (?:permissions?|privileges?)\b|\b(?:don't|doesn't|do not|does not) have (?:the )?(?:required |necessary )?(?:permissions?|access)\b|\bforbidden\b|\bnot allowed\b/i;
 
 /** A step whose change was only in values known to vary on their own. */
 interface Explained {
@@ -744,7 +747,9 @@ function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Ra
     const calls = [f, ...(f.others ?? [])];
     const tools = [...new Set(calls.map((c) => c.tool))];
     const who = tools.length === 1 ? f.tool : `${tools.slice(0, -1).join(', ')} and ${tools[tools.length - 1]}`;
-    const said = f.text ? quotedSentence(clip(f.text, 160)) : 'no error text.';
+    const words = errorWords(f.text);
+    const shown = clip(words, 160);
+    const said = f.text ? quotedSentence(shown) : 'no error text.';
     const firstArg = Object.keys(f.args)[0];
     const argsCan = f.failure === 'invalid-arguments' || f.failure === 'other';
     // No argument can fix a call to a tool that takes none, or a feature the server
@@ -778,6 +783,8 @@ function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Ra
       step: f.steps[0],
       ...(many ? { steps: f.steps } : {}),
       tool: f.tool,
+      // The server's whole text, when the message above shows less of it.
+      ...(f.text && shown !== f.text ? { serverText: f.text } : {}),
       ...(!f.timedOutMs && (unavailable || (noParams && argsCan)) ? { confidence: 'unsure' as const } : {}),
       message:
         f.rule === 'session/tool-error'

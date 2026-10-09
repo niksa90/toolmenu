@@ -29,3 +29,14 @@ test('classifyFailure on real servers\' errors', () => {
   assert.equal(classifyFailure(hubspot, { hadArguments: false }), 'not-found');
   assert.equal(classifyFailure('Issue 404 Not Found', { hadArguments: true }), 'other');
 });
+
+import { errorWords } from '../dist/failures.js';
+
+test('errorWords puts the reason of a JSON error body up front', () => {
+  assert.equal(errorWords('400 Bad Request: {"message":"Filter is mandatory"}'), '400 Bad Request: Filter is mandatory');
+  assert.equal(errorWords('{"error":{"message":"No such pool"}}'), 'No such pool');
+  assert.equal(errorWords('{"detail":"Not found"} (request 7)'), 'Not found (request 7)');
+  assert.equal(errorWords('The form definition is corrupt'), 'The form definition is corrupt');
+  assert.equal(errorWords('failed: {not json}'), 'failed: {not json}');
+  assert.equal(errorWords('{"code":12}'), '{"code":12}');
+});
