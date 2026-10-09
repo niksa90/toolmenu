@@ -764,3 +764,25 @@ test('session --union-out marks the menu as a session union', async () => {
   await run(['session', '--auto', '--union-out', 'union.json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')], { cwd: dir });
   assert.equal(JSON.parse(readFileSync(join(dir, 'union.json'), 'utf8')).from, 'session');
 });
+
+test('a schema too large to expand: definitions → $defs with a new $schema is the dialect, not a removed option', () => {
+  const D07 = 'http://json-schema.org/draft-07/schema#';
+  const D2020 = 'https://json-schema.org/draft/2020-12/schema';
+  const big = (n, pool, dialect, remove = false) => {
+    const prefix = `#/${pool}/`;
+    const defs = { [`D${n}`]: { type: 'string' } };
+    for (let i = 0; i < n; i++) defs[`D${i}`] = { type: 'object', properties: { x: { $ref: `${prefix}D${i + 1}` }, y: { $ref: `${prefix}D${i + 1}` } } };
+    const options = [{ type: 'object', properties: { kind: { const: 'a' } } }, { type: 'object', properties: { kind: { const: 'b' } } }, { $ref: `${prefix}D0` }];
+    return { $schema: dialect, type: 'object', [pool]: defs, properties: { v: { anyOf: remove ? options.slice(1) : options } } };
+  };
+  const moved = diffMenus(gen(big(17, 'definitions', D07)), gen(big(17, '$defs', D2020)));
+  assert.deepEqual(rules(moved), ['diff/schema-dialect:gen']);
+  assert.equal(moved.suggestedBump, 'patch', 'a dialect notice, as for a small schema');
+  // The same rename with the dialect unchanged is still read as moved refs: conservative.
+  const same = diffMenus(gen(big(17, 'definitions', D2020)), gen(big(17, '$defs', D2020)));
+  assert.ok(same.findings.some((f) => /\$defs entries added/.test(f.message)), 'no dialect change: still reported');
+  // A really removed option under a changed dialect is still breaking.
+  const removed = diffMenus(gen(big(17, 'definitions', D07)), gen(big(17, '$defs', D2020, true)));
+  assert.ok(removed.findings.some((f) => f.rule === 'diff/param-type' && /no longer accepts/.test(f.message)));
+  assert.equal(removed.suggestedBump, 'major');
+});

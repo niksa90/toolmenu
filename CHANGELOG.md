@@ -7,6 +7,12 @@
   handshake only, so a server that now serves both is still checked as a 2025 server
   and a baseline stays comparable. `modern` pins 2026-07-28 and fails, with a next
   step, when the server has no `server/discover`.
+- **`session`:** a tool error that carries a JSON body is shown by its message, and
+  `--json` keeps the tool's whole error text in `serverText`. The "isn't available
+  here" hint no longer fires on the bare words permission or role.
+- **`diff`:** for a schema too large to expand, `definitions` → `$defs` together with a
+  changed `$schema` is the dialect change only. It no longer reads as a removed union
+  option (an error) next to the dialect finding.
 
 ## 0.13.0
 

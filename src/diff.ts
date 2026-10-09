@@ -491,9 +491,15 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
   // Too large to expand on either side: compare both as written, so an expanded
   // side isn't read against a $ref on the other ("object → any"), and say so.
   const expanded = ea.expanded && eb.expanded;
-  const a = expanded ? ea.schema : old.inputSchema;
-  const b = expanded ? eb.schema : t.inputSchema;
-  if (!expanded && canonical(old.inputSchema) !== canonical(t.inputSchema)) {
+  // A schema generator upgrade moves `definitions` to `$defs` along with the dialect:
+  // as written, every $ref reads as pointing somewhere else. Said once, as the dialect.
+  const moved = !expanded && typeof old.inputSchema?.$schema === 'string' && typeof t.inputSchema?.$schema === 'string' && old.inputSchema.$schema !== t.inputSchema.$schema;
+  const [oldRaw, newRaw] = moved ? [defsPool(old.inputSchema), defsPool(t.inputSchema)] : [old.inputSchema, t.inputSchema];
+  const a = expanded ? ea.schema : oldRaw;
+  const b = expanded ? eb.schema : newRaw;
+  // The dialect itself is said below (diff/schema-dialect), not as a reason to look by hand.
+  const unversioned = (x: JsonSchema | undefined) => { const { $schema: _s, ...rest } = (x ?? {}) as Record<string, unknown>; return rest; };
+  if (!expanded && canonical(moved ? unversioned(oldRaw) : oldRaw) !== canonical(moved ? unversioned(newRaw) : newRaw)) {
     const which = ea.expanded ? 'the new input schema expands' : eb.expanded ? 'the old input schema expands' : 'the old and new input schemas expand';
     out.push({
       rule: 'diff/schema-other',
@@ -526,7 +532,7 @@ function compareTool(old: MenuTool, t: MenuTool): Raw[] {
   // Compared as written (too large to expand): the parameters hold $refs, so
   // what they point to is compared here, definition by definition, by name. A
   // narrowed enum inside one is still breaking.
-  if (!expanded) compareDefinitions({ tool: name, out }, name, old.inputSchema ?? {}, t.inputSchema ?? {});
+  if (!expanded) compareDefinitions({ tool: name, out }, name, oldRaw ?? {}, newRaw ?? {});
   collapsePlaces(out, found);
   const shell = (s: JsonSchema | undefined) => {
     const { properties: _p, required: _r, $defs: _d, definitions: _df, ...rest } = (s ?? {}) as Record<string, unknown>;
@@ -608,6 +614,26 @@ function sameTypes(node: unknown): unknown {
     if (Array.isArray(out[k])) out[k] = [...(out[k] as unknown[])].sort((x, y) => (canonical(x) < canonical(y) ? -1 : canonical(x) > canonical(y) ? 1 : 0));
   }
   return out;
+}
+
+/**
+ * The schema with `definitions` spelled `$defs`: its entries moved into `$defs`, and
+ * local `#/definitions/…` $refs pointing at `#/$defs/…`. The two are one place in a
+ * JSON pointer's eyes, so this changes no meaning. Used where two schemas are compared
+ * as written and their dialects differ.
+ */
+function defsPool(schema: JsonSchema | undefined): JsonSchema | undefined {
+  if (!schema || typeof schema !== 'object') return schema;
+  const rewrite = (node: unknown): unknown => {
+    if (Array.isArray(node)) return node.map(rewrite);
+    if (!node || typeof node !== 'object') return node;
+    return Object.fromEntries(
+      Object.entries(node as Record<string, unknown>).map(([k, v]) => [k, k === '$ref' && typeof v === 'string' ? v.replace(/^#\/definitions\//, '#/$defs/') : rewrite(v)]),
+    );
+  };
+  const { definitions, ...rest } = rewrite(schema) as Record<string, unknown>;
+  if (!definitions || typeof definitions !== 'object') return rest as JsonSchema;
+  return { ...rest, $defs: { ...(definitions as object), ...((rest.$defs as object | undefined) ?? {}) } } as JsonSchema;
 }
 
 /** `$defs` and `definitions` entries of two unexpanded schemas, compared by name. */
