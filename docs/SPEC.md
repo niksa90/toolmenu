@@ -309,6 +309,12 @@ the README links to the existing checkers.
 paths to `routes.yml` and the baseline, `tokenBudget`, and ignore tools by name or
 glob. No config needed for a useful first run.
 
+`--protocol auto|legacy|modern` (config: `protocol`) picks the handshake. `auto` tries
+`server/discover` and falls back to 2025; `legacy` never sends `server/discover`, so a
+server that serves both eras is checked as a 2025 server (for baselines taken before the
+server moved); `modern` pins 2026-07-28 and fails when the server can't. Rules follow the
+era that was negotiated, so nothing else changes. `history` doesn't take it yet.
+
 ## 7. Tech
 
 - Node 22+, TypeScript, ESM. `@modelcontextprotocol/client` (SDK v2) for connecting.

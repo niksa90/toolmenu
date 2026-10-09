@@ -13,6 +13,7 @@ export const CLI_OPTIONS = {
   header: { type: 'string', multiple: true },
   env: { type: 'string', multiple: true },
   timeout: { type: 'string' },
+  protocol: { type: 'string' },
   'no-auth': { type: 'boolean' },
   port: { type: 'string' },
   scope: { type: 'string' },

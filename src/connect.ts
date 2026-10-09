@@ -10,9 +10,18 @@ import { eraOf } from './menu.js';
 import type { Era } from './types.js';
 import { VERSION } from './version.js';
 
+/**
+ * Which handshake to make. auto: try the 2026-07-28 `server/discover` first and fall back
+ * to the 2025 one. legacy: the 2025 handshake only. modern: 2026-07-28 only, an error if
+ * the server can't speak it.
+ */
+export type Protocol = 'auto' | 'legacy' | 'modern';
+export const PROTOCOLS: readonly Protocol[] = ['auto', 'legacy', 'modern'];
+export const MODERN_VERSION = '2026-07-28';
+
 export type Target =
-  | { kind: 'stdio'; command: string; args: string[]; env?: Record<string, string>; cwd?: string }
-  | { kind: 'http'; url: string; headers?: Record<string, string>; noAuth?: boolean };
+  | { kind: 'stdio'; command: string; args: string[]; env?: Record<string, string>; cwd?: string; protocol?: Protocol }
+  | { kind: 'http'; url: string; headers?: Record<string, string>; noAuth?: boolean; protocol?: Protocol };
 
 export interface WireResponse {
   method: string;
@@ -88,7 +97,10 @@ export interface ConnectOptions {
 }
 
 export async function connect(target: Target, options: ConnectOptions = {}): Promise<Connection> {
-  const client = new Client({ name: 'toolmenu', version: VERSION }, { versionNegotiation: { mode: 'auto' } });
+  const client = new Client(
+    { name: 'toolmenu', version: VERSION },
+    { versionNegotiation: { mode: target.protocol === 'legacy' ? 'legacy' : target.protocol === 'modern' ? { pin: MODERN_VERSION } : 'auto' } },
+  );
   let transport: Transport;
   let stderrText = '';
   let oauth = false;
@@ -122,12 +134,12 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
       ...(oauth ? { authProvider: new StoredOAuthProvider(target.url) } : {}),
     });
   }
-  const context = { target, timeoutMs: options.timeoutMs, oauth };
+  const context = { target, timeoutMs: options.timeoutMs, oauth, ...(target.protocol && target.protocol !== 'auto' ? { protocol: target.protocol } : {}) };
 
   try {
     // A URL that answered as a 2025 server earlier in this run isn't probed again:
     // each server/discover gets a 400 there, one line in its log per connection.
-    const prior = target.kind === 'http' && LEGACY_URLS.has(target.url) ? { prior: { kind: 'legacy' as const } } : {};
+    const prior = target.kind === 'http' && (!target.protocol || target.protocol === 'auto') && LEGACY_URLS.has(target.url) ? { prior: { kind: 'legacy' as const } } : {};
     await client.connect(transport, { timeout: options.timeoutMs, ...prior });
   } catch (error) {
     // What failed is fixed now: the exit that follows toolmenu's own SIGTERM isn't the server's doing.

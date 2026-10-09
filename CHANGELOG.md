@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **`--protocol <auto|legacy|modern>`** (and `"protocol"` in the config file): which
+  handshake to make. `auto` (the default) is as before. `legacy` makes the 2025
+  handshake only, so a server that now serves both is still checked as a 2025 server
+  and a baseline stays comparable. `modern` pins 2026-07-28 and fails, with a next
+  step, when the server has no `server/discover`.
+
 ## 0.13.0
 
 Every finding and error now says what's wrong, where, what toolmenu saw, and what to

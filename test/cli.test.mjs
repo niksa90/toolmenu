@@ -198,3 +198,38 @@ test('snapshot over http: a menu that differs per connection is caught', async (
   }
 });
 
+
+test('--protocol legacy checks a dual-era server as a 2025 server', async () => {
+  const r = await run(['snapshot', '--no-write', '--json', '--protocol', 'legacy', ...sdkServer]);
+  assert.equal(r.code, 0, r.stderr);
+  const out = JSON.parse(r.stdout);
+  assert.equal(out.server.protocolVersion, '2025-11-25');
+  assert.equal(out.server.era, 'legacy');
+  assert.deepEqual(out.findings.map((f) => f.rule), ['spec/discover']);
+});
+
+test('--protocol modern pins 2026-07-28, and says what to do when the server lacks it', async () => {
+  const ok = await run(['snapshot', '--no-write', '--json', '--protocol', 'modern', ...sdkServer]);
+  assert.equal(ok.code, 0, ok.stderr);
+  assert.equal(JSON.parse(ok.stdout).server.protocolVersion, '2026-07-28');
+  const bad = await run(['snapshot', '--no-write', '--protocol', 'modern', '--env', 'LEGACY=1', ...sdkServer]);
+  assert.equal(bad.code, 2);
+  assert.match(bad.stderr, /doesn't speak the 2026-07-28 protocol/);
+  assert.match(bad.stderr, /→ Next: .*--protocol auto/);
+});
+
+test('--protocol and the config file: the flag wins, and a bad value is a usage error', async () => {
+  const dir = tempDir();
+  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ protocol: 'legacy' }));
+  const fromConfig = await run(['snapshot', '--no-write', '--json', ...sdkServer], { cwd: dir });
+  assert.equal(JSON.parse(fromConfig.stdout).server.era, 'legacy');
+  const flag = await run(['snapshot', '--no-write', '--json', '--protocol', 'auto', ...sdkServer], { cwd: dir });
+  assert.equal(JSON.parse(flag.stdout).server.era, 'modern');
+  const bad = await run(['snapshot', '--protocol', 'old', ...sdkServer]);
+  assert.equal(bad.code, 2);
+  assert.match(bad.stderr, /--protocol must be auto, legacy or modern/);
+  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ protocol: 'old' }));
+  const badConfig = await run(['snapshot', '--no-write', ...sdkServer], { cwd: dir });
+  assert.equal(badConfig.code, 2);
+  assert.match(badConfig.stderr, /protocol must be auto, legacy or modern/);
+});
