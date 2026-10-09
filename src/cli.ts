@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadConfig } from './config.js';
-import type { Target } from './connect.js';
+import { PROTOCOLS, type Protocol, type Target } from './connect.js';
 import { diffMenus } from './diff.js';
 import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
@@ -75,6 +75,8 @@ export async function main(argv: string[]): Promise<number> {
   const prefix = `${sub}${mode}`;
 
   const config = await loadConfig(values.config);
+  const protocol = (values.protocol ?? config.protocol ?? 'auto') as Protocol;
+  if (!PROTOCOLS.includes(protocol)) throw new UsageError(`--protocol must be auto, legacy or modern`);
   const processes = values.processes !== undefined ? Number(values.processes) : config.processes ?? 2;
   if (!Number.isInteger(processes) || processes < 1) throw new UsageError('--processes must be a whole number, 1 or more');
 
@@ -126,7 +128,7 @@ export async function main(argv: string[]): Promise<number> {
   if (sub === 'session' && values.init) {
     const path = values.scenario ?? 'scenario.yml';
     if (existsSync(path)) throw new UsageError(`${path} already exists. Pick another path with --scenario.`);
-    const initTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix);
+    const initTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
     const conn = await connectPatiently(seeded(initTarget, MAIN_SEED), { timeoutMs });
     try {
       const list = await patiently(() => listTools(conn, { timeoutMs }), { error: tooMany });
@@ -156,7 +158,7 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   if (sub === 'init') {
-    const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix);
+    const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
     const plan = planInit({ cwd: process.cwd(), target, out: values.out, session: values['with-session'] });
     if (plan.existing.length) throw new UsageError(existingMessage(plan));
     const { menu, findings } = await snapshot(target, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
@@ -186,7 +188,7 @@ export async function main(argv: string[]): Promise<number> {
     } catch (error) {
       throw new UsageError(error instanceof Error ? error.message : String(error));
     }
-    const autoTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix);
+    const autoTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
     const waited = { ms: 0 };
     const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
       throw refusedForTooMany(error, waited.ms);
@@ -249,7 +251,7 @@ export async function main(argv: string[]): Promise<number> {
       process.stdout.write(formatPlan(scenario, values.scenario) + '\n');
       return 0;
     }
-    const sessionTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix);
+    const sessionTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
     const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario, unionOut: !!values['union-out'] });
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
@@ -257,7 +259,7 @@ export async function main(argv: string[]): Promise<number> {
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
-  const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix);
+  const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
   const routesPath = values.routes ?? config.routes;
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
@@ -271,17 +273,17 @@ export async function main(argv: string[]): Promise<number> {
   return findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
 }
 
-function parseTarget(positionals: string[], command: string[] | undefined, headers: string[], env: string[], noAuth: boolean | undefined, prefix: string): Target {
+function parseTarget(positionals: string[], command: string[] | undefined, headers: string[], env: string[], noAuth: boolean | undefined, prefix: string, protocol: Protocol): Target {
   if (command) {
     if (command.length === 0) throw new UsageError('Nothing after "--": give the command that starts the server.');
     if (positionals.length) throw new UsageError(`Unexpected "${positionals[0]}" before "--".`);
-    return { kind: 'stdio', command: command[0], args: command.slice(1), env: parsePairs(env, '=', '--env') };
+    return { kind: 'stdio', command: command[0], args: command.slice(1), env: parsePairs(env, '=', '--env'), ...(protocol !== 'auto' ? { protocol } : {}) };
   }
   const [url, ...extra] = positionals;
   if (!url) throw new UsageError(`Give a server: a URL, or the command that starts it after "--".\n  → Next: toolmenu ${prefix} -- node dist/server.js (stdio) or toolmenu ${prefix} https://example.com/mcp (HTTP)`);
   if (extra.length) throw new UsageError(`Unexpected "${extra[0]}". For a stdio server, put the command after "--".`);
   if (!/^https?:\/\//.test(url)) throw new UsageError(`"${url}" isn't an http(s) URL. For a stdio server, put the command after "--".`);
-  return { kind: 'http', url, headers: parsePairs(headers, ':', '--header'), ...(noAuth ? { noAuth } : {}) };
+  return { kind: 'http', url, headers: parsePairs(headers, ':', '--header'), ...(noAuth ? { noAuth } : {}), ...(protocol !== 'auto' ? { protocol } : {}) };
 }
 
 async function authCommand(args: string[], values: { port?: string; scope?: string; 'client-id'?: string; 'client-secret'?: string; timeout?: string }): Promise<number> {

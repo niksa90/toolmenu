@@ -8,6 +8,8 @@ export interface Config {
   ignore?: string[];
   routes?: string;
   baseline?: string;
+  /** Which handshake to make: auto (default), legacy (2025 only) or modern (2026-07-28 only). --protocol wins. */
+  protocol?: 'auto' | 'legacy' | 'modern';
   tokenBudget?: number;
   /** diff checks the semver bump against serverInfo.version (off: it's often not the release version). */
   serverVersionIsRelease?: boolean;
@@ -43,6 +45,9 @@ export async function loadConfig(path?: string): Promise<Config> {
     if (!['error', 'warn', 'info', 'off'].includes(value)) {
       throw new Error(`${file}: rules["${id}"] must be error, warn, info or off`);
     }
+  }
+  if (config.protocol !== undefined && !['auto', 'legacy', 'modern'].includes(config.protocol)) {
+    throw new Error(`${file}: protocol must be auto, legacy or modern`);
   }
   const limit = config.descriptionLimit;
   if (limit !== undefined && !(typeof limit === 'number' && limit > 0) && !(typeof limit === 'string' && limit in CLIENT_LIMITS)) {

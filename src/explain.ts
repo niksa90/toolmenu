@@ -214,6 +214,8 @@ export interface ExplainContext {
   oauth?: boolean;
   /** The stage when it isn't the connect handshake (tools/list). */
   stage?: string;
+  /** --protocol, when it isn't auto. */
+  protocol?: 'legacy' | 'modern';
 }
 
 /**
@@ -225,6 +227,17 @@ export function explain(error: unknown, trace: Trace, context: ExplainContext): 
   // A stored OAuth login that can't be used already says why, and what to run.
   const login = causes(error).find((e) => e instanceof LoginNeededError);
   if (login) return login;
+  // --protocol modern on a server without server/discover: the choice failed, not the connection.
+  if (context.protocol === 'modern' && causes(error).some((e) => /did not offer pinned protocol version|Version negotiation failed/i.test(e.message))) {
+    const where = context.target.kind === 'stdio' ? commandLine(context.target.command, context.target.args) : context.target.url;
+    return new ConnectError(
+      "The server doesn't speak the 2026-07-28 protocol, and --protocol modern allows nothing else.",
+      [['server', where], ['stage', 'server/discover']],
+      'Drop --protocol (or use --protocol auto) to fall back to the 2025 handshake, or --protocol legacy to check it as a 2025 server on purpose.',
+      'server/discover',
+      { cause: error },
+    );
+  }
   return context.target.kind === 'stdio' ? explainStdio(error, trace, context, context.target) : explainHttp(error, trace, context, context.target);
 }
 
