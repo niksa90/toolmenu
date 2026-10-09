@@ -27,7 +27,9 @@ export function build(shared) {
       ? { isError: true, content: [{ type: 'text', text: '401 Unauthorized: token expired' }] }
       : form_id === 'broken'
         ? { isError: true, content: [{ type: 'text', text: 'The form definition is corrupt' }] }
-        : text('{}'));
+        : form_id === 'mandatory'
+          ? { isError: true, content: [{ type: 'text', text: '400 Bad Request: {"error":{"message":"Filter by folder is mandatory","code":"FILTER"}} If this keeps happening, the account may lack permission or the right role for this feature.' }] }
+          : text('{}'));
   const addReports = () => server.registerTool('export_report', { description: 'Export a report as CSV.', inputSchema: { report_id: z.string() }, annotations: ro }, async () => text(''));
   server.registerTool(
     'unlock_toolset',

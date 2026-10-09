@@ -53,6 +53,39 @@ export function tooMany(error: unknown): boolean {
  */
 export const RATE_LIMIT_WAITS_MS = waitsFrom(process.env.TOOLMENU_RATE_LIMIT_WAITS_MS) ?? [2000, 4000, 8000, 16_000, 32_000];
 
+/**
+ * A tool's error text with the reason up front: "400 Bad Request: {"message":"Filter by
+ * X is mandatory"}" says "400 Bad Request: Filter by X is mandatory". Text with no JSON
+ * message in it is returned as it is.
+ */
+export function errorWords(text: string): string {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start < 0 || end < start) return text;
+  let reason: string | undefined;
+  try {
+    const body: unknown = JSON.parse(text.slice(start, end + 1));
+    const pick = (o: unknown): string | undefined => {
+      if (typeof o !== 'object' || o === null) return undefined;
+      const r = o as Record<string, unknown>;
+      for (const key of ['message', 'detail', 'error_description', 'error']) {
+        const v = r[key];
+        if (typeof v === 'string' && v.trim()) return v.trim();
+        const inner = typeof v === 'object' ? pick(v) : undefined;
+        if (inner) return inner;
+      }
+      return undefined;
+    };
+    reason = pick(body);
+  } catch {
+    reason = undefined;
+  }
+  if (!reason) return text;
+  const lead = text.slice(0, start).trim().replace(/[:\-–]+$/, '').trim();
+  const tail = text.slice(end + 1).trim();
+  return [lead ? `${lead}: ${reason}` : reason, tail].filter(Boolean).join(' ');
+}
+
 /** What to do about a rate limit toolmenu couldn't wait out. */
 export const RATE_LIMIT_ADVICE = "The limit counts every request from this address, toolmenu's included: give the run its own server instance, or raise the limit for it.";
 
