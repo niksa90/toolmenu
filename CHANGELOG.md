@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.14.0
+
+A handshake flag for baselines, and two fixes found on real servers. Checked on the 22
+bench servers (identical menus and findings against the build before these changes)
+and on 37 more, where the Azure tool errors now show their reason.
 
 - **`--protocol <auto|legacy|modern>`** (and `"protocol"` in the config file): which
   handshake to make. `auto` (the default) is as before. `legacy` makes the 2025
