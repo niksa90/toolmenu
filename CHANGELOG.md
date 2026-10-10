@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.1
+
+- **diff: a recursive schema whose `definitions` moved to `$defs` with a new `$schema`
+  is the dialect change, not a removed option.** 0.14.0 fixed this for schemas too
+  large to expand; a recursive reference, which is unrolled once and then left as a
+  `$ref`, still showed `no longer accepts #/definitions/x` as a false
+  `diff/param-type` error beside the `diff/schema-dialect` notice. The pool spelling is
+  now normalised, and an option really removed under the same move is still breaking.
+
 ## 0.14.0
 
 A handshake flag for baselines, and two fixes found on real servers. Checked on the 22
