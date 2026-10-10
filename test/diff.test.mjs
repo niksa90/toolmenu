@@ -786,3 +786,22 @@ test('a schema too large to expand: definitions → $defs with a new $schema is 
   assert.ok(removed.findings.some((f) => f.rule === 'diff/param-type' && /no longer accepts/.test(f.message)));
   assert.equal(removed.suggestedBump, 'major');
 });
+
+test('a recursive schema whose definitions → $defs moved with the dialect is the dialect, not a removed option', () => {
+  const D07 = 'http://json-schema.org/draft-07/schema#';
+  const D2020 = 'https://json-schema.org/draft/2020-12/schema';
+  const tree = (pool, dialect, extra = []) => {
+    const ref = `#/${pool}/node`;
+    return {
+      $schema: dialect, type: 'object',
+      properties: { blocks: { type: 'array', items: { anyOf: [{ type: 'object', properties: { type: { const: 'list' }, content: { type: 'array', items: { $ref: ref } } } }, ...extra] } } },
+      [pool]: { node: { anyOf: [{ type: 'string' }, { type: 'object', properties: { type: { const: 'item' }, content: { type: 'array', items: { $ref: ref } } } }] } },
+    };
+  };
+  const moved = diffMenus(gen(tree('definitions', D07)), gen(tree('$defs', D2020)));
+  assert.deepEqual(rules(moved), ['diff/schema-dialect:gen']);
+  assert.equal(moved.suggestedBump, 'patch');
+  // A really removed option under the same dialect change is still breaking.
+  const removed = diffMenus(gen(tree('definitions', D07, [{ type: 'object', properties: { type: { const: 'quote' } } }])), gen(tree('$defs', D2020)));
+  assert.ok(removed.findings.some((f) => f.rule === 'diff/param-type' && /no longer accepts/.test(f.message)));
+});

@@ -1255,7 +1255,11 @@ function expandRefs(schema: JsonSchema | undefined): { schema: JsonSchema | unde
         return { ...(walk(target, [...stack, o.$ref]) as object), ...(walk(siblings, stack) as object) };
       }
     }
-    return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, walk(v, stack)]));
+    // A $ref left as a $ref (a recursive definition past MAX_UNROLL): `definitions` and `$defs` are one
+    // place under two spellings, and the root pool is dropped below, so the reference reads the same.
+    // Left as written, a generator upgrade that renames the pool made every recursive $ref look like a
+    // different option ("no longer accepts #/definitions/x" beside the unchanged #/$defs/x).
+    return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, k === '$ref' && typeof v === 'string' ? v.replace(/^#\/definitions\//, '#/$defs/') : walk(v, stack)]));
   };
   const { $defs: _defs, definitions: _definitions, ...rest } = schema as Record<string, unknown>;
   try {
