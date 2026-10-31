@@ -591,6 +591,10 @@ function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[
   const unrun = stoppedAt === undefined ? [] : scenario.steps.map((step, i) => ({ step, index: i + 1 })).filter((s) => s.index >= stoppedAt);
   for (const u of unlockers(menu)) {
     if (!u.param || u.values.length === 0) continue;
+    // Never says it unlocks tools and the run didn't call it: nothing suggests tools
+    // are missing (Garmin's garmin_sync { domains } downloads data). One it called
+    // and stopped is covered by auto.stopped.
+    if (!u.claims && !steps.some((r) => scenario.steps[r.index - 1]?.kind === 'call' && (scenario.steps[r.index - 1] as { tool: string }).tool === u.tool.name)) continue;
     const reached = new Set<string>();
     let last: number | undefined;
     const add = (arg: unknown) => {
