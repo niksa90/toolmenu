@@ -758,3 +758,14 @@ test('menu/gated: the suggested command keeps the headers, env names and --no-au
   assert.equal(http, '--header "X-Api-Key: <value>" --no-auth https://example.test/mcp');
   assert.doesNotMatch(http, /secret-value/);
 });
+
+test('ids/authored: viewUUID is a view ID, returned by a tool whose output schema has viewUUID (server-pdf)', () => {
+  const display = tool('display_pdf', ['url'], {
+    outputSchema: { type: 'object', properties: { viewUUID: { type: 'string' }, url: { type: 'string' } } },
+  });
+  const interact = tool('interact', ['viewUUID', 'action']);
+  assert.equal(lint([display, interact]).find((f) => f.rule === 'ids/authored'), undefined);
+  // Without a tool that hands it out, the finding names the kind as "view", not "view_uu".
+  const lone = lint([interact]).find((f) => f.rule === 'ids/authored');
+  assert.doesNotMatch(JSON.stringify(lone ?? {}), /view_uu/);
+});
