@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **`session`: a server that says it can't run on this operating system is a setup
+  failure.** "Editmamei runs on Windows and macOS; this process is on "linux"",
+  "Unsupported platform: linux" and "not supported on this platform" now count toward
+  `session/untested` (something missing on this machine), as one finding for the run,
+  instead of a `session/tool-error` warning per call. Found on editmamei 1.9.3, where 4
+  of its 5 warnings were this.
+- **`session`: a long path in an error loses its middle, not its end.** A step's error
+  is cut at 120 characters, and a path that long pushed out what came after it: “spawn
+  /tmp/…/scratch…” hid both the missing binary and the `ENOENT`. Absolute paths over 40
+  characters are now kept to their last two parts when the text is too long (“spawn
+  …/bin/editmamei-core-linux-x64 ENOENT”). URLs keep their paths.
+
 ## 0.14.1
 
 - **diff: a recursive schema whose `definitions` moved to `$defs` with a new `$schema`

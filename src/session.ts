@@ -572,7 +572,7 @@ function untested(steps: StepRecord[], target: Target): Raw[] {
       // Classified from the error's words: a guess, if a good one.
       confidence: 'unsure',
       message: `${all ? `All ${calls.length}` : `${setup.length} of ${calls.length}`} tool calls failed before reaching the tool: ${[...byClass].map(([c, list]) => `${list.length} on ${FAILURE_LABELS[c]}`).join(', ')}. Those steps only tested whether a failed call changes the menu.`,
-      detail: [...byClass].map(([c, list]) => `${c}: steps ${list.map((s) => s.index).join(', ')} (“${(list[0].note ?? '').replace(/^the tool returned an error: /, '').slice(0, 100)}”)`),
+      detail: [...byClass].map(([c, list]) => `${c}: steps ${list.map((s) => s.index).join(', ')} (“${clip((list[0].note ?? '').replace(/^the tool returned an error: /, ''), 100)}”)`),
       fix,
     },
   ];
@@ -1174,11 +1174,28 @@ interface Unlocker {
  * character. Drops U+FFFD left over from a server that cut its own message by bytes.
  */
 export function clip(text: string, max: number): string {
-  const chars = Array.from(text.replace(/\uFFFD+$/u, ''));
+  let chars = Array.from(text.replace(/\uFFFD+$/u, ''));
+  if (chars.length <= max) return chars.join('');
+  // A long path loses its middle before the text loses its end: “spawn /tmp/…/x ENOENT”
+  // cut at the end hides both the file and the reason.
+  chars = Array.from(shortenPaths(chars.join('')));
   if (chars.length <= max) return chars.join('');
   const cut = chars.slice(0, max - 1).join('');
   const space = cut.lastIndexOf(' ');
   return (space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s.,;:]+$/, '') + '…';
+}
+
+/**
+ * Absolute paths longer than 40 characters, kept to their last two parts:
+ * /tmp/a/b/node_modules/pkg/dist/bin/core-linux-x64 → …/bin/core-linux-x64.
+ */
+export function shortenPaths(text: string): string {
+  // Not a URL's path: a path starts after nothing that could be a scheme, host or word.
+  return text.replace(/(?<![\w:/\\.])(?:[A-Za-z]:)?(?:[\\/][^\s\\/"'“”()]+){3,}/g, (path) => {
+    if (path.length <= 40) return path;
+    const sep = path.includes('\\') && !path.includes('/') ? '\\' : '/';
+    return `…${sep}${path.split(/[\\/]/).slice(-2).join(sep)}`;
+  });
 }
 
 function isWriteLike(t: MenuTool): boolean {
