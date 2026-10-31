@@ -357,6 +357,10 @@ const FAILED_AS: Record<RouterFailure, { what: [string, string]; fix: string }> 
     what: ['answered "not found"', 'answered "not found"'],
     fix: 'Check the server is set up for this account or site, then rerun.',
   },
+  client: {
+    what: ["asked the client for something toolmenu doesn't offer (roots, sampling or elicitation)", "asked the client for something toolmenu doesn't offer (roots, sampling or elicitation)"],
+    fix: "Nothing to fix in the server: toolmenu doesn't answer roots, sampling or elicitation requests, so it can't list these routers' commands.",
+  },
   'invalid-arguments': {
     what: ["rejected the listing call's arguments", "rejected the listing call's arguments"],
     fix: "Read the router's own words above; if it lists its commands another way, name the right tool in catalog.tool or catalog.routers.",
