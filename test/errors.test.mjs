@@ -4,7 +4,7 @@ import { writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
 import { FIXTURES, run, tempDir } from './helpers.mjs';
-import { bodyExcerpt, formatBlock, isCredentialHeader, namedHeader, stderrFact, Trace } from '../dist/explain.js';
+import { bodyExcerpt, formatBlock, isCredentialHeader, namedHeader, startupHint, stderrFact, Trace } from '../dist/explain.js';
 import { setupFailureAdvice } from '../dist/failures.js';
 
 const broken = (mode, timeout = 5000) => ['snapshot', '--no-write', '--timeout', String(timeout), '--env', `MODE=${mode}`, '--', process.execPath, join(FIXTURES, 'broken-server.mjs')];
@@ -306,4 +306,38 @@ test('setupFailureAdvice: a next step per class, marked unsure', () => {
   assert.equal(a.confidence, 'unsure');
   assert.match(a.fix, /--header "Authorization: …"/);
   assert.match(setupFailureAdvice(['environment', 'network'], 'stdio').fix, /install it.*reach it/);
+});
+
+
+// Real output from servers in the registry scan (2026-10-31).
+function traced(stdout = [], stderr = []) {
+  const t = new Trace();
+  if (stdout.length) t.stdout(stdout.join('\n') + '\n');
+  if (stderr.length) t.stderr(stderr.join('\n') + '\n');
+  return t;
+}
+
+test('startupHint: a server that opened an HTTP port instead of stdio gets its address, not "log to stderr"', () => {
+  const pdf = traced(['MCP server listening on http://localhost:3001/mcp'], ['[pdf-server] Ready (1 URL(s) configured)']);
+  assert.match(startupHint(pdf, 'mcp-server-pdf'), /^The server started an HTTP server \(http:\/\/localhost:3001\/mcp\) instead of talking on its stdin and stdout\. .*toolmenu snapshot http:\/\/localhost:3001\/mcp$/);
+  const figma = traced(['Configuration:'], ['[INFO] HTTP server listening on port 3333', '[INFO] StreamableHTTP endpoint available at http://127.0.0.1:3333/mcp']);
+  assert.match(startupHint(figma, 'figma-developer-mcp'), /\(http:\/\/127\.0\.0\.1:3333\/mcp\)/);
+  const bound = traced([], ['Listening on http://0.0.0.0:8080/mcp. Use --stdio for stdio.']);
+  assert.match(startupHint(bound, 'x'), /\(http:\/\/localhost:8080\/mcp\).*its output mentions --stdio/);
+});
+
+test('startupHint: a CLI that printed its usage gets the subcommand its usage lists', () => {
+  const hint = (stdout, stderr) => startupHint(traced(stdout, stderr), 'tool');
+  assert.match(hint(['usage: hashgrid [-h] [--version] {mcp} ...']), /Its usage lists “mcp”: try tool mcp$/);
+  assert.match(hint([], ['usage: mirobody [-h]', '  {serve,dev,worker,doctor,mcp,migrate} ...', 'mirobody: error: the following arguments are required: command']), /lists “mcp”/);
+  assert.match(hint(['USAGE', 'mcp start [--transport stdio|sse] [--port value]']), /lists “mcp start”: try tool mcp start$/);
+  assert.match(hint(['Azure.Mcp.Server 4.0.0-beta.4', 'Description:'], ['Required command was not provided.', '  server start   Starts Azure MCP Server.']), /lists “server start”/);
+  assert.match(hint(['agent-device <command> [args] [--json]', 'Automates iOS, Android, macOS, TV, and web apps for AI agents.']), /wants a subcommand or an argument it wasn't given\. Its usage \(above\)/);
+  // A name that only contains "mcp" is not the subcommand.
+  assert.doesNotMatch(hint(['agentation-mcp - MCP server for Agentation', 'Usage:', '  agentation-mcp init   Set up']), /lists “mcp”/);
+});
+
+test('startupHint: credential errors and plain logs get no hint', () => {
+  assert.equal(startupHint(traced([], ['ERROR: GITLAB_PERSONAL_ACCESS_TOKEN environment variable is not set']), 'x'), undefined);
+  assert.equal(startupHint(traced(['Starting server...', 'Loaded 12 tools']), 'x'), undefined);
 });

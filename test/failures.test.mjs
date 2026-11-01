@@ -27,6 +27,9 @@ test('classifyFailure on real servers\' errors', () => {
     ['invalid-arguments', "Error calling tool 'get_page': Either 'page_id' OR both 'title' and 'space_key' must be provided."],
     ['invalid-arguments', '**Input Error** It looks like there was a problem with the input you provided.'],
     ['network', 'fetch failed: connect ECONNREFUSED 127.0.0.1:443'],
+    ['client', "Cannot request input 'roots' (roots/list): the request's client capabilities do not declare the required capability"],
+    ['client', 'Sampling is not supported by this client'],
+    ['other', 'The client ID is not valid for this workspace'],
     ['other', "Error calling tool 'get_link_types': HTTPError"],
     ['other', 'The token field must be a string'],
   ];

@@ -25,6 +25,20 @@
   `list_domains` comes 37th for "list domains", behind tools whose 5,000-character
   descriptions say "domain" again and again. No LLM: the ranks are deterministic,
   but a client's own search can rank a little differently, so findings are unsure.
+Found starting 200+ servers from the MCP registry and the most-downloaded npm
+packages, where these were the commonest ways a first run failed.
+
+- **A CLI that prints its usage and exits** is now said to be one, with the
+  subcommand its usage lists: `Its usage lists “mcp”: try hashgrid mcp` (also
+  `mcp start`, `server start`, `serve`, …). Before, toolmenu told it to log to
+  stderr, which was the wrong fix for about 25 of the servers that didn't start.
+- **A server that opens an HTTP port instead of talking on stdio**
+  (`@modelcontextprotocol/server-pdf`, `figma-developer-mcp`) is told so, with the
+  address it printed: start it in stdio mode, or run toolmenu against the URL.
+- **`session`: a tool that asks the client for roots, sampling or elicitation**,
+  which toolmenu doesn't provide, is a setup failure (`session/untested`), not a
+  `session/step-failed` error. `@modelcontextprotocol/server-everything`'s
+  `get-roots-list` failed the run before.
 
 ## 0.14.1
 
