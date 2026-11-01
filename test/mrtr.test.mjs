@@ -228,6 +228,26 @@ test('callWithInput: edge cases a fake connection can produce', async () => {
   const pages = await callWithInput(fake(['a', 'b', 'c', 'd'].map((u) => ({ wire: url(`https://x.test/${u}`), returns: url(`https://x.test/${u}`) }))), { name: 't', arguments: {} }, {});
   assert.equal(pages.input.outcome, 'gave-up');
 
+  // One form, a different file each round: different questions, gave-up, not a loop.
+  const del = (f) => ({ resultType: 'input_required', inputRequests: { c: { method: 'elicitation/create', params: { message: `Delete ${f}?`, requestedSchema: { type: 'object' } } } } });
+  const files = await callWithInput(fake(['a.txt', 'b.txt', 'c.txt', 'd.txt'].map((f) => ({ wire: del(f), returns: del(f) }))), { name: 't', arguments: {} }, {});
+  assert.equal(files.input.outcome, 'gave-up');
+  // The same question with a counter, new spacing and case: a loop.
+  const again = (n) => ({ resultType: 'input_required', inputRequests: { [`k${n}`]: { method: 'elicitation/create', params: { message: n % 2 ? `Go ahead?  (try ${n})` : `go ahead? (try ${n})`, requestedSchema: { type: 'object' } } } } });
+  const same = await callWithInput(fake([1, 2, 3, 4].map((n) => ({ wire: again(n), returns: again(n) }))), { name: 't', arguments: {} }, {});
+  assert.equal(same.input.outcome, 'loop');
+  // Asking the same twice, then something else: not a loop (it didn't ask the same every time).
+  const mixed = await callWithInput(fake([del('a.txt'), del('a.txt'), del('b.txt'), del('b.txt')].map((r) => ({ wire: r, returns: r }))), { name: 't', arguments: {} }, {});
+  assert.equal(mixed.input.outcome, 'gave-up');
+
+  // A requestState that isn't a string can't be echoed as it came: the call stops there, never called again without it.
+  const objectState = { ...ask, requestState: { step: 1 } };
+  let calls = 0;
+  const conn = fake([{ wire: objectState, returns: objectState }, { wire: done, returns: done }]);
+  const counted = { ...conn, client: { callTool: async (...a) => (calls++, conn.client.callTool(...a)) } };
+  const bad = await callWithInput(counted, { name: 't', arguments: {} }, {});
+  assert.deepEqual([bad.input.outcome, bad.input.kinds, bad.result, calls], ['bad-state', ['form'], undefined, 1]);
+
   // Asked once, took the decline, then worked forever: unfinished, with what it asked.
   const forever = [{ wire: ask, returns: ask }, ...Array.from({ length: 11 }, () => ({ wire: working, returns: working }))];
   const unfinished = await callWithInput(fake(forever), { name: 't', arguments: {} }, {});
@@ -327,4 +347,16 @@ test('callWithInput, third review: no resend of a tool whose first leg ran; decl
   const url = (n) => ({ resultType: 'input_required', inputRequests: { c: { method: 'elicitation/create', params: { mode: 'url', message: 'Connect', url: `https://x.test/connect?state=${n}` } } } });
   const loop = await callWithInput(fake([1, 2, 3, 4].map((n) => ({ wire: url(n), returns: url(n) }))), { name: 't', arguments: {} }, {});
   assert.equal(loop.input.outcome, 'loop');
+});
+
+test('session: a requestState that is not a string stops the call and is session/result-type, not a retry from scratch', async () => {
+  const r = await run(['session', '--auto', '--json', '--env', 'BAD_STATE=1', '--', process.execPath, server]);
+  const out = JSON.parse(r.stdout);
+  const step = out.steps.find((s) => s.label === 'call object_state');
+  assert.equal(step.outcome, 'needs-input');
+  assert.equal(step.note, "asked for a form, with a requestState that isn't a string, so it can't be sent back as it came");
+  const bad = out.findings.filter((f) => f.rule === 'session/result-type' && f.tool === 'object_state');
+  assert.equal(bad.length, 1);
+  assert.equal(bad[0].severity, 'error');
+  assert.match(bad[0].message, /requestState that isn't a string/);
 });

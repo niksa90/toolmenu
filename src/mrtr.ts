@@ -24,14 +24,16 @@ export interface InputTrace {
   kinds: InputKind[];
   /**
    * none: it asked for nothing. completed: it answered after the decline(s).
-   * loop: it asked the same again after a decline, until the round limit.
-   * gave-up: still asking (different things) at the round limit.
+   * loop: it asked the same again after every decline, until the round limit.
+   * gave-up: still asking at the round limit, not always the same thing.
    * unfinished: still returning requestState-only rounds (working, asking nothing)
    * at MAX_CONTINUATIONS or after 3 × the request timeout in all.
    * undeclared: it asked for something the request didn't declare (roots, sampling).
    * decline-failed: the retry carrying the decline failed with a protocol error.
+   * bad-state: its requestState isn't a string, so it can't be echoed byte for byte;
+   * calling again without it would run the tool again from scratch.
    */
-  outcome: 'none' | 'completed' | 'loop' | 'gave-up' | 'unfinished' | 'undeclared' | 'decline-failed';
+  outcome: 'none' | 'completed' | 'loop' | 'gave-up' | 'unfinished' | 'undeclared' | 'decline-failed' | 'bad-state';
   /** Kinds asked for that the request didn't declare. */
   undeclared?: InputKind[];
   /** The protocol error a retry failed with (decline-failed): the server's words, and its JSON-RPC code. */
@@ -58,13 +60,19 @@ function kindOf(request: { method?: string; params?: Record<string, unknown> }):
   return 'other';
 }
 
-/** What a request asks, without its key or wording: asking the same again reads the same even under a new key or a reworded message. */
+/**
+ * What a request asks, without its key: the same question under a new key each
+ * round reads the same. Its message counts, but not its counters, case or spacing:
+ * "Go ahead? (asked 2 times)" is "Go ahead? (asked 1 times)" again, while "Delete
+ * a.txt?" then "Delete b.txt?" are two questions with one form.
+ */
 function question(request: { method?: string; params?: Record<string, unknown> }): string {
   const p = request.params ?? {};
   // A URL-mode request has no schema: the page it sends the user to is the question.
   // Its path, not its query: a fresh ?state= each time is still the same page.
   const page = p.mode === 'url' && typeof p.url === 'string' ? p.url.split(/[?#]/)[0] : undefined;
-  return canonical({ method: request.method, mode: p.mode, requestedSchema: p.requestedSchema, url: page });
+  const message = typeof p.message === 'string' ? p.message.toLowerCase().replace(/\d+/g, '#').replace(/\s+/g, ' ').trim() : undefined;
+  return canonical({ method: request.method, mode: p.mode, requestedSchema: p.requestedSchema, url: page, message });
 }
 
 /**
@@ -102,7 +110,8 @@ export async function callWithInput(
   const kinds: InputKind[] = [];
   let missingResultType = false;
   let previous: string | undefined;
-  let repeated = false;
+  // Whether any round asked something other than the round before: a loop asks the same every time.
+  let changed = false;
   let rounds = 0;
   let continuations = 0;
   let call: Record<string, unknown> = { ...params };
@@ -134,11 +143,12 @@ export async function callWithInput(
         missingResultType = true;
         return { result: answered as CallResult, input: trace(finished()) };
       }
-      if (isObject(answered) && answered.resultType === 'input_required' && (isObject(answered.inputRequests) || typeof answered.requestState === 'string')) {
+      if (isObject(answered) && answered.resultType === 'input_required' && (isObject(answered.inputRequests) || answered.requestState !== undefined)) {
         // The SDK can throw after the fact (output-schema checks on a cached
         // definition): the server asked for input, so carry on with what it sent.
-        // Not one with neither inputRequests nor a string requestState: the SDK is
-        // right to reject that, and calling again from scratch would repeat the tool.
+        // Not one with neither inputRequests nor requestState: the SDK is right to
+        // reject that, and calling again from scratch would repeat the tool. A
+        // requestState that isn't a string ends the call below (bad-state).
         result = answered as unknown as InputRequired;
       } else {
         // The server's own JSON-RPC error to a retry that carried a decline is its
@@ -153,13 +163,20 @@ export async function callWithInput(
     }
     if ((result as InputRequired).resultType !== 'input_required') return { result: result as CallResult, input: trace(finished()) };
     const required = result as InputRequired;
-    const state = required.requestState;
+    // requestState as the server sent it: the SDK client drops one that isn't a string
+    // without a word, and calling again without it would run the tool from scratch.
+    const sent = conn.wire.since(mark, 'tools/call').at(-1)?.result as unknown;
+    const state = isObject(sent) && 'requestState' in sent ? sent.requestState : (required.requestState as unknown);
     const asked = Object.entries(isObject(required.inputRequests) ? required.inputRequests : {});
+    if (state !== undefined && typeof state !== 'string') {
+      for (const [, request] of asked) if (!kinds.includes(kindOf(request))) kinds.push(kindOf(request));
+      return { input: trace('bad-state') };
+    }
     if (!asked.length) {
       // Only requestState: the tool keeps working and asks nothing. Send it back.
       if (continuations >= MAX_CONTINUATIONS || (deadline !== undefined && Date.now() >= deadline)) return { input: trace('unfinished') };
       continuations++;
-      call = { ...params, ...(typeof state === 'string' ? { requestState: state } : {}) };
+      call = { ...params, ...(state !== undefined ? { requestState: state } : {}) };
       carriesDecline = false;
       continue;
     }
@@ -169,14 +186,14 @@ export async function callWithInput(
     if (undeclared.length) return { input: trace('undeclared', { undeclared }) };
     // The same question again after a decline, whatever its key or wording: the tool didn't take the answer.
     const signature = canonical(asked.map(([, request]) => question(request)).sort());
-    if (previous !== undefined && signature === previous) repeated = true;
-    if (rounds >= MAX_ROUNDS) return { input: trace(repeated ? 'loop' : 'gave-up') };
+    if (previous !== undefined && signature !== previous) changed = true;
+    if (rounds >= MAX_ROUNDS) return { input: trace(changed ? 'gave-up' : 'loop') };
     previous = signature;
     rounds++;
     call = {
       ...params,
       inputResponses: Object.fromEntries(asked.map(([key]) => [key, { action }])),
-      ...(typeof state === 'string' ? { requestState: state } : {}),
+      ...(state !== undefined ? { requestState: state } : {}),
     };
     carriesDecline = true;
   }

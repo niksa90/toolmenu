@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.16.2
+
+The rest of the 0.16.1 review: smaller cases, each fixed with a test that failed
+before.
+
+- **`session`: a `requestState` that isn't a string** stops the call and is
+  `session/result-type` (error). The official SDK client drops one without a word,
+  so the next call went out without it: the tool ran again from scratch and
+  toolmenu counted it as answered. toolmenu now reads `requestState` as the server
+  sent it.
+- **`session`: a loop is the same question every round.** A question's message now
+  counts, apart from its counters, case and spacing: "Delete a.txt?" then "Delete
+  b.txt?" on one form is still asking (`gave-up`), not a loop; "Go ahead? (asked 2
+  times)" is the same question again. Asking the same twice and then something
+  else isn't a loop either. The `gave-up` message says "not always for the same
+  thing".
+- **`$ref`** (`spec/ref`, the token breakdown, and now `diff`):
+  - relative `$id`s and refs join against the resource they're in, even when the
+    root has no absolute `$id` (`dir/a.json` then `b.json` is `dir/b.json`);
+  - two spellings of one URI are one resource (case of host, `./` and `../`);
+  - a draft-06/07 `$id` like `other.json#node` names both the resource and the node;
+  - a ref into a `$defs` entry through a list the walk doesn't enter (an entry's
+    `examples`) marks the entry used.
+- **`diff` resolves `$ref` with the same resolver.** A malformed escape in one ref
+  no longer leaves the whole schema unexpanded (every other ref compared as
+  written), anchors and `$id` resources expand, and a `"$ref"` inside `enum` or
+  `default` stays data.
+- **`menu/gated` and `session/unlock-coverage`:** a dispatcher that runs a tool from
+  a set (`call_tool { toolset, tool, arguments }`) is no longer charged as an
+  unlock. A tool that only takes `toolset` still is.
+
+
 ## 0.16.1
 
 Fixes from a review of 0.15.0 and 0.16.0. Each has a regression test made from the

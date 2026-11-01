@@ -1189,8 +1189,19 @@ const TOOLSET_PARAM = /^(?:toolsets?|tool_?sets?)$/i;
  * doesn't say it unlocks anything, may be data: session --auto still tries it once,
  * but menu/gated and session/unlock-coverage don't charge it.
  */
-export function definite(u: { claims: boolean; param?: string }): boolean {
-  return u.claims || (!!u.param && TOOLSET_PARAM.test(u.param));
+export function definite(u: { claims: boolean; param?: string; tool?: MenuTool }): boolean {
+  return u.claims || (!!u.param && TOOLSET_PARAM.test(u.param) && !dispatches(u.tool));
+}
+
+/** What a dispatcher takes besides the set: the tool or operation to run in it, or that call's arguments. */
+const DISPATCH_PARAM = /^(?:tool(?:_?name)?|command|sub_?command|operation|method|action|parameters|params|arguments|args)$/i;
+
+/**
+ * A dispatcher (`call_tool { toolset, tool, arguments }`) names a tool set to run
+ * one of its tools, not to unlock it: its `toolset` alone doesn't make it an unlock.
+ */
+function dispatches(tool: MenuTool | undefined): boolean {
+  return Object.keys(tool?.inputSchema?.properties ?? {}).some((p) => DISPATCH_PARAM.test(p));
 }
 const WEAK_UNLOCK_PARAM = /^(?:categor(?:y|ies)|modules?|features?|groups?|namespaces?)$/i;
 const UNLOCK_NAME = /unlock|enable|activate|capabilit|toolset|load_?tools|expand/i;
@@ -1504,6 +1515,8 @@ function inputNote(input: InputTrace, answer: Elicitation): string {
       return `asked for ${kindList(input.undeclared ?? [])}, which the request didn't declare`;
     case 'decline-failed':
       return `${asked}; the retry with the ${answer} failed: ${clip(input.error?.message ?? '', 160)}`;
+    case 'bad-state':
+      return `${input.kinds.length ? `${asked}, with` : 'answered input_required with'} a requestState that isn't a string, so it can't be sent back as it came`;
     default:
       return asked;
   }
@@ -1539,7 +1552,7 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
           input.outcome === 'loop'
             ? `${tool} asks the same thing again after a ${answer}, every time: an agent whose user says no gets the question back instead of an answer, and can't finish the call. toolmenu stopped after ${MAX_ROUNDS} rounds.`
             : input.outcome === 'gave-up'
-              ? `${tool} was still asking for input after ${MAX_ROUNDS} rounds of ${answer}s, each time something else. An agent whose user says no can't finish the call.`
+              ? `${tool} was still asking for input after ${MAX_ROUNDS} rounds of ${answer}s, not always for the same thing. An agent whose user says no can't finish the call.`
               : `${tool} ${input.kinds.length ? `took the ${answer}, then ` : ''}kept answering input_required with only its requestState, asking for nothing more, and never returned a result (toolmenu stopped after ${input.continuations ?? 0} rounds, at most ${MAX_CONTINUATIONS} or 3 × the request timeout). The client keeps calling it again and the agent never gets an answer.`,
         detail: [inputNote(input, answer)],
         fix:
@@ -1556,6 +1569,16 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
         message: `${tool} fails with a protocol error when the user ${answer === 'decline' ? 'declines' : 'dismisses'} its request (“${clip(input.error?.message ?? '', 120)}”). The model gets an error from the client instead of a result it can read and explain to the user.`,
         detail: [inputNote(input, answer)],
         fix: `Return a tool result on a ${answer} (isError: true with a sentence like "the user declined"), not a JSON-RPC error.`,
+      });
+    } else if (input.outcome === 'bad-state') {
+      out.push({
+        rule: 'session/result-type',
+        severity: 'error',
+        step,
+        tool,
+        message: `${tool} answered input_required with a requestState that isn't a string. 2026-07-28 makes it a string the client sends back byte for byte; a client can't echo anything else as it came, so the call can't go on (calling again without it would run the tool from scratch).`,
+        detail: [inputNote(input, answer)],
+        fix: 'Send requestState as a string: serialize (and sign, if it matters) whatever state the tool needs, and parse it when the call comes back.',
       });
     } else if (input.outcome === 'undeclared') {
       out.push({

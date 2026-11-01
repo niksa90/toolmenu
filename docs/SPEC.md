@@ -182,7 +182,7 @@ or the SDK rejecting a result the server sent is handled like any failed call.
 | `session/input-loop` | warn | After a decline the tool asks the same question again (the same kind and schema, whatever the request key or wording), or keeps asking something else, until the round limit; or it returns `requestState`-only rounds without end. An agent whose user says no can't finish the call |
 | `session/decline-fails` | warn | The retry carrying the decline fails with a JSON-RPC error, not a result the model can read. A tool error (`isError`) after a decline is the right answer and isn't reported |
 | `session/undeclared-input` | warn | The server asked for something the request didn't declare (roots, sampling) instead of returning `-32021` |
-| `session/result-type` | error | A 2026-07-28 `tools/call` result without `resultType` (**MUST**). The official SDK client rejects it |
+| `session/result-type` | error | A 2026-07-28 `tools/call` result without `resultType` (**MUST**), or an `input_required` result whose `requestState` isn't a string (it can't be echoed as it came; toolmenu stops the call). The official SDK client rejects a result without `resultType` |
 
 `-32021` (`MissingRequiredClientCapabilityError`) is a setup failure read by its
 code, counted in `session/untested` with the capabilities it names. All of the above

@@ -795,3 +795,14 @@ test('menu/gated: a device\'s capabilities or a price bundle need the tool to sa
   const device = tool('configure_device', [], { description: 'Configure the device.', inputSchema: { type: 'object', properties: { capabilities: { type: 'array', items: { type: 'string', enum: ['camera', 'gps'] } } } } });
   assert.equal(lint([device, tool('get_device', [])], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined);
 });
+
+test('menu/gated: a dispatcher that runs a tool from a set (toolset + tool + arguments) is not an unlock (0.16.2)', () => {
+  const dispatcher = tool('call_tool', [], {
+    description: 'Run a tool from one of the toolsets.',
+    inputSchema: { type: 'object', properties: { toolset: { type: 'string', enum: ['repos', 'issues'] }, tool: { type: 'string' }, arguments: { type: 'object' } }, required: ['toolset', 'tool'] },
+  });
+  assert.equal(lint([dispatcher, tool('get_me', [])], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined);
+  // The same parameter on a tool that only takes the set still warns.
+  const configure = tool('configure_session', [], { description: 'Choose toolsets.', inputSchema: { type: 'object', properties: { toolset: { type: 'string', enum: ['repos', 'issues'] } } } });
+  assert.equal(lint([configure, tool('get_me', [])], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated')?.tool, 'configure_session');
+});
