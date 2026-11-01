@@ -23,6 +23,8 @@ test('classifyFailure on real servers\' errors', () => {
     ['environment', 'Error rendering preview: Editmamei runs on Windows and macOS; this process is on "linux". Adobe ships no Linux build of Photoshop, so there is nothing here to drive.'],
     ['environment', 'Unsupported platform: linux'],
     ['environment', 'unsupported operating system "win32"'],
+    ['environment', 'Unsupported platform: Windows_NT'],
+    ['environment', 'Unsupported platform (linux)'],
     ['other', 'Unsupported platform: myspace. Use one of twitter, linkedin.'],
     ['environment', 'This tool is not supported on this platform.'],
     ['other', 'The job runs on a schedule; this process is idle.'],

@@ -1171,13 +1171,14 @@ export type { Era };
 // description to back them up.
 // `namespace` is weak too: Kubernetes and Pinecone take one on every read.
 const UNLOCK_PARAM = /^(?:domains?|toolsets?|tool_?sets?|capabilit(?:y|ies)|packs?|bundles?)$/i;
-// Parameter names that only ever name sets of tools. `domains` isn't one: Garmin's
-// garmin_sync { domains: [sleep, hrv] } names data.
-const TOOLSET_PARAM = /^(?:toolsets?|tool_?sets?|capabilit(?:y|ies)|packs?|bundles?)$/i;
+// Parameter names that only ever name sets of tools. Not `domains` (Garmin's
+// garmin_sync { domains: [sleep, hrv] } names data), nor `capabilities`, `packs` or
+// `bundles` (a device's capabilities, a price bundle): those need the tool to say so.
+const TOOLSET_PARAM = /^(?:toolsets?|tool_?sets?)$/i;
 
 /**
  * An unlock that surely unlocks tools: it says so (name or description), or its
- * parameter names tool sets outright. One that only has an enum of domains, and
+ * parameter is named for tool sets outright (toolsets). One that only has an enum of domains, and
  * doesn't say it unlocks anything, may be data: session --auto still tries it once,
  * but menu/gated and session/unlock-coverage don't charge it.
  */
@@ -1487,9 +1488,11 @@ function inputNote(input: InputTrace, answer: Elicitation): string {
     case 'loop':
       return `${asked}; asked the same again after each ${answer}, stopped after ${rounds}`;
     case 'gave-up':
-      return input.kinds.length
-        ? `${asked}; still asking after ${rounds}`
-        : `asked for nothing, but kept answering input_required with only its requestState (${input.continuations} rounds), never a result`;
+      return `${asked}; still asking after ${rounds}`;
+    case 'unfinished': {
+      const work = `kept answering input_required with only its requestState (${input.continuations ?? 0} rounds), never a result`;
+      return input.kinds.length ? `${asked}; ${PAST[answer]} ${times(input.rounds)}, then ${work}` : `asked for nothing, but ${work}`;
+    }
     case 'undeclared':
       return `asked for ${kindList(input.undeclared ?? [])}, which the request didn't declare`;
     case 'decline-failed':
@@ -1519,7 +1522,7 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
     });
   }
   for (const { step, tool, input } of inputs.filter((i) => i.input.outcome !== 'none')) {
-    if (input.outcome === 'loop' || input.outcome === 'gave-up') {
+    if (input.outcome === 'loop' || input.outcome === 'gave-up' || input.outcome === 'unfinished') {
       out.push({
         rule: 'session/input-loop',
         severity: 'warn',
@@ -1528,13 +1531,14 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
         message:
           input.outcome === 'loop'
             ? `${tool} asks the same thing again after a ${answer}, every time: an agent whose user says no gets the question back instead of an answer, and can't finish the call. toolmenu stopped after ${MAX_ROUNDS} rounds.`
-            : input.kinds.length
+            : input.outcome === 'gave-up'
               ? `${tool} was still asking for input after ${MAX_ROUNDS} rounds of ${answer}s, each time something else. An agent whose user says no can't finish the call.`
-              : `${tool} kept answering input_required with only its requestState, asking for nothing, for ${MAX_CONTINUATIONS} rounds without a result. A client keeps calling it again and the agent never gets an answer.`,
+              : `${tool} ${input.kinds.length ? `took the ${answer}, then ` : ''}kept answering input_required with only its requestState, asking for nothing more, and never returned a result (toolmenu stopped after ${input.continuations ?? 0} rounds, at most ${MAX_CONTINUATIONS} or 3 × the request timeout). The client keeps calling it again and the agent never gets an answer.`,
         detail: [inputNote(input, answer)],
-        fix: input.kinds.length
-          ? `Treat a ${answer} as an answer: return a result that says the user ${answer === 'decline' ? 'declined' : 'dismissed it'} (isError: true is fine), so the model can tell the user and move on.`
-          : 'Return a result once the work is done, or a tool error if it can\'t finish; for long work, hand back a handle the agent can check with another tool.',
+        fix:
+          input.outcome === 'unfinished'
+            ? 'Return a result once the work is done, or a tool error if it can\'t finish; for long work, hand back a handle the agent can check with another tool.'
+            : `Treat a ${answer} as an answer: return a result that says the user ${answer === 'decline' ? 'declined' : 'dismissed it'} (isError: true is fine), so the model can tell the user and move on.`,
       });
     } else if (input.outcome === 'decline-failed') {
       out.push({

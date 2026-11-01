@@ -122,3 +122,30 @@ test('breakdown: $dynamicAnchor and anchors nested inside a definition count as 
   const bad = buildMenu([tool({ type: 'object', properties: { a: { $ref: '#/$defs/100%' } }, $defs: { A: { type: 'string' } } })], {});
   assert.ok(breakdown(bad).unusedDefs.tokens > 0, 'A is unused, and nothing threw');
 });
+
+// 0.16.1, second review: the shared resolver's own regressions.
+test('unresolvedRefs: a broken local fragment is missing even under an absolute $id, never "network"', () => {
+  const faults = unresolvedRefs({ $id: 'https://x.test/root.json', type: 'object', properties: { a: { $ref: '#/$defs/Typo' }, b: { $ref: '#nowhere' } } }, 'inputSchema');
+  assert.deepEqual(faults.map((f) => [f.path, f.kind]), [['a', 'missing'], ['b', 'missing']]);
+});
+
+test('unresolvedRefs: a ref to a boolean schema resolves', () => {
+  assert.deepEqual(unresolvedRefs({ type: 'object', properties: { a: { $ref: '#/$defs/Any' } }, $defs: { Any: true } }, 'inputSchema'), []);
+  assert.deepEqual(unresolvedRefs({ type: 'object', additionalProperties: false, properties: { a: { $ref: '#/additionalProperties' } } }, 'inputSchema'), []);
+});
+
+test('unresolvedRefs: draft-07 dependencies and contentSchema are walked; branches keep their index', () => {
+  const draft07 = { type: 'object', properties: { cc: { type: 'string' } }, dependencies: { cc: { $ref: '#/definitions/Nope' }, names: ['cc'] } };
+  assert.deepEqual(unresolvedRefs(draft07, 'inputSchema').map((f) => f.path), ['<dependencies>.cc']);
+  assert.deepEqual(unresolvedRefs({ type: 'object', properties: { a: { anyOf: [{ $ref: '#/$defs/X' }, { $ref: '#/$defs/Y' }] } } }, 'inputSchema').map((f) => f.path), ['a.<anyOf>.0', 'a.<anyOf>.1']);
+});
+
+test('breakdown: entries reached through dependencies, a boolean entry, and both refs on one node count as used', () => {
+  const tool = (schema) => ({ name: 't', description: 'T.', inputSchema: schema });
+  const deps = buildMenu([tool({ type: 'object', properties: { cc: { type: 'string' } }, dependencies: { cc: { $ref: '#/definitions/billing' } }, definitions: { billing: { type: 'object', properties: { address: { type: 'string' } } } } })], {});
+  assert.equal(breakdown(deps).unusedDefs.tokens, 0);
+  const bool = buildMenu([tool({ type: 'object', properties: { a: { $ref: '#/$defs/Any' } }, $defs: { Any: true } })], {});
+  assert.equal(breakdown(bool).unusedDefs.tokens, 0);
+  const both = buildMenu([tool({ type: 'object', properties: { a: { $ref: '#/$defs/A' } }, $defs: { A: { $ref: '#/$defs/B', $dynamicRef: '#c' }, B: { type: 'string' }, C: { $dynamicAnchor: 'c', type: 'object' } } })], {});
+  assert.equal(breakdown(both).unusedDefs.tokens, 0);
+});

@@ -17,21 +17,30 @@ import { VERSION } from './version.js';
  */
 /**
  * Run `work` with the SDK's "[mcp-sdk] excluding tool" warnings held back. The SDK
- * client drops a tool with an invalid x-mcp-header from its own tools/list and
- * console.warns about it; toolmenu reads the list off the wire and reports those
- * tools as spec/x-mcp-header findings. Only while toolmenu lists, so an app that
- * imports toolmenu keeps its own warnings.
+ * client drops a tool with an invalid x-mcp-header from its own tools/list (also
+ * inside callTool, when it refreshes its list) and console.warns about it; toolmenu
+ * reads the list off the wire and reports those tools as spec/x-mcp-header findings.
+ * Only while toolmenu lists or calls, so an app that imports toolmenu keeps its own
+ * warnings. Overlapping runs share one filter, put in by the first and taken out by
+ * the last.
  */
-async function quietExclusions<T>(work: () => Promise<T>): Promise<T> {
-  const warn = console.warn;
-  console.warn = (...args: unknown[]) => {
-    if (typeof args[0] === 'string' && args[0].startsWith('[mcp-sdk] excluding tool ')) return;
-    warn(...args);
-  };
+let quieting = 0;
+let originalWarn: typeof console.warn | undefined;
+export async function quietExclusions<T>(work: () => Promise<T>): Promise<T> {
+  if (quieting++ === 0) {
+    const warn = (originalWarn = console.warn);
+    console.warn = (...args: unknown[]) => {
+      if (typeof args[0] === 'string' && args[0].startsWith('[mcp-sdk] excluding tool ')) return;
+      warn(...args);
+    };
+  }
   try {
     return await work();
   } finally {
-    console.warn = warn;
+    if (--quieting === 0 && originalWarn) {
+      console.warn = originalWarn;
+      originalWarn = undefined;
+    }
   }
 }
 

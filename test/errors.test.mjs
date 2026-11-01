@@ -379,3 +379,14 @@ test('startupHint: a command table whose "Usage:" line scrolled out of the stder
   assert.match(startupHint(traced([], rows), 'poppy-memory'), /lists “serve”: try poppy-memory serve$/);
   assert.equal(startupHint(traced([], ['INFO     Starting', 'WARNING  Low disk', 'ERROR    Crashed']), 'srv'), undefined);
 });
+
+test('startupHint: a wrapped description line or a log line offers no subcommand', () => {
+  const wrapped = ['Commands:', '  start      Start the service. Use this to run the', '             server in the background.', '  stop       Stop it.', '  status     Show status.'];
+  assert.match(startupHint(traced(wrapped), 'tool'), /lists “start”: try tool start$/);
+  assert.match(startupHint(traced(['Usage: tool [options]', 'Options:', '  --help   Show help', '  --port   Port'], ['Error: server crashed']), 'tool'), /Its usage \(above\) or its docs say/);
+  assert.match(startupHint(traced(['USAGE', '  mcp start [--transport stdio|sse] [--port value]']), 'tool'), /lists “mcp start”/);
+});
+
+test('startupHint: closed stdout without a recorded exit is not "exited"', () => {
+  assert.equal(startupHint(traced(['Usage: srv [options]', 'Options:', '  --help   Show help']), 'srv', { exited: false }), undefined);
+});

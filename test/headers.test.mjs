@@ -133,22 +133,28 @@ test('headerFaults: a duplicate involving a number parameter is caught, and drop
   assert.match(faults[1].problem, /"region" is already used by a \("Region"\)/);
 });
 
-test('diff/x-mcp-header-invalid: a release whose header makes HTTP clients drop the tool is breaking', async () => {
+test('diff/x-mcp-header-invalid: a 2026 release whose header makes HTTP clients drop the tool is warned about', async () => {
   const { writeFileSync } = await import('node:fs');
   const { tempDir } = await import('./helpers.mjs');
   const { buildMenu } = await import('../dist/menu.js');
   const dir = tempDir();
-  const menu = (header, type = 'string') => buildMenu([{ name: 'q', description: 'Q.', inputSchema: { type: 'object', properties: { region: { type, 'x-mcp-header': header } } } }], { name: 's', version: '1.0.0' });
+  const menu = (header, protocolVersion = '2026-07-28') => buildMenu([{ name: 'q', description: 'Q.', inputSchema: { type: 'object', properties: { region: { type: 'string', 'x-mcp-header': header } } } }], { name: 's', version: '1.0.0', protocolVersion });
   writeFileSync(join(dir, 'a.json'), JSON.stringify(menu('Region')));
   writeFileSync(join(dir, 'b.json'), JSON.stringify(menu('Re gion')));
   writeFileSync(join(dir, 'c.json'), JSON.stringify(menu('Zone')));
   const broke = JSON.parse((await run(['diff', '--json', join(dir, 'a.json'), join(dir, 'b.json')])).stdout).findings;
   const invalid = broke.find((f) => f.rule === 'diff/x-mcp-header-invalid');
-  assert.equal(invalid?.severity, 'error');
+  // A warning: a menu file doesn't say whether the server runs over HTTP.
+  assert.equal(invalid?.severity, 'warn');
   assert.match(invalid.message, /Streamable HTTP clients must leave the tool out of their menu/);
   assert.match(invalid.detail[0], /"Re gion" isn't a valid HTTP header name/);
   // A valid rename is only the notice.
   const renamed = JSON.parse((await run(['diff', '--json', join(dir, 'a.json'), join(dir, 'c.json')])).stdout).findings;
   assert.ok(!renamed.some((f) => f.rule === 'diff/x-mcp-header-invalid'));
   assert.ok(renamed.some((f) => f.rule === 'diff/x-mcp-header'));
+  // On a 2025 server the annotation means nothing: no invalid-header finding.
+  writeFileSync(join(dir, 'd.json'), JSON.stringify(menu('Region', '2025-11-25')));
+  writeFileSync(join(dir, 'e.json'), JSON.stringify(menu('Re gion', '2025-11-25')));
+  const legacy = JSON.parse((await run(['diff', '--json', join(dir, 'd.json'), join(dir, 'e.json')])).stdout).findings;
+  assert.ok(!legacy.some((f) => f.rule === 'diff/x-mcp-header-invalid'));
 });

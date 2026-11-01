@@ -790,3 +790,8 @@ test('menu/gated: a parameter that can only name tool sets warns without the des
   const menu = [configure, tool('get_me', [])];
   assert.equal(lint(menu, { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated')?.tool, 'configure_session');
 });
+
+test('menu/gated: a device\'s capabilities or a price bundle need the tool to say it unlocks tools', () => {
+  const device = tool('configure_device', [], { description: 'Configure the device.', inputSchema: { type: 'object', properties: { capabilities: { type: 'array', items: { type: 'string', enum: ['camera', 'gps'] } } } } });
+  assert.equal(lint([device, tool('get_device', [])], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined);
+});

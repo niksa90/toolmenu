@@ -60,7 +60,7 @@ test('session --auto on 2026-07-28: every request is declined, and what each too
   // The same question under a new key and new wording each time is still the same question.
   assert.match(loops.ask_forever_reworded.message, /asks the same thing again after a decline, every time/);
   // requestState-only rounds: asking for nothing, never finishing.
-  assert.match(loops.work_forever.message, /kept answering input_required with only its requestState, asking for nothing, for 10 rounds without a result/);
+  assert.match(loops.work_forever.message, /^work_forever kept answering input_required with only its requestState, asking for nothing more, and never returned a result \(toolmenu stopped after 10 rounds/);
   assert.match(loops.work_forever.fix, /Return a result once the work is done/);
   assert.equal(step('work_forever').note, 'asked for nothing, but kept answering input_required with only its requestState (10 rounds), never a result');
   // requestState-only rounds that end in a result are just work: no note, no finding.
@@ -180,8 +180,9 @@ test('callWithInput: edge cases a fake connection can produce', async () => {
       wire,
       client: {
         callTool: async () => {
-          const { wire: raw, returns, throws } = script[i++];
+          const { wire: raw, wireError, returns, throws } = script[i++];
           if (raw !== undefined) wire.responses.push({ method: 'tools/call', result: raw });
+          if (wireError !== undefined) wire.responses.push({ method: 'tools/call', error: wireError });
           if (throws) throw throws;
           return returns;
         },
@@ -203,10 +204,34 @@ test('callWithInput: edge cases a fake connection can produce', async () => {
   const timeout = Object.assign(new Error('Request timed out'), { code: 'REQUEST_TIMEOUT' });
   await assert.rejects(callWithInput(fake([{ wire: ask, returns: ask }, { throws: timeout }]), { name: 't', arguments: {} }, {}), /Request timed out/);
 
-  // A refused retry keeps the server's words in JSON: message and code.
-  const refused = Object.assign(new Error('Invalid or expired requestState'), { code: -32602 });
-  const r = await callWithInput(fake([{ wire: ask, returns: ask }, { throws: refused }]), { name: 't', arguments: {} }, {});
+  // A refused retry keeps the server's words in JSON, first line only: message and code.
+  const refused = Object.assign(new Error('MCP error -32602: Invalid or expired requestState'), { code: -32602 });
+  const r = await callWithInput(fake([{ wire: ask, returns: ask }, { wireError: { code: -32602, message: 'Invalid or expired requestState\n  at verify (state.py:12)' }, throws: refused }]), { name: 't', arguments: {} }, {});
+  assert.equal(r.input.outcome, 'decline-failed');
   assert.deepEqual(JSON.parse(JSON.stringify(r.input.error)), { message: 'Invalid or expired requestState', code: -32602 });
+
+  // The SDK rejecting a complete result the server did send (an output-schema check) is not the decline refused.
+  const local = Object.assign(new Error('Tool t has an output schema but did not return structured content'), { code: -32600 });
+  await assert.rejects(callWithInput(fake([{ wire: ask, returns: ask }, { wire: done, throws: local }]), { name: 't', arguments: {} }, {}), /did not return structured content/);
+
+  // A rate limit in JSON-RPC words goes back to session to be waited out.
+  const limited = Object.assign(new Error('Rate limit exceeded, retry later'), { code: -32000 });
+  await assert.rejects(callWithInput(fake([{ wire: ask, returns: ask }, { wireError: { code: -32000, message: 'Rate limit exceeded, retry later' }, throws: limited }]), { name: 't', arguments: {} }, {}), /Rate limit exceeded/);
+
+  // After requestState-only rounds no decline was sent: a server error then is a failed call.
+  const working = { resultType: 'input_required', requestState: 's' };
+  const err = Object.assign(new Error('Invalid params'), { code: -32602 });
+  await assert.rejects(callWithInput(fake([{ wire: working, returns: working }, { wireError: { code: -32602, message: 'Invalid params' }, throws: err }]), { name: 't', arguments: {} }, {}), /Invalid params/);
+
+  // Different pages to open in turn are different questions: gave-up, not a loop.
+  const url = (u) => ({ resultType: 'input_required', inputRequests: { c: { method: 'elicitation/create', params: { mode: 'url', message: 'Open', url: u } } } });
+  const pages = await callWithInput(fake(['a', 'b', 'c', 'd'].map((u) => ({ wire: url(`https://x.test/${u}`), returns: url(`https://x.test/${u}`) }))), { name: 't', arguments: {} }, {});
+  assert.equal(pages.input.outcome, 'gave-up');
+
+  // Asked once, took the decline, then worked forever: unfinished, with what it asked.
+  const forever = [{ wire: ask, returns: ask }, ...Array.from({ length: 11 }, () => ({ wire: working, returns: working }))];
+  const unfinished = await callWithInput(fake(forever), { name: 't', arguments: {} }, {});
+  assert.deepEqual([unfinished.input.outcome, unfinished.input.kinds, unfinished.input.continuations], ['unfinished', ['form'], 10]);
 });
 
 test('an unlock that never finishes its input rounds unlocked nothing: its values are not counted as reached', async () => {
@@ -217,4 +242,40 @@ test('an unlock that never finishes its input rounds unlocked nothing: its value
   assert.equal(out.steps.find((s) => s.label.startsWith('call enable_toolset')).outcome, 'needs-input');
   const coverage = out.findings.find((f) => f.rule === 'session/unlock-coverage');
   assert.match(coverage.message, /got through 0 of its 2 toolset values/);
+});
+
+test('quietExclusions: overlapping runs share one filter and leave console.warn as it was', async () => {
+  const { quietExclusions } = await import('../dist/connect.js');
+  const original = console.warn;
+  const seen = [];
+  console.warn = (...a) => seen.push(a[0]);
+  const mine = console.warn;
+  try {
+    let releaseA;
+    const a = quietExclusions(() => new Promise((r) => (releaseA = r)));
+    const b = quietExclusions(async () => {
+      console.warn('[mcp-sdk] excluding tool x');
+      console.warn('kept');
+    });
+    await b;
+    releaseA();
+    await a;
+    assert.equal(console.warn, mine, 'restored to what it was before either run');
+    assert.deepEqual(seen, ['kept']);
+  } finally {
+    console.warn = original;
+  }
+});
+
+test('callWithInput: one step stops after 3 × the request timeout of requestState-only rounds', async () => {
+  const working = { resultType: 'input_required', requestState: 's' };
+  const wire = { responses: [], since: (mark) => wire.responses.slice(mark) };
+  const conn = {
+    era: 'modern',
+    wire,
+    client: { callTool: async () => { await new Promise((r) => setTimeout(r, 25)); wire.responses.push({ method: 'tools/call', result: working }); return working; } },
+  };
+  const r = await callWithInput(conn, { name: 't', arguments: {} }, { timeoutMs: 20 });
+  assert.equal(r.input.outcome, 'unfinished');
+  assert.ok(r.input.continuations < 10, `stopped on time (${r.input.continuations} rounds), not on the round cap`);
 });

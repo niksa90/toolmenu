@@ -192,22 +192,35 @@ function ownAddress(raw: string): string | undefined {
 }
 
 /**
- * Subcommands the help text offers where a command goes: in a `{a,b,mcp}` list, or
- * as the first word or two of a row ("  mcp   Start…", "server start   Starts…",
- * "t3-watch start   Run…", "usage: prog mcp"). Never from an option's description
- * ("--port <n>   Port the server listens on").
+ * Subcommands the help text offers where a command goes, and only there:
+ * - a `{a,b,mcp}` list (argparse);
+ * - the command column of a table row, the words before its two-space gap
+ *   ("  serve   Start…", "  server start   Starts…", "t3-watch start   Run…");
+ * - a usage line: one that starts "usage:", or the indented lines under a "Usage:" or
+ *   "USAGE" header, up to the next blank line ("mcp start [--transport…]").
+ * Never a wrapped description line or a log line ("Error: server crashed").
  */
 function offeredSubcommand(text: string): string | undefined {
   const offered = new Set<string>();
+  const add = (words: string[]) => {
+    // The command, and the word after a program name in front of it.
+    for (const start of [0, 1]) for (const n of [1, 2]) if (words.length >= start + n) offered.add(words.slice(start, start + n).join(' '));
+  };
   for (const m of text.matchAll(/\{([^{}\n]*)\}/g)) for (const w of m[1].split(',')) offered.add(w.trim());
+  let inUsage = false;
   for (const line of text.split('\n')) {
-    let words = line.trim().split(/\s+/).filter(Boolean);
-    if (/^usage:$/i.test(words[0] ?? '')) words = words.slice(1);
-    if (!words.length || words[0].startsWith('-')) continue;
-    for (const start of [0, 1]) {
-      offered.add(words.slice(start, start + 1).join(' '));
-      offered.add(words.slice(start, start + 2).join(' '));
+    if (!line.trim()) {
+      inUsage = false;
+      continue;
     }
+    if (/^\s*(?:usage:|USAGE)\s*$/i.test(line)) {
+      inUsage = true;
+      continue;
+    }
+    const usage = /^\s*usage:\s+(.*)$/i.exec(line);
+    const row = /^[ \t]*([a-z][\w.-]*(?: [a-z][\w-]*)?) {2,}\S/.exec(line);
+    const words = (usage ? usage[1] : inUsage ? line : row ? row[1] : '').trim().split(/\s+/).filter((w) => /^[a-z][\w.-]*$/.test(w));
+    if (words.length) add(words.slice(0, 3));
   }
   return SUBCOMMANDS.find((c) => offered.has(c));
 }
@@ -413,7 +426,7 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
       next = "The server is missing one of its own dependencies (see stderr): reinstall it, or try another version. It's a packaging problem, not your setup.";
     } else if (rejected) {
       next = REJECTED_NEXT;
-    } else if ((hint = startupHint(trace, whole))) {
+    } else if ((hint = startupHint(trace, whole, { exited: !!exit }))) {
       next = hint;
     } else if (trace.strayCount) {
       next = `${LOG_TO_STDERR} Then fix what stderr says.`;

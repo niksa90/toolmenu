@@ -169,10 +169,12 @@ other commands declare nothing, so `snapshot` sees the menu a client that can't 
 asked sees), answers every elicitation with `decline` (`--elicitation cancel` for the
 other answer; never `accept`, which needs values someone has to choose), sends
 `requestState` back byte for byte, and calls again, for at most 3 rounds. A round that
-carries only `requestState` is the tool still working: sent back, up to 10 times. It
+carries only `requestState` is the tool still working: sent back, up to 10 times or
+3 × the request timeout in all. It
 declares no roots or sampling. On a 2025 server the same answer goes to its
-`elicitation/create` requests. A timeout, a 429 or a lost connection on a retry is
-handled like any failed call, not as the server refusing the decline.
+`elicitation/create` requests. Only the server's own JSON-RPC error to a retry that
+carried a decline is the decline refused; a timeout, a rate limit, a lost connection,
+or the SDK rejecting a result the server sent is handled like any failed call.
 
 | id | sev | check |
 |---|---|---|
@@ -483,8 +485,9 @@ Things building `snapshot` settled or changed. The spec above is updated to matc
   change, e.g. `openWorldHint` added) and `diff/other` (title, icons, `_meta`…).
   Without them, a release changed every tool's tokens with no finding (FINDINGS F7).
 - **An `x-mcp-header` that breaks the spec's rules in the new release only**
-  (`diff/x-mcp-header-invalid`, error, breaking): Streamable HTTP clients must drop
-  the tool, so for their agents it's removed.
+  (`diff/x-mcp-header-invalid`, warn, notice; 2026-07-28 menus, a menu's own tools,
+  not catalog operations): Streamable HTTP clients must drop the tool. Not breaking,
+  since a menu file doesn't say whether the server runs over HTTP.
 - **`x-mcp-header` changes** (`diff/x-mcp-header`, info, notice): a parameter newly
   mirrored into an `Mcp-Param-*` HTTP header, no longer mirrored, or with its header
   renamed. Callers send the same arguments; proxies, load balancers and WAFs that

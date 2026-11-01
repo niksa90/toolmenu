@@ -8,11 +8,11 @@
  */
 
 /** Keywords whose value is one schema. */
-const ONE = ['items', 'additionalItems', 'additionalProperties', 'unevaluatedProperties', 'unevaluatedItems', 'propertyNames', 'contains', 'not', 'if', 'then', 'else'];
+const ONE = ['items', 'additionalItems', 'additionalProperties', 'unevaluatedProperties', 'unevaluatedItems', 'propertyNames', 'contains', 'not', 'if', 'then', 'else', 'contentSchema'];
 /** Keywords whose value is a list of schemas (draft-07 `items` can be one too). */
 const LIST = ['allOf', 'anyOf', 'oneOf', 'prefixItems', 'items'];
-/** Keywords whose value maps names to schemas. */
-const MAP = ['properties', 'patternProperties', '$defs', 'definitions', 'dependentSchemas'];
+/** Keywords whose value maps names to schemas (draft-07 `dependencies` maps to a schema or a list of names; only the schemas count). */
+const MAP = ['properties', 'patternProperties', '$defs', 'definitions', 'dependentSchemas', 'dependencies'];
 
 /** Each subschema of a schema node, with the step that reaches it: `{ key: 'properties', name: 'a' }`. */
 export function children(node: Record<string, unknown>): { key: string; name?: string; index?: number; value: unknown }[] {
@@ -27,7 +27,9 @@ export function children(node: Record<string, unknown>): { key: string; name?: s
   }
   for (const key of MAP) {
     const v = node[key];
-    if (v && typeof v === 'object' && !Array.isArray(v)) for (const [name, value] of Object.entries(v)) out.push({ key, name, value });
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      for (const [name, value] of Object.entries(v)) if (value && typeof value === 'object' && !Array.isArray(value)) out.push({ key, name, value });
+    }
   }
   return out;
 }
@@ -58,9 +60,15 @@ function join(base: string, ref: string): string {
 
 const strip = (uri: string) => uri.replace(/#$/, '');
 
+/** What a ref points to: the value (an object, or a boolean schema such as `true`), and the top-level $defs entry it belongs to. */
+export interface Target {
+  value: unknown;
+  entry?: string;
+}
+
 export interface SchemaIndex {
-  /** The node a ref written inside a resource with base `base` points to; undefined when nothing in the schema matches. */
-  resolve(ref: string, base: string): object | undefined;
+  /** What a ref written inside a resource with base `base` points to; undefined when nothing in the schema matches. */
+  resolve(ref: string, base: string): Target | undefined;
   /** Every $ref and $dynamicRef in the schema, with where it's written and the resource base it's resolved against. */
   refs: { ref: string; base: string; path: string[]; node: object }[];
   /** The top-level $defs/definitions entry (`$defs/A`) a node belongs to, if any. */
@@ -92,23 +100,30 @@ export function indexSchema(schema: unknown): SchemaIndex {
     for (const key of ['$anchor', '$dynamicAnchor']) if (typeof s[key] === 'string') anchors.set(`${here}#${s[key]}`, s);
     for (const key of ['$ref', '$dynamicRef']) if (typeof s[key] === 'string') refs.push({ ref: s[key] as string, base: here, path, node: s });
     for (const c of children(s)) {
-      const step = c.key === 'properties' ? c.name! : c.name !== undefined ? `<${c.key}>.${c.name}` : `<${c.key}>`;
+      const step = c.key === 'properties' ? c.name! : c.name !== undefined ? `<${c.key}>.${c.name}` : c.index !== undefined ? `<${c.key}>.${c.index}` : `<${c.key}>`;
       const owner = entry ?? (depth === 0 && (c.key === '$defs' || c.key === 'definitions') ? `${c.key}/${c.name}` : undefined);
       walk(c.value, here, [...path, step], owner, depth + 1);
     }
   };
   walk(root, rootBase, [], undefined, 0);
 
-  const pointer = (resource: object, fragment: string): object | undefined => {
+  const pointer = (resource: object, fragment: string): Target | undefined => {
+    if (fragment === '' || fragment === '/') return { value: resource, entry: entries.get(resource) };
+    const parts = fragment.slice(1).split('/').map(decode);
     let node: unknown = resource;
-    if (fragment === '' || fragment === '/') return resource;
-    for (const raw of fragment.slice(1).split('/')) {
-      const part = decode(raw);
+    for (const part of parts) {
       if (Array.isArray(node) && /^\d+$/.test(part) && Number(part) < node.length) node = node[Number(part)];
       else if (node && typeof node === 'object' && Object.prototype.hasOwnProperty.call(node, part)) node = (node as Record<string, unknown>)[part];
       else return undefined;
     }
-    return node && typeof node === 'object' ? (node as object) : undefined;
+    // An object target knows its entry; a boolean schema ($defs: { Any: true }) gets it from the path.
+    const entry =
+      node && typeof node === 'object'
+        ? entries.get(node as object)
+        : resource === root && (parts[0] === '$defs' || parts[0] === 'definitions') && parts.length >= 2
+          ? `${parts[0]}/${parts[1]}`
+          : undefined;
+    return { value: node, ...(entry ? { entry } : {}) };
   };
 
   return {
@@ -123,13 +138,19 @@ export function indexSchema(schema: unknown): SchemaIndex {
       const resource = resources.get(where);
       if (!resource) return undefined;
       if (fragment === '' || fragment.startsWith('/')) return pointer(resource, fragment);
-      return anchors.get(`${where}#${decode(fragment)}`);
+      const anchored = anchors.get(`${where}#${decode(fragment)}`);
+      return anchored ? { value: anchored, ...(entries.get(anchored) ? { entry: entries.get(anchored) } : {}) } : undefined;
     },
   };
 }
 
-/** Is the ref a network URI (after resolving against its base)? Clients must not fetch it. */
+/**
+ * Is the ref a network URI, which clients must not fetch? A fragment-only ref
+ * ("#/$defs/Typo", "#anchor") points into the schema it's written in, whatever that
+ * schema's $id: when it doesn't resolve, it's missing, not remote.
+ */
 export function isNetworkRef(ref: string, base: string): boolean {
+  if (ref === '' || ref.startsWith('#')) return false;
   return /^https?:\/\//i.test(join(base, ref));
 }
 
@@ -138,18 +159,13 @@ export function usedEntries(schema: unknown): Set<string> {
   const index = indexSchema(schema);
   const used = new Set<string>();
   const queue = index.refs.filter((r) => !index.entryOf(r.node));
-  const seen = new Set<object>();
   while (queue.length) {
     const r = queue.pop()!;
-    const target = index.resolve(r.ref, r.base);
-    const entry = target && index.entryOf(target);
+    const entry = index.resolve(r.ref, r.base)?.entry;
     if (!entry || used.has(entry)) continue;
     used.add(entry);
-    // The refs written inside the entry now count too.
-    for (const inner of index.refs) if (index.entryOf(inner.node) === entry && !seen.has(inner.node)) {
-      seen.add(inner.node);
-      queue.push(inner);
-    }
+    // Every ref written inside the entry now counts too ($ref and $dynamicRef on one node alike).
+    for (const inner of index.refs) if (index.entryOf(inner.node) === entry) queue.push(inner);
   }
   return used;
 }

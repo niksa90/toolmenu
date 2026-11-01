@@ -20,7 +20,7 @@ const CLIENT = /client capabilit(?:y|ies)\b[^.]{0,60}\b(?:do(?:es)? not|don't|do
 // or the wrong operating system: "Editmamei runs on Windows and macOS; this process
 // is on "linux"" (editmamei), "Unsupported platform: linux" (an OS name, not any
 // "platform" argument: "Unsupported platform: myspace" is the tool's own error).
-const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b|\bruns on [^.;]{0,40}; this (?:process|machine|system) is on\b|\bunsupported (?:platform|operating system|OS):?\s*["'`]?(?:linux|darwin|macos|win32|windows|freebsd|openbsd|aix|sunos|android)\b|\bnot supported on (?:this|the current) (?:platform|operating system|OS)\b/i;
+const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b|\bruns on [^.;]{0,40}; this (?:process|machine|system) is on\b|\bunsupported (?:platform|operating system|OS)\W{0,4}(?:linux|darwin|macos|win32|windows(?:_nt)?|freebsd|openbsd|aix|sunos|android)(?![a-z])|\bnot supported on (?:this|the current) (?:platform|operating system|OS)\b/i;
 // "401 Bad credentials" (GitHub), "Authorization Expired" (Sentry), "Invalid
 // token" (Firecrawl), "authentication token is not valid" (Apify), "Please provide
 // a valid access token" (Supabase), "NetlifyUnauthError: You're not logged into
