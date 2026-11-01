@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.16.0
+
+The 2026-07-28 standard, part one: the menu as compliant clients actually show it,
+and tools that stop to ask the user something. Each rule ships with tests that run
+a fixture server through the CLI and use the official SDK client as the referee.
 
 - **`session`: tools that ask the user something (2026-07-28 multi round-trip
   requests).** A 2026 tool can stop mid-call and ask for input (`input_required`):
