@@ -29,7 +29,12 @@ The 40–57K figure supports the first row only. v0.1 of this spec mixed the two
 **Identity rule.** toolmenu is not a general "MCP best practices" linter. A feature
 earns its place by serving *observe the menu, diff the menu, or catch the menu
 changing at the wrong time*, and every rule must trace to a failure written up
-in "I built 100+ tools for one MCP server". If it can't, it doesn't ship.
+in "I built 100+ tools for one MCP server", or to a 2026-07-28 **MUST** that makes
+compliant clients hide, reject or misread part of the menu (the menu as clients show
+it, not only as the server sends it). If it can't, it doesn't ship. A rule of the
+second kind with no case in the corpus yet ships only with tests that run it end to
+end: a fixture server for each way it fires and each way it must stay quiet, checked
+through the CLI (finding, severity, message, next step).
 
 ## 2. Users
 
@@ -243,6 +248,7 @@ spec version when it only applies from that version on. §3.2 and §3.3 list the
 | `naming/vague-id` | warn | A parameter named `id`, `ids` or `key` that doesn't say which kind of thing it identifies (the ~13-wasted-calls bug) |
 | `naming/shared-word` | info | The same noun is a primary term in tools from different areas (the "audit" collision). Lists groups for review, never fails the build |
 | `naming/route` | error | A `routes.yml` expectation broke |
+| `search/findable` | info | For a menu a client would defer (10+ tools and 10K+ tokens, or 30+ tools): a tool that a BM25 search for its own name words doesn't put in the top 5, the number a tool search returns by default. With `routes.yml`, a `must_match` tool past the top 5 for its keyword is a warning. Ranked over the name, description, argument names and argument descriptions, as Claude's tool search reads them; the client's tokenizer and parameters aren't published, so marked unsure |
 
 ```yaml
 # routes.yml: lesson 04's regression test as a config file

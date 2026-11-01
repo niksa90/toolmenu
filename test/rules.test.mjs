@@ -758,3 +758,26 @@ test('menu/gated: the suggested command keeps the headers, env names and --no-au
   assert.equal(http, '--header "X-Api-Key: <value>" --no-auth https://example.test/mcp');
   assert.doesNotMatch(http, /secret-value/);
 });
+
+test('menu/gated: a domains enum that never says it unlocks tools is data (Garmin)', () => {
+  const sync = tool('garmin_sync', [], {
+    description: 'Start downloading Garmin data into the local cache. Runs in the background and returns immediately.',
+    inputSchema: { type: 'object', properties: { domains: { type: 'array', items: { type: 'string', enum: ['activities', 'sleep', 'hrv', 'weight'] } } } },
+  });
+  const menu = [sync, tool('garmin_get_profile', []), tool('garmin_status', [])];
+  assert.equal(lint(menu, { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated'), undefined);
+  // The same enum on a tool that says it loads tools still warns.
+  const load = { ...sync, name: 'load_domains', description: 'Loads the tools of each chosen domain.' };
+  assert.equal(lint([load, tool('garmin_status', [])], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated')?.tool, 'load_domains');
+});
+
+test('ids/authored: viewUUID is a view ID, returned by a tool whose output schema has viewUUID (server-pdf)', () => {
+  const display = tool('display_pdf', ['url'], {
+    outputSchema: { type: 'object', properties: { viewUUID: { type: 'string' }, url: { type: 'string' } } },
+  });
+  const interact = tool('interact', ['viewUUID', 'action']);
+  assert.equal(lint([display, interact]).find((f) => f.rule === 'ids/authored'), undefined);
+  // Without a tool that hands it out, the finding names the kind as "view", not "view_uu".
+  const lone = lint([interact]).find((f) => f.rule === 'ids/authored');
+  assert.doesNotMatch(JSON.stringify(lone ?? {}), /view_uu/);
+});

@@ -30,6 +30,8 @@ export class Trace {
   /** stdout lines that aren't JSON-RPC: the first few, and how many in all. */
   readonly stray: string[] = [];
   strayCount = 0;
+  /** The first stray stdout lines, more of them than are shown: a CLI's usage runs long. */
+  readonly strayHead: string[] = [];
   private stdoutPartial = '';
   /** The last stderr lines, and how many there were in all. */
   readonly stderrTail: string[] = [];
@@ -55,6 +57,7 @@ export class Trace {
       if (line.startsWith('{') && line.slice(0, 4096).includes('"jsonrpc"')) continue;
       this.strayCount++;
       if (this.stray.length < 2) this.stray.push(clean(line, 160));
+      if (this.strayHead.length < 60) this.strayHead.push(clean(line, 240));
     }
   }
 
@@ -153,6 +156,43 @@ function strayFact(trace: Trace): [string, string] {
 }
 
 const LOG_TO_STDERR = 'Log to stderr; stdout carries the protocol (in Node, console.error rather than console.log; in Python, logging or print(..., file=sys.stderr)).';
+
+// A CLI's usage: argparse, click, yargs, commander, System.CommandLine, stricli.
+const USAGE = /(?:^|\n)\s*(?:usage|(?:sub)?commands|options|examples|flags):|\bUSAGE\b|\s<command>|\[command\]|\bCOMMAND \[ARGS\]|arguments are required|subcommands? must be present|no command (?:specified|given)|required command was not provided|\b(?:run|see):? \S+ --help\b/i;
+// A table of commands or options, two or more rows: "  t3-watch start   Run the service",
+// "  --version   Show version number". Help output, even without a "Usage:" line.
+const HELP_ROWS = /(?:^|\n)\s*(?:[\w.-]+ [\w-]+|-{1,2}[\w-]+(?:, -{1,2}[\w-]+)?) {2,}\S[^\n]*\n\s*(?:[\w.-]+ [\w-]+|-{1,2}[\w-]+(?:, -{1,2}[\w-]+)?) {2,}\S/;
+// The subcommands that usually start the MCP server, most specific first. A word
+// on its own ({mcp}, "  mcp  Start…", "mcp start [--transport…]"), not part of a
+// name like agentation-mcp.
+const SUBCOMMANDS = ['mcp start', 'mcp serve', 'server start', 'mcp', 'stdio', 'serve', 'server', 'start'];
+// An HTTP server's address in its log: "MCP server listening on http://localhost:3001/mcp",
+// "StreamableHTTP endpoint available at http://127.0.0.1:3333/mcp".
+const HTTP_URL = /\b(?:listening|available|running|serving|started)\b[^\n]{0,60}?(https?:\/\/[^\s"'<>]+)/i;
+const HTTP_PORT = /\blistening on (?:port )?:?(\d{2,5})\b/i;
+
+/**
+ * What the server's own output says about how it was started, as a next step: a
+ * CLI that printed its usage and wants a subcommand, or a server that opened an
+ * HTTP port instead of talking on stdio. Undefined when it says neither.
+ */
+export function startupHint(trace: Trace, command: string): string | undefined {
+  const text = [...trace.strayHead, ...trace.stderrExcerpt().lines].join('\n');
+  const url = HTTP_URL.exec(text)?.[1]?.replace(/[.,;)]+$/, '').replace('//0.0.0.0', '//localhost');
+  const port = url ? undefined : HTTP_PORT.exec(text)?.[1];
+  if (url || port) {
+    const flag = /--stdio\b/.test(text) ? '--stdio' : /--transport[ =]?(?:\[?stdio|<)/i.test(text) ? '--transport stdio' : undefined;
+    const where = url ?? `http://localhost:${port}/mcp`;
+    return `The server started an HTTP server (${where}) instead of talking on its stdin and stdout. Start it in stdio mode (${flag ? `its output mentions ${flag}` : 'often --stdio or --transport stdio'}), or run toolmenu against the address while the server runs: toolmenu snapshot ${where}`;
+  }
+  if (USAGE.test(text) || HELP_ROWS.test(text)) {
+    const sub = SUBCOMMANDS.find((c) => new RegExp(`(?:^|[\\s{,|\\[])${c.replace(' ', '\\s+')}(?=[\\s},|\\]]|$)`, 'm').test(text));
+    return `The command printed its usage and exited: it wants a subcommand or an argument it wasn't given. ${
+      sub ? `Its usage lists “${sub}”: try ${command} ${sub}` : 'Its usage (above) or its docs say what starts the MCP server: add that after the command.'
+    }`;
+  }
+  return undefined;
+}
 
 /** The error codes along an error's cause chain, innermost last. */
 function causes(error: unknown): (Error & { code?: string; syscall?: string })[] {
@@ -324,10 +364,13 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
     const stderrText = trace.stderrExcerpt().lines.join('\n');
     const rejected = rejectedCredentials(stderrText);
     let next: string;
+    let hint: string | undefined;
     if (/cannot find (module|package)|ERR_MODULE_NOT_FOUND|ModuleNotFoundError|No module named/i.test(stderrText)) {
       next = "The server is missing one of its own dependencies (see stderr): reinstall it, or try another version. It's a packaging problem, not your setup.";
     } else if (rejected) {
       next = REJECTED_NEXT;
+    } else if ((hint = startupHint(trace, command))) {
+      next = hint;
     } else if (trace.strayCount) {
       next = `${LOG_TO_STDERR} Then fix what stderr says.`;
     } else if (trace.stderrLines) {
@@ -363,7 +406,10 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
       : rejected
         ? `${stage} timed out after ${seconds(waitedHere)}: the server is running but never answered; its stderr looks like rejected credentials (“${rejected}”).`
         : `${stage} timed out after ${seconds(waitedHere)}: the server is running but never answered.`;
-    const next = trace.strayCount
+    const hint = startupHint(trace, command);
+    const next = hint
+      ? hint
+      : trace.strayCount
       ? LOG_TO_STDERR
       : rejected
         ? REJECTED_NEXT

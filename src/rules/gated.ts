@@ -17,7 +17,10 @@ export const gated: Rule = {
     // Only an unlock whose parameter lists what it unlocks (an enum of toolsets or
     // domains), the kind session --auto walks: "Enables Cross-Region Restore on a
     // vault" turns on a feature, not tools (Azure, 418 tools).
-    const found = unlockers(ctx.menu.tools).filter((u) => u.param && u.values.length);
+    // And only one whose name or description says it unlocks tools: an enum of
+    // domains alone is as often data (Garmin's garmin_sync { domains: [sleep, hrv] }
+    // downloads them). session --auto still tries such a tool once.
+    const found = unlockers(ctx.menu.tools).filter((u) => u.param && u.values.length && u.claims);
     if (!found.length) return [];
     // A value whose tools are already listed adds nothing: the same server started
     // with every toolset still has its unlock. Where the tools are named

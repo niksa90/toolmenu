@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareMenus } from '../dist/compare.js';
-import { changeFindings, clip, MAX_UNLOCKS, mergeRepeats, parseScenario, scopeOf, session, starterScenario, unlockers, unlockListers, valuesFromListing } from '../dist/session.js';
+import { changeFindings, clip, shortenPaths, MAX_UNLOCKS, mergeRepeats, parseScenario, scopeOf, session, starterScenario, unlockers, unlockListers, valuesFromListing } from '../dist/session.js';
 import { autoScenario, autoSummary } from '../dist/auto.js';
 import { parse as parseYaml } from 'yaml';
 import { FIXTURES, ROOT, menuOf, run, tempDir, TIMEOUT_MS, tool } from './helpers.mjs';
@@ -940,4 +940,16 @@ test('session: a tool error shows the server\'s reason, keeps its whole text in 
   assert.doesNotMatch(e.fix, /isn't available here/);
   assert.notEqual(e.confidence, 'unsure');
   assert.match(e.serverText, /^400 Bad Request: \{"error":\{"message":"Filter by folder is mandatory","code":"FILTER"\}\} If this keeps happening/);
+});
+
+test('clip: a long path loses its middle, not the reason after it', () => {
+  const text = 'Error reading histogram: spawn /tmp/claude-0/-home-user-toolmenu/6a15a4c2-e096-5e7f-9772-f567d7616568/scratchpad/em/node_modules/editmamei/dist/bin/editmamei-core-linux-x64 ENOENT';
+  assert.equal(clip(text, 120), 'Error reading histogram: spawn …/bin/editmamei-core-linux-x64 ENOENT');
+  // Short enough already: nothing changes.
+  assert.equal(clip('spawn /usr/local/bin/x ENOENT', 120), 'spawn /usr/local/bin/x ENOENT');
+  assert.equal(shortenPaths('open C:\\Users\\someone\\AppData\\Local\\Programs\\thing\\core.exe failed'), 'open …\\thing\\core.exe failed');
+  // A URL keeps its path.
+  const url = 'GET https://api.example.com/v1/organizations/acme/projects/widgets/issues failed';
+  assert.equal(shortenPaths(url), url);
+  assert.equal(shortenPaths('see /a/b/c'), 'see /a/b/c');
 });

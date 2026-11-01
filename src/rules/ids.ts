@@ -11,7 +11,8 @@ interface IdParam {
 // form_id, form-id, formId, formID. Not uid or paid: the suffix needs a boundary.
 // Not "key" either: in real menus it's as often a keyboard key as an identifier.
 const ID_SUFFIX = /^(.+?)[_-](id|ids|uuid|uuids)$/i;
-const CAMEL_ID = /^([a-z][a-zA-Z0-9]*?)(Id|Ids|ID|IDs|Uuid)$/;
+// UUID before ID: viewUUID is a view's ID, not a viewUU's.
+const CAMEL_ID = /^([a-z][a-zA-Z0-9]*?)(UUIDs?|Uuids?|IDs|ID|Ids|Id)$/;
 const BARE_ID = /^(id|ids|uid|uuid)$/i;
 const CREATE_VERBS = new Set(['create', 'add', 'new', 'insert', 'post', 'upsert', 'start', 'run', 'submit', 'duplicate', 'copy']);
 // Words that join alternatives in a name: projectSlugOrId → project.

@@ -5,20 +5,28 @@
  * as a finding.
  */
 
-export type FailureClass = 'auth' | 'environment' | 'network' | 'not-found' | 'invalid-arguments' | 'other';
+export type FailureClass = 'auth' | 'environment' | 'network' | 'not-found' | 'client' | 'invalid-arguments' | 'other';
 
 /** Failures of the setup (credentials, this machine, the network), not of the server. */
-export const SETUP_FAILURES = new Set<FailureClass>(['auth', 'environment', 'network', 'not-found']);
+export const SETUP_FAILURES = new Set<FailureClass>(['auth', 'environment', 'network', 'not-found', 'client']);
+
+// A tool that asks the client for something toolmenu doesn't offer: "Cannot request
+// input 'roots' (roots/list): the request's client capabilities do not declare the
+// required capability" (server-everything's get-roots-list), sampling, elicitation.
+const CLIENT = /client capabilit(?:y|ies)\b[^.]{0,60}\b(?:do(?:es)? not|don't|doesn't|lack|missing|without)\b|\b(?:roots|sampling|elicitation)\b[^.]{0,40}\bnot (?:supported|declared|available)\b[^.]{0,20}\bclient\b|client does not support (?:roots|sampling|elicitation)/i;
 
 // Something this machine lacks: "Could not find Google Chrome executable"
-// (Chrome DevTools), "Chromium distribution 'chrome' is not found at" (Playwright).
-const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b/i;
+// (Chrome DevTools), "Chromium distribution 'chrome' is not found at" (Playwright),
+// or the wrong operating system: "Editmamei runs on Windows and macOS; this process
+// is on "linux"" (editmamei), "Unsupported platform: linux".
+const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b|\bruns on [^.;]{0,40}; this (?:process|machine|system) is on\b|\b(?:unsupported|not supported on (?:this|the current)) (?:platform|operating system|OS)\b/i;
 // "401 Bad credentials" (GitHub), "Authorization Expired" (Sentry), "Invalid
 // token" (Firecrawl), "authentication token is not valid" (Apify), "Please provide
 // a valid access token" (Supabase), "NetlifyUnauthError: You're not logged into
-// Netlify" (Netlify), "The API key you provided was rejected" (Pinecone). Not a
-// bare "token": plenty of errors mention one.
-const AUTH = /\b(401|403)\b|unauthori[sz]ed|unauth(enticated|error)|forbidden|bad credentials|authori[sz]ation expired|re-?authori[sz]e|not authenticated|not logged (?:in|into)\b(?! to the browser)|authentication (token|failed|required|error)|(invalid|expired|revoked) (api[ _-]?key|access token|token|credentials)|(token|api[ _-]?key|credentials) (is |are )?(not valid|invalid|expired)|(api[ _-]?key|access token|credentials)\b[^.]{0,30}\b(was|were|is|are) (rejected|refused|revoked)|valid (access )?token/i;
+// Netlify" (Netlify), "The API key you provided was rejected" (Pinecone), "Admin
+// auth is missing", "Runtime credentials are missing" (securenow). Not a bare
+// "token": plenty of errors mention one.
+const AUTH = /\b(?:auth|authentication|credentials?|api[ _-]?key|access token)\b (?:is |are )?missing\b|\b(401|403)\b|unauthori[sz]ed|unauth(enticated|error)|forbidden|bad credentials|authori[sz]ation expired|re-?authori[sz]e|not authenticated|not logged (?:in|into)\b(?! to the browser)|authentication (token|failed|required|error)|(invalid|expired|revoked) (api[ _-]?key|access token|token|credentials)|(token|api[ _-]?key|credentials) (is |are )?(not valid|invalid|expired)|(api[ _-]?key|access token|credentials)\b[^.]{0,30}\b(was|were|is|are) (rejected|refused|revoked)|valid (access )?token/i;
 const NETWORK = /\b(ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|EHOSTUNREACH)\b|socket hang up|getaddrinfo|network error/i;
 // "Either 'page_id' OR both 'title' and 'space_key' must be provided" (Atlassian),
 // "**Input Error**" (Sentry), JSON-RPC's invalid params.
@@ -157,6 +165,7 @@ export async function patiently<T>(
  * with 404; a made-up Jira URL 404s), which is setup, not the server's fault.
  */
 export function classifyFailure(text: string, options: { code?: number; hadArguments?: boolean } = {}): FailureClass {
+  if (CLIENT.test(text)) return 'client';
   if (ENVIRONMENT.test(text)) return 'environment';
   if (AUTH.test(text)) return 'auth';
   if (NETWORK.test(text)) return 'network';
@@ -170,6 +179,7 @@ export const FAILURE_LABELS: Record<FailureClass, string> = {
   environment: 'something missing on this machine',
   network: 'the network',
   'not-found': 'a 404 on a call that named nothing (usually the account or site behind the credentials)',
+  client: "a client feature toolmenu doesn't offer (roots, sampling or elicitation)",
   'invalid-arguments': 'the arguments',
   other: 'other errors',
 };
@@ -185,6 +195,7 @@ export function setupFailureAdvice(classes: Iterable<FailureClass>, transport: '
   const steps: string[] = [];
   if (set.has('auth') || set.has('not-found')) steps.push(`If the errors are about credentials, rerun with real ones (${credentials}); a test account is enough.`);
   if (set.has('environment')) steps.push('If something is missing on this machine (a browser, a binary, a module), install it where the server runs, or run the server in its own container image.');
+  if (set.has('client')) steps.push("If a tool asks the client for roots, sampling or elicitation, toolmenu doesn't provide them: those calls only checked that the menu stays put, and the server isn't at fault.");
   if (set.has('network')) steps.push('If the server calls an upstream API, check this machine can reach it (DNS, proxy, firewall).');
   return { fix: steps.join(' ') || 'Check the quoted errors: they came from before the tool ran.', confidence: 'unsure' };
 }
