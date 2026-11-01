@@ -37,6 +37,7 @@ const OPTIONS: Record<string, [string, string[]]> = {
   'values-file': ['--values-file <path>', ['with --auto, the same as a YAML/JSON map']],
   'assume-read-only': ['--assume-read-only <tools>', ["with --auto, call these tools although the server doesn't", 'mark them readOnlyHint (exact names, comma-separated; tools', 'marked or named as writes are still never called)']],
   'save-scenario': ['--save-scenario <path>', ['with --auto, write the plan made before the run as a scenario file', '(calls planned later for tools an unlock brings are not in it)']],
+  elicitation: ['--elicitation <decline|cancel>', ['how to answer a tool that asks the user something mid-call (2026-07-28):', 'decline (default) or cancel, the same every time']],
   'union-out': ['--union-out <path>', ['write every tool the session saw as a menu file, to commit as the', 'baseline for diff (tools behind unlocks included)']],
   versions: ['--versions <n|all>', ['how many of the most recent versions to inspect (default: 10), or all']],
   'include-prereleases': ['--include-prereleases', ['include versions like 1.2.0-beta.1']],
@@ -121,7 +122,7 @@ const HELP: Record<Command, CommandHelp> = {
       'prompt cache, a different menu in a fresh process.',
       SERVER_NOTE,
     ],
-    own: ['scenario', 'auto', 'init', 'plan', 'value', 'values-file', 'assume-read-only', 'open-world', 'max-calls', 'max-calls-per-unlock', 'save-scenario', 'union-out'],
+    own: ['scenario', 'auto', 'init', 'plan', 'value', 'values-file', 'assume-read-only', 'open-world', 'max-calls', 'max-calls-per-unlock', 'save-scenario', 'union-out', 'elicitation'],
     shared: ['config', 'format', 'json', 'fail-on', 'header', 'env', 'no-auth', 'protocol', 'timeout', 'processes'],
     examples: [
       'toolmenu session --auto -- node dist/index.js',

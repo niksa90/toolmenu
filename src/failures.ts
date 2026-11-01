@@ -165,7 +165,8 @@ export async function patiently<T>(
  * with 404; a made-up Jira URL 404s), which is setup, not the server's fault.
  */
 export function classifyFailure(text: string, options: { code?: number; hadArguments?: boolean } = {}): FailureClass {
-  if (CLIENT.test(text)) return 'client';
+  // 2026-07-28's MissingRequiredClientCapabilityError, by its code.
+  if (options.code === -32021 || CLIENT.test(text)) return 'client';
   if (ENVIRONMENT.test(text)) return 'environment';
   if (AUTH.test(text)) return 'auth';
   if (NETWORK.test(text)) return 'network';
@@ -179,7 +180,7 @@ export const FAILURE_LABELS: Record<FailureClass, string> = {
   environment: 'something missing on this machine',
   network: 'the network',
   'not-found': 'a 404 on a call that named nothing (usually the account or site behind the credentials)',
-  client: "a client feature toolmenu doesn't offer (roots, sampling or elicitation)",
+  client: "a client feature toolmenu doesn't offer (roots or sampling)",
   'invalid-arguments': 'the arguments',
   other: 'other errors',
 };
@@ -195,7 +196,7 @@ export function setupFailureAdvice(classes: Iterable<FailureClass>, transport: '
   const steps: string[] = [];
   if (set.has('auth') || set.has('not-found')) steps.push(`If the errors are about credentials, rerun with real ones (${credentials}); a test account is enough.`);
   if (set.has('environment')) steps.push('If something is missing on this machine (a browser, a binary, a module), install it where the server runs, or run the server in its own container image.');
-  if (set.has('client')) steps.push("If a tool asks the client for roots, sampling or elicitation, toolmenu doesn't provide them: those calls only checked that the menu stays put, and the server isn't at fault.");
+  if (set.has('client')) steps.push("If a tool needs roots or sampling from the client, toolmenu doesn't provide them (2026-07-28 deprecates both): those calls only checked that the menu stays put, and the server isn't at fault.");
   if (set.has('network')) steps.push('If the server calls an upstream API, check this machine can reach it (DNS, proxy, firewall).');
   return { fix: steps.join(' ') || 'Check the quoted errors: they came from before the tool ran.', confidence: 'unsure' };
 }

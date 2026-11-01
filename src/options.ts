@@ -14,6 +14,7 @@ export const CLI_OPTIONS = {
   env: { type: 'string', multiple: true },
   timeout: { type: 'string' },
   protocol: { type: 'string' },
+  elicitation: { type: 'string' },
   'no-auth': { type: 'boolean' },
   port: { type: 'string' },
   scope: { type: 'string' },

@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.16.0
+
+The 2026-07-28 standard, part one: the menu as compliant clients actually show it,
+and tools that stop to ask the user something. Each rule ships with tests that run
+a fixture server through the CLI and use the official SDK client as the referee.
+
+- **`session`: tools that ask the user something (2026-07-28 multi round-trip
+  requests).** A 2026 tool can stop mid-call and ask for input (`input_required`):
+  a form, a URL to open, or roots or sampling. toolmenu used to report every one as a
+  failed call. It now declares elicitation, declines every request (the same answer
+  every run, no LLM; `--elicitation cancel` for the other one), sends the tool's
+  `requestState` back byte for byte and calls again, and reports what happened:
+  - `session/input-required` (info): which tools asked, for what, and how they
+    answered the decline.
+  - `session/input-loop` (warn): a tool that asks the same thing again after a
+    decline, so an agent whose user says no is stuck.
+  - `session/decline-fails` (warn): a decline that gets a protocol error back
+    instead of a result the model can read.
+  - `session/undeclared-input` (warn): a server that asks for roots or sampling the
+    client didn't declare, instead of returning `-32021`.
+  - `session/result-type` (error): a result without `resultType`, which the official
+    SDK client rejects.
+
+  `-32021` is read by its code as a setup problem, with the capability it names.
+  Roots and sampling stay undeclared: 2026-07-28 deprecates them. On
+  `@modelcontextprotocol/server-everything` 2.1.0 all three elicitation tools take the
+  decline and answer.
+- **New rule `spec/x-mcp-header` (2026-07-28): tools that HTTP clients must hide.** A
+  parameter can be mirrored into an `Mcp-Param-*` HTTP header, and Streamable HTTP
+  clients **must** drop any tool whose annotation breaks the spec's rules: empty,
+  not a valid header name, used twice, on an object or array or a parameter with
+  no single type, or reached through anything but `properties`. The official SDK
+  client drops it with only a console warning, so neither the agent nor the
+  server's author sees it go. toolmenu reads the list off the wire, so it still
+  sees the tool, and says which annotation is broken and why. Error over HTTP,
+  warning over stdio. `number` is a warning everywhere: the spec forbids it, the SDK
+  client accepts it for now. The tests run a real SDK client against a fixture
+  server and check that the errors are exactly the tools it drops.
+- **New rule `spec/ref` (2026-07-28): `$ref`s clients can't resolve.** Clients must
+  not fetch a network URI, so a `$ref` has to point inside the schema. In an output
+  schema, one that doesn't fails every call to the tool in the official SDK client
+  ("has an invalid outputSchema"), however well the server answers: an error. In an
+  input schema, a ref to nothing is an error (the schema isn't valid), a network URI
+  a warning (clients should reject it). `#/$defs`, `#anchor`, `$id` and `#` refs
+  resolve. None of the 788 `$ref`s in the scan corpus is broken; the tests serve
+  each case from a fixture and check the SDK client's behaviour.
+- **Token breakdown:** a `$defs` entry named by its `$anchor` or `$id` is no longer
+  counted as unused.
+- **`diff/x-mcp-header`:** a header added, removed or renamed between releases is
+  said as such, with the old and new `Mcp-Param-*` name, instead of "changed in
+  keywords toolmenu doesn't classify".
+- The SDK client's own "excluding tool" warnings no longer clutter toolmenu's
+  stderr: the finding says the same, once.
+
 ## 0.15.0
 
 Fixes and one new rule, from starting ~235 servers: the recent npm and PyPI servers in

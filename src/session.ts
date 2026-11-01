@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
 import { cacheBreak, canonical, compareMenus, type ToolChange } from './compare.js';
-import { listTools, type Connection, type Target } from './connect.js';
+import { listTools, type Connection, type Elicitation, type Target } from './connect.js';
+import { callWithInput, MAX_ROUNDS, type InputKind, type InputTrace } from './mrtr.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
@@ -110,7 +111,9 @@ export interface StepRecord {
    * What a call step's call did: the tool answered, answered with an error
    * (isError), the request failed, or it wasn't sent (refused, not in the menu).
    */
-  outcome?: 'answered' | 'tool-error' | 'failed' | 'not-sent';
+  outcome?: 'answered' | 'tool-error' | 'failed' | 'not-sent' | 'needs-input';
+  /** 2026-07-28: what the tool asked for and what came of the decline (mrtr.ts). */
+  input?: InputTrace;
   changed: boolean;
   listChanged: number;
   scope?: Scope;
@@ -169,6 +172,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   const timeoutMs = options.timeoutMs ?? 30_000;
   const grace = options.noticeGraceMs ?? 500;
   const raw: Raw[] = [];
+  // 2026-07-28: every call that asked for input, for the input findings at the end.
+  const inputs: { step: number; tool: string; input: InputTrace }[] = [];
   // The main process runs with a pinned hash seed, and so does every scope probe:
   // a probe with a different seed would count ordering variance as a change.
   const mainTarget = seeded(target, MAIN_SEED);
@@ -363,13 +368,27 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           // read-only one is asked again. On the server's word, not the user's.
           const readOnly = tool?.annotations?.readOnlyHint === true;
           callWaited.ms = 0;
-          const result = await patiently(() => conn.client.callTool({ name: step.tool, arguments: step.args }, { timeout: timeoutMs }), {
+          // 2026-07-28: a tool that asks for input gets every elicitation declined
+          // and is called again (mrtr.ts); on 2025 it's a plain call.
+          const call = await patiently(() => callWithInput(conn, { name: step.tool, arguments: step.args }, { timeoutMs, elicitation: target.elicitation }), {
             waits,
             waited: callWaited,
             error: (e) => httpStatus(e) === 429 || (readOnly && tooMany(e)),
-            result: (r) => readOnly && r.isError === true && RATE_LIMITED.test(errorText(r)),
+            result: (c) => readOnly && c.result?.isError === true && RATE_LIMITED.test(errorText(c.result)),
           });
+          if (call.input.outcome !== 'none' || call.input.missingResultType) {
+            record.input = call.input;
+            inputs.push({ step: index, tool: step.tool, input: call.input });
+          }
+          if (!call.result) {
+            // It never answered: still asking, asking for what wasn't declared, or failing on the decline.
+            record.outcome = 'needs-input';
+            record.note = inputNote(call.input, target.elicitation ?? 'decline');
+            throw new InputStopped();
+          }
+          const result = call.result;
           record.outcome = result.isError ? 'tool-error' : 'answered';
+          if (call.input.rounds && !result.isError) record.note = inputNote(call.input, target.elicitation ?? 'decline');
           if (result.isError) {
             const text = errorText(result);
             if (RATE_LIMITED.test(text)) {
@@ -380,30 +399,44 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
               break;
             }
             const short = clip(text, 120);
-            record.note = text ? `the tool returned an error: ${short}` : 'the tool returned an error';
+            record.note = call.input.rounds
+              ? `${inputNote(call.input, target.elicitation ?? 'decline')}, with a tool error: ${clip(text, 100)}`
+              : text ? `the tool returned an error: ${short}` : 'the tool returned an error';
             record.failure = classifyFailure(text, { hadArguments: Object.keys(step.args).length > 0 });
-            // A setup failure is reported once, for the whole run (session/untested).
-            if (!SETUP_FAILURES.has(record.failure)) fail('session/tool-error', 'warn', index, step, text, record.failure);
+            // A setup failure is reported once, for the whole run (session/untested). A
+            // tool error that answers a decline is how a tool should say no (input-required).
+            if (!SETUP_FAILURES.has(record.failure) && !call.input.rounds) fail('session/tool-error', 'warn', index, step, text, record.failure);
           }
         } catch (error) {
-          record.status = 'failed';
-          record.outcome = 'failed';
-          record.note = serverWords(error, 200);
-          if (lost(record.note, index)) {
-            done();
-            break;
+          // A tool that never answered its input requests is said by the input findings,
+          // not as a failed call. The menu is still listed after it, as after any step.
+          if (error instanceof InputStopped) {
+            // fall through to the listing below
+          } else {
+            record.status = 'failed';
+            record.outcome = 'failed';
+            record.note = serverWords(error, 200);
+            if (lost(record.note, index)) {
+              done();
+              break;
+            }
+            if (tooMany(error)) {
+              limited(index, record.note, callWaited.ms, httpStatus(error) === 429 || tool?.annotations?.readOnlyHint === true ? undefined : step.tool);
+              record.note = 'rate-limited';
+              done();
+              break;
+            }
+            const code = (error as { code?: unknown }).code;
+            // 2026-07-28's MissingRequiredClientCapabilityError says what it needed.
+            if (code === -32021) {
+              const needed = Object.keys(((error as { data?: { requiredCapabilities?: object } }).data?.requiredCapabilities ?? {}) as object);
+              if (needed.length) record.note = `${record.note} (needs the client to support ${needed.join(', ')})`;
+            }
+            record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
+            // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
+            const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
+            if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);
           }
-          if (tooMany(error)) {
-            limited(index, record.note, callWaited.ms, httpStatus(error) === 429 || tool?.annotations?.readOnlyHint === true ? undefined : step.tool);
-            record.note = 'rate-limited';
-            done();
-            break;
-          }
-          const code = (error as { code?: unknown }).code;
-          record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
-          // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
-          const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
-          if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);
         }
       } else if (step.kind === 'wait_for') {
         const arrived = await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, step.timeoutMs);
@@ -512,6 +545,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     }
 
     raw.push(...failureFindings(sameError([...failures.values()]), options.auto));
+    raw.push(...inputFindings(inputs, target.elicitation ?? 'decline'));
     if (explained.length) raw.push(knownVariance(explained));
     if (onWord.length) raw.push(onTheirWord(onWord, options.auto !== undefined));
     raw.push(...untested(steps, target));
@@ -1411,4 +1445,111 @@ export function starterScenario(menu: Menu, options: StarterOptions = {}): strin
     lines.push('', '# No tool is marked readOnlyHint, so nothing can be called without allow_writes: true.');
   }
   return lines.join('\n') + '\n';
+}
+
+/** Thrown inside a call step when the tool never completed its input rounds: not a failed request. */
+class InputStopped extends Error {}
+
+const PAST: Record<Elicitation, string> = { decline: 'declined', cancel: 'cancelled' };
+
+const KIND_WORDS: Record<InputKind, string> = { form: 'a form', url: 'a URL to open', roots: 'roots', sampling: 'sampling', other: 'something else' };
+
+function kindList(kinds: InputKind[]): string {
+  const words = kinds.map((k) => KIND_WORDS[k]);
+  return words.length <= 1 ? words.join('') : `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
+}
+
+/** once, twice, 3 times. */
+function times(n: number): string {
+  return n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`;
+}
+
+/** The step's note for a call that asked for input. */
+function inputNote(input: InputTrace, answer: Elicitation): string {
+  const asked = `asked for ${kindList(input.kinds)}`;
+  const rounds = `${input.rounds} round${input.rounds === 1 ? '' : 's'}`;
+  switch (input.outcome) {
+    case 'completed':
+      return `${asked}; ${PAST[answer]} ${times(input.rounds)}, then answered`;
+    case 'loop':
+      return `${asked}; asked the same again after each ${answer}, stopped after ${rounds}`;
+    case 'gave-up':
+      return `${asked}; still asking after ${rounds}`;
+    case 'undeclared':
+      return `asked for ${kindList(input.undeclared ?? [])}, which the request didn't declare`;
+    case 'decline-failed':
+      return `${asked}; the retry with the ${answer} failed: ${serverWords(input.error, 160)}`;
+    default:
+      return asked;
+  }
+}
+
+/**
+ * What tools that asked for input did with the answer (2026-07-28 multi
+ * round-trip requests). One info finding for all of them, and a warning or error
+ * for each that an agent can't get past.
+ */
+function inputFindings(inputs: { step: number; tool: string; input: InputTrace }[], answer: Elicitation): Raw[] {
+  const out: Raw[] = [];
+  const asked = inputs.filter((i) => i.input.outcome !== 'none');
+  if (asked.length) {
+    const finished = asked.filter((i) => i.input.outcome === 'completed').length;
+    out.push({
+      rule: 'session/input-required',
+      severity: 'info',
+      step: asked[0].step,
+      message: `${asked.length === 1 ? `${asked[0].tool} asked` : `${asked.length} tools asked`} for input mid-call (input_required, 2026-07-28). toolmenu ${PAST[answer]} every request, the same way every run, and called again: ${finished} of ${asked.length} then answered with a result the model can read.`,
+      detail: asked.map((i) => `${i.tool} (step ${i.step}): ${inputNote(i.input, answer)}`),
+      fix: 'Nothing to do for the ones that answered. The findings next to this one cover the rest.',
+    });
+  }
+  for (const { step, tool, input } of asked) {
+    if (input.outcome === 'loop' || input.outcome === 'gave-up') {
+      out.push({
+        rule: 'session/input-loop',
+        severity: 'warn',
+        step,
+        tool,
+        message:
+          input.outcome === 'loop'
+            ? `${tool} asks the same thing again after a ${answer}, every time: an agent whose user says no gets the question back instead of an answer, and can't finish the call. toolmenu stopped after ${MAX_ROUNDS} rounds.`
+            : `${tool} was still asking for input after ${MAX_ROUNDS} rounds of ${answer}s, each time something else. An agent whose user says no can't finish the call.`,
+        detail: [inputNote(input, answer)],
+        fix: `Treat a ${answer} as an answer: return a result that says the user ${answer === 'decline' ? 'declined' : 'dismissed it'} (isError: true is fine), so the model can tell the user and move on.`,
+      });
+    } else if (input.outcome === 'decline-failed') {
+      out.push({
+        rule: 'session/decline-fails',
+        severity: 'warn',
+        step,
+        tool,
+        message: `${tool} fails with a protocol error when the user ${answer === 'decline' ? 'declines' : 'dismisses'} its request (“${serverWords(input.error, 120)}”). The model gets an error from the client instead of a result it can read and explain to the user.`,
+        detail: [inputNote(input, answer)],
+        fix: `Return a tool result on a ${answer} (isError: true with a sentence like "the user declined"), not a JSON-RPC error.`,
+      });
+    } else if (input.outcome === 'undeclared') {
+      out.push({
+        rule: 'session/undeclared-input',
+        severity: 'warn',
+        step,
+        tool,
+        message: `${tool} asked for ${kindList(input.undeclared ?? [])}, which the request didn't declare among its client capabilities. Servers must not ask a client for what it doesn't support: they should return MissingRequiredClientCapabilityError (-32021) naming it, so the client can say why the call can't run.${(input.undeclared ?? []).some((k) => k === 'roots' || k === 'sampling') ? ' 2026-07-28 also deprecates roots and sampling (SEP-2577).' : ''}`,
+        detail: [inputNote(input, answer)],
+        fix: `Check the request's io.modelcontextprotocol/clientCapabilities before asking, and return -32021 with requiredCapabilities when it lacks ${kindList(input.undeclared ?? [])}.${(input.undeclared ?? []).includes('roots') ? ' For roots, take the directory as a tool parameter instead.' : ''}`,
+      });
+    }
+  }
+  const unmarked = inputs.filter((i) => i.input.missingResultType);
+  if (unmarked.length) {
+    out.push({
+      rule: 'session/result-type',
+      severity: 'error',
+      step: unmarked[0].step,
+      ...(unmarked.length === 1 ? { tool: unmarked[0].tool } : {}),
+      message: `${unmarked.length === 1 ? `${unmarked[0].tool}'s tools/call result has` : `${unmarked.length} tools' tools/call results have`} no resultType. 2026-07-28 servers must send it ("complete", or "input_required" when asking for input), and the official SDK client rejects a result without it ("missing required resultType"), so agents on it get an error where the tool answered.`,
+      detail: unmarked.map((i) => `${i.tool} (step ${i.step})`),
+      fix: 'Add resultType: "complete" to every tools/call result (the official SDKs add it; a hand-written server has to).',
+    });
+  }
+  return out;
 }
