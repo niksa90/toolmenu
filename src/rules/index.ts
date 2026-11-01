@@ -8,6 +8,7 @@ import { cacheHints, deprecated, discover, duplicateName, schema, serverInfo, to
 import { noDryRun, unannotated } from './write.js';
 import { gated } from './gated.js';
 import { xMcpHeader } from './headers.js';
+import { schemaRef } from './refs.js';
 import { findable } from './search.js';
 import type { Rule, RuleContext } from './rule.js';
 
@@ -32,6 +33,7 @@ export const MENU_RULES: Rule[] = [
   unannotated,
   schema,
   xMcpHeader,
+  schemaRef,
   toolsCapability,
   discover,
   deprecated,

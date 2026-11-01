@@ -13,6 +13,16 @@
   warning over stdio. `number` is a warning everywhere: the spec forbids it, the SDK
   client accepts it for now. The tests run a real SDK client against a fixture
   server and check that the errors are exactly the tools it drops.
+- **New rule `spec/ref` (2026-07-28): `$ref`s clients can't resolve.** Clients must
+  not fetch a network URI, so a `$ref` has to point inside the schema. In an output
+  schema, one that doesn't fails every call to the tool in the official SDK client
+  ("has an invalid outputSchema"), however well the server answers: an error. In an
+  input schema, a ref to nothing is an error (the schema isn't valid), a network URI
+  a warning (clients should reject it). `#/$defs`, `#anchor`, `$id` and `#` refs
+  resolve. None of the 788 `$ref`s in the scan corpus is broken; the tests serve
+  each case from a fixture and check the SDK client's behaviour.
+- **Token breakdown:** a `$defs` entry named by its `$anchor` or `$id` is no longer
+  counted as unused.
 - **`diff/x-mcp-header`:** a header added, removed or renamed between releases is
   said as such, with the old and new `Mcp-Param-*` name, instead of "changed in
   keywords toolmenu doesn't classify".

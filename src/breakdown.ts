@@ -85,14 +85,29 @@ function unusedDefs(menu: Menu): Breakdown['unusedDefs'] {
     const { $defs: _d, definitions: _df, ...rest } = schema;
     const used = new Set<string>();
     const queue = [JSON.stringify(rest)];
-    while (queue.length) {
-      for (const m of queue.pop()!.matchAll(/"\$ref"\s*:\s*"#\/(\$defs|definitions)\/([^"/]+)/g)) {
-        const id = `${m[1]}/${decodeURIComponent(m[2]).replace(/~1/g, '/').replace(/~0/g, '~')}`;
-        if (used.has(id)) continue;
-        used.add(id);
-        const [pool, name] = [m[1], id.slice(m[1].length + 1)];
-        queue.push(JSON.stringify((schema[pool] as Record<string, unknown>)[name] ?? {}));
+    const use = (pool: string, name: string) => {
+      const id = `${pool}/${name}`;
+      if (used.has(id)) return;
+      used.add(id);
+      queue.push(JSON.stringify((schema[pool] as Record<string, unknown>)[name] ?? {}));
+    };
+    // A definition can also be named by its $anchor ("#amount") or its $id.
+    const named = (ref: string) => {
+      const [base, fragment] = ref.split('#');
+      for (const pool of pools) {
+        for (const [name, def] of Object.entries(schema[pool] as Record<string, unknown>)) {
+          const d = (def ?? {}) as Record<string, unknown>;
+          const id = typeof d.$id === 'string' ? d.$id.replace(/#$/, '') : undefined;
+          if ((!base && fragment && d.$anchor === fragment) || (base && id && (id === base || id.endsWith(`/${base}`)))) use(pool, name);
+        }
       }
+    };
+    while (queue.length) {
+      const text = queue.pop()!;
+      for (const m of text.matchAll(/"\$ref"\s*:\s*"#\/(\$defs|definitions)\/([^"/]+)/g)) {
+        use(m[1], decodeURIComponent(m[2]).replace(/~1/g, '/').replace(/~0/g, '~'));
+      }
+      for (const m of text.matchAll(/"\$(?:dynamic)?[rR]ef"\s*:\s*"([^"]*)"/g)) if (!m[1].startsWith('#/')) named(m[1]);
     }
     let unused = 0;
     for (const pool of pools) {
