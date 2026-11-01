@@ -1,4 +1,4 @@
-import { buildIndex, placeOf, SEARCH_LIMIT } from '../search.js';
+import { buildIndex, placeIn, placeOf, SEARCH_LIMIT } from '../search.js';
 import { commonWords, VERBS, words } from '../words.js';
 import { clip, count, kept, names, num, type Rule, type RuleFinding } from './rule.js';
 
@@ -55,8 +55,9 @@ export const findable: Rule = {
     // routes.yml: a route's tools should be in what a search for it returns.
     for (const [keyword, expectation] of Object.entries(ctx.routes ?? {})) {
       const present = (expectation.must_match ?? []).filter((n) => tools.some((t) => t.name === n));
+      const ranked = present.length ? index.rank(keyword) : [];
       const lost = present
-        .map((n) => ({ n, ...placeOf(index, keyword, n) }))
+        .map((n) => ({ n, ...placeIn(ranked, n) }))
         .filter((r) => r.place === undefined || r.place > SEARCH_LIMIT);
       for (const r of lost) {
         findings.push({

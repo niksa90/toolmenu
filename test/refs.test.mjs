@@ -88,3 +88,37 @@ test('breakdown: a definition named by $anchor or $id is used; one nothing names
   const unused = buildMenu([tool({ A: { $anchor: 'amount', type: 'number' } }, { a: { type: 'string' } })], {});
   assert.ok(breakdown(unused).unusedDefs.tokens > 0);
 });
+
+// 0.16.1: cases the review of 0.16.0 found.
+test('unresolvedRefs: a malformed percent-escape is a missing ref, never a crash', () => {
+  const faults = unresolvedRefs({ type: 'object', properties: { a: { $ref: '#/$defs/100%' } } }, 'inputSchema');
+  assert.deepEqual(faults.map((f) => [f.path, f.ref, f.kind]), [['a', '#/$defs/100%', 'missing']]);
+});
+
+test('unresolvedRefs: parameters named like data keywords are checked, and anchors under them count', () => {
+  const missing = unresolvedRefs({ type: 'object', properties: { default: { $ref: '#/$defs/Missing' } } }, 'inputSchema');
+  assert.deepEqual(missing.map((f) => f.path), ['default']);
+  const anchored = { type: 'object', properties: { a: { $ref: '#money' }, examples: { $anchor: 'money', type: 'number' } } };
+  assert.deepEqual(unresolvedRefs(anchored, 'inputSchema'), []);
+});
+
+test('unresolvedRefs: a pointer inside an embedded $id resource resolves there; draft-07 "#name" ids and "" refs resolve', () => {
+  const embedded = { type: 'object', properties: { a: { $id: 'https://x.test/a.json', $defs: { B: { type: 'string' } }, properties: { b: { $ref: '#/$defs/B' } } } } };
+  assert.deepEqual(unresolvedRefs(embedded, 'inputSchema'), []);
+  const draft07 = { $schema: 'http://json-schema.org/draft-07/schema#', type: 'object', properties: { n: { $ref: '#node' } }, definitions: { N: { $id: '#node', type: 'string' } } };
+  assert.deepEqual(unresolvedRefs(draft07, 'inputSchema'), []);
+  assert.deepEqual(unresolvedRefs({ type: 'object', properties: { self: { $ref: '' } } }, 'inputSchema'), []);
+  // A relative ref against an absolute $id is a network URI, which clients won't fetch.
+  const relative = unresolvedRefs({ $id: 'https://x.test/root.json', type: 'object', properties: { a: { $ref: 'other.json' } } }, 'inputSchema');
+  assert.deepEqual(relative.map((f) => f.kind), ['network']);
+});
+
+test('breakdown: $dynamicAnchor and anchors nested inside a definition count as used; a bad escape does not crash it', () => {
+  const tool = (schema) => ({ name: 't', description: 'T.', inputSchema: schema });
+  const dynamic = buildMenu([tool({ type: 'object', properties: { n: { $dynamicRef: '#node' } }, $defs: { node: { $dynamicAnchor: 'node', type: 'object' } } })], {});
+  assert.equal(breakdown(dynamic).unusedDefs.tokens, 0);
+  const nested = buildMenu([tool({ type: 'object', properties: { n: { $ref: '#inner' } }, $defs: { Outer: { type: 'object', properties: { x: { $anchor: 'inner', type: 'string' } } } } })], {});
+  assert.equal(breakdown(nested).unusedDefs.tokens, 0);
+  const bad = buildMenu([tool({ type: 'object', properties: { a: { $ref: '#/$defs/100%' } }, $defs: { A: { type: 'string' } } })], {});
+  assert.ok(breakdown(bad).unusedDefs.tokens > 0, 'A is unused, and nothing threw');
+});

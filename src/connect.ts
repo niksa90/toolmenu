@@ -15,14 +15,25 @@ import { VERSION } from './version.js';
  * to the 2025 one. legacy: the 2025 handshake only. modern: 2026-07-28 only, an error if
  * the server can't speak it.
  */
-// The SDK client drops a tool with an invalid x-mcp-header from its own tools/list
-// and console.warns about it, once per list. toolmenu reads the list off the wire
-// and reports those tools as spec/x-mcp-header findings, so the warning is noise.
-const sdkWarn = console.warn.bind(console);
-console.warn = (...args: unknown[]) => {
-  if (typeof args[0] === 'string' && args[0].startsWith('[mcp-sdk] excluding tool ')) return;
-  sdkWarn(...args);
-};
+/**
+ * Run `work` with the SDK's "[mcp-sdk] excluding tool" warnings held back. The SDK
+ * client drops a tool with an invalid x-mcp-header from its own tools/list and
+ * console.warns about it; toolmenu reads the list off the wire and reports those
+ * tools as spec/x-mcp-header findings. Only while toolmenu lists, so an app that
+ * imports toolmenu keeps its own warnings.
+ */
+async function quietExclusions<T>(work: () => Promise<T>): Promise<T> {
+  const warn = console.warn;
+  console.warn = (...args: unknown[]) => {
+    if (typeof args[0] === 'string' && args[0].startsWith('[mcp-sdk] excluding tool ')) return;
+    warn(...args);
+  };
+  try {
+    return await work();
+  } finally {
+    console.warn = warn;
+  }
+}
 
 export type Protocol = 'auto' | 'legacy' | 'modern';
 export const PROTOCOLS: readonly Protocol[] = ['auto', 'legacy', 'modern'];
@@ -114,16 +125,19 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     { name: 'toolmenu', version: VERSION },
     {
       versionNegotiation: { mode: target.protocol === 'legacy' ? 'legacy' : target.protocol === 'modern' ? { pin: MODERN_VERSION } : 'auto' },
-      // Elicitation, form and URL mode, so a tool that asks the user something runs
-      // its "the user said no" path instead of failing (2026-07-28 multi round-trip
-      // requests). Every request is answered the same way, with no LLM: see ELICITATION.
-      // Not roots or sampling: 2026-07-28 deprecates them (SEP-2577).
-      capabilities: { elicitation: { form: {}, url: {} } },
+      // Only for session (target.elicitation set): a connection that calls tools
+      // declares elicitation, form and URL mode, so a tool that asks the user something
+      // runs its "the user said no" path instead of failing (2026-07-28 multi
+      // round-trip requests). snapshot and the rest declare nothing, as before 0.16:
+      // a server may list different tools to a client that can be asked things.
+      // Never roots or sampling: 2026-07-28 deprecates them (SEP-2577).
+      ...(target.elicitation ? { capabilities: { elicitation: { form: {}, url: {} } } } : {}),
     },
   );
   // A 2025 server asks with an elicitation/create request; 2026-07-28 ones embed it
   // in an input_required result, which session answers itself (mrtr.ts). Same answer.
-  client.setRequestHandler('elicitation/create', async () => ({ action: target.elicitation ?? 'decline' }));
+  const elicitation = target.elicitation;
+  if (elicitation) client.setRequestHandler('elicitation/create', async () => ({ action: elicitation }));
   let transport: Transport;
   let stderrText = '';
   let oauth = false;
@@ -320,7 +334,7 @@ export async function listTools(connection: Connection, options: ConnectOptions 
   let clientError: string | undefined;
   let caught: unknown;
   try {
-    await connection.client.listTools(undefined, { cacheMode: 'bypass', timeout: options.timeoutMs });
+    await quietExclusions(() => connection.client.listTools(undefined, { cacheMode: 'bypass', timeout: options.timeoutMs }));
   } catch (error) {
     caught = error;
     clientError = error instanceof Error ? error.message : String(error);

@@ -781,3 +781,12 @@ test('ids/authored: viewUUID is a view ID, returned by a tool whose output schem
   const lone = lint([interact]).find((f) => f.rule === 'ids/authored');
   assert.doesNotMatch(JSON.stringify(lone ?? {}), /view_uu/);
 });
+
+test('menu/gated: a parameter that can only name tool sets warns without the description saying so (0.15 regression)', () => {
+  const configure = tool('configure_session', [], {
+    description: 'Choose which toolsets this session exposes.',
+    inputSchema: { type: 'object', properties: { toolsets: { type: 'array', items: { type: 'string', enum: ['repos', 'issues', 'actions'] } } } },
+  });
+  const menu = [configure, tool('get_me', [])];
+  assert.equal(lint(menu, { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated')?.tool, 'configure_session');
+});

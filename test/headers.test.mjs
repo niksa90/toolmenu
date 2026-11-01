@@ -123,3 +123,32 @@ test('diff/x-mcp-header: a header added, removed or renamed between releases is 
   assert.match(by.renamed.message, /its HTTP header was renamed, Mcp-Param-Region → Mcp-Param-Zone/);
   for (const f of Object.values(by)) assert.equal(f.severity, 'info');
 });
+
+test('headerFaults: a duplicate involving a number parameter is caught, and drops the tool as the SDK client does', () => {
+  const faults = headerFaults({
+    name: 'dup',
+    inputSchema: { type: 'object', properties: { a: { type: 'number', 'x-mcp-header': 'Region' }, b: { type: 'string', 'x-mcp-header': 'region' } } },
+  });
+  assert.deepEqual(faults.map((f) => [f.path, f.dropped]), [['a', false], ['b', true]]);
+  assert.match(faults[1].problem, /"region" is already used by a \("Region"\)/);
+});
+
+test('diff/x-mcp-header-invalid: a release whose header makes HTTP clients drop the tool is breaking', async () => {
+  const { writeFileSync } = await import('node:fs');
+  const { tempDir } = await import('./helpers.mjs');
+  const { buildMenu } = await import('../dist/menu.js');
+  const dir = tempDir();
+  const menu = (header, type = 'string') => buildMenu([{ name: 'q', description: 'Q.', inputSchema: { type: 'object', properties: { region: { type, 'x-mcp-header': header } } } }], { name: 's', version: '1.0.0' });
+  writeFileSync(join(dir, 'a.json'), JSON.stringify(menu('Region')));
+  writeFileSync(join(dir, 'b.json'), JSON.stringify(menu('Re gion')));
+  writeFileSync(join(dir, 'c.json'), JSON.stringify(menu('Zone')));
+  const broke = JSON.parse((await run(['diff', '--json', join(dir, 'a.json'), join(dir, 'b.json')])).stdout).findings;
+  const invalid = broke.find((f) => f.rule === 'diff/x-mcp-header-invalid');
+  assert.equal(invalid?.severity, 'error');
+  assert.match(invalid.message, /Streamable HTTP clients must leave the tool out of their menu/);
+  assert.match(invalid.detail[0], /"Re gion" isn't a valid HTTP header name/);
+  // A valid rename is only the notice.
+  const renamed = JSON.parse((await run(['diff', '--json', join(dir, 'a.json'), join(dir, 'c.json')])).stdout).findings;
+  assert.ok(!renamed.some((f) => f.rule === 'diff/x-mcp-header-invalid'));
+  assert.ok(renamed.some((f) => f.rule === 'diff/x-mcp-header'));
+});

@@ -1,4 +1,5 @@
 import { canonical } from './compare.js';
+import { usedEntries } from './schema-ref.js';
 import { countTokens } from './menu.js';
 import type { JsonSchema, Menu } from './types.js';
 
@@ -82,33 +83,8 @@ function unusedDefs(menu: Menu): Breakdown['unusedDefs'] {
     const schema = (tool.inputSchema ?? {}) as Record<string, unknown>;
     const pools = (['$defs', 'definitions'] as const).filter((k) => schema[k] && typeof schema[k] === 'object');
     if (!pools.length) continue;
-    const { $defs: _d, definitions: _df, ...rest } = schema;
-    const used = new Set<string>();
-    const queue = [JSON.stringify(rest)];
-    const use = (pool: string, name: string) => {
-      const id = `${pool}/${name}`;
-      if (used.has(id)) return;
-      used.add(id);
-      queue.push(JSON.stringify((schema[pool] as Record<string, unknown>)[name] ?? {}));
-    };
-    // A definition can also be named by its $anchor ("#amount") or its $id.
-    const named = (ref: string) => {
-      const [base, fragment] = ref.split('#');
-      for (const pool of pools) {
-        for (const [name, def] of Object.entries(schema[pool] as Record<string, unknown>)) {
-          const d = (def ?? {}) as Record<string, unknown>;
-          const id = typeof d.$id === 'string' ? d.$id.replace(/#$/, '') : undefined;
-          if ((!base && fragment && d.$anchor === fragment) || (base && id && (id === base || id.endsWith(`/${base}`)))) use(pool, name);
-        }
-      }
-    };
-    while (queue.length) {
-      const text = queue.pop()!;
-      for (const m of text.matchAll(/"\$ref"\s*:\s*"#\/(\$defs|definitions)\/([^"/]+)/g)) {
-        use(m[1], decodeURIComponent(m[2]).replace(/~1/g, '/').replace(/~0/g, '~'));
-      }
-      for (const m of text.matchAll(/"\$(?:dynamic)?[rR]ef"\s*:\s*"([^"]*)"/g)) if (!m[1].startsWith('#/')) named(m[1]);
-    }
+    // The same resolver as spec/ref: pointers, $anchor/$dynamicAnchor, $id resources.
+    const used = usedEntries(schema);
     let unused = 0;
     for (const pool of pools) {
       for (const [name, def] of Object.entries(schema[pool] as Record<string, unknown>)) {

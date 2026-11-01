@@ -22,6 +22,8 @@ test('classifyFailure on real servers\' errors', () => {
     ['environment', 'Error reading histogram: spawn /tmp/x/node_modules/editmamei/dist/bin/editmamei-core-linux-x64 ENOENT'],
     ['environment', 'Error rendering preview: Editmamei runs on Windows and macOS; this process is on "linux". Adobe ships no Linux build of Photoshop, so there is nothing here to drive.'],
     ['environment', 'Unsupported platform: linux'],
+    ['environment', 'unsupported operating system "win32"'],
+    ['other', 'Unsupported platform: myspace. Use one of twitter, linkedin.'],
     ['environment', 'This tool is not supported on this platform.'],
     ['other', 'The job runs on a schedule; this process is idle.'],
     ['invalid-arguments', "Error calling tool 'get_page': Either 'page_id' OR both 'title' and 'space_key' must be provided."],

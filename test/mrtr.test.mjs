@@ -8,9 +8,19 @@ import { FIXTURES, run } from './helpers.mjs';
 import { connect } from '../dist/connect.js';
 import { callWithInput } from '../dist/mrtr.js';
 import { classifyFailure } from '../dist/failures.js';
+import { writeFileSync } from 'node:fs';
+import { tempDir } from './helpers.mjs';
+
+/** A scenario file that calls the given tools once each. */
+function scenarioFile(tools) {
+  const file = join(tempDir(), 'scenario.yml');
+  writeFileSync(file, ['allow_writes: false', 'steps:', ...tools.map((t) => `  - call: ${t}`)].join('\n') + '\n');
+  return file;
+}
 
 const server = join(FIXTURES, 'mrtr-server.mjs');
-const stdio = (extra = {}) => ({ kind: 'stdio', command: process.execPath, args: [server], ...extra });
+// A session's target: it declares elicitation and says how to answer (snapshot's targets don't).
+const stdio = (extra = {}) => ({ kind: 'stdio', command: process.execPath, args: [server], elicitation: 'decline', ...extra });
 const textOf = (result) => result.content.map((c) => c.text).join(' ');
 
 async function autoRun(extra = []) {
@@ -42,10 +52,25 @@ test('session --auto on 2026-07-28: every request is declined, and what each too
 
   const [info] = findings('session/input-required');
   assert.equal(info.severity, 'info');
-  assert.match(info.message, /^8 tools asked for input mid-call \(input_required, 2026-07-28\)\. toolmenu declined every request, the same way every run, and called again: 5 of 8 then answered/);
-  assert.equal(info.detail.length, 8);
+  assert.match(info.message, /^10 tools asked for input mid-call \(input_required, 2026-07-28\)\. toolmenu declined every request, the same way every run, and called again: 6 of 10 then answered/);
+  assert.equal(info.detail.length, 10);
 
-  const [loop] = findings('session/input-loop');
+  const loops = Object.fromEntries(findings('session/input-loop').map((f) => [f.tool, f]));
+  assert.deepEqual(Object.keys(loops).sort(), ['ask_forever', 'ask_forever_reworded', 'work_forever']);
+  // The same question under a new key and new wording each time is still the same question.
+  assert.match(loops.ask_forever_reworded.message, /asks the same thing again after a decline, every time/);
+  // requestState-only rounds: asking for nothing, never finishing.
+  assert.match(loops.work_forever.message, /kept answering input_required with only its requestState, asking for nothing, for 10 rounds without a result/);
+  assert.match(loops.work_forever.fix, /Return a result once the work is done/);
+  assert.equal(step('work_forever').note, 'asked for nothing, but kept answering input_required with only its requestState (10 rounds), never a result');
+  // requestState-only rounds that end in a result are just work: no note, no finding.
+  assert.equal(step('keep_working').outcome, 'answered');
+  assert.equal(step('keep_working').note, undefined);
+  // A tool error answering a decline is the tool's answer, whatever its words: not a credentials problem.
+  assert.equal(step('ask_then_auth_error').failure, undefined);
+  assert.ok(!findings('session/untested').some((f) => /authentication/.test(f.message)));
+
+  const loop = loops.ask_forever;
   assert.equal(loop.tool, 'ask_forever');
   assert.equal(loop.severity, 'warn');
   assert.match(loop.message, /asks the same thing again after a decline, every time.*toolmenu stopped after 3 rounds/);
@@ -81,13 +106,14 @@ test('--elicitation cancel: every request is cancelled instead, and the findings
   const { step, findings } = await autoRun(['--elicitation', 'cancel']);
   assert.equal(step('ask_confirm').note, 'asked for a form; cancelled once, then answered');
   assert.match(findings('session/input-required')[0].message, /toolmenu cancelled every request/);
-  assert.match(findings('session/input-loop')[0].message, /after a cancel/);
-  assert.match(findings('session/input-loop')[0].fix, /says the user dismissed it/);
+  const loop = findings('session/input-loop').find((f) => f.tool === 'ask_forever');
+  assert.match(loop.message, /after a cancel/);
+  assert.match(loop.fix, /says the user dismissed it/);
 });
 
 test('the server gets the decline (or cancel) and its requestState back byte for byte', async () => {
   for (const answer of ['decline', 'cancel']) {
-    const conn = await connect(stdio(answer === 'cancel' ? { elicitation: 'cancel' } : {}));
+    const conn = await connect(stdio({ elicitation: answer }));
     try {
       assert.equal(conn.era, 'modern');
       const confirm = await callWithInput(conn, { name: 'ask_confirm', arguments: {} }, { elicitation: answer });
@@ -123,4 +149,72 @@ test('-32021 is a setup failure by its code; --elicitation is checked', async ()
   assert.match(bad.stderr, /--elicitation must be decline or cancel/);
   const elsewhere = await run(['snapshot', '--elicitation', 'cancel', '--', process.execPath, server]);
   assert.match(elsewhere.stderr, /--elicitation goes with session: only session calls tools\./);
+});
+
+test('a target without elicitation declares nothing: snapshot sees the menu a client that can\'t be asked sees', async () => {
+  const conn = await connect({ kind: 'stdio', command: process.execPath, args: [server] });
+  try {
+    // The SDK server refuses to ask a client that didn't declare elicitation.
+    await assert.rejects(conn.client.callTool({ name: 'ask_confirm', arguments: {} }), /client capabilities do not declare/);
+  } finally {
+    await conn.close();
+  }
+});
+
+test('a retry that times out after a decline is a failed step, not the server refusing the decline', async () => {
+  const r = await run(['session', '--json', '--timeout', '2000', '--scenario', scenarioFile(['ask_then_hang']), '--env', 'HANG=1', '--', process.execPath, server]);
+  const out = JSON.parse(r.stdout);
+  const step = out.steps.find((s) => s.label === 'call ask_then_hang');
+  assert.equal(step.outcome, 'failed');
+  assert.ok(!out.findings.some((f) => f.rule === 'session/decline-fails'), 'a timeout is not the server answering the decline');
+});
+
+test('callWithInput: edge cases a fake connection can produce', async () => {
+  // A fake 2026 connection whose callTool plays back a script; each entry is what the SDK returns or throws,
+  // and what the wire saw.
+  const fake = (script) => {
+    const wire = { responses: [], since: (mark) => wire.responses.slice(mark) };
+    let i = 0;
+    return {
+      era: 'modern',
+      wire,
+      client: {
+        callTool: async () => {
+          const { wire: raw, returns, throws } = script[i++];
+          if (raw !== undefined) wire.responses.push({ method: 'tools/call', result: raw });
+          if (throws) throw throws;
+          return returns;
+        },
+      },
+    };
+  };
+  const ask = { resultType: 'input_required', inputRequests: { c: { method: 'elicitation/create', params: { message: 'Go?', requestedSchema: { type: 'object' } } } } };
+  const done = { resultType: 'complete', content: [{ type: 'text', text: 'ok' }] };
+
+  // A non-object result the SDK rejects: its error comes through, not a TypeError from toolmenu.
+  const rejected = Object.assign(new Error('Invalid result for tools/call'), { code: -32602 });
+  await assert.rejects(callWithInput(fake([{ wire: 'ok', throws: rejected }]), { name: 't', arguments: {} }, {}), /Invalid result for tools\/call/);
+
+  // The SDK throwing after the fact on an input_required answer: the rounds go on from the wire.
+  const after = await callWithInput(fake([{ wire: ask, throws: new Error('has an output schema but did not return structured content') }, { wire: done, returns: done }]), { name: 't', arguments: {} }, {});
+  assert.equal(after.input.outcome, 'completed');
+
+  // A retry failing with no JSON-RPC code (a timeout, a lost connection) is thrown back, not called a refused decline.
+  const timeout = Object.assign(new Error('Request timed out'), { code: 'REQUEST_TIMEOUT' });
+  await assert.rejects(callWithInput(fake([{ wire: ask, returns: ask }, { throws: timeout }]), { name: 't', arguments: {} }, {}), /Request timed out/);
+
+  // A refused retry keeps the server's words in JSON: message and code.
+  const refused = Object.assign(new Error('Invalid or expired requestState'), { code: -32602 });
+  const r = await callWithInput(fake([{ wire: ask, returns: ask }, { throws: refused }]), { name: 't', arguments: {} }, {});
+  assert.deepEqual(JSON.parse(JSON.stringify(r.input.error)), { message: 'Invalid or expired requestState', code: -32602 });
+});
+
+test('an unlock that never finishes its input rounds unlocked nothing: its values are not counted as reached', async () => {
+  const file = join(tempDir(), 'unlock.yml');
+  writeFileSync(file, 'allow_writes: false\nsteps:\n  - call: enable_toolset\n    args: { toolset: billing }\n');
+  const r = await run(['session', '--json', '--union-out', join(tempDir(), 'union.json'), '--scenario', file, '--env', 'UNLOCK=1', '--', process.execPath, server]);
+  const out = JSON.parse(r.stdout);
+  assert.equal(out.steps.find((s) => s.label.startsWith('call enable_toolset')).outcome, 'needs-input');
+  const coverage = out.findings.find((f) => f.rule === 'session/unlock-coverage');
+  assert.match(coverage.message, /got through 0 of its 2 toolset values/);
 });

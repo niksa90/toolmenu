@@ -135,9 +135,9 @@ export function seconds(ms: number): string {
 }
 
 /** The command line, for a message: arguments with spaces quoted, cut at 120 characters. Never the --env values. */
-export function commandLine(command: string, args: string[]): string {
+export function commandLine(command: string, args: string[], { cut = true }: { cut?: boolean } = {}): string {
   const quoted = [command, ...args].map((a) => (/^[\w@%+=:,./-]+$/.test(a) ? a : `'${a.replace(/'/g, `'\\''`)}'`)).join(' ');
-  return quoted.length > 120 ? `${quoted.slice(0, 119)}…` : quoted;
+  return cut && quoted.length > 120 ? `${quoted.slice(0, 119)}…` : quoted;
 }
 
 /** The stderr fact: the last lines, and a note of how many came before. */
@@ -157,36 +157,78 @@ function strayFact(trace: Trace): [string, string] {
 
 const LOG_TO_STDERR = 'Log to stderr; stdout carries the protocol (in Node, console.error rather than console.log; in Python, logging or print(..., file=sys.stderr)).';
 
-// A CLI's usage: argparse, click, yargs, commander, System.CommandLine, stricli.
-const USAGE = /(?:^|\n)\s*(?:usage|(?:sub)?commands|options|examples|flags):|\bUSAGE\b|\s<command>|\[command\]|\bCOMMAND \[ARGS\]|arguments are required|subcommands? must be present|no command (?:specified|given)|required command was not provided|\b(?:run|see):? \S+ --help\b/i;
-// A table of commands or options, two or more rows: "  t3-watch start   Run the service",
-// "  --version   Show version number". Help output, even without a "Usage:" line.
-const HELP_ROWS = /(?:^|\n)\s*(?:[\w.-]+ [\w-]+|-{1,2}[\w-]+(?:, -{1,2}[\w-]+)?) {2,}\S[^\n]*\n\s*(?:[\w.-]+ [\w-]+|-{1,2}[\w-]+(?:, -{1,2}[\w-]+)?) {2,}\S/;
-// The subcommands that usually start the MCP server, most specific first. A word
-// on its own ({mcp}, "  mcp  Start…", "mcp start [--transport…]"), not part of a
-// name like agentation-mcp.
+// A CLI's usage: argparse, click, yargs, commander, System.CommandLine, stricli. Only
+// where a line starts with it ("usage: x", "Usage: npx …") or a header stands alone on
+// its line ("Options:", "Commands:", "USAGE"), so "memory usage 120MB" or a startup log
+// "Options: {...}" isn't one.
+const USAGE = [
+  /(?:^|\n)[ \t]*usage:[ \t]+\S/i,
+  /(?:^|\n)(?:USAGE|[ \t]*(?:usage|(?:sub)?commands|options|examples|flags):)[ \t]*(?=\n|$)/i,
+  /\s<command>|\[command\]|\bCOMMAND \[ARGS\]|arguments are required|subcommands? must be present|no command (?:specified|given)|required command was not provided|\b(?:run|see):? \S+ --help\b/i,
+];
+// A row of a command or option table: "  serve   Start the Poppy MCP server.",
+// "  t3-watch start   Run the service", "  -v, --version  Show the version". A command
+// starts lowercase, so a padded log level ("INFO     Starting") isn't one.
+const HELP_ROW = /^[ \t]*(?:[a-z][\w.-]*(?: [a-z][\w-]*)?|-{1,2}[\w-]+(?:, -{1,2}[\w-]+)?(?: <[^>]+>)?) {2,}\S/;
+/** Help output, even when the "Usage:" line scrolled out of the stderr kept: three table rows or more. */
+const helpRows = (text: string) => text.split('\n').filter((l) => HELP_ROW.test(l)).length >= 3;
+// The subcommands that usually start the MCP server, most specific first.
 const SUBCOMMANDS = ['mcp start', 'mcp serve', 'server start', 'mcp', 'stdio', 'serve', 'server', 'start'];
 // An HTTP server's address in its log: "MCP server listening on http://localhost:3001/mcp",
 // "StreamableHTTP endpoint available at http://127.0.0.1:3333/mcp".
-const HTTP_URL = /\b(?:listening|available|running|serving|started)\b[^\n]{0,60}?(https?:\/\/[^\s"'<>]+)/i;
+const HTTP_URL = /\b(?:listening|available|running|serving|started)\b[^\n]{0,60}?(https?:\/\/[^\s"'<>]+)/gi;
 const HTTP_PORT = /\blistening on (?:port )?:?(\d{2,5})\b/i;
+
+/** An address the server itself listens on: loopback, all interfaces, or one with a port. A docs or release link isn't one. */
+function ownAddress(raw: string): string | undefined {
+  const url = raw.replace(/[.,;)]+$/, '');
+  try {
+    const u = new URL(url);
+    const local = /^(?:localhost|127\.\d+\.\d+\.\d+|0\.0\.0\.0|\[::1?\])$/.test(u.hostname);
+    return local || u.port ? url.replace('//0.0.0.0', '//localhost') : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Subcommands the help text offers where a command goes: in a `{a,b,mcp}` list, or
+ * as the first word or two of a row ("  mcp   Start…", "server start   Starts…",
+ * "t3-watch start   Run…", "usage: prog mcp"). Never from an option's description
+ * ("--port <n>   Port the server listens on").
+ */
+function offeredSubcommand(text: string): string | undefined {
+  const offered = new Set<string>();
+  for (const m of text.matchAll(/\{([^{}\n]*)\}/g)) for (const w of m[1].split(',')) offered.add(w.trim());
+  for (const line of text.split('\n')) {
+    let words = line.trim().split(/\s+/).filter(Boolean);
+    if (/^usage:$/i.test(words[0] ?? '')) words = words.slice(1);
+    if (!words.length || words[0].startsWith('-')) continue;
+    for (const start of [0, 1]) {
+      offered.add(words.slice(start, start + 1).join(' '));
+      offered.add(words.slice(start, start + 2).join(' '));
+    }
+  }
+  return SUBCOMMANDS.find((c) => offered.has(c));
+}
 
 /**
  * What the server's own output says about how it was started, as a next step: a
- * CLI that printed its usage and wants a subcommand, or a server that opened an
- * HTTP port instead of talking on stdio. Undefined when it says neither.
+ * CLI that printed its usage and wants a subcommand (only when it `exited`), or a
+ * server that opened an HTTP port instead of talking on stdio. `command` is the whole
+ * command line, uncut, so the suggestion can be run as written.
  */
-export function startupHint(trace: Trace, command: string): string | undefined {
+export function startupHint(trace: Trace, command: string, { exited = true }: { exited?: boolean } = {}): string | undefined {
   const text = [...trace.strayHead, ...trace.stderrExcerpt().lines].join('\n');
-  const url = HTTP_URL.exec(text)?.[1]?.replace(/[.,;)]+$/, '').replace('//0.0.0.0', '//localhost');
+  const url = [...text.matchAll(HTTP_URL)].map((m) => ownAddress(m[1])).find(Boolean);
   const port = url ? undefined : HTTP_PORT.exec(text)?.[1];
   if (url || port) {
     const flag = /--stdio\b/.test(text) ? '--stdio' : /--transport[ =]?(?:\[?stdio|<)/i.test(text) ? '--transport stdio' : undefined;
     const where = url ?? `http://localhost:${port}/mcp`;
     return `The server started an HTTP server (${where}) instead of talking on its stdin and stdout. Start it in stdio mode (${flag ? `its output mentions ${flag}` : 'often --stdio or --transport stdio'}), or run toolmenu against the address while the server runs: toolmenu snapshot ${where}`;
   }
-  if (USAGE.test(text) || HELP_ROWS.test(text)) {
-    const sub = SUBCOMMANDS.find((c) => new RegExp(`(?:^|[\\s{,|\\[])${c.replace(' ', '\\s+')}(?=[\\s},|\\]]|$)`, 'm').test(text));
+  if (exited && (USAGE.some((re) => re.test(text)) || helpRows(text))) {
+    const sub = offeredSubcommand(text);
     return `The command printed its usage and exited: it wants a subcommand or an argument it wasn't given. ${
       sub ? `Its usage lists “${sub}”: try ${command} ${sub}` : 'Its usage (above) or its docs say what starts the MCP server: add that after the command.'
     }`;
@@ -310,6 +352,8 @@ function serverAnswered(error: Error, stage: string, facts: [string, string][], 
 
 function explainStdio(error: Error, trace: Trace, context: ExplainContext, target: { command: string; args: string[] }): unknown {
   const command = commandLine(target.command, target.args);
+  // Uncut: a suggestion has to run as written.
+  const whole = commandLine(target.command, target.args, { cut: false });
   const spawnError = causes(error).find((e) => typeof e.syscall === 'string' && e.syscall.startsWith('spawn'));
   if (spawnError) {
     const code = spawnError.code;
@@ -369,7 +413,7 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
       next = "The server is missing one of its own dependencies (see stderr): reinstall it, or try another version. It's a packaging problem, not your setup.";
     } else if (rejected) {
       next = REJECTED_NEXT;
-    } else if ((hint = startupHint(trace, command))) {
+    } else if ((hint = startupHint(trace, whole))) {
       next = hint;
     } else if (trace.strayCount) {
       next = `${LOG_TO_STDERR} Then fix what stderr says.`;
@@ -406,13 +450,15 @@ function explainStdio(error: Error, trace: Trace, context: ExplainContext, targe
       : rejected
         ? `${stage} timed out after ${seconds(waitedHere)}: the server is running but never answered; its stderr looks like rejected credentials (“${rejected}”).`
         : `${stage} timed out after ${seconds(waitedHere)}: the server is running but never answered.`;
-    const hint = startupHint(trace, command);
-    const next = hint
-      ? hint
-      : trace.strayCount
-      ? LOG_TO_STDERR
-      : rejected
-        ? REJECTED_NEXT
+    // Still running: no usage hint (that one is for a CLI that printed it and exited),
+    // and rejected credentials say more than an address in the log.
+    const hint = startupHint(trace, whole, { exited: false });
+    const next = rejected
+      ? REJECTED_NEXT
+      : hint
+        ? hint
+        : trace.strayCount
+        ? LOG_TO_STDERR
         : stage === 'tools/list'
         ? 'The server answered initialize, then hung on tools/list: check its logs (stderr above). If building the list is just slow, raise --timeout.'
         : 'Check the command starts an MCP server on stdio (some need an argument such as "stdio" or "--stdio"). If it is only slow to start (npx downloading, a first build), raise --timeout.';

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { canonical, compareMenus } from './compare.js';
 import { countTokens } from './menu.js';
+import { headerFaults } from './rules/headers.js';
 import { isCalendar, parseSemver } from './semver.js';
 import type { Finding, JsonSchema, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
@@ -47,6 +48,9 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   // added, removed or renamed. Callers don't change; proxies and WAFs routing on the
   // header do.
   'diff/x-mcp-header': { severity: 'info', class: 'notice' },
+  // The new release's x-mcp-header makes Streamable HTTP clients drop the tool,
+  // which the old one didn't: for them the tool is gone.
+  'diff/x-mcp-header-invalid': { severity: 'error', class: 'breaking' },
   // Restructured ($ref, $defs) but accepts the same input: bytes and tokens changed.
   'diff/schema-equivalent': { severity: 'info', class: 'notice' },
   // Only the declared $schema dialect changed: one finding for the menu.
@@ -473,6 +477,19 @@ const MAX_DEPTH = 64;
 function compareTool(old: MenuTool, t: MenuTool): Raw[] {
   const out: Raw[] = [];
   const name = t.name;
+
+  // An annotation that makes HTTP clients drop the tool, new in this release.
+  const dropped = (tool: MenuTool) => headerFaults(tool).filter((f) => f.dropped);
+  const broken = dropped(t);
+  if (broken.length && !dropped(old).length) {
+    out.push({
+      rule: 'diff/x-mcp-header-invalid',
+      tool: name,
+      message: `${code(name)}: an x-mcp-header annotation in this release breaks the spec's rules, so Streamable HTTP clients must leave the tool out of their menu. For agents on them, ${code(name)} is gone.`,
+      detail: broken.map((f) => `${f.path}${typeof f.header === 'string' && f.header ? ` (x-mcp-header: "${f.header}")` : ''}: ${f.problem}`),
+      fix: 'Fix the annotation before release (snapshot\'s spec/x-mcp-header says which rule it breaks), or ship it as a breaking change.',
+    });
+  }
 
   if ((old.description ?? '') !== (t.description ?? '')) {
     const detail = textDiff(old.description ?? '', t.description ?? '');
