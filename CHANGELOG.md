@@ -3,9 +3,10 @@
 ## 0.15.0
 
 Fixes and one new rule, from starting ~235 servers: the recent npm and PyPI servers in
-the official MCP registry, and the 60 most-downloaded npm MCP packages. On the 85 that
-started both times, the build with these changes gave the same menus, tokens and
-findings as 0.14.1, except the false positives listed below.
+the official MCP registry, and the 60 most-downloaded npm MCP packages. On 86 recent
+registry servers, `snapshot` gives the same tool counts, tokens and findings as 0.14.1,
+apart from the new rule's 14 info findings and one false positive gone (Garmin's
+`menu/gated`).
 
 - **New rule `search/findable` (info): can an agent find each tool by searching?**
   Clients that defer a large menu (Claude's tool search, OpenAI's `tool_search`,
