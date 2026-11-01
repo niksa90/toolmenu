@@ -1,4 +1,5 @@
 import type { MenuTool } from '../types.js';
+import { indexSchema, isNetworkRef } from '../schema-ref.js';
 import { count, names, type Rule, type RuleFinding } from './rule.js';
 
 /*
@@ -25,70 +26,18 @@ export interface RefFault {
   kind: 'network' | 'missing';
 }
 
-/** JSON Pointer within the schema: `#/$defs/A`, `#/properties/a/items`. */
-function pointer(root: unknown, ref: string): boolean {
-  if (ref === '#' || ref === '#/') return true;
-  let node: unknown = root;
-  for (const raw of ref.slice(2).split('/')) {
-    const part = decodeURIComponent(raw).replace(/~1/g, '/').replace(/~0/g, '~');
-    if (Array.isArray(node) && /^\d+$/.test(part) && Number(part) < node.length) node = node[Number(part)];
-    else if (node && typeof node === 'object' && part in (node as Record<string, unknown>)) node = (node as Record<string, unknown>)[part];
-    else return false;
-  }
-  return true;
-}
-
-/** Every $id and $anchor in a schema, for refs that name them. */
-function targets(node: unknown, ids: Set<string>, anchors: Set<string>, depth = 0): void {
-  if (!node || typeof node !== 'object' || depth > 64) return;
-  if (Array.isArray(node)) {
-    for (const v of node) targets(v, ids, anchors, depth + 1);
-    return;
-  }
-  const s = node as Record<string, unknown>;
-  if (typeof s.$id === 'string') ids.add(s.$id.replace(/#$/, ''));
-  if (typeof s.$anchor === 'string') anchors.add(s.$anchor);
-  if (typeof s.$dynamicAnchor === 'string') anchors.add(s.$dynamicAnchor);
-  for (const [k, v] of Object.entries(s)) if (k !== 'enum' && k !== 'const' && k !== 'default' && k !== 'examples') targets(v, ids, anchors, depth + 1);
-}
-
 /** Every $ref in one schema that a client can't resolve from the schema itself. */
 export function unresolvedRefs(schema: unknown, where: Where): RefFault[] {
   if (!schema || typeof schema !== 'object') return [];
-  const ids = new Set<string>();
-  const anchors = new Set<string>();
-  targets(schema, ids, anchors);
-  const out: RefFault[] = [];
-  const visit = (node: unknown, path: string[], depth: number) => {
-    if (!node || typeof node !== 'object' || depth > 64) return;
-    if (Array.isArray(node)) {
-      node.forEach((v, i) => visit(v, [...path, `${i}`], depth + 1));
-      return;
-    }
-    const s = node as Record<string, unknown>;
-    for (const key of ['$ref', '$dynamicRef']) {
-      const ref = s[key];
-      if (typeof ref !== 'string') continue;
-      const at = path.length ? path.join('.') : 'the schema root';
-      if (ref.startsWith('#/') || ref === '#') {
-        if (!pointer(schema, ref)) out.push({ where, path: at, ref, kind: 'missing' });
-      } else if (ref.startsWith('#')) {
-        if (!anchors.has(ref.slice(1))) out.push({ where, path: at, ref, kind: 'missing' });
-      } else {
-        // A ref to a schema's own $id (or a fragment of it) resolves locally.
-        const [base, fragment] = ref.split('#');
-        const local = [...ids].some((id) => id === base || id.endsWith(`/${base}`));
-        if (local && (!fragment || fragment.startsWith('/') || anchors.has(fragment))) continue;
-        out.push({ where, path: at, ref, kind: /^https?:\/\//i.test(ref) ? 'network' : 'missing' });
-      }
-    }
-    for (const [k, v] of Object.entries(s)) {
-      if (k === 'enum' || k === 'const' || k === 'default' || k === 'examples') continue;
-      visit(v, k === 'properties' ? path : [...path, k === 'items' || k.startsWith('$') || /^(any|one|all)Of$|^not$|^if$|^then$|^else$|Properties$/.test(k) ? `<${k}>` : k], depth + 1);
-    }
-  };
-  visit(schema, [], 0);
-  return out;
+  const index = indexSchema(schema);
+  return index.refs
+    .filter((r) => !index.resolve(r.ref, r.base))
+    .map((r) => ({
+      where,
+      path: r.path.length ? r.path.join('.') : 'the schema root',
+      ref: r.ref,
+      kind: isNetworkRef(r.ref, r.base) ? ('network' as const) : ('missing' as const),
+    }));
 }
 
 export function refFaults(tool: MenuTool): RefFault[] {

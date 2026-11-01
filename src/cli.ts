@@ -9,7 +9,7 @@ import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
 import { counts, formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
 import { loadScenario, session, starterScenario, unlockListers, valuesFromListing } from './session.js';
-import { listTools } from './connect.js';
+import { listTools, quietExclusions } from './connect.js';
 import { patiently, tooMany } from './failures.js';
 import { buildMenu } from './menu.js';
 import { existsSync } from 'node:fs';
@@ -80,8 +80,8 @@ export async function main(argv: string[]): Promise<number> {
   const elicitation = (values.elicitation ?? 'decline') as Elicitation;
   if (!ELICITATIONS.includes(elicitation)) throw new UsageError('--elicitation must be decline or cancel');
   if (values.elicitation !== undefined && sub !== 'session') throw new UsageError('--elicitation goes with session: only session calls tools.');
-  // Only session calls tools, so only its target says how to answer their questions.
-  const answering = (t: Target): Target => (elicitation === 'decline' ? t : { ...t, elicitation });
+  // Only session calls tools, so only its targets declare elicitation and say how to answer.
+  const answering = (t: Target): Target => ({ ...t, elicitation });
   const processes = values.processes !== undefined ? Number(values.processes) : config.processes ?? 2;
   if (!Number.isInteger(processes) || processes < 1) throw new UsageError('--processes must be a whole number, 1 or more');
 
@@ -133,7 +133,7 @@ export async function main(argv: string[]): Promise<number> {
   if (sub === 'session' && values.init) {
     const path = values.scenario ?? 'scenario.yml';
     if (existsSync(path)) throw new UsageError(`${path} already exists. Pick another path with --scenario.`);
-    const initTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
+    const initTarget = answering(parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol));
     const conn = await connectPatiently(seeded(initTarget, MAIN_SEED), { timeoutMs });
     try {
       const list = await patiently(() => listTools(conn, { timeoutMs }), { error: tooMany });
@@ -144,7 +144,7 @@ export async function main(argv: string[]): Promise<number> {
       const read: string[] = [];
       for (const { unlock, lister } of unlockListers(menu.tools)) {
         try {
-          const result = await conn.client.callTool({ name: lister, arguments: {} }, { timeout: timeoutMs });
+          const result = await quietExclusions(() => conn.client.callTool({ name: lister, arguments: {} }, { timeout: timeoutMs }));
           const found = result.isError ? [] : valuesFromListing(result);
           if (found.length) {
             unlockValues[unlock] = found;

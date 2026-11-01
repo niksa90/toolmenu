@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { canonical, compareMenus } from './compare.js';
 import { countTokens } from './menu.js';
+import { headerFaults } from './rules/headers.js';
 import { isCalendar, parseSemver } from './semver.js';
 import type { Finding, JsonSchema, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
@@ -47,6 +48,10 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   // added, removed or renamed. Callers don't change; proxies and WAFs routing on the
   // header do.
   'diff/x-mcp-header': { severity: 'info', class: 'notice' },
+  // The new release's x-mcp-header makes Streamable HTTP clients drop the tool,
+  // which the old one didn't. A warning, not breaking: a menu file doesn't say whether
+  // the server is served over HTTP (stdio clients may ignore the annotation).
+  'diff/x-mcp-header-invalid': { severity: 'warn', class: 'notice' },
   // Restructured ($ref, $defs) but accepts the same input: bytes and tokens changed.
   'diff/schema-equivalent': { severity: 'info', class: 'notice' },
   // Only the declared $schema dialect changed: one finding for the menu.
@@ -161,6 +166,11 @@ const BREAKING_RELEASE = '\u0000breaking-release\u0000';
 
 export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}): DiffResult {
   const raw: Raw[] = [];
+  // x-mcp-header is 2026-07-28's: only a menu served on it has the annotation mean anything.
+  const isModern = (m: Menu) => m.server.era === 'modern' || (m.server.protocolVersion ?? '') >= '2026-07-28';
+  const modern = isModern(after);
+  // A tool the old release already lost to a bad annotation isn't news; on a 2025 server it lost nothing.
+  const headers = { headers: modern, oldHeaders: isModern(before) };
   // Ignored tools leave the comparison entirely, so they can't pair into a
   // rename or show up as a reorder.
   const ignored = ignoreMatcher(options.ignore);
@@ -196,6 +206,9 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
     });
   }
   for (const t of added.filter((t) => !renamedTo.has(t.name))) {
+    // A new tool HTTP clients drop on arrival.
+    const lost = headerLoss(t, modern, undefined);
+    if (lost) raw.push(lost);
     raw.push({
       rule: 'diff/tool-added',
       tool: t.name,
@@ -209,9 +222,9 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
 
   for (const t of newTools) {
     const old = oldByName.get(t.name);
-    if (old) raw.push(...compareTool(old, t));
+    if (old) raw.push(...compareTool(old, t, headers));
   }
-  for (const { from, to } of renames) raw.push(...compareTool(from, to).filter((f) => f.rule !== 'diff/description' && f.rule !== 'diff/other'));
+  for (const { from, to } of renames) raw.push(...compareTool(from, to, headers).filter((f) => f.rule !== 'diff/description' && f.rule !== 'diff/other'));
 
   collapseDialects(raw);
   collapseMenuWide(raw);
@@ -470,9 +483,34 @@ function collapseMenuWide(raw: Raw[]): void {
  */
 const MAX_DEPTH = 64;
 
-function compareTool(old: MenuTool, t: MenuTool): Raw[] {
+/** The tool's new x-mcp-header problem, if HTTP clients drop it now and didn't before (`old` undefined: nothing to compare, or a 2025 release). */
+function headerLoss(t: MenuTool, headers: boolean, old: MenuTool | undefined): Raw | undefined {
+  if (!headers) return undefined;
+  const dropped = (tool: MenuTool) => headerFaults(tool).filter((f) => f.dropped);
+  const broken = dropped(t);
+  if (!broken.length || (old && dropped(old).length)) return undefined;
+  return {
+    rule: 'diff/x-mcp-header-invalid',
+    tool: t.name,
+    message: `${code(t.name)}: an x-mcp-header annotation in this release breaks the spec's rules, so Streamable HTTP clients must leave the tool out of their menu. If the server is served over HTTP, ${code(t.name)} is gone for agents on those clients.`,
+    detail: broken.map((f) => `${f.path}${typeof f.header === 'string' && f.header ? ` (x-mcp-header: "${f.header}")` : ''}: ${f.problem}`),
+    fix: 'Fix the annotation before release: snapshot\'s spec/x-mcp-header says which rule it breaks.',
+  };
+}
+
+/**
+ * Compare one tool across releases. `headers`: check x-mcp-header validity, for a
+ * 2026-07-28 menu's own tools (not operations behind a search tool, which no client
+ * lists, and not a 2025 server, where the annotation means nothing).
+ */
+function compareTool(old: MenuTool, t: MenuTool, { headers = false, oldHeaders = false }: { headers?: boolean; oldHeaders?: boolean } = {}): Raw[] {
   const out: Raw[] = [];
   const name = t.name;
+
+  // An annotation that makes HTTP clients drop the tool, new in this release (or new
+  // because this release moved to 2026-07-28, where it starts to count).
+  const lost = headerLoss(t, headers, oldHeaders ? old : undefined);
+  if (lost) out.push(lost);
 
   if ((old.description ?? '') !== (t.description ?? '')) {
     const detail = textDiff(old.description ?? '', t.description ?? '');

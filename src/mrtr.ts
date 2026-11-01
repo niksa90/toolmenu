@@ -6,10 +6,14 @@
  * (allowInputRequired) so it can see them: every elicitation is declined (or
  * cancelled, --elicitation cancel), no LLM, the same answer every run.
  */
-import type { Connection, Elicitation } from './connect.js';
+import { canonical } from './compare.js';
+import { quietExclusions, type Connection, type Elicitation } from './connect.js';
+import { httpStatus, tooMany } from './failures.js';
 
 /** Rounds answered before toolmenu stops: a tool still asking after this is stuck. */
 export const MAX_ROUNDS = 3;
+/** Rounds that carry only requestState (the tool keeps working, asks nothing) before toolmenu stops. */
+export const MAX_CONTINUATIONS = 10;
 
 export type InputKind = 'form' | 'url' | 'roots' | 'sampling' | 'other';
 
@@ -22,14 +26,18 @@ export interface InputTrace {
    * none: it asked for nothing. completed: it answered after the decline(s).
    * loop: it asked the same again after a decline, until the round limit.
    * gave-up: still asking (different things) at the round limit.
+   * unfinished: still returning requestState-only rounds (working, asking nothing)
+   * at MAX_CONTINUATIONS or after 3 × the request timeout in all.
    * undeclared: it asked for something the request didn't declare (roots, sampling).
    * decline-failed: the retry carrying the decline failed with a protocol error.
    */
-  outcome: 'none' | 'completed' | 'loop' | 'gave-up' | 'undeclared' | 'decline-failed';
+  outcome: 'none' | 'completed' | 'loop' | 'gave-up' | 'unfinished' | 'undeclared' | 'decline-failed';
   /** Kinds asked for that the request didn't declare. */
   undeclared?: InputKind[];
-  /** The protocol error a retry failed with (decline-failed). */
-  error?: unknown;
+  /** The protocol error a retry failed with (decline-failed): the server's words, and its JSON-RPC code. */
+  error?: { message: string; code?: number };
+  /** Rounds that carried only requestState, the tool asking for nothing. */
+  continuations?: number;
   /** A raw result on the wire without resultType, which 2026-07-28 servers MUST send. */
   missingResultType?: boolean;
 }
@@ -37,27 +45,47 @@ export interface InputTrace {
 type CallResult = Awaited<ReturnType<Connection['client']['callTool']>>;
 interface InputRequired {
   resultType: 'input_required';
-  inputRequests?: Record<string, { method?: string; params?: { mode?: string } }>;
+  inputRequests?: Record<string, { method?: string; params?: Record<string, unknown> }>;
   requestState?: string;
 }
 
 const DECLARED = new Set<InputKind>(['form', 'url']);
 
-function kindOf(request: { method?: string; params?: { mode?: string } }): InputKind {
+function kindOf(request: { method?: string; params?: Record<string, unknown> }): InputKind {
   if (request.method === 'elicitation/create') return request.params?.mode === 'url' ? 'url' : 'form';
   if (request.method === 'roots/list') return 'roots';
   if (request.method === 'sampling/createMessage') return 'sampling';
   return 'other';
 }
 
-/** Keys sorted at every level: the same request asked twice reads the same. */
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  if (value && typeof value === 'object') {
-    return `{${Object.keys(value).sort().map((k) => `${JSON.stringify(k)}:${canonical((value as Record<string, unknown>)[k])}`).join(',')}}`;
-  }
-  return JSON.stringify(value);
+/** What a request asks, without its key or wording: asking the same again reads the same even under a new key or a reworded message. */
+function question(request: { method?: string; params?: Record<string, unknown> }): string {
+  const p = request.params ?? {};
+  // A URL-mode request has no schema: the page it sends the user to is the question.
+  // Its path, not its query: a fresh ?state= each time is still the same page.
+  const page = p.mode === 'url' && typeof p.url === 'string' ? p.url.split(/[?#]/)[0] : undefined;
+  return canonical({ method: request.method, mode: p.mode, requestedSchema: p.requestedSchema, url: page });
 }
+
+/**
+ * An error thrown after the tool already asked for input: it carries what the tool
+ * asked (session still reports it), and says the first leg ran on the server, so a
+ * tool that isn't read-only must not be called again from scratch.
+ */
+export class AfterInputError extends Error {
+  constructor(readonly cause: unknown, readonly input: InputTrace) {
+    super(cause instanceof Error ? cause.message : String(cause));
+    const code = (cause as { code?: unknown } | null)?.code;
+    if (code !== undefined) (this as { code?: unknown }).code = code;
+    const status = (cause as { status?: unknown } | null)?.status;
+    if (status !== undefined) (this as { status?: unknown }).status = status;
+  }
+}
+
+/** The words of an error, first line only. */
+const firstLine = (error: unknown) => (error instanceof Error ? error.message : String(error)).split('\n')[0].trim();
+
+const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 
 /**
  * Call a tool, answering any input it asks for. On a 2025-era connection it's a
@@ -76,56 +104,80 @@ export async function callWithInput(
   let previous: string | undefined;
   let repeated = false;
   let rounds = 0;
+  let continuations = 0;
   let call: Record<string, unknown> = { ...params };
+  // Whether the request being sent carries a decline (inputResponses), not just requestState.
+  let carriesDecline = false;
   const trace = (outcome: InputTrace['outcome'], more: Partial<InputTrace> = {}): InputTrace => ({
     rounds,
     kinds,
     outcome,
+    ...(continuations ? { continuations } : {}),
     ...(missingResultType ? { missingResultType } : {}),
     ...more,
   });
+  const finished = () => (rounds ? 'completed' : 'none');
+  // However many rounds, one call step gets 3 × the request timeout in all.
+  const deadline = options.timeoutMs !== undefined ? Date.now() + 3 * options.timeoutMs : undefined;
   for (;;) {
     const mark = conn.wire.responses.length;
-    let result: CallResult | InputRequired;
+    let result: CallResult | InputRequired | undefined;
     try {
-      result = (await conn.client.callTool(call as typeof params, { timeout: options.timeoutMs, allowInputRequired: true })) as CallResult | InputRequired;
+      result = (await quietExclusions(() => conn.client.callTool(call as typeof params, { timeout: options.timeoutMs, allowInputRequired: true }))) as CallResult | InputRequired;
     } catch (error) {
-      // A result without resultType: the SDK client rejects it ("missing required
-      // resultType"). The server did answer, so the step did too; the finding says why
-      // clients won't take it.
-      const answered = conn.wire.since(mark, 'tools/call').at(-1)?.result;
-      if (answered && !('resultType' in answered)) {
+      // What the server sent decides what failed, not the error the SDK raised.
+      const wire = conn.wire.since(mark, 'tools/call').at(-1);
+      const answered = wire?.result as unknown;
+      if (isObject(answered) && !('resultType' in answered)) {
+        // No resultType: the SDK client rejects it ("missing required resultType").
+        // The server did answer; session/result-type says why clients won't take it.
         missingResultType = true;
-        return { result: answered as CallResult, input: trace(rounds ? 'completed' : 'none') };
+        return { result: answered as CallResult, input: trace(finished()) };
       }
-      // The first call failing is an ordinary failed step; a retry that carried a
-      // decline failing is the server's answer to the decline.
-      if (rounds === 0) throw error;
-      return { input: trace('decline-failed', { error }) };
+      if (isObject(answered) && answered.resultType === 'input_required' && (isObject(answered.inputRequests) || typeof answered.requestState === 'string')) {
+        // The SDK can throw after the fact (output-schema checks on a cached
+        // definition): the server asked for input, so carry on with what it sent.
+        // Not one with neither inputRequests nor a string requestState: the SDK is
+        // right to reject that, and calling again from scratch would repeat the tool.
+        result = answered as unknown as InputRequired;
+      } else {
+        // The server's own JSON-RPC error to a retry that carried a decline is its
+        // answer to the decline. Anything else goes back to session's handling as a
+        // failed call: an SDK check on a result the server did send, a timeout, a lost
+        // connection, a rate limit (429 or its words), or a failure before any decline.
+        const refused = !!wire?.error && carriesDecline && httpStatus(error) !== 429 && !tooMany(error);
+        if (!refused) throw rounds || continuations ? new AfterInputError(error, trace(finished())) : error;
+        const code = wire!.error!.code;
+        return { input: trace('decline-failed', { error: { message: firstLine(wire!.error!.message ?? error), ...(typeof code === 'number' ? { code } : {}) } }) };
+      }
     }
-    const raw = conn.wire.since(mark, 'tools/call').at(-1)?.result;
-    if (raw && !('resultType' in raw)) missingResultType = true;
-    if ((result as InputRequired).resultType !== 'input_required') {
-      return { result: result as CallResult, input: trace(rounds ? 'completed' : 'none') };
+    if ((result as InputRequired).resultType !== 'input_required') return { result: result as CallResult, input: trace(finished()) };
+    const required = result as InputRequired;
+    const state = required.requestState;
+    const asked = Object.entries(isObject(required.inputRequests) ? required.inputRequests : {});
+    if (!asked.length) {
+      // Only requestState: the tool keeps working and asks nothing. Send it back.
+      if (continuations >= MAX_CONTINUATIONS || (deadline !== undefined && Date.now() >= deadline)) return { input: trace('unfinished') };
+      continuations++;
+      call = { ...params, ...(typeof state === 'string' ? { requestState: state } : {}) };
+      carriesDecline = false;
+      continue;
     }
-    const asked = (result as InputRequired).inputRequests ?? {};
-    for (const request of Object.values(asked)) {
-      const k = kindOf(request);
-      if (!kinds.includes(k)) kinds.push(k);
-    }
-    const undeclared = [...new Set(Object.values(asked).map(kindOf).filter((k) => !DECLARED.has(k)))];
+    const askedKinds = asked.map(([, request]) => kindOf(request));
+    for (const k of askedKinds) if (!kinds.includes(k)) kinds.push(k);
+    const undeclared = [...new Set(askedKinds.filter((k) => !DECLARED.has(k)))];
     if (undeclared.length) return { input: trace('undeclared', { undeclared }) };
-    // The same requests again after a decline: the tool didn't take the answer.
-    const signature = canonical(asked);
-    if (previous !== undefined && signature === previous && Object.keys(asked).length) repeated = true;
+    // The same question again after a decline, whatever its key or wording: the tool didn't take the answer.
+    const signature = canonical(asked.map(([, request]) => question(request)).sort());
+    if (previous !== undefined && signature === previous) repeated = true;
     if (rounds >= MAX_ROUNDS) return { input: trace(repeated ? 'loop' : 'gave-up') };
     previous = signature;
     rounds++;
-    const state = (result as InputRequired).requestState;
     call = {
       ...params,
-      inputResponses: Object.fromEntries(Object.keys(asked).map((key) => [key, { action }])),
-      ...(state !== undefined ? { requestState: state } : {}),
+      inputResponses: Object.fromEntries(asked.map(([key]) => [key, { action }])),
+      ...(typeof state === 'string' ? { requestState: state } : {}),
     };
+    carriesDecline = true;
   }
 }

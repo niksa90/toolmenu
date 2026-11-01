@@ -9,6 +9,7 @@ import { Client, StreamableHTTPClientTransport, UnauthorizedError } from '@model
 import type { OAuthClientInformationContext, OAuthClientMetadata, OAuthClientProvider, OAuthDiscoveryState, StoredOAuthClientInformation, StoredOAuthTokens } from '@modelcontextprotocol/client';
 import { VERSION } from './version.js';
 import { endSession } from './close.js';
+import { quietExclusions } from './connect.js';
 
 /**
  * The redirect port. Fixed, not random: dynamic registration records the exact
@@ -313,7 +314,7 @@ async function check(serverUrl: string): Promise<{ name?: string; tools: number 
   const transport = new StreamableHTTPClientTransport(new URL(serverUrl), { authProvider: new StoredOAuthProvider(serverUrl) });
   await client.connect(transport);
   try {
-    const { tools } = await client.listTools();
+    const { tools } = await quietExclusions(() => client.listTools());
     return { name: client.getServerVersion()?.name, tools: tools.length };
   } finally {
     await endSession(client, transport);

@@ -4,6 +4,7 @@
 // Serves 2026-07-28 via serveStdio, or only the 2025 protocol when LEGACY=1.
 import { McpServer, inputRequired, inputResponse } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
+import * as z from 'zod';
 
 const text = (t) => ({ content: [{ type: 'text', text: t }] });
 const ro = { readOnlyHint: true };
@@ -79,6 +80,46 @@ export function build() {
 
   // Its result goes out without resultType (REWRITE removes it), as a hand-written server might send it.
   reg('no_result_type', 'Answers without resultType.', async () => text('NO-RESULT-TYPE'));
+
+  // Keeps working through requestState-only rounds, asking nothing, then answers.
+  reg('keep_working', 'Works in steps, then answers.', async (_args, ctx) => {
+    const step = Number(ctx.mcpReq.requestState() ?? '0');
+    return step < 2 ? inputRequired({ requestState: String(step + 1) }) : text('worked in 3 steps');
+  });
+
+  // Never finishes: requestState-only rounds forever.
+  reg('work_forever', 'Never finishes.', async (_args, ctx) => inputRequired({ requestState: `${Number(ctx.mcpReq.requestState() ?? '0') + 1}` }));
+
+  // Asks the same question again after a decline, under a new key and with new wording each time.
+  reg('ask_forever_reworded', 'Asks again, worded anew.', async (_args, ctx) => {
+    const n = Number(ctx.mcpReq.requestState() ?? '0') + 1;
+    return inputRequired({ inputRequests: { [`confirm-${n}`]: confirm(`Go ahead? (asked ${n} times)`) }, requestState: String(n) });
+  });
+
+  // Answers a decline with a tool error whose words sound like an auth problem: still its answer to the decline.
+  reg('ask_then_auth_error', 'Needs a connected account.', async (_args, ctx) => {
+    const r = inputResponse(ctx.mcpReq.inputResponses, 'connect');
+    if (r.kind === 'missing') return inputRequired({ inputRequests: { connect: inputRequired.elicitUrl({ message: 'Connect GitHub', url: 'https://example.test/github' }) }, requestState: 'gh' });
+    return { isError: true, content: [{ type: 'text', text: 'Not authenticated with GitHub: the user declined to connect their account.' }] };
+  });
+
+  // UNLOCK=1: an unlock that asks to confirm, forever, so it never unlocks anything.
+  if (process.env.UNLOCK) {
+    server.registerTool(
+      'enable_toolset',
+      { description: 'Unlock more tools: "billing" or "reports".', inputSchema: { toolset: z.enum(['billing', 'reports']) }, annotations: ro },
+      async () => inputRequired({ inputRequests: { confirm: confirm('Unlock?') } }),
+    );
+  }
+
+  // HANG=1: the retry after the decline never answers (a timeout, not the server refusing the decline).
+  if (process.env.HANG) {
+    reg('ask_then_hang', 'Hangs on the retry.', async (_args, ctx) => {
+      if (inputResponse(ctx.mcpReq.inputResponses, 'confirm').kind === 'missing') return inputRequired({ inputRequests: { confirm: confirm('Go ahead?') } });
+      await new Promise((resolve) => setTimeout(resolve, 60_000));
+      return text('too late');
+    });
+  }
 
   // Asks for roots, which the client didn't declare (and 2026-07-28 deprecates).
   reg('ask_roots', 'Asks the client for its roots.', async () => inputRequired({ inputRequests: { roots: inputRequired.listRoots() } }));

@@ -18,8 +18,9 @@ const CLIENT = /client capabilit(?:y|ies)\b[^.]{0,60}\b(?:do(?:es)? not|don't|do
 // Something this machine lacks: "Could not find Google Chrome executable"
 // (Chrome DevTools), "Chromium distribution 'chrome' is not found at" (Playwright),
 // or the wrong operating system: "Editmamei runs on Windows and macOS; this process
-// is on "linux"" (editmamei), "Unsupported platform: linux".
-const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b|\bruns on [^.;]{0,40}; this (?:process|machine|system) is on\b|\b(?:unsupported|not supported on (?:this|the current)) (?:platform|operating system|OS)\b/i;
+// is on "linux"" (editmamei), "Unsupported platform: linux" (an OS name, not any
+// "platform" argument: "Unsupported platform: myspace" is the tool's own error).
+const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b|\bruns on [^.;]{0,40}; this (?:process|machine|system) is on\b|\bunsupported (?:platform|operating system|OS)(?:\s*[.!]?\s*$|\s*\.\s|[^.\n]{0,40}?\b(?:linux|darwin|macos|win32|windows(?:_nt)?|freebsd|openbsd|aix|sunos|android)(?![a-z]))|\bnot supported on (?:this|the current) (?:platform|operating system|OS)\b/i;
 // "401 Bad credentials" (GitHub), "Authorization Expired" (Sentry), "Invalid
 // token" (Firecrawl), "authentication token is not valid" (Apify), "Please provide
 // a valid access token" (Supabase), "NetlifyUnauthError: You're not logged into
@@ -180,7 +181,7 @@ export const FAILURE_LABELS: Record<FailureClass, string> = {
   environment: 'something missing on this machine',
   network: 'the network',
   'not-found': 'a 404 on a call that named nothing (usually the account or site behind the credentials)',
-  client: "a client feature toolmenu doesn't offer (roots or sampling)",
+  client: "a client capability the request didn't declare",
   'invalid-arguments': 'the arguments',
   other: 'other errors',
 };
@@ -196,7 +197,7 @@ export function setupFailureAdvice(classes: Iterable<FailureClass>, transport: '
   const steps: string[] = [];
   if (set.has('auth') || set.has('not-found')) steps.push(`If the errors are about credentials, rerun with real ones (${credentials}); a test account is enough.`);
   if (set.has('environment')) steps.push('If something is missing on this machine (a browser, a binary, a module), install it where the server runs, or run the server in its own container image.');
-  if (set.has('client')) steps.push("If a tool needs roots or sampling from the client, toolmenu doesn't provide them (2026-07-28 deprecates both): those calls only checked that the menu stays put, and the server isn't at fault.");
+  if (set.has('client')) steps.push("If a tool needs a client capability toolmenu doesn't declare (roots and sampling, which 2026-07-28 deprecates, or one the error names), those calls only checked that the menu stays put, and the server isn't at fault.");
   if (set.has('network')) steps.push('If the server calls an upstream API, check this machine can reach it (DNS, proxy, firewall).');
   return { fix: steps.join(' ') || 'Check the quoted errors: they came from before the tool ran.', confidence: 'unsure' };
 }

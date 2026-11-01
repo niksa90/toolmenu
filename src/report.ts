@@ -486,7 +486,8 @@ function callCounts(s: SessionResult): string | undefined {
   if (!calls.length) return undefined;
   const n = (o: string) => calls.filter((st) => st.outcome === o).length;
   const notSent = n('not-sent');
-  return `${calls.length} · ${n('answered')} answered, ${plural(n('tool-error'), 'tool error')}, ${n('failed')} failed${notSent ? `, ${notSent} not sent` : ''}`;
+  const stuck = n('needs-input');
+  return `${calls.length} · ${n('answered')} answered, ${plural(n('tool-error'), 'tool error')}, ${n('failed')} failed${stuck ? `, ${stuck} never finished (input rounds)` : ''}${notSent ? `, ${notSent} not sent` : ''}`;
 }
 
 export function formatPlan(scenario: Scenario, name: string): string {

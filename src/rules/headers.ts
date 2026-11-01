@@ -62,11 +62,11 @@ export function headerFaults(tool: MenuTool): HeaderFault[] {
         const type = schema.type;
         if (typeof type !== 'string') {
           fault(type === undefined ? 'the parameter has no "type"; it must be string, integer or boolean' : `the parameter's type is ${JSON.stringify(type)}; it must be one of string, integer or boolean, not a list`);
-        } else if (type === 'number') {
-          fault('the parameter is a number; the spec allows only string, integer or boolean (the official SDK client accepts number for now, other clients may not)', false);
-        } else if (!PRIMITIVE.has(type)) {
+        } else if (type !== 'number' && !PRIMITIVE.has(type)) {
           fault(`the parameter is ${type === 'array' || type === 'object' ? 'an' : 'a'} ${type}; it must be string, integer or boolean`);
         } else {
+          // number takes part in the uniqueness check too: the SDK client registers it.
+          if (type === 'number') fault('the parameter is a number; the spec allows only string, integer or boolean (the official SDK client accepts number for now, other clients may not)', false);
           const prior = seen.get(raw.toLowerCase());
           if (prior !== undefined) fault(`"${raw}" is already used by ${prior}; header names must differ ignoring case`);
           else seen.set(raw.toLowerCase(), `${where} ("${raw}")`);

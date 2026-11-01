@@ -8,9 +8,19 @@ import { FIXTURES, run } from './helpers.mjs';
 import { connect } from '../dist/connect.js';
 import { callWithInput } from '../dist/mrtr.js';
 import { classifyFailure } from '../dist/failures.js';
+import { writeFileSync } from 'node:fs';
+import { tempDir } from './helpers.mjs';
+
+/** A scenario file that calls the given tools once each. */
+function scenarioFile(tools) {
+  const file = join(tempDir(), 'scenario.yml');
+  writeFileSync(file, ['allow_writes: false', 'steps:', ...tools.map((t) => `  - call: ${t}`)].join('\n') + '\n');
+  return file;
+}
 
 const server = join(FIXTURES, 'mrtr-server.mjs');
-const stdio = (extra = {}) => ({ kind: 'stdio', command: process.execPath, args: [server], ...extra });
+// A session's target: it declares elicitation and says how to answer (snapshot's targets don't).
+const stdio = (extra = {}) => ({ kind: 'stdio', command: process.execPath, args: [server], elicitation: 'decline', ...extra });
 const textOf = (result) => result.content.map((c) => c.text).join(' ');
 
 async function autoRun(extra = []) {
@@ -42,10 +52,25 @@ test('session --auto on 2026-07-28: every request is declined, and what each too
 
   const [info] = findings('session/input-required');
   assert.equal(info.severity, 'info');
-  assert.match(info.message, /^8 tools asked for input mid-call \(input_required, 2026-07-28\)\. toolmenu declined every request, the same way every run, and called again: 5 of 8 then answered/);
-  assert.equal(info.detail.length, 8);
+  assert.match(info.message, /^10 tools asked for input mid-call \(input_required, 2026-07-28\)\. toolmenu declined every request, the same way every run, and called again: 6 of 10 then answered/);
+  assert.equal(info.detail.length, 10);
 
-  const [loop] = findings('session/input-loop');
+  const loops = Object.fromEntries(findings('session/input-loop').map((f) => [f.tool, f]));
+  assert.deepEqual(Object.keys(loops).sort(), ['ask_forever', 'ask_forever_reworded', 'work_forever']);
+  // The same question under a new key and new wording each time is still the same question.
+  assert.match(loops.ask_forever_reworded.message, /asks the same thing again after a decline, every time/);
+  // requestState-only rounds: asking for nothing, never finishing.
+  assert.match(loops.work_forever.message, /^work_forever kept answering input_required with only its requestState, asking for nothing more, and never returned a result \(toolmenu stopped after 10 rounds/);
+  assert.match(loops.work_forever.fix, /Return a result once the work is done/);
+  assert.equal(step('work_forever').note, 'asked for nothing, but kept answering input_required with only its requestState (10 rounds), never a result');
+  // requestState-only rounds that end in a result are just work: no note, no finding.
+  assert.equal(step('keep_working').outcome, 'answered');
+  assert.equal(step('keep_working').note, undefined);
+  // A tool error answering a decline is the tool's answer, whatever its words: not a credentials problem.
+  assert.equal(step('ask_then_auth_error').failure, undefined);
+  assert.ok(!findings('session/untested').some((f) => /authentication/.test(f.message)));
+
+  const loop = loops.ask_forever;
   assert.equal(loop.tool, 'ask_forever');
   assert.equal(loop.severity, 'warn');
   assert.match(loop.message, /asks the same thing again after a decline, every time.*toolmenu stopped after 3 rounds/);
@@ -81,13 +106,14 @@ test('--elicitation cancel: every request is cancelled instead, and the findings
   const { step, findings } = await autoRun(['--elicitation', 'cancel']);
   assert.equal(step('ask_confirm').note, 'asked for a form; cancelled once, then answered');
   assert.match(findings('session/input-required')[0].message, /toolmenu cancelled every request/);
-  assert.match(findings('session/input-loop')[0].message, /after a cancel/);
-  assert.match(findings('session/input-loop')[0].fix, /says the user dismissed it/);
+  const loop = findings('session/input-loop').find((f) => f.tool === 'ask_forever');
+  assert.match(loop.message, /after a cancel/);
+  assert.match(loop.fix, /says the user dismissed it/);
 });
 
 test('the server gets the decline (or cancel) and its requestState back byte for byte', async () => {
   for (const answer of ['decline', 'cancel']) {
-    const conn = await connect(stdio(answer === 'cancel' ? { elicitation: 'cancel' } : {}));
+    const conn = await connect(stdio({ elicitation: answer }));
     try {
       assert.equal(conn.era, 'modern');
       const confirm = await callWithInput(conn, { name: 'ask_confirm', arguments: {} }, { elicitation: answer });
@@ -123,4 +149,182 @@ test('-32021 is a setup failure by its code; --elicitation is checked', async ()
   assert.match(bad.stderr, /--elicitation must be decline or cancel/);
   const elsewhere = await run(['snapshot', '--elicitation', 'cancel', '--', process.execPath, server]);
   assert.match(elsewhere.stderr, /--elicitation goes with session: only session calls tools\./);
+});
+
+test('a target without elicitation declares nothing: snapshot sees the menu a client that can\'t be asked sees', async () => {
+  const conn = await connect({ kind: 'stdio', command: process.execPath, args: [server] });
+  try {
+    // The SDK server refuses to ask a client that didn't declare elicitation.
+    await assert.rejects(conn.client.callTool({ name: 'ask_confirm', arguments: {} }), /client capabilities do not declare/);
+  } finally {
+    await conn.close();
+  }
+});
+
+test('a retry that times out after a decline is a failed step, not the server refusing the decline', async () => {
+  const r = await run(['session', '--json', '--timeout', '2000', '--scenario', scenarioFile(['ask_then_hang']), '--env', 'HANG=1', '--', process.execPath, server]);
+  const out = JSON.parse(r.stdout);
+  const step = out.steps.find((s) => s.label === 'call ask_then_hang');
+  assert.equal(step.outcome, 'failed');
+  assert.ok(!out.findings.some((f) => f.rule === 'session/decline-fails'), 'a timeout is not the server answering the decline');
+});
+
+test('callWithInput: edge cases a fake connection can produce', async () => {
+  // A fake 2026 connection whose callTool plays back a script; each entry is what the SDK returns or throws,
+  // and what the wire saw.
+  const fake = (script) => {
+    const wire = { responses: [], since: (mark) => wire.responses.slice(mark) };
+    let i = 0;
+    return {
+      era: 'modern',
+      wire,
+      client: {
+        callTool: async () => {
+          const { wire: raw, wireError, returns, throws } = script[i++];
+          if (raw !== undefined) wire.responses.push({ method: 'tools/call', result: raw });
+          if (wireError !== undefined) wire.responses.push({ method: 'tools/call', error: wireError });
+          if (throws) throw throws;
+          return returns;
+        },
+      },
+    };
+  };
+  const ask = { resultType: 'input_required', inputRequests: { c: { method: 'elicitation/create', params: { message: 'Go?', requestedSchema: { type: 'object' } } } } };
+  const done = { resultType: 'complete', content: [{ type: 'text', text: 'ok' }] };
+
+  // A non-object result the SDK rejects: its error comes through, not a TypeError from toolmenu.
+  const rejected = Object.assign(new Error('Invalid result for tools/call'), { code: -32602 });
+  await assert.rejects(callWithInput(fake([{ wire: 'ok', throws: rejected }]), { name: 't', arguments: {} }, {}), /Invalid result for tools\/call/);
+
+  // The SDK throwing after the fact on an input_required answer: the rounds go on from the wire.
+  const after = await callWithInput(fake([{ wire: ask, throws: new Error('has an output schema but did not return structured content') }, { wire: done, returns: done }]), { name: 't', arguments: {} }, {});
+  assert.equal(after.input.outcome, 'completed');
+
+  // A retry failing with no JSON-RPC code (a timeout, a lost connection) is thrown back, not called a refused decline.
+  const timeout = Object.assign(new Error('Request timed out'), { code: 'REQUEST_TIMEOUT' });
+  await assert.rejects(callWithInput(fake([{ wire: ask, returns: ask }, { throws: timeout }]), { name: 't', arguments: {} }, {}), /Request timed out/);
+
+  // A refused retry keeps the server's words in JSON, first line only: message and code.
+  const refused = Object.assign(new Error('MCP error -32602: Invalid or expired requestState'), { code: -32602 });
+  const r = await callWithInput(fake([{ wire: ask, returns: ask }, { wireError: { code: -32602, message: 'Invalid or expired requestState\n  at verify (state.py:12)' }, throws: refused }]), { name: 't', arguments: {} }, {});
+  assert.equal(r.input.outcome, 'decline-failed');
+  assert.deepEqual(JSON.parse(JSON.stringify(r.input.error)), { message: 'Invalid or expired requestState', code: -32602 });
+
+  // The SDK rejecting a complete result the server did send (an output-schema check) is not the decline refused.
+  const local = Object.assign(new Error('Tool t has an output schema but did not return structured content'), { code: -32600 });
+  await assert.rejects(callWithInput(fake([{ wire: ask, returns: ask }, { wire: done, throws: local }]), { name: 't', arguments: {} }, {}), /did not return structured content/);
+
+  // A rate limit in JSON-RPC words goes back to session to be waited out.
+  const limited = Object.assign(new Error('Rate limit exceeded, retry later'), { code: -32000 });
+  await assert.rejects(callWithInput(fake([{ wire: ask, returns: ask }, { wireError: { code: -32000, message: 'Rate limit exceeded, retry later' }, throws: limited }]), { name: 't', arguments: {} }, {}), /Rate limit exceeded/);
+
+  // After requestState-only rounds no decline was sent: a server error then is a failed call.
+  const working = { resultType: 'input_required', requestState: 's' };
+  const err = Object.assign(new Error('Invalid params'), { code: -32602 });
+  await assert.rejects(callWithInput(fake([{ wire: working, returns: working }, { wireError: { code: -32602, message: 'Invalid params' }, throws: err }]), { name: 't', arguments: {} }, {}), /Invalid params/);
+
+  // Different pages to open in turn are different questions: gave-up, not a loop.
+  const url = (u) => ({ resultType: 'input_required', inputRequests: { c: { method: 'elicitation/create', params: { mode: 'url', message: 'Open', url: u } } } });
+  const pages = await callWithInput(fake(['a', 'b', 'c', 'd'].map((u) => ({ wire: url(`https://x.test/${u}`), returns: url(`https://x.test/${u}`) }))), { name: 't', arguments: {} }, {});
+  assert.equal(pages.input.outcome, 'gave-up');
+
+  // Asked once, took the decline, then worked forever: unfinished, with what it asked.
+  const forever = [{ wire: ask, returns: ask }, ...Array.from({ length: 11 }, () => ({ wire: working, returns: working }))];
+  const unfinished = await callWithInput(fake(forever), { name: 't', arguments: {} }, {});
+  assert.deepEqual([unfinished.input.outcome, unfinished.input.kinds, unfinished.input.continuations], ['unfinished', ['form'], 10]);
+});
+
+test('an unlock that never finishes its input rounds unlocked nothing: its values are not counted as reached', async () => {
+  const file = join(tempDir(), 'unlock.yml');
+  writeFileSync(file, 'allow_writes: false\nsteps:\n  - call: enable_toolset\n    args: { toolset: billing }\n');
+  const r = await run(['session', '--json', '--union-out', join(tempDir(), 'union.json'), '--scenario', file, '--env', 'UNLOCK=1', '--', process.execPath, server]);
+  const out = JSON.parse(r.stdout);
+  assert.equal(out.steps.find((s) => s.label.startsWith('call enable_toolset')).outcome, 'needs-input');
+  const coverage = out.findings.find((f) => f.rule === 'session/unlock-coverage');
+  assert.match(coverage.message, /got through 0 of its 2 toolset values/);
+});
+
+test('quietExclusions: overlapping runs share one filter and leave console.warn as it was', async () => {
+  const { quietExclusions } = await import('../dist/connect.js');
+  const original = console.warn;
+  const seen = [];
+  console.warn = (...a) => seen.push(a[0]);
+  const mine = console.warn;
+  try {
+    let releaseA;
+    const a = quietExclusions(() => new Promise((r) => (releaseA = r)));
+    const b = quietExclusions(async () => {
+      console.warn('[mcp-sdk] excluding tool x');
+      console.warn('kept');
+    });
+    await b;
+    releaseA();
+    await a;
+    assert.equal(console.warn, mine, 'restored to what it was before either run');
+    assert.deepEqual(seen, ['kept']);
+  } finally {
+    console.warn = original;
+  }
+});
+
+test('callWithInput: one step stops after 3 × the request timeout of requestState-only rounds', async () => {
+  const working = { resultType: 'input_required', requestState: 's' };
+  const wire = { responses: [], since: (mark) => wire.responses.slice(mark) };
+  const conn = {
+    era: 'modern',
+    wire,
+    client: { callTool: async () => { await new Promise((r) => setTimeout(r, 25)); wire.responses.push({ method: 'tools/call', result: working }); return working; } },
+  };
+  const r = await callWithInput(conn, { name: 't', arguments: {} }, { timeoutMs: 20 });
+  assert.equal(r.input.outcome, 'unfinished');
+  assert.ok(r.input.continuations < 10, `stopped on time (${r.input.continuations} rounds), not on the round cap`);
+});
+
+test('callWithInput, third review: no resend of a tool whose first leg ran; decline-failed only for a request that carried one', async () => {
+  const { AfterInputError } = await import('../dist/mrtr.js');
+  const fake = (script) => {
+    const wire = { responses: [], since: (mark) => wire.responses.slice(mark) };
+    let i = 0;
+    const calls = [];
+    return {
+      calls,
+      era: 'modern',
+      wire,
+      client: {
+        callTool: async (params) => {
+          calls.push(params);
+          const { wire: raw, wireError, returns, throws } = script[i++] ?? { throws: new Error('script ran out') };
+          if (raw !== undefined) wire.responses.push({ method: 'tools/call', result: raw });
+          if (wireError !== undefined) wire.responses.push({ method: 'tools/call', error: wireError });
+          if (throws) throw throws;
+          return returns;
+        },
+      },
+    };
+  };
+  const ask = { resultType: 'input_required', inputRequests: { c: { method: 'elicitation/create', params: { message: 'Go?', requestedSchema: { type: 'object' } } } } };
+  const working = { resultType: 'input_required', requestState: 's' };
+
+  // A 429 on the retry: thrown as AfterInputError, which session never resends for a tool that isn't read-only.
+  const tooMany = Object.assign(new Error('Too Many Requests'), { status: 429 });
+  const e = await callWithInput(fake([{ wire: ask, returns: ask }, { throws: tooMany }]), { name: 't', arguments: {} }, {}).catch((x) => x);
+  assert.ok(e instanceof AfterInputError);
+  assert.deepEqual([e.input.rounds, e.input.kinds], [1, ['form']]);
+
+  // An error on a requestState-only continuation after a decline round: the continuation carried no decline.
+  const err = Object.assign(new Error('Internal error'), { code: -32603 });
+  const cont = await callWithInput(fake([{ wire: ask, returns: ask }, { wire: working, returns: working }, { wireError: { code: -32603, message: 'Internal error' }, throws: err }]), { name: 't', arguments: {} }, {}).catch((x) => x);
+  assert.ok(cont instanceof AfterInputError, 'a failed call, not decline-failed');
+
+  // input_required with neither inputRequests nor requestState: the SDK's rejection stands; the tool isn't called again.
+  const empty = { resultType: 'input_required' };
+  const rejected = new Error('carries neither inputRequests nor requestState');
+  const conn = fake([{ wire: empty, throws: rejected }]);
+  await assert.rejects(callWithInput(conn, { name: 't', arguments: {} }, {}), /carries neither/);
+  assert.equal(conn.calls.length, 1);
+
+  // The same page with a fresh ?state= each time is the same question: a loop.
+  const url = (n) => ({ resultType: 'input_required', inputRequests: { c: { method: 'elicitation/create', params: { mode: 'url', message: 'Connect', url: `https://x.test/connect?state=${n}` } } } });
+  const loop = await callWithInput(fake([1, 2, 3, 4].map((n) => ({ wire: url(n), returns: url(n) }))), { name: 't', arguments: {} }, {});
+  assert.equal(loop.input.outcome, 'loop');
 });

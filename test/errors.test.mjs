@@ -341,3 +341,57 @@ test('startupHint: credential errors and plain logs get no hint', () => {
   assert.equal(startupHint(traced([], ['ERROR: GITLAB_PERSONAL_ACCESS_TOKEN environment variable is not set']), 'x'), undefined);
   assert.equal(startupHint(traced(['Starting server...', 'Loaded 12 tools']), 'x'), undefined);
 });
+
+// 0.16.1: what the review of 0.15/0.16 found the hints getting wrong.
+test('startupHint: ordinary log lines are not usage text', () => {
+  assert.equal(startupHint(traced([], ['[info] memory usage 120MB', 'Error: database connection refused']), 'srv'), undefined);
+  assert.equal(startupHint(traced(['Options: {"debug":false}'], ['Error: boom']), 'srv'), undefined);
+  // A real header still counts, and so does "Usage: prog …".
+  assert.match(startupHint(traced(['Usage: prog [options]', '', 'Options:', '  --port <n>   Port the server listens on', '  --help       Show help']), 'srv'), /printed its usage/);
+});
+
+test('startupHint: a docs or update link is not the server\'s HTTP address', () => {
+  assert.equal(startupHint(traced([], ['Server running on stdio. Docs at https://github.com/acme/mcp', 'Error: crashed']), 'srv'), undefined);
+  assert.equal(startupHint(traced([], ['Update available: https://github.com/acme/mcp/releases']), 'srv'), undefined);
+  assert.match(startupHint(traced([], ['Listening on http://0.0.0.0:8080/mcp']), 'srv'), /\(http:\/\/localhost:8080\/mcp\)/);
+  assert.match(startupHint(traced([], ['Server available at https://mcp.internal:8443/mcp']), 'srv'), /\(https:\/\/mcp\.internal:8443\/mcp\)/);
+});
+
+test('startupHint: a subcommand comes from where commands go, never from an option description', () => {
+  const opts = startupHint(traced(['Usage: srv [options]', 'Options:', '  --port <n>   Port the server listens on', '  --verbose    Log more']), 'srv');
+  assert.match(opts, /printed its usage/);
+  assert.doesNotMatch(opts, /lists “server”/);
+  assert.match(startupHint(traced(['Commands:', '  mcp       Start the MCP server', '  login     Sign in']), 'srv'), /lists “mcp”: try srv mcp$/);
+  assert.match(startupHint(traced(['usage: srv mcp [--port N]']), 'srv'), /lists “mcp”/);
+  // The suggestion is the whole command, however long, so it runs as written.
+  const long = `npx -y @scope/a-really-long-package-name-for-testing@1.2.3 --config ${'x'.repeat(120)}`;
+  assert.ok(startupHint(traced(['usage: srv {mcp,login}']), long).endsWith(`try ${long} mcp`));
+});
+
+test('a server still running (timeout) never gets "printed its usage and exited"; rejected credentials come before an address', async () => {
+  const t = traced([], ['Usage: srv [options]', 'Options:', '  --help   Show help']);
+  assert.equal(startupHint(t, 'srv', { exited: false }), undefined);
+  assert.match(startupHint(traced([], ['listening on http://localhost:3001/mcp']), 'srv', { exited: false }), /started an HTTP server/);
+});
+
+test('startupHint: a command table whose "Usage:" line scrolled out of the stderr kept still reads as usage; padded log levels don\'t', () => {
+  const rows = ['  recall          Search memories.', '  remember        Store a memory.', '  serve           Start the Poppy MCP server.', '  stats           Show memory stats.'];
+  assert.match(startupHint(traced([], rows), 'poppy-memory'), /lists “serve”: try poppy-memory serve$/);
+  assert.equal(startupHint(traced([], ['INFO     Starting', 'WARNING  Low disk', 'ERROR    Crashed']), 'srv'), undefined);
+});
+
+test('startupHint: a wrapped description line or a log line offers no subcommand', () => {
+  const wrapped = ['Commands:', '  start      Start the service. Use this to run the', '             server in the background.', '  stop       Stop it.', '  status     Show status.'];
+  assert.match(startupHint(traced(wrapped), 'tool'), /lists “start”: try tool start$/);
+  assert.match(startupHint(traced(['Usage: tool [options]', 'Options:', '  --help   Show help', '  --port   Port'], ['Error: server crashed']), 'tool'), /Its usage \(above\) or its docs say/);
+  assert.match(startupHint(traced(['USAGE', '  mcp start [--transport stdio|sse] [--port value]']), 'tool'), /lists “mcp start”/);
+});
+
+test('startupHint: closed stdout without a recorded exit is not "exited"', () => {
+  assert.equal(startupHint(traced(['Usage: srv [options]', 'Options:', '  --help   Show help']), 'srv', { exited: false }), undefined);
+});
+
+test('startupHint: commander rows with [options] or <args> after the command offer it', () => {
+  const commander = ['Usage: agentation-mcp [options] [command]', '', 'Commands:', '  init              Set up', '  server [options]  Start the MCP server', '  doctor            Check'];
+  assert.match(startupHint(traced(commander), 'agentation-mcp'), /lists “server”: try agentation-mcp server$/);
+});

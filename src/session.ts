@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
 import { cacheBreak, canonical, compareMenus, type ToolChange } from './compare.js';
 import { listTools, type Connection, type Elicitation, type Target } from './connect.js';
-import { callWithInput, MAX_ROUNDS, type InputKind, type InputTrace } from './mrtr.js';
+import { AfterInputError, callWithInput, MAX_CONTINUATIONS, MAX_ROUNDS, type InputKind, type InputTrace } from './mrtr.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
@@ -176,6 +176,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   const inputs: { step: number; tool: string; input: InputTrace }[] = [];
   // The main process runs with a pinned hash seed, and so does every scope probe:
   // a probe with a different seed would count ordering variance as a change.
+  // How every elicitation is answered: the same each run (--elicitation). Session
+  // connections declare elicitation; snapshot's don't, so its menu is the one 0.14 saw.
+  const answer: Elicitation = target.elicitation ?? 'decline';
+  target = { ...target, elicitation: answer };
   const mainTarget = seeded(target, MAIN_SEED);
   const waits = options.rateLimitWaitsMs ?? RATE_LIMIT_WAITS_MS;
   // Connecting and listing are read-only: a refusal for being too many is waited
@@ -370,10 +374,12 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           callWaited.ms = 0;
           // 2026-07-28: a tool that asks for input gets every elicitation declined
           // and is called again (mrtr.ts); on 2025 it's a plain call.
-          const call = await patiently(() => callWithInput(conn, { name: step.tool, arguments: step.args }, { timeoutMs, elicitation: target.elicitation }), {
+          const call = await patiently(() => callWithInput(conn, { name: step.tool, arguments: step.args }, { timeoutMs, elicitation: answer }), {
             waits,
             waited: callWaited,
-            error: (e) => httpStatus(e) === 429 || (readOnly && tooMany(e)),
+            // A 429 means the server didn't run that request, but after an input round the
+            // tool's first leg did run: only a read-only tool is called again from scratch.
+            error: (e) => (httpStatus(e) === 429 && (readOnly || !(e instanceof AfterInputError))) || (readOnly && tooMany(e)),
             result: (c) => readOnly && c.result?.isError === true && RATE_LIMITED.test(errorText(c.result)),
           });
           if (call.input.outcome !== 'none' || call.input.missingResultType) {
@@ -381,62 +387,65 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             inputs.push({ step: index, tool: step.tool, input: call.input });
           }
           if (!call.result) {
-            // It never answered: still asking, asking for what wasn't declared, or failing on the decline.
+            // It never answered: still asking, asking for what wasn't declared, or
+            // failing on the decline. Said by the input findings, not as a failed call;
+            // the menu is still listed after it, as after any step.
             record.outcome = 'needs-input';
-            record.note = inputNote(call.input, target.elicitation ?? 'decline');
-            throw new InputStopped();
-          }
-          const result = call.result;
-          record.outcome = result.isError ? 'tool-error' : 'answered';
-          if (call.input.rounds && !result.isError) record.note = inputNote(call.input, target.elicitation ?? 'decline');
-          if (result.isError) {
-            const text = errorText(result);
-            if (RATE_LIMITED.test(text)) {
-              limited(index, text, callWaited.ms, readOnly ? undefined : step.tool);
-              record.status = 'failed';
-              record.note = 'rate-limited';
-              done();
-              break;
+            record.note = inputNote(call.input, answer);
+          } else {
+            const result = call.result;
+            record.outcome = result.isError ? 'tool-error' : 'answered';
+            if (call.input.rounds && !result.isError) record.note = inputNote(call.input, answer);
+            if (result.isError) {
+              const text = errorText(result);
+              if (RATE_LIMITED.test(text)) {
+                limited(index, text, callWaited.ms, readOnly ? undefined : step.tool);
+                record.status = 'failed';
+                record.note = 'rate-limited';
+                done();
+                break;
+              }
+              if (call.input.rounds) {
+                // The tool's answer to the decline: how a tool should say no. Not a
+                // setup failure, whatever its words ("the user declined to connect GitHub").
+                record.note = `${inputNote(call.input, answer)}, with a tool error: ${clip(text, 100)}`;
+              } else {
+                record.note = text ? `the tool returned an error: ${clip(text, 120)}` : 'the tool returned an error';
+                record.failure = classifyFailure(text, { hadArguments: Object.keys(step.args).length > 0 });
+                // A setup failure is reported once, for the whole run (session/untested).
+                if (!SETUP_FAILURES.has(record.failure)) fail('session/tool-error', 'warn', index, step, text, record.failure);
+              }
             }
-            const short = clip(text, 120);
-            record.note = call.input.rounds
-              ? `${inputNote(call.input, target.elicitation ?? 'decline')}, with a tool error: ${clip(text, 100)}`
-              : text ? `the tool returned an error: ${short}` : 'the tool returned an error';
-            record.failure = classifyFailure(text, { hadArguments: Object.keys(step.args).length > 0 });
-            // A setup failure is reported once, for the whole run (session/untested). A
-            // tool error that answers a decline is how a tool should say no (input-required).
-            if (!SETUP_FAILURES.has(record.failure) && !call.input.rounds) fail('session/tool-error', 'warn', index, step, text, record.failure);
           }
         } catch (error) {
-          // A tool that never answered its input requests is said by the input findings,
-          // not as a failed call. The menu is still listed after it, as after any step.
-          if (error instanceof InputStopped) {
-            // fall through to the listing below
-          } else {
-            record.status = 'failed';
-            record.outcome = 'failed';
-            record.note = serverWords(error, 200);
-            if (lost(record.note, index)) {
-              done();
-              break;
-            }
-            if (tooMany(error)) {
-              limited(index, record.note, callWaited.ms, httpStatus(error) === 429 || tool?.annotations?.readOnlyHint === true ? undefined : step.tool);
-              record.note = 'rate-limited';
-              done();
-              break;
-            }
-            const code = (error as { code?: unknown }).code;
-            // 2026-07-28's MissingRequiredClientCapabilityError says what it needed.
-            if (code === -32021) {
-              const needed = Object.keys(((error as { data?: { requiredCapabilities?: object } }).data?.requiredCapabilities ?? {}) as object);
-              if (needed.length) record.note = `${record.note} (needs the client to support ${needed.join(', ')})`;
-            }
-            record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
-            // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
-            const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
-            if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);
+          // A call that asked for input before it failed still counts among those that asked.
+          if (error instanceof AfterInputError && (error.input.rounds || error.input.continuations)) {
+            record.input = error.input;
+            if (error.input.kinds.length) inputs.push({ step: index, tool: step.tool, input: error.input });
           }
+          record.status = 'failed';
+          record.outcome = 'failed';
+          record.note = serverWords(error, 200);
+          if (lost(record.note, index)) {
+            done();
+            break;
+          }
+          if (tooMany(error)) {
+            limited(index, record.note, callWaited.ms, httpStatus(error) === 429 || tool?.annotations?.readOnlyHint === true ? undefined : step.tool);
+            record.note = 'rate-limited';
+            done();
+            break;
+          }
+          const code = (error as { code?: unknown }).code;
+          // 2026-07-28's MissingRequiredClientCapabilityError says what it needed.
+          if (code === -32021) {
+            const needed = Object.keys(((error as { data?: { requiredCapabilities?: object } }).data?.requiredCapabilities ?? {}) as object);
+            if (needed.length) record.note = `${record.note} (needs the client to support ${needed.join(', ')})`;
+          }
+          record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
+          // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
+          const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
+          if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);
         }
       } else if (step.kind === 'wait_for') {
         const arrived = await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, step.timeoutMs);
@@ -540,12 +549,12 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       record.listChanged = conn.wire.notificationsSince(mark, LIST_CHANGED);
       record.tools = current.tools.length;
       record.tokens = current.totalTokens;
-      if (firstTry && !record.changed && record.status === 'ok' && !record.failure) quiet.add((step as { tool: string }).tool);
+      if (firstTry && !record.changed && record.status === 'ok' && !record.failure && record.outcome !== 'needs-input') quiet.add((step as { tool: string }).tool);
       done();
     }
 
     raw.push(...failureFindings(sameError([...failures.values()]), options.auto));
-    raw.push(...inputFindings(inputs, target.elicitation ?? 'decline'));
+    raw.push(...inputFindings(inputs, answer));
     if (explained.length) raw.push(knownVariance(explained));
     if (onWord.length) raw.push(onTheirWord(onWord, options.auto !== undefined));
     raw.push(...untested(steps, target));
@@ -628,7 +637,7 @@ function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[
     // Never says it unlocks tools and the run didn't call it: nothing suggests tools
     // are missing (Garmin's garmin_sync { domains } downloads data). One it called
     // and stopped is covered by auto.stopped.
-    if (!u.claims && !steps.some((r) => scenario.steps[r.index - 1]?.kind === 'call' && (scenario.steps[r.index - 1] as { tool: string }).tool === u.tool.name)) continue;
+    if (!definite(u) && !steps.some((r) => scenario.steps[r.index - 1]?.kind === 'call' && (scenario.steps[r.index - 1] as { tool: string }).tool === u.tool.name)) continue;
     const reached = new Set<string>();
     let last: number | undefined;
     const add = (arg: unknown) => {
@@ -636,7 +645,8 @@ function unlockCoverage(menu: MenuTool[], scenario: Scenario, steps: StepRecord[
     };
     for (const record of steps) {
       const step = scenario.steps[record.index - 1];
-      if (step?.kind !== 'call' || step.tool !== u.tool.name || record.status !== 'ok' || record.failure) continue;
+      // A call that never finished its input rounds didn't unlock anything.
+      if (step?.kind !== 'call' || step.tool !== u.tool.name || record.status !== 'ok' || record.failure || record.outcome === 'needs-input') continue;
       last = record.index;
       add(step.args[u.param]);
     }
@@ -1168,6 +1178,20 @@ export type { Era };
 // description to back them up.
 // `namespace` is weak too: Kubernetes and Pinecone take one on every read.
 const UNLOCK_PARAM = /^(?:domains?|toolsets?|tool_?sets?|capabilit(?:y|ies)|packs?|bundles?)$/i;
+// Parameter names that only ever name sets of tools. Not `domains` (Garmin's
+// garmin_sync { domains: [sleep, hrv] } names data), nor `capabilities`, `packs` or
+// `bundles` (a device's capabilities, a price bundle): those need the tool to say so.
+const TOOLSET_PARAM = /^(?:toolsets?|tool_?sets?)$/i;
+
+/**
+ * An unlock that surely unlocks tools: it says so (name or description), or its
+ * parameter is named for tool sets outright (toolsets). One that only has an enum of domains, and
+ * doesn't say it unlocks anything, may be data: session --auto still tries it once,
+ * but menu/gated and session/unlock-coverage don't charge it.
+ */
+export function definite(u: { claims: boolean; param?: string }): boolean {
+  return u.claims || (!!u.param && TOOLSET_PARAM.test(u.param));
+}
 const WEAK_UNLOCK_PARAM = /^(?:categor(?:y|ies)|modules?|features?|groups?|namespaces?)$/i;
 const UNLOCK_NAME = /unlock|enable|activate|capabilit|toolset|load_?tools|expand/i;
 // A description about loading tools: "Adds the audit tools", "enables more
@@ -1447,9 +1471,6 @@ export function starterScenario(menu: Menu, options: StarterOptions = {}): strin
   return lines.join('\n') + '\n';
 }
 
-/** Thrown inside a call step when the tool never completed its input rounds: not a failed request. */
-class InputStopped extends Error {}
-
 const PAST: Record<Elicitation, string> = { decline: 'declined', cancel: 'cancelled' };
 
 const KIND_WORDS: Record<InputKind, string> = { form: 'a form', url: 'a URL to open', roots: 'roots', sampling: 'sampling', other: 'something else' };
@@ -1475,10 +1496,14 @@ function inputNote(input: InputTrace, answer: Elicitation): string {
       return `${asked}; asked the same again after each ${answer}, stopped after ${rounds}`;
     case 'gave-up':
       return `${asked}; still asking after ${rounds}`;
+    case 'unfinished': {
+      const work = `kept answering input_required with only its requestState (${input.continuations ?? 0} rounds), never a result`;
+      return input.kinds.length ? `${asked}; ${PAST[answer]} ${times(input.rounds)}, then ${work}` : `asked for nothing, but ${work}`;
+    }
     case 'undeclared':
       return `asked for ${kindList(input.undeclared ?? [])}, which the request didn't declare`;
     case 'decline-failed':
-      return `${asked}; the retry with the ${answer} failed: ${serverWords(input.error, 160)}`;
+      return `${asked}; the retry with the ${answer} failed: ${clip(input.error?.message ?? '', 160)}`;
     default:
       return asked;
   }
@@ -1491,7 +1516,7 @@ function inputNote(input: InputTrace, answer: Elicitation): string {
  */
 function inputFindings(inputs: { step: number; tool: string; input: InputTrace }[], answer: Elicitation): Raw[] {
   const out: Raw[] = [];
-  const asked = inputs.filter((i) => i.input.outcome !== 'none');
+  const asked = inputs.filter((i) => i.input.outcome !== 'none' && i.input.kinds.length);
   if (asked.length) {
     const finished = asked.filter((i) => i.input.outcome === 'completed').length;
     out.push({
@@ -1503,8 +1528,8 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
       fix: 'Nothing to do for the ones that answered. The findings next to this one cover the rest.',
     });
   }
-  for (const { step, tool, input } of asked) {
-    if (input.outcome === 'loop' || input.outcome === 'gave-up') {
+  for (const { step, tool, input } of inputs.filter((i) => i.input.outcome !== 'none')) {
+    if (input.outcome === 'loop' || input.outcome === 'gave-up' || input.outcome === 'unfinished') {
       out.push({
         rule: 'session/input-loop',
         severity: 'warn',
@@ -1513,9 +1538,14 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
         message:
           input.outcome === 'loop'
             ? `${tool} asks the same thing again after a ${answer}, every time: an agent whose user says no gets the question back instead of an answer, and can't finish the call. toolmenu stopped after ${MAX_ROUNDS} rounds.`
-            : `${tool} was still asking for input after ${MAX_ROUNDS} rounds of ${answer}s, each time something else. An agent whose user says no can't finish the call.`,
+            : input.outcome === 'gave-up'
+              ? `${tool} was still asking for input after ${MAX_ROUNDS} rounds of ${answer}s, each time something else. An agent whose user says no can't finish the call.`
+              : `${tool} ${input.kinds.length ? `took the ${answer}, then ` : ''}kept answering input_required with only its requestState, asking for nothing more, and never returned a result (toolmenu stopped after ${input.continuations ?? 0} rounds, at most ${MAX_CONTINUATIONS} or 3 × the request timeout). The client keeps calling it again and the agent never gets an answer.`,
         detail: [inputNote(input, answer)],
-        fix: `Treat a ${answer} as an answer: return a result that says the user ${answer === 'decline' ? 'declined' : 'dismissed it'} (isError: true is fine), so the model can tell the user and move on.`,
+        fix:
+          input.outcome === 'unfinished'
+            ? 'Return a result once the work is done, or a tool error if it can\'t finish; for long work, hand back a handle the agent can check with another tool.'
+            : `Treat a ${answer} as an answer: return a result that says the user ${answer === 'decline' ? 'declined' : 'dismissed it'} (isError: true is fine), so the model can tell the user and move on.`,
       });
     } else if (input.outcome === 'decline-failed') {
       out.push({
@@ -1523,7 +1553,7 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
         severity: 'warn',
         step,
         tool,
-        message: `${tool} fails with a protocol error when the user ${answer === 'decline' ? 'declines' : 'dismisses'} its request (“${serverWords(input.error, 120)}”). The model gets an error from the client instead of a result it can read and explain to the user.`,
+        message: `${tool} fails with a protocol error when the user ${answer === 'decline' ? 'declines' : 'dismisses'} its request (“${clip(input.error?.message ?? '', 120)}”). The model gets an error from the client instead of a result it can read and explain to the user.`,
         detail: [inputNote(input, answer)],
         fix: `Return a tool result on a ${answer} (isError: true with a sentence like "the user declined"), not a JSON-RPC error.`,
       });

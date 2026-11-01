@@ -90,7 +90,11 @@ export function buildIndex(tools: MenuTool[]): SearchIndex {
  * coin flip. Undefined when the query matches nothing in the tool.
  */
 export function placeOf(index: SearchIndex, query: string, tool: string): { place?: number; ahead: string[] } {
-  const ranked = index.rank(query);
+  return placeIn(index.rank(query), tool);
+}
+
+/** placeOf on a ranking already made: one ranking per query, however many tools are looked up in it. */
+export function placeIn(ranked: { tool: string; score: number }[], tool: string): { place?: number; ahead: string[] } {
   const mine = ranked.find((r) => r.tool === tool);
   if (!mine) return { ahead: ranked.slice(0, SEARCH_LIMIT).map((r) => r.tool) };
   const ahead = ranked.filter((r) => r.score > mine.score + 1e-9).map((r) => r.tool);

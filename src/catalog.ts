@@ -1,4 +1,4 @@
-import type { Connection } from './connect.js';
+import { quietExclusions, type Connection } from './connect.js';
 import { toolTokens } from './menu.js';
 import type { Finding, JsonSchema, MenuTool } from './types.js';
 import { classifyFailure, RATE_LIMITED, tooMany, type FailureClass } from './failures.js';
@@ -319,7 +319,7 @@ async function readRouters(conn: Connection, routers: RouterCall[], skipped: { t
 async function callPatiently(conn: Connection, name: string, args: Record<string, unknown>, timeoutMs = 30_000): Promise<{ result: { structuredContent?: unknown; content?: unknown } } | { error: string }> {
   for (let attempt = 0; ; attempt++) {
     try {
-      const result = await conn.client.callTool({ name, arguments: args }, { timeout: timeoutMs });
+      const result = await quietExclusions(() => conn.client.callTool({ name, arguments: args }, { timeout: timeoutMs }));
       const text = result.isError ? resultText(result) : '';
       if (result.isError && RATE_LIMITED.test(text) && attempt < 3) {
         await sleep(2000 * 2 ** attempt);
@@ -358,8 +358,8 @@ const FAILED_AS: Record<RouterFailure, { what: [string, string]; fix: string }> 
     fix: 'Check the server is set up for this account or site, then rerun.',
   },
   client: {
-    what: ["asked the client for something toolmenu doesn't offer (roots or sampling)", "asked the client for something toolmenu doesn't offer (roots or sampling)"],
-    fix: "Nothing to fix in the server: toolmenu doesn't answer roots or sampling requests, so it can't list these routers' commands.",
+    what: ["needed a client capability toolmenu doesn't declare", "needed a client capability toolmenu doesn't declare"],
+    fix: "Nothing to fix in the server: toolmenu doesn't declare the capability it asked for, so it can't list these routers' commands.",
   },
   'invalid-arguments': {
     what: ["rejected the listing call's arguments", "rejected the listing call's arguments"],
