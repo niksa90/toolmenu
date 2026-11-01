@@ -7,6 +7,7 @@ import { route, sharedWord, vagueId } from './naming.js';
 import { cacheHints, deprecated, discover, duplicateName, schema, serverInfo, toolsCapability } from './spec.js';
 import { noDryRun, unannotated } from './write.js';
 import { gated } from './gated.js';
+import { xMcpHeader } from './headers.js';
 import { findable } from './search.js';
 import type { Rule, RuleContext } from './rule.js';
 
@@ -30,6 +31,7 @@ export const MENU_RULES: Rule[] = [
   noDryRun,
   unannotated,
   schema,
+  xMcpHeader,
   toolsCapability,
   discover,
   deprecated,

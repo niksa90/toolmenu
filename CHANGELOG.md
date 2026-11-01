@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+- **New rule `spec/x-mcp-header` (2026-07-28): tools that HTTP clients must hide.** A
+  parameter can be mirrored into an `Mcp-Param-*` HTTP header, and Streamable HTTP
+  clients **must** drop any tool whose annotation breaks the spec's rules: empty,
+  not a valid header name, used twice, on an object or array or a parameter with
+  no single type, or reached through anything but `properties`. The official SDK
+  client drops it with only a console warning, so neither the agent nor the
+  server's author sees it go. toolmenu reads the list off the wire, so it still
+  sees the tool, and says which annotation is broken and why. Error over HTTP,
+  warning over stdio. `number` is a warning everywhere: the spec forbids it, the SDK
+  client accepts it for now. The tests run a real SDK client against a fixture
+  server and check that the errors are exactly the tools it drops.
+- **`diff/x-mcp-header`:** a header added, removed or renamed between releases is
+  said as such, with the old and new `Mcp-Param-*` name, instead of "changed in
+  keywords toolmenu doesn't classify".
+- The SDK client's own "excluding tool" warnings no longer clutter toolmenu's
+  stderr: the finding says the same, once.
+
 ## 0.15.0
 
 Fixes and one new rule, from starting ~235 servers: the recent npm and PyPI servers in

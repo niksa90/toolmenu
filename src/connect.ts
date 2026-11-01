@@ -15,6 +15,15 @@ import { VERSION } from './version.js';
  * to the 2025 one. legacy: the 2025 handshake only. modern: 2026-07-28 only, an error if
  * the server can't speak it.
  */
+// The SDK client drops a tool with an invalid x-mcp-header from its own tools/list
+// and console.warns about it, once per list. toolmenu reads the list off the wire
+// and reports those tools as spec/x-mcp-header findings, so the warning is noise.
+const sdkWarn = console.warn.bind(console);
+console.warn = (...args: unknown[]) => {
+  if (typeof args[0] === 'string' && args[0].startsWith('[mcp-sdk] excluding tool ')) return;
+  sdkWarn(...args);
+};
+
 export type Protocol = 'auto' | 'legacy' | 'modern';
 export const PROTOCOLS: readonly Protocol[] = ['auto', 'legacy', 'modern'];
 export const MODERN_VERSION = '2026-07-28';

@@ -43,6 +43,10 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/param-dropped': { severity: 'info', class: 'notice' },
   'diff/schema-other': { severity: 'info', class: 'notice' },
   'diff/param-default': { severity: 'info', class: 'notice' },
+  // x-mcp-header (2026-07-28): a parameter mirrored into an Mcp-Param-* HTTP header,
+  // added, removed or renamed. Callers don't change; proxies and WAFs routing on the
+  // header do.
+  'diff/x-mcp-header': { severity: 'info', class: 'notice' },
   // Restructured ($ref, $defs) but accepts the same input: bytes and tokens changed.
   'diff/schema-equivalent': { severity: 'info', class: 'notice' },
   // Only the declared $schema dialect changed: one finding for the menu.
@@ -930,9 +934,26 @@ function compareSchema(w: Walk, at: string, before: JsonSchema, after: JsonSchem
       fix: 'If the default is built from the clock or the environment, give a fixed one or none, and say in the description what an absent value means.',
     });
   }
+  // A header the parameter is mirrored into: who routes on it changes, not the call.
+  const [ha, hb] = [before['x-mcp-header'], after['x-mcp-header']];
+  if (canonical(ha) !== canonical(hb)) {
+    const header = (v: unknown) => `Mcp-Param-${String(v)}`;
+    const [head, tail] =
+      ha === undefined
+        ? [`: now mirrored into the ${header(hb)} HTTP header`, 'Proxies, load balancers and WAFs can route on it from this release.']
+        : hb === undefined
+          ? [`: no longer mirrored into the ${header(ha)} HTTP header`, 'Anything that routes on that header stops seeing it.']
+          : [`: its HTTP header was renamed, ${header(ha)} → ${header(hb)}`, 'Routing rules that match the old header stop matching.'];
+    say(w, 'diff/x-mcp-header', at, head, tail, [before, after], {
+      ...(ha === undefined
+        ? {}
+        : { fix: hb === undefined ? `If a proxy, load balancer or WAF rule matches ${header(ha)}, change it before this release ships.` : `Update proxy, load balancer and WAF rules from ${header(ha)} to ${header(hb)} when this release ships.` }),
+    });
+  }
   const rest = (s: JsonSchema) => {
     const r = residual(s, { object, items: arrays, union }) as Record<string, unknown>;
     delete r.default;
+    delete r['x-mcp-header'];
     return r;
   };
   if ((union || oldType === newType || accepts(after, before)) && canonical(rest(before)) !== canonical(rest(after))) {

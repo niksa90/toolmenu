@@ -284,6 +284,7 @@ Keyword matching only in v1: deterministic, free and reproducible in CI.
 
 | id | sev | check |
 |---|---|---|
+| `spec/x-mcp-header` | error / warn | `since: 2026-07-28`. An `x-mcp-header` annotation the spec doesn't allow (SEP-2243): empty; not an RFC 9110 token; the same header twice ignoring case; on a parameter that isn't `string`, `integer` or `boolean`, or has no single `type`; anywhere but a parameter reached through `properties` alone. Streamable HTTP clients **MUST** leave such a tool out of `tools/list`, and the official SDK client does, with only a console warning. Error on an HTTP server, warn on stdio (clients there MAY ignore the annotation). `number` is warn on both: the spec forbids it, the SDK client accepts it for now. Every broken annotation in a tool is listed (the SDK stops at the first). Checked against the SDK client's behaviour in the tests |
 | `spec/schema` | error | `tools/list` result fails the official `schema.json` for its version. Version-aware: a 2026-07-28 result missing `ttlMs`/`cacheScope` fails, because that version requires them on cacheable results (SEP-2549); a 2025 result is checked against its own schema, which doesn't have them |
 | `spec/discover` | info | The server only speaks the 2025 protocol: no working `server/discover`, which 2026-07-28 servers **MUST** implement. Info, not error: see §13 |
 | `spec/deprecated` | info | Advertises Sampling, Roots or Logging, or uses HTTP+SSE (`since: 2026-07-28`) |
@@ -454,6 +455,10 @@ Things building `snapshot` settled or changed. The spec above is updated to matc
 - **Two notice rules beyond §3.2:** `diff/annotations` (any other annotation
   change, e.g. `openWorldHint` added) and `diff/other` (title, icons, `_meta`…).
   Without them, a release changed every tool's tokens with no finding (FINDINGS F7).
+- **`x-mcp-header` changes** (`diff/x-mcp-header`, info, notice): a parameter newly
+  mirrored into an `Mcp-Param-*` HTTP header, no longer mirrored, or with its header
+  renamed. Callers send the same arguments; proxies, load balancers and WAFs that
+  route on the header see the change, so the finding names the old and new header.
 - **Empty or invalid schemas aren't compared** parameter by parameter: that
   produced 17 false breaking changes on real data. Reported as `diff/schema-other`.
 - **Renames:** one removed + one added tool with the same non-empty parameter names,
