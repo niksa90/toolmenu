@@ -13,6 +13,18 @@
   /tmp/…/scratch…” hid both the missing binary and the `ENOENT`. Absolute paths over 40
   characters are now kept to their last two parts when the text is too long (“spawn
   …/bin/editmamei-core-linux-x64 ENOENT”). URLs keep their paths.
+- **New rule `search/findable` (info): can an agent find each tool by searching?**
+  Clients that defer a large menu (Claude's tool search, OpenAI's `tool_search`,
+  Claude Code's deferred MCP tools) let the model search it, and a search returns 5
+  tools unless the model asks for more. For menus of 10+ tools and 10K+ tokens (or
+  30+ tools), toolmenu ranks every tool the way a BM25 tool search does, over its
+  name, description, argument names and argument descriptions, and lists the ones
+  that a search for their own name doesn't put in the top 5. With `routes.yml`, a
+  `must_match` tool past the top 5 for its keyword is a warning. On 86 servers from
+  the MCP registry it flagged tools on 14 of the 26 large enough to defer: Porkbun's
+  `list_domains` comes 37th for "list domains", behind tools whose 5,000-character
+  descriptions say "domain" again and again. No LLM: the ranks are deterministic,
+  but a client's own search can rank a little differently, so findings are unsure.
 
 ## 0.14.1
 

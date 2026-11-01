@@ -243,6 +243,7 @@ spec version when it only applies from that version on. §3.2 and §3.3 list the
 | `naming/vague-id` | warn | A parameter named `id`, `ids` or `key` that doesn't say which kind of thing it identifies (the ~13-wasted-calls bug) |
 | `naming/shared-word` | info | The same noun is a primary term in tools from different areas (the "audit" collision). Lists groups for review, never fails the build |
 | `naming/route` | error | A `routes.yml` expectation broke |
+| `search/findable` | info | For a menu a client would defer (10+ tools and 10K+ tokens, or 30+ tools): a tool that a BM25 search for its own name words doesn't put in the top 5, the number a tool search returns by default. With `routes.yml`, a `must_match` tool past the top 5 for its keyword is a warning. Ranked over the name, description, argument names and argument descriptions, as Claude's tool search reads them; the client's tokenizer and parameters aren't published, so marked unsure |
 
 ```yaml
 # routes.yml: lesson 04's regression test as a config file
