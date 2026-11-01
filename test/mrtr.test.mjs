@@ -279,3 +279,52 @@ test('callWithInput: one step stops after 3 × the request timeout of requestSta
   assert.equal(r.input.outcome, 'unfinished');
   assert.ok(r.input.continuations < 10, `stopped on time (${r.input.continuations} rounds), not on the round cap`);
 });
+
+test('callWithInput, third review: no resend of a tool whose first leg ran; decline-failed only for a request that carried one', async () => {
+  const { AfterInputError } = await import('../dist/mrtr.js');
+  const fake = (script) => {
+    const wire = { responses: [], since: (mark) => wire.responses.slice(mark) };
+    let i = 0;
+    const calls = [];
+    return {
+      calls,
+      era: 'modern',
+      wire,
+      client: {
+        callTool: async (params) => {
+          calls.push(params);
+          const { wire: raw, wireError, returns, throws } = script[i++] ?? { throws: new Error('script ran out') };
+          if (raw !== undefined) wire.responses.push({ method: 'tools/call', result: raw });
+          if (wireError !== undefined) wire.responses.push({ method: 'tools/call', error: wireError });
+          if (throws) throw throws;
+          return returns;
+        },
+      },
+    };
+  };
+  const ask = { resultType: 'input_required', inputRequests: { c: { method: 'elicitation/create', params: { message: 'Go?', requestedSchema: { type: 'object' } } } } };
+  const working = { resultType: 'input_required', requestState: 's' };
+
+  // A 429 on the retry: thrown as AfterInputError, which session never resends for a tool that isn't read-only.
+  const tooMany = Object.assign(new Error('Too Many Requests'), { status: 429 });
+  const e = await callWithInput(fake([{ wire: ask, returns: ask }, { throws: tooMany }]), { name: 't', arguments: {} }, {}).catch((x) => x);
+  assert.ok(e instanceof AfterInputError);
+  assert.deepEqual([e.input.rounds, e.input.kinds], [1, ['form']]);
+
+  // An error on a requestState-only continuation after a decline round: the continuation carried no decline.
+  const err = Object.assign(new Error('Internal error'), { code: -32603 });
+  const cont = await callWithInput(fake([{ wire: ask, returns: ask }, { wire: working, returns: working }, { wireError: { code: -32603, message: 'Internal error' }, throws: err }]), { name: 't', arguments: {} }, {}).catch((x) => x);
+  assert.ok(cont instanceof AfterInputError, 'a failed call, not decline-failed');
+
+  // input_required with neither inputRequests nor requestState: the SDK's rejection stands; the tool isn't called again.
+  const empty = { resultType: 'input_required' };
+  const rejected = new Error('carries neither inputRequests nor requestState');
+  const conn = fake([{ wire: empty, throws: rejected }]);
+  await assert.rejects(callWithInput(conn, { name: 't', arguments: {} }, {}), /carries neither/);
+  assert.equal(conn.calls.length, 1);
+
+  // The same page with a fresh ?state= each time is the same question: a loop.
+  const url = (n) => ({ resultType: 'input_required', inputRequests: { c: { method: 'elicitation/create', params: { mode: 'url', message: 'Connect', url: `https://x.test/connect?state=${n}` } } } });
+  const loop = await callWithInput(fake([1, 2, 3, 4].map((n) => ({ wire: url(n), returns: url(n) }))), { name: 't', arguments: {} }, {});
+  assert.equal(loop.input.outcome, 'loop');
+});

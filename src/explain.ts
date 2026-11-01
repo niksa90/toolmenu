@@ -169,7 +169,7 @@ const USAGE = [
 // A row of a command or option table: "  serve   Start the Poppy MCP server.",
 // "  t3-watch start   Run the service", "  -v, --version  Show the version". A command
 // starts lowercase, so a padded log level ("INFO     Starting") isn't one.
-const HELP_ROW = /^[ \t]*(?:[a-z][\w.-]*(?: [a-z][\w-]*)?|-{1,2}[\w-]+(?:, -{1,2}[\w-]+)?(?: <[^>]+>)?) {2,}\S/;
+const HELP_ROW = /^[ \t]*(?:[a-z][\w.-]*(?: [a-z][\w-]*)?(?: [[<][^\]>]*[\]>])*|-{1,2}[\w-]+(?:, -{1,2}[\w-]+)?(?: <[^>]+>)?) {2,}\S/;
 /** Help output, even when the "Usage:" line scrolled out of the stderr kept: three table rows or more. */
 const helpRows = (text: string) => text.split('\n').filter((l) => HELP_ROW.test(l)).length >= 3;
 // The subcommands that usually start the MCP server, most specific first.
@@ -218,7 +218,8 @@ function offeredSubcommand(text: string): string | undefined {
       continue;
     }
     const usage = /^\s*usage:\s+(.*)$/i.exec(line);
-    const row = /^[ \t]*([a-z][\w.-]*(?: [a-z][\w-]*)?) {2,}\S/.exec(line);
+    // A command, maybe followed by its arguments ("server [options]", "serve <port>"), then the gap.
+    const row = /^[ \t]*([a-z][\w.-]*(?: [a-z][\w-]*)?)(?: [[<][^\]>]*[\]>])* {2,}\S/.exec(line);
     const words = (usage ? usage[1] : inUsage ? line : row ? row[1] : '').trim().split(/\s+/).filter((w) => /^[a-z][\w.-]*$/.test(w));
     if (words.length) add(words.slice(0, 3));
   }

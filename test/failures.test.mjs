@@ -25,6 +25,8 @@ test('classifyFailure on real servers\' errors', () => {
     ['environment', 'unsupported operating system "win32"'],
     ['environment', 'Unsupported platform: Windows_NT'],
     ['environment', 'Unsupported platform (linux)'],
+    ['environment', 'Error: Unsupported operating system.'],
+    ['environment', 'Unsupported platform for this prebuilt binary: linux-x64'],
     ['other', 'Unsupported platform: myspace. Use one of twitter, linkedin.'],
     ['environment', 'This tool is not supported on this platform.'],
     ['other', 'The job runs on a schedule; this process is idle.'],

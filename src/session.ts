@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
 import { cacheBreak, canonical, compareMenus, type ToolChange } from './compare.js';
 import { listTools, type Connection, type Elicitation, type Target } from './connect.js';
-import { callWithInput, MAX_CONTINUATIONS, MAX_ROUNDS, type InputKind, type InputTrace } from './mrtr.js';
+import { AfterInputError, callWithInput, MAX_CONTINUATIONS, MAX_ROUNDS, type InputKind, type InputTrace } from './mrtr.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
@@ -377,7 +377,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           const call = await patiently(() => callWithInput(conn, { name: step.tool, arguments: step.args }, { timeoutMs, elicitation: answer }), {
             waits,
             waited: callWaited,
-            error: (e) => httpStatus(e) === 429 || (readOnly && tooMany(e)),
+            // A 429 means the server didn't run that request, but after an input round the
+            // tool's first leg did run: only a read-only tool is called again from scratch.
+            error: (e) => (httpStatus(e) === 429 && (readOnly || !(e instanceof AfterInputError))) || (readOnly && tooMany(e)),
             result: (c) => readOnly && c.result?.isError === true && RATE_LIMITED.test(errorText(c.result)),
           });
           if (call.input.outcome !== 'none' || call.input.missingResultType) {
@@ -416,6 +418,11 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             }
           }
         } catch (error) {
+          // A call that asked for input before it failed still counts among those that asked.
+          if (error instanceof AfterInputError && (error.input.rounds || error.input.continuations)) {
+            record.input = error.input;
+            if (error.input.kinds.length) inputs.push({ step: index, tool: step.tool, input: error.input });
+          }
           record.status = 'failed';
           record.outcome = 'failed';
           record.note = serverWords(error, 200);

@@ -1,4 +1,4 @@
-import type { Connection } from './connect.js';
+import { quietExclusions, type Connection } from './connect.js';
 import { toolTokens } from './menu.js';
 import type { Finding, JsonSchema, MenuTool } from './types.js';
 import { classifyFailure, RATE_LIMITED, tooMany, type FailureClass } from './failures.js';
@@ -319,7 +319,7 @@ async function readRouters(conn: Connection, routers: RouterCall[], skipped: { t
 async function callPatiently(conn: Connection, name: string, args: Record<string, unknown>, timeoutMs = 30_000): Promise<{ result: { structuredContent?: unknown; content?: unknown } } | { error: string }> {
   for (let attempt = 0; ; attempt++) {
     try {
-      const result = await conn.client.callTool({ name, arguments: args }, { timeout: timeoutMs });
+      const result = await quietExclusions(() => conn.client.callTool({ name, arguments: args }, { timeout: timeoutMs }));
       const text = result.isError ? resultText(result) : '';
       if (result.isError && RATE_LIMITED.test(text) && attempt < 3) {
         await sleep(2000 * 2 ** attempt);

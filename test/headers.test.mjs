@@ -157,4 +157,12 @@ test('diff/x-mcp-header-invalid: a 2026 release whose header makes HTTP clients 
   writeFileSync(join(dir, 'e.json'), JSON.stringify(menu('Re gion', '2025-11-25')));
   const legacy = JSON.parse((await run(['diff', '--json', join(dir, 'd.json'), join(dir, 'e.json')])).stdout).findings;
   assert.ok(!legacy.some((f) => f.rule === 'diff/x-mcp-header-invalid'));
+  // Moving to 2026-07-28 with the bad annotation still in place: now HTTP clients drop it.
+  const upgrade = JSON.parse((await run(['diff', '--json', join(dir, 'e.json'), join(dir, 'b.json')])).stdout).findings;
+  assert.ok(upgrade.some((f) => f.rule === 'diff/x-mcp-header-invalid'), 'the first 2026 release is when it starts to count');
+  // A new tool with a bad annotation: dropped on arrival.
+  const fresh = buildMenu([{ name: 'other', description: 'O.', inputSchema: { type: 'object', properties: {} } }], { name: 's', version: '1.0.0', protocolVersion: '2026-07-28' });
+  writeFileSync(join(dir, 'f.json'), JSON.stringify(fresh));
+  const added = JSON.parse((await run(['diff', '--json', join(dir, 'f.json'), join(dir, 'b.json')])).stdout).findings;
+  assert.deepEqual(added.filter((f) => f.rule === 'diff/x-mcp-header-invalid').map((f) => f.tool), ['q']);
 });

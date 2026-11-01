@@ -62,7 +62,24 @@ function kindOf(request: { method?: string; params?: Record<string, unknown> }):
 function question(request: { method?: string; params?: Record<string, unknown> }): string {
   const p = request.params ?? {};
   // A URL-mode request has no schema: the page it sends the user to is the question.
-  return canonical({ method: request.method, mode: p.mode, requestedSchema: p.requestedSchema, url: p.mode === 'url' ? p.url : undefined });
+  // Its path, not its query: a fresh ?state= each time is still the same page.
+  const page = p.mode === 'url' && typeof p.url === 'string' ? p.url.split(/[?#]/)[0] : undefined;
+  return canonical({ method: request.method, mode: p.mode, requestedSchema: p.requestedSchema, url: page });
+}
+
+/**
+ * An error thrown after the tool already asked for input: it carries what the tool
+ * asked (session still reports it), and says the first leg ran on the server, so a
+ * tool that isn't read-only must not be called again from scratch.
+ */
+export class AfterInputError extends Error {
+  constructor(readonly cause: unknown, readonly input: InputTrace) {
+    super(cause instanceof Error ? cause.message : String(cause));
+    const code = (cause as { code?: unknown } | null)?.code;
+    if (code !== undefined) (this as { code?: unknown }).code = code;
+    const status = (cause as { status?: unknown } | null)?.status;
+    if (status !== undefined) (this as { status?: unknown }).status = status;
+  }
 }
 
 /** The words of an error, first line only. */
@@ -89,6 +106,8 @@ export async function callWithInput(
   let rounds = 0;
   let continuations = 0;
   let call: Record<string, unknown> = { ...params };
+  // Whether the request being sent carries a decline (inputResponses), not just requestState.
+  let carriesDecline = false;
   const trace = (outcome: InputTrace['outcome'], more: Partial<InputTrace> = {}): InputTrace => ({
     rounds,
     kinds,
@@ -115,17 +134,19 @@ export async function callWithInput(
         missingResultType = true;
         return { result: answered as CallResult, input: trace(finished()) };
       }
-      if (isObject(answered) && answered.resultType === 'input_required') {
+      if (isObject(answered) && answered.resultType === 'input_required' && (isObject(answered.inputRequests) || typeof answered.requestState === 'string')) {
         // The SDK can throw after the fact (output-schema checks on a cached
         // definition): the server asked for input, so carry on with what it sent.
+        // Not one with neither inputRequests nor a string requestState: the SDK is
+        // right to reject that, and calling again from scratch would repeat the tool.
         result = answered as unknown as InputRequired;
       } else {
         // The server's own JSON-RPC error to a retry that carried a decline is its
         // answer to the decline. Anything else goes back to session's handling as a
         // failed call: an SDK check on a result the server did send, a timeout, a lost
         // connection, a rate limit (429 or its words), or a failure before any decline.
-        const refused = !!wire?.error && rounds > 0 && httpStatus(error) !== 429 && !tooMany(error);
-        if (!refused) throw error;
+        const refused = !!wire?.error && carriesDecline && httpStatus(error) !== 429 && !tooMany(error);
+        if (!refused) throw rounds || continuations ? new AfterInputError(error, trace(finished())) : error;
         const code = wire!.error!.code;
         return { input: trace('decline-failed', { error: { message: firstLine(wire!.error!.message ?? error), ...(typeof code === 'number' ? { code } : {}) } }) };
       }
@@ -138,7 +159,8 @@ export async function callWithInput(
       // Only requestState: the tool keeps working and asks nothing. Send it back.
       if (continuations >= MAX_CONTINUATIONS || (deadline !== undefined && Date.now() >= deadline)) return { input: trace('unfinished') };
       continuations++;
-      call = { ...params, ...(state !== undefined ? { requestState: state } : {}) };
+      call = { ...params, ...(typeof state === 'string' ? { requestState: state } : {}) };
+      carriesDecline = false;
       continue;
     }
     const askedKinds = asked.map(([, request]) => kindOf(request));
@@ -154,7 +176,8 @@ export async function callWithInput(
     call = {
       ...params,
       inputResponses: Object.fromEntries(asked.map(([key]) => [key, { action }])),
-      ...(state !== undefined ? { requestState: state } : {}),
+      ...(typeof state === 'string' ? { requestState: state } : {}),
     };
+    carriesDecline = true;
   }
 }

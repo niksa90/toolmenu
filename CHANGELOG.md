@@ -30,7 +30,8 @@ findings (see the release notes for the runs).
     questions; one that never ends (10 rounds, or 3 × the request timeout in all)
     is `session/input-loop`, worded as such, also after a question it took;
   - the same question again is a loop whatever its request key or wording; pages
-    to open (URL mode) are the same question only when the URL is;
+    to open (URL mode) are the same question only when the URL is (its query, often
+    a nonce, is ignored); an `input_required` round with nothing in it ends the call;
   - a tool error answering a decline is never counted as a setup problem ("the user
     declined to connect GitHub" isn't an authentication failure);
   - a call that never finished its input rounds is counted in the summary ("never
@@ -42,19 +43,21 @@ findings (see the release notes for the runs).
   read as usage text; a docs or update link is no longer taken for the server's
   HTTP address; a subcommand is suggested only from where commands go in the help,
   never from an option's description, and the suggested command is the whole one.
-  Wrapped description lines and log lines never offer one either. A server that
+  Wrapped description lines and log lines never offer one either; commander-style
+  rows (`serve [options]`) do. A server that
   hasn't exited (timed out, or only closed its stdout) never gets "printed its usage
   and exited", and rejected credentials come first. Checked again on the 25 registry servers these
   hints came from: `agentation-mcp` now gets its real subcommand (`server`, not `mcp`).
 - **`Unsupported platform: myspace`** is the tool's own error again, not a missing
   piece of this machine; only an operating system's name counts (`linux`,
-  `Windows_NT`, `(darwin)`…).
+  `Windows_NT`, `(darwin)`…), or the message ending right after "platform".
 - **`x-mcp-header`:** a duplicate involving a `number` parameter is caught. New
   `diff/x-mcp-header-invalid` (warn): a 2026-07-28 release whose annotation makes
   HTTP clients drop the tool. A warning, not breaking, because a menu file doesn't
   say whether the server runs over HTTP; never for operations behind a search tool.
+  Also raised for a server upgrading to 2026-07-28 and for tools a release adds.
 - The SDK's "excluding tool" warning is held back only while toolmenu lists or calls
-  tools, not for the whole process (it was global for anyone importing toolmenu);
+  tools (also in `catalog`, `--init` and auth checks), not for the whole process (it was global for anyone importing toolmenu);
   overlapping runs share the filter and leave `console.warn` as it was.
 - The client-capability label no longer says "roots or sampling" when `-32021` names
   something else.

@@ -9,7 +9,7 @@ import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
 import { counts, formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
 import { loadScenario, session, starterScenario, unlockListers, valuesFromListing } from './session.js';
-import { listTools } from './connect.js';
+import { listTools, quietExclusions } from './connect.js';
 import { patiently, tooMany } from './failures.js';
 import { buildMenu } from './menu.js';
 import { existsSync } from 'node:fs';
@@ -144,7 +144,7 @@ export async function main(argv: string[]): Promise<number> {
       const read: string[] = [];
       for (const { unlock, lister } of unlockListers(menu.tools)) {
         try {
-          const result = await conn.client.callTool({ name: lister, arguments: {} }, { timeout: timeoutMs });
+          const result = await quietExclusions(() => conn.client.callTool({ name: lister, arguments: {} }, { timeout: timeoutMs }));
           const found = result.isError ? [] : valuesFromListing(result);
           if (found.length) {
             unlockValues[unlock] = found;

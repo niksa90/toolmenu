@@ -390,3 +390,8 @@ test('startupHint: a wrapped description line or a log line offers no subcommand
 test('startupHint: closed stdout without a recorded exit is not "exited"', () => {
   assert.equal(startupHint(traced(['Usage: srv [options]', 'Options:', '  --help   Show help']), 'srv', { exited: false }), undefined);
 });
+
+test('startupHint: commander rows with [options] or <args> after the command offer it', () => {
+  const commander = ['Usage: agentation-mcp [options] [command]', '', 'Commands:', '  init              Set up', '  server [options]  Start the MCP server', '  doctor            Check'];
+  assert.match(startupHint(traced(commander), 'agentation-mcp'), /lists “server”: try agentation-mcp server$/);
+});

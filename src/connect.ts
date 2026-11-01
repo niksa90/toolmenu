@@ -26,20 +26,24 @@ import { VERSION } from './version.js';
  */
 let quieting = 0;
 let originalWarn: typeof console.warn | undefined;
+let installedWarn: typeof console.warn | undefined;
 export async function quietExclusions<T>(work: () => Promise<T>): Promise<T> {
   if (quieting++ === 0) {
-    const warn = (originalWarn = console.warn);
-    console.warn = (...args: unknown[]) => {
+    originalWarn = console.warn;
+    const warn = originalWarn.bind(console);
+    installedWarn = (...args: unknown[]) => {
       if (typeof args[0] === 'string' && args[0].startsWith('[mcp-sdk] excluding tool ')) return;
       warn(...args);
     };
+    console.warn = installedWarn;
   }
   try {
     return await work();
   } finally {
     if (--quieting === 0 && originalWarn) {
-      console.warn = originalWarn;
-      originalWarn = undefined;
+      // Only take out our own filter: a replacement put in meanwhile stays.
+      if (console.warn === installedWarn) console.warn = originalWarn;
+      originalWarn = installedWarn = undefined;
     }
   }
 }
