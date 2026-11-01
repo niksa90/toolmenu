@@ -25,6 +25,12 @@ export type Step =
        * alone. If its first such call changes nothing, the rest aren't made.
        */
       tentative?: boolean;
+      /**
+       * --auto only (2026-07-28): called with a handle that can't exist, to see what
+       * the model gets back. A tool error is the right answer; a JSON-RPC error is
+       * session/handle-error.
+       */
+      probe?: import('./rules/handles.js').HandleProbe;
     }
   | { kind: 'wait_for'; event: 'tools_list_changed'; timeoutMs: number };
 
@@ -174,6 +180,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   const raw: Raw[] = [];
   // 2026-07-28: every call that asked for input, for the input findings at the end.
   const inputs: { step: number; tool: string; input: InputTrace }[] = [];
+  // --auto's calls with a made-up handle that got a protocol error back (session/handle-error).
+  const handleErrors: { step: number; tool: string; probe: import('./rules/handles.js').HandleProbe; value: unknown; message: string; code: number }[] = [];
   // The main process runs with a pinned hash seed, and so does every scope probe:
   // a probe with a different seed would count ordering variance as a change.
   // How every elicitation is answered: the same each run (--elicitation). Session
@@ -270,7 +278,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     // this one when that happens.
     let probedAfter: number | undefined = probes ? 0 : undefined;
     const lost = (why: string, index: number): boolean => {
-      if (probedAfter === undefined || !SESSION_LOST.test(why)) return false;
+      // 2026-07-28 has no protocol sessions: "unknown session" from such a server is
+      // about a session it minted itself, a handle the model passes (SEP-2567).
+      if (probedAfter === undefined || conn.era === 'modern' || !SESSION_LOST.test(why)) return false;
       // The server's own words, not the transport's wrapping of its JSON-RPC error.
       const said = serverWords(why);
       raw.push({
@@ -396,7 +406,13 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             const result = call.result;
             record.outcome = result.isError ? 'tool-error' : 'answered';
             if (call.input.rounds && !result.isError) record.note = inputNote(call.input, answer);
-            if (result.isError) {
+            if (step.probe) {
+              // A handle that can't exist: a tool error is the answer the spec asks for.
+              const text = result.isError ? errorText(result) : '';
+              record.note = result.isError
+                ? `called with a made-up ${step.probe.kind}; it answered with a tool error${text ? `: ${clip(text, 100)}` : ''}`
+                : `called with a made-up ${step.probe.kind}; it answered as if that ${step.probe.kind} existed`;
+            } else if (result.isError) {
               const text = errorText(result);
               if (RATE_LIMITED.test(text)) {
                 limited(index, text, callWaited.ms, readOnly ? undefined : step.tool);
@@ -426,7 +442,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           record.status = 'failed';
           record.outcome = 'failed';
           record.note = serverWords(error, 200);
-          if (lost(record.note, index)) {
+          // A call with a made-up handle ("Unknown session: toolmenu-unknown-session") is about that handle.
+          if (!step.probe && lost(record.note, index)) {
             done();
             break;
           }
@@ -442,10 +459,16 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             const needed = Object.keys(((error as { data?: { requiredCapabilities?: object } }).data?.requiredCapabilities ?? {}) as object);
             if (needed.length) record.note = `${record.note} (needs the client to support ${needed.join(', ')})`;
           }
-          record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
-          // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
-          const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
-          if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);
+          if (step.probe && typeof code === 'number' && code !== -32021) {
+            // The server's protocol error to a handle that can't exist: the model gets no reason it can act on.
+            if (!handleErrors.some((e) => e.tool === step.tool)) handleErrors.push({ step: index, tool: step.tool, probe: step.probe, value: step.args[step.probe.param], message: record.note, code });
+            record.note = `called with a made-up ${step.probe.kind}; it answered with a protocol error (${code}): ${clip(record.note, 120)}`;
+          } else {
+            record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
+            // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
+            const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
+            if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);
+          }
         }
       } else if (step.kind === 'wait_for') {
         const arrived = await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, step.timeoutMs);
@@ -555,6 +578,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
 
     raw.push(...failureFindings(sameError([...failures.values()]), options.auto));
     raw.push(...inputFindings(inputs, answer));
+    raw.push(...handleErrorFindings(handleErrors));
     if (explained.length) raw.push(knownVariance(explained));
     if (onWord.length) raw.push(onTheirWord(onWord, options.auto !== undefined));
     raw.push(...untested(steps, target));
@@ -1520,6 +1544,24 @@ function inputNote(input: InputTrace, answer: Elicitation): string {
     default:
       return asked;
   }
+}
+
+/**
+ * Handles that can't exist answered with a protocol error (2026-07-28, SEP-2567):
+ * "a call against an expired or unknown handle should return a tool execution
+ * error that says so, so the model can recover by creating a new one." One
+ * finding per tool.
+ */
+function handleErrorFindings(errors: { step: number; tool: string; probe: import('./rules/handles.js').HandleProbe; value: unknown; message: string; code: number }[]): Raw[] {
+  return errors.map((e) => ({
+    rule: 'session/handle-error',
+    severity: 'warn' as const,
+    confidence: 'unsure' as const,
+    step: e.step,
+    tool: e.tool,
+    message: `${e.tool} answers a ${e.probe.kind} that doesn't exist with a protocol error (${e.code}: “${clip(e.message, 120)}”), not a tool error. A model whose ${e.probe.kind} expired gets an error from its client instead of a result it can read, so it can't tell it should start a new one. toolmenu passed ${e.probe.param}: ${JSON.stringify(e.value)}, which no ${e.probe.kind} has.`,
+    fix: `Return a tool result with isError: true that says the ${e.probe.kind} is unknown or expired and how to get a new one ("Session not found or expired: call start_session again").`,
+  }));
 }
 
 /**

@@ -3,6 +3,8 @@ import { SEVERITY_RANK } from '../types.js';
 import { buried, cut, lateInstruction } from './description.js';
 import { connectionVariance, hostSpecific, nondeterministic, processVariance } from './determinism.js';
 import { authoredIds } from './ids.js';
+import { handleLifetime } from './handles.js';
+import { authVariance, cacheScopePublic } from './identities.js';
 import { route, sharedWord, vagueId } from './naming.js';
 import { cacheHints, deprecated, discover, duplicateName, schema, serverInfo, toolsCapability } from './spec.js';
 import { noDryRun, unannotated } from './write.js';
@@ -26,6 +28,7 @@ export const MENU_RULES: Rule[] = [
   route,
   findable,
   authoredIds,
+  handleLifetime,
   buried,
   cut,
   lateInstruction,
@@ -38,6 +41,8 @@ export const MENU_RULES: Rule[] = [
   discover,
   deprecated,
   cacheHints,
+  authVariance,
+  cacheScopePublic,
   serverInfo,
 ];
 

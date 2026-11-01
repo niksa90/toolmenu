@@ -188,7 +188,8 @@ serves, and 23 issue and pull-request tools that only the dynamic mode has.
 | `session/assumed-read-only` | info | Tools called on your word (`--assume-read-only`, `assume_read_only`) although the server doesn't mark them readOnlyHint |
 | `session/unlock-coverage` | warn | An unlock whose enum lists its values, called with only some of them: the tools behind the rest were never seen, so a baseline from the session misses them. With `--union-out` or `--auto`, an unlock never called at all too, with why `--auto` skipped it |
 | `session/nothing-called` | warn | `--auto` called no tools (all open-world, missing values, or not read-only): the run only listed the menu |
-| `session/session-lost` | error | The server ended the session after toolmenu opened a second connection with the same credentials (servers with one session per client). The run stops there; rerun with `--processes 1` |
+| `session/session-lost` | error | The server ended the session after toolmenu opened a second connection with the same credentials (servers with one session per client; 2025-era servers only). The run stops there; rerun with `--processes 1` |
+| `session/handle-error` | warn | 2026-07-28: `--auto` called a read-only tool with a handle that can't exist (`toolmenu-unknown-session`), and it answered with a protocol error instead of a tool error the model can read |
 | `session/rate-limited` | error | The server kept refusing requests for being too many (a 429) after toolmenu waited about a minute, or a tool not marked `readOnlyHint` said it was rate-limited (it isn't called again). The run stops there, with the steps it didn't check; give the run its own server instance or raise the limit for it |
 | `session/scope-unchecked` | info | A second server process or connection couldn't start mid-session (a server that holds a file or a port), so whether a change was global wasn't checked. Said once for the run |
 
@@ -387,11 +388,14 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `description/late-instruction` | info | With the default cut: instructions after character 280, which a client that cuts descriptions short would hide, as one summary. Set `descriptionLimit` and `description/buried` checks your real cut instead. (Before 0.13 this was part of `description/cut`; that id's setting still applies.) |
 | `naming/vague-id` | warn | Parameters called just `id` that don't say *which* thing, as one summary with a suggested name |
 | `ids/authored` | info | An ID the agent must supply that no tool appears to return, so the agent may invent it, one finding per kind of ID (heuristic: IDs from a URL or another tool's text output look the same) |
+| `ids/handle-lifetime` | info | 2026-07-28: a tool that creates a handle another tool takes back (`start_session` → `session_id`) doesn't say how long it lasts (heuristic) |
 | `write/unannotated` | warn | Tools named like writes (`delete_`, `send_`…) with no annotations, as one summary grouped by the annotation each name suggests |
 | `naming/shared-word` | info | Nouns that name different things across tools (`list_team_audits` vs `get_audit_trail`), as one summary |
 | `write/no-dry-run` | info | Destructive tools with no dry-run parameter or preview tool, as one summary |
 | `spec/discover` | info | The server only speaks the 2025 protocol, so 2026-07-28 rules are skipped |
 | `spec/deprecated`, `spec/cache-hints` | info | 2026-07-28: deprecated features still advertised; `ttlMs: 0`, or `cacheScope: "public"` on a server that took credentials |
+| `menu/auth-variance` | info | With `--as` (or `identities` in the config): the tool set differs by identity, what each adds, lacks or defines differently against the first, and its tokens. Allowed by the spec; a baseline of one identity's menu doesn't cover the others. An identity that can't be listed is said here too |
+| `spec/cache-scope-public` | warn | 2026-07-28, with `--as`: the tool set differs by identity, and `tools/list` says `cacheScope: "public"`, which lets shared caches serve one caller's list to another |
 
 The naming and ID rules are heuristics, tuned on real servers (FINDINGS F7 and
 F10) and a private 115-tool one. They're the extras; the change checks are the point.
@@ -469,6 +473,9 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
                     (2026-07-28 only; an error if the server lacks it)
 --processes <n>     server processes or connections to compare (default: 2);
                     1 opens no second one, session's scope check included
+--as <name>:<cred>  snapshot: list the menu as this identity too, repeatable:
+                    "reader:Authorization: Bearer …" (HTTP) or "admin:ROLE=admin"
+                    (stdio). The first is the menu saved; the others are compared
 ```
 
 Exit codes: `0` clean · `1` findings at or above `--fail-on` · `2` couldn't connect

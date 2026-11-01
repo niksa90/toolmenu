@@ -21,6 +21,7 @@ const OPTIONS: Record<string, [string, string[]]> = {
   header: ['--header "<k>: <v>"', ['HTTP header, repeatable (e.g. "Authorization: Bearer ...")']],
   env: ['--env <K=V>', ['environment variable for a stdio server, repeatable. The server only', 'gets a minimal environment (PATH, HOME, ...) plus these']],
   protocol: ['--protocol <auto|legacy|modern>', ['which handshake to make (default: auto)', 'legacy: the 2025 handshake only; modern: 2026-07-28 only, an error if the server lacks it']],
+  as: ['--as <name>[:<credential>]', ['list the menu as this identity too, repeatable: a header ("reader:Authorization:', 'Bearer ...") or env var ("admin:ROLE=admin") on top of --header/--env. The first', 'is the main one (its menu is saved); the others are compared with it']],
   'no-auth': ['--no-auth', ["don't use a stored OAuth login (toolmenu auth login) for this server"]],
   timeout: ['--timeout <ms>', ['per-request timeout (default: 30000)']],
   processes: ['--processes <n>', ['server processes (stdio) or connections (HTTP) to compare, the main', 'one included (default: 2). 1 opens no second one: for servers with one', 'session per client']],
@@ -92,7 +93,7 @@ const HELP: Record<Command, CommandHelp> = {
       'reports what in the menu confuses agents or breaks prompt caches.',
       SERVER_NOTE,
     ],
-    own: ['out', 'no-write', 'routes', 'catalog'],
+    own: ['out', 'no-write', 'routes', 'catalog', 'as'],
     shared: ['config', 'format', 'json', 'fail-on', 'header', 'env', 'no-auth', 'protocol', 'timeout', 'processes'],
     examples: [
       'toolmenu snapshot -- npx -y @modelcontextprotocol/server-memory',

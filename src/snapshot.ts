@@ -2,7 +2,8 @@ import { listTools, type Target } from './connect.js';
 import { patiently, tooMany } from './failures.js';
 import { ConnectError } from './explain.js';
 import { buildMenu } from './menu.js';
-import { connectPatiently, isContainerWrapper, MAIN_SEED, probeVariance, seeded } from './probe.js';
+import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded, type Identity } from './probe.js';
+import type { IdentityMenu } from './rules/identities.js';
 import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
 import { catalogFindings, readCatalog, type CatalogOptions } from './catalog.js';
 import type { Routes } from './routes.js';
@@ -21,15 +22,24 @@ export interface SnapshotOptions extends RuleSettings {
   processes?: number;
   /** Also read the operations behind a catalog search tool or command routers (true, or which ones and how). */
   catalog?: boolean | CatalogOptions;
+  /**
+   * snapshot --as: list the menu once per identity. The first is the main one: its
+   * menu is the one saved and checked; the others are compared with it.
+   */
+  identities?: Identity[];
 }
 
 export interface SnapshotResult {
   menu: Menu;
   findings: Finding[];
+  /** snapshot --as: each identity's tools and tokens, or why it couldn't be listed. */
+  identities?: IdentityMenu[];
 }
 
 /** Establish the menu: connect, list the tools twice, run the menu rules. */
-export async function snapshot(target: Target, options: SnapshotOptions = {}): Promise<SnapshotResult> {
+export async function snapshot(given: Target, options: SnapshotOptions = {}): Promise<SnapshotResult> {
+  const [mainIdentity, ...otherIdentities] = options.identities ?? [];
+  const target = asIdentity(given, mainIdentity);
   // Connecting and listing are read-only: a refusal for being too many is waited
   // out and they're sent again (CI behind a shared rate limit).
   const connection = await connectPatiently(seeded(target, MAIN_SEED), { timeoutMs: options.timeoutMs });
@@ -63,6 +73,19 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
   // shouldn't have to share it with its own probe.
   const probes = await probeVariance(target, menu.tools, options.processes ?? 2, options.timeoutMs ?? 30_000);
 
+  // Each other identity's menu, from its own process (stdio) or connection (HTTP).
+  const identities: IdentityMenu[] | undefined = mainIdentity
+    ? [{ name: mainIdentity.name, tools: menu.tools, tokens: menu.totalTokens, cacheScope: menu.listMeta?.cacheScope }]
+    : undefined;
+  for (const identity of otherIdentities) {
+    try {
+      const m = await probeMenu(seeded(asIdentity(given, identity), MAIN_SEED), options.timeoutMs ?? 30_000);
+      identities!.push({ name: identity.name, tools: m.tools, tokens: m.totalTokens, cacheScope: m.listMeta?.cacheScope });
+    } catch (error) {
+      identities!.push({ name: identity.name, error: firstLine(error) });
+    }
+  }
+
   const findings = runRules(
     MENU_RULES,
     {
@@ -82,6 +105,7 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
       wrapper: isContainerWrapper(target),
       serverInfo: connection.server,
       server: serverArgs(target),
+      identities,
     },
     options,
   );
@@ -96,8 +120,10 @@ export async function snapshot(target: Target, options: SnapshotOptions = {}): P
     }
     findings.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
   }
-  return { menu, findings };
+  return { menu, findings, ...(identities ? { identities } : {}) };
 }
+
+const firstLine = (error: unknown) => (error instanceof Error ? error.message : String(error)).split('\n')[0].trim();
 
 /**
  * How this run reached the server, as the end of a command line, for next steps:

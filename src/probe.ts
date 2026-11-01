@@ -24,6 +24,20 @@ export function seeded(target: Target, seed: string): Target {
   return { ...target, env: { ...target.env, PYTHONHASHSEED: seed } };
 }
 
+/** Credentials for one identity (snapshot --as, config identities): HTTP headers or stdio env vars. */
+export interface Identity {
+  name: string;
+  headers?: Record<string, string>;
+  env?: Record<string, string>;
+}
+
+/** The target as this identity: its headers (HTTP) or env vars (stdio) over the ones given. */
+export function asIdentity(target: Target, identity: Identity | undefined): Target {
+  if (!identity) return target;
+  if (target.kind === 'http') return { ...target, headers: { ...target.headers, ...identity.headers } };
+  return { ...target, env: { ...target.env, ...identity.env } };
+}
+
 /** A command that starts the server in a container: the seed (and --env) don't reach it unless passed through. */
 export function isContainerWrapper(target: Target): boolean {
   return target.kind === 'stdio' && /^(docker|podman|nerdctl)(\.exe)?$/.test(basename(target.command));
@@ -56,7 +70,7 @@ export async function probeMenu(target: Target, timeoutMs: number, waits?: numbe
       const c = await connect(target, { timeoutMs });
       try {
         const list = await listTools(c, { timeoutMs });
-        return buildMenu(list.tools, { name: c.server.name, version: c.server.version, protocolVersion: c.protocolVersion, era: c.era });
+        return buildMenu(list.tools, { name: c.server.name, version: c.server.version, protocolVersion: c.protocolVersion, era: c.era }, list.listMeta);
       } finally {
         await c.close().catch(() => {});
       }
