@@ -164,16 +164,20 @@ out. On earlier spec versions it's allowed, and toolmenu reports only the cache 
 **Tools that ask for input (2026-07-28, multi round-trip requests, SEP-2322).** A
 tool can answer `tools/call` with `resultType: "input_required"`: `inputRequests`
 (elicitation, form or URL mode; or roots or sampling, both deprecated) and maybe a
-`requestState`. toolmenu declares elicitation on every request, answers every
-elicitation with `decline` (`--elicitation cancel` for the other answer; never
-`accept`, which needs values someone has to choose), sends `requestState` back byte
-for byte, and calls again, for at most 3 rounds. It declares no roots or sampling.
-On a 2025 server the same answer goes to its `elicitation/create` requests.
+`requestState`. `session` declares elicitation on every request (only `session`: the
+other commands declare nothing, so `snapshot` sees the menu a client that can't be
+asked sees), answers every elicitation with `decline` (`--elicitation cancel` for the
+other answer; never `accept`, which needs values someone has to choose), sends
+`requestState` back byte for byte, and calls again, for at most 3 rounds. A round that
+carries only `requestState` is the tool still working: sent back, up to 10 times. It
+declares no roots or sampling. On a 2025 server the same answer goes to its
+`elicitation/create` requests. A timeout, a 429 or a lost connection on a retry is
+handled like any failed call, not as the server refusing the decline.
 
 | id | sev | check |
 |---|---|---|
 | `session/input-required` | info | Which tools asked for input, for what, how many rounds, and what the decline led to. One finding for the run |
-| `session/input-loop` | warn | After a decline the tool asks the same thing again (or keeps asking) until the round limit: an agent whose user says no can't finish the call |
+| `session/input-loop` | warn | After a decline the tool asks the same question again (the same kind and schema, whatever the request key or wording), or keeps asking something else, until the round limit; or it returns `requestState`-only rounds without end. An agent whose user says no can't finish the call |
 | `session/decline-fails` | warn | The retry carrying the decline fails with a JSON-RPC error, not a result the model can read. A tool error (`isError`) after a decline is the right answer and isn't reported |
 | `session/undeclared-input` | warn | The server asked for something the request didn't declare (roots, sampling) instead of returning `-32021` |
 | `session/result-type` | error | A 2026-07-28 `tools/call` result without `resultType` (**MUST**). The official SDK client rejects it |
@@ -307,7 +311,7 @@ Keyword matching only in v1: deterministic, free and reproducible in CI.
 | id | sev | check |
 |---|---|---|
 | `spec/x-mcp-header` | error / warn | `since: 2026-07-28`. An `x-mcp-header` annotation the spec doesn't allow (SEP-2243): empty; not an RFC 9110 token; the same header twice ignoring case; on a parameter that isn't `string`, `integer` or `boolean`, or has no single `type`; anywhere but a parameter reached through `properties` alone. Streamable HTTP clients **MUST** leave such a tool out of `tools/list`, and the official SDK client does, with only a console warning. Error on an HTTP server, warn on stdio (clients there MAY ignore the annotation). `number` is warn on both: the spec forbids it, the SDK client accepts it for now. Every broken annotation in a tool is listed (the SDK stops at the first). Checked against the SDK client's behaviour in the tests |
-| `spec/ref` | error / warn | `since: 2026-07-28`. A `$ref` in a tool's input or output schema that doesn't resolve inside the schema: a network URI (clients **MUST NOT** fetch it, SEP-2106) or a pointer, `#anchor` or `$id` that names nothing. In an `outputSchema`, error: the official SDK client fails every call to the tool ("has an invalid outputSchema"). In an `inputSchema`, error for a ref to nothing (the schema isn't valid, and the SDK's server won't register it), warn for a network URI (clients **SHOULD** reject the schema). `#/$defs`, `#anchor`, `$id` and `#` refs resolve. Composition-keyword bounds are left to each implementation by the spec, so not checked. Checked against the SDK client's behaviour in the tests |
+| `spec/ref` | error / warn | `since: 2026-07-28`. A `$ref` in a tool's input or output schema that doesn't resolve inside the schema: a network URI (clients **MUST NOT** fetch it, SEP-2106) or a pointer, `#anchor` or `$id` that names nothing. In an `outputSchema`, error: the official SDK client fails every call to the tool ("has an invalid outputSchema"). In an `inputSchema`, error for a ref to nothing (the schema isn't valid, and the SDK's server won't register it), warn for a network URI (clients **SHOULD** reject the schema). `#/$defs`, `#anchor`, `$dynamicAnchor`, `$id` (pointers resolve inside the resource an `$id` names), draft-07 `#name` ids, `""` and `#` refs resolve. The token breakdown's unused-`$defs` count uses the same resolver. Composition-keyword bounds are left to each implementation by the spec, so not checked. Checked against the SDK client's behaviour in the tests |
 | `spec/schema` | error | `tools/list` result fails the official `schema.json` for its version. Version-aware: a 2026-07-28 result missing `ttlMs`/`cacheScope` fails, because that version requires them on cacheable results (SEP-2549); a 2025 result is checked against its own schema, which doesn't have them |
 | `spec/discover` | info | The server only speaks the 2025 protocol: no working `server/discover`, which 2026-07-28 servers **MUST** implement. Info, not error: see §13 |
 | `spec/deprecated` | info | Advertises Sampling, Roots or Logging, or uses HTTP+SSE (`since: 2026-07-28`) |
@@ -478,6 +482,9 @@ Things building `snapshot` settled or changed. The spec above is updated to matc
 - **Two notice rules beyond §3.2:** `diff/annotations` (any other annotation
   change, e.g. `openWorldHint` added) and `diff/other` (title, icons, `_meta`…).
   Without them, a release changed every tool's tokens with no finding (FINDINGS F7).
+- **An `x-mcp-header` that breaks the spec's rules in the new release only**
+  (`diff/x-mcp-header-invalid`, error, breaking): Streamable HTTP clients must drop
+  the tool, so for their agents it's removed.
 - **`x-mcp-header` changes** (`diff/x-mcp-header`, info, notice): a parameter newly
   mirrored into an `Mcp-Param-*` HTTP header, no longer mirrored, or with its header
   renamed. Callers send the same arguments; proxies, load balancers and WAFs that
