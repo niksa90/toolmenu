@@ -1,10 +1,13 @@
 # Changelog
 
-## Unreleased (0.17.0)
+## 0.17.0
 
 Two parts of the 2026-07-28 standard: server-minted handles (SEP-2567), state
 across calls that a tool hands out (`session_id`) and others take back; and menus
-that vary by who asks.
+that vary by who asks. On 86 registry servers `snapshot` gives the same results as
+0.16.2 apart from one new `ids/handle-lifetime` (User Intuition's
+`create_research_session`); on 39 servers on 2026-07-28 `session --auto` gives the
+same steps and findings.
 
 - **`ids/handle-lifetime`** (info, unsure, 2026-07-28): a tool that creates a handle
   another tool takes back, whose description doesn't say how long it lasts. The
