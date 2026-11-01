@@ -11,8 +11,10 @@ export type FailureClass = 'auth' | 'environment' | 'network' | 'not-found' | 'i
 export const SETUP_FAILURES = new Set<FailureClass>(['auth', 'environment', 'network', 'not-found']);
 
 // Something this machine lacks: "Could not find Google Chrome executable"
-// (Chrome DevTools), "Chromium distribution 'chrome' is not found at" (Playwright).
-const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b/i;
+// (Chrome DevTools), "Chromium distribution 'chrome' is not found at" (Playwright),
+// or the wrong operating system: "Editmamei runs on Windows and macOS; this process
+// is on "linux"" (editmamei), "Unsupported platform: linux".
+const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b|\bruns on [^.;]{0,40}; this (?:process|machine|system) is on\b|\b(?:unsupported|not supported on (?:this|the current)) (?:platform|operating system|OS)\b/i;
 // "401 Bad credentials" (GitHub), "Authorization Expired" (Sentry), "Invalid
 // token" (Firecrawl), "authentication token is not valid" (Apify), "Please provide
 // a valid access token" (Supabase), "NetlifyUnauthError: You're not logged into
