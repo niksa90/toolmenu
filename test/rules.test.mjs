@@ -769,6 +769,7 @@ test('menu/gated: a domains enum that never says it unlocks tools is data (Garmi
   // The same enum on a tool that says it loads tools still warns.
   const load = { ...sync, name: 'load_domains', description: 'Loads the tools of each chosen domain.' };
   assert.equal(lint([load, tool('garmin_status', [])], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated')?.tool, 'load_domains');
+});
 
 test('ids/authored: viewUUID is a view ID, returned by a tool whose output schema has viewUUID (server-pdf)', () => {
   const display = tool('display_pdf', ['url'], {

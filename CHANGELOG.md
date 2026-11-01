@@ -1,18 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.15.0
 
-- **`session`: a server that says it can't run on this operating system is a setup
-  failure.** "Editmamei runs on Windows and macOS; this process is on "linux"",
-  "Unsupported platform: linux" and "not supported on this platform" now count toward
-  `session/untested` (something missing on this machine), as one finding for the run,
-  instead of a `session/tool-error` warning per call. Found on editmamei 1.9.3, where 4
-  of its 5 warnings were this.
-- **`session`: a long path in an error loses its middle, not its end.** A step's error
-  is cut at 120 characters, and a path that long pushed out what came after it: “spawn
-  /tmp/…/scratch…” hid both the missing binary and the `ENOENT`. Absolute paths over 40
-  characters are now kept to their last two parts when the text is too long (“spawn
-  …/bin/editmamei-core-linux-x64 ENOENT”). URLs keep their paths.
+Fixes and one new rule, from starting ~235 servers: the recent npm and PyPI servers in
+the official MCP registry, and the 60 most-downloaded npm MCP packages. On the 85 that
+started both times, the build with these changes gave the same menus, tokens and
+findings as 0.14.1, except the false positives listed below.
+
 - **New rule `search/findable` (info): can an agent find each tool by searching?**
   Clients that defer a large menu (Claude's tool search, OpenAI's `tool_search`,
   Claude Code's deferred MCP tools) let the model search it, and a search returns 5
@@ -20,25 +14,49 @@
   30+ tools), toolmenu ranks every tool the way a BM25 tool search does, over its
   name, description, argument names and argument descriptions, and lists the ones
   that a search for their own name doesn't put in the top 5. With `routes.yml`, a
-  `must_match` tool past the top 5 for its keyword is a warning. On 86 servers from
-  the MCP registry it flagged tools on 14 of the 26 large enough to defer: Porkbun's
-  `list_domains` comes 37th for "list domains", behind tools whose 5,000-character
-  descriptions say "domain" again and again. No LLM: the ranks are deterministic,
-  but a client's own search can rank a little differently, so findings are unsure.
-Found starting 200+ servers from the MCP registry and the most-downloaded npm
-packages, where these were the commonest ways a first run failed.
-
-- **A CLI that prints its usage and exits** is now said to be one, with the
-  subcommand its usage lists: `Its usage lists “mcp”: try hashgrid mcp` (also
-  `mcp start`, `server start`, `serve`, …). Before, toolmenu told it to log to
-  stderr, which was the wrong fix for about 25 of the servers that didn't start.
-- **A server that opens an HTTP port instead of talking on stdio**
-  (`@modelcontextprotocol/server-pdf`, `figma-developer-mcp`) is told so, with the
-  address it printed: start it in stdio mode, or run toolmenu against the URL.
-- **`session`: a tool that asks the client for roots, sampling or elicitation**,
-  which toolmenu doesn't provide, is a setup failure (`session/untested`), not a
-  `session/step-failed` error. `@modelcontextprotocol/server-everything`'s
-  `get-roots-list` failed the run before.
+  `must_match` tool past the top 5 for its keyword is a warning. It flagged tools on
+  14 of the 26 registry servers large enough to defer: Porkbun's `list_domains` comes
+  37th for "list domains", behind tools whose 5,000-character descriptions say
+  "domain" again and again. No LLM: the ranks are deterministic, but a client's own
+  search can rank a little differently, so findings are unsure.
+- **A server that doesn't start gets the right next step.** These were the commonest
+  ways a first run failed:
+  - **A CLI that prints its usage and exits** is now said to be one, with the
+    subcommand its usage lists: `Its usage lists “mcp”: try hashgrid mcp` (also
+    `mcp start`, `server start`, `serve`, …). Before, toolmenu told it to log to
+    stderr, the wrong fix for about 25 of the servers that didn't start. Following
+    the new hint started 6 of 10 of them, Azure MCP (73 tools) among them.
+  - **A server that opens an HTTP port instead of talking on stdio**
+    (`@modelcontextprotocol/server-pdf`, `figma-developer-mcp`) is told so, with the
+    address it printed: start it in stdio mode, or run toolmenu against the URL.
+- **`session`: fewer setup problems reported as the server's fault.**
+  - A tool that asks the client for roots, sampling or elicitation, which toolmenu
+    doesn't provide, counts toward `session/untested`. Before, it was a
+    `session/step-failed` error: `@modelcontextprotocol/server-everything`'s
+    `get-roots-list` failed the run.
+  - "Admin auth is missing" and "Runtime credentials are missing" (securenow) are
+    credential problems, so they count toward `session/untested` instead of failing
+    the run.
+  - A server that says it can't run on this operating system ("Editmamei runs on
+    Windows and macOS; this process is on "linux"", "Unsupported platform: linux")
+    counts toward `session/untested` (something missing on this machine), as one
+    finding for the run, not a `session/tool-error` per call.
+- **`session`: a long path in an error loses its middle, not its end.** A step's error
+  is cut at 120 characters, and a long path pushed out what came after it: “spawn
+  /tmp/…/scratch…” hid both the missing binary and the `ENOENT`. Absolute paths over 40
+  characters are now kept to their last two parts when the text is too long (“spawn
+  …/bin/editmamei-core-linux-x64 ENOENT”). URLs keep their paths.
+- **False positives fixed.**
+  - `menu/gated` and `session/unlock-coverage` need the tool's name or description to
+    say it unlocks tools before an enum of domains counts: garmin-insights'
+    `garmin_sync { domains: [sleep, hrv, …] }` downloads data. `session --auto` still
+    tries such a tool once.
+  - `ids/authored`: `viewUUID` is a view's ID. The kind came out as "view_uu", so the
+    finding named it wrongly and missed `display_pdf`'s output schema, which returns
+    `viewUUID` (server-pdf).
+- **Docs:** the plan for 0.15 → 0.19, the 2026-07-28 standard
+  (`docs/plans/0.15-2026-readiness.md`). SPEC §1: a rule also earns its place when a
+  2026-07-28 MUST makes compliant clients hide, reject or misread part of the menu.
 
 ## 0.14.1
 
