@@ -184,6 +184,21 @@ or the SDK rejecting a result the server sent is handled like any failed call.
 | `session/undeclared-input` | warn | The server asked for something the request didn't declare (roots, sampling) instead of returning `-32021` |
 | `session/result-type` | error | A 2026-07-28 `tools/call` result without `resultType` (**MUST**), or an `input_required` result whose `requestState` isn't a string (it can't be echoed as it came; toolmenu stops the call). The official SDK client rejects a result without `resultType` |
 
+**Server-minted handles (SEP-2567).** With protocol sessions gone, state across calls
+is a handle the server hands out and takes back as an argument (`session_id`,
+`cart_id`). A handle kind is one that is always short-lived: session, basket, cart,
+checkout, handle, lease, lock; drafts, runs, jobs and tasks are as often records that
+stay. On 2026-07-28, `--auto` calls each read-only tool whose one missing required
+value is such a handle, of a kind some tool in the menu creates (`start_session`),
+once with a handle that can't exist: `toolmenu-unknown-<kind>`, or the nil-version
+UUID for `format: uuid` (a `pattern` is never guessed). On 2026-07-28 an "unknown
+session" error is about such a handle, never `session/session-lost`, which applies to
+2025-era servers only.
+
+| id | sev | check |
+|---|---|---|
+| `session/handle-error` | warn | A handle that can't exist answered with a JSON-RPC error, not a tool error (`isError`) the model can read and recover from by making a new one. A tool error, or an answer, isn't reported. One finding per tool; unsure |
+
 `-32021` (`MissingRequiredClientCapabilityError`) is a setup failure read by its
 code, counted in `session/untested` with the capabilities it names. All of the above
 are checked end to end against a fixture server and `@modelcontextprotocol/server-everything`
@@ -292,6 +307,7 @@ Keyword matching only in v1: deterministic, free and reproducible in CI.
 | id | sev | check |
 |---|---|---|
 | `ids/authored` | warn | An input that looks like an opaque ID where no tool appears to return that kind of ID, so the agent would have to invent it. Heuristic, and worded as one. Stronger when `outputSchema` is present |
+| `ids/handle-lifetime` | info | 2026-07-28. A tool that creates a handle (`create`/`start`/`open`/`new`/`begin`/`acquire` + session, basket, cart, checkout, handle, lease or lock) that another tool takes back (`session_id`, `sessionToken`, `session`), whose description and output schema don't say how long it lasts. The spec asks for retention in the creation tool's description. Unsure |
 
 **Look before it leaps (lesson 02)**
 
@@ -318,6 +334,8 @@ Keyword matching only in v1: deterministic, free and reproducible in CI.
 | `spec/discover` | info | The server only speaks the 2025 protocol: no working `server/discover`, which 2026-07-28 servers **MUST** implement. Info, not error: see §13 |
 | `spec/deprecated` | info | Advertises Sampling, Roots or Logging, or uses HTTP+SSE (`since: 2026-07-28`) |
 | `spec/cache-hints` | info | Cache metadata recommendation, not a correctness error (`since: 2026-07-28`). `ttlMs: 0` on `tools/list`: valid, but tells clients the list is "immediately stale" and they may re-fetch every time. `cacheScope: "public"` on a server that required auth: valid only if the list has no user-specific data, because shared caches "MAY … serve it across authorization contexts". Worth a look if the tool set depends on the caller's scopes |
+| `menu/auth-variance` | info | `snapshot --as name:credential` (repeatable) or `identities` in the config lists the menu once per identity: a header set (HTTP) or env vars (stdio) over `--header`/`--env`. The first identity's menu is saved and checked; each other one, from its own process or connection, is compared with it: tools it adds, lacks, or defines differently, and its tokens. The tool set **MAY** vary by authorization, so this is info. An identity that can't be listed is reported here, and the others are still compared |
+| `spec/cache-scope-public` | warn | `since: 2026-07-28`. The tool set differs by identity and `tools/list` says `cacheScope: "public"` (shared caches **MAY** serve it across authorization contexts). With identities to compare, it replaces `spec/cache-hints`' public-scope hint, which has no evidence either way |
 
 **Not linted:** lesson 03 (say how sure you are, per tool) can't be checked from
 outside. The README says so and links the article. For full stateless conformance,

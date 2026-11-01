@@ -171,7 +171,8 @@ export const cacheHints: Rule = {
         fix: 'If the tool set is stable, set a positive ttlMs on tools/list (3600000 is an hour).',
       });
     }
-    if (meta.cacheScope === 'public' && ctx.usedAuth) {
+    // With --as identities, spec/cache-scope-public answers this with evidence instead.
+    if (meta.cacheScope === 'public' && ctx.usedAuth && (ctx.identities?.length ?? 0) < 2) {
       findings.push({
         message: 'tools/list says cacheScope: "public" on a server that took credentials. Public lets shared caches serve the list to other callers, across authorization contexts. Fine only if the tool set never depends on who is asking.',
         fix: 'If tools depend on the caller\'s account or scopes, set cacheScope: "private" on tools/list.',

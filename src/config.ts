@@ -20,6 +20,12 @@ export interface Config {
   descriptionLimit?: number | string;
   /** Tools (names or globs) your client sends with the full description. */
   fullDescriptions?: string[];
+  /**
+   * snapshot: list the menu once per identity, the first being the main one:
+   * { "reader": { "headers": { "Authorization": "Bearer …" } }, "admin": { "env": { "ROLE": "admin" } } }.
+   * --as replaces them.
+   */
+  identities?: Record<string, { headers?: Record<string, string>; env?: Record<string, string> }>;
   /** Server processes (stdio) or connections (HTTP) to compare, the main one included (default 2). */
   processes?: number;
   /**
@@ -55,6 +61,16 @@ export async function loadConfig(path?: string): Promise<Config> {
   }
   if (config.processes !== undefined && !(Number.isInteger(config.processes) && config.processes >= 1)) {
     throw new Error(`${file}: processes must be a whole number, 1 or more`);
+  }
+  if (config.identities !== undefined) {
+    const strings = (v: unknown) => v === undefined || (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every((x) => typeof x === 'string'));
+    const ids = config.identities;
+    if (typeof ids !== 'object' || ids === null || Array.isArray(ids)) throw new Error(`${file}: identities must be an object, like { "reader": { "headers": { "Authorization": "Bearer …" } } }`);
+    for (const [name, id] of Object.entries(ids)) {
+      if (typeof id !== 'object' || id === null || Array.isArray(id) || !strings(id.headers) || !strings(id.env)) {
+        throw new Error(`${file}: identities.${name} must be { "headers": { … } } or { "env": { … } }, with string values`);
+      }
+    }
   }
   const catalog = config.catalog;
   if (catalog !== undefined) {

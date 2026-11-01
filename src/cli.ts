@@ -2,7 +2,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { loadConfig } from './config.js';
+import { loadConfig, type Config } from './config.js';
 import { ELICITATIONS, PROTOCOLS, type Elicitation, type Protocol, type Target } from './connect.js';
 import { diffMenus } from './diff.js';
 import { loadMenu } from './menu.js';
@@ -15,7 +15,7 @@ import { buildMenu } from './menu.js';
 import { existsSync } from 'node:fs';
 import { loadRoutes } from './routes.js';
 import { snapshot } from './snapshot.js';
-import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded } from './probe.js';
+import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded, type Identity } from './probe.js';
 import { autoScenario, loadValuesFile, parseAssumeReadOnly, parseValueFlag, scenarioYaml, type GivenValue } from './auto.js';
 import { authDir, listLogins, login, logout } from './auth.js';
 import { existingMessage, initReport, planInit, shellWord, writeInit } from './init.js';
@@ -79,6 +79,7 @@ export async function main(argv: string[]): Promise<number> {
   if (!PROTOCOLS.includes(protocol)) throw new UsageError(`--protocol must be auto, legacy or modern`);
   const elicitation = (values.elicitation ?? 'decline') as Elicitation;
   if (!ELICITATIONS.includes(elicitation)) throw new UsageError('--elicitation must be decline or cancel');
+  if (values.as !== undefined && sub !== 'snapshot') throw new UsageError('--as goes with snapshot: it lists the menu once per identity.');
   if (values.elicitation !== undefined && sub !== 'session') throw new UsageError('--elicitation goes with session: only session calls tools.');
   // Only session calls tools, so only its targets declare elicitation and say how to answer.
   const answering = (t: Target): Target => ({ ...t, elicitation });
@@ -265,10 +266,11 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
+  const identities = values.as?.length ? parseIdentities(values.as, target.kind) : configIdentities(config.identities, target.kind);
   const routesPath = values.routes ?? config.routes;
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
-  const { menu, findings } = await snapshot(target, { routes, timeoutMs, processes, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const { menu, findings } = await snapshot(target, { routes, timeoutMs, processes, identities, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');
@@ -316,6 +318,35 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
   const result = await login(url, { port, scope: values.scope, clientId: values['client-id'], clientSecret: values['client-secret'] });
   process.stdout.write(`Logged in to ${result.name ?? url} (${url}): it lists ${result.tools} tool${result.tools === 1 ? '' : 's'} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`);
   return 0;
+}
+
+/**
+ * --as name:credential, repeatable, in order of first mention: `reader:Authorization:
+ * Bearer x` (HTTP header) or `admin:ROLE=admin` (stdio env var). A name alone is an
+ * identity with only the --header/--env given to every run.
+ */
+function parseIdentities(items: string[], kind: Target['kind']): Identity[] {
+  const byName = new Map<string, Identity>();
+  for (const item of items) {
+    const colon = item.indexOf(':');
+    const name = (colon < 0 ? item : item.slice(0, colon)).trim();
+    if (!/^[\w.-]+$/.test(name)) throw new UsageError(`--as "${item}" should start with a name (letters, digits, _ . -): --as reader:${kind === 'http' ? 'Authorization: Bearer …' : 'TOKEN=…'}`);
+    const identity = byName.get(name) ?? { name };
+    byName.set(name, identity);
+    if (colon < 0) continue;
+    const credential = item.slice(colon + 1);
+    if (kind === 'http') identity.headers = { ...identity.headers, ...parsePairs([credential], ':', `--as ${name}:`) };
+    else identity.env = { ...identity.env, ...parsePairs([credential], '=', `--as ${name}:`) };
+  }
+  if (byName.size < 2) throw new UsageError('--as needs two identities or more to compare: --as reader:… --as admin:…');
+  return [...byName.values()];
+}
+
+/** The config file's identities, for this kind of server: headers for HTTP, env for stdio. */
+function configIdentities(ids: Config['identities'], kind: Target['kind']): Identity[] | undefined {
+  if (!ids) return undefined;
+  const list = Object.entries(ids).map(([name, id]) => ({ name, ...(kind === 'http' ? (id.headers ? { headers: id.headers } : {}) : id.env ? { env: id.env } : {}) }));
+  return list.length >= 2 ? list : undefined;
 }
 
 function parsePairs(items: string[], separator: string, flag: string): Record<string, string> {

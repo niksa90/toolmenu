@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased (0.17.0)
+
+Two parts of the 2026-07-28 standard: server-minted handles (SEP-2567), state
+across calls that a tool hands out (`session_id`) and others take back; and menus
+that vary by who asks.
+
+- **`ids/handle-lifetime`** (info, unsure, 2026-07-28): a tool that creates a handle
+  another tool takes back, whose description doesn't say how long it lasts. The
+  spec asks for that in the creation tool's description. Handles are kinds that are
+  always short-lived (session, basket, cart, checkout, handle, lease, lock): on the
+  scanned menus, email drafts, CI runs and planner tasks are records that stay.
+- **`session/handle-error`** (warn, unsure, 2026-07-28): `--auto` calls each
+  read-only tool that takes a handle some tool in the menu creates once with one
+  that can't exist (`toolmenu-unknown-session`). A protocol error in reply is the
+  finding: the model gets no result it can read, so it can't tell it should start a
+  new one. A tool error is the right answer.
+- **`snapshot --as name:credential`** (repeatable; or `identities` in the config):
+  lists the menu once per identity, an HTTP header or a stdio env var over
+  `--header`/`--env`. The first is the menu saved; the others are compared with it.
+  - **`menu/auth-variance`** (info): what each identity's menu adds, lacks or
+    defines differently, and its tokens. The spec allows it; a baseline of one
+    identity's menu doesn't cover the others. An identity that can't be listed is
+    said, and the rest are still compared.
+  - **`spec/cache-scope-public`** (warn, 2026-07-28): the menu differs by identity
+    and `tools/list` says `cacheScope: "public"`. With identities given, it replaces
+    `spec/cache-hints`' public-scope hint.
+  - A second process's menu (and an identity's) now keeps its list's cache hints.
+- **`session/session-lost` is for 2025-era servers only.** On 2026-07-28 there are no
+  protocol sessions, so "Unknown session" from such a server is about a session it
+  minted itself; it used to stop the run.
+
 ## 0.16.2
 
 The rest of the 0.16.1 review: smaller cases, each fixed with a test that failed

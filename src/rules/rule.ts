@@ -24,6 +24,8 @@ export interface RuleContext {
   serverInfo?: { name?: string; version?: string };
   /** How this run reached the server, as the command line ends: `-- node server.js` or the URL. For next steps. */
   server?: string;
+  /** snapshot --as: each identity's menu, the main one first (menu/auth-variance, spec/cache-scope-public). */
+  identities?: import('./identities.js').IdentityMenu[];
   /** Where clients are assumed to cut tool descriptions (description/buried). */
   descriptionLimit?: number | string;
   /** Tools (names or globs) the client sends uncut, so description/buried skips them. */

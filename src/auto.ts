@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { isMap, isNode, isScalar, parseDocument, type Document } from 'yaml';
 import { synthesizeArgs } from './args.js';
+import { createdKinds, handleParams, type HandleProbe } from './rules/handles.js';
 import { MAX_UNLOCKS, unlockers, type Scenario, type Step } from './session.js';
 import type { Menu, MenuTool } from './types.js';
 import { COLLECTION_VERBS, LOOKUP_VERBS, verbOf, WRITE_VERBS } from './words.js';
@@ -103,7 +104,8 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   const { perTool, ignored: unusedValues } = resolveValues(menu, options.values ?? {});
   ignored.push(...unusedValues);
 
-  const candidates: { tool: MenuTool; args: Record<string, unknown>; rank: number; valued: boolean }[] = [];
+  const candidates: { tool: MenuTool; args: Record<string, unknown>; rank: number; valued: boolean; probe?: HandleProbe }[] = [];
+  const modern = (menu.server.protocolVersion ?? '') >= '2026-07-28';
   // Read-only unlocks with every value in an enum: each value, outside the call
   // budget, so the tools behind every toolset are seen (GitHub: 19 toolsets).
   // Called even when marked openWorldHint, without --open-world: an unlock changes
@@ -134,6 +136,13 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     }
     const filled = synthesizeArgs(tool.inputSchema, perTool.get(tool.name));
     if (!filled.ok) {
+      // 2026-07-28: a handle the server mints (a session another tool starts) is
+      // called once with one that can't exist, to see the model gets a readable error.
+      const probe = modern ? handleProbe(tool, menu.tools, filled.missing, perTool.get(tool.name)) : undefined;
+      if (probe) {
+        candidates.push({ tool, args: probe.args, rank: 4, valued: false, probe: probe.probe });
+        continue;
+      }
       skipped.push({ tool: tool.name, reason: 'needs values', missing: filled.missing });
       continue;
     }
@@ -144,7 +153,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   for (const c of candidates.slice(maxCalls)) skipped.push({ tool: c.tool.name, reason: 'over the call budget' });
 
   const steps: Step[] = options.callsOnly ? [] : [{ kind: 'list' }];
-  for (const c of chosen) steps.push({ kind: 'call', tool: c.tool.name, args: c.args });
+  for (const c of chosen) steps.push({ kind: 'call', tool: c.tool.name, args: c.args, ...(c.probe ? { probe: c.probe } : {}) });
   for (const u of unlocks) {
     const array = u.tool.inputSchema?.properties?.[u.param!]?.type === 'array';
     const values = u.values.slice(0, MAX_UNLOCKS);
@@ -155,7 +164,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     // The same unlock again should change nothing, as in the --init starter.
     steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [values[0]] : values[0] }, ...tentative });
   }
-  if (chosen.length && !options.callsOnly) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args });
+  if (chosen.length && !options.callsOnly) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args, ...(chosen[0].probe ? { probe: chosen[0].probe } : {}) });
   const called = [...chosen.map((c) => c.tool.name), ...unlocks.map((u) => u.tool.name)];
   return {
     scenario: { allowWrites: false, steps, ...(assumed.size ? { assumeReadOnly: [...assumed] } : {}) },
@@ -280,6 +289,32 @@ function rank(tool: MenuTool, args: Record<string, unknown>): number {
   if (verb && COLLECTION_VERBS.has(verb)) return 1;
   if (verb && LOOKUP_VERBS.has(verb)) return 2;
   return 3;
+}
+
+/**
+ * A required handle filled with one that can't exist: `toolmenu-unknown-session`,
+ * or the nil-version UUID for a uuid format. Only for a read-only tool (the caller
+ * checks), only when every other required value is filled, and only for a kind
+ * some tool in the menu creates, so it is a handle the server mints.
+ */
+function handleProbe(
+  tool: MenuTool,
+  tools: MenuTool[],
+  missing: string[],
+  given: Record<string, GivenValue> | undefined,
+): { args: Record<string, unknown>; probe: HandleProbe } | undefined {
+  const created = createdKinds(tools);
+  const handles = missing.flatMap((param) => {
+    const kind = [...created].find((k) => handleParams(tool, k).includes(param));
+    return kind ? [{ param, kind }] : [];
+  });
+  if (handles.length !== 1 || missing.length !== 1) return undefined;
+  const [{ param, kind }] = handles;
+  const schema = tool.inputSchema?.properties?.[param];
+  if (!schema || (schema.type !== undefined && schema.type !== 'string') || typeof schema.pattern === 'string' || schema.enum) return undefined;
+  const value = schema.format === 'uuid' ? '00000000-0000-4000-8000-000000000000' : `toolmenu-unknown-${kind}`;
+  const rest = synthesizeArgs(tool.inputSchema, { ...given, [param]: { value, raw: value } });
+  return rest.ok ? { args: rest.args, probe: { param, kind } } : undefined;
 }
 
 /** Parameters the skipped tools need, most needed first, with how many tools each fills. */
