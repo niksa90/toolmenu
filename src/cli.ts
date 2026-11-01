@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadConfig } from './config.js';
-import { PROTOCOLS, type Protocol, type Target } from './connect.js';
+import { ELICITATIONS, PROTOCOLS, type Elicitation, type Protocol, type Target } from './connect.js';
 import { diffMenus } from './diff.js';
 import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
@@ -77,6 +77,11 @@ export async function main(argv: string[]): Promise<number> {
   const config = await loadConfig(values.config);
   const protocol = (values.protocol ?? config.protocol ?? 'auto') as Protocol;
   if (!PROTOCOLS.includes(protocol)) throw new UsageError(`--protocol must be auto, legacy or modern`);
+  const elicitation = (values.elicitation ?? 'decline') as Elicitation;
+  if (!ELICITATIONS.includes(elicitation)) throw new UsageError('--elicitation must be decline or cancel');
+  if (values.elicitation !== undefined && sub !== 'session') throw new UsageError('--elicitation goes with session: only session calls tools.');
+  // Only session calls tools, so only its target says how to answer their questions.
+  const answering = (t: Target): Target => (elicitation === 'decline' ? t : { ...t, elicitation });
   const processes = values.processes !== undefined ? Number(values.processes) : config.processes ?? 2;
   if (!Number.isInteger(processes) || processes < 1) throw new UsageError('--processes must be a whole number, 1 or more');
 
@@ -188,7 +193,7 @@ export async function main(argv: string[]): Promise<number> {
     } catch (error) {
       throw new UsageError(error instanceof Error ? error.message : String(error));
     }
-    const autoTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
+    const autoTarget = answering(parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol));
     const waited = { ms: 0 };
     const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
       throw refusedForTooMany(error, waited.ms);
@@ -251,7 +256,7 @@ export async function main(argv: string[]): Promise<number> {
       process.stdout.write(formatPlan(scenario, values.scenario) + '\n');
       return 0;
     }
-    const sessionTarget = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
+    const sessionTarget = answering(parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol));
     const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario, unionOut: !!values['union-out'] });
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);

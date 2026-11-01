@@ -161,6 +161,28 @@ out. On earlier spec versions it's allowed, and toolmenu reports only the cache 
 |---|---|---|
 | `session/unannounced` | warn | The menu changed, the server declared `listChanged: true`, and no `notifications/tools/list_changed` arrived. The spec says servers **SHOULD** send it |
 
+**Tools that ask for input (2026-07-28, multi round-trip requests, SEP-2322).** A
+tool can answer `tools/call` with `resultType: "input_required"`: `inputRequests`
+(elicitation, form or URL mode; or roots or sampling, both deprecated) and maybe a
+`requestState`. toolmenu declares elicitation on every request, answers every
+elicitation with `decline` (`--elicitation cancel` for the other answer; never
+`accept`, which needs values someone has to choose), sends `requestState` back byte
+for byte, and calls again, for at most 3 rounds. It declares no roots or sampling.
+On a 2025 server the same answer goes to its `elicitation/create` requests.
+
+| id | sev | check |
+|---|---|---|
+| `session/input-required` | info | Which tools asked for input, for what, how many rounds, and what the decline led to. One finding for the run |
+| `session/input-loop` | warn | After a decline the tool asks the same thing again (or keeps asking) until the round limit: an agent whose user says no can't finish the call |
+| `session/decline-fails` | warn | The retry carrying the decline fails with a JSON-RPC error, not a result the model can read. A tool error (`isError`) after a decline is the right answer and isn't reported |
+| `session/undeclared-input` | warn | The server asked for something the request didn't declare (roots, sampling) instead of returning `-32021` |
+| `session/result-type` | error | A 2026-07-28 `tools/call` result without `resultType` (**MUST**). The official SDK client rejects it |
+
+`-32021` (`MissingRequiredClientCapabilityError`) is a setup failure read by its
+code, counted in `session/untested` with the capabilities it names. All of the above
+are checked end to end against a fixture server and `@modelcontextprotocol/server-everything`
+2.1.0, whose elicitation tools (form, multi-step, URL) all take the decline and answer.
+
 It also runs a **connection-variance check**: the same `list` from two fresh
 connections **with the same credentials** must return the same menu. On
 2026-07-28 the tool set "MUST NOT vary per-connection" (§12). It **MAY** vary by

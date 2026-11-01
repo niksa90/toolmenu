@@ -358,8 +358,8 @@ const FAILED_AS: Record<RouterFailure, { what: [string, string]; fix: string }> 
     fix: 'Check the server is set up for this account or site, then rerun.',
   },
   client: {
-    what: ["asked the client for something toolmenu doesn't offer (roots, sampling or elicitation)", "asked the client for something toolmenu doesn't offer (roots, sampling or elicitation)"],
-    fix: "Nothing to fix in the server: toolmenu doesn't answer roots, sampling or elicitation requests, so it can't list these routers' commands.",
+    what: ["asked the client for something toolmenu doesn't offer (roots or sampling)", "asked the client for something toolmenu doesn't offer (roots or sampling)"],
+    fix: "Nothing to fix in the server: toolmenu doesn't answer roots or sampling requests, so it can't list these routers' commands.",
   },
   'invalid-arguments': {
     what: ["rejected the listing call's arguments", "rejected the listing call's arguments"],

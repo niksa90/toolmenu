@@ -20,6 +20,10 @@ connections and releases, and checks **when** it changes:
 - **Ready for 2026-07-28.** That protocol version says the tool set **must not** vary
   per connection or as a side effect of other requests (the 2025 versions allow it).
   Per-session "unlock" designs, like the one I built, are ruled out. `session` tells you whether yours is one of them.
+  It also checks the menu clients will actually show: a broken `x-mcp-header` or a
+  `$ref` they can't resolve hides a tool or fails every call to it. And when a tool
+  stops to ask the user something, `session` answers "no" and says whether the tool
+  can take it.
 - **Between releases.** `diff` finds breaking changes and token growth, and checks
   the version bump.
 

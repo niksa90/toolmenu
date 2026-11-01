@@ -28,9 +28,13 @@ export type Protocol = 'auto' | 'legacy' | 'modern';
 export const PROTOCOLS: readonly Protocol[] = ['auto', 'legacy', 'modern'];
 export const MODERN_VERSION = '2026-07-28';
 
+/** How toolmenu answers every elicitation: the user said no, or dismissed it. Never accept: that needs values, and an LLM or a person to pick them. */
+export type Elicitation = 'decline' | 'cancel';
+export const ELICITATIONS: readonly Elicitation[] = ['decline', 'cancel'];
+
 export type Target =
-  | { kind: 'stdio'; command: string; args: string[]; env?: Record<string, string>; cwd?: string; protocol?: Protocol }
-  | { kind: 'http'; url: string; headers?: Record<string, string>; noAuth?: boolean; protocol?: Protocol };
+  | { kind: 'stdio'; command: string; args: string[]; env?: Record<string, string>; cwd?: string; protocol?: Protocol; elicitation?: Elicitation }
+  | { kind: 'http'; url: string; headers?: Record<string, string>; noAuth?: boolean; protocol?: Protocol; elicitation?: Elicitation };
 
 export interface WireResponse {
   method: string;
@@ -108,8 +112,18 @@ export interface ConnectOptions {
 export async function connect(target: Target, options: ConnectOptions = {}): Promise<Connection> {
   const client = new Client(
     { name: 'toolmenu', version: VERSION },
-    { versionNegotiation: { mode: target.protocol === 'legacy' ? 'legacy' : target.protocol === 'modern' ? { pin: MODERN_VERSION } : 'auto' } },
+    {
+      versionNegotiation: { mode: target.protocol === 'legacy' ? 'legacy' : target.protocol === 'modern' ? { pin: MODERN_VERSION } : 'auto' },
+      // Elicitation, form and URL mode, so a tool that asks the user something runs
+      // its "the user said no" path instead of failing (2026-07-28 multi round-trip
+      // requests). Every request is answered the same way, with no LLM: see ELICITATION.
+      // Not roots or sampling: 2026-07-28 deprecates them (SEP-2577).
+      capabilities: { elicitation: { form: {}, url: {} } },
+    },
   );
+  // A 2025 server asks with an elicitation/create request; 2026-07-28 ones embed it
+  // in an input_required result, which session answers itself (mrtr.ts). Same answer.
+  client.setRequestHandler('elicitation/create', async () => ({ action: target.elicitation ?? 'decline' }));
   let transport: Transport;
   let stderrText = '';
   let oauth = false;

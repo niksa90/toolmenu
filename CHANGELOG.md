@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- **`session`: tools that ask the user something (2026-07-28 multi round-trip
+  requests).** A 2026 tool can stop mid-call and ask for input (`input_required`):
+  a form, a URL to open, or roots or sampling. toolmenu used to report every one as a
+  failed call. It now declares elicitation, declines every request (the same answer
+  every run, no LLM; `--elicitation cancel` for the other one), sends the tool's
+  `requestState` back byte for byte and calls again, and reports what happened:
+  - `session/input-required` (info): which tools asked, for what, and how they
+    answered the decline.
+  - `session/input-loop` (warn): a tool that asks the same thing again after a
+    decline, so an agent whose user says no is stuck.
+  - `session/decline-fails` (warn): a decline that gets a protocol error back
+    instead of a result the model can read.
+  - `session/undeclared-input` (warn): a server that asks for roots or sampling the
+    client didn't declare, instead of returning `-32021`.
+  - `session/result-type` (error): a result without `resultType`, which the official
+    SDK client rejects.
+
+  `-32021` is read by its code as a setup problem, with the capability it names.
+  Roots and sampling stay undeclared: 2026-07-28 deprecates them. On
+  `@modelcontextprotocol/server-everything` 2.1.0 all three elicitation tools take the
+  decline and answer.
 - **New rule `spec/x-mcp-header` (2026-07-28): tools that HTTP clients must hide.** A
   parameter can be mirrored into an `Mcp-Param-*` HTTP header, and Streamable HTTP
   clients **must** drop any tool whose annotation breaks the spec's rules: empty,
