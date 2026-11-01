@@ -90,6 +90,13 @@ export function build() {
   // Never finishes: requestState-only rounds forever.
   reg('work_forever', 'Never finishes.', async (_args, ctx) => inputRequired({ requestState: `${Number(ctx.mcpReq.requestState() ?? '0') + 1}` }));
 
+  // BAD_STATE=1: asks with a requestState REWRITE turns into an object (the SDK seals the one it's given), which no client can echo as it came.
+  if (process.env.BAD_STATE) {
+    reg('object_state', 'Keeps its state as an object.', async (_args, ctx) =>
+      ctx.mcpReq.inputResponses ? text('called again without its state') : inputRequired({ inputRequests: { OBJECT_STATE: confirm('Go?') }, requestState: 'x' }),
+    );
+  }
+
   // Asks the same question again after a decline, under a new key and with new wording each time.
   reg('ask_forever_reworded', 'Asks again, worded anew.', async (_args, ctx) => {
     const n = Number(ctx.mcpReq.requestState() ?? '0') + 1;
@@ -131,11 +138,12 @@ export function build() {
 // the client didn't declare, a result without resultType. Rewrites this process's
 // own stdout, one JSON-RPC line at a time.
 function rewrite(line) {
-  if (!line.includes('REWRITE_TO_ROOTS') && !line.includes('NO-RESULT-TYPE')) return line;
+  if (!line.includes('REWRITE_TO_ROOTS') && !line.includes('NO-RESULT-TYPE') && !line.includes('OBJECT_STATE')) return line;
   const message = JSON.parse(line);
   const result = message.result ?? {};
   if (result.inputRequests?.REWRITE_TO_ROOTS) result.inputRequests = { roots: { method: 'roots/list' } };
   if (result.content?.[0]?.text === 'NO-RESULT-TYPE') delete result.resultType;
+  if (result.inputRequests?.OBJECT_STATE) result.requestState = { step: 1 };
   return JSON.stringify(message);
 }
 

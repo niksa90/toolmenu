@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { canonical, compareMenus } from './compare.js';
 import { countTokens } from './menu.js';
 import { headerFaults } from './rules/headers.js';
+import { indexSchema } from './schema-ref.js';
 import { isCalendar, parseSemver } from './semver.js';
 import type { Finding, JsonSchema, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
@@ -1294,21 +1295,19 @@ export function resolveRefs(schema: JsonSchema | undefined): JsonSchema | undefi
 function expandRefs(schema: JsonSchema | undefined): { schema: JsonSchema | undefined; expanded: boolean } {
   if (!schema || typeof schema !== 'object') return { schema, expanded: true };
   let nodes = 0;
-  const pointer = (ref: string): unknown => {
-    let node: unknown = schema;
-    for (const raw of ref.slice(2).split('/')) {
-      if (!node || typeof node !== 'object') return undefined;
-      node = (node as Record<string, unknown>)[decodeURIComponent(raw).replace(/~1/g, '/').replace(/~0/g, '~')];
-    }
-    return node;
-  };
+  // The resolver spec/ref uses: pointers, anchors and $id resources alike, and only
+  // refs where a schema goes (a "$ref" inside enum or default is data). Each ref
+  // resolves against the resource it's written in.
+  const index = indexSchema(schema);
+  const bases = new Map<object, string>(index.refs.map((r) => [r.node, r.base]));
   const walk = (node: unknown, stack: string[]): unknown => {
     if (++nodes > MAX_EXPANDED_NODES) throw new Error('too large');
     if (Array.isArray(node)) return node.map((x) => walk(x, stack));
     if (!node || typeof node !== 'object') return node;
     const o = node as Record<string, unknown>;
     if (typeof o.$ref === 'string') {
-      const target = o.$ref.startsWith('#/') ? pointer(o.$ref) : undefined;
+      const base = bases.get(o) ?? (o === rest ? bases.get(schema) : undefined);
+      const target = base !== undefined ? index.resolve(o.$ref, base)?.value : undefined;
       if (target && typeof target === 'object' && !Array.isArray(target) && stack.filter((r) => r === o.$ref).length < MAX_UNROLL) {
         const { $ref: _ref, ...siblings } = o;
         return { ...(walk(target, [...stack, o.$ref]) as object), ...(walk(siblings, stack) as object) };

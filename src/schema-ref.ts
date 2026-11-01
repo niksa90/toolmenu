@@ -45,17 +45,22 @@ function decode(part: string): string {
   return text.replace(/~1/g, '/').replace(/~0/g, '~');
 }
 
-/** `base` + `ref` the way a URI resolves: absolute stays, relative joins an absolute base, otherwise as written. */
+/**
+ * A schema with no absolute $id still has a base: relative $ids and refs join
+ * against it ("dir/a.json" then "b.json" is "dir/b.json"), and it is never a
+ * network address. Its spelling never leaves this file.
+ */
+const LOCAL = 'toolmenu-schema:/';
+
+const ABSOLUTE = /^[a-z][a-z0-9+.-]*:/i;
+
+/** `base` + `ref` the way a URI resolves, normalized (case of scheme and host, dot segments), so two spellings of one URI match. */
 function join(base: string, ref: string): string {
-  if (/^[a-z][a-z0-9+.-]*:/i.test(ref)) return ref;
-  if (/^[a-z][a-z0-9+.-]*:/i.test(base)) {
-    try {
-      return new URL(ref, base).href;
-    } catch {
-      return ref;
-    }
+  try {
+    return new URL(ref, ABSOLUTE.test(base) ? base : LOCAL).href;
+  } catch {
+    return ref;
   }
-  return ref;
 }
 
 const strip = (uri: string) => uri.replace(/#$/, '');
@@ -82,20 +87,24 @@ export function indexSchema(schema: unknown): SchemaIndex {
   const refs: SchemaIndex['refs'] = [];
   const entries = new Map<object, string>();
   const root = (schema && typeof schema === 'object' ? schema : {}) as Record<string, unknown>;
-  const rootBase = typeof root.$id === 'string' && !root.$id.startsWith('#') ? strip(root.$id) : '';
-  resources.set(rootBase, root);
+  const rootBase = LOCAL;
 
   const walk = (node: unknown, base: string, path: string[], entry: string | undefined, depth: number) => {
     if (!node || typeof node !== 'object' || Array.isArray(node) || depth > 64) return;
     const s = node as Record<string, unknown>;
     if (entry) entries.set(s, entry);
     let here = base;
+    if (depth === 0) resources.set(base, s);
     if (typeof s.$id === 'string') {
-      if (s.$id.startsWith('#')) anchors.set(`${base}#${s.$id.slice(1)}`, s); // draft-07 plain name
-      else {
-        here = strip(join(base, s.$id));
+      // "#node" (draft-07 plain name), "a.json" or "a.json#node" (draft-06/07: a resource and a name for it).
+      const hash = s.$id.indexOf('#');
+      const uri = hash < 0 ? s.$id : s.$id.slice(0, hash);
+      const name = hash < 0 ? '' : s.$id.slice(hash + 1);
+      if (uri) {
+        here = strip(join(base, uri));
         resources.set(here, s);
       }
+      if (name && !name.startsWith('/')) anchors.set(`${here}#${name}`, s);
     }
     for (const key of ['$anchor', '$dynamicAnchor']) if (typeof s[key] === 'string') anchors.set(`${here}#${s[key]}`, s);
     for (const key of ['$ref', '$dynamicRef']) if (typeof s[key] === 'string') refs.push({ ref: s[key] as string, base: here, path, node: s });
@@ -116,13 +125,14 @@ export function indexSchema(schema: unknown): SchemaIndex {
       else if (node && typeof node === 'object' && Object.prototype.hasOwnProperty.call(node, part)) node = (node as Record<string, unknown>)[part];
       else return undefined;
     }
-    // An object target knows its entry; a boolean schema ($defs: { Any: true }) gets it from the path.
+    // The entry comes from where the pointer goes: a path under the root's $defs, the
+    // entry the resource itself sits in, or the node's own. Not only the node's: a
+    // boolean schema ($defs: { Any: true }) or an object inside a list the walk doesn't
+    // enter (an entry's `examples`) is still inside its entry.
     const entry =
-      node && typeof node === 'object'
-        ? entries.get(node as object)
-        : resource === root && (parts[0] === '$defs' || parts[0] === 'definitions') && parts.length >= 2
-          ? `${parts[0]}/${parts[1]}`
-          : undefined;
+      (resource === root && (parts[0] === '$defs' || parts[0] === 'definitions') && parts.length >= 2 ? `${parts[0]}/${parts[1]}` : undefined) ??
+      entries.get(resource) ??
+      (node && typeof node === 'object' ? entries.get(node as object) : undefined);
     return { value: node, ...(entry ? { entry } : {}) };
   };
 
@@ -130,11 +140,13 @@ export function indexSchema(schema: unknown): SchemaIndex {
     refs,
     entryOf: (node) => entries.get(node),
     resolve(ref, base) {
-      const target = ref === '' ? base : ref.startsWith('#') ? `${base}${ref}` : join(base, ref);
-      const hash = target.indexOf('#');
-      const where = strip(hash < 0 ? target : target.slice(0, hash));
-      // Split a pointer into segments before decoding any: "~1" is a "/" inside one segment.
-      const fragment = hash < 0 ? '' : target.slice(hash + 1);
+      // The resource from the URI part, joined and normalized; the fragment as written
+      // (the URL parser would re-encode it). A pointer is split into segments before
+      // any is decoded: "~1" is a "/" inside one segment.
+      const hash = ref.indexOf('#');
+      const uri = hash < 0 ? ref : ref.slice(0, hash);
+      const where = uri ? strip(join(base, uri)) : base;
+      const fragment = hash < 0 ? '' : ref.slice(hash + 1);
       const resource = resources.get(where);
       if (!resource) return undefined;
       if (fragment === '' || fragment.startsWith('/')) return pointer(resource, fragment);

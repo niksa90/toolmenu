@@ -805,3 +805,14 @@ test('a recursive schema whose definitions → $defs moved with the dialect is t
   const removed = diffMenus(gen(tree('definitions', D07, [{ type: 'object', properties: { type: { const: 'quote' } } }])), gen(tree('$defs', D2020)));
   assert.ok(removed.findings.some((f) => f.rule === 'diff/param-type' && /no longer accepts/.test(f.message)));
 });
+
+// 0.16.2: diff resolves refs with the resolver spec/ref uses.
+test('resolveRefs: a bad percent-escape no longer stops expansion; anchors and $id resources expand; a "$ref" in enum is data', async () => {
+  const { resolveRefs } = await import('../dist/diff.js');
+  const bad = resolveRefs({ type: 'object', properties: { a: { $ref: '#/$defs/100%' }, b: { $ref: '#/$defs/B' } }, $defs: { B: { type: 'string' } } });
+  assert.deepEqual(bad.properties.b, { type: 'string' }, 'B expands though another ref is malformed');
+  const anchored = resolveRefs({ type: 'object', properties: { a: { $ref: '#money' } }, $defs: { M: { $anchor: 'money', type: 'number' } } });
+  assert.equal(anchored.properties.a.type, 'number');
+  const data = resolveRefs({ type: 'object', properties: { c: { enum: [{ $ref: '#/$defs/B' }] } }, $defs: { B: { type: 'string' } } });
+  assert.deepEqual(data.properties.c.enum, [{ $ref: '#/$defs/B' }]);
+});

@@ -149,3 +149,34 @@ test('breakdown: entries reached through dependencies, a boolean entry, and both
   const both = buildMenu([tool({ type: 'object', properties: { a: { $ref: '#/$defs/A' } }, $defs: { A: { $ref: '#/$defs/B', $dynamicRef: '#c' }, B: { type: 'string' }, C: { $dynamicAnchor: 'c', type: 'object' } } })], {});
   assert.equal(breakdown(both).unusedDefs.tokens, 0);
 });
+
+// 0.16.2: the resolver's remaining edge cases.
+test('unresolvedRefs: relative $ids join against the resource they sit in, even with no absolute $id at the root', () => {
+  const schema = {
+    type: 'object',
+    properties: {
+      a: { $id: 'dir/a.json', properties: { inner: { $id: 'b.json', type: 'string' }, x: { $ref: 'b.json' } } },
+      y: { $ref: 'dir/b.json' },
+    },
+  };
+  assert.deepEqual(unresolvedRefs(schema, 'inputSchema'), []);
+  // "b.json" at the root is not "dir/b.json": it points to nothing, and it is not a network URI.
+  const wrong = unresolvedRefs({ type: 'object', properties: { a: { $id: 'dir/b.json', type: 'string' }, y: { $ref: 'b.json' } } }, 'inputSchema');
+  assert.deepEqual(wrong.map((f) => [f.path, f.kind]), [['y', 'missing']]);
+});
+
+test('unresolvedRefs: two spellings of one URI are one resource', () => {
+  const schema = { $id: 'https://X.test/schemas/root.json', type: 'object', properties: { a: { $ref: 'https://x.test/schemas/./sub/../root.json#/$defs/A' } }, $defs: { A: { type: 'string' } } };
+  assert.deepEqual(unresolvedRefs(schema, 'inputSchema'), []);
+});
+
+test('unresolvedRefs: a draft-06/07 $id with a name ("other.json#node") names the resource and the node', () => {
+  const schema = { type: 'object', properties: { a: { $ref: 'other.json#node' }, b: { $ref: 'other.json' } }, definitions: { N: { $id: 'other.json#node', type: 'string' } } };
+  assert.deepEqual(unresolvedRefs(schema, 'inputSchema'), []);
+});
+
+test('breakdown: a ref into an entry through a list the walk does not enter still marks the entry used', () => {
+  const tool = (schema) => ({ name: 't', description: 'T.', inputSchema: schema });
+  const menu = buildMenu([tool({ type: 'object', properties: { a: { $ref: '#/$defs/A/examples/0' } }, $defs: { A: { type: 'object', examples: [{ type: 'string' }] } } })], {});
+  assert.equal(breakdown(menu).unusedDefs.tokens, 0);
+});
