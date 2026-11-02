@@ -7,7 +7,9 @@
 //   NO_HINTS=1    resources/templates/list without ttlMs and cacheScope (lists/schema): the SDK
 //                 fills them in, so REWRITE takes them out on the wire
 //   BROKEN=1      prompts/list fails (lists/schema, as a warning)
-//   NO_RESOURCES=1 declares no resources capability (lists/undeclared)
+//   NO_RESOURCES=1 declares no resources capability (a note, not a finding)
+//   NO_TEMPLATES=1 declares resources but has no resources/templates/list: Method not found
+//   NO_KEY=1      resources/list fails for want of credentials: a setup problem, not the server's
 import { Server } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
 
@@ -26,11 +28,14 @@ export function build() {
   });
   if (!process.env.NO_RESOURCES) {
     server.setRequestHandler('resources/list', async () => {
+      if (process.env.NO_KEY) throw new Error('Not authenticated: set LISTS_API_KEY.');
       const resources = [{ uri: 'file:///a.txt', name: 'a' }, { uri: 'file:///b.txt', name: 'b' }];
       if (process.env.VARY && calls++ % 2) resources.reverse();
       return { resources, ...hints };
     });
-    server.setRequestHandler('resources/templates/list', async () => ({ resourceTemplates: [{ uriTemplate: 'file:///{path}', name: 'file' }], ...hints }));
+    if (!process.env.NO_TEMPLATES) {
+      server.setRequestHandler('resources/templates/list', async () => ({ resourceTemplates: [{ uriTemplate: 'file:///{path}', name: 'file' }], ...hints }));
+    }
   }
   return server;
 }

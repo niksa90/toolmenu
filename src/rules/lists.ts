@@ -1,5 +1,6 @@
 import { LIST_INFO, listChanges, type ListKind, type ListRead } from '../lists.js';
-import { count, names, type Rule, type RuleFinding } from './rule.js';
+import { classifyFailure, SETUP_FAILURES } from '../failures.js';
+import { count, type Rule, type RuleFinding } from './rule.js';
 import { resultValidator } from './spec.js';
 
 /*
@@ -59,11 +60,29 @@ export const listSchema: Rule = {
     for (const r of ctx.lists?.read ?? []) {
       const info = LIST_INFO[r.kind];
       if (r.first.error) {
-        findings.push({
-          severity: 'warn',
-          message: `The server declares ${info.capability}, but ${info.method} failed: ${r.first.error}. Clients that load ${info.key === 'resourceTemplates' ? 'resource templates' : info.key} up front get an error instead.`,
-          fix: `Answer ${info.method} (an empty list is fine), or stop declaring the ${info.capability} capability.`,
-        });
+        const said = r.first.error.replace(/[.\s]+$/, '');
+        const failure = classifyFailure(r.first.error, { code: r.first.code });
+        if (r.first.code === -32601 || /method not found/i.test(r.first.error)) {
+          // A server that declares resources but answers one of their methods with Method not found.
+          findings.push({
+            severity: 'info',
+            message: `The server declares ${info.capability} but answers ${info.method} with Method not found (-32601), so a client that asks for ${info.key === 'resourceTemplates' ? 'resource templates' : info.key} gets an error, not an empty list.`,
+            fix: `Answer ${info.method} with an empty list if there are none.`,
+          });
+        } else if (SETUP_FAILURES.has(failure)) {
+          // Credentials, this machine, a missing app: a failure of the setup, not of the server.
+          findings.push({
+            severity: 'info',
+            message: `${info.method} couldn't be read here (${said}), so it wasn't checked: a setup problem, not the server's.`,
+            fix: `Rerun where ${info.method} can answer (credentials, the app or data it needs) to check it.`,
+          });
+        } else {
+          findings.push({
+            severity: 'warn',
+            message: `The server declares ${info.capability}, but ${info.method} failed: ${said}. Clients that load ${info.key === 'resourceTemplates' ? 'resource templates' : info.key} up front get an error instead.`,
+            fix: `Answer ${info.method} (an empty list is fine), or stop declaring the ${info.capability} capability.`,
+          });
+        }
         continue;
       }
       const validate = resultValidator(ctx.protocolVersion, RESULT[r.kind]);
@@ -82,22 +101,5 @@ export const listSchema: Rule = {
       });
     }
     return findings;
-  },
-};
-
-export const listsUndeclared: Rule = {
-  id: 'lists/undeclared',
-  severity: 'info',
-  summary: '--lists asked for a list the server declares no capability for',
-  run(ctx) {
-    const kinds = ctx.lists?.undeclared ?? [];
-    if (!kinds.length) return [];
-    const caps = [...new Set(kinds.map((k) => LIST_INFO[k].capability))];
-    return [
-      {
-        message: `The server declares no ${names(caps)} capability, so ${names(kinds.map((k) => LIST_INFO[k].method))} ${kinds.length === 1 ? "wasn't" : "weren't"} read. Nothing to check there.`,
-        fix: `Nothing to change if the server has no ${names(caps)}; leave ${names(caps)} out of --lists.`,
-      },
-    ];
   },
 };

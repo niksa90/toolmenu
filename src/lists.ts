@@ -32,6 +32,8 @@ export interface ListRead {
   truncated?: boolean;
   /** Why it couldn't be read. */
   error?: string;
+  /** The JSON-RPC error code it failed with, when there was one (-32601: method not found). */
+  code?: number;
 }
 
 /** Read one list, page by page, as the server sends it. */
@@ -58,7 +60,8 @@ export async function readList(connection: Connection, kind: ListKind, timeoutMs
       if (!cursor) break;
     }
   } catch (error) {
-    return { kind, items: [], pages, listMeta: {}, error: (error instanceof Error ? error.message : String(error)).split('\n')[0] };
+    const code = (error as { code?: unknown } | null)?.code;
+    return { kind, items: [], pages, listMeta: {}, error: (error instanceof Error ? error.message : String(error)).split('\n')[0].replace(/^MCP error -?\d+:\s*/, ''), ...(typeof code === 'number' ? { code } : {}) };
   }
   const first = pages[0] ?? {};
   return {

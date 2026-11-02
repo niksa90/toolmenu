@@ -63,11 +63,21 @@ test('lists/schema: a result without the cache hints 2026-07-28 requires; a list
   assert.match(broken.message, /^The server declares prompts, but prompts\/list failed: .*prompts are not configured/);
 });
 
-test('lists/undeclared: a list asked for that the server has no capability for is said, not an error', async () => {
-  const [f] = await findings(['--lists', 'prompts,resources', '--env', 'NO_RESOURCES=1']);
-  assert.equal(f.rule, 'lists/undeclared');
-  assert.equal(f.severity, 'info');
-  assert.match(f.message, /^The server declares no resources capability, so resources\/list and resources\/templates\/list weren't read\./);
+test('a list the server doesn\'t offer is a note on the snapshot, not a finding', async () => {
+  assert.deepEqual(await findings(['--lists', 'prompts,resources', '--env', 'NO_RESOURCES=1']), []);
+  const text = await snap(['--no-write', '--lists', 'prompts,resources', '--env', 'NO_RESOURCES=1']);
+  assert.match(text.stdout, /\n {2}also listed: 2 prompts · no resources offered \(not declared\)\n/);
+  const json = JSON.parse((await snap(['--no-write', '--json', '--lists', 'prompts,resources', '--env', 'NO_RESOURCES=1'])).stdout);
+  assert.deepEqual(json.notOffered, ['resources', 'resourceTemplates']);
+});
+
+test('lists/schema: Method not found for a declared list is info; a setup failure (credentials) is info that says so', async () => {
+  const [missing] = await findings(['--lists', 'resources', '--env', 'NO_TEMPLATES=1']);
+  assert.equal(missing.severity, 'info');
+  assert.match(missing.message, /^The server declares resources but answers resources\/templates\/list with Method not found \(-32601\), so a client that asks for resource templates gets an error, not an empty list\.$/);
+  const [setup] = await findings(['--lists', 'resources', '--env', 'NO_KEY=1']);
+  assert.equal(setup.severity, 'info');
+  assert.match(setup.message, /^resources\/list couldn't be read here \(.*Not authenticated: set LISTS_API_KEY\), so it wasn't checked: a setup problem, not the server's\.$/);
 });
 
 test('--lists on a 2025 server: checked against that version\'s schema, with no cache hints required', async () => {

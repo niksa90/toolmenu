@@ -279,12 +279,12 @@ export async function main(argv: string[]): Promise<number> {
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
   const client = values.client ?? config.client;
-  const { menu, findings, cost } = await snapshot(target, { routes, timeoutMs, processes, identities, client, lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const { menu, findings, cost, notOffered } = await snapshot(target, { routes, timeoutMs, processes, identities, client, lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');
 
-  const output = formatSnapshot(menu, findings, format, outPath, cost);
+  const output = formatSnapshot(menu, findings, format, outPath, cost, notOffered);
   if (output) process.stdout.write(output + '\n');
   return findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
 }

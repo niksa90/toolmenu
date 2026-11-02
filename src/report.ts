@@ -38,7 +38,7 @@ function costLine(cost: ClientCost): string {
   return `as ${cost.label}: ${parts.join(' · ')}`;
 }
 
-export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, outPath?: string, cost?: ClientCost): string {
+export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, outPath?: string, cost?: ClientCost, notOffered: string[] = []): string {
   if (format === 'json') {
     return JSON.stringify(
       {
@@ -52,6 +52,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
         ...(menu.prompts ? { prompts: menu.prompts.length } : {}),
         ...(menu.resources ? { resources: menu.resources.length } : {}),
         ...(menu.resourceTemplates ? { resourceTemplates: menu.resourceTemplates.length } : {}),
+        ...(notOffered.length ? { notOffered } : {}),
         written: outPath ?? null,
         counts: counts(findings),
         findings,
@@ -81,7 +82,9 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
   ];
   if (cost) lines.push(`  ${costLine(cost)}`, `    ${cost.basis}`);
   const others = otherLists(menu);
-  if (others) lines.push(`  also listed: ${others}`);
+  // Lists asked for that the server doesn't offer: said once, not a finding.
+  const caps = [...new Set(notOffered.map((k) => (k === 'prompts' ? 'prompts' : 'resources')))];
+  if (others || caps.length) lines.push(`  ${[others ? `also listed: ${others}` : '', caps.length ? `no ${caps.join(' or ')} offered (not declared)` : ''].filter(Boolean).join(' · ')}`);
   if (outPath) lines.push(`  wrote ${outPath}`);
   lines.push('');
   const where = breakdownLines(breakdown(menu), menu.tools.length);

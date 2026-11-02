@@ -43,6 +43,8 @@ export interface SnapshotResult {
   identities?: IdentityMenu[];
   /** --client: what the menu costs up front and per tool a search loads. */
   cost?: ClientCost;
+  /** --lists: lists asked for that the server declares no capability for, so weren't read. */
+  notOffered?: ListKind[];
 }
 
 /** Establish the menu: connect, list the tools twice, run the menu rules. */
@@ -159,7 +161,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     findings.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
   }
   const cost = options.client ? clientCost(options.client, menu) : undefined;
-  return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}) };
+  return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}), ...(undeclared.length ? { notOffered: undeclared } : {}) };
 }
 
 const firstLine = (error: unknown) => (error instanceof Error ? error.message : String(error)).split('\n')[0].trim();
