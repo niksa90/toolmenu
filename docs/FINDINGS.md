@@ -631,13 +631,15 @@ truth: 171 tools, 154 of them not in the default menu.
 
 ## F16. 0.16–0.20 on 86 registry servers and the reference server
 
-*Checked 2026-11-01 to 11-03 with `bench/` (`corpus/registry.tsv`: 86 recent stdio
-servers from the MCP registry that start without credentials; 39 of them answer the
-2026-07-28 handshake) and `@modelcontextprotocol/server-everything` 2.1.0.* Each release
+*Checked 2026-11-01 to 11-03 with `bench/` (`snapshot`: `corpus/registry.tsv`, 86 recent
+stdio servers from the MCP registry that start without credentials; `session --auto`:
+the 39 servers across all three corpus lists that answer the 2026-07-28 handshake, 13
+from the registry list, 9 popular npm, 17 PyPI) and
+`@modelcontextprotocol/server-everything` 2.1.0.* Each release
 was compared with the one before, server by server (`bench/scripts/compare.py`), and
 every changed finding read by hand.
 
-| Release | `snapshot` on 86 | `session --auto` on 39 |
+| Release | `snapshot` on 86 (registry) | `session --auto` on 39 (2026-07-28) |
 |---|---|---|
 | 0.16.0 → 0.16.2 | same | same |
 | 0.17.0 | +1 `ids/handle-lifetime` (User Intuition `create_research_session`) | same |

@@ -19,9 +19,9 @@ from its own folder for that reason.
 Each line: `id<TAB>package@version` (npm) or `package==version` (PyPI)`<TAB>repository`.
 Versions are pinned, so a rerun checks the same code.
 
-Of the 86 registry servers, 39 answer the 2026-07-28 handshake; they are the `session
---auto` corpus (a server is on it when `snapshot --json` reports `protocolVersion`
-`2026-07-28`).
+The `session --auto` corpus is the servers across all three lists that answer the
+2026-07-28 handshake (`snapshot --json` reports `protocolVersion` `2026-07-28`): 39 at
+the last run, 13 from the registry list, 9 from the popular npm list, 17 from PyPI.
 
 ## Running
 
