@@ -4,6 +4,7 @@ import { ConnectError } from './explain.js';
 import { buildMenu } from './menu.js';
 import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded, type Identity } from './probe.js';
 import type { IdentityMenu } from './rules/identities.js';
+import { clientCost, type ClientCost } from './clients.js';
 import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
 import { catalogFindings, readCatalog, type CatalogOptions } from './catalog.js';
 import type { Routes } from './routes.js';
@@ -27,6 +28,8 @@ export interface SnapshotOptions extends RuleSettings {
    * menu is the one saved and checked; the others are compared with it.
    */
   identities?: Identity[];
+  /** --client: check the menu for this client (src/clients.ts): its description cut, its search, its name format. */
+  client?: string;
 }
 
 export interface SnapshotResult {
@@ -34,6 +37,8 @@ export interface SnapshotResult {
   findings: Finding[];
   /** snapshot --as: each identity's tools and tokens, or why it couldn't be listed. */
   identities?: IdentityMenu[];
+  /** --client: what the menu costs up front and per tool a search loads. */
+  cost?: ClientCost;
 }
 
 /** Establish the menu: connect, list the tools twice, run the menu rules. */
@@ -98,7 +103,10 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       capabilities: connection.capabilities,
       usedAuth: connection.usedAuth,
       routes: options.routes,
-      descriptionLimit: options.descriptionLimit,
+      // A client profile's cut, unless descriptionLimit says otherwise. A client whose docs
+      // give no cut (Claude's API, OpenAI) isn't checked against Claude Code's.
+      descriptionLimit: options.descriptionLimit ?? (options.client === undefined ? undefined : options.client === 'claude-code' ? 'claude-code' : Number.POSITIVE_INFINITY),
+      client: options.client,
       fullDescriptions: options.fullDescriptions,
       transport: target.kind,
       probes,
@@ -120,7 +128,8 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     }
     findings.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
   }
-  return { menu, findings, ...(identities ? { identities } : {}) };
+  const cost = options.client ? clientCost(options.client, menu) : undefined;
+  return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}) };
 }
 
 const firstLine = (error: unknown) => (error instanceof Error ? error.message : String(error)).split('\n')[0].trim();

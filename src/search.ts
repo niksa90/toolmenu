@@ -22,8 +22,10 @@ const K1 = 1.2;
 const B = 0.75;
 
 /** The words a search sees in a tool: its name, description, and every argument's name and description. */
-export function searchText(tool: MenuTool): string[] {
-  const parts: string[] = [tool.name, tool.description ?? ''];
+export function searchText(tool: MenuTool, descriptionChars?: number): string[] {
+  // A client whose search reads only the start of a description (Claude Code: the first 4,096 characters).
+  const description = tool.description ?? '';
+  const parts: string[] = [tool.name, descriptionChars !== undefined ? description.slice(0, descriptionChars) : description];
   const walk = (schema: unknown, depth: number) => {
     if (!schema || typeof schema !== 'object' || depth > 6) return;
     const s = schema as { properties?: Record<string, unknown>; items?: unknown; description?: unknown };
@@ -51,10 +53,10 @@ export interface SearchIndex {
   rank(query: string): { tool: string; score: number }[];
 }
 
-export function buildIndex(tools: MenuTool[]): SearchIndex {
+export function buildIndex(tools: MenuTool[], options: { descriptionChars?: number } = {}): SearchIndex {
   const docs = tools.map((t) => {
     const tf = new Map<string, number>();
-    const text = searchText(t);
+    const text = searchText(t, options.descriptionChars);
     for (const w of text) tf.set(w, (tf.get(w) ?? 0) + 1);
     return { name: t.name, tf, length: text.length };
   });
