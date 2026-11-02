@@ -23,7 +23,15 @@ connections and releases, and checks **when** it changes:
   It also checks the menu clients will actually show: a broken `x-mcp-header` or a
   `$ref` they can't resolve hides a tool or fails every call to it. And when a tool
   stops to ask the user something, `session` answers "no" and says whether the tool
-  can take it.
+  can take it. Handles a server mints (`session_id`) should say how long they last and
+  fail readably when unknown; menus that differ by who asks (`--as`) shouldn't be
+  cached as public; prompts and resources (`--lists`) are checked like tools. Run
+  against the reference server, `@modelcontextprotocol/server-everything` 2.1.0, with
+  no false findings ([bench/](bench/README.md)).
+- **For your client.** `--client claude-code | claude-api-search | openai` checks the
+  menu the way that client loads it, from its own docs: what it costs up front and per
+  tool a search loads, where it cuts descriptions, what its search can find, and names
+  its API refuses.
 - **Between releases.** `diff` finds breaking changes and token growth, and checks
   the version bump.
 
@@ -247,9 +255,9 @@ the way OpenAPI breaking-change checkers do it:
 
 | Class | Changes | Rules |
 |---|---|---|
-| **breaking** (error) | tool removed or renamed, parameter removed, new required parameter, narrower or different type, enum narrowed, unlisted properties now rejected (`additionalProperties: false` added), a tool becoming less safe (no longer read-only, or additive → destructive) | `diff/tool-removed`, `diff/tool-renamed`, `diff/param-removed`, `diff/param-required`, `diff/param-type`, `diff/enum-narrowed`, `diff/properties-closed`, `diff/safety-hint` |
-| **minor** (info) | tool added, new optional parameter, parameter now optional, type or enum widened, unlisted properties now accepted (`additionalProperties: false` removed) | `diff/tool-added`, `diff/param-added`, `diff/param-relaxed`, `diff/type-widened`, `diff/enum-widened`, `diff/properties-opened` |
-| **notice** (info) | optional parameter dropped (extra properties still allowed), description changed (with the text diff: it changes what the agent does), output schema, annotations, other fields, order, a schema restructured but accepting the same input, only the declared `$schema` dialect changed | `diff/param-dropped`, `diff/description`, `diff/schema-other`, `diff/annotations`, `diff/other`, `diff/order`, `diff/schema-equivalent`, `diff/schema-dialect` |
+| **breaking** (error) | tool removed or renamed, parameter removed, new required parameter, narrower or different type, enum narrowed, unlisted properties now rejected (`additionalProperties: false` added), a tool becoming less safe (no longer read-only, or additive → destructive); with `--lists` on both sides, a prompt removed or newly requiring an argument, a resource template removed | `diff/tool-removed`, `diff/tool-renamed`, `diff/param-removed`, `diff/param-required`, `diff/param-type`, `diff/enum-narrowed`, `diff/properties-closed`, `diff/safety-hint`, `diff/prompt-removed`, `diff/prompt-argument-required`, `diff/resource-template-removed` |
+| **minor** (info) | tool added, new optional parameter, parameter now optional, type or enum widened, unlisted properties now accepted (`additionalProperties: false` removed), a prompt or resource template added | `diff/tool-added`, `diff/param-added`, `diff/param-relaxed`, `diff/type-widened`, `diff/enum-widened`, `diff/properties-opened`, `diff/prompt-added`, `diff/resource-template-added` |
+| **notice** (info) | optional parameter dropped (extra properties still allowed), description changed (with the text diff: it changes what the agent does), output schema, annotations, other fields, order, a schema restructured but accepting the same input, only the declared `$schema` dialect changed, a prompt's description or optional arguments, resources added or gone (data, so no bump) | `diff/param-dropped`, `diff/description`, `diff/schema-other`, `diff/annotations`, `diff/other`, `diff/order`, `diff/schema-equivalent`, `diff/schema-dialect`, `diff/prompt-changed`, `diff/resources` |
 
 The same rules apply inside parameters: fields of an object parameter, array items,
 and the options of an `anyOf`/`oneOf` union (zod's unions, discriminated unions and

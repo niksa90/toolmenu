@@ -116,3 +116,34 @@ test('--format markdown names the other lists too', async () => {
   const md = await snap(['--no-write', '--format', 'markdown', '--lists', 'prompts,resources']);
   assert.match(md.stdout, /\nAlso listed: 2 prompts · 2 resources · 1 resource template\n/);
 });
+
+test('diff: prompts and resource templates compare like tools; resources as data; a list one side didn\'t read isn\'t compared', async () => {
+  const dir = tempDir();
+  const old = join(dir, 'old.json');
+  const next = join(dir, 'new.json');
+  const bare = join(dir, 'bare.json');
+  await snap(['--out', old, '--lists', 'prompts,resources']);
+  await snap(['--out', next, '--lists', 'prompts,resources', '--env', 'NEXT=1']);
+  await snap(['--out', bare]);
+  const d = JSON.parse((await run(['diff', '--json', old, next])).stdout);
+  const by = (rule) => d.findings.filter((f) => f.rule === rule);
+  assert.match(by('diff/prompt-removed')[0].message, /^Prompt `review` was removed\./);
+  assert.equal(by('diff/prompt-removed')[0].class, 'breaking');
+  assert.match(by('diff/prompt-argument-required')[0].message, /^Prompt `summarize` now requires `topic`\./);
+  assert.match(by('diff/prompt-added')[0].message, /^Prompt `translate` is new\.$/);
+  assert.match(by('diff/resource-template-added')[0].message, /^Resource template `db:\/\/\{table\}` is new\.$/);
+  const [res] = by('diff/resources');
+  assert.equal(res.class, 'notice');
+  assert.deepEqual(res.detail, ['gone: file:///b.txt', 'new: file:///c.txt']);
+  assert.equal(d.suggestedBump, 'major', 'a removed prompt is breaking');
+  // The reverse: a template removed is breaking too.
+  const back = JSON.parse((await run(['diff', '--json', next, old])).stdout);
+  assert.equal(back.findings.find((f) => f.rule === 'diff/resource-template-removed').class, 'breaking');
+  // Only one side read the lists: said, not compared.
+  const half = JSON.parse((await run(['diff', '--json', bare, next])).stdout);
+  assert.deepEqual(half.findings.filter((f) => /prompt|resource/.test(f.rule) && f.rule !== 'diff/lists-unread'), []);
+  assert.match(half.findings.find((f) => f.rule === 'diff/lists-unread').message, /^Not compared: prompts \(the new menu has them, the old one wasn't read with --lists\)/);
+  // The same release twice: nothing.
+  const same = JSON.parse((await run(['diff', '--json', old, old])).stdout);
+  assert.deepEqual(same.findings.filter((f) => /prompt|resource|lists/.test(f.rule)), []);
+});

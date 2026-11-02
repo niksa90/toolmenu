@@ -75,6 +75,17 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/catalog-missing': { severity: 'info' },
   'diff/catalog-added': { severity: 'info' },
   'diff/catalog-queries': { severity: 'info' },
+  // snapshot --lists: prompts are called by name like tools, and resource templates are
+  // the URIs clients read through. Concrete resources are data (files come and go):
+  // counted, no bump. Only compared when both menus read the list.
+  'diff/prompt-removed': { severity: 'error', class: 'breaking' },
+  'diff/prompt-argument-required': { severity: 'error', class: 'breaking' },
+  'diff/prompt-added': { severity: 'info', class: 'minor' },
+  'diff/prompt-changed': { severity: 'info', class: 'notice' },
+  'diff/resource-template-removed': { severity: 'error', class: 'breaking' },
+  'diff/resource-template-added': { severity: 'info', class: 'minor' },
+  'diff/resources': { severity: 'info', class: 'notice' },
+  'diff/lists-unread': { severity: 'info' },
 };
 
 export interface TokenChange {
@@ -243,6 +254,7 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   }
 
   raw.push(...compareCatalogs(before.catalog, after.catalog, ignored));
+  raw.push(...compareLists(before, after));
 
   // Ignored tools leave the token counts and the budget too.
   const tokens = tokenChange(oldTools, newTools);
@@ -1325,6 +1337,85 @@ function expandRefs(schema: JsonSchema | undefined): { schema: JsonSchema | unde
   } catch {
     return { schema, expanded: false };
   }
+}
+
+type Item = Record<string, unknown>;
+
+/** The arguments a prompt requires. */
+function requiredArguments(p: Item): string[] {
+  return (Array.isArray(p.arguments) ? (p.arguments as Item[]) : []).filter((a) => a.required === true).map((a) => String(a.name));
+}
+
+/**
+ * snapshot --lists: prompts, resource templates and resources between two menus.
+ * A list only one menu read isn't compared (everything would read as added or removed).
+ */
+function compareLists(before: Menu, after: Menu): Raw[] {
+  const out: Raw[] = [];
+  const unread: string[] = [];
+  const pair = (key: 'prompts' | 'resources' | 'resourceTemplates', label: string): [Item[], Item[]] | undefined => {
+    const a = before[key];
+    const b = after[key];
+    if (!a && !b) return undefined;
+    if (!a || !b) {
+      unread.push(`${label} (${a ? 'the old' : 'the new'} menu has them, the ${a ? 'new' : 'old'} one wasn't read with --lists)`);
+      return undefined;
+    }
+    return [a, b];
+  };
+
+  const prompts = pair('prompts', 'prompts');
+  if (prompts) {
+    const [a, b] = prompts;
+    const oldBy = new Map(a.map((p) => [String(p.name), p]));
+    const newBy = new Map(b.map((p) => [String(p.name), p]));
+    for (const [name] of oldBy) {
+      if (!newBy.has(name)) out.push({ rule: 'diff/prompt-removed', message: `Prompt ${code(name)} was removed. Users and clients that invoke it by name (a slash command, a saved workflow) now get an error.`, fix: `Keep ${code(name)} for one release, or ${BREAKING_RELEASE}.` });
+    }
+    for (const [name, p] of newBy) {
+      const old = oldBy.get(name);
+      if (!old) {
+        out.push({ rule: 'diff/prompt-added', message: `Prompt ${code(name)} is new.` });
+        continue;
+      }
+      const required = requiredArguments(p).filter((r) => !requiredArguments(old).includes(r));
+      if (required.length) {
+        out.push({ rule: 'diff/prompt-argument-required', message: `Prompt ${code(name)} now requires ${required.map(code).join(', ')}. Invocations that don't pass ${required.length === 1 ? 'it' : 'them'} now fail.`, fix: `Make ${required.length === 1 ? 'it' : 'them'} optional, or ${BREAKING_RELEASE}.` });
+      } else if (JSON.stringify(old) !== JSON.stringify(p)) {
+        out.push({ rule: 'diff/prompt-changed', message: `Prompt ${code(name)} changed (its description or arguments), and nothing it requires.` });
+      }
+    }
+  }
+
+  const templates = pair('resourceTemplates', 'resource templates');
+  if (templates) {
+    const [a, b] = templates;
+    const oldSet = new Set(a.map((t) => String(t.uriTemplate)));
+    const newSet = new Set(b.map((t) => String(t.uriTemplate)));
+    for (const t of oldSet) if (!newSet.has(t)) out.push({ rule: 'diff/resource-template-removed', message: `Resource template ${code(t)} was removed. Clients that read resources through it now get an error.`, fix: `Keep ${code(t)} for one release, or ${BREAKING_RELEASE}.` });
+    for (const t of newSet) if (!oldSet.has(t)) out.push({ rule: 'diff/resource-template-added', message: `Resource template ${code(t)} is new.` });
+  }
+
+  const resources = pair('resources', 'resources');
+  if (resources) {
+    const [a, b] = resources;
+    const oldSet = new Set(a.map((r) => String(r.uri)));
+    const newSet = new Set(b.map((r) => String(r.uri)));
+    const gone = [...oldSet].filter((u) => !newSet.has(u));
+    const fresh = [...newSet].filter((u) => !oldSet.has(u));
+    if (gone.length || fresh.length) {
+      out.push({
+        rule: 'diff/resources',
+        message: `The resources list changed: ${[fresh.length ? `${fresh.length} new` : '', gone.length ? `${gone.length} gone` : ''].filter(Boolean).join(', ')}. Resources are often data that changes between runs; a resource clients rely on by URI going away is worth a look.`,
+        detail: [...gone.slice(0, 5).map((u) => `gone: ${u}`), ...fresh.slice(0, 5).map((u) => `new: ${u}`), ...(gone.length + fresh.length > 10 ? ['…'] : [])],
+      });
+    }
+  }
+
+  if (unread.length) {
+    out.push({ rule: 'diff/lists-unread', message: `Not compared: ${unread.join('; ')}.`, fix: 'Snapshot both releases with the same --lists to compare them.' });
+  }
+  return out;
 }
 
 /** What the operations are behind: the search tool or router by name, or "the command routers" as words. */
