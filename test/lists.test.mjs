@@ -104,3 +104,15 @@ test('--lists: usage errors and the config key', async () => {
   assert.equal(badConfig.code, 2);
   assert.match(badConfig.stderr, /lists must be a list of tools, prompts, resources/);
 });
+
+// 0.20, from the review of 0.19.
+test('a list longer than the page cap is read up to it, and the snapshot says the checks cover those pages only', async () => {
+  const [f] = await findings(['--lists', 'resources', '--env', 'PAGED=1', '--processes', '1']);
+  assert.equal(f.severity, 'info');
+  assert.match(f.message, /^resources\/list has more than 50 pages; toolmenu read the first 50 \(50 items\), so the checks and the menu file cover those only\.$/);
+});
+
+test('--format markdown names the other lists too', async () => {
+  const md = await snap(['--no-write', '--format', 'markdown', '--lists', 'prompts,resources']);
+  assert.match(md.stdout, /\nAlso listed: 2 prompts · 2 resources · 1 resource template\n/);
+});

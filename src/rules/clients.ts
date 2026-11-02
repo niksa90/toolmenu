@@ -1,4 +1,4 @@
-import { CLIENTS, nameProblem } from '../clients.js';
+import { nameProblem, profileOf } from '../clients.js';
 import { count, kept, type Rule } from './rule.js';
 
 /**
@@ -11,7 +11,7 @@ export const clientName: Rule = {
   severity: 'warn',
   summary: "Tool names the client's API doesn't accept as they are",
   run(ctx) {
-    const profile = ctx.client ? CLIENTS[ctx.client] : undefined;
+    const profile = profileOf(ctx.client);
     if (!profile?.namePattern) return [];
     const bad = kept(ctx.menu.tools, ctx)
       .map((t) => ({ tool: t.name, why: nameProblem(t.name, profile) }))

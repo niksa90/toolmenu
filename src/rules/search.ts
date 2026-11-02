@@ -1,4 +1,4 @@
-import { CLIENTS } from '../clients.js';
+import { profileOf } from '../clients.js';
 import { buildIndex, placeIn, placeOf, SEARCH_LIMIT } from '../search.js';
 import { commonWords, VERBS, words } from '../words.js';
 import { clip, count, kept, names, num, type Rule, type RuleFinding } from './rule.js';
@@ -22,7 +22,7 @@ export const findable: Rule = {
   summary: 'Each tool comes up when searched for by its own name, for clients that defer tools',
   run(ctx) {
     const tools = ctx.menu.tools;
-    const profile = ctx.client ? CLIENTS[ctx.client] : undefined;
+    const profile = profileOf(ctx.client);
     if (profile) {
       // A client that defers tools does it at any size; one whose search results
       // aren't documented (OpenAI's spec doesn't say how many) isn't ranked against a guess.

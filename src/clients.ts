@@ -85,10 +85,15 @@ export const CLIENTS: Record<string, ClientProfile> = {
 
 export const CLIENT_NAMES = Object.keys(CLIENTS);
 
+/** A client's profile by name: own keys only ("toString" names no client). */
+export function profileOf(name: string | undefined): ClientProfile | undefined {
+  return name !== undefined && Object.hasOwn(CLIENTS, name) ? CLIENTS[name] : undefined;
+}
+
 /** The profile for a client name, or undefined for none given. Throws for an unknown name. */
 export function clientProfile(name: string | undefined): ClientProfile | undefined {
   if (name === undefined) return undefined;
-  const profile = CLIENTS[name];
+  const profile = profileOf(name);
   if (!profile) throw new Error(`unknown client "${name}": one of ${CLIENT_NAMES.join(', ')}`);
   return profile;
 }
@@ -126,7 +131,7 @@ export interface ClientCost {
 
 /** What the menu costs under a client that defers tools: up front, and per tool a search loads. */
 export function clientCost(name: string, menu: Menu): ClientCost | undefined {
-  const profile = CLIENTS[name];
+  const profile = profileOf(name);
   if (!profile || profile.defers.value === 'none') return undefined;
   const loaded = profile.defers.value === 'all' ? menu.tools.filter(loadsUpfront) : [];
   const deferred = menu.tools.filter((t) => !loaded.includes(t));

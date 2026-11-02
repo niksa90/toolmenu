@@ -9,6 +9,7 @@
 //   BROKEN=1      prompts/list fails (lists/schema, as a warning)
 //   NO_RESOURCES=1 declares no resources capability (a note, not a finding)
 //   NO_TEMPLATES=1 declares resources but has no resources/templates/list: Method not found
+//   PAGED=1       resources/list never stops paging (a cursor on every page): read up to the cap
 //   NO_KEY=1      resources/list fails for want of credentials: a setup problem, not the server's
 import { Server } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
@@ -27,8 +28,12 @@ export function build() {
     return { prompts, ...hints };
   });
   if (!process.env.NO_RESOURCES) {
-    server.setRequestHandler('resources/list', async () => {
+    server.setRequestHandler('resources/list', async (request) => {
       if (process.env.NO_KEY) throw new Error('Not authenticated: set LISTS_API_KEY.');
+      if (process.env.PAGED) {
+        const at = Number(request.params?.cursor ?? 0);
+        return { resources: [{ uri: `file:///${at}.txt`, name: String(at) }], nextCursor: String(at + 1), ...hints };
+      }
       const resources = [{ uri: 'file:///a.txt', name: 'a' }, { uri: 'file:///b.txt', name: 'b' }];
       if (process.env.VARY && calls++ % 2) resources.reverse();
       return { resources, ...hints };

@@ -63,7 +63,7 @@ export async function loadConfig(path?: string): Promise<Config> {
     throw new Error(`${file}: protocol must be auto, legacy or modern`);
   }
   const limit = config.descriptionLimit;
-  if (limit !== undefined && !(typeof limit === 'number' && limit > 0) && !(typeof limit === 'string' && limit in CLIENT_LIMITS)) {
+  if (limit !== undefined && !(typeof limit === 'number' && limit > 0) && !(typeof limit === 'string' && Object.hasOwn(CLIENT_LIMITS, limit))) {
     throw new Error(`${file}: descriptionLimit must be a positive number or one of ${Object.keys(CLIENT_LIMITS).join(', ')}`);
   }
   if (config.processes !== undefined && !(Number.isInteger(config.processes) && config.processes >= 1)) {
@@ -72,7 +72,7 @@ export async function loadConfig(path?: string): Promise<Config> {
   if (config.lists !== undefined && !(Array.isArray(config.lists) && config.lists.every((l) => (LIST_WORDS as readonly string[]).includes(l)))) {
     throw new Error(`${file}: lists must be a list of ${LIST_WORDS.join(', ')}`);
   }
-  if (config.client !== undefined && !(typeof config.client === 'string' && config.client in CLIENTS)) {
+  if (config.client !== undefined && !(typeof config.client === 'string' && Object.hasOwn(CLIENTS, config.client))) {
     throw new Error(`${file}: client must be one of ${Object.keys(CLIENTS).join(', ')}`);
   }
   if (config.identities !== undefined) {

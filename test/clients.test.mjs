@@ -117,3 +117,19 @@ test('--client: usage errors and the config key', async () => {
 test('clientCost: a profile that defers nothing has no cost line', () => {
   assert.equal(clientCost('unknown', menuOf([tool('a')])), undefined);
 });
+
+// 0.20, from the review of 0.18: a name that's a key of every object is no client.
+test('--client and descriptionLimit: "toString" and "constructor" name no client', async () => {
+  const cli = await snap(['--client', 'toString']);
+  assert.equal(cli.code, 2);
+  assert.match(cli.stderr, /--client must be one of/);
+  const dir = tempDir();
+  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ client: 'constructor' }));
+  const cfg = await run(['snapshot', '--no-write', '--', process.execPath, server], { cwd: dir });
+  assert.equal(cfg.code, 2);
+  assert.match(cfg.stderr, /client must be one of/);
+  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ descriptionLimit: 'toString' }));
+  const limit = await run(['snapshot', '--no-write', '--', process.execPath, server], { cwd: dir });
+  assert.equal(limit.code, 2);
+  assert.match(limit.stderr, /descriptionLimit must be a positive number or one of/);
+});
