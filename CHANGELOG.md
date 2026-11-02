@@ -3,7 +3,18 @@
 ## 0.17.1
 
 From running 0.17.0 on a real 2026-07-28 server that mints sessions (User
-Intuition), and a review of 0.17.0. Each fix has a test that failed before.
+Intuition), a review of 0.17.0, and Claude Code's current docs. Each fix has a test
+that failed before.
+
+- **Claude Code's description cut is 16,384 characters, not 2,048.** Its docs
+  (code.claude.com/docs/en/mcp, read 2026-11-02) say Claude Code cuts a tool loaded
+  through tool search, which is on by default, at 16,384 characters, and one that
+  loads up front at 4,096; 2,048 was the cut before v2.1.296. `description/buried`
+  and `description/cut` used 2,048, so they reported cuts Claude Code no longer
+  makes. The default now follows the docs per tool: 4,096 for a tool marked
+  `_meta["anthropic/alwaysLoad"]: true`, 16,384 otherwise. New preset
+  `descriptionLimit: "claude-code-upfront"` (4,096 for every tool) for tool search
+  off.
 
 - **`session --auto` probes optional handles too.** A read-only tool whose handle is
   optional (`inspect_research_session { view, session_id? }`) gets one more call with

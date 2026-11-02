@@ -15,7 +15,8 @@ export interface Config {
   serverVersionIsRelease?: boolean;
   /**
    * Where your client cuts tool descriptions: a number of characters, or a
-   * known client ("claude-code", "amazon-q"). Default "claude-code" (2,048).
+   * known client ("claude-code", "claude-code-upfront", "amazon-q"). Default "claude-code"
+   * (16,384 through tool search, 4,096 for a tool that loads up front).
    */
   descriptionLimit?: number | string;
   /** Tools (names or globs) your client sends with the full description. */

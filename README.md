@@ -383,7 +383,7 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `spec/tools-capability` | error | The server doesn't declare the `tools` capability, so clients (the official SDK included) never ask for its tools |
 | `menu/duplicate-name` | error | Two tools with the same name: only one can be called, and some clients reject the list |
 | `naming/route` | error | A `routes.yml` expectation broke: a keyword now matches the wrong tool at least as well as the right one |
-| `description/buried` | warn | Instructions to the agent ("use X instead", "don't retry", "never guess one") past the point where your client cuts descriptions: 2,048 characters in Claude Code, or your `descriptionLimit`. From a real failure: a client cut at 280 characters, and the line that decided routing was at 1,222 |
+| `description/buried` | warn | Instructions to the agent ("use X instead", "don't retry", "never guess one") past the point where your client cuts descriptions: in Claude Code 16,384 characters for a tool loaded through tool search (its default) and 4,096 for one that loads up front, or your `descriptionLimit`. From a real failure: a client cut at 280 characters, and the line that decided routing was at 1,222 |
 | `description/cut` | info | Descriptions longer than the client sends, with nothing that reads as an instruction past the cut, as one summary that shows where each one is cut. The model gets a prefix that can read as complete |
 | `description/late-instruction` | info | With the default cut: instructions after character 280, which a client that cuts descriptions short would hide, as one summary. Set `descriptionLimit` and `description/buried` checks your real cut instead. (Before 0.13 this was part of `description/cut`; that id's setting still applies.) |
 | `naming/vague-id` | warn | Parameters called just `id` that don't say *which* thing, as one summary with a suggested name |
@@ -431,10 +431,12 @@ meant to steer away from, and toolmenu says so.
 ```
 
 `descriptionLimit` is where your client cuts tool descriptions: a number, or a client
-whose cut has been reported: `"claude-code"` (2,048, the default: reported in
-[anthropics/claude-code#87650](https://github.com/anthropics/claude-code/issues/87650);
-the [Claude Code changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)
-lists `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH` to change it from 2.1.280) or
+whose cut has been reported: `"claude-code"` (the default: Claude Code's own docs,
+[code.claude.com/docs/en/mcp](https://code.claude.com/docs/en/mcp), read 2026-11-02:
+16,384 characters for a tool loaded through tool search, which is on by default, and
+4,096 for a tool that loads up front, marked `_meta["anthropic/alwaysLoad"]: true`;
+the cut was 2,048 before v2.1.296), `"claude-code-upfront"` (4,096 for every tool:
+Claude Code with tool search off) or
 `"amazon-q"` (10,024, reported in
 [makenotion/notion-mcp-server#145](https://github.com/makenotion/notion-mcp-server/issues/145)).
 Clients that send descriptions in full don't need a setting beyond that. If your own

@@ -43,7 +43,7 @@ test('spec/tools-capability: a server without it serves clients no tools', () =>
 });
 
 test('description/buried: another tool\'s name counts only as a whole word', () => {
-  const padding = 'x'.repeat(2100);
+  const padding = 'x'.repeat(16_500);
   const menu = (tail) => [
     tool('search', ['query'], { annotations: { readOnlyHint: true } }),
     tool('get_papers', [], { description: `${padding} ${tail}`, annotations: { readOnlyHint: true } }),
@@ -399,36 +399,48 @@ test('description/buried: tools the client sends in full are skipped', () => {
 });
 
 test('description limits: Claude Code by default, presets, or your number', () => {
-  const pad = 'Returns the record with every field it has. '.repeat(50); // 2,200 characters
+  // Claude Code's documented cuts (code.claude.com/docs/en/mcp, read 2026-11-02): 16,384 for a
+  // tool loaded through tool search (the default), 4,096 for one that loads up front.
+  const pad = 'Returns the record with every field it has. '.repeat(400); // 17,600 characters
   const text = (at) => `${pad.slice(0, at)} Never guess a record ID. ${pad}`;
   const run = (tools, ctx = {}) => lint(tools, ctx).filter((f) => f.rule.startsWith('description/'));
-  // past Claude Code's 2,048: flagged, and the message names the client
-  const late = run([tool('get_record', ['record_id'], { description: text(2100) })]);
+  // past 16,384: flagged, and the message names the client
+  const late = run([tool('get_record', ['record_id'], { description: text(16_500) })]);
   assert.deepEqual(late.map((f) => f.rule), ['description/buried']);
-  assert.match(late[0].message, /past character 2,048, where Claude Code cuts the description/);
+  assert.match(late[0].message, /past character 16,384, where Claude Code cuts the description/);
   assert.match(late[0].fix, /If your client isn't Claude Code, set descriptionLimit to its cut\.$/);
-  // before 2,048 but past 280: fine unless you say your client cuts at 280
+  // past 2,048 (the cut before Claude Code v2.1.296) and 4,096, but before 16,384: no longer buried
+  assert.ok(!run([tool('get_record', ['record_id'], { description: text(5000) })]).some((f) => f.rule === 'description/buried'));
+  // a tool marked to load up front is cut at 4,096
+  const upfront = run([tool('get_record', ['record_id'], { description: text(5000), _meta: { 'anthropic/alwaysLoad': true } })]);
+  assert.match(upfront.find((f) => f.rule === 'description/buried').message, /past character 4,096, where Claude Code cuts the description/);
+  // with tool search off, every tool is cut at 4,096
+  assert.match(run([tool('get_record', ['record_id'], { description: text(5000) })], { descriptionLimit: 'claude-code-upfront' }).find((f) => f.rule === 'description/buried').message, /past character 4,096/);
+  // before 16,384 but past 280: fine unless you say your client cuts at 280
   // (one summary for the length, one hint for the instruction a shorter cut would hide)
   assert.deepEqual(run([tool('get_record', ['record_id'], { description: text(500) })]).map((f) => f.rule), ['description/cut', 'description/late-instruction']);
   assert.match(run([tool('get_record', ['record_id'], { description: text(500) })], { descriptionLimit: 280 })[0].message, /past character 280, where your client cuts the description/);
   // Amazon Q sends up to 10,024
-  assert.deepEqual(run([tool('get_record', ['record_id'], { description: text(2100) })], { descriptionLimit: 'amazon-q' }), []);
+  assert.match(run([tool('get_record', ['record_id'], { description: text(10_100) })], { descriptionLimit: 'amazon-q' }).find((f) => f.rule === 'description/buried').message, /past character 10,024, where Amazon Q CLI cuts the description/);
 });
 
 test('description/cut: one summary of descriptions longer than the client sends', () => {
-  const long = 'Lists every field with an example value. '.repeat(60);
+  const long = 'Lists every field with an example value. '.repeat(420);
   const found = lint([tool('get_a', [], { description: long }), tool('get_b', [], { description: long }), tool('get_c', [], { description: 'Short.' })]).filter((f) => f.rule === 'description/cut');
   assert.equal(found.length, 1);
   assert.equal(found[0].severity, 'info');
-  assert.match(found[0].message, /^2 descriptions are longer than the 2,048 characters Claude Code sends/);
+  assert.match(found[0].message, /^2 descriptions are longer than the 16,384 characters Claude Code sends/);
   assert.equal(found[0].confidence, undefined, 'a length is observed, not guessed');
   assert.equal(found[0].detail.length, 2);
-  assert.match(found[0].detail[0], /^get_a: 2,4\d\d characters, \d+ past the cut, which falls at “….+✂.+…”$/);
+  assert.match(found[0].detail[0], /^get_a: 17,\d\d\d characters, \d+ past the cut, which falls at “….+✂.+…”$/);
+  // An up-front tool (cut at 4,096) beside a deferred one (16,384): both cuts are named.
+  const mixed = lint([tool('get_a', [], { description: long }), tool('get_b', [], { description: 'Lists every field. '.repeat(250), _meta: { 'anthropic/alwaysLoad': true } })]).filter((f) => f.rule === 'description/cut');
+  assert.match(mixed[0].message, /^2 descriptions are longer than Claude Code sends \(16,384 or 4,096 characters\)/);
   assert.ok(found[0].fix);
 });
 
 test('description/cut: every tool in the detail, not the first five', () => {
-  const long = 'Lists every field with an example value. '.repeat(60);
+  const long = 'Lists every field with an example value. '.repeat(420);
   const names = ['get_a', 'get_b', 'get_c', 'get_d', 'get_e', 'get_f', 'get_g'];
   const found = lint(names.map((n) => tool(n, [], { description: long }))).filter((f) => f.rule === 'description/cut');
   assert.deepEqual(found[0].detail.map((d) => d.split(':')[0]), names);
@@ -451,13 +463,13 @@ test('naming/route: a tool missing from a server that changes its menu is info, 
 });
 
 test('description/late-instruction: with the default cut, instructions a shorter client cut would hide get one hint', () => {
-  const pad = 'Returns the record with every field it has. '.repeat(10); // 450 characters, under 2,048
+  const pad = 'Returns the record with every field it has. '.repeat(10); // 450 characters, under Claude Code's cut
   const tools = [tool('get_record', ['record_id'], { description: `${pad}Never guess a record ID.` }), tool('get_other', [], { description: 'Short.' })];
   const hint = lint(tools).filter((f) => f.rule === 'description/late-instruction');
   assert.equal(hint.length, 1);
   assert.equal(hint[0].tool, 'get_record');
   assert.equal(hint[0].confidence, 'unsure');
-  assert.match(hint[0].message, /^The get_record description gives the agent instructions after character 280.*Claude Code sends 2,048 characters/);
+  assert.match(hint[0].message, /^The get_record description gives the agent instructions after character 280.*Claude Code sends 16,384 characters/);
   assert.deepEqual(hint[0].detail, ['get_record: char 440: “Never guess a record ID.”']);
   assert.match(hint[0].fix, /set descriptionLimit/);
   assert.deepEqual(lint(tools).filter((f) => f.rule === 'description/cut'), [], 'no longer a description/cut finding');
