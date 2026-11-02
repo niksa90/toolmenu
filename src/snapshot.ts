@@ -2,7 +2,9 @@ import { listTools, type Target } from './connect.js';
 import { patiently, tooMany } from './failures.js';
 import { ConnectError } from './explain.js';
 import { buildMenu } from './menu.js';
-import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded, type Identity } from './probe.js';
+import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, PROBE_SEED, probeMenu, probeVariance, seeded, type Identity } from './probe.js';
+import { kindsToRead, readList, type ListKind } from './lists.js';
+import type { ListsContext } from './rules/lists.js';
 import type { IdentityMenu } from './rules/identities.js';
 import { clientCost, type ClientCost } from './clients.js';
 import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
@@ -28,6 +30,8 @@ export interface SnapshotOptions extends RuleSettings {
    * menu is the one saved and checked; the others are compared with it.
    */
   identities?: Identity[];
+  /** --lists: which lists besides tools to read and check (prompts, resources). */
+  lists?: string[];
   /** --client: check the menu for this client (src/clients.ts): its description cut, its search, its name format. */
   client?: string;
 }
@@ -39,6 +43,8 @@ export interface SnapshotResult {
   identities?: IdentityMenu[];
   /** --client: what the menu costs up front and per tool a search loads. */
   cost?: ClientCost;
+  /** --lists: lists asked for that the server declares no capability for, so weren't read. */
+  notOffered?: ListKind[];
 }
 
 /** Establish the menu: connect, list the tools twice, run the menu rules. */
@@ -51,6 +57,8 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   let menu: Menu;
   let secondList: Menu['tools'];
   let first: Awaited<ReturnType<typeof listTools>>;
+  const reads: ListsContext['read'] = [];
+  let undeclared: ListKind[] = [];
   try {
     first = await patiently(() => listTools(connection, options), { error: tooMany });
     const second = await patiently(() => listTools(connection, options), { error: tooMany });
@@ -62,6 +70,15 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     };
     menu = buildMenu(first.tools, server, first.listMeta);
     secondList = buildMenu(second.tools, server, second.listMeta).tools;
+    // --lists: prompts and resources, each read twice on this connection.
+    const kinds = kindsToRead(options.lists ?? [], connection.capabilities);
+    undeclared = kinds.undeclared;
+    for (const kind of kinds.read) {
+      const first = await readList(connection, kind, options.timeoutMs);
+      const second = first.error ? undefined : await readList(connection, kind, options.timeoutMs);
+      reads.push({ kind, first, ...(second ? { second } : {}) });
+      if (!first.error) menu[kind] = first.items;
+    }
     if (options.catalog) {
       menu.catalog = await readCatalog(connection, menu.tools, { ...(typeof options.catalog === 'object' ? options.catalog : {}), timeoutMs: options.timeoutMs });
     }
@@ -77,6 +94,20 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   // After the main process has exited: a server that holds a file or a port
   // shouldn't have to share it with its own probe.
   const probes = await probeVariance(target, menu.tools, options.processes ?? 2, options.timeoutMs ?? 30_000);
+
+  // The other lists from a second process (stdio) or connection (HTTP), as tools get.
+  if ((options.processes ?? 2) > 1 && reads.some((r) => !r.first.error)) {
+    try {
+      const probe = await connectPatiently(seeded(target, PROBE_SEED), { timeoutMs: options.timeoutMs });
+      try {
+        for (const r of reads) if (!r.first.error) r.probe = await readList(probe, r.kind, options.timeoutMs);
+      } finally {
+        await probe.close().catch(() => {});
+      }
+    } catch {
+      // The tool probe above says why a second process or connection failed.
+    }
+  }
 
   // Each other identity's menu, from its own process (stdio) or connection (HTTP).
   const identities: IdentityMenu[] | undefined = mainIdentity
@@ -114,6 +145,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       serverInfo: connection.server,
       server: serverArgs(target),
       identities,
+      ...(reads.length || undeclared.length ? { lists: { read: reads, undeclared } } : {}),
     },
     options,
   );
@@ -129,7 +161,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     findings.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
   }
   const cost = options.client ? clientCost(options.client, menu) : undefined;
-  return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}) };
+  return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}), ...(undeclared.length ? { notOffered: undeclared } : {}) };
 }
 
 const firstLine = (error: unknown) => (error instanceof Error ? error.message : String(error)).split('\n')[0].trim();

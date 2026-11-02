@@ -22,6 +22,7 @@ const OPTIONS: Record<string, [string, string[]]> = {
   env: ['--env <K=V>', ['environment variable for a stdio server, repeatable. The server only', 'gets a minimal environment (PATH, HOME, ...) plus these']],
   protocol: ['--protocol <auto|legacy|modern>', ['which handshake to make (default: auto)', 'legacy: the 2025 handshake only; modern: 2026-07-28 only, an error if the server lacks it']],
   as: ['--as <name>[:<credential>]', ['list the menu as this identity too, repeatable: a header ("reader:Authorization:', 'Bearer ...") or env var ("admin:ROLE=admin") on top of --header/--env. The first', 'is the main one (its menu is saved); the others are compared with it']],
+  lists: ['--lists <kinds>', ['which lists to read and check, comma-separated: tools (always),', 'prompts, resources (resources/list and resources/templates/list).', 'Saved in the menu file beside the tools']],
   client: ['--client <name>', ['check the menu for one client, from its own docs: claude-code (tools deferred,', 'its description cut and search), claude-api-search (Claude API tool search)', 'or openai (Responses API tool_search): cost up front and per tool, names it refuses']],
   'no-auth': ['--no-auth', ["don't use a stored OAuth login (toolmenu auth login) for this server"]],
   timeout: ['--timeout <ms>', ['per-request timeout (default: 30000)']],
@@ -94,7 +95,7 @@ const HELP: Record<Command, CommandHelp> = {
       'reports what in the menu confuses agents or breaks prompt caches.',
       SERVER_NOTE,
     ],
-    own: ['out', 'no-write', 'routes', 'catalog', 'as', 'client'],
+    own: ['out', 'no-write', 'routes', 'catalog', 'as', 'client', 'lists'],
     shared: ['config', 'format', 'json', 'fail-on', 'header', 'env', 'no-auth', 'protocol', 'timeout', 'processes'],
     examples: [
       'toolmenu snapshot -- npx -y @modelcontextprotocol/server-memory',

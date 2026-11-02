@@ -14,6 +14,7 @@ export const CLI_OPTIONS = {
   env: { type: 'string', multiple: true },
   as: { type: 'string', multiple: true },
   client: { type: 'string' },
+  lists: { type: 'string' },
   timeout: { type: 'string' },
   protocol: { type: 'string' },
   elicitation: { type: 'string' },

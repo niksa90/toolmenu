@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.19.0
+
+Prompts and resources (point 8 of the 2026-07-28 plan): toolmenu now checks
+everything a client loads up front, not only the tool menu. On 2026-07-28,
+`prompts/list`, `resources/list` and `resources/templates/list` are cacheable like
+`tools/list` (`ttlMs` and `cacheScope` required) and no longer vary per connection.
+
+- **`snapshot --lists prompts,resources`** (or `"lists"` in the config) reads each
+  list the server declares a capability for, twice on one connection and once from
+  a second process or connection, and saves it in the menu file beside the tools
+  (optional `prompts`, `resources`, `resourceTemplates` keys; the file is still
+  `toolmenu: 1`). The snapshot says how many it listed.
+- **`lists/variance`** (warn): a list that changes between two calls, or from a
+  second process or connection.
+- **`lists/schema`** (error): a list result that doesn't match the official schema,
+  such as one without the cache hints 2026-07-28 requires. A declared list that
+  fails to answer is a warning; Method not found is info (7 of 86 registry servers
+  declare resources without `resources/templates/list`), and a setup failure
+  (credentials, an app that isn't running) is info that says it wasn't checked.
+- A list asked for that the server doesn't offer is a note on the snapshot line
+  ("no prompts offered"), not a finding: on 86 registry servers it would have been
+  63 findings saying nothing.
+- `diff` doesn't compare prompts and resources yet.
+
 ## 0.18.0
 
 Client profiles (point 6 of the 2026-07-28 plan): what an agent sees depends on its

@@ -20,6 +20,15 @@ function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
+/** snapshot --lists: "3 prompts · 5 resources · 2 resource templates", or nothing. */
+function otherLists(menu: Menu): string {
+  return [
+    menu.prompts ? plural(menu.prompts.length, 'prompt') : '',
+    menu.resources ? plural(menu.resources.length, 'resource') : '',
+    menu.resourceTemplates ? plural(menu.resourceTemplates.length, 'resource template') : '',
+  ].filter(Boolean).join(' · ');
+}
+
 /** --client: "as Claude Code: up front ~N tokens (…) · on demand ~M per tool loaded (largest: x, ~K)". */
 function costLine(cost: ClientCost): string {
   const parts = [
@@ -29,7 +38,7 @@ function costLine(cost: ClientCost): string {
   return `as ${cost.label}: ${parts.join(' · ')}`;
 }
 
-export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, outPath?: string, cost?: ClientCost): string {
+export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, outPath?: string, cost?: ClientCost, notOffered: string[] = []): string {
   if (format === 'json') {
     return JSON.stringify(
       {
@@ -40,6 +49,10 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
         listMeta: menu.listMeta,
         breakdown: breakdown(menu),
         ...(cost ? { client: cost } : {}),
+        ...(menu.prompts ? { prompts: menu.prompts.length } : {}),
+        ...(menu.resources ? { resources: menu.resources.length } : {}),
+        ...(menu.resourceTemplates ? { resourceTemplates: menu.resourceTemplates.length } : {}),
+        ...(notOffered.length ? { notOffered } : {}),
         written: outPath ?? null,
         counts: counts(findings),
         findings,
@@ -68,6 +81,10 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
     `  protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)`,
   ];
   if (cost) lines.push(`  ${costLine(cost)}`, `    ${cost.basis}`);
+  const others = otherLists(menu);
+  // Lists asked for that the server doesn't offer: said once, not a finding.
+  const caps = [...new Set(notOffered.map((k) => (k === 'prompts' ? 'prompts' : 'resources')))];
+  if (others || caps.length) lines.push(`  ${[others ? `also listed: ${others}` : '', caps.length ? `no ${caps.join(' or ')} offered (not declared)` : ''].filter(Boolean).join(' · ')}`);
   if (outPath) lines.push(`  wrote ${outPath}`);
   lines.push('');
   const where = breakdownLines(breakdown(menu), menu.tools.length);
