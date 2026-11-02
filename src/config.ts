@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { CLIENTS } from './clients.js';
 import { CLIENT_LIMITS } from './rules/description.js';
 import type { Severity } from './types.js';
 
@@ -27,6 +28,8 @@ export interface Config {
    * --as replaces them.
    */
   identities?: Record<string, { headers?: Record<string, string>; env?: Record<string, string> }>;
+  /** snapshot: the client to check the menu for (claude-code, claude-api-search, openai). --client wins. */
+  client?: string;
   /** Server processes (stdio) or connections (HTTP) to compare, the main one included (default 2). */
   processes?: number;
   /**
@@ -62,6 +65,9 @@ export async function loadConfig(path?: string): Promise<Config> {
   }
   if (config.processes !== undefined && !(Number.isInteger(config.processes) && config.processes >= 1)) {
     throw new Error(`${file}: processes must be a whole number, 1 or more`);
+  }
+  if (config.client !== undefined && !(typeof config.client === 'string' && config.client in CLIENTS)) {
+    throw new Error(`${file}: client must be one of ${Object.keys(CLIENTS).join(', ')}`);
   }
   if (config.identities !== undefined) {
     const strings = (v: unknown) => v === undefined || (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every((x) => typeof x === 'string'));

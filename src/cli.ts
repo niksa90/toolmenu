@@ -2,6 +2,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
+import { CLIENT_NAMES, CLIENTS } from './clients.js';
 import { loadConfig, type Config } from './config.js';
 import { ELICITATIONS, PROTOCOLS, type Elicitation, type Protocol, type Target } from './connect.js';
 import { diffMenus } from './diff.js';
@@ -79,6 +80,8 @@ export async function main(argv: string[]): Promise<number> {
   if (!PROTOCOLS.includes(protocol)) throw new UsageError(`--protocol must be auto, legacy or modern`);
   const elicitation = (values.elicitation ?? 'decline') as Elicitation;
   if (!ELICITATIONS.includes(elicitation)) throw new UsageError('--elicitation must be decline or cancel');
+  if (values.client !== undefined && sub !== 'snapshot') throw new UsageError('--client goes with snapshot.');
+  if (values.client !== undefined && !(values.client in CLIENTS)) throw new UsageError(`--client must be one of ${CLIENT_NAMES.join(', ')}`);
   if (values.as !== undefined && sub !== 'snapshot') throw new UsageError('--as goes with snapshot: it lists the menu once per identity.');
   if (values.elicitation !== undefined && sub !== 'session') throw new UsageError('--elicitation goes with session: only session calls tools.');
   // Only session calls tools, so only its targets declare elicitation and say how to answer.
@@ -270,12 +273,13 @@ export async function main(argv: string[]): Promise<number> {
   const routesPath = values.routes ?? config.routes;
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
-  const { menu, findings } = await snapshot(target, { routes, timeoutMs, processes, identities, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const client = values.client ?? config.client;
+  const { menu, findings, cost } = await snapshot(target, { routes, timeoutMs, processes, identities, client, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');
 
-  const output = formatSnapshot(menu, findings, format, outPath);
+  const output = formatSnapshot(menu, findings, format, outPath, cost);
   if (output) process.stdout.write(output + '\n');
   return findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
 }

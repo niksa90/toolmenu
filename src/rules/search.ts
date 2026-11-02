@@ -1,3 +1,4 @@
+import { CLIENTS } from '../clients.js';
 import { buildIndex, placeIn, placeOf, SEARCH_LIMIT } from '../search.js';
 import { commonWords, VERBS, words } from '../words.js';
 import { clip, count, kept, names, num, type Rule, type RuleFinding } from './rule.js';
@@ -21,8 +22,14 @@ export const findable: Rule = {
   summary: 'Each tool comes up when searched for by its own name, for clients that defer tools',
   run(ctx) {
     const tools = ctx.menu.tools;
-    if (tools.length < MIN_TOOLS || ((ctx.menu.totalTokens ?? 0) < MIN_TOKENS && tools.length < 30)) return [];
-    const index = buildIndex(tools);
+    const profile = ctx.client ? CLIENTS[ctx.client] : undefined;
+    if (profile) {
+      // A client that defers tools does it at any size; one whose search results
+      // aren't documented (OpenAI's spec doesn't say how many) isn't ranked against a guess.
+      if (profile.defers.value === 'none' || tools.length < 2) return [];
+      if (!profile.searchLimit && ctx.client !== 'claude-code') return [];
+    } else if (tools.length < MIN_TOOLS || ((ctx.menu.totalTokens ?? 0) < MIN_TOKENS && tools.length < 30)) return [];
+    const index = buildIndex(tools, { descriptionChars: profile?.searchReads?.value });
     const findings: RuleFinding[] = [];
 
     // The words of a name that say something: not a prefix most tools share (firecrawl_, API-).
@@ -43,7 +50,7 @@ export const findable: Rule = {
       findings.push({
         ...(missed.length === 1 ? { tool: first.tool } : {}),
         confidence: 'unsure',
-        message: `${count(missed.length, 'tool')} of ${num(tools.length)} ${missed.length === 1 ? "doesn't" : "don't"} come up in the top ${SEARCH_LIMIT} when searched for by ${missed.length === 1 ? 'its' : 'their'} own name. Clients that defer a menu this size let the model search it, and a search returns ${SEARCH_LIMIT} tools unless the model asks for more, so an agent looking for ${missed.length === 1 ? 'it' : 'them'} can be shown other tools instead. Ranked the way a BM25 tool search ranks them (name, description, argument names and descriptions); a client's own search can rank a little differently.`,
+        message: `${count(missed.length, 'tool')} of ${num(tools.length)} ${missed.length === 1 ? "doesn't" : "don't"} come up in the top ${SEARCH_LIMIT} when searched for by ${missed.length === 1 ? 'its' : 'their'} own name. Clients that defer a menu this size let the model search it, and a search returns ${SEARCH_LIMIT} tools unless the model asks for more, so an agent looking for ${missed.length === 1 ? 'it' : 'them'} can be shown other tools instead. Ranked the way a BM25 tool search ranks them (name, description, argument names and descriptions${profile?.searchReads ? `, the description up to character ${num(profile.searchReads.value)}, all ${profile.label}'s search reads` : ''}); a client's own search can rank a little differently.`,
         detail: missed.slice(0, 12).map(
           (m) =>
             `${m.tool}: “${m.query}” puts it ${m.place === undefined ? 'nowhere' : `at ${m.place}`}, behind ${names(m.ahead.slice(0, 4), 4)}${m.ahead.length > 4 ? ` and ${num(m.ahead.length - 4)} more` : ''}`,

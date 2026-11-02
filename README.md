@@ -394,6 +394,7 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `write/no-dry-run` | info | Destructive tools with no dry-run parameter or preview tool, as one summary |
 | `spec/discover` | info | The server only speaks the 2025 protocol, so 2026-07-28 rules are skipped |
 | `spec/deprecated`, `spec/cache-hints` | info | 2026-07-28: deprecated features still advertised; `ttlMs: 0`, or `cacheScope: "public"` on a server that took credentials |
+| `naming/client-name` | warn | With `--client`: tool names the client's API refuses: `^[a-zA-Z0-9_-]{1,128}$` for the Claude API, `^[a-zA-Z0-9_-]+$` up to 128 for OpenAI's functions. MCP allows names such as `files.read` that neither takes as they are |
 | `menu/auth-variance` | info | With `--as` (or `identities` in the config): the tool set differs by identity, what each adds, lacks or defines differently against the first, and its tokens. Allowed by the spec; a baseline of one identity's menu doesn't cover the others. An identity that can't be listed is said here too |
 | `spec/cache-scope-public` | warn | 2026-07-28, with `--as`: the tool set differs by identity, and `tools/list` says `cacheScope: "public"`, which lets shared caches serve one caller's list to another |
 
@@ -443,6 +444,23 @@ Clients that send descriptions in full don't need a setting beyond that. If your
 client cuts shorter, as mine did at 280, set its number. `fullDescriptions` lists the
 tools it sends uncut, so the description rules skip them.
 
+### Checking for one client (`--client`)
+
+What an agent sees depends on its client. `snapshot --client <name>` (or `"client"` in the
+config) checks the menu against what that client's own docs say, and every value
+toolmenu uses names its source and the date it was read (`src/clients.ts`). What a
+client doesn't document is left out, not guessed.
+
+| `--client` | Up front | Search | Description cut | Names |
+|---|---|---|---|---|
+| `claude-code` | tool names; full definitions for tools marked `_meta["anthropic/alwaysLoad"]` | reads a description up to 4,096 characters | 16,384 through search, 4,096 up front | Claude API's |
+| `claude-api-search` | nothing from tools you defer (keep the 3–5 used most loaded) | name, description, argument names and descriptions; 5 results by default | none documented | `^[a-zA-Z0-9_-]{1,128}$` |
+| `openai` | not in OpenAI's spec, so no figure | not in the spec, so `search/findable` doesn't run | none documented | `^[a-zA-Z0-9_-]+$`, up to 128 |
+
+The snapshot adds a line such as `as Claude Code: up front ~524 tokens · on demand ~344
+per tool a search loads (largest: update_contacts, ~2,093)`, and `--json` a `client`
+object. With a client that defers tools, `search/findable` runs at any menu size.
+
 ## What toolmenu can't catch
 
 toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
@@ -475,6 +493,8 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
                     (2026-07-28 only; an error if the server lacks it)
 --processes <n>     server processes or connections to compare (default: 2);
                     1 opens no second one, session's scope check included
+--client <name>     snapshot: check the menu for one client, from its own docs:
+                    claude-code, claude-api-search or openai
 --as <name>:<cred>  snapshot: list the menu as this identity too, repeatable:
                     "reader:Authorization: Bearer …" (HTTP) or "admin:ROLE=admin"
                     (stdio). The first is the menu saved; the others are compared

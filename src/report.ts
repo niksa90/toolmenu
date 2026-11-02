@@ -1,3 +1,4 @@
+import type { ClientCost } from './clients.js';
 import type { DiffResult } from './diff.js';
 import type { HistoryResult, HistoryRow } from './history.js';
 import { clip, stepLabel, stepsText, type Scenario, type SessionResult } from './session.js';
@@ -19,7 +20,16 @@ function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
-export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, outPath?: string): string {
+/** --client: "as Claude Code: up front ~N tokens (…) · on demand ~M per tool loaded (largest: x, ~K)". */
+function costLine(cost: ClientCost): string {
+  const parts = [
+    cost.upfront !== undefined ? `up front ~${cost.upfront.toLocaleString('en-US')} tokens${cost.loaded.length ? ` (names, and ${plural(cost.loaded.length, 'tool')} loaded in full)` : ''}` : '',
+    `on demand ~${cost.perTool.toLocaleString('en-US')} per tool a search loads${cost.largest ? ` (largest: ${cost.largest.tool}, ~${cost.largest.tokens.toLocaleString('en-US')})` : ''}`,
+  ].filter(Boolean);
+  return `as ${cost.label}: ${parts.join(' · ')}`;
+}
+
+export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, outPath?: string, cost?: ClientCost): string {
   if (format === 'json') {
     return JSON.stringify(
       {
@@ -29,6 +39,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
         totalTokens: menu.totalTokens,
         listMeta: menu.listMeta,
         breakdown: breakdown(menu),
+        ...(cost ? { client: cost } : {}),
         written: outPath ?? null,
         counts: counts(findings),
         findings,
@@ -44,6 +55,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
       `### toolmenu snapshot: \`${s.name ?? 'server'}\` ${s.version ?? ''}`.trimEnd(),
       '',
       `Protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)`,
+      ...(cost ? ['', `${costLine(cost)}. _${cost.basis}._`] : []),
       '',
       ...mdFindings(findings),
       ...mdBreakdown(menu),
@@ -55,6 +67,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
     `toolmenu snapshot  ${s.name ?? 'unknown server'} ${s.version ?? ''}`.trimEnd(),
     `  protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)`,
   ];
+  if (cost) lines.push(`  ${costLine(cost)}`, `    ${cost.basis}`);
   if (outPath) lines.push(`  wrote ${outPath}`);
   lines.push('');
   const where = breakdownLines(breakdown(menu), menu.tools.length);

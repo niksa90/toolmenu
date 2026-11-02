@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.18.0
+
+Client profiles (point 6 of the 2026-07-28 plan): what an agent sees depends on its
+client, and toolmenu now checks a menu for one, from that client's own docs. Every
+value carries its source and the date it was read (`src/clients.ts`); what a client
+doesn't document is left out, not guessed.
+
+- **`snapshot --client claude-code | claude-api-search | openai`** (or `"client"` in
+  the config):
+  - a cost line: up front (Claude Code: the deferred tools' names, and the tools
+    marked to load up front in full; Claude's tool search: nothing from deferred
+    tools) and on demand, per tool a search loads, with the largest. OpenAI's spec
+    doesn't say what the model sees before a search, so it gets no up-front figure.
+    `--json` has a `client` object.
+  - the description cut from the profile: Claude Code's (16,384 through search,
+    4,096 up front); none for the Claude API or OpenAI, whose docs give none.
+  - `search/findable` runs at any menu size for a client that defers, and for Claude
+    Code ranks a description only up to character 4,096, all its search reads. Not
+    for OpenAI: how many results its search returns isn't in its spec.
+- **`naming/client-name`** (warn, with `--client`): tool names the client's API
+  refuses. Both the Claude API (`^[a-zA-Z0-9_-]{1,128}$`) and OpenAI's functions
+  (`^[a-zA-Z0-9_-]+$`, up to 128) refuse names MCP allows, such as `files.read`.
+- Sources, read 2026-11-02: code.claude.com/docs/en/mcp; platform.claude.com tool
+  search and define-tools docs; openai/openai-openapi `openapi.yaml`
+  (platform.openai.com wasn't reachable from where this was built).
+
 ## 0.17.1
 
 From running 0.17.0 on a real 2026-07-28 server that mints sessions (User

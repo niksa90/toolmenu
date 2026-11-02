@@ -13,6 +13,7 @@ export const CLI_OPTIONS = {
   header: { type: 'string', multiple: true },
   env: { type: 'string', multiple: true },
   as: { type: 'string', multiple: true },
+  client: { type: 'string' },
   timeout: { type: 'string' },
   protocol: { type: 'string' },
   elicitation: { type: 'string' },
