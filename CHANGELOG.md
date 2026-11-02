@@ -16,6 +16,10 @@ that failed before.
   `descriptionLimit: "claude-code-upfront"` (4,096 for every tool) for tool search
   off.
 
+- **"No authentication found" (or no API key, credentials or token "found",
+  "provided", "configured", "set") is a credentials failure.** It was a
+  `session/tool-error` on every call of a server run without its key (User
+  Intuition), instead of one `session/untested` that says to rerun with credentials.
 - **`session --auto` probes optional handles too.** A read-only tool whose handle is
   optional (`inspect_research_session { view, session_id? }`) gets one more call with
   a made-up one. A handle with a `pattern` is probed when the made-up value passes it

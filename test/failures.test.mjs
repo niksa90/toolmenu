@@ -6,6 +6,9 @@ import { classifyFailure } from '../dist/failures.js';
 test('classifyFailure on real servers\' errors', () => {
   const cases = [
     ['auth', 'failed to get user: GET https://api.github.com/user: 401 Bad credentials []'],
+    // User Intuition 0.18.0 (2026-07-28), every call without a key (0.17.1).
+    ['auth', '{ "error": "No authentication found. Run `userintuition-mcp login`, create an API key with `userintuition-mcp api-key create`, set USERINTUITION_API_KEY, or use OAuth" }'],
+    ['auth', 'No API key provided. Set EXAMPLE_API_KEY.'],
     ['auth', '**Authorization Expired** Sentry rejected the stored access token for this session. Please re-authorize to continue.'],
     ['auth', "Tool 'firecrawl_monitor_list' execution failed: Unauthorized: Invalid token"],
     ['auth', 'Error calling tool "search-actors": User was not found or authentication token is not valid'],
