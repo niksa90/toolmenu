@@ -95,3 +95,51 @@ test('autoScenario: a handle probe only for a read-only tool whose one missing v
   assert.deepEqual(calls([start, tool('status', ['session_id', 'query_text'], ro)]), []);
   assert.deepEqual(autoScenario({ ...menuOf([start, tool('status', ['session_id'], ro)]), server: { protocolVersion: '2025-11-25' } }).scenario.steps.filter((s) => s.kind === 'call'), []);
 });
+
+// 0.17.1: optional handles, and patterns the made-up handle passes (User Intuition's inspect_research_session).
+test('autoScenario: an optional handle gets one more call with a made-up one; a pattern it passes is no reason to skip', () => {
+  const menu = (tools) => ({ ...menuOf(tools), server: { name: 's', protocolVersion: '2026-07-28', era: 'modern' } });
+  const ro = { annotations: { readOnlyHint: true } };
+  const start = tool('create_research_session', []);
+  const uuidPattern = '^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$';
+  const inspect = (session) => tool('inspect_research_session', [], {
+    ...ro,
+    inputSchema: { type: 'object', properties: { view: { type: 'string', enum: ['sessions', 'session'] }, session_id: session }, required: ['view'] },
+  });
+  const calls = (tools) => autoScenario(menu(tools)).scenario.steps.filter((s) => s.kind === 'call').map((s) => [s.tool, s.args, s.probe?.kind]);
+  const plain = calls([start, inspect({ type: 'string', format: 'uuid', pattern: uuidPattern })]);
+  assert.deepEqual(plain.slice(0, 2), [
+    ['inspect_research_session', { view: 'sessions' }, undefined],
+    ['inspect_research_session', { view: 'sessions', session_id: '00000000-0000-4000-8000-000000000000' }, 'session'],
+  ]);
+  // A pattern neither made-up value passes: no probe, only the plain call (and its repeat).
+  const strict = calls([start, inspect({ type: 'string', pattern: '^ses_[a-z]{8}$' })]);
+  assert.ok(strict.every(([, args]) => !('session_id' in args)));
+  // A required handle with a pattern it passes is probed too.
+  const required = tool('get_session', [], { ...ro, inputSchema: { type: 'object', properties: { session_id: { type: 'string', pattern: uuidPattern } }, required: ['session_id'] } });
+  assert.deepEqual(calls([start, required])[0], ['get_session', { session_id: '00000000-0000-4000-8000-000000000000' }, 'session']);
+  // A user's value for the optional handle: no made-up one beside it.
+  const given = autoScenario(menu([start, inspect({ type: 'string' })]), { values: { 'inspect_research_session.session_id': { value: 's-real', raw: 's-real' } } });
+  assert.ok(!given.scenario.steps.some((s) => s.probe));
+});
+
+test('session/handle-error: a probe that fails on credentials says nothing about the handle: a setup failure, never the finding', async () => {
+  const out = await json(['session', '--auto', '--json']);
+  const step = (tool) => out.steps.find((s) => s.label.startsWith(`call ${tool} `));
+  assert.equal(step('checkout_status').note, 'called with a made-up checkout, but it failed before the checkout mattered: Not authenticated: set CHECKOUT_API_KEY.');
+  assert.equal(step('checkout_status').failure, 'auth');
+  assert.equal(step('lease_info').failure, 'auth');
+  assert.doesNotMatch(step('lease_info').note, /made-up lease; it answered with a protocol error/);
+  assert.deepEqual(out.findings.filter((f) => f.rule === 'session/handle-error').map((f) => f.tool), ['session_status']);
+  const untested = out.findings.find((f) => f.rule === 'session/untested');
+  assert.ok(untested, 'the setup failures are counted where setup failures go');
+  assert.match(untested.message, /failed before reaching the tool: 2 on authentication/);
+});
+
+test('--save-scenario: a probe step is saved commented out, never as a step that would fail on replay', async () => {
+  const { scenarioYaml } = await import('../dist/auto.js');
+  const menu = { ...menuOf([tool('start_session', []), tool('status', ['session_id'], { annotations: { readOnlyHint: true } })]), server: { name: 's', protocolVersion: '2026-07-28', era: 'modern' } };
+  const yaml = scenarioYaml(autoScenario(menu), 's');
+  assert.doesNotMatch(yaml, /^  - call: status$/m);
+  assert.match(yaml, /^  # --auto called status with a made-up session \(session\/handle-error\); to replay it, put a real one in:\n  # - call: status\n  #   args: \{"session_id":"toolmenu-unknown-session"\}$/m);
+});

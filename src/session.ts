@@ -406,7 +406,13 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             const result = call.result;
             record.outcome = result.isError ? 'tool-error' : 'answered';
             if (call.input.rounds && !result.isError) record.note = inputNote(call.input, answer);
-            if (step.probe) {
+            const setup = step.probe && result.isError ? classifyFailure(errorText(result), { hadArguments: true }) : undefined;
+            if (step.probe && setup && SETUP_FAILURES.has(setup)) {
+              // Missing credentials, this machine: the call never got as far as the
+              // handle, so it says nothing about it. Counted with the other setup failures.
+              record.failure = setup;
+              record.note = `called with a made-up ${step.probe.kind}, but it failed before the ${step.probe.kind} mattered: ${clip(errorText(result), 100)}`;
+            } else if (step.probe) {
               // A handle that can't exist: a tool error is the answer the spec asks for.
               const text = result.isError ? errorText(result) : '';
               record.note = result.isError
@@ -459,7 +465,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             const needed = Object.keys(((error as { data?: { requiredCapabilities?: object } }).data?.requiredCapabilities ?? {}) as object);
             if (needed.length) record.note = `${record.note} (needs the client to support ${needed.join(', ')})`;
           }
-          if (step.probe && typeof code === 'number' && code !== -32021) {
+          const probeFailure = step.probe ? classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: true }) : undefined;
+          // Not a setup failure (credentials, this machine, -32021): those never got as far as the handle.
+          if (step.probe && typeof code === 'number' && probeFailure && !SETUP_FAILURES.has(probeFailure)) {
             // The server's protocol error to a handle that can't exist: the model gets no reason it can act on.
             if (!handleErrors.some((e) => e.tool === step.tool)) handleErrors.push({ step: index, tool: step.tool, probe: step.probe, value: step.args[step.probe.param], message: record.note, code });
             record.note = `called with a made-up ${step.probe.kind}; it answered with a protocol error (${code}): ${clip(record.note, 120)}`;

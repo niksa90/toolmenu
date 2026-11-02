@@ -3,24 +3,39 @@ import { clip, kept, num, type Rule, type RuleFinding } from './rule.js';
 
 /*
  * Clients that cut tool descriptions, and where. Only reported cuts, with sources:
- * - claude-code: 2,048 characters, "… [truncated]" appended, silently (anthropics/claude-code#87650);
- *   the Claude Code changelog lists CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH to change it from 2.1.280.
+ * - claude-code: Claude Code's default, where MCP tools are deferred behind tool
+ *   search: 16,384 characters for a tool loaded through tool search, 4,096 for one
+ *   that loads up front (marked `_meta["anthropic/alwaysLoad"]: true`). Read
+ *   2026-11-02 from https://code.claude.com/docs/en/mcp ("Tool search for MCP server
+ *   authors"). Before v2.1.296 the cut was 2,048 for every tool.
+ * - claude-code-upfront: Claude Code with tool search off (ENABLE_TOOL_SEARCH=false,
+ *   or a server set to alwaysLoad): 4,096 for every tool, same source.
  * - amazon-q: 10,024 characters, with a warning (Amazon Q CLI 1.19; makenotion/notion-mcp-server#145).
  * Other clients send the description in full or don't document a cut. Your own
  * client may cut elsewhere: set descriptionLimit to its number.
  */
-export const CLIENT_LIMITS: Record<string, number> = { 'claude-code': 2048, 'amazon-q': 10024 };
+export const CLIENT_LIMITS: Record<string, number> = { 'claude-code': 16384, 'claude-code-upfront': 4096, 'amazon-q': 10024 };
 export const DEFAULT_CLIENT = 'claude-code';
+/** Claude Code's cut for a tool that loads up front, not through tool search. */
+const CLAUDE_CODE_UPFRONT = 4096;
 
 /**
  * The cut in characters, the client to name in a message ("Claude Code", "your
  * client"), and whether it's toolmenu's assumption rather than the user's setting.
+ * `perTool`: the cut for one tool, which differs under Claude Code's default for a
+ * tool marked to load up front.
  */
-export function resolveLimit(setting: number | string | undefined): { limit: number; who: string; assumed: boolean } {
-  if (typeof setting === 'number') return { limit: setting, who: 'your client', assumed: false };
-  const client = setting ?? DEFAULT_CLIENT;
-  const limit = CLIENT_LIMITS[client] ?? CLIENT_LIMITS[DEFAULT_CLIENT];
-  return { limit, who: client === 'amazon-q' ? 'Amazon Q CLI' : 'Claude Code', assumed: setting === undefined };
+export function resolveLimit(setting: number | string | undefined): { limit: number; who: string; assumed: boolean; perTool: (tool: MenuTool) => number } {
+  if (typeof setting === 'number') return { limit: setting, who: 'your client', assumed: false, perTool: () => setting };
+  const client = setting !== undefined && setting in CLIENT_LIMITS ? setting : DEFAULT_CLIENT;
+  const limit = CLIENT_LIMITS[client];
+  const upfront = (tool: MenuTool) => (tool._meta as Record<string, unknown> | undefined)?.['anthropic/alwaysLoad'] === true;
+  return {
+    limit,
+    who: client === 'amazon-q' ? 'Amazon Q CLI' : 'Claude Code',
+    assumed: setting === undefined,
+    perTool: client === 'claude-code' ? (tool) => (upfront(tool) ? CLAUDE_CODE_UPFRONT : limit) : () => limit,
+  };
 }
 
 /** The fix's last words when the cut is assumed, not set. */
@@ -109,10 +124,11 @@ export const buried: Rule = {
   lesson: 'truncated description',
   summary: 'Instructions to the agent sit past the point where your client cuts descriptions',
   run(ctx) {
-    const { limit, who, assumed } = resolveLimit(ctx.descriptionLimit);
+    const { perTool, who, assumed } = resolveLimit(ctx.descriptionLimit);
     const all = ctx.menu.tools.map((t) => t.name);
     const findings: RuleFinding[] = [];
     for (const tool of ctx.menu.tools) {
+      const limit = perTool(tool);
       const text = tool.description ?? '';
       if (text.length <= limit || sentInFull(tool, ctx.fullDescriptions)) continue;
       const past = pastTheCut(text, all.filter((n) => n !== tool.name), limit);
@@ -151,22 +167,27 @@ export const cut: Rule = {
   lesson: 'truncated description',
   summary: 'Descriptions longer than your client sends',
   run(ctx) {
-    const { limit, who, assumed } = resolveLimit(ctx.descriptionLimit);
+    const { perTool, who, assumed } = resolveLimit(ctx.descriptionLimit);
     const all = ctx.menu.tools.map((t) => t.name);
     const long = kept(ctx.menu.tools, ctx).filter((tool) => {
       const text = tool.description ?? '';
+      const limit = perTool(tool);
       return !sentInFull(tool, ctx.fullDescriptions) && text.length > limit && pastTheCut(text, all.filter((n) => n !== tool.name), limit).length === 0;
     });
+    // One number when every cut tool has the same cut (Claude Code cuts up-front tools shorter).
+    const limits = [...new Set(long.map(perTool))];
+    const limit = limits.length === 1 ? limits[0] : Math.min(...limits);
     if (long.length === 0) return [];
     const one = long.length === 1;
     // One summary: a long description is a question for its author, not a defect.
     return [
       {
         ...(one ? { tool: long[0].name } : {}),
-        message: `${one ? `The ${long[0].name} description is` : `${long.length} descriptions are`} longer than the ${num(limit)} characters ${who} sends. The model gets the start, with no sign that anything is missing, so a cut list or example can read as complete. Nothing past the cut reads as an instruction to the agent, so this is a check, not a bug.`,
+        message: `${one ? `The ${long[0].name} description is` : `${long.length} descriptions are`} longer than ${limits.length === 1 ? `the ${num(limit)} characters ${who} sends` : `${who} sends (${limits.map(num).join(' or ')} characters)`}. The model gets the start, with no sign that anything is missing, so a cut list or example can read as complete. Nothing past the cut reads as an instruction to the agent, so this is a check, not a bug.`,
         detail: long.map((t) => {
           const text = t.description ?? '';
-          return `${t.name}: ${num(text.length)} characters, ${num(text.length - limit)} past the cut, which falls at ${aroundTheCut(text, limit)}`;
+          const at = perTool(t);
+          return `${t.name}: ${num(text.length)} characters, ${num(text.length - at)} past the cut, which falls at ${aroundTheCut(text, at)}`;
         }),
         fix: `Check that what's past the cut ${one ? 'in' : 'in each of'} ${one ? long[0].name : 'these'} can be lost, and move anything the agent needs into the first ${num(limit)} characters.${unlessOtherClient(assumed)}`,
       },

@@ -34,7 +34,12 @@ export interface Identity {
 /** The target as this identity: its headers (HTTP) or env vars (stdio) over the ones given. */
 export function asIdentity(target: Target, identity: Identity | undefined): Target {
   if (!identity) return target;
-  if (target.kind === 'http') return { ...target, headers: { ...target.headers, ...identity.headers } };
+  if (target.kind === 'http') {
+    // Header names match whatever their case: the identity's authorization replaces --header's Authorization.
+    const mine = new Set(Object.keys(identity.headers ?? {}).map((h) => h.toLowerCase()));
+    const kept = Object.fromEntries(Object.entries(target.headers ?? {}).filter(([h]) => !mine.has(h.toLowerCase())));
+    return { ...target, headers: { ...kept, ...identity.headers } };
+  }
   return { ...target, env: { ...target.env, ...identity.env } };
 }
 

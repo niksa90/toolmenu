@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.17.1
+
+From running 0.17.0 on a real 2026-07-28 server that mints sessions (User
+Intuition), a review of 0.17.0, and Claude Code's current docs. Each fix has a test
+that failed before.
+
+- **Claude Code's description cut is 16,384 characters, not 2,048.** Its docs
+  (code.claude.com/docs/en/mcp, read 2026-11-02) say Claude Code cuts a tool loaded
+  through tool search, which is on by default, at 16,384 characters, and one that
+  loads up front at 4,096; 2,048 was the cut before v2.1.296. `description/buried`
+  and `description/cut` used 2,048, so they reported cuts Claude Code no longer
+  makes. The default now follows the docs per tool: 4,096 for a tool marked
+  `_meta["anthropic/alwaysLoad"]: true`, 16,384 otherwise. New preset
+  `descriptionLimit: "claude-code-upfront"` (4,096 for every tool) for tool search
+  off.
+
+- **"No authentication found" (or no API key, credentials or token "found",
+  "provided", "configured", "set") is a credentials failure.** It was a
+  `session/tool-error` on every call of a server run without its key (User
+  Intuition), instead of one `session/untested` that says to rerun with credentials.
+- **`session --auto` probes optional handles too.** A read-only tool whose handle is
+  optional (`inspect_research_session { view, session_id? }`) gets one more call with
+  a made-up one. A handle with a `pattern` is probed when the made-up value passes it
+  (the nil-version UUID passes most UUID patterns); 0.17.0 skipped every pattern, so
+  the one real server with session handles was never probed.
+- **A probe that fails on credentials says nothing about the handle.** 0.17.0 read a
+  "No authentication found" tool error as the right answer to an unknown handle, and
+  could call an auth protocol error `session/handle-error`. Both are now setup
+  failures, counted in `session/untested` like any other.
+- **`--save-scenario` writes probe steps commented out**, with a note to put a real
+  handle in: replayed as written, they failed as steps.
+- **`--as`: header names match whatever their case.** `--header "Authorization: …"`
+  with `--as admin:authorization: …` sent both.
+- **Config `identities` with credentials only for the other kind of server** (`env`
+  for an HTTP server) is a usage error, not an identity that silently lists as nobody
+  in particular.
+
 ## 0.17.0
 
 Two parts of the 2026-07-28 standard: server-minted handles (SEP-2567), state

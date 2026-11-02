@@ -12,6 +12,8 @@
 //   cart_contents   a tool error that says the cart is unknown or expired: right.
 //   basket_total    answers as if any basket existed: no finding (it may be right).
 //   send_draft      not read-only: never called.
+//   checkout_status a tool error about credentials: a setup failure, says nothing about the handle.
+//   lease_info      a protocol error about credentials: the same, not session/handle-error.
 import { McpServer, fromJsonSchema } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
 
@@ -47,6 +49,14 @@ export function build() {
 
   reg('create_draft', 'Creates an email draft in the Drafts folder.', obj({ subject: str }), async () => text('draft_id: d-1'), { readOnlyHint: false });
   reg('send_draft', 'Sends a draft.', obj({ draft_id: str }), async () => text('sent'), { readOnlyHint: false, destructiveHint: true });
+
+  reg('create_checkout', 'Starts a checkout. Checkouts expire after 15 minutes.', obj({}), async () => text('checkout_id: k-1'), { readOnlyHint: false });
+  reg('checkout_status', 'Shows a checkout.', obj({ checkout_id: str }), async () => ({
+    isError: true,
+    content: [{ type: 'text', text: 'Not authenticated: set CHECKOUT_API_KEY.' }],
+  }));
+  reg('acquire_lease', 'Acquires a lease. Leases expire after 60 seconds.', obj({}), async () => text('lease_id: l-1'), { readOnlyHint: false });
+  reg('lease_info', 'Shows a lease.', obj({ lease_id: str }), async () => text('PROTOCOL-ERROR Unauthorized: missing API key'));
 
   reg('acquire_lock', 'Takes the deploy lock.', obj({}), async () => text('locked'), { readOnlyHint: false });
   return server;
