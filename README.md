@@ -394,6 +394,9 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `write/no-dry-run` | info | Destructive tools with no dry-run parameter or preview tool, as one summary |
 | `spec/discover` | info | The server only speaks the 2025 protocol, so 2026-07-28 rules are skipped |
 | `spec/deprecated`, `spec/cache-hints` | info | 2026-07-28: deprecated features still advertised; `ttlMs: 0`, or `cacheScope: "public"` on a server that took credentials |
+| `lists/variance` | warn | With `--lists`: `prompts/list`, `resources/list` or `resources/templates/list` differs between two calls, or from a second process or connection (2026-07-28: lists no longer vary per connection) |
+| `lists/schema` | error | With `--lists`: a list result that doesn't match the official schema (2026-07-28 requires `ttlMs` and `cacheScope` on each), or a declared list that fails to answer (warn) |
+| `lists/undeclared` | info | With `--lists`: a list asked for that the server declares no capability for |
 | `naming/client-name` | warn | With `--client`: tool names the client's API refuses: `^[a-zA-Z0-9_-]{1,128}$` for the Claude API, `^[a-zA-Z0-9_-]+$` up to 128 for OpenAI's functions. MCP allows names such as `files.read` that neither takes as they are |
 | `menu/auth-variance` | info | With `--as` (or `identities` in the config): the tool set differs by identity, what each adds, lacks or defines differently against the first, and its tokens. Allowed by the spec; a baseline of one identity's menu doesn't cover the others. An identity that can't be listed is said here too |
 | `spec/cache-scope-public` | warn | 2026-07-28, with `--as`: the tool set differs by identity, and `tools/list` says `cacheScope: "public"`, which lets shared caches serve one caller's list to another |
@@ -493,6 +496,8 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
                     (2026-07-28 only; an error if the server lacks it)
 --processes <n>     server processes or connections to compare (default: 2);
                     1 opens no second one, session's scope check included
+--lists <kinds>     snapshot: also read and check prompts, resources (comma-separated);
+                    saved in the menu file beside the tools
 --client <name>     snapshot: check the menu for one client, from its own docs:
                     claude-code, claude-api-search or openai
 --as <name>:<cred>  snapshot: list the menu as this identity too, repeatable:

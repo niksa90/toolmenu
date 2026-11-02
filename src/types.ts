@@ -60,6 +60,10 @@ export interface Menu {
   tools: MenuTool[];
   totalTokens: number;
   listMeta?: { ttlMs?: number; cacheScope?: string };
+  /** snapshot --lists: the other lists as the server sent them (additive; readers that don't know them ignore them). */
+  prompts?: Record<string, unknown>[];
+  resources?: Record<string, unknown>[];
+  resourceTemplates?: Record<string, unknown>[];
   /**
    * 'session': every tool a session saw (session --union-out), in the order first
    * seen, which is the unlock order, not an order any client was served.

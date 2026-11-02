@@ -4,6 +4,7 @@ import { buried, cut, lateInstruction } from './description.js';
 import { connectionVariance, hostSpecific, nondeterministic, processVariance } from './determinism.js';
 import { authoredIds } from './ids.js';
 import { clientName } from './clients.js';
+import { listSchema, listsUndeclared, listVariance } from './lists.js';
 import { handleLifetime } from './handles.js';
 import { authVariance, cacheScopePublic } from './identities.js';
 import { route, sharedWord, vagueId } from './naming.js';
@@ -44,6 +45,9 @@ export const MENU_RULES: Rule[] = [
   deprecated,
   cacheHints,
   authVariance,
+  listVariance,
+  listSchema,
+  listsUndeclared,
   cacheScopePublic,
   serverInfo,
 ];

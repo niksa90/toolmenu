@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { CLIENT_NAMES, CLIENTS } from './clients.js';
+import { LIST_WORDS } from './lists.js';
 import { loadConfig, type Config } from './config.js';
 import { ELICITATIONS, PROTOCOLS, type Elicitation, type Protocol, type Target } from './connect.js';
 import { diffMenus } from './diff.js';
@@ -80,6 +81,10 @@ export async function main(argv: string[]): Promise<number> {
   if (!PROTOCOLS.includes(protocol)) throw new UsageError(`--protocol must be auto, legacy or modern`);
   const elicitation = (values.elicitation ?? 'decline') as Elicitation;
   if (!ELICITATIONS.includes(elicitation)) throw new UsageError('--elicitation must be decline or cancel');
+  if (values.lists !== undefined && sub !== 'snapshot') throw new UsageError('--lists goes with snapshot.');
+  const lists = values.lists !== undefined ? values.lists.split(',').map((w) => w.trim()).filter(Boolean) : config.lists;
+  const badList = (lists ?? []).find((w) => !(LIST_WORDS as readonly string[]).includes(w));
+  if (badList) throw new UsageError(`--lists takes ${LIST_WORDS.join(', ')}, comma-separated; not "${badList}"`);
   if (values.client !== undefined && sub !== 'snapshot') throw new UsageError('--client goes with snapshot.');
   if (values.client !== undefined && !(values.client in CLIENTS)) throw new UsageError(`--client must be one of ${CLIENT_NAMES.join(', ')}`);
   if (values.as !== undefined && sub !== 'snapshot') throw new UsageError('--as goes with snapshot: it lists the menu once per identity.');
@@ -274,7 +279,7 @@ export async function main(argv: string[]): Promise<number> {
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
   const client = values.client ?? config.client;
-  const { menu, findings, cost } = await snapshot(target, { routes, timeoutMs, processes, identities, client, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const { menu, findings, cost } = await snapshot(target, { routes, timeoutMs, processes, identities, client, lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');

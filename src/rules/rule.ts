@@ -26,6 +26,8 @@ export interface RuleContext {
   server?: string;
   /** snapshot --as: each identity's menu, the main one first (menu/auth-variance, spec/cache-scope-public). */
   identities?: import('./identities.js').IdentityMenu[];
+  /** snapshot --lists: the prompts and resources lists read (lists/* rules). */
+  lists?: import('./lists.js').ListsContext;
   /** --client: the client profile the menu is checked for (src/clients.ts). */
   client?: string;
   /** Where clients are assumed to cut tool descriptions (description/buried). */

@@ -20,6 +20,15 @@ function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
+/** snapshot --lists: "3 prompts · 5 resources · 2 resource templates", or nothing. */
+function otherLists(menu: Menu): string {
+  return [
+    menu.prompts ? plural(menu.prompts.length, 'prompt') : '',
+    menu.resources ? plural(menu.resources.length, 'resource') : '',
+    menu.resourceTemplates ? plural(menu.resourceTemplates.length, 'resource template') : '',
+  ].filter(Boolean).join(' · ');
+}
+
 /** --client: "as Claude Code: up front ~N tokens (…) · on demand ~M per tool loaded (largest: x, ~K)". */
 function costLine(cost: ClientCost): string {
   const parts = [
@@ -40,6 +49,9 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
         listMeta: menu.listMeta,
         breakdown: breakdown(menu),
         ...(cost ? { client: cost } : {}),
+        ...(menu.prompts ? { prompts: menu.prompts.length } : {}),
+        ...(menu.resources ? { resources: menu.resources.length } : {}),
+        ...(menu.resourceTemplates ? { resourceTemplates: menu.resourceTemplates.length } : {}),
         written: outPath ?? null,
         counts: counts(findings),
         findings,
@@ -68,6 +80,8 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
     `  protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)`,
   ];
   if (cost) lines.push(`  ${costLine(cost)}`, `    ${cost.basis}`);
+  const others = otherLists(menu);
+  if (others) lines.push(`  also listed: ${others}`);
   if (outPath) lines.push(`  wrote ${outPath}`);
   lines.push('');
   const where = breakdownLines(breakdown(menu), menu.tools.length);

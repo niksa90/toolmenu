@@ -11,23 +11,32 @@ const addFormats = ((addFormatsImport as unknown as { default?: unknown }).defau
 const SCHEMA_DIR = fileURLToPath(new URL('../../schemas/', import.meta.url));
 const validators = new Map<string, ReturnType<Ajv['compile']> | null>();
 
-function listToolsValidator(version: string) {
-  if (!validators.has(version)) {
+/** A validator for one result type ($defs name) of a protocol version, or null when this toolmenu has no schema for it. */
+export function resultValidator(version: string, result = 'ListToolsResult') {
+  const key = `${version}\0${result}`;
+  if (!validators.has(key)) {
     const file = `${SCHEMA_DIR}${version}.json`;
     if (!existsSync(file)) {
-      validators.set(version, null);
+      validators.set(key, null);
     } else {
       const schema = JSON.parse(readFileSync(file, 'utf8'));
       // 2025-11-25 and later are draft 2020-12 with $defs; earlier ones are draft-07 with definitions.
       const modernDraft = String(schema.$schema).includes('2020-12');
-      const ajv = modernDraft ? new Ajv2020({ strict: false, allErrors: true }) : new Ajv({ strict: false, allErrors: true });
-      addFormats(ajv);
-      ajv.addSchema(schema, 'mcp');
-      validators.set(version, ajv.compile({ $ref: `mcp#/${modernDraft ? '$defs' : 'definitions'}/ListToolsResult` }));
+      const pool = modernDraft ? schema.$defs : schema.definitions;
+      if (!pool?.[result]) {
+        validators.set(key, null);
+      } else {
+        const ajv = modernDraft ? new Ajv2020({ strict: false, allErrors: true }) : new Ajv({ strict: false, allErrors: true });
+        addFormats(ajv);
+        ajv.addSchema(schema, 'mcp');
+        validators.set(key, ajv.compile({ $ref: `mcp#/${modernDraft ? '$defs' : 'definitions'}/${result}` }));
+      }
     }
   }
-  return validators.get(version) ?? null;
+  return validators.get(key) ?? null;
 }
+
+const listToolsValidator = (version: string) => resultValidator(version, 'ListToolsResult');
 
 export const schema: Rule = {
   id: 'spec/schema',

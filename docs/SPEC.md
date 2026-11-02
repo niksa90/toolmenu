@@ -334,6 +334,9 @@ Keyword matching only in v1: deterministic, free and reproducible in CI.
 | `spec/discover` | info | The server only speaks the 2025 protocol: no working `server/discover`, which 2026-07-28 servers **MUST** implement. Info, not error: see §13 |
 | `spec/deprecated` | info | Advertises Sampling, Roots or Logging, or uses HTTP+SSE (`since: 2026-07-28`) |
 | `spec/cache-hints` | info | Cache metadata recommendation, not a correctness error (`since: 2026-07-28`). `ttlMs: 0` on `tools/list`: valid, but tells clients the list is "immediately stale" and they may re-fetch every time. `cacheScope: "public"` on a server that required auth: valid only if the list has no user-specific data, because shared caches "MAY … serve it across authorization contexts". Worth a look if the tool set depends on the caller's scopes |
+| `lists/variance` | warn | `snapshot --lists prompts,resources` (or `lists` in the config) reads `prompts/list`, `resources/list` and `resources/templates/list` (only those the server declares a capability for, up to 50 pages each, bypassing the SDK's list cache) twice on the main connection and once from a second process or connection (`--processes 1` turns that off). A difference by item (name, uri, uriTemplate), in content, key order or order is the finding |
+| `lists/schema` | error | Each list's raw result pages against the official schema of the protocol version (`ListPromptsResult`, `ListResourcesResult`, `ListResourceTemplatesResult`); 2026-07-28 requires `ttlMs` and `cacheScope`. A declared list that fails to answer is a warning |
+| `lists/undeclared` | info | A list asked for whose capability the server doesn't declare: not read |
 | `naming/client-name` | warn | `--client` only. Tool names outside the client's API name format: the Claude API's `^[a-zA-Z0-9_-]{1,128}$` (platform.claude.com define-tools) for `claude-code` and `claude-api-search`, OpenAI's `FunctionToolParam.name` (`^[a-zA-Z0-9_-]+$`, maxLength 128, openai/openai-openapi) for `openai`. The detail names the source and read date |
 | `menu/auth-variance` | info | `snapshot --as name:credential` (repeatable) or `identities` in the config lists the menu once per identity: a header set (HTTP) or env vars (stdio) over `--header`/`--env`. The first identity's menu is saved and checked; each other one, from its own process or connection, is compared with it: tools it adds, lacks, or defines differently, and its tokens. The tool set **MAY** vary by authorization, so this is info. An identity that can't be listed is reported here, and the others are still compared |
 | `spec/cache-scope-public` | warn | `since: 2026-07-28`. The tool set differs by identity and `tools/list` says `cacheScope: "public"` (shared caches **MAY** serve it across authorization contexts). With identities to compare, it replaces `spec/cache-hints`' public-scope hint, which has no evidence either way |
@@ -685,6 +688,14 @@ positive or a miss in that run.
   told apart still tie, and the message now says so and asks for a route word only
   the right tool has.
 - **`--init`** no longer ends with two `list` steps in a row.
+
+## Prompts and resources (0.19)
+
+With `--lists`, toolmenu reads everything a client loads up front, not only the tool
+menu: prompts, resources and resource templates are cacheable lists like tools on
+2026-07-28. They are saved in the menu file as optional `prompts`, `resources` and
+`resourceTemplates` keys (still `toolmenu: 1`; readers that don't know them ignore
+them). `diff` doesn't compare them yet.
 
 ## 19. Implementation notes (0.7: the cut belongs to the client)
 
