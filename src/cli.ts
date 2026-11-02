@@ -345,6 +345,11 @@ function parseIdentities(items: string[], kind: Target['kind']): Identity[] {
 /** The config file's identities, for this kind of server: headers for HTTP, env for stdio. */
 function configIdentities(ids: Config['identities'], kind: Target['kind']): Identity[] | undefined {
   if (!ids) return undefined;
+  // Credentials for the other kind of server only (env for an HTTP server): that identity would list as nobody in particular.
+  const wrong = Object.entries(ids).filter(([, id]) => (kind === 'http' ? !id.headers && id.env : !id.env && id.headers)).map(([name]) => name);
+  if (wrong.length) {
+    throw new UsageError(`identities ${wrong.join(', ')} in the config give ${kind === 'http' ? 'env vars' : 'headers'} only, and this is ${kind === 'http' ? 'an HTTP' : 'a stdio'} server: give each ${kind === 'http' ? '"headers"' : '"env"'}.`);
+  }
   const list = Object.entries(ids).map(([name, id]) => ({ name, ...(kind === 'http' ? (id.headers ? { headers: id.headers } : {}) : id.env ? { env: id.env } : {}) }));
   return list.length >= 2 ? list : undefined;
 }

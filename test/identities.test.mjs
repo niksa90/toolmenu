@@ -107,3 +107,17 @@ test('spec/cache-hints: with identities to compare, the public-scope hint gives 
   const same = [{ name: 'a', tools: [tool('a')], tokens: 1, cacheScope: 'public' }, { name: 'b', tools: [tool('a')], tokens: 1, cacheScope: 'public' }];
   assert.equal(hint(ctx(same)).length, 0);
 });
+
+// 0.17.1, from the review of 0.17.
+test('asIdentity: header names match whatever their case, so the identity\'s credential is the only one sent', () => {
+  const t = asIdentity({ kind: 'http', url: 'https://x.test/mcp', headers: { Authorization: 'Bearer base', 'X-Team': 'a' } }, { name: 'admin', headers: { authorization: 'Bearer admin' } });
+  assert.deepEqual(t.headers, { 'X-Team': 'a', authorization: 'Bearer admin' });
+});
+
+test('snapshot: a config identity with credentials only for the other kind of server is a usage error, not a silent no-op', async () => {
+  const dir = tempDir();
+  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ identities: { reader: { headers: { Authorization: 'Bearer r' } }, admin: { env: { ROLE: 'admin' } } } }));
+  const r = await run(['snapshot', '--no-write', '--', process.execPath, server], { cwd: dir });
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /identities reader in the config give headers only, and this is a stdio server: give each "env"\./);
+});

@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.17.1
+
+From running 0.17.0 on a real 2026-07-28 server that mints sessions (User
+Intuition), and a review of 0.17.0. Each fix has a test that failed before.
+
+- **`session --auto` probes optional handles too.** A read-only tool whose handle is
+  optional (`inspect_research_session { view, session_id? }`) gets one more call with
+  a made-up one. A handle with a `pattern` is probed when the made-up value passes it
+  (the nil-version UUID passes most UUID patterns); 0.17.0 skipped every pattern, so
+  the one real server with session handles was never probed.
+- **A probe that fails on credentials says nothing about the handle.** 0.17.0 read a
+  "No authentication found" tool error as the right answer to an unknown handle, and
+  could call an auth protocol error `session/handle-error`. Both are now setup
+  failures, counted in `session/untested` like any other.
+- **`--save-scenario` writes probe steps commented out**, with a note to put a real
+  handle in: replayed as written, they failed as steps.
+- **`--as`: header names match whatever their case.** `--header "Authorization: …"`
+  with `--as admin:authorization: …` sent both.
+- **Config `identities` with credentials only for the other kind of server** (`env`
+  for an HTTP server) is a usage error, not an identity that silently lists as nobody
+  in particular.
+
 ## 0.17.0
 
 Two parts of the 2026-07-28 standard: server-minted handles (SEP-2567), state

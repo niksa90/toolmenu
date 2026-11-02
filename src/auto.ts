@@ -3,7 +3,7 @@ import { isMap, isNode, isScalar, parseDocument, type Document } from 'yaml';
 import { synthesizeArgs } from './args.js';
 import { createdKinds, handleParams, type HandleProbe } from './rules/handles.js';
 import { MAX_UNLOCKS, unlockers, type Scenario, type Step } from './session.js';
-import type { Menu, MenuTool } from './types.js';
+import type { JsonSchema, Menu, MenuTool } from './types.js';
 import { COLLECTION_VERBS, LOOKUP_VERBS, verbOf, WRITE_VERBS } from './words.js';
 
 /** A value the user gave: `raw` is the text as typed on the command line, when it was typed. */
@@ -147,6 +147,11 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
       continue;
     }
     candidates.push({ tool, args: filled.args, rank: rank(tool, filled.args), valued: Object.values(filled.sources).includes('value') });
+    // An optional handle (inspect_session { view, session_id? }): the call above
+    // leaves it out; one more call passes one that can't exist. Not when the user
+    // gave a value for it (it's in args then).
+    const optional = modern ? optionalHandleProbe(tool, menu.tools, filled.args) : undefined;
+    if (optional) candidates.push({ tool, args: optional.args, rank: 4, valued: false, probe: optional.probe });
   }
   candidates.sort((x, y) => x.rank - y.rank);
   const chosen = candidates.slice(0, maxCalls);
@@ -297,6 +302,35 @@ function rank(tool: MenuTool, args: Record<string, unknown>): number {
  * checks), only when every other required value is filled, and only for a kind
  * some tool in the menu creates, so it is a handle the server mints.
  */
+/** The value a probe passes for a handle: one no server minted. Undefined when the schema rules a guess out (an enum, not a string, a pattern neither made-up value passes). */
+function madeUpHandle(schema: JsonSchema | undefined, kind: string): string | undefined {
+  if (!schema || (schema.type !== undefined && schema.type !== 'string') || schema.enum || 'const' in schema) return undefined;
+  const value = schema.format === 'uuid' || /uuid/i.test(String(schema.pattern ?? '')) ? '00000000-0000-4000-8000-000000000000' : `toolmenu-unknown-${kind}`;
+  if (typeof schema.pattern !== 'string') return value;
+  // A pattern is the server's own check: the made-up handle must pass it (a nil
+  // UUID passes most UUID patterns), or the error would be about the format.
+  const uuid = '00000000-0000-4000-8000-000000000000';
+  for (const candidate of [value, uuid]) {
+    try {
+      if (new RegExp(schema.pattern, 'u').test(candidate)) return candidate;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
+/** The one optional handle parameter of a tool, of a kind the menu creates, filled with a made-up handle on top of `args`. */
+function optionalHandleProbe(tool: MenuTool, tools: MenuTool[], args: Record<string, unknown>): { args: Record<string, unknown>; probe: HandleProbe } | undefined {
+  const created = createdKinds(tools);
+  const required = new Set(tool.inputSchema?.required ?? []);
+  const handles = [...created].flatMap((kind) => handleParams(tool, kind).filter((p) => !required.has(p) && !(p in args)).map((param) => ({ param, kind })));
+  if (handles.length !== 1) return undefined;
+  const [{ param, kind }] = handles;
+  const value = madeUpHandle(tool.inputSchema?.properties?.[param], kind);
+  return value === undefined ? undefined : { args: { ...args, [param]: value }, probe: { param, kind } };
+}
+
 function handleProbe(
   tool: MenuTool,
   tools: MenuTool[],
@@ -310,9 +344,8 @@ function handleProbe(
   });
   if (handles.length !== 1 || missing.length !== 1) return undefined;
   const [{ param, kind }] = handles;
-  const schema = tool.inputSchema?.properties?.[param];
-  if (!schema || (schema.type !== undefined && schema.type !== 'string') || typeof schema.pattern === 'string' || schema.enum) return undefined;
-  const value = schema.format === 'uuid' ? '00000000-0000-4000-8000-000000000000' : `toolmenu-unknown-${kind}`;
+  const value = madeUpHandle(tool.inputSchema?.properties?.[param], kind);
+  if (value === undefined) return undefined;
   const rest = synthesizeArgs(tool.inputSchema, { ...given, [param]: { value, raw: value } });
   return rest.ok ? { args: rest.args, probe: { param, kind } } : undefined;
 }
@@ -400,7 +433,14 @@ export function scenarioYaml(plan: AutoPlan, serverName?: string): string {
   lines.push('steps:');
   for (const step of plan.scenario.steps) {
     if (step.kind === 'list') lines.push('  - list');
-    else if (step.kind === 'call') {
+    else if (step.kind === 'call' && step.probe) {
+      // A made-up handle is --auto's check, not a step to replay: as written it would fail as a step.
+      lines.push(
+        `  # --auto called ${step.tool} with a made-up ${step.probe.kind} (session/handle-error); to replay it, put a real one in:`,
+        `  # - call: ${step.tool}`,
+        `  #   args: ${JSON.stringify(step.args)}`,
+      );
+    } else if (step.kind === 'call') {
       lines.push(`  - call: ${step.tool}`);
       if (Object.keys(step.args).length) lines.push(`    args: ${JSON.stringify(step.args)}`);
     }
