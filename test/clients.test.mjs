@@ -30,7 +30,7 @@ test('--client claude-code: names up front, full definitions on demand, tools ma
   const r = await snap(['--client', 'claude-code']);
   assert.equal(r.code, 0);
   assert.match(r.stdout, /\n {2}as Claude Code: up front ~\d+ tokens \(names, and 1 tool loaded in full\) · on demand ~\d+ per tool a search loads \(largest: list_entries, ~\d+\)\n/);
-  assert.match(r.stdout, /Claude Code defers MCP tools and shows their names until a search loads one \(https:\/\/code\.claude\.com\/docs\/en\/mcp, read \d{4}-\d{2}-\d{2}\)/);
+  assert.match(r.stdout, /Claude Code defers MCP tools and shows their names until a search loads one; the server's instructions load up front too and aren't counted here \(https:\/\/code\.claude\.com\/docs\/en\/mcp, read \d{4}-\d{2}-\d{2}\)/);
   const out = await json(['--client', 'claude-code']);
   assert.deepEqual(out.client.loaded, ['search_records']);
   assert.ok(out.client.upfront < out.totalTokens / 5, 'names cost a fraction of the definitions');

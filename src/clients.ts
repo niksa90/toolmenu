@@ -137,7 +137,7 @@ export function clientCost(name: string, menu: Menu): ClientCost | undefined {
   const upfront = seen === 'name' ? countTokens(deferred.map((t) => t.name).join('\n')) + loadedTokens : seen === 'nothing' ? loadedTokens : undefined;
   const basis =
     seen === 'name'
-      ? `${profile.label} defers MCP tools and shows their names until a search loads one (${profile.beforeSearch!.source}, read ${profile.beforeSearch!.read})`
+      ? `${profile.label} defers MCP tools and shows their names until a search loads one; the server's instructions load up front too and aren't counted here (${profile.beforeSearch!.source}, read ${profile.beforeSearch!.read})`
       : seen === 'nothing'
         ? `with every tool deferred, the model sees none of them until a search loads one, and the docs advise keeping the 3–5 tools used most loaded (${profile.beforeSearch!.source}, read ${profile.beforeSearch!.read})`
         : `${profile.label} defers per function or per MCP server; what the model sees before a search isn't in ${profile.defers.source}, so no up-front figure`;
