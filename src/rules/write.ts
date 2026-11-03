@@ -7,8 +7,13 @@ const PREVIEW_WORDS = new Set(['preview', 'validate', 'plan', 'simulate', 'dry']
 /** Write verbs that only add something; the others delete or overwrite. A guess from the name. */
 const ADDITIVE_VERBS = new Set(['create', 'add', 'insert', 'send', 'post', 'publish', 'submit', 'upload', 'assign', 'invite', 'approve']);
 
-function isWriteByName(tool: MenuTool): boolean {
-  return WRITE_VERBS.has(verbOf(tool.name) ?? '');
+/**
+ * Named like a write: the name leads with a write verb, after a prefix most of the
+ * menu's tools share. Not a verb further in: percent_change computes a change, and
+ * score_status_update scores one (both seen on scanned servers).
+ */
+function isWriteByName(tool: MenuTool, common: Set<string> = new Set()): boolean {
+  return WRITE_VERBS.has(leadingVerb(tool.name, common) ?? '');
 }
 
 function hasAnnotations(tool: MenuTool): boolean {
@@ -24,9 +29,10 @@ export const unannotated: Rule = {
   lesson: '02',
   summary: 'Tools that look like writes carry annotations',
   run(ctx) {
-    const bare = kept(ctx.menu.tools, ctx).filter((t) => isWriteByName(t) && !hasAnnotations(t));
+    const common = commonWords(ctx.menu.tools.map((t) => t.name));
+    const bare = kept(ctx.menu.tools, ctx).filter((t) => isWriteByName(t, common) && !hasAnnotations(t));
     if (bare.length === 0) return [];
-    const additive = (t: MenuTool) => ADDITIVE_VERBS.has(verbOf(t.name)!);
+    const additive = (t: MenuTool) => ADDITIVE_VERBS.has(leadingVerb(t.name, common)!);
     // One finding, not one per tool: the same gap in 53 tools is one thing to fix.
     if (bare.length === 1) {
       const [tool] = bare;
@@ -35,12 +41,12 @@ export const unannotated: Rule = {
         {
           tool: tool.name,
           confidence: 'unsure',
-          message: `${tool.name} is named like a write ("${verbOf(tool.name)}") and has no annotations. ${WHY}`,
+          message: `${tool.name} is named like a write ("${leadingVerb(tool.name, common)}") and has no annotations. ${WHY}`,
           fix: `Add annotations: { readOnlyHint: false, destructiveHint: ${!adds} } to ${tool.name} (${adds ? 'true if it can also delete or overwrite' : 'false if it only adds'}), or { readOnlyHint: true } if it changes nothing.`,
         },
       ];
     }
-    const verbs = [...new Set(bare.map((t) => `${verbOf(t.name)}…`))];
+    const verbs = [...new Set(bare.map((t) => `${leadingVerb(t.name, common)}…`))];
     const overwrites = bare.filter((t) => !additive(t)).map((t) => t.name);
     const adds = bare.filter(additive).map((t) => t.name);
     return [

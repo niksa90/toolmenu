@@ -13,8 +13,9 @@ registry (`bench/corpus/hosted.tsv`), of which 116 listed their tools (45 on
   them: 28 tools on 8 of the scanned servers, among them a hosted `create_booking`; 16
   are one structural-analysis server's model-building tools, which may change only its
   own state. The verb is the one the name leads with, after a prefix most of the
-  menu's tools share: `score_status_update` scores, it doesn't update.
-- **Behind a proxy Node doesn't use**, every host "doesn't resolve": Node's `fetch`
+  menu's tools share: `score_status_update` scores, it doesn't update. `write/unannotated`
+  reads the verb the same way now (it flagged a hosted `percent_change`).
+- **Behind a proxy Node doesn't use** (a host `NO_PROXY` exempts aside), every host "doesn't resolve": Node's `fetch`
   reads `HTTPS_PROXY` only with `NODE_USE_ENV_PROXY=1` (Node 22.21 and later). toolmenu
   now names the proxy variable and says what to run.
 - **A proxy that won't open the tunnel** (it answered CONNECT with 502) was "Version

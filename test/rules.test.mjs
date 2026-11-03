@@ -848,3 +848,9 @@ test('--auto doesn\'t call a tool marked read-only whose name says it writes, an
   assert.equal(skipped.reason, 'not read-only');
   assert.match(skipped.why, /^the server marks it readOnlyHint, but its name starts with "create", a write: not called on the hint alone$/);
 });
+
+test('write/unannotated: the verb a name leads with, not one in its object (percent_change computes a change)', () => {
+  const found = (tools) => lint(tools).filter((f) => f.rule === 'write/unannotated').map((f) => f.tool ?? f.detail);
+  assert.deepEqual(found([tool('percent_change', []), tool('score_status_update', [])]), []);
+  assert.deepEqual(found([tool('create_order', [])]), ['create_order']);
+});
