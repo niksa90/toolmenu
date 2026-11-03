@@ -407,3 +407,19 @@ test('a proxy Node\'s fetch ignores is named, with what to do on this Node', asy
   assert.match(proxyAdvice('HTTPS_PROXY', '24.1.0'), /rerun as NODE_USE_ENV_PROXY=1 toolmenu/);
   assert.match(proxyAdvice('HTTPS_PROXY', '22.12.0'), /Node 22\.12\.0 can't be told to: Node 22\.21 or later reads it with NODE_USE_ENV_PROXY=1/);
 });
+
+test('a proxy that won\'t open the tunnel is said as that, with the HTTP status it answered (0.20.1)', async () => {
+  const { explain, Trace } = await import('../dist/explain.js');
+  const target = { kind: 'http', url: 'https://down.example/mcp' };
+  const chain = (status) => {
+    const inner = Object.assign(new Error(`Proxy response (${status}) !== 200 when HTTP Tunneling`), { code: 'UND_ERR_ABORTED' });
+    const cancelled = Object.assign(new Error('Request was cancelled.', { cause: inner }), { code: 0 });
+    const fetchFailed = new TypeError('fetch failed', { cause: cancelled });
+    return Object.assign(new Error('Version negotiation probe failed: fetch failed', { cause: fetchFailed }), { code: 'ERA_NEGOTIATION_FAILED' });
+  };
+  const down = explain(chain(502), new Trace(), { target });
+  assert.match(down.message.split('\n')[0], /^The proxy couldn't open a connection to down\.example: it answered the tunnel request with HTTP 502\.$/);
+  assert.match(down.next, /the host is down or doesn't answer/);
+  const refused = explain(chain(403), new Trace(), { target });
+  assert.match(refused.next, /^The proxy refused down\.example: check what HTTPS_PROXY's policy allows/);
+});

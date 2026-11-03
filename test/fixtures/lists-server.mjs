@@ -11,8 +11,9 @@
 //   NO_TEMPLATES=1 declares resources but has no resources/templates/list: Method not found
 //   NEXT=1        the next release: review gone, summarize requires a topic, a new template, b.txt gone
 //   PAGED=1       resources/list never stops paging (a cursor on every page): read up to the cap
+//   UNSUPPORTED=1 resources/templates/list answers -32600 "Method not supported" (seen on a hosted server)
 //   NO_KEY=1      resources/list fails for want of credentials: a setup problem, not the server's
-import { Server } from '@modelcontextprotocol/server';
+import { ProtocolError, Server } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
 
 const hints = { ttlMs: 60_000, cacheScope: 'public' };
@@ -41,7 +42,11 @@ export function build() {
       if (process.env.VARY && calls++ % 2) resources.reverse();
       return { resources, ...hints };
     });
-    if (!process.env.NO_TEMPLATES) {
+    if (process.env.UNSUPPORTED) {
+      server.setRequestHandler('resources/templates/list', async () => {
+        throw new ProtocolError(-32600, 'Invalid request. Method not supported');
+      });
+    } else if (!process.env.NO_TEMPLATES) {
       server.setRequestHandler('resources/templates/list', async () => ({
         resourceTemplates: [{ uriTemplate: 'file:///{path}', name: 'file' }, ...(process.env.NEXT ? [{ uriTemplate: 'db://{table}', name: 'table' }] : [])],
         ...hints,

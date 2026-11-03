@@ -547,6 +547,19 @@ function explainHttp(error: Error, trace: Trace, context: ExplainContext, target
       { cause: error },
     );
   }
+  // A proxy that won't open the tunnel (undici: "Proxy response (502) !== 200 when HTTP Tunneling").
+  const tunnel = chain.map((e) => /Proxy response \((\d+)\) !== 200 when HTTP Tunneling/.exec(e.message)).find(Boolean);
+  if (tunnel) {
+    return new ConnectError(
+      `The proxy couldn't open a connection to ${host}: it answered the tunnel request with HTTP ${tunnel[1]}.`,
+      [['url', target.url], ['stage', first]],
+      tunnel[1] === '403' || tunnel[1] === '407'
+        ? `The proxy refused ${host}: check what HTTPS_PROXY's policy allows, or run from a machine that can reach it directly.`
+        : `The proxy couldn't reach ${host} (often: the host is down or doesn't answer). Check that the server is up, e.g. curl -I ${target.url}, then retry.`,
+      stage,
+      { cause: error },
+    );
+  }
   if (code === 'ECONNREFUSED') {
     return new ConnectError(
       `Nothing is listening at ${host}:${port}: the connection was refused (ECONNREFUSED).`,

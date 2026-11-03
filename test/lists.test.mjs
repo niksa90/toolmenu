@@ -147,3 +147,10 @@ test('diff: prompts and resource templates compare like tools; resources as data
   const same = JSON.parse((await run(['diff', '--json', old, old])).stdout);
   assert.deepEqual(same.findings.filter((f) => /prompt|resource|lists/.test(f.rule)), []);
 });
+
+// 0.20.1, from scanning hosted servers: "Method not supported" (-32600) is Method not found in other words.
+test('lists/schema: a declared list answered with "Method not supported" is info, like Method not found', async () => {
+  const [f] = await findings(['--lists', 'resources', '--env', 'UNSUPPORTED=1']);
+  assert.equal(f.severity, 'info');
+  assert.match(f.message, /answers resources\/templates\/list with Method not found/);
+});
