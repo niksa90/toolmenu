@@ -26,6 +26,8 @@ registry (`bench/corpus/hosted.tsv`), of which 116 listed their tools (45 on
   paid tool ("Payment required", HTTP 402), a new `payment` class.
 - keboola-mcp-server's "This session has no Keboola credentials" is now one
   `session/untested` (17 calls, all on credentials), not 17 tool errors.
+- **A CLI that names its commands when given none** ("Unknown command: undefined.
+  Expected 'init' or 'run'", @cloudflare/mcp-server-cloudflare) gets "try … run".
 - **`lists/schema`**: "Method not supported" (-32600) for a declared list is Method
   not found in other words: info, not a warning.
 - What the scan confirmed: 4 servers on 2026-07-28 leave `ttlMs`/`cacheScope` (one also

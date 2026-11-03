@@ -173,7 +173,10 @@ const HELP_ROW = /^[ \t]*(?:[a-z][\w.-]*(?: [a-z][\w-]*)?(?: [[<][^\]>]*[\]>])*|
 /** Help output, even when the "Usage:" line scrolled out of the stderr kept: three table rows or more. */
 const helpRows = (text: string) => text.split('\n').filter((l) => HELP_ROW.test(l)).length >= 3;
 // The subcommands that usually start the MCP server, most specific first.
-const SUBCOMMANDS = ['mcp start', 'mcp serve', 'server start', 'mcp', 'stdio', 'serve', 'server', 'start'];
+const SUBCOMMANDS = ['mcp start', 'mcp serve', 'server start', 'mcp', 'stdio', 'serve', 'server', 'start', 'run'];
+// A CLI that names its commands when it gets none: "Unknown command: undefined. Expected
+// 'init' or 'run'." (@cloudflare/mcp-server-cloudflare 0.2.0).
+const EXPECTED_COMMANDS = /\b(?:unknown|invalid|missing|no) (?:sub)?command\b[^\n]*?\bexpected:?\s+((?:["'`][a-z][\w-]*["'`](?:,?\s*(?:or\s+)?)?)+)/i;
 // An HTTP server's address in its log: "MCP server listening on http://localhost:3001/mcp",
 // "StreamableHTTP endpoint available at http://127.0.0.1:3333/mcp".
 const HTTP_URL = /\b(?:listening|available|running|serving|started)\b[^\n]{0,60}?(https?:\/\/[^\s"'<>]+)/gi;
@@ -207,6 +210,8 @@ function offeredSubcommand(text: string): string | undefined {
     for (const start of [0, 1]) for (const n of [1, 2]) if (words.length >= start + n) offered.add(words.slice(start, start + n).join(' '));
   };
   for (const m of text.matchAll(/\{([^{}\n]*)\}/g)) for (const w of m[1].split(',')) offered.add(w.trim());
+  const expected = EXPECTED_COMMANDS.exec(text);
+  if (expected) for (const m of expected[1].matchAll(/["'`]([a-z][\w-]*)["'`]/g)) offered.add(m[1]);
   let inUsage = false;
   for (const line of text.split('\n')) {
     if (!line.trim()) {
@@ -241,7 +246,7 @@ export function startupHint(trace: Trace, command: string, { exited = true }: { 
     const where = url ?? `http://localhost:${port}/mcp`;
     return `The server started an HTTP server (${where}) instead of talking on its stdin and stdout. Start it in stdio mode (${flag ? `its output mentions ${flag}` : 'often --stdio or --transport stdio'}), or run toolmenu against the address while the server runs: toolmenu snapshot ${where}`;
   }
-  if (exited && (USAGE.some((re) => re.test(text)) || helpRows(text))) {
+  if (exited && (USAGE.some((re) => re.test(text)) || helpRows(text) || EXPECTED_COMMANDS.test(text))) {
     const sub = offeredSubcommand(text);
     return `The command printed its usage and exited: it wants a subcommand or an argument it wasn't given. ${
       sub ? `Its usage lists “${sub}”: try ${command} ${sub}` : 'Its usage (above) or its docs say what starts the MCP server: add that after the command.'

@@ -426,3 +426,10 @@ test('a proxy that won\'t open the tunnel is said as that, with the HTTP status 
   const refused = explain(chain(403), new Trace(), { target });
   assert.match(refused.next, /^The proxy refused down\.example: check what HTTPS_PROXY's policy allows/);
 });
+
+test('startupHint: a CLI that names its commands when given none gets the one that runs the server (@cloudflare/mcp-server-cloudflare)', () => {
+  const cf = traced([], ["[DEBUG 2026-11-03T21:20:40.713Z] Uncaught exception: Error: Unknown command: undefined. Expected 'init' or 'run'."]);
+  assert.match(startupHint(cf, 'mcp-server-cloudflare'), /Its usage lists “run”: try mcp-server-cloudflare run$/);
+  // An error that names no commands isn't read as one.
+  assert.equal(startupHint(traced([], ['Error: Unknown option --foo. Expected a number.']), 'x'), undefined);
+});
