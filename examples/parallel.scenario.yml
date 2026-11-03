@@ -1,0 +1,21 @@
+# Hosted HTTP example; run from the repository root with the commands in README.md.
+# Search, fetch a known page, then repeat the search to watch for menu changes.
+allow_writes: false
+steps:
+  - list
+  - call: web_search
+    args:
+      objective: Find the toolmenu documentation for checking MCP tool menus.
+      search_queries:
+        - toolmenu MCP menu linting
+  - call: web_fetch
+    args:
+      urls:
+        - https://github.com/niksa90/toolmenu
+      objective: Find the snapshot and session commands in the toolmenu README.
+  - call: web_search
+    args:
+      objective: Find the toolmenu documentation for checking MCP tool menus.
+      search_queries:
+        - toolmenu MCP menu linting
+  - list
