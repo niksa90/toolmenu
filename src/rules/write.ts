@@ -1,5 +1,5 @@
 import type { MenuTool } from '../types.js';
-import { WRITE_VERBS, nouns, verbOf, words } from '../words.js';
+import { WRITE_VERBS, commonWords, leadingVerb, nouns, verbOf, words } from '../words.js';
 import { count, kept, names, type Rule } from './rule.js';
 
 const DRY_RUN_PARAMS = /^(dry[_-]?run|preview|validate[_-]?only|simulate|plan|what[_-]?if)$/i;
@@ -68,14 +68,16 @@ export const readOnlyMismatch: Rule = {
   severity: 'warn',
   summary: 'Tools marked read-only whose names say they write',
   run(ctx) {
-    const odd = kept(ctx.menu.tools, ctx).filter((t) => t.annotations?.readOnlyHint === true && isWriteByName(t));
+    const common = commonWords(ctx.menu.tools.map((t) => t.name));
+    const lead = (t: MenuTool) => leadingVerb(t.name, common);
+    const odd = kept(ctx.menu.tools, ctx).filter((t) => t.annotations?.readOnlyHint === true && WRITE_VERBS.has(lead(t) ?? ''));
     if (!odd.length) return [];
     const one = odd.length === 1;
     return [
       {
         ...(one ? { tool: odd[0].name } : {}),
         confidence: 'unsure',
-        message: `${one ? `${odd[0].name} is` : `${count(odd.length, 'tool')} are`} marked readOnlyHint: true but named like ${one ? 'a write' : 'writes'} (${names([...new Set(odd.map((t) => `${verbOf(t.name)}…`))], 6)}). readOnlyHint says a tool doesn't change anything, and clients act on it: one may run ${one ? 'it' : 'them'} without asking the user, or call ${one ? 'it' : 'them'} just to look. If ${one ? 'it changes' : 'they change'} anything, even state on the server, the hint is wrong.`,
+        message: `${one ? `${odd[0].name} is` : `${count(odd.length, 'tool')} are`} marked readOnlyHint: true but named like ${one ? 'a write' : 'writes'} (${names([...new Set(odd.map((t) => `${lead(t)}…`))], 6)}). readOnlyHint says a tool doesn't change anything, and clients act on it: one may run ${one ? 'it' : 'them'} without asking the user, or call ${one ? 'it' : 'them'} just to look. If ${one ? 'it changes' : 'they change'} anything, even state on the server, the hint is wrong.`,
         ...(one ? {} : { detail: [odd.map((t) => t.name).join(', ')] }),
         fix: `Where the tool changes anything, set readOnlyHint: false (and destructiveHint to whether it deletes or overwrites); where it truly only reads, a name without the write verb says so to agents too.`,
       },

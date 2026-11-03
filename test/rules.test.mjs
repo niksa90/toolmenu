@@ -832,6 +832,10 @@ test('write/read-only-mismatch: a tool marked read-only whose name says it write
   const many = lint([tool('upload_images', [], ro), tool('set_member', [], ro), tool('delete_thing', [])]).filter((f) => f.rule === 'write/read-only-mismatch');
   assert.equal(many.length, 1);
   assert.deepEqual(many[0].detail, ['upload_images, set_member']);
+  // The verb the name leads with, not one in its object; after a prefix the menu's tools share.
+  assert.deepEqual(lint([tool('score_status_update', [], ro)]).filter((f) => f.rule === 'write/read-only-mismatch'), []);
+  const prefixed = lint([tool('studio_clear_read_cache', [], ro), tool('studio_get_status', [], ro), tool('studio_list_envs', [], ro), tool('studio_get_bots', [], ro)]).filter((f) => f.rule === 'write/read-only-mismatch');
+  assert.equal(prefixed[0]?.tool, 'studio_clear_read_cache');
 });
 
 test('--auto doesn\'t call a tool marked read-only whose name says it writes, and says why', async () => {

@@ -10,7 +10,10 @@ registry (`bench/corpus/hosted.tsv`), of which 116 listed their tools (45 on
   writes.** A hosted server marked `create_my_ideal_account` `readOnlyHint: true`, and
   `--auto` called it on the hint (it failed for want of sign-in). Such a tool is now
   skipped, with the reason. New **`write/read-only-mismatch`** (warn, unsure) reports
-  them: 15 tools on 4 servers across the corpora.
+  them: 28 tools on 8 of the scanned servers, among them a hosted `create_booking`; 16
+  are one structural-analysis server's model-building tools, which may change only its
+  own state. The verb is the one the name leads with, after a prefix most of the
+  menu's tools share: `score_status_update` scores, it doesn't update.
 - **Behind a proxy Node doesn't use**, every host "doesn't resolve": Node's `fetch`
   reads `HTTPS_PROXY` only with `NODE_USE_ENV_PROXY=1` (Node 22.21 and later). toolmenu
   now names the proxy variable and says what to run.
@@ -20,6 +23,8 @@ registry (`bench/corpus/hosted.tsv`), of which 116 listed their tools (45 on
 - **Setup failures in hosted servers' words** are counted as setup, not as the
   server's: "Sign in to … to continue", "Connect your … account" (credentials), and a
   paid tool ("Payment required", HTTP 402), a new `payment` class.
+- keboola-mcp-server's "This session has no Keboola credentials" is now one
+  `session/untested` (17 calls, all on credentials), not 17 tool errors.
 - **`lists/schema`**: "Method not supported" (-32600) for a declared list is Method
   not found in other words: info, not a warning.
 - What the scan confirmed: 4 servers on 2026-07-28 leave `ttlMs`/`cacheScope` (one also
