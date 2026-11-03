@@ -26,6 +26,13 @@ The reference server, a review of 0.18 and 0.19, and `diff` for prompts and reso
   - A list longer than 50 pages was checked as if it were all of it; the snapshot now
     says the checks cover the pages read.
   - `--format markdown` shows the other lists too.
+- **`--client openai` has an up-front figure.** OpenAI's tool search guide
+  (developers.openai.com, read 2026-11-03) says a deferred function keeps its name and
+  description in front of the model and defers only its schema; a deferred MCP server
+  shows only its own name and description. The cost line now counts names and
+  descriptions up front and the rest per tool a search loads. How many tools a search
+  returns, and what it matches on, still isn't documented, so `search/findable` still
+  doesn't run for OpenAI.
 - README: the 2026-07-28 and client sections cover what 0.16–0.19 added.
 
 ## 0.19.0
@@ -76,7 +83,8 @@ doesn't document is left out, not guessed.
   (`^[a-zA-Z0-9_-]+$`, up to 128) refuse names MCP allows, such as `files.read`.
 - Sources, read 2026-11-02: code.claude.com/docs/en/mcp; platform.claude.com tool
   search and define-tools docs; openai/openai-openapi `openapi.yaml`
-  (platform.openai.com wasn't reachable from where this was built).
+  (platform.openai.com wasn't reachable from where this was built; 0.20.0 adds OpenAI's
+  tool search guide).
 
 ## 0.17.1
 

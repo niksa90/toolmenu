@@ -21,8 +21,8 @@ test('every profile value says where it was read and when', () => {
       assert.match(v.read, /^\d{4}-\d{2}-\d{2}$/, `${name}.${key} has a read date`);
     }
   }
-  // Not sourced, so not there: what OpenAI's model sees before a search, and how many results come back.
-  assert.equal(CLIENTS.openai.beforeSearch, undefined);
+  // What OpenAI's guide says the model sees before a search; not sourced, so not there: how many results come back.
+  assert.equal(CLIENTS.openai.beforeSearch.value, 'name-and-description');
   assert.equal(CLIENTS.openai.searchLimit, undefined);
 });
 
@@ -36,13 +36,16 @@ test('--client claude-code: names up front, full definitions on demand, tools ma
   assert.ok(out.client.upfront < out.totalTokens / 5, 'names cost a fraction of the definitions');
 });
 
-test('--client claude-api-search: nothing up front with every tool deferred; openai: no up-front figure, since its spec doesn\'t say', async () => {
+test('--client claude-api-search: nothing up front with every tool deferred; openai: names and descriptions up front, schemas on demand', async () => {
   const api = await json(['--client', 'claude-api-search']);
   assert.equal(api.client.upfront, 0);
   assert.match(api.client.basis, /docs advise keeping the 3–5 tools used most loaded/);
   const openai = await json(['--client', 'openai']);
-  assert.equal(openai.client.upfront, undefined);
-  assert.match(openai.client.basis, /what the model sees before a search isn't in https:\/\/github\.com\/openai\/openai-openapi/);
+  assert.ok(openai.client.upfront > 0 && openai.client.upfront < openai.totalTokens, 'names and descriptions are up front, schemas are not');
+  // On demand is what the names and descriptions leave out: less than the whole tool.
+  const api2 = await json(['--client', 'claude-api-search']);
+  assert.ok(openai.client.perTool < api2.client.perTool);
+  assert.match(openai.client.basis, /each tool's name and description stay up front and its schema loads on demand; deferred as one MCP server, the model sees only the server's name and description .*\(https:\/\/developers\.openai\.com\/api\/docs\/guides\/tools-tool-search, read 2026-11-03\)$/);
 });
 
 test('naming/client-name: names the client\'s API refuses, with the source; quiet without --client', async () => {

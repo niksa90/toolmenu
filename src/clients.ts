@@ -24,7 +24,11 @@ export interface ClientProfile {
    */
   defers: Sourced<'all' | 'chosen' | 'none'>;
   /** What the model has of a deferred tool before it searches: its name, or nothing. */
-  beforeSearch?: Sourced<'name' | 'nothing'>;
+  /**
+   * What the model has of a deferred tool before it searches: its name, nothing, or its
+   * name and description (OpenAI defers the parameter schema).
+   */
+  beforeSearch?: Sourced<'name' | 'nothing' | 'name-and-description'>;
   /** Where the client cuts a description: for a tool loaded up front, and one loaded through search. */
   descriptionCut?: Sourced<{ upfront: number; searched: number }>;
   /** How much of a description the search reads. */
@@ -43,6 +47,7 @@ const CLAUDE_CODE_MCP = 'https://code.claude.com/docs/en/mcp';
 const CLAUDE_TOOL_SEARCH = 'https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool';
 const CLAUDE_DEFINE_TOOLS = 'https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools';
 const OPENAI_SPEC = 'https://github.com/openai/openai-openapi (openapi.yaml: FunctionToolParam, NamespaceToolParam, MCPTool)';
+const OPENAI_TOOL_SEARCH = 'https://developers.openai.com/api/docs/guides/tools-tool-search';
 const READ = '2026-11-02';
 
 const claudeName: Sourced<{ pattern: string; max: number; api: string }> = { value: { pattern: '^[a-zA-Z0-9_-]{1,128}$', max: 128, api: 'the Claude API' }, source: CLAUDE_DEFINE_TOOLS, read: READ };
@@ -78,6 +83,12 @@ export const CLIENTS: Record<string, ClientProfile> = {
     label: "OpenAI's tool_search (Responses API)",
     // FunctionToolParam.defer_loading, MCPTool.defer_loading: per function, or per MCP server.
     defers: { value: 'chosen', source: OPENAI_SPEC, read: READ },
+    // "For an individual deferred function, the model still sees the function name and description,
+    // so in practice tool search is mostly deferring the parameter schema." For an MCP server or
+    // namespace, "the model sees only the namespace or server name and description at the beginning".
+    beforeSearch: { value: 'name-and-description', source: OPENAI_TOOL_SEARCH, read: '2026-11-03' },
+    // Not in the guide or the spec: how many tools a search returns, and which fields it matches on.
+    // So search/findable doesn't rank for OpenAI.
     // FunctionToolParam.name: maxLength 128, pattern ^[a-zA-Z0-9_-]+$.
     namePattern: { value: { pattern: '^[a-zA-Z0-9_-]+$', max: 128, api: "OpenAI's Responses API" }, source: OPENAI_SPEC, read: READ },
   },
@@ -135,17 +146,30 @@ export function clientCost(name: string, menu: Menu): ClientCost | undefined {
   if (!profile || profile.defers.value === 'none') return undefined;
   const loaded = profile.defers.value === 'all' ? menu.tools.filter(loadsUpfront) : [];
   const deferred = menu.tools.filter((t) => !loaded.includes(t));
-  const perTool = deferred.length ? Math.round(deferred.reduce((n, t) => n + t.tokens, 0) / deferred.length) : 0;
-  const largest = [...deferred].sort((a, b) => b.tokens - a.tokens)[0];
   const loadedTokens = loaded.reduce((n, t) => n + t.tokens, 0);
   const seen = profile.beforeSearch?.value;
-  const upfront = seen === 'name' ? countTokens(deferred.map((t) => t.name).join('\n')) + loadedTokens : seen === 'nothing' ? loadedTokens : undefined;
+  // OpenAI keeps a deferred function's name and description up front: what a search adds is the rest.
+  const seenUpfront = (t: MenuTool) => countTokens(`${t.name}\n${t.description ?? ''}`);
+  const upfront =
+    seen === 'name'
+      ? countTokens(deferred.map((t) => t.name).join('\n')) + loadedTokens
+      : seen === 'nothing'
+        ? loadedTokens
+        : seen === 'name-and-description'
+          ? deferred.reduce((n, t) => n + seenUpfront(t), 0) + loadedTokens
+          : undefined;
+  const onDemand = (t: MenuTool) => (seen === 'name-and-description' ? Math.max(0, t.tokens - seenUpfront(t)) : t.tokens);
   const basis =
     seen === 'name'
       ? `${profile.label} defers MCP tools and shows their names until a search loads one; the server's instructions load up front too and aren't counted here (${profile.beforeSearch!.source}, read ${profile.beforeSearch!.read})`
       : seen === 'nothing'
         ? `with every tool deferred, the model sees none of them until a search loads one, and the docs advise keeping the 3–5 tools used most loaded (${profile.beforeSearch!.source}, read ${profile.beforeSearch!.read})`
-        : `${profile.label} defers per function or per MCP server; what the model sees before a search isn't in ${profile.defers.source}, so no up-front figure`;
+        : seen === 'name-and-description'
+          ? `deferred as functions, each tool's name and description stay up front and its schema loads on demand; deferred as one MCP server, the model sees only the server's name and description (set where the server is added) until a search loads its tools (${profile.beforeSearch!.source}, read ${profile.beforeSearch!.read})`
+          : `${profile.label} defers per function or per MCP server; what the model sees before a search isn't documented, so no up-front figure`;
+  const perTool = deferred.length ? Math.round(deferred.reduce((n, t) => n + onDemand(t), 0) / deferred.length) : 0;
+  const biggest = [...deferred].sort((a, b) => onDemand(b) - onDemand(a))[0];
+  const largest = biggest ? { name: biggest.name, tokens: onDemand(biggest) } : undefined;
   return {
     client: name,
     label: profile.label,

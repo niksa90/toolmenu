@@ -465,7 +465,7 @@ client doesn't document is left out, not guessed.
 |---|---|---|---|---|
 | `claude-code` | tool names; full definitions for tools marked `_meta["anthropic/alwaysLoad"]` | reads a description up to 4,096 characters | 16,384 through search, 4,096 up front | Claude API's |
 | `claude-api-search` | nothing from tools you defer (keep the 3–5 used most loaded) | name, description, argument names and descriptions; 5 results by default | none documented | `^[a-zA-Z0-9_-]{1,128}$` |
-| `openai` | not in OpenAI's spec, so no figure | not in the spec, so `search/findable` doesn't run | none documented | `^[a-zA-Z0-9_-]+$`, up to 128 |
+| `openai` | each deferred function's name and description (its schema loads on demand); a deferred MCP server shows only its own name and description | how many results, and which fields, isn't documented, so `search/findable` doesn't run | none documented | `^[a-zA-Z0-9_-]+$`, up to 128 |
 
 The snapshot adds a line such as `as Claude Code: up front ~524 tokens · on demand ~344
 per tool a search loads (largest: update_contacts, ~2,093)`, and `--json` a `client`
