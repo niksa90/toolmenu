@@ -70,6 +70,16 @@ export function verbOf(name: string): string | undefined {
   return words(name).find((w) => VERBS.has(w));
 }
 
+/**
+ * The verb a name leads with, after any prefix most of the menu's tools share
+ * (copilot_studio_clear_read_cache → clear): the verb of what the tool does, not one
+ * in its object (score_status_update scores; "update" is what it scores).
+ */
+export function leadingVerb(name: string, common: Set<string> = new Set()): string | undefined {
+  const first = words(name).find((w) => !common.has(w));
+  return first !== undefined && VERBS.has(first) ? first : undefined;
+}
+
 /** The nouns in a tool name, singular: `list_team_audits` → team, audit. */
 export function nouns(name: string): string[] {
   return words(name)

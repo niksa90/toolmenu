@@ -395,3 +395,41 @@ test('startupHint: commander rows with [options] or <args> after the command off
   const commander = ['Usage: agentation-mcp [options] [command]', '', 'Commands:', '  init              Set up', '  server [options]  Start the MCP server', '  doctor            Check'];
   assert.match(startupHint(traced(commander), 'agentation-mcp'), /lists “server”: try agentation-mcp server$/);
 });
+
+// 0.20.1: behind a proxy Node's fetch ignores, every host "doesn't resolve" (found scanning hosted servers).
+test('a proxy Node\'s fetch ignores is named, with what to do on this Node', async () => {
+  const { ignoredProxy, proxyAdvice } = await import('../dist/explain.js');
+  assert.equal(ignoredProxy({ HTTPS_PROXY: 'http://proxy:8080' }), 'HTTPS_PROXY');
+  assert.equal(ignoredProxy({ http_proxy: 'http://proxy:8080' }), 'http_proxy');
+  assert.equal(ignoredProxy({ HTTPS_PROXY: 'http://proxy:8080', NODE_USE_ENV_PROXY: '1' }), undefined);
+  assert.equal(ignoredProxy({}), undefined);
+  // A host NO_PROXY exempts goes direct: its DNS failure isn't the proxy's.
+  assert.equal(ignoredProxy({ HTTPS_PROXY: 'http://p', NO_PROXY: 'localhost,.internal.example' }, 'mcp.internal.example'), undefined);
+  assert.equal(ignoredProxy({ HTTPS_PROXY: 'http://p', NO_PROXY: 'localhost' }, 'mcp.example.com'), 'HTTPS_PROXY');
+  assert.match(proxyAdvice('HTTPS_PROXY', '22.21.0'), /rerun as NODE_USE_ENV_PROXY=1 toolmenu/);
+  assert.match(proxyAdvice('HTTPS_PROXY', '24.1.0'), /rerun as NODE_USE_ENV_PROXY=1 toolmenu/);
+  assert.match(proxyAdvice('HTTPS_PROXY', '22.12.0'), /Node 22\.12\.0 can't be told to: Node 22\.21 or later reads it with NODE_USE_ENV_PROXY=1/);
+});
+
+test('a proxy that won\'t open the tunnel is said as that, with the HTTP status it answered (0.20.1)', async () => {
+  const { explain, Trace } = await import('../dist/explain.js');
+  const target = { kind: 'http', url: 'https://down.example/mcp' };
+  const chain = (status) => {
+    const inner = Object.assign(new Error(`Proxy response (${status}) !== 200 when HTTP Tunneling`), { code: 'UND_ERR_ABORTED' });
+    const cancelled = Object.assign(new Error('Request was cancelled.', { cause: inner }), { code: 0 });
+    const fetchFailed = new TypeError('fetch failed', { cause: cancelled });
+    return Object.assign(new Error('Version negotiation probe failed: fetch failed', { cause: fetchFailed }), { code: 'ERA_NEGOTIATION_FAILED' });
+  };
+  const down = explain(chain(502), new Trace(), { target });
+  assert.match(down.message.split('\n')[0], /^The proxy couldn't open a connection to down\.example: it answered the tunnel request with HTTP 502\.$/);
+  assert.match(down.next, /the host is down or doesn't answer/);
+  const refused = explain(chain(403), new Trace(), { target });
+  assert.match(refused.next, /^The proxy refused down\.example: check what HTTPS_PROXY's policy allows/);
+});
+
+test('startupHint: a CLI that names its commands when given none gets the one that runs the server (@cloudflare/mcp-server-cloudflare)', () => {
+  const cf = traced([], ["[DEBUG 2026-11-03T21:20:40.713Z] Uncaught exception: Error: Unknown command: undefined. Expected 'init' or 'run'."]);
+  assert.match(startupHint(cf, 'mcp-server-cloudflare'), /Its usage lists “run”: try mcp-server-cloudflare run$/);
+  // An error that names no commands isn't read as one.
+  assert.equal(startupHint(traced([], ['Error: Unknown option --foo. Expected a number.']), 'x'), undefined);
+});

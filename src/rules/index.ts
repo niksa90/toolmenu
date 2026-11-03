@@ -9,7 +9,7 @@ import { handleLifetime } from './handles.js';
 import { authVariance, cacheScopePublic } from './identities.js';
 import { route, sharedWord, vagueId } from './naming.js';
 import { cacheHints, deprecated, discover, duplicateName, schema, serverInfo, toolsCapability } from './spec.js';
-import { noDryRun, unannotated } from './write.js';
+import { noDryRun, readOnlyMismatch, unannotated } from './write.js';
 import { gated } from './gated.js';
 import { xMcpHeader } from './headers.js';
 import { schemaRef } from './refs.js';
@@ -37,6 +37,7 @@ export const MENU_RULES: Rule[] = [
   lateInstruction,
   noDryRun,
   unannotated,
+  readOnlyMismatch,
   schema,
   xMcpHeader,
   schemaRef,

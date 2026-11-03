@@ -173,7 +173,10 @@ const HELP_ROW = /^[ \t]*(?:[a-z][\w.-]*(?: [a-z][\w-]*)?(?: [[<][^\]>]*[\]>])*|
 /** Help output, even when the "Usage:" line scrolled out of the stderr kept: three table rows or more. */
 const helpRows = (text: string) => text.split('\n').filter((l) => HELP_ROW.test(l)).length >= 3;
 // The subcommands that usually start the MCP server, most specific first.
-const SUBCOMMANDS = ['mcp start', 'mcp serve', 'server start', 'mcp', 'stdio', 'serve', 'server', 'start'];
+const SUBCOMMANDS = ['mcp start', 'mcp serve', 'server start', 'mcp', 'stdio', 'serve', 'server', 'start', 'run'];
+// A CLI that names its commands when it gets none: "Unknown command: undefined. Expected
+// 'init' or 'run'." (@cloudflare/mcp-server-cloudflare 0.2.0).
+const EXPECTED_COMMANDS = /\b(?:unknown|invalid|missing|no) (?:sub)?command\b[^\n]*?\bexpected:?\s+((?:["'`][a-z][\w-]*["'`](?:,?\s*(?:or\s+)?)?)+)/i;
 // An HTTP server's address in its log: "MCP server listening on http://localhost:3001/mcp",
 // "StreamableHTTP endpoint available at http://127.0.0.1:3333/mcp".
 const HTTP_URL = /\b(?:listening|available|running|serving|started)\b[^\n]{0,60}?(https?:\/\/[^\s"'<>]+)/gi;
@@ -207,6 +210,8 @@ function offeredSubcommand(text: string): string | undefined {
     for (const start of [0, 1]) for (const n of [1, 2]) if (words.length >= start + n) offered.add(words.slice(start, start + n).join(' '));
   };
   for (const m of text.matchAll(/\{([^{}\n]*)\}/g)) for (const w of m[1].split(',')) offered.add(w.trim());
+  const expected = EXPECTED_COMMANDS.exec(text);
+  if (expected) for (const m of expected[1].matchAll(/["'`]([a-z][\w-]*)["'`]/g)) offered.add(m[1]);
   let inUsage = false;
   for (const line of text.split('\n')) {
     if (!line.trim()) {
@@ -241,7 +246,7 @@ export function startupHint(trace: Trace, command: string, { exited = true }: { 
     const where = url ?? `http://localhost:${port}/mcp`;
     return `The server started an HTTP server (${where}) instead of talking on its stdin and stdout. Start it in stdio mode (${flag ? `its output mentions ${flag}` : 'often --stdio or --transport stdio'}), or run toolmenu against the address while the server runs: toolmenu snapshot ${where}`;
   }
-  if (exited && (USAGE.some((re) => re.test(text)) || helpRows(text))) {
+  if (exited && (USAGE.some((re) => re.test(text)) || helpRows(text) || EXPECTED_COMMANDS.test(text))) {
     const sub = offeredSubcommand(text);
     return `The command printed its usage and exited: it wants a subcommand or an argument it wasn't given. ${
       sub ? `Its usage lists “${sub}”: try ${command} ${sub}` : 'Its usage (above) or its docs say what starts the MCP server: add that after the command.'
@@ -495,6 +500,28 @@ function rejectedCredentials(stderrText: string): string | undefined {
 
 const REJECTED_NEXT = "Check the API key or token the server was given (--env, or its config): it's likely wrong, expired or for another account. This is a reading of the server's log, not certain: read its stderr above.";
 
+/**
+ * A proxy this machine sets that Node's built-in fetch ignores: it reads HTTPS_PROXY
+ * only with NODE_USE_ENV_PROXY=1 (Node 22.21 and later). Behind such a proxy, every
+ * host looks like it doesn't resolve.
+ */
+export function ignoredProxy(env: NodeJS.ProcessEnv = process.env, host?: string): string | undefined {
+  if (env.NODE_USE_ENV_PROXY === '1') return undefined;
+  // A host NO_PROXY exempts goes direct either way: its DNS failure is its own.
+  const exempt = (env.NO_PROXY ?? env.no_proxy ?? '').split(',').map((h) => h.trim().replace(/^\*?\./, '').toLowerCase()).filter(Boolean);
+  if (host && exempt.some((h) => h === '*' || host.toLowerCase() === h || host.toLowerCase().endsWith(`.${h}`))) return undefined;
+  return ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy'].find((k) => env[k]);
+}
+
+/** What to do about an ignored proxy, for this Node. */
+export function proxyAdvice(proxy: string, version: string = process.versions.node): string {
+  const [major, minor] = version.split('.').map(Number);
+  const supported = major > 22 || (major === 22 && minor >= 21);
+  return supported
+    ? `This machine sets ${proxy}, but Node's fetch only goes through it with NODE_USE_ENV_PROXY=1: rerun as NODE_USE_ENV_PROXY=1 toolmenu ….`
+    : `This machine sets ${proxy}, but Node's fetch doesn't go through it, and Node ${version} can't be told to: Node 22.21 or later reads it with NODE_USE_ENV_PROXY=1.`;
+}
+
 function firstLine(text: string): string {
   return clean(text.split('\n')[0], 300);
 }
@@ -515,12 +542,28 @@ function explainHttp(error: Error, trace: Trace, context: ExplainContext, target
 
   // The network, before any HTTP answer.
   if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
+    const proxy = ignoredProxy(process.env, host);
     return new ConnectError(
       code === 'ENOTFOUND' ? `Couldn't find ${host}: the name doesn't resolve (DNS: ENOTFOUND).` : `Couldn't look up ${host}: DNS failed for now (EAI_AGAIN).`,
+      [['url', target.url], ['stage', first], ...(proxy ? [['proxy', `${proxy} is set, but Node's fetch doesn't use it`] as [string, string]] : [])],
+      proxy
+        ? proxyAdvice(proxy)
+        : code === 'ENOTFOUND'
+          ? "Check the host name for typos. If it's right, the server may have moved or shut down: look up its current URL in its docs or registry entry."
+          : 'Check this machine\'s network and DNS, then retry.',
+      stage,
+      { cause: error },
+    );
+  }
+  // A proxy that won't open the tunnel (undici: "Proxy response (502) !== 200 when HTTP Tunneling").
+  const tunnel = chain.map((e) => /Proxy response \((\d+)\) !== 200 when HTTP Tunneling/.exec(e.message)).find(Boolean);
+  if (tunnel) {
+    return new ConnectError(
+      `The proxy couldn't open a connection to ${host}: it answered the tunnel request with HTTP ${tunnel[1]}.`,
       [['url', target.url], ['stage', first]],
-      code === 'ENOTFOUND'
-        ? "Check the host name for typos. If it's right, the server may have moved or shut down: look up its current URL in its docs or registry entry."
-        : 'Check this machine\'s network and DNS, then retry.',
+      tunnel[1] === '403' || tunnel[1] === '407'
+        ? `The proxy refused ${host}: check what HTTPS_PROXY's policy allows, or run from a machine that can reach it directly.`
+        : `The proxy couldn't reach ${host} (often: the host is down or doesn't answer). Check that the server is up, e.g. curl -I ${target.url}, then retry.`,
       stage,
       { cause: error },
     );

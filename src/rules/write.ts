@@ -1,5 +1,5 @@
 import type { MenuTool } from '../types.js';
-import { WRITE_VERBS, nouns, verbOf, words } from '../words.js';
+import { WRITE_VERBS, commonWords, leadingVerb, nouns, verbOf, words } from '../words.js';
 import { count, kept, names, type Rule } from './rule.js';
 
 const DRY_RUN_PARAMS = /^(dry[_-]?run|preview|validate[_-]?only|simulate|plan|what[_-]?if)$/i;
@@ -7,8 +7,13 @@ const PREVIEW_WORDS = new Set(['preview', 'validate', 'plan', 'simulate', 'dry']
 /** Write verbs that only add something; the others delete or overwrite. A guess from the name. */
 const ADDITIVE_VERBS = new Set(['create', 'add', 'insert', 'send', 'post', 'publish', 'submit', 'upload', 'assign', 'invite', 'approve']);
 
-function isWriteByName(tool: MenuTool): boolean {
-  return WRITE_VERBS.has(verbOf(tool.name) ?? '');
+/**
+ * Named like a write: the name leads with a write verb, after a prefix most of the
+ * menu's tools share. Not a verb further in: percent_change computes a change, and
+ * score_status_update scores one (both seen on scanned servers).
+ */
+function isWriteByName(tool: MenuTool, common: Set<string> = new Set()): boolean {
+  return WRITE_VERBS.has(leadingVerb(tool.name, common) ?? '');
 }
 
 function hasAnnotations(tool: MenuTool): boolean {
@@ -24,9 +29,10 @@ export const unannotated: Rule = {
   lesson: '02',
   summary: 'Tools that look like writes carry annotations',
   run(ctx) {
-    const bare = kept(ctx.menu.tools, ctx).filter((t) => isWriteByName(t) && !hasAnnotations(t));
+    const common = commonWords(ctx.menu.tools.map((t) => t.name));
+    const bare = kept(ctx.menu.tools, ctx).filter((t) => isWriteByName(t, common) && !hasAnnotations(t));
     if (bare.length === 0) return [];
-    const additive = (t: MenuTool) => ADDITIVE_VERBS.has(verbOf(t.name)!);
+    const additive = (t: MenuTool) => ADDITIVE_VERBS.has(leadingVerb(t.name, common)!);
     // One finding, not one per tool: the same gap in 53 tools is one thing to fix.
     if (bare.length === 1) {
       const [tool] = bare;
@@ -35,12 +41,12 @@ export const unannotated: Rule = {
         {
           tool: tool.name,
           confidence: 'unsure',
-          message: `${tool.name} is named like a write ("${verbOf(tool.name)}") and has no annotations. ${WHY}`,
+          message: `${tool.name} is named like a write ("${leadingVerb(tool.name, common)}") and has no annotations. ${WHY}`,
           fix: `Add annotations: { readOnlyHint: false, destructiveHint: ${!adds} } to ${tool.name} (${adds ? 'true if it can also delete or overwrite' : 'false if it only adds'}), or { readOnlyHint: true } if it changes nothing.`,
         },
       ];
     }
-    const verbs = [...new Set(bare.map((t) => `${verbOf(t.name)}…`))];
+    const verbs = [...new Set(bare.map((t) => `${leadingVerb(t.name, common)}…`))];
     const overwrites = bare.filter((t) => !additive(t)).map((t) => t.name);
     const adds = bare.filter(additive).map((t) => t.name);
     return [
@@ -52,6 +58,34 @@ export const unannotated: Rule = {
           ...(adds.length ? [`Only add, going by the name (destructiveHint: false): ${adds.join(', ')}`] : []),
         ],
         fix: 'Add annotations to each: { readOnlyHint: false, destructiveHint: true } where it deletes or overwrites, { readOnlyHint: false, destructiveHint: false } where it only adds. The split above is a guess from the names: check each tool.',
+      },
+    ];
+  },
+};
+
+/**
+ * readOnlyHint: true on a tool whose name says it writes (create_, delete_, send_…).
+ * The spec's readOnlyHint means "the tool does not modify its environment", and
+ * clients and agents act on it: run it without asking, retry it, call it to explore.
+ * Seen on a hosted server: create_my_ideal_account, marked read-only.
+ */
+export const readOnlyMismatch: Rule = {
+  id: 'write/read-only-mismatch',
+  severity: 'warn',
+  summary: 'Tools marked read-only whose names say they write',
+  run(ctx) {
+    const common = commonWords(ctx.menu.tools.map((t) => t.name));
+    const lead = (t: MenuTool) => leadingVerb(t.name, common);
+    const odd = kept(ctx.menu.tools, ctx).filter((t) => t.annotations?.readOnlyHint === true && WRITE_VERBS.has(lead(t) ?? ''));
+    if (!odd.length) return [];
+    const one = odd.length === 1;
+    return [
+      {
+        ...(one ? { tool: odd[0].name } : {}),
+        confidence: 'unsure',
+        message: `${one ? `${odd[0].name} is` : `${count(odd.length, 'tool')} are`} marked readOnlyHint: true but named like ${one ? 'a write' : 'writes'} (${names([...new Set(odd.map((t) => `${lead(t)}…`))], 6)}). readOnlyHint says a tool doesn't change anything, and clients act on it: one may run ${one ? 'it' : 'them'} without asking the user, or call ${one ? 'it' : 'them'} just to look. If ${one ? 'it changes' : 'they change'} anything, even state on the server, the hint is wrong.`,
+        ...(one ? {} : { detail: [odd.map((t) => t.name).join(', ')] }),
+        fix: `Where the tool changes anything, set readOnlyHint: false (and destructiveHint to whether it deletes or overwrites); where it truly only reads, a name without the write verb says so to agents too.`,
       },
     ];
   },

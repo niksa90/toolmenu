@@ -5,10 +5,10 @@
  * as a finding.
  */
 
-export type FailureClass = 'auth' | 'environment' | 'network' | 'not-found' | 'client' | 'invalid-arguments' | 'other';
+export type FailureClass = 'auth' | 'payment' | 'environment' | 'network' | 'not-found' | 'client' | 'invalid-arguments' | 'other';
 
 /** Failures of the setup (credentials, this machine, the network), not of the server. */
-export const SETUP_FAILURES = new Set<FailureClass>(['auth', 'environment', 'network', 'not-found', 'client']);
+export const SETUP_FAILURES = new Set<FailureClass>(['auth', 'payment', 'environment', 'network', 'not-found', 'client']);
 
 // A tool that asks the client for something toolmenu doesn't offer: "Cannot request
 // input 'roots' (roots/list): the request's client capabilities do not declare the
@@ -27,6 +27,11 @@ const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bno
 // Netlify" (Netlify), "The API key you provided was rejected" (Pinecone), "Admin
 // auth is missing", "Runtime credentials are missing" (securenow). Not a bare
 // "token": plenty of errors mention one.
+// Hosted servers ask the user to sign in in their own words: "Sign in to Ideal (or create
+// your creator account) to continue", "Connect your Novamris account to read its saved chart".
+const SIGN_IN = /\bsign in to\b|\blog ?in to (?:continue|use)\b|\bconnect your [\w .'-]{1,40}? account\b/i;
+// A paid tool: "Payment required: $0.50 over MPP" (a hosted server), HTTP 402, no credits left.
+const PAYMENT = /\bpayment required\b|\b(?:HTTP|status(?: code)?) 402\b|\binsufficient (?:credits?|balance|funds)\b/i;
 const AUTH = /\b(?:auth|authentication|credentials?|api[ _-]?key|access token)\b (?:is |are )?missing\b|\bno (?:authentication|auth|credentials?|api[ _-]?keys?|access tokens?|auth tokens?) (?:was |were )?(?:found|provided|configured|set|given)\b|\b(401|403)\b|unauthori[sz]ed|unauth(enticated|error)|forbidden|bad credentials|authori[sz]ation expired|re-?authori[sz]e|not authenticated|not logged (?:in|into)\b(?! to the browser)|authentication (token|failed|required|error)|(invalid|expired|revoked) (api[ _-]?key|access token|token|credentials)|(token|api[ _-]?key|credentials) (is |are )?(not valid|invalid|expired)|(api[ _-]?key|access token|credentials)\b[^.]{0,30}\b(was|were|is|are) (rejected|refused|revoked)|valid (access )?token/i;
 const NETWORK = /\b(ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|EHOSTUNREACH)\b|socket hang up|getaddrinfo|network error/i;
 // "Either 'page_id' OR both 'title' and 'space_key' must be provided" (Atlassian),
@@ -169,7 +174,8 @@ export function classifyFailure(text: string, options: { code?: number; hadArgum
   // 2026-07-28's MissingRequiredClientCapabilityError, by its code.
   if (options.code === -32021 || CLIENT.test(text)) return 'client';
   if (ENVIRONMENT.test(text)) return 'environment';
-  if (AUTH.test(text)) return 'auth';
+  if (PAYMENT.test(text)) return 'payment';
+  if (AUTH.test(text) || SIGN_IN.test(text)) return 'auth';
   if (NETWORK.test(text)) return 'network';
   if (options.code === -32602 || INVALID_ARGUMENTS.test(text)) return 'invalid-arguments';
   if (NOT_FOUND.test(text) && !options.hadArguments) return 'not-found';
@@ -178,6 +184,7 @@ export function classifyFailure(text: string, options: { code?: number; hadArgum
 
 export const FAILURE_LABELS: Record<FailureClass, string> = {
   auth: 'authentication',
+  payment: 'payment (a paid tool)',
   environment: 'something missing on this machine',
   network: 'the network',
   'not-found': 'a 404 on a call that named nothing (usually the account or site behind the credentials)',
@@ -196,6 +203,7 @@ export function setupFailureAdvice(classes: Iterable<FailureClass>, transport: '
   const credentials = transport === 'http' ? '--header "Authorization: …"' : '--env KEY=…';
   const steps: string[] = [];
   if (set.has('auth') || set.has('not-found')) steps.push(`If the errors are about credentials, rerun with real ones (${credentials}); a test account is enough.`);
+  if (set.has('payment')) steps.push('If a tool asks for payment, it can\'t be checked without paying: leave it out of the scenario, or run with an account that has credit.');
   if (set.has('environment')) steps.push('If something is missing on this machine (a browser, a binary, a module), install it where the server runs, or run the server in its own container image.');
   if (set.has('client')) steps.push("If a tool needs a client capability toolmenu doesn't declare (roots and sampling, which 2026-07-28 deprecates, or one the error names), those calls only checked that the menu stays put, and the server isn't at fault.");
   if (set.has('network')) steps.push('If the server calls an upstream API, check this machine can reach it (DNS, proxy, firewall).');

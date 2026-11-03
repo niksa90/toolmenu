@@ -345,6 +345,10 @@ const FAILED_AS: Record<RouterFailure, { what: [string, string]; fix: string }> 
     what: ['wanted credentials before it would list its commands', 'wanted credentials before they would list their commands'],
     fix: "Rerun with the server's credentials (--env for a stdio server, --header for HTTP); if these routers aren't yours to watch, ignore this.",
   },
+  payment: {
+    what: ['asked for payment before it would list its commands', 'asked for payment before they would list their commands'],
+    fix: "Listing these routers' commands costs money here; rerun with an account that has credit if they're yours to watch, or ignore this.",
+  },
   environment: {
     what: ["needs something this machine doesn't have", "need something this machine doesn't have"],
     fix: 'Install what the error names where toolmenu starts the server (the same container or CI image), then rerun.',

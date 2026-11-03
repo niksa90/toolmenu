@@ -4,7 +4,7 @@ import { synthesizeArgs } from './args.js';
 import { createdKinds, handleParams, type HandleProbe } from './rules/handles.js';
 import { MAX_UNLOCKS, unlockers, type Scenario, type Step } from './session.js';
 import type { JsonSchema, Menu, MenuTool } from './types.js';
-import { COLLECTION_VERBS, LOOKUP_VERBS, verbOf, WRITE_VERBS } from './words.js';
+import { COLLECTION_VERBS, commonWords, leadingVerb, LOOKUP_VERBS, verbOf, WRITE_VERBS } from './words.js';
 
 /** A value the user gave: `raw` is the text as typed on the command line, when it was typed. */
 export interface GivenValue {
@@ -99,7 +99,11 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     else if (writeSign(tool)) ignored.push({ input: `--assume-read-only ${name}`, why: `not called: ${writeSign(tool)}` });
     else assumed.add(name);
   }
-  const readOnly = (t: MenuTool) => t.annotations?.readOnlyHint === true || assumed.has(t.name);
+  // The server's readOnlyHint, but not against a name that says it writes: a hosted
+  // server marked create_my_ideal_account read-only (write/read-only-mismatch).
+  const common = commonWords(menu.tools.map((t) => t.name));
+  const namedWrite = (t: MenuTool) => WRITE_VERBS.has(leadingVerb(t.name, common) ?? '');
+  const readOnly = (t: MenuTool) => (t.annotations?.readOnlyHint === true && !namedWrite(t)) || assumed.has(t.name);
 
   const { perTool, ignored: unusedValues } = resolveValues(menu, options.values ?? {});
   ignored.push(...unusedValues);
@@ -121,7 +125,10 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     if (unlocking.has(tool.name)) continue;
     const a = tool.annotations ?? {};
     if (!readOnly(tool)) {
-      const write = writeSign(tool);
+      const write =
+        a.readOnlyHint === true && namedWrite(tool)
+          ? `the server marks it readOnlyHint, but its name starts with "${leadingVerb(tool.name, common)}", a write: not called on the hint alone`
+          : writeSign(tool);
       skipped.push(write || a.readOnlyHint !== undefined ? { tool: tool.name, reason: 'not read-only', ...(write ? { why: write } : {}) } : { tool: tool.name, reason: 'unmarked' });
       continue;
     }

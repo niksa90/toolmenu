@@ -15,8 +15,10 @@ from its own folder for that reason.
 | `corpus/registry.tsv` | Recent stdio servers from the MCP registry (npm), no required credentials, that started and listed their tools | 86 |
 | `corpus/npm-popular.tsv` | MCP servers on npm by downloads | 60 |
 | `corpus/pypi.tsv` | Recent stdio servers on PyPI | 37 |
+| `corpus/hosted.tsv` | Hosted (Streamable HTTP) servers from the MCP registry that declare no required headers, one per host, sampled with a fixed seed | 200 |
 
-Each line: `id<TAB>package@version` (npm) or `package==version` (PyPI)`<TAB>repository`.
+Each line: `id<TAB>package@version` (npm) or `package==version` (PyPI)`<TAB>repository`;
+for `hosted.tsv`, `id<TAB>url`.
 Versions are pinned, so a rerun checks the same code.
 
 The `session --auto` corpus is the servers across all three lists that answer the
@@ -49,6 +51,18 @@ and their outcomes). Every difference is read by hand before a release: a rule t
 changes a finding on a real server has to say why in the changelog.
 
 `TOOLMENU=/path/to/cli.js` runs another build than this checkout's.
+
+Hosted servers are only listed (`snapshot`, no tool calls), or called read-only with
+`session --auto --max-calls 10`:
+
+```sh
+cut -f1,2 bench/corpus/hosted.tsv | xargs -P 10 -L 1 sh -c \
+  'mkdir -p /tmp/hosted/$0 && node dist/cli.js snapshot --json --no-write --no-auth --lists prompts,resources "$1" > /tmp/hosted/$0/snap.json'
+```
+
+Behind a proxy, Node's `fetch` only goes through `HTTPS_PROXY` with
+`NODE_USE_ENV_PROXY=1` (Node 22.21 and later); without it every host fails to resolve,
+and toolmenu says so.
 
 ## The reference server
 

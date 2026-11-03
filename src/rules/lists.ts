@@ -62,7 +62,7 @@ export const listSchema: Rule = {
       if (r.first.error) {
         const said = r.first.error.replace(/[.\s]+$/, '');
         const failure = classifyFailure(r.first.error, { code: r.first.code });
-        if (r.first.code === -32601 || /method not found/i.test(r.first.error)) {
+        if (r.first.code === -32601 || /method not (?:found|supported|implemented)/i.test(r.first.error)) {
           // A server that declares resources but answers one of their methods with Method not found.
           findings.push({
             severity: 'info',
