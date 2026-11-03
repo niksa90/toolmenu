@@ -500,8 +500,11 @@ const REJECTED_NEXT = "Check the API key or token the server was given (--env, o
  * only with NODE_USE_ENV_PROXY=1 (Node 22.21 and later). Behind such a proxy, every
  * host looks like it doesn't resolve.
  */
-export function ignoredProxy(env: NodeJS.ProcessEnv = process.env): string | undefined {
+export function ignoredProxy(env: NodeJS.ProcessEnv = process.env, host?: string): string | undefined {
   if (env.NODE_USE_ENV_PROXY === '1') return undefined;
+  // A host NO_PROXY exempts goes direct either way: its DNS failure is its own.
+  const exempt = (env.NO_PROXY ?? env.no_proxy ?? '').split(',').map((h) => h.trim().replace(/^\*?\./, '').toLowerCase()).filter(Boolean);
+  if (host && exempt.some((h) => h === '*' || host.toLowerCase() === h || host.toLowerCase().endsWith(`.${h}`))) return undefined;
   return ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy'].find((k) => env[k]);
 }
 
@@ -534,7 +537,7 @@ function explainHttp(error: Error, trace: Trace, context: ExplainContext, target
 
   // The network, before any HTTP answer.
   if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
-    const proxy = ignoredProxy();
+    const proxy = ignoredProxy(process.env, host);
     return new ConnectError(
       code === 'ENOTFOUND' ? `Couldn't find ${host}: the name doesn't resolve (DNS: ENOTFOUND).` : `Couldn't look up ${host}: DNS failed for now (EAI_AGAIN).`,
       [['url', target.url], ['stage', first], ...(proxy ? [['proxy', `${proxy} is set, but Node's fetch doesn't use it`] as [string, string]] : [])],

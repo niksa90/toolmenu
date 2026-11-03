@@ -403,6 +403,9 @@ test('a proxy Node\'s fetch ignores is named, with what to do on this Node', asy
   assert.equal(ignoredProxy({ http_proxy: 'http://proxy:8080' }), 'http_proxy');
   assert.equal(ignoredProxy({ HTTPS_PROXY: 'http://proxy:8080', NODE_USE_ENV_PROXY: '1' }), undefined);
   assert.equal(ignoredProxy({}), undefined);
+  // A host NO_PROXY exempts goes direct: its DNS failure isn't the proxy's.
+  assert.equal(ignoredProxy({ HTTPS_PROXY: 'http://p', NO_PROXY: 'localhost,.internal.example' }, 'mcp.internal.example'), undefined);
+  assert.equal(ignoredProxy({ HTTPS_PROXY: 'http://p', NO_PROXY: 'localhost' }, 'mcp.example.com'), 'HTTPS_PROXY');
   assert.match(proxyAdvice('HTTPS_PROXY', '22.21.0'), /rerun as NODE_USE_ENV_PROXY=1 toolmenu/);
   assert.match(proxyAdvice('HTTPS_PROXY', '24.1.0'), /rerun as NODE_USE_ENV_PROXY=1 toolmenu/);
   assert.match(proxyAdvice('HTTPS_PROXY', '22.12.0'), /Node 22\.12\.0 can't be told to: Node 22\.21 or later reads it with NODE_USE_ENV_PROXY=1/);
