@@ -399,6 +399,7 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `ids/handle-lifetime` | info | 2026-07-28: a tool that creates a handle another tool takes back (`start_session` → `session_id`) doesn't say how long it lasts (heuristic) |
 | `write/unannotated` | warn | Tools named like writes (`delete_`, `send_`…) with no annotations, as one summary grouped by the annotation each name suggests |
 | `naming/shared-word` | info | Nouns that name different things across tools (`list_team_audits` vs `get_audit_trail`), as one summary |
+| `write/read-only-mismatch` | warn | A tool marked `readOnlyHint: true` whose name says it writes (`create_my_account`): clients act on the hint, and `--auto` doesn't call it on the hint alone (heuristic) |
 | `write/no-dry-run` | info | Destructive tools with no dry-run parameter or preview tool, as one summary |
 | `spec/discover` | info | The server only speaks the 2025 protocol, so 2026-07-28 rules are skipped |
 | `spec/deprecated`, `spec/cache-hints` | info | 2026-07-28: deprecated features still advertised; `ttlMs: 0`, or `cacheScope: "public"` on a server that took credentials |

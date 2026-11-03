@@ -818,3 +818,29 @@ test('menu/gated: a dispatcher that runs a tool from a set (toolset + tool + arg
   const configure = tool('configure_session', [], { description: 'Choose toolsets.', inputSchema: { type: 'object', properties: { toolset: { type: 'string', enum: ['repos', 'issues'] } } } });
   assert.equal(lint([configure, tool('get_me', [])], { capabilities: { tools: { listChanged: true } } }).find((f) => f.rule === 'menu/gated')?.tool, 'configure_session');
 });
+
+// 0.20.1, from scanning hosted servers: create_my_ideal_account was marked readOnlyHint: true.
+test('write/read-only-mismatch: a tool marked read-only whose name says it writes', () => {
+  const ro = { annotations: { readOnlyHint: true } };
+  const found = lint([tool('create_my_account', [], ro), tool('get_account', [], ro), tool('list_items', [], ro)]).filter((f) => f.rule === 'write/read-only-mismatch');
+  assert.equal(found.length, 1);
+  assert.equal(found[0].tool, 'create_my_account');
+  assert.equal(found[0].severity, 'warn');
+  assert.equal(found[0].confidence, 'unsure');
+  assert.match(found[0].message, /^create_my_account is marked readOnlyHint: true but named like a write \(create…\)\./);
+  // Several are one finding; read-named tools and unmarked writes aren't this rule's.
+  const many = lint([tool('upload_images', [], ro), tool('set_member', [], ro), tool('delete_thing', [])]).filter((f) => f.rule === 'write/read-only-mismatch');
+  assert.equal(many.length, 1);
+  assert.deepEqual(many[0].detail, ['upload_images, set_member']);
+});
+
+test('--auto doesn\'t call a tool marked read-only whose name says it writes, and says why', async () => {
+  const { autoScenario } = await import('../dist/auto.js');
+  const ro = { annotations: { readOnlyHint: true } };
+  const plan = autoScenario(menuOf([tool('create_my_account', [], ro), tool('get_account', [], ro)]));
+  assert.ok(!plan.called.includes('create_my_account'));
+  assert.ok(plan.called.includes('get_account'));
+  const skipped = plan.skipped.find((s) => s.tool === 'create_my_account');
+  assert.equal(skipped.reason, 'not read-only');
+  assert.match(skipped.why, /^the server marks it readOnlyHint, but its name starts with "create", a write: not called on the hint alone$/);
+});

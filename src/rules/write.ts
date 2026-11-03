@@ -57,6 +57,32 @@ export const unannotated: Rule = {
   },
 };
 
+/**
+ * readOnlyHint: true on a tool whose name says it writes (create_, delete_, send_…).
+ * The spec's readOnlyHint means "the tool does not modify its environment", and
+ * clients and agents act on it: run it without asking, retry it, call it to explore.
+ * Seen on a hosted server: create_my_ideal_account, marked read-only.
+ */
+export const readOnlyMismatch: Rule = {
+  id: 'write/read-only-mismatch',
+  severity: 'warn',
+  summary: 'Tools marked read-only whose names say they write',
+  run(ctx) {
+    const odd = kept(ctx.menu.tools, ctx).filter((t) => t.annotations?.readOnlyHint === true && isWriteByName(t));
+    if (!odd.length) return [];
+    const one = odd.length === 1;
+    return [
+      {
+        ...(one ? { tool: odd[0].name } : {}),
+        confidence: 'unsure',
+        message: `${one ? `${odd[0].name} is` : `${count(odd.length, 'tool')} are`} marked readOnlyHint: true but named like ${one ? 'a write' : 'writes'} (${names([...new Set(odd.map((t) => `${verbOf(t.name)}…`))], 6)}). readOnlyHint says a tool doesn't change anything, and clients act on it: one may run ${one ? 'it' : 'them'} without asking the user, or call ${one ? 'it' : 'them'} just to look. If ${one ? 'it changes' : 'they change'} anything, even state on the server, the hint is wrong.`,
+        ...(one ? {} : { detail: [odd.map((t) => t.name).join(', ')] }),
+        fix: `Where the tool changes anything, set readOnlyHint: false (and destructiveHint to whether it deletes or overwrites); where it truly only reads, a name without the write verb says so to agents too.`,
+      },
+    ];
+  },
+};
+
 export const noDryRun: Rule = {
   id: 'write/no-dry-run',
   severity: 'info',

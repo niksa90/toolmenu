@@ -9,6 +9,11 @@ test('classifyFailure on real servers\' errors', () => {
     // User Intuition 0.18.0 (2026-07-28), every call without a key (0.17.1).
     ['auth', '{ "error": "No authentication found. Run `userintuition-mcp login`, create an API key with `userintuition-mcp api-key create`, set USERINTUITION_API_KEY, or use OAuth" }'],
     ['auth', 'No API key provided. Set EXAMPLE_API_KEY.'],
+    // Hosted servers, 0.20.1 scan: sign-in in their own words, and a paid tool.
+    ['auth', 'Sign in to Ideal (or create your creator account) to continue.'],
+    ['auth', 'Connect your Novamris account to read its saved chart, or calculate a temporary chart.'],
+    ['payment', 'Payment required: $0.50 over MPP (Machine Payments Protocol), paid with a Stripe shared payment token (SPT), single use.'],
+    ['payment', 'Request failed with status code 402'],
     ['auth', '**Authorization Expired** Sentry rejected the stored access token for this session. Please re-authorize to continue.'],
     ['auth', "Tool 'firecrawl_monitor_list' execution failed: Unauthorized: Invalid token"],
     ['auth', 'Error calling tool "search-actors": User was not found or authentication token is not valid'],

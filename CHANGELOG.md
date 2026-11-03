@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.20.1
+
+From the first scan of hosted servers: 200 Streamable HTTP servers from the MCP
+registry (`bench/corpus/hosted.tsv`), of which 116 listed their tools (45 on
+2026-07-28), 78 wanted OAuth and 6 were down. Each fix has a test that failed before.
+
+- **`session --auto` no longer calls a tool marked read-only whose name says it
+  writes.** A hosted server marked `create_my_ideal_account` `readOnlyHint: true`, and
+  `--auto` called it on the hint (it failed for want of sign-in). Such a tool is now
+  skipped, with the reason. New **`write/read-only-mismatch`** (warn, unsure) reports
+  them: 15 tools on 4 servers across the corpora.
+- **Behind a proxy Node doesn't use**, every host "doesn't resolve": Node's `fetch`
+  reads `HTTPS_PROXY` only with `NODE_USE_ENV_PROXY=1` (Node 22.21 and later). toolmenu
+  now names the proxy variable and says what to run.
+- **A proxy that won't open the tunnel** (it answered CONNECT with 502) was "Version
+  negotiation probe failed: fetch failed"; now it says the proxy couldn't reach the
+  host, and what to check.
+- **Setup failures in hosted servers' words** are counted as setup, not as the
+  server's: "Sign in to … to continue", "Connect your … account" (credentials), and a
+  paid tool ("Payment required", HTTP 402), a new `payment` class.
+- **`lists/schema`**: "Method not supported" (-32600) for a declared list is Method
+  not found in other words: info, not a warning.
+- What the scan confirmed: 4 servers on 2026-07-28 leave `ttlMs`/`cacheScope` (one also
+  `resultType`) off `tools/list`, and the official SDK client really refuses their
+  tool list (`spec/schema`); the first hosted server whose tool asked for input mid-call
+  took the decline and answered. None of the 45 menus on 2026-07-28 uses
+  `x-mcp-header`, and none varied between connections.
+
 ## 0.20.0
 
 The reference server, a review of 0.18 and 0.19, and `diff` for prompts and resources.
