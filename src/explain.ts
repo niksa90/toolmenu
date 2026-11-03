@@ -495,6 +495,25 @@ function rejectedCredentials(stderrText: string): string | undefined {
 
 const REJECTED_NEXT = "Check the API key or token the server was given (--env, or its config): it's likely wrong, expired or for another account. This is a reading of the server's log, not certain: read its stderr above.";
 
+/**
+ * A proxy this machine sets that Node's built-in fetch ignores: it reads HTTPS_PROXY
+ * only with NODE_USE_ENV_PROXY=1 (Node 22.21 and later). Behind such a proxy, every
+ * host looks like it doesn't resolve.
+ */
+export function ignoredProxy(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  if (env.NODE_USE_ENV_PROXY === '1') return undefined;
+  return ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy'].find((k) => env[k]);
+}
+
+/** What to do about an ignored proxy, for this Node. */
+export function proxyAdvice(proxy: string, version: string = process.versions.node): string {
+  const [major, minor] = version.split('.').map(Number);
+  const supported = major > 22 || (major === 22 && minor >= 21);
+  return supported
+    ? `This machine sets ${proxy}, but Node's fetch only goes through it with NODE_USE_ENV_PROXY=1: rerun as NODE_USE_ENV_PROXY=1 toolmenu ….`
+    : `This machine sets ${proxy}, but Node's fetch doesn't go through it, and Node ${version} can't be told to: Node 22.21 or later reads it with NODE_USE_ENV_PROXY=1.`;
+}
+
 function firstLine(text: string): string {
   return clean(text.split('\n')[0], 300);
 }
@@ -515,12 +534,15 @@ function explainHttp(error: Error, trace: Trace, context: ExplainContext, target
 
   // The network, before any HTTP answer.
   if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
+    const proxy = ignoredProxy();
     return new ConnectError(
       code === 'ENOTFOUND' ? `Couldn't find ${host}: the name doesn't resolve (DNS: ENOTFOUND).` : `Couldn't look up ${host}: DNS failed for now (EAI_AGAIN).`,
-      [['url', target.url], ['stage', first]],
-      code === 'ENOTFOUND'
-        ? "Check the host name for typos. If it's right, the server may have moved or shut down: look up its current URL in its docs or registry entry."
-        : 'Check this machine\'s network and DNS, then retry.',
+      [['url', target.url], ['stage', first], ...(proxy ? [['proxy', `${proxy} is set, but Node's fetch doesn't use it`] as [string, string]] : [])],
+      proxy
+        ? proxyAdvice(proxy)
+        : code === 'ENOTFOUND'
+          ? "Check the host name for typos. If it's right, the server may have moved or shut down: look up its current URL in its docs or registry entry."
+          : 'Check this machine\'s network and DNS, then retry.',
       stage,
       { cause: error },
     );
