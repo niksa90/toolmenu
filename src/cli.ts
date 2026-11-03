@@ -86,7 +86,7 @@ export async function main(argv: string[]): Promise<number> {
   const badList = (lists ?? []).find((w) => !(LIST_WORDS as readonly string[]).includes(w));
   if (badList) throw new UsageError(`--lists takes ${LIST_WORDS.join(', ')}, comma-separated; not "${badList}"`);
   if (values.client !== undefined && sub !== 'snapshot') throw new UsageError('--client goes with snapshot.');
-  if (values.client !== undefined && !(values.client in CLIENTS)) throw new UsageError(`--client must be one of ${CLIENT_NAMES.join(', ')}`);
+  if (values.client !== undefined && !Object.hasOwn(CLIENTS, values.client)) throw new UsageError(`--client must be one of ${CLIENT_NAMES.join(', ')}`);
   if (values.as !== undefined && sub !== 'snapshot') throw new UsageError('--as goes with snapshot: it lists the menu once per identity.');
   if (values.elicitation !== undefined && sub !== 'session') throw new UsageError('--elicitation goes with session: only session calls tools.');
   // Only session calls tools, so only its targets declare elicitation and say how to answer.

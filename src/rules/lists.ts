@@ -85,6 +85,14 @@ export const listSchema: Rule = {
         }
         continue;
       }
+      if (r.first.truncated) {
+        // Not a defect: said so that no one reads the checks as covering the whole list.
+        findings.push({
+          severity: 'info',
+          message: `${info.method} has more than ${r.first.pages.length} pages; toolmenu read the first ${r.first.pages.length} (${r.first.items.length} items), so the checks and the menu file cover those only.`,
+          fix: 'Nothing to change for this; a client that loads the whole list up front pays for every page.',
+        });
+      }
       const validate = resultValidator(ctx.protocolVersion, RESULT[r.kind]);
       if (!validate) continue;
       r.first.pages.forEach((page, i) => {

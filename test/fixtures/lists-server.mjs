@@ -9,6 +9,8 @@
 //   BROKEN=1      prompts/list fails (lists/schema, as a warning)
 //   NO_RESOURCES=1 declares no resources capability (a note, not a finding)
 //   NO_TEMPLATES=1 declares resources but has no resources/templates/list: Method not found
+//   NEXT=1        the next release: review gone, summarize requires a topic, a new template, b.txt gone
+//   PAGED=1       resources/list never stops paging (a cursor on every page): read up to the cap
 //   NO_KEY=1      resources/list fails for want of credentials: a setup problem, not the server's
 import { Server } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
@@ -22,19 +24,28 @@ export function build() {
   server.setRequestHandler('tools/list', async () => ({ tools: [{ name: 'ping', description: 'Pings.', inputSchema: { type: 'object', properties: {} } }], ...hints }));
   server.setRequestHandler('prompts/list', async () => {
     if (process.env.BROKEN) throw new Error('prompts are not configured');
-    const prompts = [{ name: 'summarize', description: 'Summarize a document.' }, { name: 'review', description: 'Review a change.' }];
+    const prompts = process.env.NEXT
+      ? [{ name: 'summarize', description: 'Summarize a document.', arguments: [{ name: 'topic', required: true }] }, { name: 'translate', description: 'Translate a text.' }]
+      : [{ name: 'summarize', description: 'Summarize a document.' }, { name: 'review', description: 'Review a change.' }];
     if (process.env.PER_PROCESS && process.env.PYTHONHASHSEED !== '0') prompts.reverse();
     return { prompts, ...hints };
   });
   if (!process.env.NO_RESOURCES) {
-    server.setRequestHandler('resources/list', async () => {
+    server.setRequestHandler('resources/list', async (request) => {
       if (process.env.NO_KEY) throw new Error('Not authenticated: set LISTS_API_KEY.');
-      const resources = [{ uri: 'file:///a.txt', name: 'a' }, { uri: 'file:///b.txt', name: 'b' }];
+      if (process.env.PAGED) {
+        const at = Number(request.params?.cursor ?? 0);
+        return { resources: [{ uri: `file:///${at}.txt`, name: String(at) }], nextCursor: String(at + 1), ...hints };
+      }
+      const resources = process.env.NEXT ? [{ uri: 'file:///a.txt', name: 'a' }, { uri: 'file:///c.txt', name: 'c' }] : [{ uri: 'file:///a.txt', name: 'a' }, { uri: 'file:///b.txt', name: 'b' }];
       if (process.env.VARY && calls++ % 2) resources.reverse();
       return { resources, ...hints };
     });
     if (!process.env.NO_TEMPLATES) {
-      server.setRequestHandler('resources/templates/list', async () => ({ resourceTemplates: [{ uriTemplate: 'file:///{path}', name: 'file' }], ...hints }));
+      server.setRequestHandler('resources/templates/list', async () => ({
+        resourceTemplates: [{ uriTemplate: 'file:///{path}', name: 'file' }, ...(process.env.NEXT ? [{ uriTemplate: 'db://{table}', name: 'table' }] : [])],
+        ...hints,
+      }));
     }
   }
   return server;

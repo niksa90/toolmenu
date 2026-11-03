@@ -1,0 +1,18 @@
+# The 2026-07-28 conformance run against the reference server,
+# @modelcontextprotocol/server-everything (pinned in bench/README.md).
+# Its elicitation and sampling tools are demos that change nothing, but the server
+# marks them readOnlyHint: false, so --auto never calls them: this scenario does,
+# with allow_writes. toolmenu declines every elicitation, the same each run.
+allow_writes: true
+steps:
+  - list
+  - call: trigger-elicitation-request
+  - call: trigger-multi-step-elicitation
+  - call: trigger-url-elicitation
+    args: { url: "https://example.com/connect" }
+  - call: trigger-elicitation-request-async
+  - call: trigger-sampling-request
+    args: { prompt: "Say hello." }
+  - call: get-roots-list
+  - call: get-header-params
+    args: { region: "eu-west-1" }

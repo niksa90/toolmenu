@@ -1,0 +1,37 @@
+bourdon	bourdon==0.32.3	
+deepdna-mcp	deepdna-mcp==0.1.2	https://github.com/alfonsoguv/deepdna-mcp
+hashgrid	hashgrid==1.3.0	https://github.com/hashgrid-labs/sdk
+leadgreen-mcp	leadgreen-mcp==0.3.1	https://github.com/katonic-dev/leadgreen-ai
+nauro	nauro==1.23.0	https://github.com/Nauro-AI/nauro
+mirobody	mirobody==1.5.9	https://github.com/thetahealth/mirobody
+poppy-memory	poppy-memory==0.3.6	https://github.com/trags-garden/poppy
+apiguru-mcp	apiguru-mcp==1.1.60	https://github.com/apiguru-app/agent-kit
+backtest-auditor	backtest-auditor==0.7.0	
+srift	srift==4.4.0	https://github.com/srivardhan113/SRIFT-Open_Source
+apillow-mcp	apillow-mcp==0.1.7	
+model-finder-mcp	model-finder-mcp==1.3.5	https://github.com/Abhiindigloo/EvalHarness
+perfume-finder-mcp	perfume-finder-mcp==2.5.4	
+perfume-mcp	perfume-mcp==2.5.4	
+acquisition-gov-mcp	acquisition-gov-mcp==1.0.16	https://github.com/1102tools-dev/federal-contracting-mcps
+bls-oews-mcp	bls-oews-mcp==1.1.6	https://github.com/1102tools-dev/federal-contracting-mcps
+ecfr-mcp	ecfr-mcp==1.1.14	https://github.com/1102tools-dev/federal-contracting-mcps
+federal-register-mcp	federal-register-mcp==1.0.21	https://github.com/1102tools-dev/federal-contracting-mcps
+gsa-calc-mcp	gsa-calc-mcp==1.0.24	https://github.com/1102tools-dev/federal-contracting-mcps
+gsa-perdiem-mcp	gsa-perdiem-mcp==1.2.8	https://github.com/1102tools-dev/federal-contracting-mcps
+usaspending-gov-mcp	usaspending-gov-mcp==1.0.28	https://github.com/1102tools-dev/federal-contracting-mcps
+hongkong-company-mcp	hongkong-company-mcp==1.2.4	https://github.com/86hc-compliance/hongkong-company-mcp
+arxyne	arxyne==0.10.24	
+browser-use	browser-use==0.13.11	https://github.com/browser-use/browser-use
+flieber	flieber==0.1.13	
+fulcra-context-mcp	fulcra-context-mcp==1.19.8	https://github.com/fulcradynamics/fulcra-context-mcp
+adloop	adloop==0.37.0	https://github.com/kLOsk/adloop
+singularis-mcp	singularis-mcp==0.1.11	https://github.com/oov1317/singularis-mcp
+hodlodds-mcp	hodlodds-mcp==0.2.3	https://github.com/hodlodds/hodlodds-sdk
+refereekit	refereekit==1.0.2	https://github.com/junipertcy/refereekit
+jidoseal-mcp	jidoseal-mcp==0.2.0	https://github.com/Jidoseal/jidoseal-mcp
+keboola-mcp-server	keboola-mcp-server==1.110.6	https://github.com/keboola/mcp-server
+savvly-mcp-server	savvly-mcp-server==1.0.102	https://github.com/Savvly/savvly-mcp
+scento-perfume-api	scento-perfume-api==1.0.0	https://github.com/Scento-com/perfume-mcp-server
+scento-perfume-compendium	scento-perfume-compendium==1.0.1	https://github.com/Scento-com/perfume-compendium
+hypr-cua-mcp	hypr-cua-mcp==0.1.2	https://github.com/Smirnov-Labs/hypr-computer-use-mcp
+stochastly-mcp	stochastly-mcp==0.2.2	https://github.com/Stochastly/stochastly-mcp

@@ -694,7 +694,10 @@ With `--lists`, toolmenu reads everything a client loads up front, not only the 
 menu: prompts, resources and resource templates are cacheable lists like tools on
 2026-07-28. They are saved in the menu file as optional `prompts`, `resources` and
 `resourceTemplates` keys (still `toolmenu: 1`; readers that don't know them ignore
-them). `diff` doesn't compare them yet.
+them). `diff` compares them when both menus have them: prompts (by name) and resource
+templates (by `uriTemplate`) like tools, removed or a newly required prompt argument
+being breaking; concrete resources (by `uri`) as data, a notice without a bump. A list
+only one menu has is not compared (`diff/lists-unread`).
 
 ## 19. Implementation notes (0.7: the cut belongs to the client)
 

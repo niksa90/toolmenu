@@ -20,7 +20,7 @@ export const LIST_INFO: Record<ListKind, { method: string; key: string; id: stri
 };
 
 /** Pages read at most: a resources list can be a whole file tree. */
-const MAX_PAGES = 50;
+export const MAX_PAGES = 50;
 
 export interface ListRead {
   kind: ListKind;

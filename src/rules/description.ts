@@ -27,7 +27,7 @@ const CLAUDE_CODE_UPFRONT = 4096;
  */
 export function resolveLimit(setting: number | string | undefined): { limit: number; who: string; assumed: boolean; perTool: (tool: MenuTool) => number } {
   if (typeof setting === 'number') return { limit: setting, who: 'your client', assumed: false, perTool: () => setting };
-  const client = setting !== undefined && setting in CLIENT_LIMITS ? setting : DEFAULT_CLIENT;
+  const client = setting !== undefined && Object.hasOwn(CLIENT_LIMITS, setting) ? setting : DEFAULT_CLIENT;
   const limit = CLIENT_LIMITS[client];
   const upfront = (tool: MenuTool) => (tool._meta as Record<string, unknown> | undefined)?.['anthropic/alwaysLoad'] === true;
   return {

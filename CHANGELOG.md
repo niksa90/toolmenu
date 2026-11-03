@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.20.0
+
+The reference server, a review of 0.18 and 0.19, and `diff` for prompts and resources.
+
+- **Checked against the reference server.** `@modelcontextprotocol/server-everything`
+  2.1.0 (the protocol's reference implementation, on 2026-07-28) is pinned in
+  `bench/` with a scenario that calls its elicitation and sampling demos. Every
+  finding was checked by hand; none is false. Form, multi-step and URL elicitation are
+  each declined and answered; sampling, roots and the async demo's `extensions`
+  capability each come back `-32021` and count as client gaps.
+- **`diff` compares prompts and resources** when both menus were snapshot with
+  `--lists`: a prompt removed or newly requiring an argument, and a resource template
+  removed, are breaking (`diff/prompt-removed`, `diff/prompt-argument-required`,
+  `diff/resource-template-removed`); added ones are minor; a prompt's other changes
+  and resources added or gone (data) are notices. A list only one menu has isn't
+  compared, and `diff/lists-unread` says so.
+- **`bench/`**: the corpus (86 registry, 60 popular npm, 37 PyPI servers, pinned
+  versions), the scripts that install and run them, and `compare.py`, which prints
+  every server whose findings change between two runs. What every release here was
+  checked with, now in the repository.
+- From the review of 0.18 and 0.19:
+  - `--client toString` (or `"client": "constructor"`, or such a `descriptionLimit`)
+    named no client but passed the check and crashed: only real client names pass.
+  - A list longer than 50 pages was checked as if it were all of it; the snapshot now
+    says the checks cover the pages read.
+  - `--format markdown` shows the other lists too.
+- **`--client openai` has an up-front figure.** OpenAI's tool search guide
+  (developers.openai.com, read 2026-11-03) says a deferred function keeps its name and
+  description in front of the model and defers only its schema; a deferred MCP server
+  shows only its own name and description. The cost line now counts names and
+  descriptions up front and the rest per tool a search loads. How many tools a search
+  returns, and what it matches on, still isn't documented, so `search/findable` still
+  doesn't run for OpenAI.
+- README: the 2026-07-28 and client sections cover what 0.16–0.19 added.
+
 ## 0.19.0
 
 Prompts and resources (point 8 of the 2026-07-28 plan): toolmenu now checks
@@ -48,7 +83,8 @@ doesn't document is left out, not guessed.
   (`^[a-zA-Z0-9_-]+$`, up to 128) refuse names MCP allows, such as `files.read`.
 - Sources, read 2026-11-02: code.claude.com/docs/en/mcp; platform.claude.com tool
   search and define-tools docs; openai/openai-openapi `openapi.yaml`
-  (platform.openai.com wasn't reachable from where this was built).
+  (platform.openai.com wasn't reachable from where this was built; 0.20.0 adds OpenAI's
+  tool search guide).
 
 ## 0.17.1
 

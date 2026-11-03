@@ -628,3 +628,47 @@ truth: 171 tools, 154 of them not in the default menu.
 - **Rate limits are real.** Sentry answered "Rate limit exceeded" after about 70
   searches in a few minutes. Paced at 300 ms with retries (2, 4, 8 s), later runs had
   no failed queries, including Atlassian's 181.
+
+## F16. 0.16–0.20 on 86 registry servers and the reference server
+
+*Checked 2026-11-01 to 11-03 with `bench/` (`snapshot`: `corpus/registry.tsv`, 86 recent
+stdio servers from the MCP registry that start without credentials; `session --auto`:
+the 39 servers across all three corpus lists that answer the 2026-07-28 handshake, 13
+from the registry list, 9 popular npm, 17 PyPI) and
+`@modelcontextprotocol/server-everything` 2.1.0.* Each release
+was compared with the one before, server by server (`bench/scripts/compare.py`), and
+every changed finding read by hand.
+
+| Release | `snapshot` on 86 (registry) | `session --auto` on 39 (2026-07-28) |
+|---|---|---|
+| 0.16.0 → 0.16.2 | same | same |
+| 0.17.0 | +1 `ids/handle-lifetime` (User Intuition `create_research_session`) | same |
+| 0.17.1 | −13 `description/buried`, −8 `description/cut` | User Intuition: 2 `session/tool-error` → 1 `session/untested` |
+| 0.18.0, 0.19.0, 0.20.0 (without the new flags) | same | same |
+
+- **Claude Code's description cut had moved.** toolmenu assumed 2,048 characters, from
+  a bug report. Claude Code's docs now say 16,384 for a tool loaded through tool search
+  (its default) and 4,096 for one loaded up front; 2,048 was the cut before v2.1.296.
+  The 21 findings 0.17.1 dropped were all cuts that no longer happen. A client's own
+  docs, read on a date, now back every client value (`src/clients.ts`).
+- **One registry server mints handles.** User Intuition hands out research sessions
+  that 19 other tools take back, without saying how long they last. Every call to it
+  without an API key says "No authentication found", which 0.17.0 read as the server's
+  error on each call, and as the probe's verdict on an unknown session; 0.17.1 counts
+  it as a setup failure, once.
+- **Prompts and resources.** With `--lists prompts,resources`, 39 of the 86 servers
+  offer at least one of them. None of those lists varied between calls or processes,
+  and all matched the schema. 7 servers declare resources but answer
+  `resources/templates/list` with Method not found; one couldn't be read because its
+  desktop app wasn't running. The first version of the rules made 63 findings of
+  "this server has no prompts"; that's now a line on the snapshot.
+- **What deferral changes.** porkbun-mcp's 120 tools are ~41K tokens of definitions.
+  As Claude Code loads them (`--client claude-code`): ~524 tokens of names up front,
+  ~344 per tool a search loads, the largest ~2,093.
+- **The reference server: no false findings.** server-everything 2.1.0: 22 tools, 4
+  prompts, 7 resources, 3 resource templates. Its form, multi-step and URL elicitation
+  demos each took the decline and answered (the multi-step one with a tool error
+  saying the user declined, the right answer); sampling, roots and the async demo's
+  `extensions` capability each returned `-32021` and counted as client gaps. Its
+  `x-mcp-header` is valid, its lists stable; the only `spec/` finding is the logging
+  capability, which 2026-07-28 deprecates.
