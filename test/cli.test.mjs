@@ -233,3 +233,20 @@ test('--protocol and the config file: the flag wins, and a bad value is a usage 
   assert.equal(badConfig.code, 2);
   assert.match(badConfig.stderr, /protocol must be auto, legacy or modern/);
 });
+
+// 0.21: behind a proxy, a stdio server that calls an API at startup failed with nothing
+// to say why (Stripe, Supabase): only PATH, HOME and the like reached it.
+test('stdio servers get this machine\'s proxy and CA settings, and nothing else from it', async () => {
+  const dir = tempDir();
+  const out = join(dir, 'menu.json');
+  // This machine's own settings cleared, so only these reach the CLI.
+  const env = { HTTPS_PROXY: 'http://proxy.test:3128', HTTP_PROXY: '', https_proxy: '', http_proxy: '', NO_PROXY: 'localhost', no_proxy: '', NODE_EXTRA_CA_CERTS: '/etc/ca.pem', SSL_CERT_FILE: '', SECRET_TOKEN: 'not-for-the-server' };
+  const r = await run(['snapshot', '--out', out, '--processes', '1', '--', process.execPath, join(FIXTURES, 'env-server.mjs')], { env: { ...env, NODE_USE_ENV_PROXY: '' } });
+  assert.equal(r.code, 0, r.stderr);
+  const seen = JSON.parse(JSON.parse(readFileSync(out, 'utf8')).tools[0].description);
+  assert.deepEqual(seen, { HTTPS_PROXY: 'http://proxy.test:3128', NO_PROXY: 'localhost', NODE_USE_ENV_PROXY: '1', NODE_EXTRA_CA_CERTS: '/etc/ca.pem' });
+  // --env still wins.
+  const own = join(dir, 'own.json');
+  await run(['snapshot', '--out', own, '--processes', '1', '--env', 'HTTPS_PROXY=http://other.test:8080', '--', process.execPath, join(FIXTURES, 'env-server.mjs')], { env: { ...env, NODE_USE_ENV_PROXY: '' } });
+  assert.equal(JSON.parse(JSON.parse(readFileSync(own, 'utf8')).tools[0].description).HTTPS_PROXY, 'http://other.test:8080');
+});
