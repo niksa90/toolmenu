@@ -24,6 +24,18 @@ Three things the 0.21 corpus run found in real servers, now rules of their own.
   answering after a step (0.21 stopped the run there), under its own id rather than
   `session/step-failed`. fulcra-context-mcp polls its device-code sign-in on the
   event loop inside a tool call.
+- Corpus run (224 installed npm and PyPI servers, `snapshot --offline-check` and
+  `session --auto`), every new finding read by hand:
+  - `menu/network-dependent` on 3 servers: inite-visibility (3 tools offline, 10
+    online), Netlify's (9 and 10), and n2c's (the same 28 tools, schemas fetched when
+    it can).
+  - 15 servers don't start or list offline (info): each fetches its tool list at
+    start (apick-mcp, dchub-mcp-server, the scento-perfume pair…).
+  - `session/error-not-flagged` on Notion's server only.
+  - fulcra-context-mcp's session now ends at the blocked call in about a minute,
+    where it ran past the 10-minute limit.
+  - One false positive was found and fixed before release: TabRunner's server talks
+    to its own bridge on 127.0.0.1, and the first offline environment cut loopback too.
 
 ## 0.21.0
 
