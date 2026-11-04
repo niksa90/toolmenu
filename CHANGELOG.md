@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.21.0
+
+Two new commands, and four things the hosted scan asked for.
+
+- **`toolmenu scan <list>`**: every server in an MCP client config (Claude Desktop,
+  Claude Code's `.mcp.json`, Cursor, VS Code) or a text list, a few at a time
+  (`--concurrency`), side by side, then each one's findings. A server that couldn't
+  be started or read is a row with the reason and makes the exit 2: it wasn't
+  checked, so the scan isn't a pass. `${VAR}` in a config is filled from the
+  environment, and a server whose variable isn't set isn't started with an empty
+  credential. URLs are printed without their query. `--out-dir` saves each menu.
+- **`toolmenu explain <rule>`**: what a rule checks, its default level, and how to
+  change it. Every rule `snapshot`, `diff` and `session` can report is now in
+  [docs/RULES.md](docs/RULES.md); 48 of the 101 had no entry in the README or SPEC
+  tables before (most of `diff`'s, the `catalog/` rules, `menu/gated`,
+  `spec/server-info`…). A test fails on a rule without an entry, or with the wrong
+  level.
+- **`auth/invalid-accepted`** (warn): with credentials over HTTP, `snapshot` lists the
+  menu once more with an invalid credential in the same scheme. Atlassian Rovo
+  (`mcp.atlassian.com/v1/mcp`) serves 4 of its tools to any `Authorization` header,
+  so a client whose token expired gets a smaller menu, not a 401 that would make it
+  log in again. `--processes 1` turns it off.
+- **`session --auto --create-handles`** (2026-07-28): calls the tool that creates a
+  session, basket or cart, and gives the tools that take it back the handle it
+  returned, beside the made-up one. **`session/handle-roundtrip`** (warn, unsure): the
+  handle just returned is refused; info when the result carries no handle to find.
+- **`auth login --no-browser`**: prints the login URL, and takes the address the
+  browser ends on, pasted back, for SSH sessions and containers.
+- **Stdio servers behind a proxy get the proxy and CA settings** (`HTTPS_PROXY`,
+  `NO_PROXY`, `NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`…), and
+  `NODE_USE_ENV_PROXY=1`. The minimal environment left them out, so Stripe's and
+  Supabase's servers couldn't reach their APIs in the hosted scan's container and
+  failed as if broken. Node 22's warning about that variable is left out of the
+  server's stderr in errors.
+
 ## 0.20.1
 
 From the first scan of hosted servers: 200 Streamable HTTP servers from the MCP

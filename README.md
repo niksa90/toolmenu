@@ -91,14 +91,51 @@ npx toolmenu snapshot https://mcp.example.com/mcp
 Logins are stored per server in `~/.config/toolmenu/auth` (readable only by you);
 `auth list` and `auth logout <url>` manage them. A server that doesn't allow
 dynamic registration needs a pre-registered app: `--client-id` (and
-`--client-secret`). In CI, where no browser can open, pass a token as a header.
+`--client-secret`). Over SSH or in a container, `auth login --no-browser` prints the
+login URL instead of opening it: open it on any device, sign in, and paste back the
+address the browser ends on (a `localhost` page that doesn't load is expected). In
+CI, where nobody can sign in, pass a token as a header.
 Both protocol generations are supported: 2026-07-28 (`server/discover`, stateless)
 and the 2025 `initialize` handshake, through the official TypeScript SDK.
 
 Every finding and error says what's wrong, where, what toolmenu saw, and ends in a
 `→ Next:` step. Findings marked `· unsure` are heuristics (names and words): they say
-what was seen, not what it means. Every command has its own help:
-`toolmenu history --help`.
+what was seen, not what it means. `toolmenu explain <rule>` says what a rule checks,
+its default level and how to change it (every rule is in [docs/RULES.md](docs/RULES.md)).
+Every command has its own help: `toolmenu history --help`.
+
+Behind a proxy (`HTTPS_PROXY`), stdio servers get the proxy and CA settings
+(`HTTPS_PROXY`, `NO_PROXY`, `NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`…)
+along with the minimal environment, and `NODE_USE_ENV_PROXY=1` so a Node server's
+`fetch` uses the proxy. Without them a server that calls an API can't reach it, and
+fails as if it were broken.
+
+### Every server you use: `scan`
+
+```sh
+npx toolmenu scan ~/Library/Application\ Support/Claude/claude_desktop_config.json
+npx toolmenu scan .mcp.json --format markdown
+```
+
+`scan` runs `snapshot` on every server in an MCP client config (Claude Desktop, Claude
+Code's `.mcp.json`, Cursor, VS Code: the `mcpServers` or `servers` object) or in a
+text file with one server per line (a URL or a command, optionally `name<TAB>` first),
+four at a time (`--concurrency`), and prints them side by side, then each server's
+findings, like this:
+
+```
+  server       tools  tokens  findings
+  github          42  ~18K    1 error · 2 warn
+  filesystem      11  ~2.1K   no findings
+  linear           –      –   not checked: LINEAR_API_KEY is not set (the config refers to it)
+```
+
+`${VAR}`, `${VAR:-default}` and `${env:VAR}` in the config are filled from the
+environment. A server whose variable isn't set isn't started with an empty
+credential: it's a row that says so. A server that couldn't be started or read
+makes the exit code 2, because it wasn't checked; one marked `disabled` is listed and
+left alone. URLs are printed without their query, which can hold a key. Nothing is
+written unless `--out-dir` names a folder for each server's menu file.
 
 ## In CI: one PR comment
 
@@ -198,6 +235,7 @@ serves, and 23 issue and pull-request tools that only the dynamic mode has.
 | `session/nothing-called` | warn | `--auto` called no tools (all open-world, missing values, or not read-only): the run only listed the menu |
 | `session/session-lost` | error | The server ended the session after toolmenu opened a second connection with the same credentials (servers with one session per client; 2025-era servers only). The run stops there; rerun with `--processes 1` |
 | `session/handle-error` | warn | 2026-07-28: `--auto` called a read-only tool with a handle that can't exist (`toolmenu-unknown-session`), and it answered with a protocol error instead of a tool error the model can read |
+| `session/handle-roundtrip` | warn | With `--create-handles`: the tool that creates a session, basket or cart was called, and the tools that take it back refused the handle it had just returned (info when its result had no handle to find) |
 | `session/rate-limited` | error | The server kept refusing requests for being too many (a 429) after toolmenu waited about a minute, or a tool not marked `readOnlyHint` said it was rate-limited (it isn't called again). The run stops there, with the steps it didn't check; give the run its own server instance or raise the limit for it |
 | `session/scope-unchecked` | info | A second server process or connection couldn't start mid-session (a server that holds a file or a port), so whether a change was global wasn't checked. Said once for the run |
 
@@ -214,6 +252,10 @@ of either. Servers that don't mark their tools `readOnlyHint` (DeepWiki, every
 `--assume-read-only read_wiki_structure,ask_wiki_question`. Only exact names are
 accepted: a pattern would also cover tools a later release adds. A tool marked or
 named as a write is never called, and the report says which tools ran on your word.
+With `--create-handles` on 2026-07-28, `--auto` also calls the tool that creates a
+session, basket or cart (`start_session`; a write, so only with the flag, and never
+one marked `destructiveHint`; not locks, leases or checkouts) and gives the tools that
+take it back the handle it returned, beside the made-up one.
 `--save-scenario auto.yml` writes the steps, with the skipped tools commented out, for
 you to fill in. Tools marked `openWorldHint: true` (web
 search, fetch, scraping, which can cost API credits) are called only with
@@ -408,6 +450,9 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `naming/client-name` | warn | With `--client`: tool names the client's API refuses: `^[a-zA-Z0-9_-]{1,128}$` for the Claude API, `^[a-zA-Z0-9_-]+$` up to 128 for OpenAI's functions. MCP allows names such as `files.read` that neither takes as they are |
 | `menu/auth-variance` | info | With `--as` (or `identities` in the config): the tool set differs by identity, what each adds, lacks or defines differently against the first, and its tokens. Allowed by the spec; a baseline of one identity's menu doesn't cover the others. An identity that can't be listed is said here too |
 | `spec/cache-scope-public` | warn | 2026-07-28, with `--as`: the tool set differs by identity, and `tools/list` says `cacheScope: "public"`, which lets shared caches serve one caller's list to another |
+| `auth/invalid-accepted` | warn | HTTP with credentials: the menu listed once more with an invalid credential in the same scheme. A server that serves a menu to it, not 401, gives a client whose token expired no reason to log in again; the agent just has fewer tools (Atlassian Rovo served 4 tools to any `Authorization` header). `--processes 1` turns it off |
+
+The full list, `diff` and `session` rules included, is [docs/RULES.md](docs/RULES.md).
 
 The naming and ID rules are heuristics, tuned on real servers (FINDINGS F7 and
 F10) and a private 115-tool one. They're the extras; the change checks are the point.
@@ -511,10 +556,12 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --as <name>:<cred>  snapshot: list the menu as this identity too, repeatable:
                     "reader:Authorization: Bearer …" (HTTP) or "admin:ROLE=admin"
                     (stdio). The first is the menu saved; the others are compared
+--concurrency <n>   scan: servers checked at a time (default: 4)
+--out-dir <dir>     scan: write each server's menu file there, as <name>.json
 ```
 
 Exit codes: `0` clean · `1` findings at or above `--fail-on` · `2` couldn't connect
-or bad usage. `toolmenu <command> --help` lists that command's own options.
+(for `scan`: a server wasn't checked) or bad usage. `toolmenu <command> --help` lists that command's own options.
 
 ## Limitations
 
