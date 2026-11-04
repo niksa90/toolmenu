@@ -40,6 +40,82 @@ function createdKind(tool: MenuTool): string | undefined {
 export interface HandleProbe {
   param: string;
   kind: string;
+  /**
+   * --create-handles: a creating tool runs first, and this call gets the handle it
+   * returned instead of a made-up one (the made-up one when it returned none).
+   */
+  fromCreated?: string;
+}
+
+/** Kinds --create-handles may create: scratch state that expires. Not a lock, lease or checkout. */
+export const CREATABLE_KINDS = new Set(['session', 'basket', 'cart']);
+
+/** The tool that creates handles of this kind, if the menu has one. */
+export function creatorOf(tools: MenuTool[], kind: string): MenuTool | undefined {
+  return tools.find((t) => createdKind(t) === kind);
+}
+
+/**
+ * The handle a creating tool's result carries: a `<kind>_id` / `<kind>Id` / `id` in its
+ * structured content, in JSON text, or written out ("session_id: s-1").
+ */
+const WRAPPERS = new Set(['data', 'result', 'results', 'item', 'response']);
+
+export function handleFromResult(result: { structuredContent?: unknown; content?: unknown }, kind: string): string | undefined {
+  // Compared without case, dashes or underscores: session_id, sessionId and session-id are one key.
+  const norm = (k: string) => k.toLowerCase().replace(/[-_\s]/g, '');
+  const own = new Set([`${kind}id`, kind, `${kind}handle`, `${kind}token`]);
+  const scalar = (x: unknown) => (typeof x === 'string' && x ? x : typeof x === 'number' ? String(x) : undefined);
+  // The kind's own key anywhere (breadth first, so the shallowest wins); a bare id or
+  // handle only at the top, where it names what was created, not a nested user or request.
+  const find = (root: unknown): string | undefined => {
+    let level: unknown[] = [root];
+    for (let depth = 0; depth <= 3 && level.length; depth++) {
+      const next: unknown[] = [];
+      for (const v of level) {
+        if (!v || typeof v !== 'object') continue;
+        for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+          const found = own.has(norm(k)) ? scalar(x) : undefined;
+          if (found) return found;
+          if (x && typeof x === 'object') next.push(x);
+        }
+      }
+      level = next;
+    }
+    // At the top, or right under a wrapper ({"data":{"id":…}}), never under another thing's key (user.id).
+    const bare = (v: unknown, inWrapper = false): string | undefined => {
+      // Under a wrapper, a one-item list is the item ({"data":[{"id":…}]}); a longer one, or
+      // a list at the top, names no single handle.
+      const one = Array.isArray(v) ? (inWrapper && v.length === 1 ? v[0] : undefined) : v;
+      if (!one || typeof one !== 'object' || Array.isArray(one)) return undefined;
+      for (const [k, x] of Object.entries(one as Record<string, unknown>)) {
+        const found = norm(k) === 'id' || norm(k) === 'handle' ? scalar(x) : undefined;
+        if (found) return found;
+      }
+      return undefined;
+    };
+    const top = bare(root);
+    if (top || !root || typeof root !== 'object' || Array.isArray(root)) return top;
+    for (const [k, x] of Object.entries(root as Record<string, unknown>)) {
+      const found = WRAPPERS.has(norm(k)) || norm(k) === kind ? bare(x, true) : undefined;
+      if (found) return found;
+    }
+    return undefined;
+  };
+  const structured = find(result.structuredContent);
+  if (structured) return structured;
+  const texts = Array.isArray(result.content) ? (result.content as { type?: string; text?: string }[]).filter((c) => c.type === 'text' && c.text).map((c) => c.text!) : [];
+  for (const t of texts) {
+    try {
+      const r = find(JSON.parse(t));
+      if (r) return r;
+    } catch {
+      // not JSON: look for "session_id: s-1" written out
+    }
+    const m = new RegExp(`\\b${kind}[_ -]?(?:id|handle|token)\\b["']?\\s*[:=]\\s*["']?([\\w.:-]+)`, 'i').exec(t);
+    if (m) return m[1];
+  }
+  return undefined;
 }
 
 /** The handle kinds some tool in the menu creates. */

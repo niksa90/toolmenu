@@ -6,13 +6,14 @@ import { AfterInputError, callWithInput, MAX_CONTINUATIONS, MAX_ROUNDS, type Inp
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
-import { classifyFailure, errorWords, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
+import { classifyFailure, deniedAnswer, errorWords, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
 import { allDifferences, describeToolDifference } from './difference.js';
 import { autoNextStep, neededValues, writeSign, type AutoSummary } from './auto.js';
 import { LOOKUP_VERBS, singular, VERBS, verbOf, words, WRITE_VERBS } from './words.js';
+import { handleFromResult } from './rules/handles.js';
 
 export type Step =
   | { kind: 'list' }
@@ -31,6 +32,8 @@ export type Step =
        * session/handle-error.
        */
       probe?: import('./rules/handles.js').HandleProbe;
+      /** --create-handles: this call creates a handle of this kind, for the probes after it. A write, allowed for this step only. */
+      creates?: string;
     }
   | { kind: 'wait_for'; event: 'tools_list_changed'; timeoutMs: number };
 
@@ -180,6 +183,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   const raw: Raw[] = [];
   // 2026-07-28: every call that asked for input, for the input findings at the end.
   const inputs: { step: number; tool: string; input: InputTrace }[] = [];
+  // --create-handles: the handles creating tools returned, by kind, and what went wrong on the way.
+  const created = new Map<string, { tool: string; value: string }>();
+  const roundtrips: { step: number; tool: string; kind: string; creator?: string; problem: string }[] = [];
   // --auto's calls with a made-up handle that got a protocol error back (session/handle-error).
   const handleErrors: { step: number; tool: string; probe: import('./rules/handles.js').HandleProbe; value: unknown; message: string; code: number }[] = [];
   // The main process runs with a pinned hash seed, and so does every scope probe:
@@ -354,7 +360,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             message: `${step.tool} isn't in the menu at step ${index}, so it wasn't called.`,
             fix: close ? `Did you mean ${close.name}? Fix the name in the scenario.` : `Check the name, or move the call after the step that adds ${step.tool}.`,
           });
-        } else if (!scenario.allowWrites && tool.annotations?.readOnlyHint !== true && !word) {
+        } else if (!scenario.allowWrites && tool.annotations?.readOnlyHint !== true && !word && !(step.creates && tool.annotations?.destructiveHint !== true)) {
           record.status = 'refused';
           record.reason = 'refused';
           record.outcome = 'not-sent';
@@ -375,6 +381,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           });
         }
         if (word) onWord.push({ tool: step.tool, step: index });
+        // --create-handles: the handle the creating tool returned, in place of a made-up one.
+        const real = step.probe?.fromCreated ? created.get(step.probe.kind) : undefined;
+        const args = real && step.probe ? { ...step.args, [step.probe.param]: real.value } : step.args;
+        if (real) record.label = stepLabel({ ...step, args });
         if (record.status === 'ok') try {
           // Sent again after a refusal only when that repeats nothing: the transport's
           // 429 means the server never ran it; a tool that says it was rate-limited,
@@ -384,7 +394,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           callWaited.ms = 0;
           // 2026-07-28: a tool that asks for input gets every elicitation declined
           // and is called again (mrtr.ts); on 2025 it's a plain call.
-          const call = await patiently(() => callWithInput(conn, { name: step.tool, arguments: step.args }, { timeoutMs, elicitation: answer }), {
+          const call = await patiently(() => callWithInput(conn, { name: step.tool, arguments: args }, { timeoutMs, elicitation: answer }), {
             waits,
             waited: callWaited,
             // A 429 means the server didn't run that request, but after an input round the
@@ -406,12 +416,25 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             const result = call.result;
             record.outcome = result.isError ? 'tool-error' : 'answered';
             if (call.input.rounds && !result.isError) record.note = inputNote(call.input, answer);
+            if (step.creates) {
+              // The handle this result carries, for the probes after it.
+              const value = result.isError ? undefined : handleFromResult(result, step.creates);
+              if (value) created.set(step.creates, { tool: step.tool, value });
+              else roundtrips.push({ step: index, tool: step.tool, kind: step.creates, problem: result.isError ? `returned an error: ${clip(errorText(result), 120)}` : 'returned no handle toolmenu could find' });
+              record.note = value ? `created a ${step.creates} (${clip(value, 40)}) for the calls after it` : `--create-handles: ${roundtrips.at(-1)!.problem}`;
+            }
             const setup = step.probe && result.isError ? classifyFailure(errorText(result), { hadArguments: true }) : undefined;
             if (step.probe && setup && SETUP_FAILURES.has(setup)) {
               // Missing credentials, this machine: the call never got as far as the
               // handle, so it says nothing about it. Counted with the other setup failures.
               record.failure = setup;
-              record.note = `called with a made-up ${step.probe.kind}, but it failed before the ${step.probe.kind} mattered: ${clip(errorText(result), 100)}`;
+              record.note = `called with ${real ? `the ${step.probe.kind} ${real.tool} just created` : `a made-up ${step.probe.kind}`}, but it failed before the ${step.probe.kind} mattered: ${clip(errorText(result), 100)}`;
+            } else if (step.probe && real) {
+              // The handle the creating tool just returned: an error here is the round trip broken.
+              record.note = result.isError
+                ? `called with the ${step.probe.kind} ${real.tool} just created; it answered with an error: ${clip(errorText(result), 100)}`
+                : `called with the ${step.probe.kind} ${real.tool} just created; it answered`;
+              if (result.isError) roundtrips.push({ step: index, tool: step.tool, kind: step.probe.kind, creator: real.tool, problem: `answered with an error: ${clip(errorText(result), 160)}` });
             } else if (step.probe) {
               // A handle that can't exist: a tool error is the answer the spec asks for.
               const text = result.isError ? errorText(result) : '';
@@ -436,6 +459,16 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
                 record.failure = classifyFailure(text, { hadArguments: Object.keys(step.args).length > 0 });
                 // A setup failure is reported once, for the whole run (session/untested).
                 if (!SETUP_FAILURES.has(record.failure)) fail('session/tool-error', 'warn', index, step, text, record.failure);
+              }
+            } else if (!call.input.rounds && !step.creates) {
+              // An auth error passed on as an answer (not isError): the call reached the
+              // server but not the API behind it, so it tested no more than a refused one.
+              // A tool that takes a URL fetches it: what its answer says (a status, "Forbidden") is the page's.
+              const fetches = Object.keys(tool?.inputSchema?.properties ?? {}).some((p) => /^(?:url|uri|href|endpoint|link)s?$/i.test(p) || /_url$|Url$/.test(p));
+              const denied = fetches ? undefined : deniedAnswer(result);
+              if (denied) {
+                record.failure = 'auth';
+                record.note = `the tool answered, not as an error, with the API's ${clip(denied, 120)}`;
               }
             }
           }
@@ -467,7 +500,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           }
           const probeFailure = step.probe ? classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: true }) : undefined;
           // Not a setup failure (credentials, this machine, -32021): those never got as far as the handle.
-          if (step.probe && typeof code === 'number' && probeFailure && !SETUP_FAILURES.has(probeFailure)) {
+          if (step.probe && real && probeFailure && !SETUP_FAILURES.has(probeFailure)) {
+            roundtrips.push({ step: index, tool: step.tool, kind: step.probe.kind, creator: real.tool, problem: `failed: ${clip(record.note ?? '', 160)}` });
+            record.note = `called with the ${step.probe.kind} ${real.tool} just created; it failed: ${clip(record.note ?? '', 120)}`;
+          } else if (step.probe && typeof code === 'number' && probeFailure && !SETUP_FAILURES.has(probeFailure)) {
             // The server's protocol error to a handle that can't exist: the model gets no reason it can act on.
             if (!handleErrors.some((e) => e.tool === step.tool)) handleErrors.push({ step: index, tool: step.tool, probe: step.probe, value: step.args[step.probe.param], message: record.note, code });
             record.note = `called with a made-up ${step.probe.kind}; it answered with a protocol error (${code}): ${clip(record.note, 120)}`;
@@ -503,6 +539,29 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
         if (tooMany(error)) {
           limited(index, why, listWaited.ms);
           record.note = record.note?.startsWith('listing the menu failed') ? 'rate-limited listing the menu' : 'rate-limited listing the menu after the call';
+          done();
+          break;
+        }
+        if (/\btimed out after\b.*\bnever answered\b/.test(why)) {
+          // The server is running but answers nothing, tools/list included: every later
+          // step would wait out its timeout too (fulcra-context-mcp polls a device-code
+          // sign-in inside the call). One finding, and the run stops, as for a rate limit.
+          limitedAt = index;
+          // The call's own timeout at this step is the same cause: said by this finding.
+          for (const [key, f] of failures) {
+            if (!f.timedOutMs || f.steps.at(-1) !== index) continue;
+            f.steps.pop();
+            if (!f.steps.length) failures.delete(key);
+          }
+          const last = scenario.steps.length;
+          raw.push({
+            rule: 'session/step-failed',
+            severity: 'error',
+            step: index,
+            ...(step.kind === 'call' ? { tool: step.tool } : {}),
+            message: `The server stopped answering at step ${index} (${label}): after it, ${why.replace(/\.$/, '')}. The run stopped there${index < last ? `: steps ${index + 1}–${last} weren't run` : ''}.`,
+            fix: 'A tool that waits for something outside the call (a sign-in in a browser, a device code, input on a terminal) blocks every request after it. The server\'s stderr may say what it waits for: sign in before the run, or pass credentials (--env), and rerun.',
+          });
           done();
           break;
         }
@@ -587,6 +646,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     raw.push(...failureFindings(sameError([...failures.values()]), options.auto));
     raw.push(...inputFindings(inputs, answer));
     raw.push(...handleErrorFindings(handleErrors));
+    raw.push(...roundtripFindings(roundtrips));
     if (explained.length) raw.push(knownVariance(explained));
     if (onWord.length) raw.push(onTheirWord(onWord, options.auto !== undefined));
     raw.push(...untested(steps, target));
@@ -1552,6 +1612,33 @@ function inputNote(input: InputTrace, answer: Elicitation): string {
     default:
       return asked;
   }
+}
+
+/**
+ * --create-handles: a handle a creating tool returned that its own tools then refuse, or
+ * a creating tool whose result carries no handle to find.
+ */
+function roundtripFindings(problems: { step: number; tool: string; kind: string; creator?: string; problem: string }[]): Raw[] {
+  return problems.map((p) =>
+    p.creator
+      ? {
+          rule: 'session/handle-roundtrip',
+          severity: 'warn' as const,
+          confidence: 'unsure' as const,
+          step: p.step,
+          tool: p.tool,
+          message: `${p.tool} was given the ${p.kind} ${p.creator} had just created, and ${p.problem}. A model that starts a ${p.kind} and uses it right away hits the same error.`,
+          fix: `Check that ${p.tool} accepts the ${p.kind} handle ${p.creator} returns, in the same form (the same field, no extra prefix or quoting).`,
+        }
+      : {
+          rule: 'session/handle-roundtrip',
+          severity: 'info' as const,
+          step: p.step,
+          tool: p.tool,
+          message: `--create-handles called ${p.tool}, which ${p.problem}, so the tools that take a ${p.kind} were called with a made-up one instead.`,
+          fix: `Return the new ${p.kind}'s handle where a model finds it: a ${p.kind}_id field in structuredContent (declared in outputSchema), or at least "${p.kind}_id: …" in the text.`,
+        },
+  );
 }
 
 /**

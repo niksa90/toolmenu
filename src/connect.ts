@@ -161,7 +161,7 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     const stdio = new StdioClientTransport({
       command: target.command,
       args: target.args,
-      env: { ...getDefaultEnvironment(), ...target.env },
+      env: { ...getDefaultEnvironment(), ...proxyEnvironment(), ...target.env },
       cwd: target.cwd,
       stderr: 'pipe',
     });
@@ -339,6 +339,26 @@ export interface ToolList {
   listMeta: { ttlMs?: number; cacheScope?: string };
   /** Set when the SDK client rejected the result (toolmenu still reads it off the wire). */
   clientError?: string;
+}
+
+/**
+ * The proxy and CA settings of this process, for a stdio server: the SDK passes a
+ * minimal environment (PATH, HOME…), so a server that calls an API at startup (Stripe,
+ * Supabase) couldn't get out behind a proxy and failed with nothing to say why. Node's
+ * fetch reads HTTPS_PROXY only with NODE_USE_ENV_PROXY=1, so that's set too when a proxy
+ * is. --env overrides each.
+ */
+export function proxyEnvironment(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  const proxied = ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy'].some((k) => env[k]);
+  const names = [
+    ...(proxied ? ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'NO_PROXY', 'no_proxy'] : []),
+    // Certificates a proxy that inspects TLS needs trusted, by Node, Python and curl.
+    'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'REQUESTS_CA_BUNDLE', 'CURL_CA_BUNDLE',
+  ];
+  const out: Record<string, string> = {};
+  for (const k of names) if (env[k]) out[k] = env[k]!;
+  if (proxied) out.NODE_USE_ENV_PROXY = env.NODE_USE_ENV_PROXY || '1';
+  return out;
 }
 
 /** One full `tools/list`, bypassing the SDK's cache, read from the wire rather than the SDK's parsed copy. */

@@ -4,6 +4,8 @@
  */
 export const CLI_OPTIONS = {
   out: { type: 'string' },
+  'out-dir': { type: 'string' },
+  concurrency: { type: 'string' },
   'no-write': { type: 'boolean' },
   routes: { type: 'string' },
   config: { type: 'string' },
@@ -20,6 +22,7 @@ export const CLI_OPTIONS = {
   elicitation: { type: 'string' },
   'no-auth': { type: 'boolean' },
   port: { type: 'string' },
+  'no-browser': { type: 'boolean' },
   scope: { type: 'string' },
   'client-id': { type: 'string' },
   'client-secret': { type: 'string' },
@@ -40,6 +43,7 @@ export const CLI_OPTIONS = {
   init: { type: 'boolean' },
   'union-out': { type: 'string' },
   auto: { type: 'boolean' },
+  'create-handles': { type: 'boolean' },
   'with-session': { type: 'boolean' },
   catalog: { type: 'boolean' },
   'open-world': { type: 'boolean' },

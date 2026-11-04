@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { hasLogin, listLogins, login, LoginNeededError, logout, StoredOAuthProvider } from '../dist/auth.js';
 import { snapshot } from '../dist/snapshot.js';
 import { start } from './fixtures/oauth-server.mjs';
-import { run, tempDir, TIMEOUT_MS } from './helpers.mjs';
+import { CLI, run, tempDir, TIMEOUT_MS } from './helpers.mjs';
 
 // Every test stores its logins in its own directory, never the user's.
 const isolated = () => (process.env.TOOLMENU_AUTH_DIR = tempDir());
@@ -188,6 +188,100 @@ test('auth: a refused refresh is said so on this run and the next; a login the s
     assert.ok(e instanceof LoginNeededError);
     assert.match(e.message, /the server rejected the stored login for it, so toolmenu removed it/);
     assert.doesNotMatch(e.message, /no stored login/);
+  } finally {
+    await server.close();
+  }
+});
+
+// 0.21: --no-browser. The browser runs elsewhere (a phone, a laptop with an SSH session
+// open); the address it ends on is pasted back instead of reaching the loopback.
+test('auth login --no-browser: the address the browser ends on, pasted back, finishes the login', async () => {
+  isolated();
+  const server = await start();
+  try {
+    const p = port();
+    let shown;
+    // The "other device": follows the authorization redirect but never reaches 127.0.0.1;
+    // the user copies the address it ended on.
+    const paste = async () => {
+      while (!shown) await new Promise((r) => setTimeout(r, 10));
+      const r = await fetch(shown, { redirect: 'manual' });
+      return `  ${r.headers.get('location')}  `;
+    };
+    const err = process.stderr.write;
+    process.stderr.write = (chunk, ...rest) => {
+      const m = /https?:\/\/\S+\/authorize\S*/.exec(String(chunk));
+      if (m) shown = m[0];
+      return true;
+    };
+    const result = await login(server.url, { port: p, noBrowser: true, paste }).finally(() => (process.stderr.write = err));
+    assert.ok(shown, 'the authorization URL is printed');
+    assert.equal(result.tools > 0, true);
+    assert.equal(hasLogin(server.url), true);
+  } finally {
+    await server.close();
+  }
+});
+
+test('pastedRedirect: the whole address or its query; anything without a code or error is refused', async () => {
+  const { pastedRedirect } = await import('../dist/auth.js');
+  assert.equal(pastedRedirect('http://127.0.0.1:33418/callback?code=abc&state=xyz').get('code'), 'abc');
+  assert.equal(pastedRedirect('"http://127.0.0.1:33418/callback?code=abc&state=xyz"').get('state'), 'xyz');
+  assert.equal(pastedRedirect('?code=abc&state=xyz').get('code'), 'abc');
+  assert.equal(pastedRedirect('code=abc&state=xyz').get('code'), 'abc');
+  assert.equal(pastedRedirect('http://127.0.0.1:33418/callback?error=access_denied').get('error'), 'access_denied');
+  assert.equal(pastedRedirect('hello'), undefined);
+  assert.equal(pastedRedirect('http://127.0.0.1:33418/callback'), undefined);
+});
+
+// 0.21, from review: stdin that ends (</dev/null, a script) says so, and the loopback can still finish the login.
+test('auth login --no-browser: stdin that ends says nothing can be pasted, and waits for the loopback instead', async () => {
+  isolated();
+  const server = await start();
+  try {
+    const { spawn } = await import('node:child_process');
+    const p = port();
+    const child = spawn(process.execPath, [CLI, 'auth', 'login', '--no-browser', '--port', String(p), server.url], { env: process.env });
+    child.stdin.end();
+    let stderr = '';
+    const said = new Promise((resolve) => child.stderr.on('data', (d) => {
+      stderr += d;
+      if (/stdin ended/.test(stderr) && /\/authorize\S*/.test(stderr)) resolve();
+    }));
+    await said;
+    assert.match(stderr, /Nothing can be pasted here \(stdin ended\): waiting for the browser to reach http:\/\/127\.0\.0\.1:\d+\/callback instead\./);
+    // The browser, on this machine: follows the authorization URL to the loopback.
+    const url = /https?:\/\/\S+\/authorize\S*/.exec(stderr)[0];
+    const r = await fetch(url, { redirect: 'manual' });
+    await fetch(r.headers.get('location'));
+    const code = await new Promise((resolve) => child.on('close', resolve));
+    assert.equal(code, 0, stderr);
+    assert.equal(hasLogin(server.url), true);
+  } finally {
+    await server.close();
+  }
+});
+
+test('auth login --no-browser: a bad line, then the address, piped in: the second line isn\'t lost', async () => {
+  isolated();
+  const server = await start();
+  try {
+    const { spawn } = await import('node:child_process');
+    const child = spawn(process.execPath, [CLI, 'auth', 'login', '--no-browser', '--port', String(port()), server.url], { env: process.env });
+    let stderr = '';
+    let sent = false;
+    child.stderr.on('data', async (d) => {
+      stderr += d;
+      const m = /https?:\/\/\S+\/authorize\S*/.exec(stderr);
+      if (m && !sent) {
+        sent = true;
+        child.stdin.end(`junk\n${(await fetch(m[0], { redirect: 'manual' })).headers.get('location')}\n`);
+      }
+    });
+    const code = await new Promise((resolve) => child.on('close', resolve));
+    assert.equal(code, 0, stderr);
+    assert.match(stderr, /That has no code= or error= in it/);
+    assert.doesNotMatch(stderr, /Nothing can be pasted/);
   } finally {
     await server.close();
   }

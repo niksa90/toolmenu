@@ -253,6 +253,60 @@ export interface LoginOptions extends Omit<ProviderOptions, 'interactive' | 'onR
   open?: (url: URL) => void | Promise<void>;
   /** How long to wait for the browser to come back (default 5 min). */
   timeoutMs?: number;
+  /**
+   * --no-browser: don't open a browser; print the URL, and also take the address the
+   * browser ends on, pasted back (a machine whose browser can't reach this one's
+   * 127.0.0.1: SSH, a container, a remote dev box). `paste` reads that text (default:
+   * one line from stdin).
+   */
+  noBrowser?: boolean;
+  paste?: () => Promise<string>;
+}
+
+/**
+ * The redirect's query from what someone pasted: the whole address the browser ended
+ * on (http://127.0.0.1:33418/callback?code=…&state=…), or just its query. Undefined when
+ * it carries neither a code nor an error.
+ */
+export function pastedRedirect(text: string): URLSearchParams | undefined {
+  const t = text.trim().replace(/^["'<]|["'>]$/g, '');
+  let params: URLSearchParams;
+  try {
+    params = /^[a-z][a-z0-9+.-]*:\/\//i.test(t) ? new URL(t).searchParams : new URLSearchParams(t.replace(/^[^?]*\?/, ''));
+  } catch {
+    return undefined;
+  }
+  return params.get('code') || params.get('error') ? params : undefined;
+}
+
+/**
+ * Lines from stdin, for --no-browser: one reader for the whole login, so a line
+ * already buffered after a bad paste isn't lost. Ends (undefined) when stdin does;
+ * `signal` closes it when the loopback redirect won, so stdin doesn't keep the
+ * process alive.
+ */
+async function* stdinLines(signal: AbortSignal): AsyncGenerator<string> {
+  const { createInterface } = await import('node:readline');
+  const rl = createInterface({ input: process.stdin });
+  const stop = () => rl.close();
+  signal.addEventListener('abort', stop, { once: true });
+  try {
+    for await (const line of rl) yield line;
+  } finally {
+    signal.removeEventListener('abort', stop);
+    rl.close();
+  }
+}
+
+/** Print the authorization URL and say what to paste back. */
+function printForPaste(port: number): (url: URL) => void {
+  return (url) => {
+    process.stderr.write(
+      `Open this address in a browser on any device and approve the login:\n\n  ${url.href}\n\n` +
+        `The browser then goes to http://127.0.0.1:${port}/callback?code=… . On another device that page won't load: ` +
+        `copy its address from the address bar and paste it here, then press Enter.\n> `,
+    );
+  };
 }
 
 /**
@@ -265,7 +319,33 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
   const port = options.port ?? DEFAULT_PORT;
   const callback = await listenForCallback(port, options.timeoutMs ?? 300_000);
   try {
-    const provider = new StoredOAuthProvider(serverUrl, { ...options, port, interactive: true, onRedirect: options.open ?? openInBrowser });
+    const provider = new StoredOAuthProvider(serverUrl, {
+      ...options,
+      port,
+      interactive: true,
+      onRedirect: options.open ?? (options.noBrowser ? printForPaste(port) : openInBrowser),
+    });
+    // --no-browser: the loopback redirect, or the address pasted back, whichever comes first.
+    const reading = new AbortController();
+    const retry = () => process.stderr.write(`That has no code= or error= in it: paste the whole address the browser ended on (http://127.0.0.1:${port}/callback?code=…).\n> `);
+    const pasted = async (): Promise<URLSearchParams> => {
+      if (options.paste) {
+        for (;;) {
+          const params = pastedRedirect(await options.paste());
+          if (params) return params;
+          retry();
+        }
+      }
+      for await (const line of stdinLines(reading.signal)) {
+        const params = pastedRedirect(line);
+        if (params) return params;
+        retry();
+      }
+      // stdin ended (</dev/null, a script): nothing can be pasted, but the browser may
+      // still reach the loopback (SSH with the port forwarded). Said, then left to it.
+      if (!reading.signal.aborted) process.stderr.write(`\nNothing can be pasted here (stdin ended): waiting for the browser to reach http://127.0.0.1:${port}/callback instead.\n`);
+      return new Promise<URLSearchParams>(() => {});
+    };
     // Each login discovers the authorization server afresh (a server may have
     // moved); the state is then kept for the callback leg's check.
     await provider.invalidateCredentials('discovery');
@@ -277,7 +357,7 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
       await endSession(client, transport);
     } catch (error) {
       if (!(error instanceof UnauthorizedError)) throw error;
-      const params = await callback.params;
+      const params = options.noBrowser ? await Promise.race([callback.params, pasted()]).finally(() => reading.abort()) : await callback.params;
       if (params.get('error')) {
         const described = params.get('error_description');
         throw new Error(

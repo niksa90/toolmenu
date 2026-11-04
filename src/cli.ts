@@ -24,6 +24,9 @@ import { existingMessage, initReport, planInit, shellWord, writeInit } from './i
 import { SEVERITY_RANK, type MenuTool, type Severity } from './types.js';
 import { VERSION } from './version.js';
 import { CLI_OPTIONS } from './options.js';
+import { editDistance } from './words.js';
+import { formatScan, ListError, loadList, scan, scanExit } from './scan.js';
+import { explain, findRule, formatExplained, listRules, ruleDocs } from './rule-docs.js';
 import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type Command } from './help.js';
 
 class UsageError extends Error {}
@@ -69,6 +72,7 @@ export async function main(argv: string[]): Promise<number> {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new UsageError(`--timeout must be a positive number of milliseconds`);
 
   if (sub === 'auth') return authCommand(rest, values);
+  if (sub === 'explain') return explainCommand(rest, command, format);
 
   // The invocation up to the server, for examples in messages: a session example
   // without --auto or --scenario wouldn't run.
@@ -93,6 +97,41 @@ export async function main(argv: string[]): Promise<number> {
   const answering = (t: Target): Target => ({ ...t, elicitation });
   const processes = values.processes !== undefined ? Number(values.processes) : config.processes ?? 2;
   if (!Number.isInteger(processes) || processes < 1) throw new UsageError('--processes must be a whole number, 1 or more');
+
+  if (sub === 'scan') {
+    if (command) throw new UsageError('scan reads its servers from a list file; give the file, not a command.');
+    if (rest.length !== 1) throw new UsageError('scan needs one list: an MCP client config (mcp.json) or a text file with a server per line.');
+    const concurrency = values.concurrency !== undefined ? Number(values.concurrency) : 4;
+    if (!Number.isInteger(concurrency) || concurrency < 1) throw new UsageError('--concurrency must be a whole number, 1 or more');
+    let entries;
+    try {
+      entries = await loadList(rest[0]);
+    } catch (error) {
+      if (error instanceof ListError) throw new UsageError(error.message);
+      throw error;
+    }
+    const withProtocol = entries.map((e) => (e.target && protocol !== 'auto' ? { ...e, target: { ...e.target, protocol } } : e));
+    const outDir = values['out-dir'];
+    if (outDir) await mkdir(outDir, { recursive: true });
+    const tty = process.stderr.isTTY;
+    const rows = await scan(withProtocol, {
+      timeoutMs,
+      processes,
+      concurrency,
+      rules: config.rules,
+      ignore: config.ignore,
+      descriptionLimit: config.descriptionLimit,
+      fullDescriptions: config.fullDescriptions,
+      ...(config.client ? { client: config.client } : {}),
+      onDone: (row, done, total) => {
+        if (tty) process.stderr.write(`\r\x1b[K  ${done}/${total}  ${row.name}`);
+      },
+    });
+    if (tty) process.stderr.write('\r\x1b[K');
+    if (outDir) for (const r of rows) if (r.menu) await writeFile(join(outDir, `${r.name.replace(/[^\w.@-]+/g, '_')}.json`), JSON.stringify(r.menu, null, 2) + '\n');
+    process.stdout.write(formatScan(rows, format, rest[0]) + '\n');
+    return scanExit(rows, failOn);
+  }
 
   if (sub === 'diff') {
     if (command) throw new UsageError('diff compares two menu files; it doesn\'t start a server. Run snapshot first.');
@@ -207,7 +246,7 @@ export async function main(argv: string[]): Promise<number> {
     const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
       throw refusedForTooMany(error, waited.ms);
     });
-    const options = { openWorld: values['open-world'], values: given, assumeReadOnly };
+    const options = { openWorld: values['open-world'], createHandles: values['create-handles'], values: given, assumeReadOnly };
     let plan = autoScenario(menu, { ...options, maxCalls: givenMax ?? 20 });
     // Each unlock value gets its own budget for the tools it brings, so the first
     // toolsets can't use up the calls the last ones need. --max-calls, when given,
@@ -302,7 +341,7 @@ function parseTarget(positionals: string[], command: string[] | undefined, heade
   return { kind: 'http', url, headers: parsePairs(headers, ':', '--header'), ...(noAuth ? { noAuth } : {}), ...(protocol !== 'auto' ? { protocol } : {}) };
 }
 
-async function authCommand(args: string[], values: { port?: string; scope?: string; 'client-id'?: string; 'client-secret'?: string; timeout?: string }): Promise<number> {
+async function authCommand(args: string[], values: { port?: string; scope?: string; 'client-id'?: string; 'client-secret'?: string; timeout?: string; 'no-browser'?: boolean }): Promise<number> {
   const [action, url, ...extra] = args;
   if (action === 'list') {
     const logins = await listLogins();
@@ -324,7 +363,7 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
   const port = values.port ? Number(values.port) : undefined;
   if (port !== undefined && !(Number.isInteger(port) && port > 0 && port < 65536)) throw new UsageError('--port must be a port number');
   if (values['client-secret'] && !values['client-id']) throw new UsageError('--client-secret goes with --client-id');
-  const result = await login(url, { port, scope: values.scope, clientId: values['client-id'], clientSecret: values['client-secret'] });
+  const result = await login(url, { port, scope: values.scope, clientId: values['client-id'], clientSecret: values['client-secret'], noBrowser: values['no-browser'] });
   process.stdout.write(`Logged in to ${result.name ?? url} (${url}): it lists ${result.tools} tool${result.tools === 1 ? '' : 's'} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`);
   return 0;
 }
@@ -397,6 +436,24 @@ main(process.argv.slice(2)).then(exitWhenFlushed, (error: unknown) => {
   exitWhenFlushed(2);
 });
 
+function explainCommand(rest: string[], command: string[] | undefined, format: Format): number {
+  if (command) throw new UsageError("explain takes a rule's name, not a server.");
+  if (format !== 'text' && format !== 'json') throw new UsageError('explain prints text, or JSON with --json.');
+  if (rest.length > 1) throw new UsageError(`explain takes one rule at a time; got ${rest.length}.`);
+  if (!rest.length) {
+    process.stdout.write(format === 'json' ? `${JSON.stringify(Object.keys(ruleDocs()))}\n` : listRules());
+    return 0;
+  }
+  const found = findRule(rest[0]);
+  if ('near' in found) {
+    const hint = found.near.length ? ` Did you mean ${found.near.join(', ')}?` : '';
+    throw new UsageError(`No rule "${rest[0]}".${hint} toolmenu explain lists every rule.`);
+  }
+  const e = explain(found.id);
+  process.stdout.write(format === 'json' ? `${JSON.stringify(e, null, 2)}\n` : formatExplained(e));
+  return 0;
+}
+
 /** What stopped the command. A mistyped option gets the nearest real one. */
 function failureMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
@@ -428,20 +485,6 @@ function commandIn(args: string[]): Command | undefined {
     if (isCommand(a)) return a;
   }
   return undefined;
-}
-
-function editDistance(a: string, b: string): number {
-  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    let diagonal = row[0];
-    row[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const above = row[j];
-      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
-      diagonal = above;
-    }
-  }
-  return row[b.length];
 }
 
 function parseRelease(value: string): { before: string; after: string } {

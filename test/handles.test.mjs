@@ -143,3 +143,80 @@ test('--save-scenario: a probe step is saved commented out, never as a step that
   assert.doesNotMatch(yaml, /^  - call: status$/m);
   assert.match(yaml, /^  # --auto called status with a made-up session \(session\/handle-error\); to replay it, put a real one in:\n  # - call: status\n  #   args: \{"session_id":"toolmenu-unknown-session"\}$/m);
 });
+
+// 0.21: --create-handles.
+test('--create-handles: the creating tool runs first, and its handle goes to the tools that take it back, beside the made-up one', async () => {
+  const out = await json(['session', '--auto', '--create-handles', '--json']);
+  const labels = out.steps.map((s) => s.label);
+  // Created first, never a checkout, lease or lock.
+  assert.deepEqual(labels.slice(1, 4), ['call start_session', 'call create_cart', 'call open_basket']);
+  assert.ok(!labels.some((l) => /create_checkout|acquire_lease|acquire_lock/.test(l)));
+  assert.equal(out.steps[1].note, 'created a session (s-1) for the calls after it');
+  // Both calls: the made-up handle, and the real one.
+  assert.ok(labels.includes('call session_status {"session_id":"toolmenu-unknown-session"}'));
+  assert.ok(labels.includes('call session_status {"session_id":"s-1"}'));
+  assert.ok(labels.includes('call basket_total {"basket_id":"b-1"}'));
+  assert.equal(out.findings.filter((f) => f.rule === 'session/handle-roundtrip').length, 0);
+  assert.equal(out.findings.filter((f) => f.rule === 'session/handle-error').length, 1, 'the made-up handle still checks what a model gets for an unknown one');
+});
+
+test('--create-handles: a created handle its own tool refuses, and a creating tool that returns no handle', async () => {
+  const out = await json(['session', '--auto', '--create-handles', '--json', '--env', 'BROKEN=1']);
+  const by = out.findings.filter((f) => f.rule === 'session/handle-roundtrip');
+  const refused = by.find((f) => f.tool === 'session_status');
+  assert.equal(refused.severity, 'warn');
+  assert.match(refused.message, /^session_status was given the session start_session had just created, and answered with an error: Session s-1 is not ready yet\./);
+  const none = by.find((f) => f.tool === 'create_cart');
+  assert.equal(none.severity, 'info');
+  assert.match(none.message, /^--create-handles called create_cart, which returned no handle toolmenu could find, so the tools that take a cart were called with a made-up one instead\./);
+  assert.match(none.fix, /a cart_id field in structuredContent/);
+});
+
+test('without --create-handles nothing is created', async () => {
+  const out = await json(['session', '--auto', '--json']);
+  assert.ok(!out.steps.some((s) => /^call (start_session|create_cart|open_basket)/.test(s.label)));
+});
+
+test('handleFromResult: structured content, JSON text, or written out', async () => {
+  const { handleFromResult } = await import('../dist/rules/handles.js');
+  assert.equal(handleFromResult({ structuredContent: { session_id: 's-1' } }, 'session'), 's-1');
+  assert.equal(handleFromResult({ structuredContent: { sessionId: 's-2' } }, 'session'), 's-2');
+  assert.equal(handleFromResult({ content: [{ type: 'text', text: '{"data":{"id":"s-3"}}' }] }, 'session'), 's-3');
+  assert.equal(handleFromResult({ content: [{ type: 'text', text: 'Started. session_id: s-4' }] }, 'session'), 's-4');
+  assert.equal(handleFromResult({ structuredContent: { cartId: 7 } }, 'cart'), '7');
+  assert.equal(handleFromResult({ content: [{ type: 'text', text: 'nothing here' }] }, 'session'), undefined);
+});
+
+// 0.21, from review.
+test('--create-handles: within --max-calls; the saved scenario keeps the creator commented out; nested ids aren\'t the handle', async () => {
+  const { scenarioYaml } = await import('../dist/auto.js');
+  const { handleFromResult } = await import('../dist/rules/handles.js');
+  const menu = { ...menuOf([tool('start_session', []), ...Array.from({ length: 6 }, (_, i) => tool(`status_${i}`, ['session_id'], { annotations: { readOnlyHint: true } }))]), server: { name: 's', protocolVersion: '2026-07-28', era: 'modern' } };
+  // 6 probes, 1 creator: 13 calls with every real-handle call; 9 allowed.
+  const plan = autoScenario(menu, { createHandles: true, maxCalls: 9 });
+  const calls = plan.scenario.steps.filter((s) => s.kind === 'call');
+  // The last call repeats the first, outside the budget, as without --create-handles.
+  assert.equal(calls.length - 1, 9);
+  assert.equal(plan.spent, 9);
+  assert.equal(calls.slice(0, -1).filter((s) => s.probe?.fromCreated).length, 2, 'the real-handle calls go first; every probe keeps its made-up call');
+  const yaml = scenarioYaml(plan, 's');
+  assert.match(yaml, /# --create-handles called start_session to create a session \(a write\); to replay it, set allow_writes: true and uncomment:\n {2}# - call: start_session\n/);
+  assert.doesNotMatch(yaml, /^ {2}- call: start_session/m, 'no uncommented write under allow_writes: false');
+  assert.equal(handleFromResult({ structuredContent: { data: { user: { id: 'u1' }, session: { session_id: 's1' } } } }, 'session'), 's1');
+  assert.equal(handleFromResult({ structuredContent: { data: { id: 'wrapped' } } }, 'session'), 'wrapped');
+  assert.equal(handleFromResult({ structuredContent: { owner: { id: 'u1' } } }, 'session'), undefined);
+  assert.equal(handleFromResult({ structuredContent: { result: 'created', data: { id: 's1' } } }, 'session'), 's1');
+  assert.equal(handleFromResult({ structuredContent: { results: [{ id: 's1' }] } }, 'session'), 's1');
+  assert.equal(handleFromResult({ structuredContent: [{ id: 'user-7' }] }, 'session'), undefined, 'a list at the top');
+  assert.equal(handleFromResult({ structuredContent: { id: null, handle: 'h1' } }, 'session'), 'h1');
+  // A budget too small for the real-handle calls keeps the made-up probes, as without --create-handles.
+  const one = { ...menuOf([tool('start_session', []), tool('a_read', [], { annotations: { readOnlyHint: true } }), tool('status', ['session_id'], { annotations: { readOnlyHint: true } })]), server: { name: 's', protocolVersion: '2026-07-28', era: 'modern' } };
+  const tight = autoScenario(one, { createHandles: true, maxCalls: 2 });
+  const tc = tight.scenario.steps.filter((s) => s.kind === 'call');
+  assert.ok(tc.some((s) => s.tool === 'status' && s.probe && !s.probe.fromCreated), 'the made-up probe stays');
+  assert.ok(!tc.some((s) => s.creates), 'no creator without a real-handle call to serve');
+  assert.equal(tight.spent, 2);
+  // The round-trip call is described as one in the saved scenario.
+  assert.match(scenarioYaml(autoScenario(one, { createHandles: true }), 's'), /# --create-handles called status with the session start_session returned \(session\/handle-roundtrip\)/);
+  assert.equal(handleFromResult({ structuredContent: { id: 'top' } }, 'session'), 'top');
+});

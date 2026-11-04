@@ -953,3 +953,45 @@ test('clip: a long path loses its middle, not the reason after it', () => {
   assert.equal(shortenPaths(url), url);
   assert.equal(shortenPaths('see /a/b/c'), 'see /a/b/c');
 });
+
+// 0.21, from the corpus run: Notion's server passes the API's 401 on as an answer.
+test('session: an auth error passed on as an answer, not isError, is a setup failure; data with 401 in it is not', async () => {
+  const { deniedAnswer } = await import('../dist/failures.js');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":401,"object":"error","code":"unauthorized","message":"bad"}' }] }), 'HTTP 401: bad');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"error":{"code":"invalid_auth"}}' }] }), 'invalid_auth');
+  assert.equal(deniedAnswer({ structuredContent: { statusCode: 403 } }), undefined, 'a status alone may be a fetched page\'s');
+  assert.equal(deniedAnswer({ structuredContent: { statusCode: 403, message: 'no' } }), 'HTTP 403: no');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"codes":[{"code":401}],"status":"ok"}' }] }), undefined);
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: 'HTTP 401 is the status for unauthorized' }] }), undefined);
+  const server = join(FIXTURES, 'denied-server.mjs');
+  const r = JSON.parse((await run(['session', '--auto', '--json', '--processes', '1', '--', process.execPath, server])).stdout);
+  const [f] = r.findings.filter((x) => x.rule === 'session/untested');
+  assert.equal(f.severity, 'warn', 'list_codes got through');
+  assert.match(f.message, /^3 of 4 tool calls failed before reaching the tool: 3 on authentication\./);
+  assert.match(f.detail[0], /the tool answered, not as an error, with the API's HTTP 401: API token is invalid\./);
+  const all = JSON.parse((await run(['session', '--auto', '--json', '--processes', '1', '--env', 'ALL_DENIED=1', '--', process.execPath, server])).stdout);
+  assert.equal(all.findings.find((x) => x.rule === 'session/untested').severity, 'error');
+});
+
+// 0.21, from the corpus run: fulcra-context-mcp blocks while it polls a device-code sign-in.
+test('session: a server that stops answering after a call ends the run with one finding, not one per step', async () => {
+  const server = join(FIXTURES, 'blocking-server.mjs');
+  const started = Date.now();
+  const r = await run(['session', '--auto', '--json', '--processes', '1', '--timeout', '1000', '--', process.execPath, server]);
+  const out = JSON.parse(r.stdout);
+  const stopped = out.findings.filter((f) => /stopped answering/.test(f.message));
+  assert.equal(stopped.length, 1, JSON.stringify(out.findings.map((f) => f.message)));
+  assert.deepEqual(out.findings.filter((f) => f.rule === 'session/step-failed').length, 1, 'the call\'s own timeout is the same cause');
+  assert.match(stopped[0].message, /^The server stopped answering at step 3 \(call b_sign_in\): after it, tools\/list timed out after [\d.]+ s: the server is running but never answered\. The run stopped there: steps 4–\d+ weren't run\.$/);
+  assert.equal(out.steps.at(-1).label, 'call b_sign_in', 'nothing ran after it');
+  assert.ok(Date.now() - started < 60_000, 'the run didn\'t wait out every step');
+});
+
+test('deniedAnswer: a fetched page\'s status isn\'t an auth error; one that says it\'s an error is', async () => {
+  const { deniedAnswer } = await import('../dist/failures.js');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"body":"<html>…"}' }] }), undefined);
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"error":"Forbidden"}' }] }), 'HTTP 403');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"error":{"status":401}}' }] }), 'HTTP 401');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"error":null,"body":"x"}' }] }), undefined, 'an empty error field');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"error":0}' }] }), undefined);
+});

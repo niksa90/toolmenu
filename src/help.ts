@@ -5,7 +5,7 @@
  */
 import { VERSION } from './version.js';
 
-export const COMMANDS = ['init', 'snapshot', 'diff', 'session', 'history', 'auth'] as const;
+export const COMMANDS = ['init', 'snapshot', 'diff', 'session', 'history', 'auth', 'scan', 'explain'] as const;
 export type Command = (typeof COMMANDS)[number];
 
 /** Every option, once: its spelling and what it does (continuation lines are indented by the renderer). */
@@ -33,6 +33,7 @@ const OPTIONS: Record<string, [string, string[]]> = {
   plan: ['--plan', ['print the steps without connecting or running anything']],
   init: ['--init', ["write a starter scenario from the server's menu (to --scenario,", 'default scenario.yml; never overwrites)']],
   auto: ['--auto', ['build the steps from the menu: every read-only tool whose required', 'arguments the schema can fill (const, default, examples, enum, type),', 'then the first call again']],
+  'create-handles': ['--create-handles', ['with --auto on 2026-07-28, call the tool that creates a session, basket or cart', '(a write, so only with this flag; never one marked destructiveHint) and give', 'the tools that take it back the handle it returned']],
   'open-world': ['--open-world', ['with --auto, also call read-only tools marked openWorldHint: true', '(web search, fetch, scraping): they may cost API credits']],
   'max-calls': ['--max-calls <n>', ['with --auto, at most n calls in all, the tools unlocks bring', 'included (default: 20, plus --max-calls-per-unlock for each unlock value)']],
   'max-calls-per-unlock': ['--max-calls-per-unlock <n>', ['with --auto, at most n calls for the tools each unlock value', 'brings (default: 5), so every toolset gets some']],
@@ -55,6 +56,9 @@ const OPTIONS: Record<string, [string, string[]]> = {
   'init-out': ['--out <path>', ['where to write the baseline menu (default: menu.json)']],
   'with-session': ['--with-session', ['the workflow also runs session --auto (calls read-only tools)']],
   port: ['--port <n>', ['loopback port for the login redirect (default: 33418)']],
+  concurrency: ['--concurrency <n>', ['servers checked at a time (default: 4)']],
+  'out-dir': ['--out-dir <dir>', ["write each server's menu file there, as <name>.json (default: none)"]],
+  'no-browser': ['--no-browser', ["don't open a browser: print the login URL, open it on any device, and paste", 'back the address the browser ends on (over SSH, in a container, on a remote box)']],
   scope: ['--scope <scopes>', ["scopes to ask for (default: the server's)"]],
   'client-id': ['--client-id <id>', ['a pre-registered client, for servers without dynamic registration']],
   'client-secret': ['--client-secret <s>', ['its secret, if it has one']],
@@ -125,7 +129,7 @@ const HELP: Record<Command, CommandHelp> = {
       'prompt cache, a different menu in a fresh process.',
       SERVER_NOTE,
     ],
-    own: ['scenario', 'auto', 'init', 'plan', 'value', 'values-file', 'assume-read-only', 'open-world', 'max-calls', 'max-calls-per-unlock', 'save-scenario', 'union-out', 'elicitation'],
+    own: ['scenario', 'auto', 'init', 'plan', 'value', 'values-file', 'assume-read-only', 'open-world', 'create-handles', 'max-calls', 'max-calls-per-unlock', 'save-scenario', 'union-out', 'elicitation'],
     shared: ['config', 'format', 'json', 'fail-on', 'header', 'env', 'no-auth', 'protocol', 'timeout', 'processes'],
     examples: [
       'toolmenu session --auto -- node dist/index.js',
@@ -159,7 +163,7 @@ const HELP: Record<Command, CommandHelp> = {
       'snapshot and session then use them for that URL (--no-auth to skip).',
       'Stored in $TOOLMENU_AUTH_DIR, else $XDG_CONFIG_HOME/toolmenu/auth, else ~/.config/toolmenu/auth.',
     ],
-    own: ['port', 'scope', 'client-id', 'client-secret'],
+    own: ['port', 'no-browser', 'scope', 'client-id', 'client-secret'],
     shared: [],
     examples: [
       'toolmenu auth login https://example.com/mcp',
@@ -167,6 +171,33 @@ const HELP: Record<Command, CommandHelp> = {
       'toolmenu auth list',
     ],
     exits: ['0  done (logout of a URL with no login is not an error)', '2  the login failed, or bad usage'],
+  },
+  scan: {
+    summary: 'snapshot every server in an MCP client config or a list, side by side',
+    usage: ['toolmenu scan [options] <list>'],
+    about: [
+      'The list is an MCP client config (Claude Desktop, Claude Code .mcp.json, Cursor,',
+      'VS Code: the mcpServers or servers object, ${VAR} filled from the environment), or a',
+      'text file with one server per line: a URL or a command, optionally "name<TAB>" first.',
+      'Runs snapshot on each (nothing written unless --out-dir). A server that could not be',
+      'started or read is a row that says why, and makes the exit code 2: it was not checked.',
+    ],
+    own: ['concurrency', 'out-dir'],
+    shared: ['config', 'format', 'json', 'fail-on', 'protocol', 'timeout', 'processes'],
+    examples: ['toolmenu scan ~/Library/Application\\ Support/Claude/claude_desktop_config.json', 'toolmenu scan .mcp.json --format markdown', 'toolmenu scan servers.txt --concurrency 8 --out-dir menus'],
+    exits: ['0  every server checked, no findings at or above --fail-on', '1  findings at or above --fail-on', "2  a server wasn't checked (couldn't start, couldn't connect, a variable not set), or bad usage"],
+  },
+  explain: {
+    summary: 'say what a rule checks, its default level and how to change it',
+    usage: ['toolmenu explain <rule>', 'toolmenu explain'],
+    about: [
+      'The rule as a finding names it (naming/vague-id), or the part after the slash (vague-id).',
+      'Without a rule, lists every rule by the command that reports it. Offline.',
+    ],
+    own: [],
+    shared: ['format', 'json'],
+    examples: ['toolmenu explain naming/vague-id', 'toolmenu explain handle-lifetime', 'toolmenu explain --json diff/param-required'],
+    exits: ['0  explained', "2  no such rule (the closest ones are named), or bad usage"],
   },
 };
 

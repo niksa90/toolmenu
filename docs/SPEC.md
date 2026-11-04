@@ -969,3 +969,52 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   and descriptions, none invented; the other 6 of the 418 are the menu's plain tools.
   `azd` (binary not installed) and `foundry`, `arm` (credentials) didn't list. Two
   crawls gave identical catalogs.
+
+## 27. 0.21: scan, explain, and what the hosted scan asked for
+
+- **`toolmenu scan <list>`** runs `snapshot` on each server of an MCP client config
+  (`mcpServers`, `servers`, VS Code's `mcp.servers`; `command`/`args`/`env`/`cwd` or
+  `url`/`serverUrl`/`httpUrl`/`headers`) or a text list (a URL or a command per line,
+  `name<TAB>` or `name = ` optional). A failed server is a row with the reason (a
+  `ConnectError`'s headline), never a pass: any such row makes the exit 2, ahead of
+  findings (1). `disabled: true` is listed and isn't a failure. `${VAR}`,
+  `${VAR:-default}` and `${env:VAR}` are filled from the environment; a variable not
+  set means the server isn't started (an empty credential would be checked as if it
+  were the server's fault). A URL is printed as origin and path, `?…` for a query;
+  the same in a failure reason that quotes the URL.
+- **`toolmenu explain <rule>`** prints the rule's entry in `docs/RULES.md` (one table
+  per command), with its default level, `since` for menu rules and the class for diff
+  rules. The build copies the tables to `dist/rule-docs.json`, since `docs/` isn't in
+  the package. A test reads every rule id in `src/` and fails on one without an entry,
+  or an entry for no rule, and checks each entry's severity against the code. A name
+  can be the part after the slash (`vague-id`) when only one rule ends that way.
+- **Proxy and CA settings for stdio servers.** The minimal environment kept out
+  `HTTPS_PROXY` and the CA bundle variables, so behind a proxy a server that calls an
+  API failed (Stripe's and Supabase's servers in the hosted scan's container). They're
+  passed when a proxy is set, with `NODE_USE_ENV_PROXY=1` (Node 22.21 and later read
+  the proxy variables only with it); `--env` overrides each. Node 22 warns on stderr
+  that the proxy agent is experimental; that warning is toolmenu's doing and is left
+  out of the stderr shown in errors.
+- **`auth/invalid-accepted`** (warn): with credentials over HTTP and `--processes` 2
+  or more, one more listing with an invalid credential in the same scheme (Bearer
+  `toolmenu-invalid-credential`, Basic `toolmenu-invalid:toolmenu-invalid`, the same
+  API-key header, or Bearer in place of a stored login; never the stored login
+  itself). A menu in answer is the finding: Atlassian Rovo served 4 of its tools to
+  any `Authorization` header (2026-11-03), so an expired token reads to the client as
+  a smaller menu, not a reason to log in again.
+- **`auth login --no-browser`** prints the authorization URL and reads the address the
+  browser ends on from stdin, racing the loopback callback, so it works over SSH and
+  in containers. The pasted address must carry the same `state`.
+- **`session --auto --create-handles`** (2026-07-28): a creating tool for a session,
+  basket or cart (`CREATABLE_KINDS`; not locks, leases, checkouts: those hold
+  something) runs first, if it isn't `destructiveHint`, and each probe of a tool that
+  takes the handle back is run twice: with a made-up handle (`session/handle-error`)
+  and with the one returned (`handleFromResult`: `structuredContent`, JSON text, or
+  `session_id: s-1` written out). Refused: `session/handle-roundtrip` warn, unsure. No
+  handle in the result: info, and only the made-up call runs.
+- **From the 0.21 corpus run** (the proxy let servers reach their APIs for the first
+  time): an answer, not `isError`, whose JSON object has its own `status` 401/403 or
+  an auth `code` is a setup failure (`deniedAnswer`, Notion); a `tools/list` that
+  times out after a step ("running but never answered") stops the session like a rate
+  limit, and the call's timeout at that step is folded into the one finding
+  (fulcra-context-mcp's device-code sign-in blocks the server).

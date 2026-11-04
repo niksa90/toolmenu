@@ -6,6 +6,9 @@ import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, PROBE_SEED
 import { kindsToRead, readList, type ListKind } from './lists.js';
 import type { ListsContext } from './rules/lists.js';
 import type { IdentityMenu } from './rules/identities.js';
+import type { InvalidCredential } from './rules/auth.js';
+import { isCredentialHeader } from './explain.js';
+import { httpStatus } from './failures.js';
 import { clientCost, type ClientCost } from './clients.js';
 import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
 import { catalogFindings, readCatalog, type CatalogOptions } from './catalog.js';
@@ -109,6 +112,10 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     }
   }
 
+  // A credential that can't be valid, in place of the one this run used (HTTP): the
+  // server should refuse it, not serve a menu (rules/auth.ts).
+  const invalid = target.kind === 'http' && connection.usedAuth && (options.processes ?? 2) > 1 ? await invalidCredentialProbe(target, options.timeoutMs ?? 30_000) : undefined;
+
   // Each other identity's menu, from its own process (stdio) or connection (HTTP).
   const identities: IdentityMenu[] | undefined = mainIdentity
     ? [{ name: mainIdentity.name, tools: menu.tools, tokens: menu.totalTokens, cacheScope: menu.listMeta?.cacheScope }]
@@ -145,6 +152,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       serverInfo: connection.server,
       server: serverArgs(target),
       identities,
+      ...(invalid ? { invalidCredential: invalid } : {}),
       ...(reads.length || undeclared.length ? { lists: { read: reads, undeclared } } : {}),
     },
     options,
@@ -162,6 +170,38 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   }
   const cost = options.client ? clientCost(options.client, menu) : undefined;
   return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}), ...(undeclared.length ? { notOffered: undeclared } : {}) };
+}
+
+/**
+ * The target with every credential it carries swapped for one that can't be valid,
+ * same scheme: Bearer stays Bearer, Basic gets a made-up user and password, an API-key
+ * header a made-up key. A stored login (OAuth) becomes an invalid Bearer token.
+ */
+export function withInvalidCredential(target: Extract<Target, { kind: 'http' }>): Extract<Target, { kind: 'http' }> {
+  const headers: Record<string, string> = {};
+  let replaced = false;
+  for (const [k, v] of Object.entries(target.headers ?? {})) {
+    if (k.toLowerCase() === 'authorization') {
+      const scheme = /^\s*(\w+)\s/.exec(v)?.[1] ?? 'Bearer';
+      headers[k] = /^basic$/i.test(scheme) ? `Basic ${Buffer.from('toolmenu-invalid:toolmenu-invalid').toString('base64')}` : `${scheme} toolmenu-invalid-credential`;
+      replaced = true;
+    } else if (isCredentialHeader(k)) {
+      headers[k] = 'toolmenu-invalid-credential';
+      replaced = true;
+    } else headers[k] = v;
+  }
+  if (!replaced) headers.Authorization = 'Bearer toolmenu-invalid-credential';
+  return { ...target, headers, noAuth: true };
+}
+
+async function invalidCredentialProbe(target: Extract<Target, { kind: 'http' }>, timeoutMs: number): Promise<InvalidCredential> {
+  try {
+    const m = await probeMenu(withInvalidCredential(target), timeoutMs);
+    return { tools: m.tools };
+  } catch (error) {
+    const status = httpStatus(error);
+    return status !== undefined ? { status } : { error: firstLine(error) };
+  }
 }
 
 const firstLine = (error: unknown) => (error instanceof Error ? error.message : String(error)).split('\n')[0].trim();

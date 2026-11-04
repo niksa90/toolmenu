@@ -433,3 +433,14 @@ test('startupHint: a CLI that names its commands when given none gets the one th
   // An error that names no commands isn't read as one.
   assert.equal(startupHint(traced([], ['Error: Unknown option --foo. Expected a number.']), 'x'), undefined);
 });
+
+// 0.21: stdio servers behind a proxy get NODE_USE_ENV_PROXY=1, and Node 22 warns about it.
+test('errors: Node\'s warning about NODE_USE_ENV_PROXY, which toolmenu set, isn\'t shown as the server\'s stderr', async () => {
+  const { Trace } = await import('../dist/explain.js');
+  const t = new Trace();
+  t.stderr('(node:4242) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\nError: the real reason\n');
+  assert.deepEqual(t.stderrExcerpt(), { lines: ['Error: the real reason'], total: 1 });
+  const other = new Trace();
+  other.stderr('(Use `node --trace-warnings ...` to show where the warning was created)\n');
+  assert.equal(other.stderrExcerpt().total, 1, 'the hint after a warning of the server\'s own stays');
+});

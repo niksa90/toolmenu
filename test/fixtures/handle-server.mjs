@@ -14,6 +14,9 @@
 //   send_draft      not read-only: never called.
 //   checkout_status a tool error about credentials: a setup failure, says nothing about the handle.
 //   lease_info      a protocol error about credentials: the same, not session/handle-error.
+// --create-handles: start_session, create_cart and open_basket are called first. BROKEN=1 breaks the
+//   round trip: session_status refuses even the session start_session made, and create_cart
+//   returns no cart id.
 import { McpServer, fromJsonSchema } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
 
@@ -29,10 +32,11 @@ export function build() {
   reg('start_session', 'Starts a work session and returns its session_id.', obj({}), async () => text('session_id: s-1'), { readOnlyHint: false });
   reg('session_status', 'Shows the status of a session.', obj({ session_id: str }), async ({ session_id }) => {
     // REWRITE (below) turns this result into the JSON-RPC error a server that throws would send.
+    if (process.env.BROKEN && session_id === 's-1') return { isError: true, content: [{ type: 'text', text: 'Session s-1 is not ready yet.' }] };
     return session_id === 's-1' ? text('active') : text(`PROTOCOL-ERROR Unknown session: ${session_id}`);
   });
 
-  reg('create_cart', 'Creates a shopping cart. Carts expire after 24 hours of inactivity.', obj({}), async () => text('cart_id: c-1'), { readOnlyHint: false });
+  reg('create_cart', 'Creates a shopping cart. Carts expire after 24 hours of inactivity.', obj({}), async () => text(process.env.BROKEN ? 'Cart created.' : 'cart_id: c-1'), { readOnlyHint: false });
   reg('cart_contents', 'Lists what is in a cart.', obj({ cart_id: str }), async ({ cart_id }) =>
     cart_id === 'c-1' ? text('empty') : { isError: true, content: [{ type: 'text', text: `Cart ${cart_id} not found or expired: call create_cart for a new one.` }] },
   );
