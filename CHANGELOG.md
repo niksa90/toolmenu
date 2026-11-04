@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.22.0
+
+Three things the 0.21 corpus run found in real servers, now rules of their own.
+
+- **`session/error-not-flagged`** (warn, unsure): a tool that passes its API's HTTP
+  error on as a plain result, not marked `isError`. Notion's server returns
+  `{"status":401,"object":"error",…}` that way, so a client that branches on `isError`
+  takes it for a success. The error must be a JSON object whose own `status` (4xx,
+  5xx) or code says so, with a sign it's an error (`object: "error"`, an `error`
+  field, a `message`). Tools that take a URL are left out: their answer is the
+  page's. One finding for the run. An auth one still counts toward `session/untested`.
+- **`menu/network-dependent`** (warn) with **`snapshot --offline-check`** (stdio, or
+  `offlineCheck` in the config, which `scan` follows too). The menu is listed once
+  more from a process whose proxy variables point at a closed port.
+  - inite-visibility serves 3 tools that way and 10 with the network; Netlify's
+    server serves 9 and 10. A baseline made on a machine with the network doesn't
+    match one without.
+  - A server that doesn't start offline is info.
+  - It's one-sided, and the docs say so: a server that ignores the proxy variables
+    still reaches the network where the machine has direct access.
+- **`session/server-unresponsive`** (error): the finding for a server that stopped
+  answering after a step (0.21 stopped the run there), under its own id rather than
+  `session/step-failed`. fulcra-context-mcp polls its device-code sign-in on the
+  event loop inside a tool call.
+
 ## 0.21.0
 
 Two new commands, and four things the hosted scan asked for.
