@@ -56,6 +56,7 @@ const OPTIONS: Record<string, [string, string[]]> = {
   'init-out': ['--out <path>', ['where to write the baseline menu (default: menu.json)']],
   'with-session': ['--with-session', ['the workflow also runs session --auto (calls read-only tools)']],
   port: ['--port <n>', ['loopback port for the login redirect (default: 33418)']],
+  'offline-check': ['--offline-check', ['stdio: list the menu once more with the network cut off (the proxy variables', 'pointed at a closed port): a server whose menu depends on what it fetches at start']],
   concurrency: ['--concurrency <n>', ['servers checked at a time (default: 4)']],
   'out-dir': ['--out-dir <dir>', ["write each server's menu file there, as <name>.json (default: none)"]],
   'no-browser': ['--no-browser', ["don't open a browser: print the login URL, open it on any device, and paste", 'back the address the browser ends on (over SSH, in a container, on a remote box)']],
@@ -99,7 +100,7 @@ const HELP: Record<Command, CommandHelp> = {
       'reports what in the menu confuses agents or breaks prompt caches.',
       SERVER_NOTE,
     ],
-    own: ['out', 'no-write', 'routes', 'catalog', 'as', 'client', 'lists'],
+    own: ['out', 'no-write', 'routes', 'catalog', 'as', 'client', 'lists', 'offline-check'],
     shared: ['config', 'format', 'json', 'fail-on', 'header', 'env', 'no-auth', 'protocol', 'timeout', 'processes'],
     examples: [
       'toolmenu snapshot -- npx -y @modelcontextprotocol/server-memory',

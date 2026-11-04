@@ -91,6 +91,7 @@ export async function main(argv: string[]): Promise<number> {
   if (badList) throw new UsageError(`--lists takes ${LIST_WORDS.join(', ')}, comma-separated; not "${badList}"`);
   if (values.client !== undefined && sub !== 'snapshot') throw new UsageError('--client goes with snapshot.');
   if (values.client !== undefined && !Object.hasOwn(CLIENTS, values.client)) throw new UsageError(`--client must be one of ${CLIENT_NAMES.join(', ')}`);
+  if (values['offline-check'] && sub !== 'snapshot') throw new UsageError('--offline-check goes with snapshot.');
   if (values.as !== undefined && sub !== 'snapshot') throw new UsageError('--as goes with snapshot: it lists the menu once per identity.');
   if (values.elicitation !== undefined && sub !== 'session') throw new UsageError('--elicitation goes with session: only session calls tools.');
   // Only session calls tools, so only its targets declare elicitation and say how to answer.
@@ -318,7 +319,9 @@ export async function main(argv: string[]): Promise<number> {
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
   const client = values.client ?? config.client;
-  const { menu, findings, cost, notOffered } = await snapshot(target, { routes, timeoutMs, processes, identities, client, lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const offlineCheck = values['offline-check'] ?? config.offlineCheck;
+  if (values['offline-check'] && target.kind !== 'stdio') throw new UsageError("--offline-check goes with a stdio server: an HTTP server's network isn't this machine's to cut.");
+  const { menu, findings, cost, notOffered } = await snapshot(target, { offlineCheck: offlineCheck && target.kind === 'stdio', routes, timeoutMs, processes, identities, client, lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');

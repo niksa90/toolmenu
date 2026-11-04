@@ -30,6 +30,8 @@ export interface RuleContext {
   lists?: import('./lists.js').ListsContext;
   /** HTTP with credentials: what the server did with an invalid credential in their place. */
   invalidCredential?: import('./auth.js').InvalidCredential;
+  /** snapshot --offline-check: the menu from a process with the network cut off. */
+  offline?: import('./network.js').OfflineMenu;
   /** --client: the client profile the menu is checked for (src/clients.ts). */
   client?: string;
   /** Where clients are assumed to cut tool descriptions (description/buried). */

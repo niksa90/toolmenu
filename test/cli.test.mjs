@@ -285,3 +285,34 @@ test('withInvalidCredential: same scheme, every credential header, other headers
   // A stored login (no header of its own) gets an invalid Bearer token.
   assert.equal(withInvalidCredential({ kind: 'http', url: 'https://x.test/mcp' }).headers.Authorization, 'Bearer toolmenu-invalid-credential');
 });
+
+// 0.22, from the 0.21 corpus run: inite-visibility serves 3 tools offline, 10 online.
+test('snapshot --offline-check: a menu that depends on the network; a server that needs it to start; quiet when the same', async () => {
+  const { createServer } = await import('node:http');
+  const remote = createServer((req, res) => res.end('ok'));
+  await new Promise((r) => remote.listen(0, '127.0.0.1', r));
+  const REMOTE_URL = `http://127.0.0.1:${remote.address().port}/`;
+  const fixture = join(FIXTURES, 'network-server.mjs');
+  // The main process reaches it directly: no proxy in its environment.
+  const env = { HTTPS_PROXY: '', HTTP_PROXY: '', https_proxy: '', http_proxy: '' };
+  const snap = async (more = []) => JSON.parse((await run(['snapshot', '--no-write', '--json', '--processes', '1', '--offline-check', '--env', `REMOTE_URL=${REMOTE_URL}`, ...more, '--', process.execPath, fixture], { env })).stdout).findings.filter((f) => f.rule === 'menu/network-dependent');
+  try {
+    const [f] = await snap();
+    assert.equal(f.severity, 'warn');
+    assert.match(f.message, /^With the network cut off, the server serves a different menu: 1 tool, not 2 \(1 missing\)\./);
+    assert.deepEqual(f.detail, ['missing offline: remote_rules']);
+    const [g] = await snap(['--env', 'REQUIRE=1']);
+    assert.equal(g.severity, 'info');
+    assert.match(g.message, /^The server didn't start or list its tools with the network cut off: the server exited with code 1/);
+    // Not asked for: not run.
+    const none = JSON.parse((await run(['snapshot', '--no-write', '--json', '--processes', '1', '--env', `REMOTE_URL=${REMOTE_URL}`, '--', process.execPath, fixture], { env })).stdout);
+    assert.equal(none.findings.filter((x) => x.rule === 'menu/network-dependent').length, 0);
+    // A server that fetches nothing: quiet.
+    assert.deepEqual(JSON.parse((await run(['snapshot', '--no-write', '--json', '--processes', '1', '--offline-check', '--', process.execPath, join(FIXTURES, 'client-server.mjs')])).stdout).findings.filter((x) => x.rule === 'menu/network-dependent'), []);
+    const http = await run(['snapshot', '--offline-check', 'https://example.com/mcp']);
+    assert.equal(http.code, 2);
+    assert.match(http.stderr, /--offline-check goes with a stdio server/);
+  } finally {
+    remote.close();
+  }
+});
