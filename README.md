@@ -235,6 +235,8 @@ serves, and 23 issue and pull-request tools that only the dynamic mode has.
 | `session/nothing-called` | warn | `--auto` called no tools (all open-world, missing values, or not read-only): the run only listed the menu |
 | `session/session-lost` | error | The server ended the session after toolmenu opened a second connection with the same credentials (servers with one session per client; 2025-era servers only). The run stops there; rerun with `--processes 1` |
 | `session/handle-error` | warn | 2026-07-28: `--auto` called a read-only tool with a handle that can't exist (`toolmenu-unknown-session`), and it answered with a protocol error instead of a tool error the model can read |
+| `session/error-not-flagged` | warn | A tool answered with an HTTP error from the API behind it (`{"status":401,"object":"error",…}`) as a plain result, not marked `isError`, so a client that reads `isError` takes the call for a success (Notion's server). An auth one also counts toward `session/untested`. Tools that take a URL are left out: their answer is the page's (heuristic) |
+| `session/server-unresponsive` | error | The server stopped answering after a step: even `tools/list` timed out. The run stops there with this one finding, instead of every later step waiting out its timeout (a server that polls a device-code sign-in inside a tool call) |
 | `session/handle-roundtrip` | warn | With `--create-handles`: the tool that creates a session, basket or cart was called, and the tools that take it back refused the handle it had just returned (info when its result had no handle to find) |
 | `session/rate-limited` | error | The server kept refusing requests for being too many (a 429) after toolmenu waited about a minute, or a tool not marked `readOnlyHint` said it was rate-limited (it isn't called again). The run stops there, with the steps it didn't check; give the run its own server instance or raise the limit for it |
 | `session/scope-unchecked` | info | A second server process or connection couldn't start mid-session (a server that holds a file or a port), so whether a change was global wasn't checked. Said once for the run |
@@ -450,6 +452,7 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `naming/client-name` | warn | With `--client`: tool names the client's API refuses: `^[a-zA-Z0-9_-]{1,128}$` for the Claude API, `^[a-zA-Z0-9_-]+$` up to 128 for OpenAI's functions. MCP allows names such as `files.read` that neither takes as they are |
 | `menu/auth-variance` | info | With `--as` (or `identities` in the config): the tool set differs by identity, what each adds, lacks or defines differently against the first, and its tokens. Allowed by the spec; a baseline of one identity's menu doesn't cover the others. An identity that can't be listed is said here too |
 | `spec/cache-scope-public` | warn | 2026-07-28, with `--as`: the tool set differs by identity, and `tools/list` says `cacheScope: "public"`, which lets shared caches serve one caller's list to another |
+| `menu/network-dependent` | warn | With `--offline-check` (stdio): the menu listed once more with the network cut off (the proxy variables pointed at a closed port) differs: inite-visibility serves 3 tools offline and 10 online, so a baseline made with the network doesn't match a machine without it. A server that doesn't start offline is info. A server that ignores the proxy variables still reaches the network where the machine has it directly; then nothing is reported, which isn't a pass |
 | `auth/invalid-accepted` | warn | HTTP with credentials: the menu listed once more with an invalid credential in the same scheme. A server that serves a menu to it, not 401, gives a client whose token expired no reason to log in again; the agent just has fewer tools (Atlassian Rovo served 4 tools to any `Authorization` header). `--processes 1` turns it off |
 
 The full list, `diff` and `session` rules included, is [docs/RULES.md](docs/RULES.md).
@@ -483,9 +486,12 @@ meant to steer away from, and toolmenu says so.
   "routes": "routes.yml",
   "tokenBudget": 4000,
   "descriptionLimit": "claude-code",
-  "fullDescriptions": ["search_capabilities", "lookup_*"]
+  "fullDescriptions": ["search_capabilities", "lookup_*"],
+  "offlineCheck": true
 }
 ```
+
+`offlineCheck` turns on `--offline-check` for every `snapshot` of a stdio server.
 
 `descriptionLimit` is where your client cuts tool descriptions: a number, or a client
 whose cut has been reported: `"claude-code"` (the default: Claude Code's own docs,
@@ -556,6 +562,7 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --as <name>:<cred>  snapshot: list the menu as this identity too, repeatable:
                     "reader:Authorization: Bearer …" (HTTP) or "admin:ROLE=admin"
                     (stdio). The first is the menu saved; the others are compared
+--offline-check     snapshot (stdio): also list the menu with the network cut off
 --concurrency <n>   scan: servers checked at a time (default: 4)
 --out-dir <dir>     scan: write each server's menu file there, as <name>.json
 ```

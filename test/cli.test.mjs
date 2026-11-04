@@ -309,6 +309,14 @@ test('snapshot --offline-check: a menu that depends on the network; a server tha
     assert.equal(none.findings.filter((x) => x.rule === 'menu/network-dependent').length, 0);
     // A server that fetches nothing: quiet.
     assert.deepEqual(JSON.parse((await run(['snapshot', '--no-write', '--json', '--processes', '1', '--offline-check', '--', process.execPath, join(FIXTURES, 'client-server.mjs')])).stdout).findings.filter((x) => x.rule === 'menu/network-dependent'), []);
+    // The config key, for scan too.
+    const dir = tempDir();
+    writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ offlineCheck: true }));
+    writeFileSync(join(dir, 'mcp.json'), JSON.stringify({ mcpServers: { net: { command: process.execPath, args: [fixture], env: { REMOTE_URL } } } }));
+    const scanned = JSON.parse((await run(['scan', '--json', '--processes', '1', 'mcp.json'], { cwd: dir, env })).stdout);
+    assert.ok(scanned.servers[0].findings.some((x) => x.rule === 'menu/network-dependent'));
+    writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ offlineCheck: 'yes' }));
+    assert.match((await run(['snapshot', '--no-write', '--', process.execPath, fixture], { cwd: dir })).stderr, /offlineCheck must be true or false/);
     const http = await run(['snapshot', '--offline-check', 'https://example.com/mcp']);
     assert.equal(http.code, 2);
     assert.match(http.stderr, /--offline-check goes with a stdio server/);

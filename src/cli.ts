@@ -124,6 +124,8 @@ export async function main(argv: string[]): Promise<number> {
       descriptionLimit: config.descriptionLimit,
       fullDescriptions: config.fullDescriptions,
       ...(config.client ? { client: config.client } : {}),
+      // stdio servers only: snapshot skips it for HTTP.
+      ...(config.offlineCheck ? { offlineCheck: true } : {}),
       onDone: (row, done, total) => {
         if (tty) process.stderr.write(`\r\x1b[K  ${done}/${total}  ${row.name}`);
       },
