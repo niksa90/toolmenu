@@ -24,6 +24,7 @@ import { existingMessage, initReport, planInit, shellWord, writeInit } from './i
 import { SEVERITY_RANK, type MenuTool, type Severity } from './types.js';
 import { VERSION } from './version.js';
 import { CLI_OPTIONS } from './options.js';
+import { explain, findRule, formatExplained, listRules, ruleDocs } from './rule-docs.js';
 import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type Command } from './help.js';
 
 class UsageError extends Error {}
@@ -69,6 +70,7 @@ export async function main(argv: string[]): Promise<number> {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new UsageError(`--timeout must be a positive number of milliseconds`);
 
   if (sub === 'auth') return authCommand(rest, values);
+  if (sub === 'explain') return explainCommand(rest, command, format);
 
   // The invocation up to the server, for examples in messages: a session example
   // without --auto or --scenario wouldn't run.
@@ -396,6 +398,24 @@ main(process.argv.slice(2)).then(exitWhenFlushed, (error: unknown) => {
   process.stderr.write(`toolmenu: ${failureMessage(error)}\n`);
   exitWhenFlushed(2);
 });
+
+function explainCommand(rest: string[], command: string[] | undefined, format: Format): number {
+  if (command) throw new UsageError("explain takes a rule's name, not a server.");
+  if (format !== 'text' && format !== 'json') throw new UsageError('explain prints text, or JSON with --json.');
+  if (rest.length > 1) throw new UsageError(`explain takes one rule at a time; got ${rest.length}.`);
+  if (!rest.length) {
+    process.stdout.write(format === 'json' ? `${JSON.stringify(Object.keys(ruleDocs()))}\n` : listRules());
+    return 0;
+  }
+  const found = findRule(rest[0]);
+  if ('near' in found) {
+    const hint = found.near.length ? ` Did you mean ${found.near.join(', ')}?` : '';
+    throw new UsageError(`No rule "${rest[0]}".${hint} toolmenu explain lists every rule.`);
+  }
+  const e = explain(found.id);
+  process.stdout.write(format === 'json' ? `${JSON.stringify(e, null, 2)}\n` : formatExplained(e));
+  return 0;
+}
 
 /** What stopped the command. A mistyped option gets the nearest real one. */
 function failureMessage(error: unknown): string {

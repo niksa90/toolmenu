@@ -5,7 +5,7 @@
   "author": "Nikša Perović (https://niksa.me)",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/rule-docs.mjs",
     "test": "npm run build && node --test --test-reporter=spec test/*.test.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepublishOnly": "npm run build"

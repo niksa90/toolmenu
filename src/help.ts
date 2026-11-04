@@ -5,7 +5,7 @@
  */
 import { VERSION } from './version.js';
 
-export const COMMANDS = ['init', 'snapshot', 'diff', 'session', 'history', 'auth'] as const;
+export const COMMANDS = ['init', 'snapshot', 'diff', 'session', 'history', 'auth', 'explain'] as const;
 export type Command = (typeof COMMANDS)[number];
 
 /** Every option, once: its spelling and what it does (continuation lines are indented by the renderer). */
@@ -169,6 +169,18 @@ const HELP: Record<Command, CommandHelp> = {
       'toolmenu auth list',
     ],
     exits: ['0  done (logout of a URL with no login is not an error)', '2  the login failed, or bad usage'],
+  },
+  explain: {
+    summary: 'say what a rule checks, its default level and how to change it',
+    usage: ['toolmenu explain <rule>', 'toolmenu explain'],
+    about: [
+      'The rule as a finding names it (naming/vague-id), or the part after the slash (vague-id).',
+      'Without a rule, lists every rule by the command that reports it. Offline.',
+    ],
+    own: [],
+    shared: ['format', 'json'],
+    examples: ['toolmenu explain naming/vague-id', 'toolmenu explain handle-lifetime', 'toolmenu explain --json diff/param-required'],
+    exits: ['0  explained', "2  no such rule (the closest ones are named), or bad usage"],
   },
 };
 
