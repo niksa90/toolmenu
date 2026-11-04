@@ -540,6 +540,29 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           done();
           break;
         }
+        if (/\btimed out after\b.*\bnever answered\b/.test(why)) {
+          // The server is running but answers nothing, tools/list included: every later
+          // step would wait out its timeout too (fulcra-context-mcp polls a device-code
+          // sign-in inside the call). One finding, and the run stops, as for a rate limit.
+          limitedAt = index;
+          // The call's own timeout at this step is the same cause: said by this finding.
+          for (const [key, f] of failures) {
+            if (!f.timedOutMs || f.steps.at(-1) !== index) continue;
+            f.steps.pop();
+            if (!f.steps.length) failures.delete(key);
+          }
+          const last = scenario.steps.length;
+          raw.push({
+            rule: 'session/step-failed',
+            severity: 'error',
+            step: index,
+            ...(step.kind === 'call' ? { tool: step.tool } : {}),
+            message: `The server stopped answering at step ${index} (${label}): after it, ${why.replace(/\.$/, '')}. The run stopped there${index < last ? `: steps ${index + 1}–${last} weren't run` : ''}.`,
+            fix: 'A tool that waits for something outside the call (a sign-in in a browser, a device code, input on a terminal) blocks every request after it. The server\'s stderr may say what it waits for: sign in before the run, or pass credentials (--env), and rerun.',
+          });
+          done();
+          break;
+        }
         raw.push({
           rule: 'session/step-failed',
           severity: 'error',
