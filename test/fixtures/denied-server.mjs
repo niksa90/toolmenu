@@ -10,6 +10,8 @@ function build() {
   reg('get_self', async () => text(JSON.stringify({ status: 401, object: 'error', code: 'unauthorized', message: 'API token is invalid.' })));
   reg('list_users', async () => text(JSON.stringify({ status: 401, object: 'error', code: 'unauthorized', message: 'API token is invalid.' })));
   reg('list_codes', async () => text(process.env.ALL_DENIED ? '{"error":{"code":"forbidden"}}' : JSON.stringify({ codes: [{ code: 401, meaning: 'Unauthorized' }], status: 'ok' })));
+  // A 500 passed on the same way: not an auth failure, still not isError.
+  if (process.env.SERVER_ERROR) reg('get_report', async () => text(JSON.stringify({ error: { status: 500, message: 'Internal error' } })));
   return server;
 }
 serveStdio(build);

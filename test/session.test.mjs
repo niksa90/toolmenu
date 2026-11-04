@@ -995,3 +995,21 @@ test('deniedAnswer: a fetched page\'s status isn\'t an auth error; one that says
   assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"error":null,"body":"x"}' }] }), undefined, 'an empty error field');
   assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"error":0}' }] }), undefined);
 });
+
+// 0.22: the same answers, reported against the server: a client that reads isError takes them for successes.
+test('session/error-not-flagged: an API\'s HTTP error passed on as a plain answer, auth or not; not for a tool that fetches a URL', async () => {
+  const { structuredError } = await import('../dist/failures.js');
+  assert.deepEqual(structuredError({ content: [{ type: 'text', text: '{"error":{"status":500,"message":"Internal error"}}' }] }), { status: 500, message: 'Internal error', auth: false, said: 'HTTP 500: Internal error' });
+  assert.equal(structuredError({ content: [{ type: 'text', text: '{"status":404}' }] }), undefined, 'a status alone');
+  assert.equal(structuredError({ content: [{ type: 'text', text: '{"status":200,"object":"error"}' }] }), undefined, 'not an HTTP error status');
+  const server = join(FIXTURES, 'denied-server.mjs');
+  const r = JSON.parse((await run(['session', '--auto', '--json', '--processes', '1', '--env', 'SERVER_ERROR=1', '--', process.execPath, server])).stdout);
+  const [f] = r.findings.filter((x) => x.rule === 'session/error-not-flagged');
+  assert.equal(f.severity, 'warn');
+  assert.equal(f.confidence, 'unsure');
+  assert.match(f.message, /^3 tools answered with an HTTP error from the API behind them, passed on as a plain result, not marked isError\./);
+  assert.ok(f.detail.some((d) => /get_report: HTTP 500: Internal error/.test(d)));
+  // The 500 isn't a setup failure: untested counts only the 401s.
+  assert.match(r.findings.find((x) => x.rule === 'session/untested').message, / on authentication\./);
+  assert.doesNotMatch(r.findings.find((x) => x.rule === 'session/untested').detail.join(' '), /get_report|500/);
+});

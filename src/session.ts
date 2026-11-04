@@ -6,7 +6,7 @@ import { AfterInputError, callWithInput, MAX_CONTINUATIONS, MAX_ROUNDS, type Inp
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
-import { classifyFailure, deniedAnswer, errorWords, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
+import { classifyFailure, errorWords, structuredError, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
@@ -186,6 +186,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   // --create-handles: the handles creating tools returned, by kind, and what went wrong on the way.
   const created = new Map<string, { tool: string; value: string }>();
   const roundtrips: { step: number; tool: string; kind: string; creator?: string; problem: string }[] = [];
+  // HTTP errors passed on as plain answers, not isError (session/error-not-flagged).
+  const unflagged: { step: number; tool: string; said: string }[] = [];
   // --auto's calls with a made-up handle that got a protocol error back (session/handle-error).
   const handleErrors: { step: number; tool: string; probe: import('./rules/handles.js').HandleProbe; value: unknown; message: string; code: number }[] = [];
   // The main process runs with a pinned hash seed, and so does every scope probe:
@@ -461,14 +463,16 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
                 if (!SETUP_FAILURES.has(record.failure)) fail('session/tool-error', 'warn', index, step, text, record.failure);
               }
             } else if (!call.input.rounds && !step.creates) {
-              // An auth error passed on as an answer (not isError): the call reached the
+              // An HTTP error passed on as an answer (not isError): a client that reads
+              // isError takes it for a success. An auth one also means the call reached the
               // server but not the API behind it, so it tested no more than a refused one.
               // A tool that takes a URL fetches it: what its answer says (a status, "Forbidden") is the page's.
               const fetches = Object.keys(tool?.inputSchema?.properties ?? {}).some((p) => /^(?:url|uri|href|endpoint|link)s?$/i.test(p) || /_url$|Url$/.test(p));
-              const denied = fetches ? undefined : deniedAnswer(result);
-              if (denied) {
-                record.failure = 'auth';
-                record.note = `the tool answered, not as an error, with the API's ${clip(denied, 120)}`;
+              const passedOn = fetches ? undefined : structuredError(result);
+              if (passedOn) {
+                unflagged.push({ step: index, tool: step.tool, said: passedOn.said });
+                record.note = `the tool answered, not as an error, with the API's ${clip(passedOn.said, 120)}`;
+                if (passedOn.auth) record.failure = 'auth';
               }
             }
           }
@@ -647,6 +651,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     raw.push(...inputFindings(inputs, answer));
     raw.push(...handleErrorFindings(handleErrors));
     raw.push(...roundtripFindings(roundtrips));
+    raw.push(...unflaggedFindings(unflagged));
     if (explained.length) raw.push(knownVariance(explained));
     if (onWord.length) raw.push(onTheirWord(onWord, options.auto !== undefined));
     raw.push(...untested(steps, target));
@@ -1612,6 +1617,29 @@ function inputNote(input: InputTrace, answer: Elicitation): string {
     default:
       return asked;
   }
+}
+
+/**
+ * Tools that passed an API's HTTP error on as a plain answer, not isError: one finding
+ * for the run. The spec reports tool execution errors, API failures among them, in
+ * the result with isError: true; a client that reads it (retry logic, its UI, a check
+ * like this one) takes the call for a success.
+ */
+function unflaggedFindings(list: { step: number; tool: string; said: string }[]): Raw[] {
+  if (!list.length) return [];
+  const tools = [...new Set(list.map((u) => u.tool))];
+  return [
+    {
+      rule: 'session/error-not-flagged',
+      severity: 'warn',
+      // Read from the answer's shape: a tool may return an error object as its data.
+      confidence: 'unsure',
+      ...(tools.length === 1 ? { tool: tools[0] } : {}),
+      message: `${tools.length === 1 ? tools[0] : `${tools.length} tools`} answered with an HTTP error from the API behind ${tools.length === 1 ? 'it' : 'them'}, passed on as a plain result, not marked isError. The spec reports tool errors, API failures among them, with isError: true; a client that reads it (retries, its UI, a check like this one) takes the call for a success.`,
+      detail: list.slice(0, 8).map((u) => `step ${u.step}, ${u.tool}: ${clip(u.said, 120)}`).concat(list.length > 8 ? [`… and ${list.length - 8} more`] : []),
+      fix: 'Return the API\'s error with isError: true (in the official SDKs: throw from the handler, or return { isError: true, content }), keeping its message for the model.',
+    },
+  ];
 }
 
 /**
