@@ -37,6 +37,7 @@ export class Trace {
   readonly stderrTail: string[] = [];
   stderrLines = 0;
   private stderrPartial = '';
+  private ownWarning = false;
 
   send(method: string): void {
     this.sent.push({ method, at: Date.now() });
@@ -70,6 +71,15 @@ export class Trace {
   private pushStderr(line: string): void {
     const text = clean(line, 240);
     if (!text) return;
+    // Node 22 warns about NODE_USE_ENV_PROXY, which toolmenu sets for stdio servers
+    // behind a proxy (connect.ts): toolmenu's doing, not the server's words.
+    if (/^\(node:\d+\) \[UNDICI-EHPA\] Warning: EnvHttpProxyAgent is experimental/.test(text)) {
+      this.ownWarning = true;
+      return;
+    }
+    const hint = this.ownWarning && text.startsWith('(Use `node --trace-warnings');
+    this.ownWarning = false;
+    if (hint) return;
     this.stderrLines++;
     this.stderrTail.push(text);
     if (this.stderrTail.length > STDERR_LINES) this.stderrTail.shift();

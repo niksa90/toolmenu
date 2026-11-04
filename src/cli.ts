@@ -24,6 +24,7 @@ import { existingMessage, initReport, planInit, shellWord, writeInit } from './i
 import { SEVERITY_RANK, type MenuTool, type Severity } from './types.js';
 import { VERSION } from './version.js';
 import { CLI_OPTIONS } from './options.js';
+import { formatScan, ListError, loadList, scan, scanExit } from './scan.js';
 import { explain, findRule, formatExplained, listRules, ruleDocs } from './rule-docs.js';
 import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type Command } from './help.js';
 
@@ -95,6 +96,41 @@ export async function main(argv: string[]): Promise<number> {
   const answering = (t: Target): Target => ({ ...t, elicitation });
   const processes = values.processes !== undefined ? Number(values.processes) : config.processes ?? 2;
   if (!Number.isInteger(processes) || processes < 1) throw new UsageError('--processes must be a whole number, 1 or more');
+
+  if (sub === 'scan') {
+    if (command) throw new UsageError('scan reads its servers from a list file; give the file, not a command.');
+    if (rest.length !== 1) throw new UsageError('scan needs one list: an MCP client config (mcp.json) or a text file with a server per line.');
+    const concurrency = values.concurrency !== undefined ? Number(values.concurrency) : 4;
+    if (!Number.isInteger(concurrency) || concurrency < 1) throw new UsageError('--concurrency must be a whole number, 1 or more');
+    let entries;
+    try {
+      entries = await loadList(rest[0]);
+    } catch (error) {
+      if (error instanceof ListError) throw new UsageError(error.message);
+      throw error;
+    }
+    const withProtocol = entries.map((e) => (e.target && protocol !== 'auto' ? { ...e, target: { ...e.target, protocol } } : e));
+    const outDir = values['out-dir'];
+    if (outDir) await mkdir(outDir, { recursive: true });
+    const tty = process.stderr.isTTY;
+    const rows = await scan(withProtocol, {
+      timeoutMs,
+      processes,
+      concurrency,
+      rules: config.rules,
+      ignore: config.ignore,
+      descriptionLimit: config.descriptionLimit,
+      fullDescriptions: config.fullDescriptions,
+      ...(config.client ? { client: config.client } : {}),
+      onDone: (row, done, total) => {
+        if (tty) process.stderr.write(`\r\x1b[K  ${done}/${total}  ${row.name}`);
+      },
+    });
+    if (tty) process.stderr.write('\r\x1b[K');
+    if (outDir) for (const r of rows) if (r.menu) await writeFile(join(outDir, `${r.name.replace(/[^\w.@-]+/g, '_')}.json`), JSON.stringify(r.menu, null, 2) + '\n');
+    process.stdout.write(formatScan(rows, format, rest[0]) + '\n');
+    return scanExit(rows, failOn);
+  }
 
   if (sub === 'diff') {
     if (command) throw new UsageError('diff compares two menu files; it doesn\'t start a server. Run snapshot first.');

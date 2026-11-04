@@ -5,7 +5,7 @@
  */
 import { VERSION } from './version.js';
 
-export const COMMANDS = ['init', 'snapshot', 'diff', 'session', 'history', 'auth', 'explain'] as const;
+export const COMMANDS = ['init', 'snapshot', 'diff', 'session', 'history', 'auth', 'scan', 'explain'] as const;
 export type Command = (typeof COMMANDS)[number];
 
 /** Every option, once: its spelling and what it does (continuation lines are indented by the renderer). */
@@ -56,6 +56,8 @@ const OPTIONS: Record<string, [string, string[]]> = {
   'init-out': ['--out <path>', ['where to write the baseline menu (default: menu.json)']],
   'with-session': ['--with-session', ['the workflow also runs session --auto (calls read-only tools)']],
   port: ['--port <n>', ['loopback port for the login redirect (default: 33418)']],
+  concurrency: ['--concurrency <n>', ['servers checked at a time (default: 4)']],
+  'out-dir': ['--out-dir <dir>', ["write each server's menu file there, as <name>.json (default: none)"]],
   'no-browser': ['--no-browser', ["don't open a browser: print the login URL, open it on any device, and paste", 'back the address the browser ends on (over SSH, in a container, on a remote box)']],
   scope: ['--scope <scopes>', ["scopes to ask for (default: the server's)"]],
   'client-id': ['--client-id <id>', ['a pre-registered client, for servers without dynamic registration']],
@@ -169,6 +171,21 @@ const HELP: Record<Command, CommandHelp> = {
       'toolmenu auth list',
     ],
     exits: ['0  done (logout of a URL with no login is not an error)', '2  the login failed, or bad usage'],
+  },
+  scan: {
+    summary: 'snapshot every server in an MCP client config or a list, side by side',
+    usage: ['toolmenu scan [options] <list>'],
+    about: [
+      'The list is an MCP client config (Claude Desktop, Claude Code .mcp.json, Cursor,',
+      'VS Code: the mcpServers or servers object, ${VAR} filled from the environment), or a',
+      'text file with one server per line: a URL or a command, optionally "name<TAB>" first.',
+      'Runs snapshot on each (nothing written unless --out-dir). A server that could not be',
+      'started or read is a row that says why, and makes the exit code 2: it was not checked.',
+    ],
+    own: ['concurrency', 'out-dir'],
+    shared: ['config', 'format', 'json', 'fail-on', 'protocol', 'timeout', 'processes'],
+    examples: ['toolmenu scan ~/Library/Application\\ Support/Claude/claude_desktop_config.json', 'toolmenu scan .mcp.json --format markdown', 'toolmenu scan servers.txt --concurrency 8 --out-dir menus'],
+    exits: ['0  every server checked, no findings at or above --fail-on', '1  findings at or above --fail-on', "2  a server wasn't checked (couldn't start, couldn't connect, a variable not set), or bad usage"],
   },
   explain: {
     summary: 'say what a rule checks, its default level and how to change it',

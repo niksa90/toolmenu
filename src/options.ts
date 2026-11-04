@@ -4,6 +4,8 @@
  */
 export const CLI_OPTIONS = {
   out: { type: 'string' },
+  'out-dir': { type: 'string' },
+  concurrency: { type: 'string' },
   'no-write': { type: 'boolean' },
   routes: { type: 'string' },
   config: { type: 'string' },

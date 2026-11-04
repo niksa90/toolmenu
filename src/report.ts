@@ -99,7 +99,7 @@ function mdBreakdown(menu: Menu): string[] {
   return breakdownMarkdown(breakdown(menu), menu.tools.length);
 }
 
-function findingLines(findings: Finding[]): string[] {
+export function findingLines(findings: Finding[]): string[] {
   const lines: string[] = [];
   for (const f of findings) {
     lines.push(`${LABEL[f.severity]}  ${f.rule}${unsureMark(f)}`);
@@ -118,7 +118,7 @@ function summaryLine(findings: Finding[]): string {
   return `${mark} ${plural(c.error, 'error')}, ${plural(c.warn, 'warning')}, ${c.info} info`;
 }
 
-function githubLines(findings: Finding[]): string[] {
+export function githubLines(findings: Finding[]): string[] {
   return findings.map((f) => {
     const level = f.severity === 'error' ? 'error' : f.severity === 'warn' ? 'warning' : 'notice';
     const body = [f.message, ...(f.detail ?? []), ...(f.fix ? [`→ Next: ${f.fix}`] : [])].join('\n').replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
@@ -543,7 +543,7 @@ function mdCell(text: string): string {
   return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
 }
 
-function mdFindings(findings: Finding[]): string[] {
+export function mdFindings(findings: Finding[]): string[] {
   if (findings.length === 0) return ['No findings.'];
   const row = (f: Finding) =>
     `| ${f.severity === 'error' ? '**error**' : f.severity} | \`${f.rule}\`${f.confidence === 'unsure' ? ' · _unsure_' : ''} | ${mdCell([f.message, ...(f.detail ?? [])].join(' · '))}${f.fix ? `<br>**→ Next:** ${mdCell(f.fix)}` : ''} |`;
