@@ -6,7 +6,10 @@ import { build } from './forms.mjs';
 // limit: answer every POST after the first `limit` with 429, the way a per-IP rate
 // limiter does, for `resetAfterMs` after the first refusal and not again (for good, if unset).
 // json: the refusal as a JSON-RPC error body, as some servers send it.
-export async function start({ factory = build, limit = Infinity, resetAfterMs, json = false } = {}) {
+// auth: { token, onBad }: a request without `Authorization: Bearer <token>` gets 401 when
+// it has no Authorization at all; with a wrong one, 401 too (onBad: 'refuse') or the
+// menu anyway (onBad: 'serve', the way a server that only checks at call time does).
+export async function start({ factory = build, limit = Infinity, resetAfterMs, json = false, auth } = {}) {
   const handler = createMcpHandler(factory);
   const seen = { authorization: [], posts: 0, refused: 0 };
   let refusingSince;
@@ -25,6 +28,10 @@ export async function start({ factory = build, limit = Infinity, resetAfterMs, j
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     seen.authorization.push(req.headers.authorization);
+    if (auth && req.headers.authorization !== `Bearer ${auth.token}` && (!req.headers.authorization || auth.onBad !== 'serve')) {
+      res.writeHead(401, { 'content-type': 'application/json', 'www-authenticate': 'Bearer' }).end(JSON.stringify({ error: 'invalid_token' }));
+      return;
+    }
     const headers = new Headers();
     for (const [k, v] of Object.entries(req.headers)) if (typeof v === 'string') headers.set(k, v);
     const request = new Request(`http://${req.headers.host}${req.url}`, {

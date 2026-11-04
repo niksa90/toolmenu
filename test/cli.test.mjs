@@ -250,3 +250,38 @@ test('stdio servers get this machine\'s proxy and CA settings, and nothing else 
   await run(['snapshot', '--out', own, '--processes', '1', '--env', 'HTTPS_PROXY=http://other.test:8080', '--', process.execPath, join(FIXTURES, 'env-server.mjs')], { env: { ...env, NODE_USE_ENV_PROXY: '' } });
   assert.equal(JSON.parse(JSON.parse(readFileSync(own, 'utf8')).tools[0].description).HTTPS_PROXY, 'http://other.test:8080');
 });
+
+// 0.21: Atlassian Rovo answered any Authorization header with a menu, not 401.
+test('auth/invalid-accepted: a server that serves a menu to an invalid credential, not one that refuses it', async () => {
+  const serving = await start({ auth: { token: 'good', onBad: 'serve' } });
+  const refusing = await start({ auth: { token: 'good', onBad: 'refuse' } });
+  try {
+    const snap = async (url, extra = []) => JSON.parse((await run(['snapshot', '--no-write', '--json', '--no-auth', ...extra, url])).stdout);
+    const bad = await snap(serving.url, ['--header', 'Authorization: Bearer good']);
+    const [f] = bad.findings.filter((x) => x.rule === 'auth/invalid-accepted');
+    assert.equal(f.severity, 'warn');
+    assert.match(f.message, /^With an invalid credential in place of this run's, the server served the same \d+ tools instead of refusing \(401\)\./);
+    // The probe sent a credential that can't be valid, in the same scheme.
+    assert.ok(serving.seen.authorization.includes('Bearer toolmenu-invalid-credential'));
+    const good = await snap(refusing.url, ['--header', 'Authorization: Bearer good']);
+    assert.deepEqual(good.findings.filter((x) => x.rule === 'auth/invalid-accepted'), []);
+    // --processes 1 opens no extra connection, this probe included.
+    const before = refusing.seen.authorization.length;
+    await snap(refusing.url, ['--header', 'Authorization: Bearer good', '--processes', '1']);
+    assert.ok(!refusing.seen.authorization.slice(before).includes('Bearer toolmenu-invalid-credential'));
+  } finally {
+    await serving.close();
+    await refusing.close();
+  }
+});
+
+test('withInvalidCredential: same scheme, every credential header, other headers kept', async () => {
+  const { withInvalidCredential } = await import('../dist/snapshot.js');
+  const t = withInvalidCredential({ kind: 'http', url: 'https://x.test/mcp', headers: { Authorization: 'Basic dTpw', 'X-Api-Key': 'k', 'X-Team': 'a' } });
+  assert.equal(t.headers.Authorization, `Basic ${Buffer.from('toolmenu-invalid:toolmenu-invalid').toString('base64')}`);
+  assert.equal(t.headers['X-Api-Key'], 'toolmenu-invalid-credential');
+  assert.equal(t.headers['X-Team'], 'a');
+  assert.equal(t.noAuth, true);
+  // A stored login (no header of its own) gets an invalid Bearer token.
+  assert.equal(withInvalidCredential({ kind: 'http', url: 'https://x.test/mcp' }).headers.Authorization, 'Bearer toolmenu-invalid-credential');
+});
