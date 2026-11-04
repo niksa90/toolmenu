@@ -84,13 +84,21 @@ export function handleFromResult(result: { structuredContent?: unknown; content?
     }
     // At the top, or right under a wrapper ({"data":{"id":…}}), never under another thing's key (user.id).
     const bare = (v: unknown): string | undefined => {
-      if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
-      for (const [k, x] of Object.entries(v as Record<string, unknown>)) if (norm(k) === 'id' || norm(k) === 'handle') return scalar(x);
+      // A one-item list is the item ({"results":[{"id":…}]}); a longer one names no single handle.
+      const one = Array.isArray(v) ? (v.length === 1 ? v[0] : undefined) : v;
+      if (!one || typeof one !== 'object' || Array.isArray(one)) return undefined;
+      for (const [k, x] of Object.entries(one as Record<string, unknown>)) {
+        const found = norm(k) === 'id' || norm(k) === 'handle' ? scalar(x) : undefined;
+        if (found) return found;
+      }
       return undefined;
     };
     const top = bare(root);
     if (top || !root || typeof root !== 'object' || Array.isArray(root)) return top;
-    for (const [k, x] of Object.entries(root as Record<string, unknown>)) if (WRAPPERS.has(norm(k)) || norm(k) === kind) return bare(x);
+    for (const [k, x] of Object.entries(root as Record<string, unknown>)) {
+      const found = WRAPPERS.has(norm(k)) || norm(k) === kind ? bare(x) : undefined;
+      if (found) return found;
+    }
     return undefined;
   };
   const structured = find(result.structuredContent);

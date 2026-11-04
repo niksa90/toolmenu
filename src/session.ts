@@ -463,9 +463,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             } else if (!call.input.rounds && !step.creates) {
               // An auth error passed on as an answer (not isError): the call reached the
               // server but not the API behind it, so it tested no more than a refused one.
-              // A tool that takes a URL fetches it: a 401 in its answer is the page's, not ours.
+              // A tool that takes a URL fetches it: a status in its answer is the page's.
               const fetches = Object.keys(tool?.inputSchema?.properties ?? {}).some((p) => /^(?:url|uri|href|endpoint|link)s?$/i.test(p) || /_url$|Url$/.test(p));
-              const denied = fetches ? undefined : deniedAnswer(result);
+              const denied = deniedAnswer(result, { fetches });
               if (denied) {
                 record.failure = 'auth';
                 record.note = `the tool answered, not as an error, with the API's ${clip(denied, 120)}`;

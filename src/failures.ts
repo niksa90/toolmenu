@@ -219,8 +219,9 @@ const DENIED_CODES = /^(?:unauthori[sz]ed|unauthenticated|forbidden|invalid_auth
  * as a plain result. Only a JSON object whose own status or code says so counts, not
  * "401" anywhere in the data. Says what it saw, or undefined.
  */
-export function deniedAnswer(result: { content?: unknown; structuredContent?: unknown }): string | undefined {
-  // (A tool that fetches a URL is skipped by the caller: its answer is the page's status.)
+export function deniedAnswer(result: { content?: unknown; structuredContent?: unknown }, options: { fetches?: boolean } = {}): string | undefined {
+  // A tool that fetches a URL (options.fetches) answers with the page's status: only an
+  // auth code (unauthorized, invalid_auth) counts there, never a status.
   const objects: unknown[] = [result.structuredContent];
   for (const c of Array.isArray(result.content) ? result.content : []) {
     const text = c && typeof c === 'object' && 'text' in c && typeof c.text === 'string' ? c.text.trim() : '';
@@ -240,8 +241,8 @@ export function deniedAnswer(result: { content?: unknown; structuredContent?: un
       const code = [r.code, r.error, r.type].find((x) => typeof x === 'string' && DENIED_CODES.test(x));
       // A status alone may be what the tool was asked to fetch ({"status":403,"body":…});
       // with it, the object has to say it's an error.
-      const isError = v !== o || r.object === 'error' || 'error' in r || typeof r.message === 'string';
-      if (code === undefined && (status === undefined || !isError)) continue;
+      const isError = v !== o || r.object === 'error' || (r.error !== undefined && r.error !== null && r.error !== false && r.error !== '') || typeof r.message === 'string';
+      if (code === undefined && (status === undefined || !isError || options.fetches)) continue;
       const message = typeof r.message === 'string' ? `: ${r.message}` : '';
       return `${status !== undefined ? `HTTP ${status}` : String(code)}${message}`;
     }

@@ -173,6 +173,8 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   const steps: Step[] = options.callsOnly ? [] : [{ kind: 'list' }];
   // --create-handles: the creating tool of each kind a probe takes, called first.
   const creators: { tool: MenuTool; kind: string; args: Record<string, unknown> }[] = [];
+  // Calls the plan makes, the final repeat aside: each creator is one, and each probe it serves is called twice.
+  const cost = () => chosen.length + creators.length + chosen.filter((c) => c.probe?.fromCreated).length;
   if (options.createHandles && modern) {
     for (const kind of [...new Set(chosen.filter((c) => c.probe).map((c) => c.probe!.kind))]) {
       if (!CREATABLE_KINDS.has(kind)) continue;
@@ -183,10 +185,24 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
       creators.push({ tool: creator, kind, args: filled.args });
       for (const c of chosen) if (c.probe?.kind === kind) c.probe = { ...c.probe, fromCreated: creator.name };
     }
-    // Within --max-calls: each creator is a call, and each probe it serves is called twice.
-    const cost = () => chosen.length + creators.length + chosen.filter((c) => c.probe?.fromCreated).length;
-    while (chosen.length && cost() > maxCalls) skipped.push({ tool: chosen.pop()!.tool.name, reason: 'over the call budget' });
-    for (let i = creators.length - 1; i >= 0; i--) if (!chosen.some((c) => c.probe?.kind === creators[i].kind)) creators.splice(i, 1);
+    // Within --max-calls. First the real-handle calls go (last first), each probe keeping
+    // its made-up call as without --create-handles, and a creator that serves none goes
+    // with them; only then whole calls.
+    const unused = () => {
+      for (let i = creators.length - 1; i >= 0; i--) if (!chosen.some((c) => c.probe?.fromCreated === creators[i].tool.name)) creators.splice(i, 1);
+    };
+    for (let i = chosen.length - 1; i >= 0 && cost() > maxCalls; i--) {
+      const probe = chosen[i].probe;
+      if (!probe?.fromCreated) continue;
+      chosen[i].probe = { param: probe.param, kind: probe.kind };
+      unused();
+    }
+    while (chosen.length && cost() > maxCalls) {
+      const c = chosen.pop()!;
+      // A tool called through its other candidate (its plain call beside an optional-handle probe) isn't skipped.
+      if (!chosen.some((x) => x.tool.name === c.tool.name)) skipped.push({ tool: c.tool.name, reason: 'over the call budget' });
+      unused();
+    }
     // Called on purpose now: not skipped.
     for (const c of creators) {
       const i = skipped.findIndex((x) => x.tool === c.tool.name);
@@ -218,7 +234,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     withValues: chosen.filter((c) => c.valued).map((c) => c.tool.name),
     skipped,
     ignored,
-    spent: chosen.length + creators.length + chosen.filter((c) => c.probe?.fromCreated).length,
+    spent: cost(),
     unlockValues: unlocks.reduce((n, u) => n + Math.min(u.values.length, MAX_UNLOCKS), 0),
   };
 }
@@ -479,6 +495,12 @@ export function scenarioYaml(plan: AutoPlan, serverName?: string): string {
         `  # --create-handles called ${step.tool} to create a ${step.creates} (a write); to replay it, set allow_writes: true and uncomment:`,
         `  # - call: ${step.tool}`,
         ...(Object.keys(step.args).length ? [`  #   args: ${JSON.stringify(step.args)}`] : []),
+      );
+    } else if (step.kind === 'call' && step.probe?.fromCreated) {
+      lines.push(
+        `  # --create-handles called ${step.tool} with the ${step.probe.kind} ${step.probe.fromCreated} returned (session/handle-roundtrip); to replay it, put one in:`,
+        `  # - call: ${step.tool}`,
+        `  #   args: ${JSON.stringify({ ...step.args, [step.probe.param]: 'TODO' })}`,
       );
     } else if (step.kind === 'call' && step.probe) {
       // A made-up handle is --auto's check, not a step to replay: as written it would fail as a step.

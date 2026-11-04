@@ -234,21 +234,52 @@ test('pastedRedirect: the whole address or its query; anything without a code or
   assert.equal(pastedRedirect('http://127.0.0.1:33418/callback'), undefined);
 });
 
-// 0.21, from review: stdin that ends (</dev/null, a closed pipe) fails the login at once.
-test('auth login --no-browser: stdin that ends before an address is pasted fails at once, not after the timeout', async () => {
+// 0.21, from review: stdin that ends (</dev/null, a script) says so, and the loopback can still finish the login.
+test('auth login --no-browser: stdin that ends says nothing can be pasted, and waits for the loopback instead', async () => {
   isolated();
   const server = await start();
   try {
     const { spawn } = await import('node:child_process');
-    const started = Date.now();
-    const child = spawn(process.execPath, [CLI, 'auth', 'login', '--no-browser', '--port', String(port()), server.url], { env: process.env });
+    const p = port();
+    const child = spawn(process.execPath, [CLI, 'auth', 'login', '--no-browser', '--port', String(p), server.url], { env: process.env });
     child.stdin.end();
     let stderr = '';
-    child.stderr.on('data', (d) => (stderr += d));
-    const code = await new Promise((r) => child.on('close', r));
-    assert.equal(code, 2, stderr);
-    assert.match(stderr, /Nothing was pasted: stdin ended before an address came\./);
-    assert.ok(Date.now() - started < 30_000);
+    const said = new Promise((resolve) => child.stderr.on('data', (d) => {
+      stderr += d;
+      if (/stdin ended/.test(stderr) && /\/authorize\S*/.test(stderr)) resolve();
+    }));
+    await said;
+    assert.match(stderr, /Nothing can be pasted here \(stdin ended\): waiting for the browser to reach http:\/\/127\.0\.0\.1:\d+\/callback instead\./);
+    // The browser, on this machine: follows the authorization URL to the loopback.
+    const url = /https?:\/\/\S+\/authorize\S*/.exec(stderr)[0];
+    const r = await fetch(url, { redirect: 'manual' });
+    await fetch(r.headers.get('location'));
+    const code = await new Promise((resolve) => child.on('close', resolve));
+    assert.equal(code, 0, stderr);
+    assert.equal(hasLogin(server.url), true);
+  } finally {
+    await server.close();
+  }
+});
+
+test('auth login --no-browser: a bad line, then the address, piped in: the second line isn\'t lost', async () => {
+  isolated();
+  const server = await start();
+  try {
+    const { spawn } = await import('node:child_process');
+    const child = spawn(process.execPath, [CLI, 'auth', 'login', '--no-browser', '--port', String(port()), server.url], { env: process.env });
+    let stderr = '';
+    child.stderr.on('data', async (d) => {
+      stderr += d;
+      const m = /https?:\/\/\S+\/authorize\S*/.exec(stderr);
+      if (m && !child.stdin.writableEnded) {
+        child.stdin.end(`junk\n${(await fetch(m[0], { redirect: 'manual' })).headers.get('location')}\n`);
+      }
+    });
+    const code = await new Promise((resolve) => child.on('close', resolve));
+    assert.equal(code, 0, stderr);
+    assert.match(stderr, /That has no code= or error= in it/);
+    assert.doesNotMatch(stderr, /Nothing can be pasted/);
   } finally {
     await server.close();
   }

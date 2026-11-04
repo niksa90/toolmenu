@@ -280,22 +280,20 @@ export function pastedRedirect(text: string): URLSearchParams | undefined {
 }
 
 /**
- * One line from stdin, for --no-browser. Fails when stdin ends first (</dev/null, a
- * closed pipe, Ctrl-D) instead of waiting out the login; `signal` closes it when the
- * loopback redirect won, so stdin doesn't keep the process alive.
+ * Lines from stdin, for --no-browser: one reader for the whole login, so a line
+ * already buffered after a bad paste isn't lost. Ends (undefined) when stdin does;
+ * `signal` closes it when the loopback redirect won, so stdin doesn't keep the
+ * process alive.
  */
-async function readLine(signal?: AbortSignal): Promise<string> {
+async function* stdinLines(signal: AbortSignal): AsyncGenerator<string> {
   const { createInterface } = await import('node:readline');
   const rl = createInterface({ input: process.stdin });
   const stop = () => rl.close();
-  signal?.addEventListener('abort', stop, { once: true });
+  signal.addEventListener('abort', stop, { once: true });
   try {
-    return await new Promise<string>((resolve, reject) => {
-      rl.once('line', resolve);
-      rl.once('close', () => reject(new Error('Nothing was pasted: stdin ended before an address came.\n→ Next: Run toolmenu auth login --no-browser in a terminal, and paste the address the browser ends on.')));
-    });
+    for await (const line of rl) yield line;
   } finally {
-    signal?.removeEventListener('abort', stop);
+    signal.removeEventListener('abort', stop);
     rl.close();
   }
 }
@@ -329,12 +327,24 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
     });
     // --no-browser: the loopback redirect, or the address pasted back, whichever comes first.
     const reading = new AbortController();
+    const retry = () => process.stderr.write(`That has no code= or error= in it: paste the whole address the browser ended on (http://127.0.0.1:${port}/callback?code=…).\n> `);
     const pasted = async (): Promise<URLSearchParams> => {
-      for (;;) {
-        const params = pastedRedirect(await (options.paste ?? (() => readLine(reading.signal)))());
-        if (params) return params;
-        process.stderr.write(`That has no code= or error= in it: paste the whole address the browser ended on (http://127.0.0.1:${port}/callback?code=…).\n> `);
+      if (options.paste) {
+        for (;;) {
+          const params = pastedRedirect(await options.paste());
+          if (params) return params;
+          retry();
+        }
       }
+      for await (const line of stdinLines(reading.signal)) {
+        const params = pastedRedirect(line);
+        if (params) return params;
+        retry();
+      }
+      // stdin ended (</dev/null, a script): nothing can be pasted, but the browser may
+      // still reach the loopback (SSH with the port forwarded). Said, then left to it.
+      if (!reading.signal.aborted) process.stderr.write(`\nNothing can be pasted here (stdin ended): waiting for the browser to reach http://127.0.0.1:${port}/callback instead.\n`);
+      return new Promise<URLSearchParams>(() => {});
     };
     // Each login discovers the authorization server afresh (a server may have
     // moved); the state is then kept for the callback leg's check.
