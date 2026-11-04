@@ -269,10 +269,12 @@ test('auth login --no-browser: a bad line, then the address, piped in: the secon
     const { spawn } = await import('node:child_process');
     const child = spawn(process.execPath, [CLI, 'auth', 'login', '--no-browser', '--port', String(port()), server.url], { env: process.env });
     let stderr = '';
+    let sent = false;
     child.stderr.on('data', async (d) => {
       stderr += d;
       const m = /https?:\/\/\S+\/authorize\S*/.exec(stderr);
-      if (m && !child.stdin.writableEnded) {
+      if (m && !sent) {
+        sent = true;
         child.stdin.end(`junk\n${(await fetch(m[0], { redirect: 'manual' })).headers.get('location')}\n`);
       }
     });

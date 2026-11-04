@@ -168,7 +168,8 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   }
   candidates.sort((x, y) => x.rank - y.rank);
   const chosen = candidates.slice(0, maxCalls);
-  for (const c of candidates.slice(maxCalls)) skipped.push({ tool: c.tool.name, reason: 'over the call budget' });
+  // A tool also called through its other candidate (a plain call beside an optional-handle probe) isn't skipped.
+  for (const c of candidates.slice(maxCalls)) if (!chosen.some((x) => x.tool.name === c.tool.name)) skipped.push({ tool: c.tool.name, reason: 'over the call budget' });
 
   const steps: Step[] = options.callsOnly ? [] : [{ kind: 'list' }];
   // --create-handles: the creating tool of each kind a probe takes, called first.
@@ -200,7 +201,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     while (chosen.length && cost() > maxCalls) {
       const c = chosen.pop()!;
       // A tool called through its other candidate (its plain call beside an optional-handle probe) isn't skipped.
-      if (!chosen.some((x) => x.tool.name === c.tool.name)) skipped.push({ tool: c.tool.name, reason: 'over the call budget' });
+      if (!chosen.some((x) => x.tool.name === c.tool.name) && !skipped.some((x) => x.tool === c.tool.name)) skipped.push({ tool: c.tool.name, reason: 'over the call budget' });
       unused();
     }
     // Called on purpose now: not skipped.

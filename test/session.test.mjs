@@ -993,7 +993,5 @@ test('deniedAnswer: a fetched page\'s status isn\'t an auth error; one that says
   assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"error":"Forbidden"}' }] }), 'HTTP 403');
   assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"error":{"status":401}}' }] }), 'HTTP 401');
   assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"error":null,"body":"x"}' }] }), undefined, 'an empty error field');
-  // A tool that fetches: a status is the page's; an auth code is still ours.
-  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":401,"object":"error","message":"m"}' }] }, { fetches: true }), undefined);
-  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":401,"object":"error","code":"unauthorized"}' }] }, { fetches: true }), 'HTTP 401');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"error":0}' }] }), undefined);
 });

@@ -207,6 +207,7 @@ test('--create-handles: within --max-calls; the saved scenario keeps the creator
   assert.equal(handleFromResult({ structuredContent: { owner: { id: 'u1' } } }, 'session'), undefined);
   assert.equal(handleFromResult({ structuredContent: { result: 'created', data: { id: 's1' } } }, 'session'), 's1');
   assert.equal(handleFromResult({ structuredContent: { results: [{ id: 's1' }] } }, 'session'), 's1');
+  assert.equal(handleFromResult({ structuredContent: [{ id: 'user-7' }] }, 'session'), undefined, 'a list at the top');
   assert.equal(handleFromResult({ structuredContent: { id: null, handle: 'h1' } }, 'session'), 'h1');
   // A budget too small for the real-handle calls keeps the made-up probes, as without --create-handles.
   const one = { ...menuOf([tool('start_session', []), tool('a_read', [], { annotations: { readOnlyHint: true } }), tool('status', ['session_id'], { annotations: { readOnlyHint: true } })]), server: { name: 's', protocolVersion: '2026-07-28', era: 'modern' } };
