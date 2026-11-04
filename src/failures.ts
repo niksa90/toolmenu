@@ -209,3 +209,38 @@ export function setupFailureAdvice(classes: Iterable<FailureClass>, transport: '
   if (set.has('network')) steps.push('If the server calls an upstream API, check this machine can reach it (DNS, proxy, firewall).');
   return { fix: steps.join(' ') || 'Check the quoted errors: they came from before the tool ran.', confidence: 'unsure' };
 }
+
+const DENIED_CODES = /^(?:unauthori[sz]ed|unauthenticated|forbidden|invalid_auth|invalid_token|not_authed|authentication_(?:required|failed)|permission_denied)$/i;
+
+/**
+ * A result not marked isError whose content is an HTTP auth error in structured form:
+ * the API the tool calls said 401 or 403 and the server passed the body on as an
+ * answer. Notion's server returns `{"status":401,"object":"error","code":"unauthorized"}`
+ * as a plain result. Only a JSON object whose own status or code says so counts, not
+ * "401" anywhere in the data. Says what it saw, or undefined.
+ */
+export function deniedAnswer(result: { content?: unknown; structuredContent?: unknown }): string | undefined {
+  const objects: unknown[] = [result.structuredContent];
+  for (const c of Array.isArray(result.content) ? result.content : []) {
+    const text = c && typeof c === 'object' && 'text' in c && typeof c.text === 'string' ? c.text.trim() : '';
+    if (!text.startsWith('{')) continue;
+    try {
+      objects.push(JSON.parse(text));
+    } catch {
+      // not JSON
+    }
+  }
+  for (const o of objects) {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) continue;
+    for (const v of [o as Record<string, unknown>, (o as Record<string, unknown>).error]) {
+      if (!v || typeof v !== 'object' || Array.isArray(v)) continue;
+      const r = v as Record<string, unknown>;
+      const status = [r.status, r.statusCode, r.status_code, r.code].find((x) => x === 401 || x === 403 || x === '401' || x === '403');
+      const code = [r.code, r.error, r.type].find((x) => typeof x === 'string' && DENIED_CODES.test(x));
+      if (status === undefined && code === undefined) continue;
+      const message = typeof r.message === 'string' ? `: ${r.message}` : '';
+      return `${status !== undefined ? `HTTP ${status}` : String(code)}${message}`;
+    }
+  }
+  return undefined;
+}

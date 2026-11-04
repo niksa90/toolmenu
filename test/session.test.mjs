@@ -953,3 +953,21 @@ test('clip: a long path loses its middle, not the reason after it', () => {
   assert.equal(shortenPaths(url), url);
   assert.equal(shortenPaths('see /a/b/c'), 'see /a/b/c');
 });
+
+// 0.21, from the corpus run: Notion's server passes the API's 401 on as an answer.
+test('session: an auth error passed on as an answer, not isError, is a setup failure; data with 401 in it is not', async () => {
+  const { deniedAnswer } = await import('../dist/failures.js');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":401,"object":"error","code":"unauthorized","message":"bad"}' }] }), 'HTTP 401: bad');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"error":{"code":"invalid_auth"}}' }] }), 'invalid_auth');
+  assert.equal(deniedAnswer({ structuredContent: { statusCode: 403 } }), 'HTTP 403');
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"codes":[{"code":401}],"status":"ok"}' }] }), undefined);
+  assert.equal(deniedAnswer({ content: [{ type: 'text', text: 'HTTP 401 is the status for unauthorized' }] }), undefined);
+  const server = join(FIXTURES, 'denied-server.mjs');
+  const r = JSON.parse((await run(['session', '--auto', '--json', '--processes', '1', '--', process.execPath, server])).stdout);
+  const [f] = r.findings.filter((x) => x.rule === 'session/untested');
+  assert.equal(f.severity, 'warn', 'list_codes got through');
+  assert.match(f.message, /^3 of 4 tool calls failed before reaching the tool: 3 on authentication\./);
+  assert.match(f.detail[0], /the tool answered, not as an error, with the API's HTTP 401: API token is invalid\./);
+  const all = JSON.parse((await run(['session', '--auto', '--json', '--processes', '1', '--env', 'ALL_DENIED=1', '--', process.execPath, server])).stdout);
+  assert.equal(all.findings.find((x) => x.rule === 'session/untested').severity, 'error');
+});

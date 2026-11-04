@@ -6,7 +6,7 @@ import { AfterInputError, callWithInput, MAX_CONTINUATIONS, MAX_ROUNDS, type Inp
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
-import { classifyFailure, errorWords, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
+import { classifyFailure, deniedAnswer, errorWords, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
@@ -459,6 +459,14 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
                 record.failure = classifyFailure(text, { hadArguments: Object.keys(step.args).length > 0 });
                 // A setup failure is reported once, for the whole run (session/untested).
                 if (!SETUP_FAILURES.has(record.failure)) fail('session/tool-error', 'warn', index, step, text, record.failure);
+              }
+            } else if (!call.input.rounds && !step.creates) {
+              // An auth error passed on as an answer (not isError): the call reached the
+              // server but not the API behind it, so it tested no more than a refused one.
+              const denied = deniedAnswer(result);
+              if (denied) {
+                record.failure = 'auth';
+                record.note = `the tool answered, not as an error, with the API's ${clip(denied, 120)}`;
               }
             }
           }
