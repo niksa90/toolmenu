@@ -1030,8 +1030,9 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   parameter are skipped. The auth subset (`deniedAnswer`) keeps feeding
   `session/untested`.
 - **`menu/network-dependent`**: `offlineEnvironment()` sets HTTP(S)_PROXY and ALL_PROXY,
-  in both cases, to `http://127.0.0.1:9`, empties NO_PROXY, and sets
-  `NODE_USE_ENV_PROXY=1`; `--env` still wins. One more process is listed after the
+  in both cases, to `http://127.0.0.1:9`, sets NO_PROXY to loopback only (a server's
+  own local helper isn't the network: TabRunner's bridge), and sets
+  `NODE_USE_ENV_PROXY=1`. These win over `--env`, where a proxy would undo the cut. One more process is listed after the
   others. A menu that already differs between processes (`menu/process-variance`)
   only counts tools missing or added offline. A failed start is info, with a note
   when the command is a package runner (npx, uvx…), which may need the network itself.

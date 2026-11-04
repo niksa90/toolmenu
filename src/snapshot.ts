@@ -204,18 +204,21 @@ export function withInvalidCredential(target: Extract<Target, { kind: 'http' }>)
 /**
  * The proxy variables pointed at a port nothing listens on (the discard port): every
  * client that honours them (Python requests and httpx, Go, curl, Node's fetch with
- * NODE_USE_ENV_PROXY on 22.21+) fails to connect at once. NO_PROXY is emptied so
- * nothing is exempt. --env values for these still win: they're the user's.
+ * NODE_USE_ENV_PROXY on 22.21+) fails to connect at once. Loopback stays exempt: a
+ * server's own local helper (TabRunner's bridge on 127.0.0.1) isn't the network.
+ * These win over --env: a proxy given there would undo the cut.
  */
+const LOOPBACK = 'localhost,127.0.0.1,::1';
+
 export function offlineEnvironment(): Record<string, string> {
   const dead = 'http://127.0.0.1:9';
-  return { HTTPS_PROXY: dead, https_proxy: dead, HTTP_PROXY: dead, http_proxy: dead, ALL_PROXY: dead, all_proxy: dead, NO_PROXY: '', no_proxy: '', NODE_USE_ENV_PROXY: '1' };
+  return { HTTPS_PROXY: dead, https_proxy: dead, HTTP_PROXY: dead, http_proxy: dead, ALL_PROXY: dead, all_proxy: dead, NO_PROXY: LOOPBACK, no_proxy: LOOPBACK, NODE_USE_ENV_PROXY: '1' };
 }
 
 async function offlineProbe(target: Extract<Target, { kind: 'stdio' }>, timeoutMs: number): Promise<OfflineMenu> {
   const launcher = /(?:^|[\\/])(?:npx|uvx|bunx|pnpx|pipx)(?:\.cmd)?$/.test(target.command) || (/(?:^|[\\/])(?:pnpm|yarn|npm|bun)(?:\.cmd)?$/.test(target.command) && /^(?:dlx|exec|x)$/.test(target.args[0] ?? ''));
   try {
-    const m = await probeMenu(seeded({ ...target, env: { ...offlineEnvironment(), ...target.env } }, MAIN_SEED), timeoutMs);
+    const m = await probeMenu(seeded({ ...target, env: { ...target.env, ...offlineEnvironment() } }, MAIN_SEED), timeoutMs);
     return { tools: m.tools };
   } catch (error) {
     const e = error instanceof ConnectError ? error.headline : firstLine(error);

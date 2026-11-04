@@ -289,13 +289,25 @@ test('withInvalidCredential: same scheme, every credential header, other headers
 // 0.22, from the 0.21 corpus run: inite-visibility serves 3 tools offline, 10 online.
 test('snapshot --offline-check: a menu that depends on the network; a server that needs it to start; quiet when the same', async () => {
   const { createServer } = await import('node:http');
-  const remote = createServer((req, res) => res.end('ok'));
+  // "The network": a host only a proxy reaches. The main process is given the proxy
+  // (--env); the offline process gets the dead one in its place, --env or not.
+  const remote = createServer((req, res) => {
+    res.statusCode = /^remote\.test(:\d+)?$/.test(req.headers.host ?? '') ? 200 : 404;
+    res.end();
+  });
+  // Node's proxy agent tunnels plain HTTP too: answer CONNECT, then serve the tunnel here.
+  remote.on('connect', (req, sock) => {
+    sock.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+    remote.emit('connection', sock);
+  });
   await new Promise((r) => remote.listen(0, '127.0.0.1', r));
-  const REMOTE_URL = `http://127.0.0.1:${remote.address().port}/`;
+  const REMOTE_URL = 'http://remote.test/';
+  const proxy = `http://127.0.0.1:${remote.address().port}`;
   const fixture = join(FIXTURES, 'network-server.mjs');
-  // The main process reaches it directly: no proxy in its environment.
-  const env = { HTTPS_PROXY: '', HTTP_PROXY: '', https_proxy: '', http_proxy: '' };
-  const snap = async (more = []) => JSON.parse((await run(['snapshot', '--no-write', '--json', '--processes', '1', '--offline-check', '--env', `REMOTE_URL=${REMOTE_URL}`, ...more, '--', process.execPath, fixture], { env })).stdout).findings.filter((f) => f.rule === 'menu/network-dependent');
+  const env = {};
+  // Both spellings: Node reads the lowercase one first, and the machine running the tests may set it.
+  const via = ['--env', `REMOTE_URL=${REMOTE_URL}`, '--env', `HTTP_PROXY=${proxy}`, '--env', `http_proxy=${proxy}`, '--env', 'NODE_USE_ENV_PROXY=1'];
+  const snap = async (more = []) => JSON.parse((await run(['snapshot', '--no-write', '--json', '--processes', '1', '--offline-check', ...via, ...more, '--', process.execPath, fixture], { env })).stdout).findings.filter((f) => f.rule === 'menu/network-dependent');
   try {
     const [f] = await snap();
     assert.equal(f.severity, 'warn');
@@ -305,14 +317,20 @@ test('snapshot --offline-check: a menu that depends on the network; a server tha
     assert.equal(g.severity, 'info');
     assert.match(g.message, /^The server didn't start or list its tools with the network cut off: the server exited with code 1/);
     // Not asked for: not run.
-    const none = JSON.parse((await run(['snapshot', '--no-write', '--json', '--processes', '1', '--env', `REMOTE_URL=${REMOTE_URL}`, '--', process.execPath, fixture], { env })).stdout);
+    const none = JSON.parse((await run(['snapshot', '--no-write', '--json', '--processes', '1', ...via, '--', process.execPath, fixture], { env })).stdout);
     assert.equal(none.findings.filter((x) => x.rule === 'menu/network-dependent').length, 0);
+    // Loopback isn't the network: a server that reaches 127.0.0.1 directly keeps its menu.
+    const local = createServer((req, res) => res.end('ok'));
+    await new Promise((r) => local.listen(0, '127.0.0.1', r));
+    const direct = JSON.parse((await run(['snapshot', '--no-write', '--json', '--processes', '1', '--offline-check', '--env', `REMOTE_URL=http://127.0.0.1:${local.address().port}/`, '--', process.execPath, fixture], { env })).stdout);
+    local.close();
+    assert.deepEqual(direct.findings.filter((x) => x.rule === 'menu/network-dependent'), [], 'a local helper on loopback');
     // A server that fetches nothing: quiet.
     assert.deepEqual(JSON.parse((await run(['snapshot', '--no-write', '--json', '--processes', '1', '--offline-check', '--', process.execPath, join(FIXTURES, 'client-server.mjs')])).stdout).findings.filter((x) => x.rule === 'menu/network-dependent'), []);
     // The config key, for scan too.
     const dir = tempDir();
     writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ offlineCheck: true }));
-    writeFileSync(join(dir, 'mcp.json'), JSON.stringify({ mcpServers: { net: { command: process.execPath, args: [fixture], env: { REMOTE_URL } } } }));
+    writeFileSync(join(dir, 'mcp.json'), JSON.stringify({ mcpServers: { net: { command: process.execPath, args: [fixture], env: { REMOTE_URL, HTTP_PROXY: proxy, http_proxy: proxy, NODE_USE_ENV_PROXY: '1' } } } }));
     const scanned = JSON.parse((await run(['scan', '--json', '--processes', '1', 'mcp.json'], { cwd: dir, env })).stdout);
     assert.ok(scanned.servers[0].findings.some((x) => x.rule === 'menu/network-dependent'));
     writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ offlineCheck: 'yes' }));
