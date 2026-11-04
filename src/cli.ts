@@ -207,7 +207,7 @@ export async function main(argv: string[]): Promise<number> {
     const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
       throw refusedForTooMany(error, waited.ms);
     });
-    const options = { openWorld: values['open-world'], values: given, assumeReadOnly };
+    const options = { openWorld: values['open-world'], createHandles: values['create-handles'], values: given, assumeReadOnly };
     let plan = autoScenario(menu, { ...options, maxCalls: givenMax ?? 20 });
     // Each unlock value gets its own budget for the tools it brings, so the first
     // toolsets can't use up the calls the last ones need. --max-calls, when given,

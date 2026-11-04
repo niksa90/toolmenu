@@ -40,6 +40,56 @@ function createdKind(tool: MenuTool): string | undefined {
 export interface HandleProbe {
   param: string;
   kind: string;
+  /**
+   * --create-handles: a creating tool runs first, and this call gets the handle it
+   * returned instead of a made-up one (the made-up one when it returned none).
+   */
+  fromCreated?: string;
+}
+
+/** Kinds --create-handles may create: scratch state that expires. Not a lock, lease or checkout. */
+export const CREATABLE_KINDS = new Set(['session', 'basket', 'cart']);
+
+/** The tool that creates handles of this kind, if the menu has one. */
+export function creatorOf(tools: MenuTool[], kind: string): MenuTool | undefined {
+  return tools.find((t) => createdKind(t) === kind);
+}
+
+/**
+ * The handle a creating tool's result carries: a `<kind>_id` / `<kind>Id` / `id` in its
+ * structured content, in JSON text, or written out ("session_id: s-1").
+ */
+export function handleFromResult(result: { structuredContent?: unknown; content?: unknown }, kind: string): string | undefined {
+  // Compared without case, dashes or underscores: session_id, sessionId and session-id are one key.
+  const norm = (k: string) => k.toLowerCase().replace(/[-_\s]/g, '');
+  const keys = new Set([`${kind}id`, kind, `${kind}handle`, `${kind}token`, 'id', 'handle']);
+  const find = (v: unknown, depth = 0): string | undefined => {
+    if (!v || typeof v !== 'object' || depth > 3) return undefined;
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+      if (!keys.has(norm(k))) continue;
+      if (typeof x === 'string' && x) return x;
+      if (typeof x === 'number') return String(x);
+    }
+    for (const x of Object.values(v as Record<string, unknown>)) {
+      const r = find(x, depth + 1);
+      if (r) return r;
+    }
+    return undefined;
+  };
+  const structured = find(result.structuredContent);
+  if (structured) return structured;
+  const texts = Array.isArray(result.content) ? (result.content as { type?: string; text?: string }[]).filter((c) => c.type === 'text' && c.text).map((c) => c.text!) : [];
+  for (const t of texts) {
+    try {
+      const r = find(JSON.parse(t));
+      if (r) return r;
+    } catch {
+      // not JSON: look for "session_id: s-1" written out
+    }
+    const m = new RegExp(`\\b${kind}[_ -]?(?:id|handle|token)\\b["']?\\s*[:=]\\s*["']?([\\w.:-]+)`, 'i').exec(t);
+    if (m) return m[1];
+  }
+  return undefined;
 }
 
 /** The handle kinds some tool in the menu creates. */

@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { isMap, isNode, isScalar, parseDocument, type Document } from 'yaml';
 import { synthesizeArgs } from './args.js';
-import { createdKinds, handleParams, type HandleProbe } from './rules/handles.js';
+import { CREATABLE_KINDS, createdKinds, creatorOf, handleParams, type HandleProbe } from './rules/handles.js';
 import { MAX_UNLOCKS, unlockers, type Scenario, type Step } from './session.js';
 import type { JsonSchema, Menu, MenuTool } from './types.js';
 import { COLLECTION_VERBS, commonWords, leadingVerb, LOOKUP_VERBS, verbOf, WRITE_VERBS } from './words.js';
@@ -18,6 +18,12 @@ export interface GivenValue {
 export interface AutoOptions {
   /** Also call read-only tools marked openWorldHint: true (web search, fetch, scraping). */
   openWorld?: boolean;
+  /**
+   * --create-handles: call the tool that creates a session, basket or cart (a write,
+   * so only when asked, and never one marked destructiveHint), and give the tools that
+   * take it back the handle it returned instead of a made-up one.
+   */
+  createHandles?: boolean;
   /** At most this many calls (default 20). */
   maxCalls?: number;
   /**
@@ -165,7 +171,30 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   for (const c of candidates.slice(maxCalls)) skipped.push({ tool: c.tool.name, reason: 'over the call budget' });
 
   const steps: Step[] = options.callsOnly ? [] : [{ kind: 'list' }];
-  for (const c of chosen) steps.push({ kind: 'call', tool: c.tool.name, args: c.args, ...(c.probe ? { probe: c.probe } : {}) });
+  // --create-handles: the creating tool of each kind a probe takes, called first.
+  const creators: { tool: MenuTool; kind: string; args: Record<string, unknown> }[] = [];
+  if (options.createHandles && modern) {
+    for (const kind of [...new Set(chosen.filter((c) => c.probe).map((c) => c.probe!.kind))]) {
+      if (!CREATABLE_KINDS.has(kind)) continue;
+      const creator = creatorOf(menu.tools, kind);
+      if (!creator || creator.annotations?.destructiveHint === true) continue;
+      const filled = synthesizeArgs(creator.inputSchema, perTool.get(creator.name));
+      if (!filled.ok) continue;
+      creators.push({ tool: creator, kind, args: filled.args });
+      for (const c of chosen) if (c.probe?.kind === kind) c.probe = { ...c.probe, fromCreated: creator.name };
+    }
+    // Called on purpose now: not skipped.
+    for (const c of creators) {
+      const i = skipped.findIndex((x) => x.tool === c.tool.name);
+      if (i >= 0) skipped.splice(i, 1);
+    }
+  }
+  for (const c of creators) steps.push({ kind: 'call', tool: c.tool.name, args: c.args, creates: c.kind });
+  for (const c of chosen) {
+    // With a created handle, both: the made-up one (session/handle-error) and the real one (session/handle-roundtrip).
+    if (c.probe?.fromCreated) steps.push({ kind: 'call', tool: c.tool.name, args: c.args, probe: { param: c.probe.param, kind: c.probe.kind } });
+    steps.push({ kind: 'call', tool: c.tool.name, args: c.args, ...(c.probe ? { probe: c.probe } : {}) });
+  }
   for (const u of unlocks) {
     const array = u.tool.inputSchema?.properties?.[u.param!]?.type === 'array';
     const values = u.values.slice(0, MAX_UNLOCKS);
@@ -177,7 +206,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     steps.push({ kind: 'call', tool: u.tool.name, args: { [u.param!]: array ? [values[0]] : values[0] }, ...tentative });
   }
   if (chosen.length && !options.callsOnly) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args, ...(chosen[0].probe ? { probe: chosen[0].probe } : {}) });
-  const called = [...chosen.map((c) => c.tool.name), ...unlocks.map((u) => u.tool.name)];
+  const called = [...creators.map((c) => c.tool.name), ...chosen.map((c) => c.tool.name), ...unlocks.map((u) => u.tool.name)];
   return {
     scenario: { allowWrites: false, steps, ...(assumed.size ? { assumeReadOnly: [...assumed] } : {}) },
     called,

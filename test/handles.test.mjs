@@ -143,3 +143,46 @@ test('--save-scenario: a probe step is saved commented out, never as a step that
   assert.doesNotMatch(yaml, /^  - call: status$/m);
   assert.match(yaml, /^  # --auto called status with a made-up session \(session\/handle-error\); to replay it, put a real one in:\n  # - call: status\n  #   args: \{"session_id":"toolmenu-unknown-session"\}$/m);
 });
+
+// 0.21: --create-handles.
+test('--create-handles: the creating tool runs first, and its handle goes to the tools that take it back, beside the made-up one', async () => {
+  const out = await json(['session', '--auto', '--create-handles', '--json']);
+  const labels = out.steps.map((s) => s.label);
+  // Created first, never a checkout, lease or lock.
+  assert.deepEqual(labels.slice(1, 4), ['call start_session', 'call create_cart', 'call open_basket']);
+  assert.ok(!labels.some((l) => /create_checkout|acquire_lease|acquire_lock/.test(l)));
+  assert.equal(out.steps[1].note, 'created a session (s-1) for the calls after it');
+  // Both calls: the made-up handle, and the real one.
+  assert.ok(labels.includes('call session_status {"session_id":"toolmenu-unknown-session"}'));
+  assert.ok(labels.includes('call session_status {"session_id":"s-1"}'));
+  assert.ok(labels.includes('call basket_total {"basket_id":"b-1"}'));
+  assert.equal(out.findings.filter((f) => f.rule === 'session/handle-roundtrip').length, 0);
+  assert.equal(out.findings.filter((f) => f.rule === 'session/handle-error').length, 1, 'the made-up handle still checks what a model gets for an unknown one');
+});
+
+test('--create-handles: a created handle its own tool refuses, and a creating tool that returns no handle', async () => {
+  const out = await json(['session', '--auto', '--create-handles', '--json', '--env', 'BROKEN=1']);
+  const by = out.findings.filter((f) => f.rule === 'session/handle-roundtrip');
+  const refused = by.find((f) => f.tool === 'session_status');
+  assert.equal(refused.severity, 'warn');
+  assert.match(refused.message, /^session_status was given the session start_session had just created, and answered with an error: Session s-1 is not ready yet\./);
+  const none = by.find((f) => f.tool === 'create_cart');
+  assert.equal(none.severity, 'info');
+  assert.match(none.message, /^--create-handles called create_cart, which returned no handle toolmenu could find, so the tools that take a cart were called with a made-up one instead\./);
+  assert.match(none.fix, /a cart_id field in structuredContent/);
+});
+
+test('without --create-handles nothing is created', async () => {
+  const out = await json(['session', '--auto', '--json']);
+  assert.ok(!out.steps.some((s) => /^call (start_session|create_cart|open_basket)/.test(s.label)));
+});
+
+test('handleFromResult: structured content, JSON text, or written out', async () => {
+  const { handleFromResult } = await import('../dist/rules/handles.js');
+  assert.equal(handleFromResult({ structuredContent: { session_id: 's-1' } }, 'session'), 's-1');
+  assert.equal(handleFromResult({ structuredContent: { sessionId: 's-2' } }, 'session'), 's-2');
+  assert.equal(handleFromResult({ content: [{ type: 'text', text: '{"data":{"id":"s-3"}}' }] }, 'session'), 's-3');
+  assert.equal(handleFromResult({ content: [{ type: 'text', text: 'Started. session_id: s-4' }] }, 'session'), 's-4');
+  assert.equal(handleFromResult({ structuredContent: { cartId: 7 } }, 'cart'), '7');
+  assert.equal(handleFromResult({ content: [{ type: 'text', text: 'nothing here' }] }, 'session'), undefined);
+});

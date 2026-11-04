@@ -41,6 +41,7 @@ export const CLI_OPTIONS = {
   init: { type: 'boolean' },
   'union-out': { type: 'string' },
   auto: { type: 'boolean' },
+  'create-handles': { type: 'boolean' },
   'with-session': { type: 'boolean' },
   catalog: { type: 'boolean' },
   'open-world': { type: 'boolean' },

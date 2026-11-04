@@ -33,6 +33,7 @@ const OPTIONS: Record<string, [string, string[]]> = {
   plan: ['--plan', ['print the steps without connecting or running anything']],
   init: ['--init', ["write a starter scenario from the server's menu (to --scenario,", 'default scenario.yml; never overwrites)']],
   auto: ['--auto', ['build the steps from the menu: every read-only tool whose required', 'arguments the schema can fill (const, default, examples, enum, type),', 'then the first call again']],
+  'create-handles': ['--create-handles', ['with --auto on 2026-07-28, call the tool that creates a session, basket or cart', '(a write, so only with this flag; never one marked destructiveHint) and give', 'the tools that take it back the handle it returned']],
   'open-world': ['--open-world', ['with --auto, also call read-only tools marked openWorldHint: true', '(web search, fetch, scraping): they may cost API credits']],
   'max-calls': ['--max-calls <n>', ['with --auto, at most n calls in all, the tools unlocks bring', 'included (default: 20, plus --max-calls-per-unlock for each unlock value)']],
   'max-calls-per-unlock': ['--max-calls-per-unlock <n>', ['with --auto, at most n calls for the tools each unlock value', 'brings (default: 5), so every toolset gets some']],
@@ -126,7 +127,7 @@ const HELP: Record<Command, CommandHelp> = {
       'prompt cache, a different menu in a fresh process.',
       SERVER_NOTE,
     ],
-    own: ['scenario', 'auto', 'init', 'plan', 'value', 'values-file', 'assume-read-only', 'open-world', 'max-calls', 'max-calls-per-unlock', 'save-scenario', 'union-out', 'elicitation'],
+    own: ['scenario', 'auto', 'init', 'plan', 'value', 'values-file', 'assume-read-only', 'open-world', 'create-handles', 'max-calls', 'max-calls-per-unlock', 'save-scenario', 'union-out', 'elicitation'],
     shared: ['config', 'format', 'json', 'fail-on', 'header', 'env', 'no-auth', 'protocol', 'timeout', 'processes'],
     examples: [
       'toolmenu session --auto -- node dist/index.js',
