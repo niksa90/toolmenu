@@ -1012,3 +1012,9 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   and with the one returned (`handleFromResult`: `structuredContent`, JSON text, or
   `session_id: s-1` written out). Refused: `session/handle-roundtrip` warn, unsure. No
   handle in the result: info, and only the made-up call runs.
+- **From the 0.21 corpus run** (the proxy let servers reach their APIs for the first
+  time): an answer, not `isError`, whose JSON object has its own `status` 401/403 or
+  an auth `code` is a setup failure (`deniedAnswer`, Notion); a `tools/list` that
+  times out after a step ("running but never answered") stops the session like a rate
+  limit, and the call's timeout at that step is folded into the one finding
+  (fulcra-context-mcp's device-code sign-in blocks the server).

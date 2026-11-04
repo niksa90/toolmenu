@@ -34,6 +34,23 @@ Two new commands, and four things the hosted scan asked for.
   Supabase's servers couldn't reach their APIs in the hosted scan's container and
   failed as if broken. Node 22's warning about that variable is left out of the
   server's stderr in errors.
+- **An auth error passed on as an answer counts as one** (`session/untested`). With
+  the network reachable, Notion's server got its API's 401 and returned it as a
+  plain result, not `isError`, and `--auto` reported 3 answered calls and nothing
+  else. A JSON object whose own `status` (401, 403) or `code` (`unauthorized`,
+  `forbidden`, `invalid_auth`…) says so now counts; 401 elsewhere in the data doesn't.
+- **A server that stops answering ends the session.** fulcra-context-mcp polls a
+  device-code sign-in inside a tool call and blocks the server; every later step
+  waited out its timeout and the `tools/list` after it (22 minutes, 20 findings).
+  A `tools/list` that times out after a step now stops the run with one finding.
+- Corpus run, 0.20.1 → 0.21.0 (224 installed npm and PyPI servers, `snapshot` and
+  `session --auto`), every difference read by hand: 14 servers that failed to start
+  behind the container's proxy (`apick-mcp`, `dchub-mcp-server`, `perfume-mcp`…, which
+  fetch their tool list at start) are now read; 7 sessions whose calls failed on the
+  network now get answers, and Notion's gets its 401 (above); 3 servers serve a larger menu when they can reach the
+  network (inite-visibility 3 → 10 tools, Netlify's 9 → 10, n2c's schemas): with the
+  proxy variables overridden to empty, 0.21 lists exactly what 0.20.1 did. No other
+  finding changed.
 
 ## 0.20.1
 
