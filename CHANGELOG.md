@@ -32,8 +32,6 @@ Three things the 0.21 corpus run found in real servers, now rules of their own.
   - 15 servers don't start or list offline (info): each fetches its tool list at
     start (apick-mcp, dchub-mcp-server, the scento-perfume pair…).
   - `session/error-not-flagged` on Notion's server only.
-  - fulcra-context-mcp's session now ends at the blocked call in about a minute,
-    where it ran past the 10-minute limit.
   - One false positive was found and fixed before release: TabRunner's server talks
     to its own bridge on 127.0.0.1, and the first offline environment cut loopback too.
 
