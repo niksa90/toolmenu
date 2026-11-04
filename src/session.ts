@@ -559,7 +559,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           }
           const last = scenario.steps.length;
           raw.push({
-            rule: 'session/step-failed',
+            rule: 'session/server-unresponsive',
             severity: 'error',
             step: index,
             ...(step.kind === 'call' ? { tool: step.tool } : {}),

@@ -981,7 +981,8 @@ test('session: a server that stops answering after a call ends the run with one 
   const out = JSON.parse(r.stdout);
   const stopped = out.findings.filter((f) => /stopped answering/.test(f.message));
   assert.equal(stopped.length, 1, JSON.stringify(out.findings.map((f) => f.message)));
-  assert.deepEqual(out.findings.filter((f) => f.rule === 'session/step-failed').length, 1, 'the call\'s own timeout is the same cause');
+  assert.equal(stopped[0].rule, 'session/server-unresponsive');
+  assert.deepEqual(out.findings.filter((f) => f.rule === 'session/step-failed'), [], 'the call\'s own timeout is the same cause');
   assert.match(stopped[0].message, /^The server stopped answering at step 3 \(call b_sign_in\): after it, tools\/list timed out after [\d.]+ s: the server is running but never answered\. The run stopped there: steps 4–\d+ weren't run\.$/);
   assert.equal(out.steps.at(-1).label, 'call b_sign_in', 'nothing ran after it');
   assert.ok(Date.now() - started < 60_000, 'the run didn\'t wait out every step');
