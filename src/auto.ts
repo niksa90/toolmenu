@@ -183,6 +183,10 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
       creators.push({ tool: creator, kind, args: filled.args });
       for (const c of chosen) if (c.probe?.kind === kind) c.probe = { ...c.probe, fromCreated: creator.name };
     }
+    // Within --max-calls: each creator is a call, and each probe it serves is called twice.
+    const cost = () => chosen.length + creators.length + chosen.filter((c) => c.probe?.fromCreated).length;
+    while (chosen.length && cost() > maxCalls) skipped.push({ tool: chosen.pop()!.tool.name, reason: 'over the call budget' });
+    for (let i = creators.length - 1; i >= 0; i--) if (!chosen.some((c) => c.probe?.kind === creators[i].kind)) creators.splice(i, 1);
     // Called on purpose now: not skipped.
     for (const c of creators) {
       const i = skipped.findIndex((x) => x.tool === c.tool.name);
@@ -214,7 +218,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
     withValues: chosen.filter((c) => c.valued).map((c) => c.tool.name),
     skipped,
     ignored,
-    spent: chosen.length,
+    spent: chosen.length + creators.length + chosen.filter((c) => c.probe?.fromCreated).length,
     unlockValues: unlocks.reduce((n, u) => n + Math.min(u.values.length, MAX_UNLOCKS), 0),
   };
 }
@@ -469,7 +473,14 @@ export function scenarioYaml(plan: AutoPlan, serverName?: string): string {
   lines.push('steps:');
   for (const step of plan.scenario.steps) {
     if (step.kind === 'list') lines.push('  - list');
-    else if (step.kind === 'call' && step.probe) {
+    else if (step.kind === 'call' && step.creates) {
+      // A write, called only with --create-handles: as written it would be refused under allow_writes: false.
+      lines.push(
+        `  # --create-handles called ${step.tool} to create a ${step.creates} (a write); to replay it, set allow_writes: true and uncomment:`,
+        `  # - call: ${step.tool}`,
+        ...(Object.keys(step.args).length ? [`  #   args: ${JSON.stringify(step.args)}`] : []),
+      );
+    } else if (step.kind === 'call' && step.probe) {
       // A made-up handle is --auto's check, not a step to replay: as written it would fail as a step.
       lines.push(
         `  # --auto called ${step.tool} with a made-up ${step.probe.kind} (session/handle-error); to replay it, put a real one in:`,

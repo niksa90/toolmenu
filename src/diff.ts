@@ -6,6 +6,7 @@ import { indexSchema } from './schema-ref.js';
 import { isCalendar, parseSemver } from './semver.js';
 import type { Finding, JsonSchema, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
+import { editDistance } from './words.js';
 
 export type ChangeClass = 'breaking' | 'minor' | 'notice';
 export type Bump = 'major' | 'minor' | 'patch' | 'none';
@@ -901,16 +902,6 @@ function closeNames(a: string, b: string): boolean {
   if (long === `${short}s` || long === `${short}es` || (short.endsWith('y') && long === `${short.slice(0, -1)}ies`)) return true;
   if (short.length < 5) return false;
   return editDistance(x, y) <= (long.length >= 10 ? 2 : 1);
-}
-
-function editDistance(a: string, b: string): number {
-  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
-  for (let i = 1; i <= a.length; i++) {
-    const row = [i];
-    for (let j = 1; j <= b.length; j++) row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-    prev = row;
-  }
-  return prev[b.length];
 }
 
 /** The same type, or one side an array of the other's type. */

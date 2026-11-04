@@ -124,3 +124,12 @@ test('parseList: configs from several clients, text lines, names', () => {
   assert.throws(() => splitCommand('node "a'), /unclosed/);
   assert.equal(where({ kind: 'http', url: 'https://u:p@h/mcp?k=1' }), 'https://h/mcp?…');
 });
+
+// 0.21, from review.
+test('scan: a key filled into args isn\'t printed; a malformed URL line is a row, not a crash', async () => {
+  const entries = parseList(JSON.stringify({ mcpServers: { s: { command: 'npx', args: ['-y', 'x', '--api-key', '${SCAN_KEY}'] } } }), 'mcp.json', { SCAN_KEY: 'sk_live_secret' });
+  assert.deepEqual(entries[0].target.args, ['-y', 'x', '--api-key', 'sk_live_secret']);
+  assert.equal(where(entries[0].shown), "npx -y x --api-key '${SCAN_KEY}'");
+  const lines = parseList('https://\nhttps://ok.example/mcp\n', 'l.txt');
+  assert.deepEqual(lines.map((e) => [e.name, e.problem]), [['line 1', '"https://" isn\'t a valid URL'], ['ok.example', undefined]]);
+});

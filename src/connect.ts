@@ -341,7 +341,6 @@ export interface ToolList {
   clientError?: string;
 }
 
-/** One full `tools/list`, bypassing the SDK's cache, read from the wire rather than the SDK's parsed copy. */
 /**
  * The proxy and CA settings of this process, for a stdio server: the SDK passes a
  * minimal environment (PATH, HOME…), so a server that calls an API at startup (Stripe,
@@ -362,6 +361,7 @@ export function proxyEnvironment(env: NodeJS.ProcessEnv = process.env): Record<s
   return out;
 }
 
+/** One full `tools/list`, bypassing the SDK's cache, read from the wire rather than the SDK's parsed copy. */
 export async function listTools(connection: Connection, options: ConnectOptions = {}): Promise<ToolList> {
   const mark = connection.wire.responses.length;
   let clientError: string | undefined;

@@ -59,21 +59,38 @@ export function creatorOf(tools: MenuTool[], kind: string): MenuTool | undefined
  * The handle a creating tool's result carries: a `<kind>_id` / `<kind>Id` / `id` in its
  * structured content, in JSON text, or written out ("session_id: s-1").
  */
+const WRAPPERS = new Set(['data', 'result', 'results', 'item', 'response']);
+
 export function handleFromResult(result: { structuredContent?: unknown; content?: unknown }, kind: string): string | undefined {
   // Compared without case, dashes or underscores: session_id, sessionId and session-id are one key.
   const norm = (k: string) => k.toLowerCase().replace(/[-_\s]/g, '');
-  const keys = new Set([`${kind}id`, kind, `${kind}handle`, `${kind}token`, 'id', 'handle']);
-  const find = (v: unknown, depth = 0): string | undefined => {
-    if (!v || typeof v !== 'object' || depth > 3) return undefined;
-    for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
-      if (!keys.has(norm(k))) continue;
-      if (typeof x === 'string' && x) return x;
-      if (typeof x === 'number') return String(x);
+  const own = new Set([`${kind}id`, kind, `${kind}handle`, `${kind}token`]);
+  const scalar = (x: unknown) => (typeof x === 'string' && x ? x : typeof x === 'number' ? String(x) : undefined);
+  // The kind's own key anywhere (breadth first, so the shallowest wins); a bare id or
+  // handle only at the top, where it names what was created, not a nested user or request.
+  const find = (root: unknown): string | undefined => {
+    let level: unknown[] = [root];
+    for (let depth = 0; depth <= 3 && level.length; depth++) {
+      const next: unknown[] = [];
+      for (const v of level) {
+        if (!v || typeof v !== 'object') continue;
+        for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+          const found = own.has(norm(k)) ? scalar(x) : undefined;
+          if (found) return found;
+          if (x && typeof x === 'object') next.push(x);
+        }
+      }
+      level = next;
     }
-    for (const x of Object.values(v as Record<string, unknown>)) {
-      const r = find(x, depth + 1);
-      if (r) return r;
-    }
+    // At the top, or right under a wrapper ({"data":{"id":…}}), never under another thing's key (user.id).
+    const bare = (v: unknown): string | undefined => {
+      if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+      for (const [k, x] of Object.entries(v as Record<string, unknown>)) if (norm(k) === 'id' || norm(k) === 'handle') return scalar(x);
+      return undefined;
+    };
+    const top = bare(root);
+    if (top || !root || typeof root !== 'object' || Array.isArray(root)) return top;
+    for (const [k, x] of Object.entries(root as Record<string, unknown>)) if (WRAPPERS.has(norm(k)) || norm(k) === kind) return bare(x);
     return undefined;
   };
   const structured = find(result.structuredContent);

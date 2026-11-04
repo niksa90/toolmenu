@@ -220,6 +220,7 @@ const DENIED_CODES = /^(?:unauthori[sz]ed|unauthenticated|forbidden|invalid_auth
  * "401" anywhere in the data. Says what it saw, or undefined.
  */
 export function deniedAnswer(result: { content?: unknown; structuredContent?: unknown }): string | undefined {
+  // (A tool that fetches a URL is skipped by the caller: its answer is the page's status.)
   const objects: unknown[] = [result.structuredContent];
   for (const c of Array.isArray(result.content) ? result.content : []) {
     const text = c && typeof c === 'object' && 'text' in c && typeof c.text === 'string' ? c.text.trim() : '';
@@ -237,7 +238,10 @@ export function deniedAnswer(result: { content?: unknown; structuredContent?: un
       const r = v as Record<string, unknown>;
       const status = [r.status, r.statusCode, r.status_code, r.code].find((x) => x === 401 || x === 403 || x === '401' || x === '403');
       const code = [r.code, r.error, r.type].find((x) => typeof x === 'string' && DENIED_CODES.test(x));
-      if (status === undefined && code === undefined) continue;
+      // A status alone may be what the tool was asked to fetch ({"status":403,"body":…});
+      // with it, the object has to say it's an error.
+      const isError = v !== o || r.object === 'error' || 'error' in r || typeof r.message === 'string';
+      if (code === undefined && (status === undefined || !isError)) continue;
       const message = typeof r.message === 'string' ? `: ${r.message}` : '';
       return `${status !== undefined ? `HTTP ${status}` : String(code)}${message}`;
     }

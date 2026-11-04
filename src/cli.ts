@@ -24,6 +24,7 @@ import { existingMessage, initReport, planInit, shellWord, writeInit } from './i
 import { SEVERITY_RANK, type MenuTool, type Severity } from './types.js';
 import { VERSION } from './version.js';
 import { CLI_OPTIONS } from './options.js';
+import { editDistance } from './words.js';
 import { formatScan, ListError, loadList, scan, scanExit } from './scan.js';
 import { explain, findRule, formatExplained, listRules, ruleDocs } from './rule-docs.js';
 import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type Command } from './help.js';
@@ -484,20 +485,6 @@ function commandIn(args: string[]): Command | undefined {
     if (isCommand(a)) return a;
   }
   return undefined;
-}
-
-function editDistance(a: string, b: string): number {
-  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    let diagonal = row[0];
-    row[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const above = row[j];
-      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
-      diagonal = above;
-    }
-  }
-  return row[b.length];
 }
 
 function parseRelease(value: string): { before: string; after: string } {

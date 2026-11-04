@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { DIFF_RULES } from './diff.js';
 import { MENU_RULES } from './rules/index.js';
+import { editDistance } from './words.js';
 
 export interface RuleDoc {
   command: string;
@@ -37,20 +38,6 @@ function wrap(text: string, width: number, indent: string): string[] {
   return lines;
 }
 
-function distance(a: string, b: string): number {
-  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    let prev = row[0];
-    row[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const next = Math.min(row[j] + 1, row[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
-      prev = row[j];
-      row[j] = next;
-    }
-  }
-  return row[b.length];
-}
-
 /**
  * The rule a name means: the id itself, or the part after the slash when only one
  * rule ends that way (vague-id → naming/vague-id). Otherwise the ids close to it.
@@ -64,7 +51,7 @@ export function findRule(name: string): { id: string } | { near: string[] } {
   if (tail.length === 1) return { id: tail[0] };
   if (tail.length > 1) return { near: tail };
   const scored = ids
-    .map((id) => ({ id, d: Math.min(distance(wanted, id), distance(wanted, id.split('/')[1]) + (wanted.includes('/') ? 99 : 0)) }))
+    .map((id) => ({ id, d: Math.min(editDistance(wanted, id), editDistance(wanted, id.split('/')[1]) + (wanted.includes('/') ? 99 : 0)) }))
     .filter((x) => x.d <= Math.max(2, Math.floor(wanted.length / 4)));
   const contains = ids.filter((id) => wanted.length >= 3 && id.includes(wanted));
   const near = [...new Set([...scored.sort((a, b) => a.d - b.d).map((x) => x.id), ...contains])];

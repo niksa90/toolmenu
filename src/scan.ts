@@ -20,6 +20,8 @@ export interface ScanEntry {
   problem?: string;
   /** Turned off in the config: listed, not checked, and not a failure. */
   disabled?: true;
+  /** The target as the config writes it, ${VAR} unfilled: what's printed, so a key passed in args stays out. */
+  shown?: Target;
 }
 
 export class ListError extends Error {}
@@ -73,7 +75,11 @@ function fromConfig(name: string, raw: unknown, env: NodeJS.ProcessEnv): ScanEnt
   // A missing variable would send an empty credential: say so instead of checking a server set up wrong.
   if (missing.size) return { name, problem: `${[...missing].join(', ')} ${missing.size === 1 ? 'is' : 'are'} not set (the config refers to ${missing.size === 1 ? 'it' : 'them'})` };
   if (target.kind === 'http' && !/^https?:\/\//.test(target.url)) return { name, problem: `"${clean(target.url, 60)}" isn't an http(s) URL` };
-  return { name, target };
+  const shown: Target =
+    target.kind === 'http'
+      ? { kind: 'http', url: (s.url ?? s.serverUrl ?? s.httpUrl) as string }
+      : { kind: 'stdio', command: s.command as string, args: (s.args as string[] | undefined) ?? [] };
+  return { name, target, shown };
 }
 
 /** Words of a command line: whitespace-separated, with '…' and "…" kept together. */
@@ -135,6 +141,10 @@ function fromLines(text: string): ScanEntry[] {
     if (/^https?:\/\//.test(rest)) {
       if (/\s/.test(rest.trim())) throw new ListError(`line ${i + 1}: a URL and something after it; one server per line`);
       target = { kind: 'http', url: rest.trim() };
+      if (!URL.canParse(target.url)) {
+        entries.push({ name: name ?? `line ${i + 1}`, problem: `"${clean(target.url, 60)}" isn't a valid URL` });
+        continue;
+      }
     } else {
       const words = splitCommand(rest);
       target = { kind: 'stdio', command: words[0], args: words.slice(1) };
@@ -206,10 +216,10 @@ export function where(target: Target | undefined): string {
 }
 
 /** A one-line reason a server wasn't read: a ConnectError's headline, else the first line of the error. */
-function reason(error: unknown, target: Target): string {
+function reason(error: unknown, target: Target, shown: Target): string {
   const text = error instanceof ConnectError ? error.headline : clean((error instanceof Error ? error.message : String(error)).split('\n')[0], 200);
   // The URL can carry a key a ${VAR} filled in: print it as where() does.
-  return target.kind === 'http' ? text.split(target.url).join(where(target)) : text;
+  return target.kind === 'http' ? text.split(target.url).join(where(shown)) : text;
 }
 
 export interface ScanOptions extends SnapshotOptions {
@@ -233,10 +243,10 @@ export async function scan(entries: ScanEntry[], options: ScanOptions = {}): Pro
       else {
         try {
           const { menu, findings } = await snapshot(e.target, options);
-          row = { name: e.name, where: where(e.target), menu, findings };
+          row = { name: e.name, where: where(e.shown ?? e.target), menu, findings };
         } catch (error) {
           const status = error instanceof ConnectError ? error.status : undefined;
-          row = { name: e.name, where: where(e.target), findings: [], failed: reason(error, e.target), ...(status === 401 || status === 403 ? { wantsCredentials: true as const } : {}) };
+          row = { name: e.name, where: where(e.shown ?? e.target), findings: [], failed: reason(error, e.target, e.shown ?? e.target), ...(status === 401 || status === 403 ? { wantsCredentials: true as const } : {}) };
         }
       }
       rows[i] = row;

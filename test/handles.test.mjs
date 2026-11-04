@@ -186,3 +186,23 @@ test('handleFromResult: structured content, JSON text, or written out', async ()
   assert.equal(handleFromResult({ structuredContent: { cartId: 7 } }, 'cart'), '7');
   assert.equal(handleFromResult({ content: [{ type: 'text', text: 'nothing here' }] }, 'session'), undefined);
 });
+
+// 0.21, from review.
+test('--create-handles: within --max-calls; the saved scenario keeps the creator commented out; nested ids aren\'t the handle', async () => {
+  const { scenarioYaml } = await import('../dist/auto.js');
+  const { handleFromResult } = await import('../dist/rules/handles.js');
+  const menu = { ...menuOf([tool('start_session', []), ...Array.from({ length: 6 }, (_, i) => tool(`status_${i}`, ['session_id'], { annotations: { readOnlyHint: true } }))]), server: { name: 's', protocolVersion: '2026-07-28', era: 'modern' } };
+  const plan = autoScenario(menu, { createHandles: true, maxCalls: 5 });
+  const calls = plan.scenario.steps.filter((s) => s.kind === 'call').length;
+  // The last call repeats the first, outside the budget, as without --create-handles.
+  assert.ok(calls - 1 <= 5, `${calls} calls`);
+  assert.equal(plan.spent, calls - 1);
+  assert.ok(plan.skipped.some((s) => s.reason === 'over the call budget'));
+  const yaml = scenarioYaml(plan, 's');
+  assert.match(yaml, /# --create-handles called start_session to create a session \(a write\); to replay it, set allow_writes: true and uncomment:\n {2}# - call: start_session\n/);
+  assert.doesNotMatch(yaml, /^ {2}- call: start_session/m, 'no uncommented write under allow_writes: false');
+  assert.equal(handleFromResult({ structuredContent: { data: { user: { id: 'u1' }, session: { session_id: 's1' } } } }, 'session'), 's1');
+  assert.equal(handleFromResult({ structuredContent: { data: { id: 'wrapped' } } }, 'session'), 'wrapped');
+  assert.equal(handleFromResult({ structuredContent: { owner: { id: 'u1' } } }, 'session'), undefined);
+  assert.equal(handleFromResult({ structuredContent: { id: 'top' } }, 'session'), 'top');
+});

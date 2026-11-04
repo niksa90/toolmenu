@@ -428,7 +428,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
               // Missing credentials, this machine: the call never got as far as the
               // handle, so it says nothing about it. Counted with the other setup failures.
               record.failure = setup;
-              record.note = `called with a made-up ${step.probe.kind}, but it failed before the ${step.probe.kind} mattered: ${clip(errorText(result), 100)}`;
+              record.note = `called with ${real ? `the ${step.probe.kind} ${real.tool} just created` : `a made-up ${step.probe.kind}`}, but it failed before the ${step.probe.kind} mattered: ${clip(errorText(result), 100)}`;
             } else if (step.probe && real) {
               // The handle the creating tool just returned: an error here is the round trip broken.
               record.note = result.isError
@@ -463,7 +463,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             } else if (!call.input.rounds && !step.creates) {
               // An auth error passed on as an answer (not isError): the call reached the
               // server but not the API behind it, so it tested no more than a refused one.
-              const denied = deniedAnswer(result);
+              // A tool that takes a URL fetches it: a 401 in its answer is the page's, not ours.
+              const fetches = Object.keys(tool?.inputSchema?.properties ?? {}).some((p) => /^(?:url|uri|href|endpoint|link)s?$/i.test(p) || /_url$|Url$/.test(p));
+              const denied = fetches ? undefined : deniedAnswer(result);
               if (denied) {
                 record.failure = 'auth';
                 record.note = `the tool answered, not as an error, with the API's ${clip(denied, 120)}`;

@@ -279,13 +279,23 @@ export function pastedRedirect(text: string): URLSearchParams | undefined {
   return params.get('code') || params.get('error') ? params : undefined;
 }
 
-/** One line from stdin, for --no-browser. */
-async function readLine(): Promise<string> {
+/**
+ * One line from stdin, for --no-browser. Fails when stdin ends first (</dev/null, a
+ * closed pipe, Ctrl-D) instead of waiting out the login; `signal` closes it when the
+ * loopback redirect won, so stdin doesn't keep the process alive.
+ */
+async function readLine(signal?: AbortSignal): Promise<string> {
   const { createInterface } = await import('node:readline');
   const rl = createInterface({ input: process.stdin });
+  const stop = () => rl.close();
+  signal?.addEventListener('abort', stop, { once: true });
   try {
-    return await new Promise<string>((resolve) => rl.once('line', resolve));
+    return await new Promise<string>((resolve, reject) => {
+      rl.once('line', resolve);
+      rl.once('close', () => reject(new Error('Nothing was pasted: stdin ended before an address came.\n→ Next: Run toolmenu auth login --no-browser in a terminal, and paste the address the browser ends on.')));
+    });
   } finally {
+    signal?.removeEventListener('abort', stop);
     rl.close();
   }
 }
@@ -318,9 +328,10 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
       onRedirect: options.open ?? (options.noBrowser ? printForPaste(port) : openInBrowser),
     });
     // --no-browser: the loopback redirect, or the address pasted back, whichever comes first.
+    const reading = new AbortController();
     const pasted = async (): Promise<URLSearchParams> => {
       for (;;) {
-        const params = pastedRedirect(await (options.paste ?? readLine)());
+        const params = pastedRedirect(await (options.paste ?? (() => readLine(reading.signal)))());
         if (params) return params;
         process.stderr.write(`That has no code= or error= in it: paste the whole address the browser ended on (http://127.0.0.1:${port}/callback?code=…).\n> `);
       }
@@ -336,7 +347,7 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
       await endSession(client, transport);
     } catch (error) {
       if (!(error instanceof UnauthorizedError)) throw error;
-      const params = options.noBrowser ? await Promise.race([callback.params, pasted()]) : await callback.params;
+      const params = options.noBrowser ? await Promise.race([callback.params, pasted()]).finally(() => reading.abort()) : await callback.params;
       if (params.get('error')) {
         const described = params.get('error_description');
         throw new Error(

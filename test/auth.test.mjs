@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { hasLogin, listLogins, login, LoginNeededError, logout, StoredOAuthProvider } from '../dist/auth.js';
 import { snapshot } from '../dist/snapshot.js';
 import { start } from './fixtures/oauth-server.mjs';
-import { run, tempDir, TIMEOUT_MS } from './helpers.mjs';
+import { CLI, run, tempDir, TIMEOUT_MS } from './helpers.mjs';
 
 // Every test stores its logins in its own directory, never the user's.
 const isolated = () => (process.env.TOOLMENU_AUTH_DIR = tempDir());
@@ -232,4 +232,24 @@ test('pastedRedirect: the whole address or its query; anything without a code or
   assert.equal(pastedRedirect('http://127.0.0.1:33418/callback?error=access_denied').get('error'), 'access_denied');
   assert.equal(pastedRedirect('hello'), undefined);
   assert.equal(pastedRedirect('http://127.0.0.1:33418/callback'), undefined);
+});
+
+// 0.21, from review: stdin that ends (</dev/null, a closed pipe) fails the login at once.
+test('auth login --no-browser: stdin that ends before an address is pasted fails at once, not after the timeout', async () => {
+  isolated();
+  const server = await start();
+  try {
+    const { spawn } = await import('node:child_process');
+    const started = Date.now();
+    const child = spawn(process.execPath, [CLI, 'auth', 'login', '--no-browser', '--port', String(port()), server.url], { env: process.env });
+    child.stdin.end();
+    let stderr = '';
+    child.stderr.on('data', (d) => (stderr += d));
+    const code = await new Promise((r) => child.on('close', r));
+    assert.equal(code, 2, stderr);
+    assert.match(stderr, /Nothing was pasted: stdin ended before an address came\./);
+    assert.ok(Date.now() - started < 30_000);
+  } finally {
+    await server.close();
+  }
 });
