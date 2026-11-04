@@ -79,6 +79,10 @@ test('scan an HTTP server from the config, headers filled from the environment; 
     assert.match(by.page.failed, /^http:\/\/127\.0\.0\.1:\d+\/mcp\?… isn't an MCP endpoint/, 'the key a ${VAR} put in the URL stays out of the reason');
     assert.doesNotMatch(r.stdout, /s3cret|key=abc/);
     assert.equal(r.code, 2);
+    const { file: bare } = write('bare.json', { mcpServers: { api: { type: 'http', url: server.url } } });
+    const text = await run(['scan', bare]);
+    assert.match(text.stdout, /not checked: 127\.0\.0\.1 wants credentials: .*401/);
+    assert.match(text.stdout, /\nA server that wants credentials: toolmenu auth login <url> once \(OAuth\), or its headers in the config\.\n$/);
   } finally {
     await server.close();
     page.close();

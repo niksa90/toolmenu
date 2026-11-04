@@ -189,6 +189,8 @@ export interface ScanRow {
   failed?: string;
   /** Turned off in the config. */
   disabled?: true;
+  /** An HTTP server that answered 401 or 403. */
+  wantsCredentials?: true;
 }
 
 /** Printable location. A URL's query and credentials can hold keys, so they're left out. */
@@ -233,7 +235,8 @@ export async function scan(entries: ScanEntry[], options: ScanOptions = {}): Pro
           const { menu, findings } = await snapshot(e.target, options);
           row = { name: e.name, where: where(e.target), menu, findings };
         } catch (error) {
-          row = { name: e.name, where: where(e.target), findings: [], failed: reason(error, e.target) };
+          const status = error instanceof ConnectError ? error.status : undefined;
+          row = { name: e.name, where: where(e.target), findings: [], failed: reason(error, e.target), ...(status === 401 || status === 403 ? { wantsCredentials: true as const } : {}) };
         }
       }
       rows[i] = row;
@@ -324,6 +327,7 @@ export function formatScan(rows: ScanRow[], format: Format, file: string): strin
     lines.push('', `── ${r.name}  ${s.name ?? ''} ${s.version ?? ''} · protocol ${s.protocolVersion ?? 'unknown'}`.trimEnd(), '');
     lines.push(...findingLines(r.findings).filter((l, i, all) => !(i === all.length - 1 && l === '')));
   }
-  if (rows.some((r) => r.failed)) lines.push('', 'toolmenu snapshot on one server says more about why it couldn\'t be read.');
+  if (rows.some((r) => r.wantsCredentials)) lines.push('', 'A server that wants credentials: toolmenu auth login <url> once (OAuth), or its headers in the config.');
+  if (rows.some((r) => r.failed && !r.wantsCredentials)) lines.push('', 'toolmenu snapshot on one server says more about why it couldn\'t be read.');
   return lines.join('\n');
 }
