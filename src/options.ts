@@ -20,6 +20,7 @@ export const CLI_OPTIONS = {
   elicitation: { type: 'string' },
   'no-auth': { type: 'boolean' },
   port: { type: 'string' },
+  'no-browser': { type: 'boolean' },
   scope: { type: 'string' },
   'client-id': { type: 'string' },
   'client-secret': { type: 'string' },

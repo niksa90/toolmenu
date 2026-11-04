@@ -55,6 +55,7 @@ const OPTIONS: Record<string, [string, string[]]> = {
   'init-out': ['--out <path>', ['where to write the baseline menu (default: menu.json)']],
   'with-session': ['--with-session', ['the workflow also runs session --auto (calls read-only tools)']],
   port: ['--port <n>', ['loopback port for the login redirect (default: 33418)']],
+  'no-browser': ['--no-browser', ["don't open a browser: print the login URL, open it on any device, and paste", 'back the address the browser ends on (over SSH, in a container, on a remote box)']],
   scope: ['--scope <scopes>', ["scopes to ask for (default: the server's)"]],
   'client-id': ['--client-id <id>', ['a pre-registered client, for servers without dynamic registration']],
   'client-secret': ['--client-secret <s>', ['its secret, if it has one']],
@@ -159,7 +160,7 @@ const HELP: Record<Command, CommandHelp> = {
       'snapshot and session then use them for that URL (--no-auth to skip).',
       'Stored in $TOOLMENU_AUTH_DIR, else $XDG_CONFIG_HOME/toolmenu/auth, else ~/.config/toolmenu/auth.',
     ],
-    own: ['port', 'scope', 'client-id', 'client-secret'],
+    own: ['port', 'no-browser', 'scope', 'client-id', 'client-secret'],
     shared: [],
     examples: [
       'toolmenu auth login https://example.com/mcp',

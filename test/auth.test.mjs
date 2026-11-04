@@ -192,3 +192,44 @@ test('auth: a refused refresh is said so on this run and the next; a login the s
     await server.close();
   }
 });
+
+// 0.21: --no-browser. The browser runs elsewhere (a phone, a laptop with an SSH session
+// open); the address it ends on is pasted back instead of reaching the loopback.
+test('auth login --no-browser: the address the browser ends on, pasted back, finishes the login', async () => {
+  isolated();
+  const server = await start();
+  try {
+    const p = port();
+    let shown;
+    // The "other device": follows the authorization redirect but never reaches 127.0.0.1;
+    // the user copies the address it ended on.
+    const paste = async () => {
+      while (!shown) await new Promise((r) => setTimeout(r, 10));
+      const r = await fetch(shown, { redirect: 'manual' });
+      return `  ${r.headers.get('location')}  `;
+    };
+    const err = process.stderr.write;
+    process.stderr.write = (chunk, ...rest) => {
+      const m = /https?:\/\/\S+\/authorize\S*/.exec(String(chunk));
+      if (m) shown = m[0];
+      return true;
+    };
+    const result = await login(server.url, { port: p, noBrowser: true, paste }).finally(() => (process.stderr.write = err));
+    assert.ok(shown, 'the authorization URL is printed');
+    assert.equal(result.tools > 0, true);
+    assert.equal(hasLogin(server.url), true);
+  } finally {
+    await server.close();
+  }
+});
+
+test('pastedRedirect: the whole address or its query; anything without a code or error is refused', async () => {
+  const { pastedRedirect } = await import('../dist/auth.js');
+  assert.equal(pastedRedirect('http://127.0.0.1:33418/callback?code=abc&state=xyz').get('code'), 'abc');
+  assert.equal(pastedRedirect('"http://127.0.0.1:33418/callback?code=abc&state=xyz"').get('state'), 'xyz');
+  assert.equal(pastedRedirect('?code=abc&state=xyz').get('code'), 'abc');
+  assert.equal(pastedRedirect('code=abc&state=xyz').get('code'), 'abc');
+  assert.equal(pastedRedirect('http://127.0.0.1:33418/callback?error=access_denied').get('error'), 'access_denied');
+  assert.equal(pastedRedirect('hello'), undefined);
+  assert.equal(pastedRedirect('http://127.0.0.1:33418/callback'), undefined);
+});

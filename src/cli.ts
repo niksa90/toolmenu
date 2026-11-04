@@ -302,7 +302,7 @@ function parseTarget(positionals: string[], command: string[] | undefined, heade
   return { kind: 'http', url, headers: parsePairs(headers, ':', '--header'), ...(noAuth ? { noAuth } : {}), ...(protocol !== 'auto' ? { protocol } : {}) };
 }
 
-async function authCommand(args: string[], values: { port?: string; scope?: string; 'client-id'?: string; 'client-secret'?: string; timeout?: string }): Promise<number> {
+async function authCommand(args: string[], values: { port?: string; scope?: string; 'client-id'?: string; 'client-secret'?: string; timeout?: string; 'no-browser'?: boolean }): Promise<number> {
   const [action, url, ...extra] = args;
   if (action === 'list') {
     const logins = await listLogins();
@@ -324,7 +324,7 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
   const port = values.port ? Number(values.port) : undefined;
   if (port !== undefined && !(Number.isInteger(port) && port > 0 && port < 65536)) throw new UsageError('--port must be a port number');
   if (values['client-secret'] && !values['client-id']) throw new UsageError('--client-secret goes with --client-id');
-  const result = await login(url, { port, scope: values.scope, clientId: values['client-id'], clientSecret: values['client-secret'] });
+  const result = await login(url, { port, scope: values.scope, clientId: values['client-id'], clientSecret: values['client-secret'], noBrowser: values['no-browser'] });
   process.stdout.write(`Logged in to ${result.name ?? url} (${url}): it lists ${result.tools} tool${result.tools === 1 ? '' : 's'} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`);
   return 0;
 }
