@@ -90,14 +90,28 @@ export async function probeMenu(target: Target, timeoutMs: number, waits?: numbe
  * HTTP probe that differs is retried once: a rolling deploy can serve two
  * versions for a moment.
  */
-export async function probeVariance(target: Target, main: MenuTool[], processes: number, timeoutMs: number, waits?: number[]): Promise<Probe[]> {
+/**
+ * probeMenu, on the protocol an earlier connection got. Negotiated as usual (so errors
+ * read as they always have); only a probe that ends on the other protocol is asked
+ * again, pinned to that one. Under load a version probe can time out and fall back to
+ * 2025 in one process only, and a menu from another protocol differs in ways no
+ * client sees (mastra's $schema): a false variance (the 0.22 corpus run).
+ */
+export async function probeSameEra(target: Target, era: string | undefined, timeoutMs: number, waits?: number[], waited?: { ms: number }, seen?: Set<string>): Promise<Menu> {
+  const m = await probeMenu(target, timeoutMs, waits, waited);
+  if (m.server.era) seen?.add(m.server.era);
+  if (!era || target.protocol || m.server.era === era) return m;
+  return probeMenu({ ...target, protocol: era === 'modern' ? 'modern' : 'legacy' }, timeoutMs, waits, waited);
+}
+
+export async function probeVariance(target: Target, main: MenuTool[], processes: number, timeoutMs: number, waits?: number[], era?: string, seen?: Set<string>): Promise<Probe[]> {
   const probes: Probe[] = [];
   for (let i = 0; i < processes - 1; i++) {
     const seed = String(Number(PROBE_SEED) + i);
     const waited = { ms: 0 };
     try {
-      let tools = (await probeMenu(seeded(target, seed), timeoutMs, waits, waited)).tools;
-      if (target.kind === 'http' && compareMenus(main, tools).length) tools = (await probeMenu(target, timeoutMs, waits, waited)).tools;
+      let tools = (await probeSameEra(seeded(target, seed), era, timeoutMs, waits, waited, seen)).tools;
+      if (target.kind === 'http' && compareMenus(main, tools).length) tools = (await probeSameEra(target, era, timeoutMs, waits, waited)).tools;
       probes.push({ tools });
     } catch (error) {
       probes.push({ error: tooMany(error) ? whyNot(error, waited.ms) : error instanceof Error ? error.message : String(error) });

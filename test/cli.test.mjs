@@ -342,3 +342,40 @@ test('snapshot --offline-check: a menu that depends on the network; a server tha
     remote.close();
   }
 });
+
+// 0.22, from running github-mcp-server 1.14: delete_repository is listed only to clients with elicitation.
+test('menu/capability-dependent: a tool listed only to a client with elicitation is in the menu file, and said', async () => {
+  const dir = tempDir();
+  const out = join(dir, 'menu.json');
+  const raw = join(FIXTURES, 'raw-server.mjs');
+  const r = JSON.parse((await run(['snapshot', '--json', '--out', out, '--env', 'FIXTURE=confirm', '--', process.execPath, raw])).stdout);
+  assert.equal(r.tools, 2);
+  assert.deepEqual(JSON.parse(readFileSync(out, 'utf8')).tools.map((t) => t.name), ['get_thing', 'delete_thing'], 'the baseline holds the tool');
+  const [f] = r.findings.filter((x) => x.rule === 'menu/capability-dependent');
+  assert.equal(f.severity, 'info');
+  assert.equal(f.tool, 'delete_thing');
+  assert.match(f.message, /^delete_thing is listed only to a client that supports elicitation \(can ask the user to confirm\)\. A client without elicitation gets 1 tool, not 2\./);
+  // --processes 1 opens nothing more: not checked.
+  const one = JSON.parse((await run(['snapshot', '--json', '--no-write', '--processes', '1', '--env', 'FIXTURE=confirm', '--', process.execPath, raw])).stdout);
+  assert.equal(one.findings.filter((x) => x.rule === 'menu/capability-dependent').length, 0);
+  // A server that lists the same either way: quiet.
+  const same = JSON.parse((await run(['snapshot', '--json', '--no-write', '--env', 'FIXTURE=clean', '--', process.execPath, raw])).stdout);
+  assert.equal(same.findings.filter((x) => x.rule === 'menu/capability-dependent').length, 0);
+});
+
+// 0.22, from the corpus run: under load mastra's version probe fell back to 2025 in the
+// main process only, and the second process's 2026-07-28 menu read as process variance.
+test('snapshot: a later process that ends on another protocol than the main one is asked again on that one', async () => {
+  const dir = tempDir();
+  const log = join(dir, 'methods.log');
+  const r = await run(['snapshot', '--no-write', '--json', '--env', `LOG=${log}`, '--', process.execPath, join(FIXTURES, 'first-legacy-server.mjs')]);
+  const out = JSON.parse(r.stdout);
+  assert.equal(out.server.protocolVersion, '2025-11-25');
+  assert.match(out.findings.find((f) => f.rule === 'spec/discover').message, /^This connection fell back to protocol 2025-11-25: .* A later process got 2026-07-28, so the server speaks it/);
+  // The first method each process got: the main one, then each later one negotiated
+  // as usual (server/discover) and, having got 2026-07-28, asked again on 2025 (initialize).
+  const [main, ...later] = readFileSync(log, 'utf8').trim().split('\n');
+  assert.equal(main, 'server/discover');
+  // (0.22 before this fix sent no initialize after the main process: every later one stayed on 2026-07-28.)
+  assert.ok(later.filter((m) => m === 'initialize').length >= 2, `the variance probe and the capability listing, each asked again on 2025: ${later.join(', ')}`);
+});

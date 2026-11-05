@@ -6,6 +6,9 @@ const fixture = process.env.FIXTURE ?? 'smells';
 const str = { type: 'string' };
 const obj = (properties, required = Object.keys(properties)) => ({ type: 'object', properties, required });
 
+// Whether the client declared elicitation in initialize (the confirm fixture).
+let elicits = false;
+
 const MENUS = {
   smells: () => [
     { name: 'list_team_audits', description: 'List the audits a team has done.', inputSchema: obj({ team_id: str }), annotations: { readOnlyHint: true } },
@@ -26,6 +29,11 @@ const MENUS = {
     { name: 'get_time', description: `Get the time. Generated at call ${call}.`, inputSchema: obj({}), annotations: { readOnlyHint: true } },
   ],
   badschema: () => [{ name: 'no_schema', description: 'Missing inputSchema.' }],
+  // Like github-mcp-server 1.14's delete_repository: listed only to a client that declared elicitation.
+  confirm: () => [
+    { name: 'get_thing', description: 'Get a thing.', inputSchema: obj({}), annotations: { readOnlyHint: true } },
+    ...(elicits ? [{ name: 'delete_thing', description: 'Delete a thing, after the user confirms.', inputSchema: obj({ thing: str }), annotations: { destructiveHint: true } }] : []),
+  ],
   clean: () => [{ name: 'ping_service', description: 'Check the service is up.', inputSchema: obj({}), annotations: { readOnlyHint: true } }],
   // Search and execute, like Sentry (catalog: standard tool definitions) and
   // Atlassian (catalog-inputs: an `inputs` list). CATALOG_VERSION=2 makes a
@@ -84,6 +92,7 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   }
   if (msg.id === undefined) return; // notifications
   if (msg.method === 'initialize') {
+    elicits = !!msg.params?.capabilities?.elicitation;
     send({ id: msg.id, result: { protocolVersion: '2025-11-25', capabilities: process.env.NO_TOOLS_CAPABILITY ? {} : { tools: {} }, serverInfo: { name: `raw-${fixture}`, version: '0.0.1' } } });
   } else if (msg.method === 'tools/list') {
     calls++;

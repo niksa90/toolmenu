@@ -138,11 +138,12 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     { name: 'toolmenu', version: VERSION },
     {
       versionNegotiation: { mode: target.protocol === 'legacy' ? 'legacy' : target.protocol === 'modern' ? { pin: MODERN_VERSION } : 'auto' },
-      // Only for session (target.elicitation set): a connection that calls tools
-      // declares elicitation, form and URL mode, so a tool that asks the user something
-      // runs its "the user said no" path instead of failing (2026-07-28 multi
-      // round-trip requests). snapshot and the rest declare nothing, as before 0.16:
-      // a server may list different tools to a client that can be asked things.
+      // With target.elicitation set, the connection declares elicitation, form and URL
+      // mode: session, so a tool that asks the user something runs its "the user said
+      // no" path instead of failing (2026-07-28 multi round-trip requests); and, from
+      // 0.22, snapshot's listing, since a server may list more tools to a client that
+      // can be asked things (github-mcp-server's delete_repository). snapshot lists
+      // once more without it (menu/capability-dependent).
       // Never roots or sampling: 2026-07-28 deprecates them (SEP-2577).
       ...(target.elicitation ? { capabilities: { elicitation: { form: {}, url: {} } } } : {}),
     },

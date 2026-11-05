@@ -4,7 +4,7 @@ import { cacheBreak, canonical, compareMenus, type ToolChange } from './compare.
 import { listTools, type Connection, type Elicitation, type Target } from './connect.js';
 import { AfterInputError, callWithInput, MAX_CONTINUATIONS, MAX_ROUNDS, type InputKind, type InputTrace } from './mrtr.js';
 import { buildMenu, toolDefinition } from './menu.js';
-import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeVariance, seeded } from './probe.js';
+import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeSameEra, probeVariance, seeded } from './probe.js';
 import { varianceFinding } from './rules/determinism.js';
 import { classifyFailure, errorWords, structuredError, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
@@ -256,7 +256,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
 
     // Fresh processes or connections, same credentials, must see the same menu.
     let connectionCheck: SessionResult['connectionCheck'];
-    for (const probe of await probeVariance(target, current.tools, options.processes ?? 2, timeoutMs, waits)) {
+    for (const probe of await probeVariance(target, current.tools, options.processes ?? 2, timeoutMs, waits, era)) {
       if (probe.error) {
         raw.push({
           rule: target.kind === 'stdio' ? 'menu/process-variance' : 'menu/connection-variance',
@@ -625,7 +625,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             const probeWaited = { ms: 0 };
             try {
               probedAfter = index;
-              const probe = await probeMenu(mainTarget, timeoutMs, waits, probeWaited);
+              const probe = await probeSameEra(mainTarget, era, timeoutMs, waits, probeWaited);
               record.scope = scopeOf(changes, next.tools, probe.tools, target.kind, baseline.tools);
               raw.push(...scopeFindings(record.scope, modern, index));
             } catch (error) {
