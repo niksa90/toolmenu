@@ -7,7 +7,7 @@
  * Each child runs in its own process group, so cancelling a call, its time running
  * out, or the client closing the connection stops the child and the server it started.
  */
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { statSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,44 +34,63 @@ export interface CliRun {
   stopped?: string;
 }
 
-/**
- * Process groups still running: each run's CLI and the server it started. A group is
- * kept until nothing in it is alive, not until the CLI exits: a server that ignores
- * SIGTERM outlives the CLI that started it.
- */
-const groups = new Set<number>();
+const WINDOWS = process.platform === 'win32';
 
-/** Signal a whole process group. */
-function signalGroup(pgid: number, signal: NodeJS.Signals | 0): boolean {
+/**
+ * Runs still going, by the CLI's pid. On Linux and macOS each run is a process group
+ * (the CLI and the server it started), kept until nothing in it is alive, not until
+ * the CLI exits: a server that ignores SIGTERM outlives the CLI that started it.
+ * Windows has no process groups to signal: there a run is the CLI's process tree,
+ * which taskkill /T ends while the CLI is still its root.
+ */
+const runs = new Map<number, ChildProcess>();
+
+/** Whether anything in the run is still alive. */
+function runAlive(pid: number): boolean {
+  if (WINDOWS) {
+    const child = runs.get(pid);
+    return !!child && child.exitCode === null && child.signalCode === null;
+  }
   try {
-    process.kill(-pgid, signal);
+    process.kill(-pid, 0);
     return true;
   } catch {
     return false;
   }
 }
 
-const groupAlive = (pgid: number) => signalGroup(pgid, 0);
-
-/** Stop a group: SIGTERM, then SIGKILL to whatever in it is still there 2 s later. */
-async function stopGroup(pgid: number): Promise<void> {
-  if (groupAlive(pgid)) {
-    signalGroup(pgid, 'SIGTERM');
-    const end = Date.now() + 2_000;
-    while (groupAlive(pgid) && Date.now() < end) await new Promise((r) => setTimeout(r, 50));
-    if (groupAlive(pgid)) signalGroup(pgid, 'SIGKILL');
+/** Signal the whole run. On Windows, any stop is taskkill /T /F: there's no polite one for a console process. */
+function signalRun(pid: number, signal: 'SIGTERM' | 'SIGKILL'): void {
+  if (WINDOWS) {
+    spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+    return;
   }
-  groups.delete(pgid);
+  try {
+    process.kill(-pid, signal);
+  } catch {
+    // Already gone.
+  }
 }
 
-/** SIGKILL every group still running, at once: toolmenu mcp itself is exiting. */
+/** Stop a run: SIGTERM, then SIGKILL to whatever in it is still there 2 s later. */
+async function stopRun(pid: number): Promise<void> {
+  if (runAlive(pid)) {
+    signalRun(pid, 'SIGTERM');
+    const end = Date.now() + 2_000;
+    while (runAlive(pid) && Date.now() < end) await new Promise((r) => setTimeout(r, 50));
+    if (runAlive(pid)) signalRun(pid, 'SIGKILL');
+  }
+  runs.delete(pid);
+}
+
+/** Kill every run still going, at once: toolmenu mcp itself is exiting. */
 export function killAllNow(): void {
-  for (const pgid of groups) signalGroup(pgid, 'SIGKILL');
+  for (const pid of runs.keys()) signalRun(pid, 'SIGKILL');
 }
 
-/** Stop every group still running, and wait for it: the client closed the connection. */
+/** Stop every run still going, and wait for it: the client closed the connection. */
 export async function stopAll(): Promise<void> {
-  await Promise.all([...groups].map(stopGroup));
+  await Promise.all([...runs.keys()].map(stopRun));
 }
 
 export interface RunOptions {
@@ -86,18 +105,22 @@ export function runCli(args: string[], cwd: string, options: RunOptions = {}): P
   const { secretArgs = [], signal, limitMs = RUN_LIMIT_MS } = options;
   return new Promise((done) => {
     if (signal?.aborted) return done({ code: 2, stdout: '', stderr: '', stopped: 'The call was cancelled before it started.' });
-    // NO_COLOR: the report goes to an agent, not a terminal.
-    const env: NodeJS.ProcessEnv = { ...process.env, NO_COLOR: '1' };
+    // NO_COLOR: the report goes to an agent, not a terminal. NODE_NO_WARNINGS: Node's
+    // own notices (experimental features) aren't findings, and would read as if they
+    // were. Neither reaches the server under test: it gets a minimal environment.
+    const env: NodeJS.ProcessEnv = { ...process.env, NO_COLOR: '1', NODE_NO_WARNINGS: '1' };
     delete env[SECRET_ARGS_ENV];
     if (secretArgs.length) env[SECRET_ARGS_ENV] = JSON.stringify(secretArgs);
-    const child = spawn(process.execPath, [CLI, ...args], { cwd, env, detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
-    if (child.pid) groups.add(child.pid);
+    // detached: its own process group (Linux, macOS). On Windows it would open a console
+    // window for every run instead, so there the run stays attached and hidden.
+    const child = spawn(process.execPath, [CLI, ...args], { cwd, env, detached: !WINDOWS, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    if (child.pid) runs.set(child.pid, child);
     let stdout = '';
     let stderr = '';
     let stopped: string | undefined;
     const halt = (why: string) => {
       stopped ??= why;
-      if (child.pid) void stopGroup(child.pid);
+      if (child.pid) void stopRun(child.pid);
     };
     child.stdout!.on('data', (d) => {
       stdout += d;
@@ -110,11 +133,15 @@ export function runCli(args: string[], cwd: string, options: RunOptions = {}): P
     const timer = setTimeout(() => halt(`The run took longer than ${limitMs / 60_000} minutes, so it was stopped. A server that is slow to answer each request can be given a longer --timeout in toolmenu.config.json, or fewer calls (max_calls).`), limitMs);
     const onAbort = () => halt('The call was cancelled, so the run was stopped.');
     signal?.addEventListener('abort', onAbort, { once: true });
+    let finished = false;
+    // A child that fails to start can emit both error and close: answer once.
     const finish = (code: number) => {
+      if (finished) return;
+      finished = true;
       clearTimeout(timer);
       signal?.removeEventListener('abort', onAbort);
       // Whatever the CLI left behind (a server it couldn't stop) goes with it.
-      if (child.pid) void stopGroup(child.pid);
+      if (child.pid) void stopRun(child.pid);
       done({ code, stdout, stderr, ...(stopped ? { stopped } : {}) });
     };
     // Never Node's own error message: it repeats the command line.
@@ -307,7 +334,7 @@ export function build(baseCwd = process.cwd()): McpServer {
  */
 export async function serveMcp(): Promise<void> {
   process.once('exit', killAllNow);
-  for (const [signal, code] of [['SIGTERM', 143], ['SIGINT', 130]] as const) {
+  for (const [signal, code] of [['SIGTERM', 143], ['SIGINT', 130], ['SIGHUP', 129]] as const) {
     process.once(signal, () => {
       killAllNow();
       process.exit(code);

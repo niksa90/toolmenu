@@ -17,6 +17,9 @@ It adds:
 - **The `check-mcp-menu` skill**: when to run them while you work on a server's
   tools, and how to read the report.
 
+The first start downloads toolmenu from npm, which can take a few seconds; later
+starts use npx's cache.
+
 `snapshot_menu` and `check_session` start the server command you give them (or
 connect to its URL), as `toolmenu snapshot` does on the command line. Claude Code
 asks before each call unless you allow the tools.

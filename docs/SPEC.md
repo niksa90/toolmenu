@@ -1101,10 +1101,15 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   like one. Header and env values (credentials) go to the CLI in `TOOLMENU_MCP_ARGS`,
   a JSON array the CLI puts before `--` and removes from its environment, not in argv,
   which any local user can read.
-- **Stopping**: each child is its own process group, holding the server it starts.
-  A cancelled call, a run past 10 minutes, a report past 64 MB, and the client
-  closing stdin each send the group SIGTERM, then SIGKILL 2 s later; on close the
-  server waits for that before it exits.
+- **Stopping**: on Linux and macOS each child is its own process group, holding the
+  server it starts, tracked until nothing in it is alive. A cancelled call, a run
+  past 10 minutes, a report past 64 MB, and the client closing stdin each send the
+  group SIGTERM, then SIGKILL 2 s later; on close the server waits for that. On
+  SIGTERM, SIGINT, SIGHUP or exit, what's left gets SIGKILL at once. Windows has no
+  process groups: the child stays attached (hidden, no console window) and a stop is
+  `taskkill /T /F` on its tree. CI runs the MCP tests on Windows and macOS.
+- **The child's environment**: `NO_COLOR=1` and `NODE_NO_WARNINGS=1` (Node's notices
+  aren't findings). The server under test still gets only the minimal environment.
 - **Its own menu** has no findings at any level on either protocol, and under
   `session --auto`; `test/mcp.test.mjs` checks it.
 - **The plugin**: `.claude-plugin/marketplace.json` lists `plugins/toolmenu`, which

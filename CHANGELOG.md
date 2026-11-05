@@ -13,7 +13,8 @@ works, and a Claude Code plugin that installs it.
   both protocols and under `session --auto`, and a test keeps it that way.
   - Each run is its own process group: a cancelled call, a run past 10 minutes and
     the client disconnecting stop the run and the server it started, a server that
-    ignores SIGTERM included.
+    ignores SIGTERM included. On Windows, where there are no process groups, a stop
+    ends the run's process tree (`taskkill /T`), with no console window per run.
   - Header and env values (credentials) reach the CLI through the environment, not
     its command line, and a tool error never repeats the command line.
   - Paths, rule names and option values from the agent are never read as options,
