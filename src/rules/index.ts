@@ -6,6 +6,7 @@ import { authoredIds } from './ids.js';
 import { clientName } from './clients.js';
 import { invalidCredential } from './auth.js';
 import { networkDependent } from './network.js';
+import { capabilityDependent } from './capabilities.js';
 import { listSchema, listVariance } from './lists.js';
 import { handleLifetime } from './handles.js';
 import { authVariance, cacheScopePublic } from './identities.js';
@@ -50,6 +51,7 @@ export const MENU_RULES: Rule[] = [
   authVariance,
   invalidCredential,
   networkDependent,
+  capabilityDependent,
   listVariance,
   listSchema,
   cacheScopePublic,

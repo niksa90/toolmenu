@@ -342,3 +342,23 @@ test('snapshot --offline-check: a menu that depends on the network; a server tha
     remote.close();
   }
 });
+
+// 0.22, from running github-mcp-server 1.14: delete_repository is listed only to clients with elicitation.
+test('menu/capability-dependent: a tool listed only to a client with elicitation is in the menu file, and said', async () => {
+  const dir = tempDir();
+  const out = join(dir, 'menu.json');
+  const raw = join(FIXTURES, 'raw-server.mjs');
+  const r = JSON.parse((await run(['snapshot', '--json', '--out', out, '--env', 'FIXTURE=confirm', '--', process.execPath, raw])).stdout);
+  assert.equal(r.tools, 2);
+  assert.deepEqual(JSON.parse(readFileSync(out, 'utf8')).tools.map((t) => t.name), ['get_thing', 'delete_thing'], 'the baseline holds the tool');
+  const [f] = r.findings.filter((x) => x.rule === 'menu/capability-dependent');
+  assert.equal(f.severity, 'info');
+  assert.equal(f.tool, 'delete_thing');
+  assert.match(f.message, /^delete_thing is listed only to a client that supports elicitation \(can ask the user to confirm\)\. A client without elicitation gets 1 tool, not 2\./);
+  // --processes 1 opens nothing more: not checked.
+  const one = JSON.parse((await run(['snapshot', '--json', '--no-write', '--processes', '1', '--env', 'FIXTURE=confirm', '--', process.execPath, raw])).stdout);
+  assert.equal(one.findings.filter((x) => x.rule === 'menu/capability-dependent').length, 0);
+  // A server that lists the same either way: quiet.
+  const same = JSON.parse((await run(['snapshot', '--json', '--no-write', '--env', 'FIXTURE=clean', '--', process.execPath, raw])).stdout);
+  assert.equal(same.findings.filter((x) => x.rule === 'menu/capability-dependent').length, 0);
+});

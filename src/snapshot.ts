@@ -8,6 +8,8 @@ import type { ListsContext } from './rules/lists.js';
 import type { IdentityMenu } from './rules/identities.js';
 import type { InvalidCredential } from './rules/auth.js';
 import type { OfflineMenu } from './rules/network.js';
+import type { PlainMenu } from './rules/capabilities.js';
+import type { Target as AnyTarget } from './connect.js';
 import { isCredentialHeader } from './explain.js';
 import { httpStatus } from './failures.js';
 import { clientCost, type ClientCost } from './clients.js';
@@ -56,7 +58,11 @@ export interface SnapshotResult {
 /** Establish the menu: connect, list the tools twice, run the menu rules. */
 export async function snapshot(given: Target, options: SnapshotOptions = {}): Promise<SnapshotResult> {
   const [mainIdentity, ...otherIdentities] = options.identities ?? [];
-  const target = asIdentity(given, mainIdentity);
+  // Listed as a client that can be asked things (elicitation, answered "decline"; no tool
+  // is called, so none is asked): a server may list some tools only to such clients, and
+  // the baseline should hold every tool some client sees. One more listing without it
+  // says what a client without elicitation gets (rules/capabilities.ts).
+  const target = withElicitation(asIdentity(given, mainIdentity));
   // Connecting and listing are read-only: a refusal for being too many is waited
   // out and they're sent again (CI behind a shared rate limit).
   const connection = await connectPatiently(seeded(target, MAIN_SEED), { timeoutMs: options.timeoutMs });
@@ -119,6 +125,17 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   // server should refuse it, not serve a menu (rules/auth.ts).
   const invalid = target.kind === 'http' && connection.usedAuth && (options.processes ?? 2) > 1 ? await invalidCredentialProbe(target, options.timeoutMs ?? 30_000) : undefined;
 
+  // The menu a client without elicitation gets (rules/capabilities.ts).
+  // Another process or connection: not with --processes 1 (one session per client), nor when the rule is off.
+  let plain: PlainMenu | undefined;
+  if ((options.processes ?? 2) > 1 && options.rules?.['menu/capability-dependent'] !== 'off') {
+    try {
+      plain = { tools: (await probeMenu(seeded({ ...target, elicitation: undefined }, MAIN_SEED), options.timeoutMs ?? 30_000)).tools };
+    } catch (error) {
+      plain = { error: firstLine(error) };
+    }
+  }
+
   // --offline-check: one more process with the network cut off (rules/network.ts).
   // Not run when the rule is off: it's a whole server start.
   const offline = options.offlineCheck && target.kind === 'stdio' && options.rules?.['menu/network-dependent'] !== 'off' ? (isContainerWrapper(target) ? { wrapper: true } : await offlineProbe(target, options.timeoutMs ?? 30_000)) : undefined;
@@ -129,7 +146,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     : undefined;
   for (const identity of otherIdentities) {
     try {
-      const m = await probeMenu(seeded(asIdentity(given, identity), MAIN_SEED), options.timeoutMs ?? 30_000);
+      const m = await probeMenu(seeded(withElicitation(asIdentity(given, identity)), MAIN_SEED), options.timeoutMs ?? 30_000);
       identities!.push({ name: identity.name, tools: m.tools, tokens: m.totalTokens, cacheScope: m.listMeta?.cacheScope });
     } catch (error) {
       identities!.push({ name: identity.name, error: firstLine(error) });
@@ -161,6 +178,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       identities,
       ...(invalid ? { invalidCredential: invalid } : {}),
       ...(offline ? { offline } : {}),
+      ...(plain ? { plain } : {}),
       ...(reads.length || undeclared.length ? { lists: { read: reads, undeclared } } : {}),
     },
     options,
@@ -235,6 +253,11 @@ async function invalidCredentialProbe(target: Extract<Target, { kind: 'http' }>,
     const status = httpStatus(error);
     return status !== undefined ? { status } : { error: firstLine(error) };
   }
+}
+
+/** The target, listed as a client that supports elicitation (answered "decline" if ever asked). */
+function withElicitation<T extends AnyTarget>(t: T): T {
+  return t.elicitation ? t : { ...t, elicitation: 'decline' };
 }
 
 const firstLine = (error: unknown) => (error instanceof Error ? error.message : String(error)).split('\n')[0].trim();
