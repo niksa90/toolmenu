@@ -167,12 +167,30 @@ test('a cwd that is not a folder says so', async () => {
   });
 });
 
-test('the plugin runs the toolmenu version it is released with', () => {
-  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-  const plugin = JSON.parse(readFileSync(join(ROOT, 'plugins/toolmenu/.claude-plugin/plugin.json'), 'utf8'));
-  const mcp = JSON.parse(readFileSync(join(ROOT, 'plugins/toolmenu/.mcp.json'), 'utf8'));
-  assert.equal(plugin.version, pkg.version);
-  assert.deepEqual(mcp.mcpServers.toolmenu.args, ['-y', `toolmenu@${pkg.version}`, 'mcp']);
+test('the plugin runs the toolmenu release its lockfile pins, installed with it, never a newer one than this repo', () => {
+  const dir = join(ROOT, 'plugins/toolmenu');
+  const read = (f) => JSON.parse(readFileSync(join(dir, f), 'utf8'));
+  const plugin = read('.claude-plugin/plugin.json');
+  const deps = read('package.json').dependencies;
+  const lock = read('package-lock.json');
+  // The plugin's version is the toolmenu release it runs: published first, then pinned here.
+  assert.deepEqual(deps, { toolmenu: plugin.version }, 'package.json pins toolmenu to the plugin version, exactly');
+  assert.equal(lock.packages['node_modules/toolmenu'].version, plugin.version, 'regenerate: npm install --package-lock-only (in plugins/toolmenu)');
+  assert.deepEqual(lock.packages[''].dependencies, deps, 'package.json and the lockfile list the same dependencies, or Claude Code skips the install');
+  // What Claude Code's install needs: lockfile v2 or 3, exact registry packages over https with hashes, no scripts.
+  assert.ok([2, 3].includes(lock.lockfileVersion));
+  for (const [path, p] of Object.entries(lock.packages)) {
+    if (!path) continue;
+    assert.match(p.resolved, /^https:\/\/registry\.npmjs\.org\//, path);
+    assert.match(p.integrity, /^sha512-/, path);
+    assert.ok(!p.hasInstallScript, `${path} has an install script, which Claude Code's install doesn't run`);
+  }
+  const pkgVersion = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version.split('.').map(Number);
+  const pinned = plugin.version.split('.').map(Number);
+  assert.ok(pinned[0] < pkgVersion[0] || (pinned[0] === pkgVersion[0] && (pinned[1] < pkgVersion[1] || (pinned[1] === pkgVersion[1] && pinned[2] <= pkgVersion[2]))), 'the plugin pins a published release, not one ahead of this repo');
+  const mcp = read('.mcp.json').mcpServers.toolmenu;
+  assert.equal(mcp.command, 'node');
+  assert.deepEqual(mcp.args, ['${CLAUDE_PLUGIN_ROOT}/node_modules/toolmenu/dist/cli.js', 'mcp']);
 });
 
 test('TOOLMENU_MCP_ARGS: arguments the CLI takes from the environment, before "--"', async () => {

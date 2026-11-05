@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "toolmenu": {
-      "command": "npx",
-      "args": ["-y", "toolmenu@0.25.0", "mcp"]
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/node_modules/toolmenu/dist/cli.js", "mcp"]
     }
   }
 }

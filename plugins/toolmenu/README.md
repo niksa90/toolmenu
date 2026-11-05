@@ -14,8 +14,9 @@ give the same answer.
 
 It adds:
 
-- **The toolmenu MCP server** (`npx -y toolmenu@<this plugin's version> mcp`, Node 22 or later; a plugin update moves it to a new release):
-  `snapshot_menu`, `diff_menus`, `check_session` and `explain_rule`.
+- **The toolmenu MCP server** (Node 22 or later), the toolmenu release the plugin
+  pins: `snapshot_menu`, `diff_menus`, `check_session` and `explain_rule`. A plugin
+  update moves it to a new release.
 - **Three skills**, each for one moment of work on an MCP server:
   - `check-mcp-menu`: after changing tools (names, descriptions, schemas,
     annotations), or when an agent picks the wrong tool.
@@ -24,12 +25,15 @@ It adds:
   - `setup-ci`: adds toolmenu to CI with `toolmenu init`, so every pull request gets
     a comment.
 
-The first start downloads toolmenu from npm, which can take a few seconds; later
-starts use npx's cache.
+Installing the plugin installs toolmenu with it: Claude Code runs npm on the plugin's
+`package-lock.json`, which pins toolmenu and each of its dependencies to an exact
+version and hash, with install scripts off. The server then starts from the plugin's
+folder, with no download at start.
 
 ## What it runs, sends and stores
 
-- **Runs:** `npx -y toolmenu@<version> mcp`, downloaded once from the npm registry
+- **Runs:** toolmenu's MCP server (`node node_modules/toolmenu/dist/cli.js mcp`),
+  installed from the npm registry at plugin install, as `package-lock.json` pins it
   (source: https://github.com/niksa90/toolmenu, published with npm provenance).
   `snapshot_menu` and `check_session` start the server command you give them, in the
   folder you give, or connect to the URL you give, as `toolmenu snapshot` does on the
@@ -38,7 +42,7 @@ starts use npx's cache.
   with arguments its schemas allow. `snapshot_menu` and `diff_menus` call none.
 - **Sends:** nothing to toolmenu or anyone else: no telemetry, no account. The only
   network traffic is to the server URL you give (and its sign-in server, if you
-  signed in to it) and the npm download.
+  signed in to it) and the npm install.
 - **Stores:** the menu files you ask it to write (`save_as`). If you sign in to a
   server with `toolmenu login`, its tokens stay in `~/.config/toolmenu/auth` on your
   machine, and the tools use them for that server.
@@ -46,8 +50,7 @@ starts use npx's cache.
   reach toolmenu through its environment, not its command line, so other processes
   on the machine don't see them in a process list.
 
-Without the plugin: `claude mcp add toolmenu -- npx -y toolmenu mcp`.
-Docs: https://github.com/niksa90/toolmenu#readme
+Without the plugin, see the toolmenu docs: https://github.com/niksa90/toolmenu#readme
 
 ## Evals
 

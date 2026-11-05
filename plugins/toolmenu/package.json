@@ -1,0 +1,9 @@
+{
+  "name": "toolmenu-claude-plugin",
+  "private": true,
+  "description": "The toolmenu version this plugin runs. Claude Code installs it from package-lock.json when the plugin is installed.",
+  "license": "MIT",
+  "dependencies": {
+    "toolmenu": "0.25.0"
+  }
+}
