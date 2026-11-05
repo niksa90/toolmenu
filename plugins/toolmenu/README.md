@@ -1,3 +1,5 @@
+![toolmenu](logo.svg)
+
 # toolmenu for Claude Code
 
 Lets Claude check the MCP server you're building, the way clients and agents will meet
