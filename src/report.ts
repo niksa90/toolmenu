@@ -1,5 +1,5 @@
 import type { ClientCost } from './clients.js';
-import { agentTools } from './apps.js';
+import { agentMenu } from './apps.js';
 import type { DiffResult } from './diff.js';
 import type { HistoryResult, HistoryRow } from './history.js';
 import { clip, stepLabel, stepsText, type Scenario, type SessionResult } from './session.js';
@@ -39,25 +39,13 @@ function costLine(cost: ClientCost): string {
   return `as ${cost.label}: ${parts.join(' · ')}`;
 }
 
-/**
- * The menu without MCP Apps app-only tools, which an Apps host keeps out of the agent's
- * list (the breakdown is about what the agent pays for), and what was left out.
- */
-function agentView(menu: Menu): { shown: Menu; appOnly?: { tools: number; tokens: number } } {
-  const tools = agentTools(menu.tools);
-  if (tools === menu.tools) return { shown: menu };
-  const tokens = tools.reduce((n, t) => n + t.tokens, 0);
-  return { shown: { ...menu, tools, totalTokens: tokens }, appOnly: { tools: menu.tools.length - tools.length, tokens: menu.totalTokens - tokens } };
-}
-
 /** " · 2 not shown to the agent (MCP Apps visibility without "model", ~60 tokens)", or nothing. */
-function appOnlyNote(menu: Menu): string {
-  const a = agentView(menu).appOnly;
+function appOnlyNote(a: { tools: number; tokens: number } | undefined): string {
   return a ? ` · ${a.tools} not shown to the agent (MCP Apps visibility without "model", ~${a.tokens.toLocaleString('en-US')} tokens)` : '';
 }
 
 export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, outPath?: string, cost?: ClientCost, notOffered: string[] = []): string {
-  const view = agentView(menu);
+  const view = agentMenu(menu);
   if (format === 'json') {
     return JSON.stringify(
       {
@@ -87,7 +75,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
     return [
       `### toolmenu snapshot: \`${s.name ?? 'server'}\` ${s.version ?? ''}`.trimEnd(),
       '',
-      `Protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(menu)}`,
+      `Protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(view.appOnly)}`,
       ...(cost ? ['', `${costLine(cost)}. _${cost.basis}._`] : []),
       ...(otherLists(menu) ? ['', `Also listed: ${otherLists(menu)}`] : []),
       '',
@@ -99,7 +87,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
   const s = menu.server;
   const lines = [
     `toolmenu snapshot  ${s.name ?? 'unknown server'} ${s.version ?? ''}`.trimEnd(),
-    `  protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(menu)}`,
+    `  protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(view.appOnly)}`,
   ];
   if (cost) lines.push(`  ${costLine(cost)}`, `    ${cost.basis}`);
   const others = otherLists(menu);

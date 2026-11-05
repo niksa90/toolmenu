@@ -18,7 +18,7 @@ import { xMcpHeader } from './headers.js';
 import { schemaRef } from './refs.js';
 import { findable } from './search.js';
 import { appsAppOnlyListed, appsLegacyKey, appsResource, appsVisibility } from './apps.js';
-import { agentTools } from '../apps.js';
+import { agentMenu } from '../apps.js';
 import { serverCard } from './card.js';
 import type { Rule, RuleContext } from './rule.js';
 
@@ -87,13 +87,12 @@ export function runRules(rules: Rule[], ctx: RuleContext, settings: RuleSettings
   const isIgnored = (tool: string) => ignore.some((re) => re.test(tool));
   const findings: Finding[] = [];
   // The menu as an MCP Apps host shows it to the agent: app-only tools left out.
-  const shown = agentTools(ctx.menu.tools);
-  const agentMenu = shown === ctx.menu.tools ? ctx.menu : { ...ctx.menu, tools: shown, totalTokens: shown.reduce((n, t) => n + t.tokens, 0) };
+  const shown = agentMenu(ctx.menu).shown;
   for (const rule of rules) {
     const configured = settings.rules?.[rule.id] ?? (RULE_ALIASES[rule.id] ? settings.rules?.[RULE_ALIASES[rule.id]] : undefined);
     if (configured === 'off') continue;
     if (rule.since && (!ctx.protocolVersion || ctx.protocolVersion < rule.since)) continue;
-    for (const f of rule.run({ ...ctx, ...(rule.scope === 'agent' ? { menu: agentMenu } : {}), isIgnored })) {
+    for (const f of rule.run({ ...ctx, ...(rule.scope === 'agent' ? { menu: shown } : {}), isIgnored })) {
       if (f.tool && isIgnored(f.tool)) continue;
       findings.push({ rule: rule.id, ...f, severity: configured ?? f.severity ?? rule.severity });
     }

@@ -1,4 +1,4 @@
-import { LEGACY_URI_KEY, resourceUriOf, uiMeta } from './apps.js';
+import { agentTools, LEGACY_URI_KEY, resourceUriOf, uiMeta } from './apps.js';
 import { createHash } from 'node:crypto';
 import { canonical, compareMenus } from './compare.js';
 import { countTokens } from './menu.js';
@@ -272,7 +272,8 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   raw.push(...compareExtensions(before, after));
 
   // Ignored tools leave the token counts and the budget too.
-  const tokens = tokenChange(oldTools, newTools);
+  // What the agent pays: app-only tools (MCP Apps) aren't in its list.
+  const tokens = tokenChange(agentTools(oldTools), agentTools(newTools));
   if (options.tokenBudget !== undefined && tokens.after > options.tokenBudget) {
     const grew = tokens.tools.filter((t) => t.delta > 0).slice(0, 3);
     raw.push({
@@ -1535,7 +1536,7 @@ function compareRest(old: MenuTool, t: MenuTool): Raw[] {
   }
 
   out.push(...compareApps(old, t));
-  // _meta.ui is compareApps'; the rest of _meta is compared as any other field.
+  // _meta.ui's URI and visibility are compareApps'; the rest of _meta is compared as any other field.
   const field = (tool: MenuTool, k: string) => (k === '_meta' ? withoutUi(tool._meta) : tool[k]);
   const others = [...new Set([...Object.keys(old), ...Object.keys(t)])].filter((k) => !TOOL_FIELDS.has(k) && canonical(field(old, k)) !== canonical(field(t, k))).sort();
   if (others.length) {
@@ -1553,10 +1554,18 @@ function compareRest(old: MenuTool, t: MenuTool): Raw[] {
   return out;
 }
 
-/** _meta without MCP Apps' ui and the deprecated ui/resourceUri; undefined when nothing else is left. */
+/** _meta without MCP Apps' resourceUri, visibility and the deprecated ui/resourceUri; undefined when nothing else is left. */
 function withoutUi(meta: unknown): unknown {
   if (typeof meta !== 'object' || meta === null || Array.isArray(meta)) return meta;
-  const { ui: _ui, [LEGACY_URI_KEY]: _legacy, ...rest } = meta as Record<string, unknown>;
+  const { ui, [LEGACY_URI_KEY]: _legacy, ...rest } = meta as Record<string, unknown>;
+  // Only what compareApps says: the URI and visibility. The rest of _meta.ui (csp,
+  // permissions, domain, prefersBorder) is still compared here, as any _meta field.
+  if (typeof ui === 'object' && ui !== null && !Array.isArray(ui)) {
+    const { resourceUri: _uri, visibility: _visibility, ...uiRest } = ui as Record<string, unknown>;
+    if (Object.keys(uiRest).length) rest.ui = uiRest;
+  } else if (ui !== undefined) {
+    rest.ui = ui;
+  }
   return Object.keys(rest).length ? rest : undefined;
 }
 

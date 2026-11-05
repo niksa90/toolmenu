@@ -38,6 +38,29 @@ const definition = (t: MenuTool) => {
   return JSON.stringify(rest);
 };
 
+/**
+ * What the rule compares, between the main listing and a bare one: tools listed only
+ * in the main one (app-only tools left out: listing those only to Apps hosts is what
+ * ext-apps asks for), only in the bare one, and same-name tools defined otherwise.
+ */
+function compareListings(main: MenuTool[], bare: MenuTool[]) {
+  const theirs = new Map(bare.map((t) => [t.name, t]));
+  const mine = new Map(main.map((t) => [t.name, t]));
+  return {
+    theirs,
+    mine,
+    only: [...mine.keys()].filter((n) => !theirs.has(n) && !isAppOnly(mine.get(n)!)),
+    without: [...theirs.keys()].filter((n) => !mine.has(n)),
+    variants: [...mine.keys()].filter((n) => theirs.has(n) && definition(mine.get(n)!) !== definition(theirs.get(n)!)),
+  };
+}
+
+/** Whether the rule has anything to say about these two listings: snapshot lists a third time only then. */
+export function listingsDiffer(main: MenuTool[], bare: MenuTool[]): boolean {
+  const { only, without, variants } = compareListings(main, bare);
+  return only.length + without.length + variants.length > 0;
+}
+
 export const capabilityDependent: Rule = {
   id: 'menu/capability-dependent',
   severity: 'info',
@@ -46,15 +69,10 @@ export const capabilityDependent: Rule = {
     const plain = ctx.plain?.tools;
     if (!plain) return [];
     const middle = ctx.plain?.elicitationOnly;
-    const theirs = new Map(plain.map((t) => [t.name, t]));
-    const mine = new Map(ctx.menu.tools.map((t) => [t.name, t]));
+    const { mine, only, without, variants } = compareListings(ctx.menu.tools, plain);
     const halfway = middle ? new Map(middle.map((t) => [t.name, t])) : undefined;
     // Which capability brings a tool, or its variant: the one elicitation alone doesn't.
     const cause = (name: string, same: (m: MenuTool | undefined) => boolean): Cause => (!halfway ? 'either' : same(halfway.get(name)) ? 'elicitation' : 'apps');
-    // An app-only tool listed only to an Apps host is what ext-apps asks for: not said.
-    const only = [...mine.keys()].filter((n) => !theirs.has(n) && !isAppOnly(mine.get(n)!));
-    const without = [...theirs.keys()].filter((n) => !mine.has(n));
-    const variants = [...mine.keys()].filter((n) => theirs.has(n) && definition(mine.get(n)!) !== definition(theirs.get(n)!));
     if (!only.length && !without.length && !variants.length) return [];
 
     const byCause = new Map<Cause, string[]>();

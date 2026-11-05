@@ -247,28 +247,34 @@ export const extensionId: Rule = {
         },
       ];
     }
-    const bad: string[] = [];
+    // One entry per extension: its identifier, its settings, or both.
+    const named: string[] = [];
+    const unset: string[] = [];
     for (const [id, settings] of Object.entries(e as Record<string, unknown>)) {
-      if (!EXTENSION_ID.test(id)) bad.push(`"${id}": ${id.includes('/') ? 'not in vendor-prefix/name form (labels start with a letter; the name starts and ends alphanumeric)' : 'no vendor prefix (the spec makes one mandatory: io.modelcontextprotocol/ui, com.example/feature)'}`);
-      if (typeof settings !== 'object' || settings === null || Array.isArray(settings)) bad.push(`"${id}": its settings are ${JSON.stringify(settings)}, not an object ({} for none)`);
+      if (!EXTENSION_ID.test(id)) named.push(`"${id}": ${id.includes('/') ? 'not in vendor-prefix/name form (labels start with a letter; the name starts and ends alphanumeric)' : 'no vendor prefix (the spec makes one mandatory: io.modelcontextprotocol/ui, com.example/feature)'}`);
+      else if (typeof settings !== 'object' || settings === null || Array.isArray(settings)) unset.push(`"${id}": its settings are ${JSON.stringify(settings)}, not an object ({} for none)`);
     }
-    if (!bad.length) return [];
-    return [
-      {
-        message: `${bad.length === 1 ? 'An extension the server declares is' : `${bad.length} extensions the server declares are`} not identified as the spec says, so a client that looks ${bad.length === 1 ? 'it' : 'them'} up by identifier finds ${bad.length === 1 ? 'it' : 'them'} not declared: ${bad[0]}${bad.length > 1 ? '…' : '.'}`,
-        ...(bad.length > 1 ? { detail: bad } : {}),
+    const out: RuleFinding[] = [];
+    if (named.length) {
+      const one = named.length === 1;
+      out.push({
+        message: `${one ? 'An extension the server declares is' : `${named.length} extensions the server declares are`} not identified as the spec says, so a client that looks ${one ? 'it' : 'them'} up by identifier finds ${one ? 'it' : 'them'} not declared: ${named[0]}${one ? '.' : '…'}`,
+        ...(one ? {} : { detail: named }),
         fix: 'Use the identifier the extension\'s spec gives (io.modelcontextprotocol/ui for MCP Apps, io.modelcontextprotocol/tasks for Tasks), or your reverse-DNS prefix for your own, with {} or a settings object as the value.',
-      },
-    ];
+      });
+    }
+    if (unset.length) {
+      const one = unset.length === 1;
+      out.push({
+        message: `${one ? 'An extension the server declares has' : `${unset.length} extensions the server declares have`} settings that aren't an object, which the 2026-07-28 schema requires (a settings object per extension, {} for none), so a client that reads ${one ? 'its' : 'their'} settings may reject or ignore ${one ? 'it' : 'them'}: ${unset[0]}${one ? '.' : '…'}`,
+        ...(one ? {} : { detail: unset }),
+        fix: 'Give each extension an object as its value: {} when it has no settings.',
+      });
+    }
+    return out;
   },
 };
 
-/**
- * 2025-11-25 tasks: a tool with execution.taskSupport "required" can only be called as
- * a task ("Tool requires task-augmented execution"), so a client without Tasks support
- * can't call it at all. 2026-07-28 moved Tasks to an extension with no per-tool flag:
- * the server decides per request, so the field says nothing there.
- */
 export const taskRequired: Rule = {
   id: 'spec/task-required',
   severity: 'info',

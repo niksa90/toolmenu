@@ -23,9 +23,10 @@ function hasAnnotations(tool: MenuTool): boolean {
 const WHY =
   'Without readOnlyHint and destructiveHint, a client has to assume the worst of every write, and neither the client nor the agent can tell a harmless create from a delete when deciding what to confirm.';
 
+// Not agent-scope: an MCP Apps app-only tool is still called through the host, which
+// decides from its annotations whether to confirm (write/read-only-mismatch likewise).
 export const unannotated: Rule = {
   id: 'write/unannotated',
-  scope: 'agent',
   severity: 'warn',
   lesson: '02',
   summary: 'Tools that look like writes carry annotations',
@@ -72,7 +73,6 @@ export const unannotated: Rule = {
  */
 export const readOnlyMismatch: Rule = {
   id: 'write/read-only-mismatch',
-  scope: 'agent',
   severity: 'warn',
   summary: 'Tools marked read-only whose names say they write',
   run(ctx) {

@@ -50,7 +50,8 @@ const MENUS = {
     apps
       ? { name: 'show_chart', description: 'Show the chart as an interactive view.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('ui://fx/chart') }
       : { name: 'show_chart', description: 'Show the chart as text.', inputSchema: obj({}), annotations: { readOnlyHint: true } },
-    // Named like a write, no annotations: the agent never sees it, so no write rule.
+    // Named like a write, no annotations: the agent never sees it, but the host still
+    // confirms the app's calls by annotations, so write/unannotated names it.
     ...(apps || process.env.APPS_LEAK ? [{ name: 'update_chart_data', description: 'Called by the chart view.', inputSchema: obj({ series: str }), ...ui('ui://fx/chart', { visibility: ['app'] }) }] : []),
     ...(apps ? [{ name: 'open_dashboard', description: 'Open the dashboard.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('ui://fx/chart') }] : []),
     { name: 'show_map', description: 'Show a map.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('ui://fx/missing') },

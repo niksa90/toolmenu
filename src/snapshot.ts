@@ -4,13 +4,13 @@ import { ConnectError } from './explain.js';
 import { buildMenu } from './menu.js';
 import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, PROBE_SEED, probeMenu, probeSameEra, probeVariance, seeded, type Identity } from './probe.js';
 import { kindsToRead, readList, type ListKind } from './lists.js';
-import { readAppResources, resourceUriOf, type AppResource } from './apps.js';
+import { agentMenu, readAppResources, resourceUriOf, type AppResource } from './apps.js';
 import { readServerCard, type CardRead } from './card.js';
 import type { ListsContext } from './rules/lists.js';
 import type { IdentityMenu } from './rules/identities.js';
 import type { InvalidCredential } from './rules/auth.js';
 import type { OfflineMenu } from './rules/network.js';
-import type { PlainMenu } from './rules/capabilities.js';
+import { listingsDiffer, type PlainMenu } from './rules/capabilities.js';
 import type { Target as AnyTarget } from './connect.js';
 import { isCredentialHeader } from './explain.js';
 import { httpStatus } from './failures.js';
@@ -150,7 +150,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     }
     // The menus differ: once more with elicitation alone, to tell which capability a tool
     // depends on (MCP Apps or elicitation). Only then: it's one more process or connection.
-    if (plain.tools && differs(menu.tools, plain.tools)) {
+    if (plain.tools && listingsDiffer(menu.tools, plain.tools)) {
       try {
         plain.elicitationOnly = (await probeSameEra(seeded({ ...target, apps: undefined }, MAIN_SEED), connection.era, options.timeoutMs ?? 30_000, undefined, undefined, eras)).tools;
       } catch {
@@ -221,7 +221,8 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     }
     findings.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
   }
-  const cost = options.client ? clientCost(options.client, menu) : undefined;
+  // What the agent pays: app-only tools aren't in its list.
+  const cost = options.client ? clientCost(options.client, agentMenu(menu).shown) : undefined;
   return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}), ...(undeclared.length ? { notOffered: undeclared } : {}) };
 }
 
@@ -294,14 +295,6 @@ function withElicitation<T extends AnyTarget>(t: T): T {
 export function declaredExtensions(capabilities: Record<string, unknown>): Record<string, unknown> {
   const e = capabilities.extensions;
   return typeof e === 'object' && e !== null && !Array.isArray(e) ? { ...(e as Record<string, unknown>) } : {};
-}
-
-/** Two listings differ in their tool names or in a tool's definition. */
-function differs(a: Menu['tools'], b: Menu['tools']): boolean {
-  if (a.length !== b.length) return true;
-  const key = (t: Menu['tools'][number]) => JSON.stringify(t);
-  const theirs = new Set(b.map(key));
-  return a.some((t) => !theirs.has(key(t)));
 }
 
 const firstLine = (error: unknown) => (error instanceof Error ? error.message : String(error)).split('\n')[0].trim();

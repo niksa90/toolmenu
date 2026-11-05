@@ -18,6 +18,10 @@ export const serverCard: Rule = {
     const read = ctx.serverCard;
     if (!read || !isObject(read.card)) return [];
     const card = read.card;
+    // Only a card says it is one: its media type, or the Server Card schema in $schema.
+    // A server that answers every path with JSON (an error object, a health check) has none.
+    const typed = !!read.contentType?.toLowerCase().startsWith(CARD_MEDIA_TYPE);
+    if (!typed && !(typeof card.$schema === 'string' && /server-card/i.test(card.$schema))) return [];
     const where = read.url;
     const out: RuleFinding[] = [];
     const validate = resultValidator('server-card', 'ServerCard');
@@ -36,7 +40,9 @@ export const serverCard: Rule = {
     const remotes = Array.isArray(card.remotes) ? card.remotes.filter(isObject) : [];
     const mine = ctx.serverUrl ? remotes.find((r) => typeof r.url === 'string' && trim(r.url) === trim(ctx.serverUrl!)) : undefined;
     const versions = Array.isArray(mine?.supportedProtocolVersions) ? (mine!.supportedProtocolVersions as unknown[]).filter((v): v is string => typeof v === 'string') : undefined;
-    if (versions?.length && ctx.protocolVersion && !versions.includes(ctx.protocolVersion)) {
+    // Not when this connection fell back to 2025 and a later one got 2026-07-28: the
+    // negotiated version then isn't all the server speaks (spec/discover says why).
+    if (versions?.length && ctx.protocolVersion && !ctx.laterModern && !versions.includes(ctx.protocolVersion)) {
       contradictions.push(`protocol: the card lists ${versions.join(', ')} for ${mine!.url}, the server negotiated ${ctx.protocolVersion}`);
     }
     if (contradictions.length) {
@@ -46,10 +52,10 @@ export const serverCard: Rule = {
         fix: 'Build the card from the same values the server reports (its package version, the protocol versions the SDK serves), or update it with each release.',
       });
     }
-    if (read.contentType && !read.contentType.toLowerCase().startsWith(CARD_MEDIA_TYPE)) {
+    if (!typed) {
       out.push({
         severity: 'info',
-        message: `The Server Card at ${where} is served as ${clip(read.contentType, 60)}, not ${CARD_MEDIA_TYPE}, which ext-server-card says servers SHOULD use.`,
+        message: `The Server Card at ${where} is served as ${read.contentType ? clip(read.contentType, 60) : 'no content type'}, not ${CARD_MEDIA_TYPE}, which ext-server-card says servers SHOULD use.`,
         fix: `Serve it with Content-Type: ${CARD_MEDIA_TYPE}.`,
       });
     }

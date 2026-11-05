@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import { diffMenus } from '../dist/diff.js';
 import { MENU_RULES, runRules } from '../dist/rules/index.js';
 import { menuOf, tool } from './helpers.mjs';
+import { readAppResources, resourceUriOf } from '../dist/apps.js';
+import { listingsDiffer } from '../dist/rules/capabilities.js';
 
 const ui = (resourceUri, extra = {}) => ({ _meta: { ui: { ...(resourceUri ? { resourceUri } : {}), ...extra } } });
 const rules = (d, prefix) => d.findings.filter((f) => f.rule.startsWith(prefix));
@@ -67,9 +69,12 @@ test('spec/extension-id: identifiers need a vendor prefix and a settings object;
   assert.equal(one.severity, 'warn');
   assert.equal(one.message, 'An extension the server declares is not identified as the spec says, so a client that looks it up by identifier finds it not declared: "ui": no vendor prefix (the spec makes one mandatory: io.modelcontextprotocol/ui, com.example/feature).');
   assert.match(one.fix, /io\.modelcontextprotocol\/ui for MCP Apps/);
-  const [two] = lint({ '1bad/x': {}, 'com.example/ok': true });
-  assert.match(two.message, /^2 extensions the server declares are not identified/);
-  assert.deepEqual(two.detail, ['"1bad/x": not in vendor-prefix/name form (labels start with a letter; the name starts and ends alphanumeric)', '"com.example/ok": its settings are true, not an object ({} for none)']);
+  // A bad identifier and bad settings are two findings, each counting extensions.
+  const [named, unset] = lint({ '1bad/x': {}, 'com.example/ok': true, ui: true });
+  assert.match(named.message, /^2 extensions the server declares are not identified/);
+  assert.deepEqual(named.detail, ['"1bad/x": not in vendor-prefix/name form (labels start with a letter; the name starts and ends alphanumeric)', '"ui": no vendor prefix (the spec makes one mandatory: io.modelcontextprotocol/ui, com.example/feature)']);
+  assert.equal(unset.message, 'An extension the server declares has settings that aren\'t an object, which the 2026-07-28 schema requires (a settings object per extension, {} for none), so a client that reads its settings may reject or ignore it: "com.example/ok": its settings are true, not an object ({} for none).');
+  assert.equal(unset.fix, 'Give each extension an object as its value: {} when it has no settings.');
   const [list] = lint(['io.modelcontextprotocol/ui']);
   assert.match(list.message, /^capabilities\.extensions is a list, not an object/);
 });
@@ -86,4 +91,63 @@ test('spec/task-required: a 2025-11-25 tool that runs only as a task; on 2026-07
   assert.match(modern.message, /a 2025-11-25 field\. 2026-07-28 moved Tasks to the io\.modelcontextprotocol\/tasks extension/);
   assert.match(modern.fix, /^Drop execution from the tool definitions/);
   assert.deepEqual(runRules(MENU_RULES, { menu: menuOf([tools[1], tools[2]]), pages: [], capabilities: { tools: {} }, usedAuth: false, protocolVersion: '2025-11-25', era: 'legacy' }).filter((f) => f.rule === 'spec/task-required'), []);
+});
+
+test('diff: the rest of _meta.ui (csp, permissions) still compares; tokens count what the agent is shown', () => {
+  const csp = (domains) => ui('ui://a/v', { csp: { connectDomains: domains } });
+  const d = diffMenus(menuOf([tool('show', [], csp(['https://api.a.test']))]), menuOf([tool('show', [], csp(['https://api.a.test', 'https://evil.test']))]));
+  const [other] = rules(d, 'diff/other');
+  assert.equal(other.tool, 'show');
+  assert.match(other.message, /^`show`: _meta changed/);
+  assert.equal(rules(d, 'diff/apps-ui').length, 0);
+  // An app-only tool added: not tokens the agent pays.
+  const appOnly = tool('refresh', ['series'], ui('ui://a/v', { visibility: ['app'] }));
+  const t = diffMenus(menuOf([tool('show', [])]), menuOf([tool('show', []), appOnly]));
+  assert.equal(t.tokens.delta, 0);
+});
+
+test('apps: an empty _meta.ui.resourceUri falls back to the deprecated key', () => {
+  assert.equal(resourceUriOf({ _meta: { ui: { resourceUri: '' }, 'ui/resourceUri': 'ui://x/v' } }), 'ui://x/v');
+  assert.equal(resourceUriOf({ _meta: { ui: { resourceUri: 'ui://x/new' }, 'ui/resourceUri': 'ui://x/old' } }), 'ui://x/new');
+  assert.equal(resourceUriOf({ _meta: { ui: { resourceUri: '' } } }), undefined);
+});
+
+test('apps: UI resources are read 4 at a time within one deadline, not one timeout each', async () => {
+  let open = 0;
+  let most = 0;
+  const conn = {
+    client: {
+      readResource: ({ uri }, { timeout }) => {
+        open++;
+        most = Math.max(most, open);
+        return new Promise((resolve, reject) => setTimeout(() => (open--, uri.endsWith('ok') ? resolve({ contents: [{ uri, mimeType: 'text/html;profile=mcp-app', text: 'x' }] }) : reject(new Error('Request timed out'))), uri.endsWith('ok') ? 5 : timeout));
+      },
+    },
+  };
+  const tools = [...Array(12)].map((_, i) => tool(`t${i}`, [], ui(`ui://s/${i}${i === 0 ? 'ok' : ''}`)));
+  const started = Date.now();
+  const out = await readAppResources(conn, tools, 100);
+  assert.ok(Date.now() - started < 400, `all 12 within the 2 × 100 ms deadline (took ${Date.now() - started} ms)`);
+  assert.equal(most, 4);
+  assert.equal(out.length, 12);
+  assert.deepEqual(out[0].mimeTypes, ['text/html;profile=mcp-app']);
+  assert.ok(out.slice(1).every((r) => r.error));
+  // 11 hang for the whole 100 ms timeout, 4 at a time: the third batch is past the 200 ms deadline.
+  assert.ok(out.some((r) => /^not read: the reads took longer than/.test(r.error ?? '')));
+});
+
+test('menu/capability-dependent: the third listing is made only when the rule has something to say', () => {
+  const appOnly = tool('refresh', [], ui('ui://a/v', { visibility: ['app'] }));
+  const show = { ...tool('show', []), tokens: 20 };
+  // Only an app-only tool more, and a token estimate apart: nothing to say.
+  assert.equal(listingsDiffer([show, appOnly], [{ ...show, tokens: show.tokens + 7 }]), false);
+  assert.equal(listingsDiffer([show, tool('extra', [])], [show]), true);
+  assert.equal(listingsDiffer([tool('show', [], ui('ui://a/v'))], [show]), true);
+});
+
+test('spec/server-card: no protocol contradiction when this connection fell back to 2025 and a later one got 2026-07-28', () => {
+  const card = { $schema: 'https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json', name: 'io.example/x', description: 'X.', version: '1.0.0', remotes: [{ type: 'streamable-http', url: 'https://x.test/mcp', supportedProtocolVersions: ['2026-07-28'] }] };
+  const lint = (more) => runRules(MENU_RULES, { menu: menuOf([tool('a', [])], { serverInfo: { name: 'x', version: '1.0.0' } }), pages: [], capabilities: { tools: {} }, usedAuth: false, protocolVersion: '2025-11-25', era: 'legacy', serverInfo: { name: 'x', version: '1.0.0' }, serverUrl: 'https://x.test/mcp', serverCard: { url: 'https://x.test/mcp/server-card', status: 200, contentType: 'application/mcp-server-card+json', card }, ...more }).filter((f) => f.rule === 'spec/server-card');
+  assert.match(lint({})[0].message, /protocol: the card lists 2026-07-28 for https:\/\/x\.test\/mcp, the server negotiated 2025-11-25/);
+  assert.deepEqual(lint({ laterModern: true }), []);
 });

@@ -406,8 +406,10 @@ test('apps/*: UI resources read as a host would, visibility, the deprecated key,
   assert.equal(vis.tool, 'hidden_tool');
   assert.match(vis.message, /names neither "model" nor "app", so no one can call it/);
 
-  // The agent never sees update_chart_data: no rule about what the agent reads looks at it.
-  assert.equal(by('write/unannotated').length, 0, 'update_chart_data is app-only');
+  // The agent never sees update_chart_data: rules about what the agent reads leave it out.
+  // The host still confirms the app's calls by annotations: write/unannotated names it.
+  assert.equal(by('write/unannotated')[0]?.tool, 'update_chart_data');
+  assert.ok(!by('write/no-dry-run').some((f) => f.tool === 'update_chart_data' || f.detail?.some((d) => d.includes('update_chart_data'))), 'no-dry-run is about the agent');
   assert.deepEqual(r.appOnly, { tools: 2, tokens: r.appOnly.tokens });
   assert.ok(!r.breakdown.top.some((t) => t.name === 'update_chart_data'), 'not in the token breakdown');
 
@@ -437,6 +439,8 @@ test('spec/server-card: a card at <url>/server-card that contradicts the live se
     { card: { version: 3 } },
     { card: card({}) },
     {},
+    // A catch-all JSON answer, not a card: no $schema, not served as one.
+    { card: { jsonrpc: '2.0', error: { code: -32601, message: 'Not found' } }, cardType: 'application/json' },
   ];
   const got = [];
   for (const c of cases) {
@@ -449,7 +453,8 @@ test('spec/server-card: a card at <url>/server-card that contradicts the live se
       await server.close();
     }
   }
-  const [contradicts, wrongType, invalid, matching, none] = got;
+  const [contradicts, wrongType, invalid, matching, none, catchAll] = got;
+  assert.deepEqual(catchAll, []);
   assert.equal(contradicts.length, 1);
   assert.equal(contradicts[0].severity, 'warn');
   assert.match(contradicts[0].message, /^The Server Card at http:\/\/127\.0\.0\.1:\d+\/mcp\/server-card contradicts the live server \(version: the card says 9\.9\.9, the server 0\.0\.1; protocol: the card lists 2026-07-28 for http:\/\/127\.0\.0\.1:\d+\/mcp, the server negotiated 2025-11-25\)\./);

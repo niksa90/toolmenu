@@ -7,7 +7,7 @@
  */
 import type { Connection } from './connect.js';
 import { APPS_MIME_TYPE } from './connect.js';
-import type { MenuTool } from './types.js';
+import type { Menu, MenuTool } from './types.js';
 
 /** The deprecated flat key, before `_meta.ui` ("will be removed before GA"). */
 export const LEGACY_URI_KEY = 'ui/resourceUri';
@@ -40,7 +40,8 @@ export function uiMeta(tool: object): UiMeta | undefined {
 /** The UI resource the host renders for this tool: `_meta.ui.resourceUri`, else the deprecated key. */
 export function resourceUriOf(tool: object): string | undefined {
   const ui = uiMeta(tool);
-  const uri = typeof ui?.resourceUri === 'string' ? ui.resourceUri : typeof ui?.legacyUri === 'string' ? ui.legacyUri : undefined;
+  // An empty _meta.ui.resourceUri names nothing: the deprecated key, when it has one, is what's left.
+  const uri = typeof ui?.resourceUri === 'string' && ui.resourceUri ? ui.resourceUri : typeof ui?.legacyUri === 'string' ? ui.legacyUri : undefined;
   return uri || undefined;
 }
 
@@ -57,6 +58,17 @@ export function isAppOnly(tool: object): boolean {
 /** The tools the agent is shown: all of them but the app-only ones. */
 export function agentTools<T extends object>(tools: T[]): T[] {
   return tools.some(isAppOnly) ? tools.filter((t) => !isAppOnly(t)) : tools;
+}
+
+/**
+ * The menu the agent is shown, its token total recomputed, and what was left out: one
+ * view for the report, the agent-scope rules and the --client cost.
+ */
+export function agentMenu(menu: Menu): { shown: Menu; appOnly?: { tools: number; tokens: number } } {
+  const tools = agentTools(menu.tools);
+  if (tools === menu.tools) return { shown: menu };
+  const tokens = tools.reduce((n, t) => n + t.tokens, 0);
+  return { shown: { ...menu, tools, totalTokens: tokens }, appOnly: { tools: menu.tools.length - tools.length, tokens: menu.totalTokens - tokens } };
 }
 
 /** What resources/read gave for one UI resource. */
@@ -78,29 +90,44 @@ export interface AppResource {
  * Read each `ui://` resource the menu's tools name (resources/read: a read, not a tool
  * call), at most `limit` of them. Each is read once, however many tools name it.
  */
-export async function readAppResources(connection: Connection, tools: MenuTool[], timeoutMs?: number, limit = 50): Promise<AppResource[]> {
+export async function readAppResources(connection: Connection, tools: MenuTool[], timeoutMs = 30_000, limit = 50): Promise<AppResource[]> {
   const byUri = new Map<string, string[]>();
   for (const t of tools) {
     const uri = resourceUriOf(t);
     if (uri && uri.startsWith('ui://')) byUri.set(uri, [...(byUri.get(uri) ?? []), t.name]);
   }
-  const out: AppResource[] = [];
-  for (const [uri, names] of [...byUri].slice(0, limit)) {
+  const queue = [...byUri].slice(0, limit);
+  const out: (AppResource | undefined)[] = new Array(queue.length);
+  // All of them within 2 × the request timeout, 4 at a time: a server whose reads hang
+  // costs one bounded wait, not one timeout per resource.
+  const deadline = Date.now() + 2 * timeoutMs;
+  const readOne = async (i: number) => {
+    const [uri, names] = queue[i];
+    const left = deadline - Date.now();
+    if (left <= 0) {
+      out[i] = { uri, tools: names, error: `not read: the reads took longer than ${Math.round((2 * timeoutMs) / 1000)} s in all` };
+      return;
+    }
     try {
-      const result = await connection.client.readResource({ uri }, { timeout: timeoutMs });
+      const result = await connection.client.readResource({ uri }, { timeout: Math.min(timeoutMs, left) });
       const contents = Array.isArray(result?.contents) ? (result.contents as Record<string, unknown>[]) : [];
-      out.push({
+      out[i] = {
         uri,
         tools: names,
         mimeTypes: contents.map((c) => (typeof c.mimeType === 'string' ? c.mimeType : '')),
         hasContent: contents.some((c) => (typeof c.text === 'string' && c.text.length > 0) || (typeof c.blob === 'string' && c.blob.length > 0)),
         otherUris: contents.flatMap((c) => (typeof c.uri === 'string' && c.uri !== uri ? [c.uri] : [])),
-      });
+      };
     } catch (error) {
-      out.push({ uri, tools: names, error: (error instanceof Error ? error.message : String(error)).split('\n')[0].trim() });
+      out[i] = { uri, tools: names, error: (error instanceof Error ? error.message : String(error)).split('\n')[0].trim() };
     }
-  }
-  return out;
+  };
+  let next = 0;
+  const worker = async () => {
+    while (next < queue.length) await readOne(next++);
+  };
+  await Promise.all(Array.from({ length: Math.min(4, queue.length) }, worker));
+  return out.filter((r): r is AppResource => r !== undefined);
 }
 
 /** Whether a content type is the one MCP Apps allow, compared without case or spaces around `;`. */
