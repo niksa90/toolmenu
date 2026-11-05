@@ -16,7 +16,8 @@ The menu of the last release, in this order:
 1. A committed `menu.json` (or the path `toolmenu.config.json` or the CI workflow's
    `baseline:` input names). Check it matches the last release: `git log -1 -- menu.json`
    against the last tag. If it was updated after the tag, use the tag's copy:
-   `git show <last tag>:menu.json > /tmp/baseline.json`.
+   `git show <last tag>:./menu.json > /tmp/baseline.json` (`./`: the path from the
+   current folder, not the repository root).
 2. No baseline: build the last release in a separate worktree
    (`git worktree add /tmp/last-release <last tag>`), build it there, snapshot it with
    `snapshot_menu` (`cwd` that worktree, `save_as` an absolute path outside the repo),

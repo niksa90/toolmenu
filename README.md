@@ -235,12 +235,18 @@ and anything `session` caught. The same report goes to the job summary.
 
 ### In the Security tab: code scanning
 
-With `sarif`, findings also go to GitHub code scanning: alerts in the Security tab and
-on the pull request's changed files, each on the line of its tool in your `menu.json`.
-Code scanning is free for public repositories; private ones need GitHub Advanced
+With `sarif`, findings also go to GitHub code scanning: alerts in the Security tab,
+each on the line of its tool in your `menu.json`, and a code scanning check on the pull
+request. GitHub shows an alert inline in the pull request only when that line changed in
+it, so most stay in the Security tab and the check. Run the workflow on pushes to your
+default branch too, so GitHub has a base to compare a pull request's alerts with. Code scanning is free for public repositories; private ones need GitHub Advanced
 Security.
 
 ```yaml
+on:
+  pull_request:
+  push:
+    branches: [main]              # the base GitHub compares a pull request's alerts with
 permissions:
   contents: read
   pull-requests: write

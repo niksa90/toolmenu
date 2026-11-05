@@ -86,3 +86,17 @@ test('SARIF goes with snapshot, diff and session only', async () => {
   assert.equal(plan.code, 2);
   assert.match(plan.stderr, /SARIF needs findings/);
 });
+
+test('two findings of one rule on one tool stay two alerts; a menu outside the repository is a file URL', () => {
+  const dir = tempDir();
+  const outside = join(tempDir(), 'menu.json');
+  writeFileSync(outside, JSON.stringify({ tools: [{ name: 'x' }] }, null, 2) + '\n');
+  const two = [{ rule: 'diff/schema-other', severity: 'warn', message: 'input schemas empty', tool: 'x' }, { rule: 'diff/schema-other', severity: 'warn', message: 'no outputSchema', tool: 'x' }];
+  const [run] = JSON.parse(toSarif(two, { command: 'diff', menuPath: outside, root: dir })).runs;
+  const prints = run.results.map((r) => r.partialFingerprints['toolmenuFinding/v1']);
+  assert.notEqual(prints[0], prints[1], 'code scanning merges results with one fingerprint');
+  const loc = run.results[0].locations[0].physicalLocation.artifactLocation;
+  assert.match(loc.uri, /^file:\/\/\//);
+  assert.equal(loc.uriBaseId, undefined);
+  assert.match(run.originalUriBaseIds['%SRCROOT%'].uri, /^file:\/\/\/.*\/$/);
+});

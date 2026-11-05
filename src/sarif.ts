@@ -8,7 +8,8 @@
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { ruleDocs } from './rule-docs.js';
 import type { Finding, Severity } from './types.js';
 import { VERSION } from './version.js';
@@ -61,19 +62,24 @@ function toolsOf(f: Finding): string[] {
   return f.tool ? [f.tool] : [];
 }
 
-/** A stable identity for a result across runs: rule and tool, not the message (it carries counts). */
-function fingerprint(f: Finding, tool: string | undefined): string {
-  return createHash('sha256').update(`${f.rule}\u0000${tool ?? ''}`).digest('hex').slice(0, 32);
+/**
+ * A stable identity for a result across runs: rule, tool, and which of that rule's
+ * findings on that tool it is (one rule can find two things about one tool). Not the
+ * message: it carries counts that change between runs.
+ */
+function fingerprint(rule: string, tool: string | undefined, nth: number): string {
+  return createHash('sha256').update(`${rule}\u0000${tool ?? ''}\u0000${nth}`).digest('hex').slice(0, 32);
 }
 
 export function toSarif(findings: Finding[], options: SarifOptions): string {
   const root = options.root ?? repoRoot();
-  let uri: string | undefined;
+  let artifact: { uri: string; uriBaseId?: string } | undefined;
   let lines = new Map<string, number>();
   if (options.menuPath) {
     const abs = resolve(options.menuPath);
-    uri = relative(root, abs).split(sep).join('/');
-    if (uri.startsWith('..')) uri = abs.split(sep).join('/');
+    const rel = relative(root, abs);
+    // Inside the repository: relative to its root. Outside (or another drive): a file URL.
+    artifact = rel && rel !== '..' && !rel.startsWith('..' + sep) && !isAbsolute(rel) ? { uri: rel.split(sep).join('/'), uriBaseId: '%SRCROOT%' } : { uri: pathToFileURL(abs).href };
     try {
       lines = toolLines(readFileSync(abs, 'utf8'));
     } catch {
@@ -82,18 +88,22 @@ export function toSarif(findings: Finding[], options: SarifOptions): string {
   }
   const docs = ruleDocs();
   const ruleIds = [...new Set(findings.map((f) => f.rule))].sort();
+  const seen = new Map<string, number>();
   const results = findings.flatMap((f) => {
     const tools = toolsOf(f);
     // One result per tool, so each alert sits on its own tool's line.
     return (tools.length ? tools : [undefined]).map((tool) => {
+      const key = `${f.rule}\u0000${tool ?? ''}`;
+      const nth = seen.get(key) ?? 0;
+      seen.set(key, nth + 1);
       const text = [f.message, ...(f.detail ?? []), ...(f.fix ? [`→ Next: ${f.fix}`] : [])].join('\n');
       return {
         ruleId: f.rule,
         ruleIndex: ruleIds.indexOf(f.rule),
         level: LEVEL[f.severity],
         message: { text: f.confidence === 'unsure' ? `${text}\n(unsure: a heuristic, from names and words)` : text },
-        ...(uri ? { locations: [{ physicalLocation: { artifactLocation: { uri, uriBaseId: '%SRCROOT%' }, region: { startLine: (tool && lines.get(tool)) || 1 } } }] } : {}),
-        partialFingerprints: { 'toolmenuFinding/v1': fingerprint(f, tool) },
+        ...(artifact ? { locations: [{ physicalLocation: { artifactLocation: artifact, region: { startLine: (tool && lines.get(tool)) || 1 } } }] } : {}),
+        partialFingerprints: { 'toolmenuFinding/v1': fingerprint(f.rule, tool, nth) },
         properties: { ...(tool ? { tool } : {}), ...(f.step !== undefined ? { step: f.step } : {}), ...(f.confidence ? { confidence: f.confidence } : {}) },
       };
     });
@@ -128,7 +138,7 @@ export function toSarif(findings: Finding[], options: SarifOptions): string {
           },
         },
         automationDetails: { id: `toolmenu/${options.command}/` },
-        originalUriBaseIds: { '%SRCROOT%': { uri: `file://${root.split(sep).join('/')}/` } },
+        originalUriBaseIds: { '%SRCROOT%': { uri: pathToFileURL(root + sep).href } },
         results,
       },
     ],
