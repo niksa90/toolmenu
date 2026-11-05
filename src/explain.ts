@@ -20,6 +20,8 @@ export class Trace {
   readonly answered = new Set<string>();
   /** HTTP: the last response to each method (status, content type, final URL). */
   readonly http = new Map<string, { status: number; statusText: string; contentType: string; url: string }>();
+  /** HTTP: a redirect to another origin, which the MCP SDK (2.3 and later) doesn't follow. */
+  redirect?: { from: string; to: string; status: number };
   process?: ChildProcess;
   /** How the process ended. `afterStop`: it ended after toolmenu sent it SIGTERM, so the exit may be toolmenu's doing. */
   exit?: { code: number | null; signal: string | null; afterStop?: boolean };
@@ -335,6 +337,9 @@ export interface ExplainContext {
  */
 export function explain(error: unknown, trace: Trace, context: ExplainContext): unknown {
   if (error instanceof ConnectError || !(error instanceof Error)) return error;
+  // Whatever the SDK made of it (a transport error, or a probe that waited for a reply):
+  // the server sent the request to another origin, and nothing past that was tried.
+  if (trace.redirect) return redirectError(trace.redirect, error);
   // A stored OAuth login that can't be used already says why, and what to run.
   const login = causes(error).find((e) => e instanceof LoginNeededError);
   if (login) return login;
@@ -730,4 +735,19 @@ function explainHttp(error: Error, trace: Trace, context: ExplainContext, target
     );
   }
   return error;
+}
+
+/**
+ * The server redirected to another origin. The MCP SDK follows a redirect only within
+ * the request's origin (since 2.3: it re-sent custom headers, credentials included,
+ * to wherever a redirect pointed), so clients built on it fail here too, not only toolmenu.
+ */
+export function redirectError(r: { from: string; to: string; status: number }, cause?: unknown): ConnectError {
+  return new ConnectError(
+    `The server redirects to another origin (HTTP ${r.status}), and MCP clients don't follow that: the official SDK, and so most clients, only follow a redirect within the same scheme, host and port.`,
+    [['url', r.from], ['redirects to', r.to]],
+    `Use the URL it redirects to: toolmenu snapshot ${r.to}. Agents' clients configured with the old URL fail the same way, so publish the new one.`,
+    'server/discover',
+    { cause, status: r.status },
+  );
 }
