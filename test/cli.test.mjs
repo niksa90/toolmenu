@@ -362,3 +362,20 @@ test('menu/capability-dependent: a tool listed only to a client with elicitation
   const same = JSON.parse((await run(['snapshot', '--json', '--no-write', '--env', 'FIXTURE=clean', '--', process.execPath, raw])).stdout);
   assert.equal(same.findings.filter((x) => x.rule === 'menu/capability-dependent').length, 0);
 });
+
+// 0.22, from the corpus run: under load mastra's version probe fell back to 2025 in the
+// main process only, and the second process's 2026-07-28 menu read as process variance.
+test('snapshot: a later process that ends on another protocol than the main one is asked again on that one', async () => {
+  const dir = tempDir();
+  const log = join(dir, 'methods.log');
+  const r = await run(['snapshot', '--no-write', '--json', '--env', `LOG=${log}`, '--', process.execPath, join(FIXTURES, 'first-legacy-server.mjs')]);
+  const out = JSON.parse(r.stdout);
+  assert.equal(out.server.protocolVersion, '2025-11-25');
+  assert.match(out.findings.find((f) => f.rule === 'spec/discover').message, /^This connection fell back to protocol 2025-11-25: .* A later process got 2026-07-28, so the server speaks it/);
+  // The first method each process got: the main one, then each later one negotiated
+  // as usual (server/discover) and, having got 2026-07-28, asked again on 2025 (initialize).
+  const [main, ...later] = readFileSync(log, 'utf8').trim().split('\n');
+  assert.equal(main, 'server/discover');
+  // (0.22 before this fix sent no initialize after the main process: every later one stayed on 2026-07-28.)
+  assert.ok(later.filter((m) => m === 'initialize').length >= 2, `the variance probe and the capability listing, each asked again on 2025: ${later.join(', ')}`);
+});

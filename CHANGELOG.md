@@ -32,6 +32,13 @@ Three things the 0.21 corpus run found in real servers, now rules of their own.
   now holds the elicitation client's menu: a baseline from 0.21 or earlier may show
   such tools as new in the first `diff` after upgrading. The extra listing isn't made
   with `--processes 1`.
+- **Later processes speak the main connection's protocol.** On stdio, the official SDK
+  falls back to the 2025 handshake when the `server/discover` probe times out (within
+  `--timeout`); under load, mastra's main process did, while its second process got
+  2026-07-28. The two menus then differed in `$schema`, a false
+  `menu/process-variance`. A probe that ends on the other protocol is now asked again
+  on the main one's. `spec/discover` then says the connection fell back, not that the
+  server isn't on 2026-07-28.
 - **`ids/authored` reads a router's operations**: an enum value like `list_workflows`
   (github-mcp-server's `actions_list { method }`) or `list_project_views` counts as a
   tool that lists that kind. It must name the kind after its verb (`list_public`

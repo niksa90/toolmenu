@@ -117,6 +117,16 @@ export const discover: Rule = {
   summary: 'Reports when the server only speaks the 2025-era protocol',
   run(ctx) {
     if (ctx.era !== 'legacy') return [];
+    // A later process got 2026-07-28: this one's server/discover probe went unanswered in
+    // time, and the SDK falls back to 2025 then (stdio). The server does speak 2026-07-28.
+    if (ctx.laterModern) {
+      return [
+        {
+          message: `This connection fell back to protocol ${ctx.protocolVersion}: its server/discover probe got no usable answer (on stdio the official SDK falls back to the 2025 handshake after a timeout too). A later process got 2026-07-28, so the server speaks it, but this run was checked as a 2025 server.`,
+          fix: 'Rerun with a longer --timeout (the server may start slowly, or this machine was busy), or --protocol modern to require 2026-07-28.',
+        },
+      ];
+    }
     return [
       {
         message: `The server answered with protocol ${ctx.protocolVersion} and no working server/discover, so it isn't on 2026-07-28 yet. Rules for 2026-07-28 were skipped.`,

@@ -32,6 +32,8 @@ export interface RuleContext {
   invalidCredential?: import('./auth.js').InvalidCredential;
   /** snapshot --offline-check: the menu from a process with the network cut off. */
   offline?: import('./network.js').OfflineMenu;
+  /** A later process or connection got 2026-07-28 while this one fell back to 2025 (spec/discover). */
+  laterModern?: boolean;
   /** snapshot: the menu listed by a client that declares no elicitation support. */
   plain?: import('./capabilities.js').PlainMenu;
   /** --client: the client profile the menu is checked for (src/clients.ts). */

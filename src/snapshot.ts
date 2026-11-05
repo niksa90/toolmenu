@@ -2,7 +2,7 @@ import { listTools, type Target } from './connect.js';
 import { patiently, tooMany } from './failures.js';
 import { ConnectError } from './explain.js';
 import { buildMenu } from './menu.js';
-import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, PROBE_SEED, probeMenu, probeVariance, seeded, type Identity } from './probe.js';
+import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, PROBE_SEED, probeMenu, probeSameEra, probeVariance, seeded, type Identity } from './probe.js';
 import { kindsToRead, readList, type ListKind } from './lists.js';
 import type { ListsContext } from './rules/lists.js';
 import type { IdentityMenu } from './rules/identities.js';
@@ -105,7 +105,9 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
 
   // After the main process has exited: a server that holds a file or a port
   // shouldn't have to share it with its own probe.
-  const probes = await probeVariance(target, menu.tools, options.processes ?? 2, options.timeoutMs ?? 30_000);
+  // Eras later processes negotiated, before any retry on the main one's (spec/discover).
+  const eras = new Set<string>();
+  const probes = await probeVariance(target, menu.tools, options.processes ?? 2, options.timeoutMs ?? 30_000, undefined, connection.era, eras);
 
   // The other lists from a second process (stdio) or connection (HTTP), as tools get.
   if ((options.processes ?? 2) > 1 && reads.some((r) => !r.first.error)) {
@@ -130,7 +132,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   let plain: PlainMenu | undefined;
   if ((options.processes ?? 2) > 1 && options.rules?.['menu/capability-dependent'] !== 'off') {
     try {
-      plain = { tools: (await probeMenu(seeded({ ...target, elicitation: undefined }, MAIN_SEED), options.timeoutMs ?? 30_000)).tools };
+      plain = { tools: (await probeSameEra(seeded({ ...target, elicitation: undefined }, MAIN_SEED), connection.era, options.timeoutMs ?? 30_000, undefined, undefined, eras)).tools };
     } catch (error) {
       plain = { error: firstLine(error) };
     }
@@ -179,6 +181,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       ...(invalid ? { invalidCredential: invalid } : {}),
       ...(offline ? { offline } : {}),
       ...(plain ? { plain } : {}),
+      ...(connection.era === 'legacy' && eras.has('modern') ? { laterModern: true } : {}),
       ...(reads.length || undeclared.length ? { lists: { read: reads, undeclared } } : {}),
     },
     options,
