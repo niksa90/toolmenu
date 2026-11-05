@@ -20,6 +20,24 @@ jobs:
       - run: npm ci
       - run: npm test
 
+  # toolmenu mcp stops runs differently per platform (process groups on Linux and
+  # macOS, taskkill on Windows): its tests on the other two.
+  mcp-platforms:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: node --test --test-reporter=spec test/mcp.test.mjs
+
   # Dogfood: the Action from this checkout, on its own fixture server.
   action:
     runs-on: ubuntu-latest

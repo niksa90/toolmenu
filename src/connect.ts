@@ -4,7 +4,7 @@ import type { ChildProcess } from 'node:child_process';
 import type { Stream } from 'node:stream';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/client/stdio';
 import { hasLogin, StoredOAuthProvider } from './auth.js';
-import { explain, isCredentialHeader, Trace } from './explain.js';
+import { explain, isCredentialHeader, redirectError, Trace } from './explain.js';
 import { endSession } from './close.js';
 import { eraOf } from './menu.js';
 import type { Era } from './types.js';
@@ -328,6 +328,27 @@ function watchProcess(stdio: StdioClientTransport, trace: Trace): void {
   };
 }
 
+/**
+ * Where a redirect response points, when it leaves the request's origin as the MCP
+ * SDK (2.3 and later) judges it: same scheme and host:port, or http to https on the
+ * same host with default ports, is within. Anything else the SDK leaves to it.
+ */
+export function crossOriginRedirect(input: string | URL | Request, response: Response): { from: string; to: string } | undefined {
+  if (![301, 302, 303, 307, 308].includes(response.status)) return undefined;
+  const location = response.headers.get('location');
+  if (!location) return undefined;
+  let from: URL;
+  let to: URL;
+  try {
+    from = new URL(typeof input === 'string' || input instanceof URL ? input : input.url);
+    to = new URL(location, from);
+  } catch {
+    return undefined;
+  }
+  const within = (from.protocol === to.protocol && from.host === to.host) || (from.protocol === 'http:' && to.protocol === 'https:' && from.hostname === to.hostname && !from.port && !to.port);
+  return within ? undefined : { from: from.href, to: to.href };
+}
+
 /** fetch, noting each JSON-RPC request's method and the answer's status, content type and final URL. */
 function tracedFetch(trace: Trace): typeof fetch {
   return async (input, init) => {
@@ -342,6 +363,14 @@ function tracedFetch(trace: Trace): typeof fetch {
     }
     if (method) trace.send(method);
     const response = await fetch(input, init);
+    // A redirect the SDK won't follow because it leaves the origin (2.3 and later). Its
+    // own error names the target; this one also says which clients fail the same way,
+    // and what to run next. explain() returns it as it is.
+    const to = crossOriginRedirect(input, response);
+    if (to) {
+      trace.redirect ??= { ...to, status: response.status };
+      throw redirectError(trace.redirect);
+    }
     if (method) {
       trace.http.set(method, { status: response.status, statusText: response.statusText, contentType: response.headers.get('content-type') ?? '', url: response.url });
     }

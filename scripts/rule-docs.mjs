@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const rules = {};
 let command;
-for (const line of readFileSync(join(root, 'docs/RULES.md'), 'utf8').split('\n')) {
+for (const line of readFileSync(join(root, 'docs/RULES.md'), 'utf8').split(/\r?\n/)) {
   const h = /^## (\w+)/.exec(line);
   if (h) command = h[1];
   const m = /^\| `([a-z]+\/[a-z0-9-]+)` \| ([^|]+) \| (.*) \|$/.exec(line);

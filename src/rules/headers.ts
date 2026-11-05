@@ -11,8 +11,8 @@ import { count, names, type Rule, type RuleFinding } from './rule.js';
  *
  * The checks follow the spec and the SDK client's own scan
  * (scanXMcpHeaderDeclarations in @modelcontextprotocol/client), which decides
- * what SDK-based clients actually drop. Where the two differ (`number`: the spec
- * forbids it, the SDK accepts it), the finding says so.
+ * what SDK-based clients actually drop. The two agree: since SDK 2.4 the client
+ * drops a tool whose header is on a number parameter too, as the spec says.
  */
 
 const KEY = 'x-mcp-header';
@@ -33,8 +33,6 @@ export interface HeaderFault {
   /** The annotation's value, as written. */
   header: unknown;
   problem: string;
-  /** The SDK client drops the tool for this (true), or only the spec forbids it (false: `number`). */
-  dropped: boolean;
 }
 
 /** Every broken x-mcp-header annotation in a tool's input schema; empty when all are valid or there are none. */
@@ -47,7 +45,7 @@ export function headerFaults(tool: MenuTool): HeaderFault[] {
     const where = path.length ? path.join('.') : 'the schema root';
     if (KEY in schema) {
       const raw = schema[KEY];
-      const fault = (problem: string, dropped = true) => faults.push({ path: where, header: raw, problem, dropped });
+      const fault = (problem: string) => faults.push({ path: where, header: raw, problem });
       if (!reachable || path.length === 0) {
         fault(
           path.length === 0
@@ -66,7 +64,7 @@ export function headerFaults(tool: MenuTool): HeaderFault[] {
           fault(`the parameter is ${type === 'array' || type === 'object' ? 'an' : 'a'} ${type}; it must be string, integer or boolean`);
         } else {
           // number takes part in the uniqueness check too: the SDK client registers it.
-          if (type === 'number') fault('the parameter is a number; the spec allows only string, integer or boolean (the official SDK client accepts number for now, other clients may not)', false);
+          if (type === 'number') fault('the parameter is a number; it must be string, integer or boolean (make it an integer or a string: a header carries text anyway)');
           const prior = seen.get(raw.toLowerCase());
           if (prior !== undefined) fault(`"${raw}" is already used by ${prior}; header names must differ ignoring case`);
           else seen.set(raw.toLowerCase(), `${where} ("${raw}")`);
@@ -99,20 +97,15 @@ export const xMcpHeader: Rule = {
     for (const tool of ctx.menu.tools) {
       const faults = headerFaults(tool);
       if (!faults.length) continue;
-      const dropped = faults.some((f) => f.dropped);
       const where = faults.map((f) => f.path);
       findings.push({
         tool: tool.name,
         // Over HTTP the tool is gone for every compliant client. On stdio clients may
         // ignore the annotation, but the same server is often deployed over HTTP too.
-        severity: dropped ? (http ? 'error' : 'warn') : 'warn',
-        message: dropped
-          ? `${tool.name} has ${faults.length === 1 ? 'an x-mcp-header annotation' : `${count(faults.length, 'x-mcp-header annotation')}`} the spec doesn't allow (on ${names(where, 4)}), and Streamable HTTP clients must then leave the whole tool out of their menu. The official SDK client does, with only a console warning, so the agent never sees ${tool.name} and nothing tells the server.${http ? ' toolmenu reads the list off the wire, which is why it is in this menu.' : ' Over stdio clients may ignore the annotation, so it shows here; served over HTTP, it would be gone.'}`
-          : `${tool.name} mirrors a number parameter into a header (${names(where, 4)}). The spec allows only string, integer or boolean there, so a strict Streamable HTTP client must leave the tool out of its menu; the official SDK client keeps it for now (its conformance tests expect number to work, a gap tracked upstream).`,
+        severity: http ? 'error' : 'warn',
+        message: `${tool.name} has ${faults.length === 1 ? 'an x-mcp-header annotation' : `${count(faults.length, 'x-mcp-header annotation')}`} the spec doesn't allow (on ${names(where, 4)}), and Streamable HTTP clients must then leave the whole tool out of their menu. The official SDK client does, with only a console warning, so the agent never sees ${tool.name} and nothing tells the server.${http ? ' toolmenu reads the list off the wire, which is why it is in this menu.' : ' Over stdio clients may ignore the annotation, so it shows here; served over HTTP, it would be gone.'}`,
         detail: faults.map((f) => `${f.path}${typeof f.header === 'string' && f.header ? ` (x-mcp-header: "${f.header}")` : ''}: ${f.problem}`),
-        fix: dropped
-          ? `Fix each annotation listed: on a string, integer or boolean parameter reached through "properties" alone, with a header name of letters, digits and - _ . only, different from the tool's other headers ignoring case. Then list the tools over HTTP with an SDK client and check ${tool.name} is there.`
-          : 'Make the parameter a string or an integer (a header carries text anyway), or stop mirroring it into a header.',
+        fix: `Fix each annotation listed: on a string, integer or boolean parameter reached through "properties" alone, with a header name of letters, digits and - _ . only, different from the tool's other headers ignoring case. Then list the tools over HTTP with an SDK client and check ${tool.name} is there.`,
       });
     }
     return findings;

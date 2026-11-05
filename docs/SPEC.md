@@ -328,7 +328,7 @@ Keyword matching only in v1: deterministic, free and reproducible in CI.
 
 | id | sev | check |
 |---|---|---|
-| `spec/x-mcp-header` | error / warn | `since: 2026-07-28`. An `x-mcp-header` annotation the spec doesn't allow (SEP-2243): empty; not an RFC 9110 token; the same header twice ignoring case; on a parameter that isn't `string`, `integer` or `boolean`, or has no single `type`; anywhere but a parameter reached through `properties` alone. Streamable HTTP clients **MUST** leave such a tool out of `tools/list`, and the official SDK client does, with only a console warning. Error on an HTTP server, warn on stdio (clients there MAY ignore the annotation). `number` is warn on both: the spec forbids it, the SDK client accepts it for now. Every broken annotation in a tool is listed (the SDK stops at the first). Checked against the SDK client's behaviour in the tests |
+| `spec/x-mcp-header` | error / warn | `since: 2026-07-28`. An `x-mcp-header` annotation the spec doesn't allow (SEP-2243): empty; not an RFC 9110 token; the same header twice ignoring case; on a parameter that isn't `string`, `integer` or `boolean`, or has no single `type`; anywhere but a parameter reached through `properties` alone. Streamable HTTP clients **MUST** leave such a tool out of `tools/list`, and the official SDK client does, with only a console warning. Error on an HTTP server, warn on stdio (clients there MAY ignore the annotation). A `number` parameter counts too: the SDK client drops those tools since 2.4. Every broken annotation in a tool is listed (the SDK stops at the first). Checked against the SDK client's behaviour in the tests |
 | `spec/ref` | error / warn | `since: 2026-07-28`. A `$ref` in a tool's input or output schema that doesn't resolve inside the schema: a network URI (clients **MUST NOT** fetch it, SEP-2106) or a pointer, `#anchor` or `$id` that names nothing. In an `outputSchema`, error: the official SDK client fails every call to the tool ("has an invalid outputSchema"). In an `inputSchema`, error for a ref to nothing (the schema isn't valid, and the SDK's server won't register it), warn for a network URI (clients **SHOULD** reject the schema). `#/$defs`, `#anchor`, `$dynamicAnchor`, `$id` (pointers resolve inside the resource an `$id` names), draft-07 `#name` ids, `""` and `#` refs resolve. The token breakdown's unused-`$defs` count uses the same resolver. Composition-keyword bounds are left to each implementation by the spec, so not checked. Checked against the SDK client's behaviour in the tests |
 | `spec/schema` | error | `tools/list` result fails the official `schema.json` for its version. Version-aware: a 2026-07-28 result missing `ttlMs`/`cacheScope` fails, because that version requires them on cacheable results (SEP-2549); a 2025 result is checked against its own schema, which doesn't have them |
 | `spec/discover` | info | The server only speaks the 2025 protocol: no working `server/discover`, which 2026-07-28 servers **MUST** implement. Info, not error: see §13 |
@@ -1079,3 +1079,44 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   of the remote whose URL is this one with the negotiated version, unless the
   connection fell back to 2025 while a later one got 2026-07-28. The schema is
   `schemas/server-card.json`, from modelcontextprotocol/ext-server-card at 526201bb.
+
+## 30. 0.24: toolmenu as an MCP server
+
+- **`toolmenu mcp`** serves over stdio (`serveStdio`: 2026-07-28, and 2025 for a
+  client that opens with `initialize`) until stdin closes. `tools/list` and
+  `server/discover` carry `ttlMs: 3600000`, `cacheScope: "public"`: the tool set is
+  fixed and the same for everyone.
+- **Tools** map onto commands: `snapshot_menu` → `snapshot` (`--no-write` unless
+  `save_as`), `diff_menus` → `diff`, `check_session` → `session --auto`,
+  `explain_rule` → `explain`. A server is `command` (stdio, with `env`) or `url`
+  (HTTP, with `headers`), exactly one; the wrong pairing is a tool error before
+  anything runs.
+- **Each call runs the CLI** (`process.execPath dist/cli.js …`, no shell) in `cwd`,
+  resolved against the folder the server runs in and checked to be a folder, with
+  `NO_COLOR=1`. Exit 0 and 1 return the report (1 with a line saying so); exit 2
+  returns stderr as a tool error, never Node's spawn error (it repeats the command
+  line).
+- **Arguments**: paths are made absolute and option values are passed as
+  `--name=value`, so nothing from the agent is read as an option; a rule must look
+  like one. Header and env values (credentials) go to the CLI in `TOOLMENU_MCP_ARGS`,
+  a JSON array the CLI puts before `--` and removes from its environment, not in argv,
+  which any local user can read.
+- **Stopping**: on Linux and macOS each child is its own process group, holding the
+  server it starts, tracked until nothing in it is alive. A cancelled call, a run
+  past 10 minutes, a report past 64 MB, and the client closing stdin each send the
+  group SIGTERM, then SIGKILL 2 s later; on close the server waits for that. On
+  SIGTERM, SIGINT, SIGHUP or exit, what's left gets SIGKILL at once. Windows has no
+  process groups: the child stays attached (hidden, no console window) and a stop is
+  `taskkill /T /F` on its tree. CI runs the MCP tests on Windows and macOS.
+- **The child's environment**: `NO_COLOR=1` and `NODE_NO_WARNINGS=1` (Node's notices
+  aren't findings). The server under test still gets only the minimal environment.
+- **Its own menu** has no findings at any level on either protocol, and under
+  `session --auto`; `test/mcp.test.mjs` checks it.
+- **The plugin**: `.claude-plugin/marketplace.json` lists `plugins/toolmenu`, which
+  holds the server (`npx -y toolmenu@<version> mcp`, pinned to the plugin's
+  version, which matches package.json: a test checks) and the `check-mcp-menu` skill.
+- **Redirects** (HTTP): a 301, 302, 303, 307 or 308 whose `Location` leaves the
+  request's origin, as the SDK judges it (same scheme and host:port, or http to https
+  on the same host with default ports), stops the connection at once with a
+  ConnectError that names both URLs and the one to use. Redirects within the origin
+  are left to the SDK, which follows them.

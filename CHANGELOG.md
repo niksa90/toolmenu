@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.24.0
+
+toolmenu as an MCP server, so the agent building your server can check it while it
+works, and a Claude Code plugin that installs it.
+
+- **`toolmenu mcp`**: toolmenu as an MCP server over stdio, for the agent building
+  your server. Four tools, `snapshot_menu`, `diff_menus`, `check_session` and
+  `explain_rule`, each running the matching command in a child process and
+  returning its report. Findings are a report, not a tool error; a server that
+  couldn't start or a bad path is. Its own menu has no findings at any level, on
+  both protocols and under `session --auto`, and a test keeps it that way.
+  - Each run is its own process group: a cancelled call, a run past 10 minutes and
+    the client disconnecting stop the run and the server it started, a server that
+    ignores SIGTERM included. On Windows, where there are no process groups, a stop
+    ends the run's process tree (`taskkill /T`), with no console window per run.
+  - Header and env values (credentials) reach the CLI through the environment, not
+    its command line, and a tool error never repeats the command line.
+  - Paths, rule names and option values from the agent are never read as options,
+    and a `cwd` that isn't a folder says so.
+- **A Claude Code plugin** in this repository (`/plugin marketplace add
+  niksa90/toolmenu`): the server, pinned to the plugin's version, and a `check-mcp-menu` skill that says when to
+  run it and how to read the report.
+- `@modelcontextprotocol/server` and `zod` are runtime dependencies now (the server).
+- **Security: the MCP SDKs are 2.4.0 or later** (`client`, `server`) and zod 4.6.7
+  or later. Earlier client releases could send OAuth credentials to an authorization
+  server the MCP server chose, and re-send custom headers (an `Authorization` given
+  with `--header`) across a cross-origin redirect; toolmenu connects to servers it
+  doesn't control with both. 0.23.0 and earlier allow the affected versions.
+- **A server that redirects to another origin now fails to connect**, where 0.23
+  followed it: the SDK (2.3 and later) follows a redirect only within the same
+  scheme, host and port (or http to https on the same host), so it doesn't re-send
+  headers and credentials elsewhere. Clients built on the TypeScript SDK fail the
+  same way (others may still follow it). toolmenu says so and names the URL to use
+  (`toolmenu snapshot <that URL>`).
+- **`spec/x-mcp-header`**: a header on a `number` parameter is now like any other
+  broken annotation (error over HTTP, warn on stdio), not a warning everywhere: the
+  SDK client drops those tools too since 2.4.0. `diff/x-mcp-header-invalid` counts
+  it as well.
+- **Releases**: a tag push also creates the GitHub Release, with the version's
+  CHANGELOG section as its notes, in its own job: the only one with write access,
+  and safe to re-run after the npm publish.
+
 ## 0.23.0
 
 MCP extensions: Apps, Tasks, Server Cards, and the extension capability itself.

@@ -1,6 +1,6 @@
 {
   "name": "toolmenu",
-  "version": "0.23.0",
+  "version": "0.24.0",
   "description": "Lint your MCP server's tool menu for changes that confuse agents or break caches.",
   "author": "Nikša Perović (https://niksa.me)",
   "main": "dist/index.js",
@@ -20,7 +20,8 @@
     "linter",
     "agents",
     "prompt-caching",
-    "cli"
+    "cli",
+    "mcp-server"
   ],
   "license": "MIT",
   "bugs": {
@@ -28,17 +29,17 @@
   },
   "homepage": "https://github.com/niksa90/toolmenu#readme",
   "dependencies": {
-    "@modelcontextprotocol/client": "^2.1.0",
+    "@modelcontextprotocol/client": "^2.4.0",
+    "@modelcontextprotocol/server": "^2.4.0",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "js-tiktoken": "^1.0.21",
-    "yaml": "^2.9.1"
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@modelcontextprotocol/server": "^2.1.0",
     "@types/node": "^22.20.4",
-    "typescript": "^7.0.2",
-    "zod": "^4.6.5"
+    "typescript": "^7.0.2"
   },
   "type": "module",
   "bin": {

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "toolmenu": {
+      "command": "npx",
+      "args": ["-y", "toolmenu@0.24.0", "mcp"]
+    }
+  }
+}

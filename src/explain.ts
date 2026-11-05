@@ -20,6 +20,8 @@ export class Trace {
   readonly answered = new Set<string>();
   /** HTTP: the last response to each method (status, content type, final URL). */
   readonly http = new Map<string, { status: number; statusText: string; contentType: string; url: string }>();
+  /** HTTP: a redirect to another origin, which the MCP SDK (2.3 and later) doesn't follow. */
+  redirect?: { from: string; to: string; status: number };
   process?: ChildProcess;
   /** How the process ended. `afterStop`: it ended after toolmenu sent it SIGTERM, so the exit may be toolmenu's doing. */
   exit?: { code: number | null; signal: string | null; afterStop?: boolean };
@@ -335,6 +337,9 @@ export interface ExplainContext {
  */
 export function explain(error: unknown, trace: Trace, context: ExplainContext): unknown {
   if (error instanceof ConnectError || !(error instanceof Error)) return error;
+  // Whatever the SDK made of it (a transport error, or a probe that waited for a reply):
+  // the server sent the request to another origin, and nothing past that was tried.
+  if (trace.redirect) return redirectError(trace.redirect, error);
   // A stored OAuth login that can't be used already says why, and what to run.
   const login = causes(error).find((e) => e instanceof LoginNeededError);
   if (login) return login;
@@ -730,4 +735,19 @@ function explainHttp(error: Error, trace: Trace, context: ExplainContext, target
     );
   }
   return error;
+}
+
+/**
+ * The server redirected to another origin. The MCP TypeScript SDK follows a redirect
+ * only within the request's origin since 2.3 (before, it re-sent custom headers,
+ * credentials included, wherever a redirect pointed). Other clients may still follow it.
+ */
+export function redirectError(r: { from: string; to: string; status: number }, cause?: unknown): ConnectError {
+  return new ConnectError(
+    `The server redirects to another origin (HTTP ${r.status}). toolmenu doesn't follow it, and neither do clients built on the MCP TypeScript SDK 2.3 or later (they won't re-send headers or credentials to another host).`,
+    [['url', r.from], ['redirects to', r.to]],
+    `Check with the URL it redirects to: toolmenu snapshot ${r.to}. If it's your server, give clients that URL: those on the TypeScript SDK can't reach the old one.`,
+    'server/discover',
+    { cause, status: r.status },
+  );
 }
