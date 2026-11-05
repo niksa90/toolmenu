@@ -48,6 +48,10 @@ These are live on real servers now, so toolmenu checks them too.
   0.20.1.
 - **`write/read-only-mismatch`** leaves out a tool whose description says it only
   reads. Vercel's `create_observability_query` runs a read-only query.
+- **Colour in a terminal**: severities, rule ids, the `→ Next:` step and the verdict,
+  with evidence dimmed, for every command's text report and for errors. Only when
+  the output is a terminal: pipes, CI logs, `--json`, markdown and github output are
+  unchanged. `NO_COLOR` turns it off, `FORCE_COLOR` on.
 - Checked on real servers:
   - The 22-server bench, now declaring Apps: every server starts and lists as
     before. Apify keeps two widget tools for Apps hosts; their UI resolves.
