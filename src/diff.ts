@@ -515,9 +515,8 @@ const MAX_DEPTH = 64;
 /** The tool's new x-mcp-header problem, if HTTP clients drop it now and didn't before (`old` undefined: nothing to compare, or a 2025 release). */
 function headerLoss(t: MenuTool, headers: boolean, old: MenuTool | undefined): Raw | undefined {
   if (!headers) return undefined;
-  const dropped = (tool: MenuTool) => headerFaults(tool).filter((f) => f.dropped);
-  const broken = dropped(t);
-  if (!broken.length || (old && dropped(old).length)) return undefined;
+  const broken = headerFaults(t);
+  if (!broken.length || (old && headerFaults(old).length)) return undefined;
   return {
     rule: 'diff/x-mcp-header-invalid',
     tool: t.name,

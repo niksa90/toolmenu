@@ -41,22 +41,24 @@ test('spec/x-mcp-header over stdio: every broken annotation is a warning that na
   assert.match(items.message, /Streamable HTTP clients must then leave the whole tool out of their menu/);
   assert.match(items.message, /Over stdio clients may ignore the annotation, so it shows here; served over HTTP, it would be gone\./);
   assert.match(items.fix, /Then list the tools over HTTP with an SDK client and check header_in_items is there\./);
+  // A number parameter is like any other broken annotation: the SDK client drops the tool (since 2.4).
   const number = findings.find((f) => f.tool === 'header_number');
-  assert.match(number.message, /the official SDK client keeps it for now/);
-  assert.match(number.fix, /Make the parameter a string or an integer/);
+  assert.match(number.message, /Streamable HTTP clients must then leave the whole tool out of their menu/);
+  assert.match(number.detail.join('\n'), /make it an integer or a string/);
   // Text output too: the finding and its next step.
   const text = await run(['snapshot', '--no-write', '--', process.execPath, server]);
   assert.match(text.stdout, /WARN {3}spec\/x-mcp-header\n {7}header_on_root has an x-mcp-header annotation/);
 });
 
-test('spec/x-mcp-header over HTTP: exactly the tools the official SDK client drops are errors; number is a warning', async () => {
+test('spec/x-mcp-header over HTTP: exactly the tools the official SDK client drops are errors', async () => {
   const s = await start({ factory: build });
   try {
     const r = await run(['snapshot', '--no-write', '--json', s.url]);
     const out = JSON.parse(r.stdout);
     const findings = findingsOf(r.stdout);
     const errors = findings.filter((f) => f.severity === 'error').map((f) => f.tool).sort();
-    assert.deepEqual(findings.filter((f) => f.severity === 'warn').map((f) => f.tool), ['header_number']);
+    assert.deepEqual(findings.filter((f) => f.severity === 'warn').map((f) => f.tool), []);
+    assert.ok(errors.includes('header_number'), 'a header on a number parameter drops the tool too');
     assert.match(findings.find((f) => f.tool === 'header_in_items').message, /toolmenu reads the list off the wire, which is why it is in this menu\./);
     // toolmenu reads the wire, so the dropped tools are still in its menu.
     assert.equal(out.tools.length ?? out.tools, Object.keys(VALID).length + Object.keys(BROKEN).length);
@@ -97,7 +99,7 @@ test('headerFaults: every broken annotation in a tool, where the SDK client stop
     name: 'many',
     inputSchema: { type: 'object', properties: { a: { type: 'object', 'x-mcp-header': 'A' }, b: { type: 'string', 'x-mcp-header': 'B C' }, c: { type: 'number', 'x-mcp-header': 'C' } } },
   });
-  assert.deepEqual(faults.map((f) => [f.path, f.dropped]), [['a', true], ['b', true], ['c', false]]);
+  assert.deepEqual(faults.map((f) => f.path), ['a', 'b', 'c']);
 });
 
 test('diff/x-mcp-header: a header added, removed or renamed between releases is said as such, not as an unclassified keyword', async () => {
@@ -129,7 +131,7 @@ test('headerFaults: a duplicate involving a number parameter is caught, and drop
     name: 'dup',
     inputSchema: { type: 'object', properties: { a: { type: 'number', 'x-mcp-header': 'Region' }, b: { type: 'string', 'x-mcp-header': 'region' } } },
   });
-  assert.deepEqual(faults.map((f) => [f.path, f.dropped]), [['a', false], ['b', true]]);
+  assert.deepEqual(faults.map((f) => f.path), ['a', 'b']);
   assert.match(faults[1].problem, /"region" is already used by a \("Region"\)/);
 });
 

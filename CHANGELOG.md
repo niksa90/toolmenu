@@ -23,6 +23,15 @@ works, and a Claude Code plugin that installs it.
   niksa90/toolmenu`): the server, pinned to the plugin's version, and a `check-mcp-menu` skill that says when to
   run it and how to read the report.
 - `@modelcontextprotocol/server` and `zod` are runtime dependencies now (the server).
+- **Security: the MCP SDKs are 2.4.0 or later** (`client`, `server`) and zod 4.6.7
+  or later. Earlier client releases could send OAuth credentials to an authorization
+  server the MCP server chose, and re-send custom headers (an `Authorization` given
+  with `--header`) across a cross-origin redirect; toolmenu connects to servers it
+  doesn't control with both. 0.23.0 and earlier allow the affected versions.
+- **`spec/x-mcp-header`**: a header on a `number` parameter is now like any other
+  broken annotation (error over HTTP, warn on stdio), not a warning everywhere: the
+  SDK client drops those tools too since 2.4.0. `diff/x-mcp-header-invalid` counts
+  it as well.
 - **Releases**: a tag push also creates the GitHub Release, with the version's
   CHANGELOG section as its notes, in its own job: the only one with write access,
   and safe to re-run after the npm publish.
