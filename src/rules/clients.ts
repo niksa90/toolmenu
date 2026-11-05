@@ -8,6 +8,7 @@ import { count, kept, type Rule } from './rule.js';
  */
 export const clientName: Rule = {
   id: 'naming/client-name',
+  scope: 'agent',
   severity: 'warn',
   summary: "Tool names the client's API doesn't accept as they are",
   run(ctx) {

@@ -18,6 +18,7 @@ const MIN_TOKENS = 10_000;
 
 export const findable: Rule = {
   id: 'search/findable',
+  scope: 'agent',
   severity: 'info',
   summary: 'Each tool comes up when searched for by its own name, for clients that defer tools',
   run(ctx) {

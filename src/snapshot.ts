@@ -4,11 +4,13 @@ import { ConnectError } from './explain.js';
 import { buildMenu } from './menu.js';
 import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, PROBE_SEED, probeMenu, probeSameEra, probeVariance, seeded, type Identity } from './probe.js';
 import { kindsToRead, readList, type ListKind } from './lists.js';
+import { agentMenu, readAppResources, resourceUriOf, type AppResource } from './apps.js';
+import { readServerCard, type CardRead } from './card.js';
 import type { ListsContext } from './rules/lists.js';
 import type { IdentityMenu } from './rules/identities.js';
 import type { InvalidCredential } from './rules/auth.js';
 import type { OfflineMenu } from './rules/network.js';
-import type { PlainMenu } from './rules/capabilities.js';
+import { listingsDiffer, type PlainMenu } from './rules/capabilities.js';
 import type { Target as AnyTarget } from './connect.js';
 import { isCredentialHeader } from './explain.js';
 import { httpStatus } from './failures.js';
@@ -71,6 +73,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   let first: Awaited<ReturnType<typeof listTools>>;
   const reads: ListsContext['read'] = [];
   let undeclared: ListKind[] = [];
+  let appResources: AppResource[] | undefined;
   try {
     first = await patiently(() => listTools(connection, options), { error: tooMany });
     const second = await patiently(() => listTools(connection, options), { error: tooMany });
@@ -79,6 +82,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       version: connection.server.version,
       protocolVersion: connection.protocolVersion,
       era: connection.era,
+      extensions: declaredExtensions(connection.capabilities),
     };
     menu = buildMenu(first.tools, server, first.listMeta);
     secondList = buildMenu(second.tools, server, second.listMeta).tools;
@@ -90,6 +94,11 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       const second = first.error ? undefined : await readList(connection, kind, options.timeoutMs);
       reads.push({ kind, first, ...(second ? { second } : {}) });
       if (!first.error) menu[kind] = first.items;
+    }
+    // MCP Apps: each ui:// resource a tool names, read as a host would before rendering
+    // it (apps/resource). A read, not a tool call.
+    if (options.rules?.['apps/resource'] !== 'off' && menu.tools.some((t) => resourceUriOf(t)?.startsWith('ui://'))) {
+      appResources = await readAppResources(connection, menu.tools, options.timeoutMs);
     }
     if (options.catalog) {
       menu.catalog = await readCatalog(connection, menu.tools, { ...(typeof options.catalog === 'object' ? options.catalog : {}), timeoutMs: options.timeoutMs });
@@ -127,14 +136,26 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   // server should refuse it, not serve a menu (rules/auth.ts).
   const invalid = target.kind === 'http' && connection.usedAuth && (options.processes ?? 2) > 1 ? await invalidCredentialProbe(target, options.timeoutMs ?? 30_000) : undefined;
 
+  // The Server Card at its reserved location, compared with the live server (rules/card.ts).
+  const card: CardRead | undefined = target.kind === 'http' && options.rules?.['spec/server-card'] !== 'off' ? await readServerCard(target.url, Math.min(options.timeoutMs ?? 30_000, 10_000)) : undefined;
+
   // The menu a client without elicitation gets (rules/capabilities.ts).
   // Another process or connection: not with --processes 1 (one session per client), nor when the rule is off.
   let plain: PlainMenu | undefined;
   if ((options.processes ?? 2) > 1 && options.rules?.['menu/capability-dependent'] !== 'off') {
     try {
-      plain = { tools: (await probeSameEra(seeded({ ...target, elicitation: undefined }, MAIN_SEED), connection.era, options.timeoutMs ?? 30_000, undefined, undefined, eras)).tools };
+      plain = { tools: (await probeSameEra(seeded({ ...target, elicitation: undefined, apps: undefined }, MAIN_SEED), connection.era, options.timeoutMs ?? 30_000, undefined, undefined, eras)).tools };
     } catch (error) {
       plain = { error: firstLine(error) };
+    }
+    // The menus differ: once more with elicitation alone, to tell which capability a tool
+    // depends on (MCP Apps or elicitation). Only then: it's one more process or connection.
+    if (plain.tools && listingsDiffer(menu.tools, plain.tools)) {
+      try {
+        plain.elicitationOnly = (await probeSameEra(seeded({ ...target, apps: undefined }, MAIN_SEED), connection.era, options.timeoutMs ?? 30_000, undefined, undefined, eras)).tools;
+      } catch {
+        // Not attributed: the finding names both capabilities.
+      }
     }
   }
 
@@ -181,6 +202,9 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       ...(invalid ? { invalidCredential: invalid } : {}),
       ...(offline ? { offline } : {}),
       ...(plain ? { plain } : {}),
+      ...(appResources ? { appResources } : {}),
+      ...(card ? { serverCard: card } : {}),
+      ...(target.kind === 'http' ? { serverUrl: new URL(target.url).origin + new URL(target.url).pathname } : {}),
       ...(connection.era === 'legacy' && eras.has('modern') ? { laterModern: true } : {}),
       ...(reads.length || undeclared.length ? { lists: { read: reads, undeclared } } : {}),
     },
@@ -197,7 +221,8 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     }
     findings.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
   }
-  const cost = options.client ? clientCost(options.client, menu) : undefined;
+  // What the agent pays: app-only tools aren't in its list.
+  const cost = options.client ? clientCost(options.client, agentMenu(menu).shown) : undefined;
   return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}), ...(undeclared.length ? { notOffered: undeclared } : {}) };
 }
 
@@ -258,9 +283,18 @@ async function invalidCredentialProbe(target: Extract<Target, { kind: 'http' }>,
   }
 }
 
-/** The target, listed as a client that supports elicitation (answered "decline" if ever asked). */
+/**
+ * The target, listed as a client that supports elicitation (answered "decline" if ever
+ * asked) and renders MCP Apps: the client that sees every tool some client sees.
+ */
 function withElicitation<T extends AnyTarget>(t: T): T {
-  return t.elicitation ? t : { ...t, elicitation: 'decline' };
+  return { ...t, elicitation: t.elicitation ?? 'decline', apps: true };
+}
+
+/** capabilities.extensions as the server sent it: identifier → settings, {} for none. */
+export function declaredExtensions(capabilities: Record<string, unknown>): Record<string, unknown> {
+  const e = capabilities.extensions;
+  return typeof e === 'object' && e !== null && !Array.isArray(e) ? { ...(e as Record<string, unknown>) } : {};
 }
 
 const firstLine = (error: unknown) => (error instanceof Error ? error.message : String(error)).split('\n')[0].trim();

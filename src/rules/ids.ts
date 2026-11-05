@@ -146,6 +146,7 @@ function outputMentions(schema: JsonSchema | undefined, kind: string, depth = 0,
 
 export const authoredIds: Rule = {
   id: 'ids/authored',
+  scope: 'agent',
   // A heuristic: IDs that only appear in another tool's text output look the same
   // as invented ones from the schema alone (FINDINGS F12).
   severity: 'info',

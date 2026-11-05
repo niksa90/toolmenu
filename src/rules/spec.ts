@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { Ajv } from 'ajv';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import addFormatsImport from 'ajv-formats';
-import type { Rule, RuleFinding } from './rule.js';
+import { kept, names, type Rule, type RuleFinding } from './rule.js';
 
 // ajv-formats ships CommonJS; under NodeNext its default import is the module object.
 const addFormats = ((addFormatsImport as unknown as { default?: unknown }).default ?? addFormatsImport) as (ajv: Ajv | Ajv2020) => void;
@@ -165,11 +165,29 @@ export const serverInfo: Rule = {
   summary: 'The handshake names the server and its version',
   run(ctx) {
     if (!ctx.serverInfo) return [];
-    const missing = [!ctx.serverInfo.name ? 'name' : '', !ctx.serverInfo.version ? 'version' : ''].filter(Boolean);
-    if (!missing.length) return [];
+    const { name, version } = ctx.serverInfo;
+    // undefined: not sent; '': sent empty (a string, so it passes the schema).
+    const gaps = [
+      name === undefined ? 'no name' : name === '' ? 'an empty name' : '',
+      version === undefined ? 'no version' : version === '' ? 'an empty version' : '',
+    ].filter(Boolean);
+    if (!gaps.length) return [];
+    const who = !name && !version ? 'server or release' : !name ? 'server' : 'release';
+    // 2026-07-28 moved serverInfo to each result's _meta, where it is a SHOULD ("Servers
+    // SHOULD include this field on every response"); the 2025 handshake requires it.
+    const modern = ctx.era === 'modern';
+    const absent = name === undefined && version === undefined;
+    const named = name ? ` (${name})` : '';
+    const cant = `Clients, logs and this report can't tell which ${who} answered.`;
+    const message = modern
+      ? absent
+        ? `The server sends no serverInfo, which 2026-07-28 says servers SHOULD include on every response (io.modelcontextprotocol/serverInfo). ${cant}`
+        : `The server's serverInfo has ${gaps.join(' and ')}${named}. ${gaps.every((g) => g.startsWith('an empty')) ? 'Valid, since it is a string, but' : 'The schema requires both when serverInfo is sent, and'} ${cant[0].toLowerCase()}${cant.slice(1)}`
+      : `The server's handshake has ${gaps.join(' and ')}${named}, which ${absent ? "the 2025 handshake requires (initialize's serverInfo)" : 'the 2025 handshake requires to be filled'}. ${cant}`;
     return [
       {
-        message: `The server's handshake has no serverInfo ${missing.join(' or ')}, which the spec requires. Clients, logs and this report can't tell which ${missing.length === 2 ? 'server or release' : missing[0] === 'name' ? 'server' : 'release'} answered${ctx.serverInfo.name ? ` (${ctx.serverInfo.name})` : ''}.`,
+        ...(modern ? { severity: 'info' as const } : {}),
+        message,
         fix: 'Set serverInfo { name, version } where the server is created, the version from its package.',
       },
     ];
@@ -198,5 +216,89 @@ export const cacheHints: Rule = {
       });
     }
     return findings;
+  },
+};
+
+// _meta key rules, which extension identifiers follow "with a mandatory prefix"
+// (2026-07-28 ServerCapabilities.extensions; MetaObject): labels that start with a
+// letter and end with a letter or digit, dots between, then a slash and a name that
+// starts and ends alphanumeric.
+const LABEL = '[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?';
+const EXTENSION_ID = new RegExp(`^${LABEL}(?:\\.${LABEL})*/[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$`);
+
+/**
+ * The extensions a server declares: each key an identifier in _meta key form with a
+ * vendor prefix (io.modelcontextprotocol/ui), each value a settings object ({} for none).
+ * A client looks an extension up by its exact identifier, so one spelled otherwise reads
+ * as not declared.
+ */
+export const extensionId: Rule = {
+  id: 'spec/extension-id',
+  severity: 'warn',
+  summary: 'Declared extensions are identified as the spec says: vendor-prefix/name, with a settings object',
+  run(ctx) {
+    const e = ctx.capabilities.extensions;
+    if (e === undefined) return [];
+    if (typeof e !== 'object' || e === null || Array.isArray(e)) {
+      return [
+        {
+          message: `capabilities.extensions is ${Array.isArray(e) ? 'a list' : JSON.stringify(e)}, not an object of extension identifiers, so clients find none of the extensions it means to declare.`,
+          fix: 'Declare extensions as an object: { "io.modelcontextprotocol/ui": {} }, one key per extension, {} when it has no settings.',
+        },
+      ];
+    }
+    // One entry per extension: its identifier, its settings, or both.
+    const named: string[] = [];
+    const unset: string[] = [];
+    for (const [id, settings] of Object.entries(e as Record<string, unknown>)) {
+      if (!EXTENSION_ID.test(id)) named.push(`"${id}": ${id.includes('/') ? 'not in vendor-prefix/name form (labels start with a letter; the name starts and ends alphanumeric)' : 'no vendor prefix (the spec makes one mandatory: io.modelcontextprotocol/ui, com.example/feature)'}`);
+      else if (typeof settings !== 'object' || settings === null || Array.isArray(settings)) unset.push(`"${id}": its settings are ${JSON.stringify(settings)}, not an object ({} for none)`);
+    }
+    const out: RuleFinding[] = [];
+    if (named.length) {
+      const one = named.length === 1;
+      out.push({
+        message: `${one ? 'An extension the server declares is' : `${named.length} extensions the server declares are`} not identified as the spec says, so a client that looks ${one ? 'it' : 'them'} up by identifier finds ${one ? 'it' : 'them'} not declared: ${named[0]}${one ? '.' : '…'}`,
+        ...(one ? {} : { detail: named }),
+        fix: 'Use the identifier the extension\'s spec gives (io.modelcontextprotocol/ui for MCP Apps, io.modelcontextprotocol/tasks for Tasks), or your reverse-DNS prefix for your own, with {} or a settings object as the value.',
+      });
+    }
+    if (unset.length) {
+      const one = unset.length === 1;
+      out.push({
+        message: `${one ? 'An extension the server declares has' : `${unset.length} extensions the server declares have`} settings that aren't an object, which the 2026-07-28 schema requires (a settings object per extension, {} for none), so a client that reads ${one ? 'its' : 'their'} settings may reject or ignore ${one ? 'it' : 'them'}: ${unset[0]}${one ? '.' : '…'}`,
+        ...(one ? {} : { detail: unset }),
+        fix: 'Give each extension an object as its value: {} when it has no settings.',
+      });
+    }
+    return out;
+  },
+};
+
+export const taskRequired: Rule = {
+  id: 'spec/task-required',
+  severity: 'info',
+  summary: 'Tools that only run as tasks (execution.taskSupport: "required")',
+  run(ctx) {
+    const required = kept(ctx.menu.tools, ctx).filter((t) => {
+      const e = t.execution as { taskSupport?: unknown } | undefined;
+      return typeof e === 'object' && e !== null && e.taskSupport === 'required';
+    });
+    if (!required.length) return [];
+    const list = required.map((t) => t.name);
+    const one = list.length === 1;
+    const modern = ctx.era === 'modern';
+    return [
+      {
+        ...(one ? { tool: list[0] } : {}),
+        message: modern
+          ? `${one ? `${list[0]} is` : `${names(list, 6)} are`} marked execution.taskSupport: "required", a 2025-11-25 field. 2026-07-28 moved Tasks to the io.modelcontextprotocol/tasks extension, where the server decides per request whether to answer with a task, so clients on 2026-07-28 ignore it.`
+          : `${one ? `${list[0]} runs` : `${names(list, 6)} run`} only as a task (execution.taskSupport: "required"), so a client without Tasks support can't call ${one ? 'it' : 'them'}: the call is refused, not run. Most clients don't support Tasks yet.`,
+        ...(one ? {} : { detail: [list.join(', ')] }),
+        fix: modern
+          ? 'Drop execution from the tool definitions; answer with a task only when the request declares the io.modelcontextprotocol/tasks extension.'
+          : `If ${one ? 'it' : 'they'} can also answer in one go, mark ${one ? 'it' : 'them'} "optional", so clients without Tasks can call ${one ? 'it' : 'them'}; otherwise say in the README which clients can.`,
+      },
+    ];
   },
 };

@@ -8,6 +8,7 @@ const VAGUE_IDS = /^(id|ids|uuid|uuids|identifier|identifiers)$/i;
 
 export const vagueId: Rule = {
   id: 'naming/vague-id',
+  scope: 'agent',
   severity: 'warn',
   lesson: '04',
   summary: 'ID parameters say which kind of thing they identify',
@@ -54,6 +55,7 @@ function betterName(tool: string, param: string, params: string[], common: Set<s
 
 export const sharedWord: Rule = {
   id: 'naming/shared-word',
+  scope: 'agent',
   severity: 'info',
   lesson: '04',
   summary: 'The same noun used for different things across tools',
@@ -129,6 +131,7 @@ export const sharedWord: Rule = {
 
 export const route: Rule = {
   id: 'naming/route',
+  scope: 'agent',
   severity: 'error',
   lesson: '04',
   summary: 'routes.yml expectations still hold',

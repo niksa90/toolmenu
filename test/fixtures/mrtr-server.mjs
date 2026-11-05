@@ -128,6 +128,9 @@ export function build() {
     });
   }
 
+  // TASK=1: answers with a task to poll (ext-tasks) though the client declared no Tasks support.
+  if (process.env.TASK) reg('start_job', 'Starts a long job.', async () => text('MAKE-TASK'));
+
   // Asks for roots, which the client didn't declare (and 2026-07-28 deprecates).
   reg('ask_roots', 'Asks the client for its roots.', async () => inputRequired({ inputRequests: { roots: inputRequired.listRoots() } }));
 
@@ -138,12 +141,15 @@ export function build() {
 // the client didn't declare, a result without resultType. Rewrites this process's
 // own stdout, one JSON-RPC line at a time.
 function rewrite(line) {
-  if (!line.includes('REWRITE_TO_ROOTS') && !line.includes('NO-RESULT-TYPE') && !line.includes('OBJECT_STATE')) return line;
+  if (!line.includes('REWRITE_TO_ROOTS') && !line.includes('NO-RESULT-TYPE') && !line.includes('OBJECT_STATE') && !line.includes('MAKE-TASK')) return line;
   const message = JSON.parse(line);
   const result = message.result ?? {};
   if (result.inputRequests?.REWRITE_TO_ROOTS) result.inputRequests = { roots: { method: 'roots/list' } };
   if (result.content?.[0]?.text === 'NO-RESULT-TYPE') delete result.resultType;
   if (result.inputRequests?.OBJECT_STATE) result.requestState = { step: 1 };
+  if (result.content?.[0]?.text === 'MAKE-TASK') {
+    message.result = { resultType: 'task', taskId: 'task-1', status: 'working', createdAt: '2026-11-05T10:00:00Z', lastUpdatedAt: '2026-11-05T10:00:00Z', ttlMs: 60000, pollIntervalMs: 1000 };
+  }
   return JSON.stringify(message);
 }
 

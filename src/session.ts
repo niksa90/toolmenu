@@ -195,7 +195,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   // How every elicitation is answered: the same each run (--elicitation). Session
   // connections declare elicitation; snapshot's don't, so its menu is the one 0.14 saw.
   const answer: Elicitation = target.elicitation ?? 'decline';
-  target = { ...target, elicitation: answer };
+  // And MCP Apps, as snapshot's baseline is listed: the same tools, the same variants.
+  target = { ...target, elicitation: answer, apps: true };
   const mainTarget = seeded(target, MAIN_SEED);
   const waits = options.rateLimitWaitsMs ?? RATE_LIMIT_WAITS_MS;
   // Connecting and listing are read-only: a refusal for being too many is waited
@@ -1614,6 +1615,8 @@ function inputNote(input: InputTrace, answer: Elicitation): string {
       return `asked for ${kindList(input.undeclared ?? [])}, which the request didn't declare`;
     case 'decline-failed':
       return `${asked}; the retry with the ${answer} failed: ${clip(input.error?.message ?? '', 160)}`;
+    case 'task':
+      return `answered with a task to poll (resultType "task"${input.task?.taskId ? `, taskId ${clip(input.task.taskId, 40)}` : ''}${input.task?.status ? `, ${input.task.status}` : ''}), which the request didn't declare it could take`;
     case 'bad-state':
       return `${input.kinds.length ? `${asked}, with` : 'answered input_required with'} a requestState that isn't a string, so it can't be sent back as it came`;
     default:
@@ -1758,6 +1761,21 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
         fix: `Check the request's io.modelcontextprotocol/clientCapabilities before asking, and return -32021 with requiredCapabilities when it lacks ${kindList(input.undeclared ?? [])}.${(input.undeclared ?? []).includes('roots') ? ' For roots, take the directory as a tool parameter instead.' : ''}`,
       });
     }
+  }
+  // ext-tasks: "A server MUST NOT return CreateTaskResult to a client that did not
+  // include the extension capability on its request". session declares no Tasks support.
+  const tasks = inputs.filter((i) => i.input.outcome === 'task');
+  if (tasks.length) {
+    const one = tasks.length === 1;
+    out.push({
+      rule: 'session/undeclared-task',
+      severity: 'error',
+      step: tasks[0].step,
+      ...(one ? { tool: tasks[0].tool } : {}),
+      message: `${one ? `${tasks[0].tool} answered` : `${tasks.length} calls answered`} with a task to poll (resultType "task", the Tasks extension), though the request didn't declare io.modelcontextprotocol/tasks. Servers must not send a task to such a client: it has no tasks/get to poll with, so the agent gets no result at all.`,
+      detail: tasks.map((i) => `${i.tool} (step ${i.step}): ${inputNote(i.input, answer)}`),
+      fix: `Check the request's io.modelcontextprotocol/clientCapabilities for the io.modelcontextprotocol/tasks extension before creating a task. Without it, answer the call in one go, or return -32021 (Missing Required Client Capability) naming the extension.`,
+    });
   }
   const unmarked = inputs.filter((i) => i.input.missingResultType);
   if (unmarked.length) {

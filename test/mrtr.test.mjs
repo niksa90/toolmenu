@@ -360,3 +360,22 @@ test('session: a requestState that is not a string stops the call and is session
   assert.equal(bad[0].severity, 'error');
   assert.match(bad[0].message, /requestState that isn't a string/);
 });
+
+// ext-tasks: "A server MUST NOT return CreateTaskResult to a client that did not include
+// the extension capability on its request". session declares no Tasks support.
+test('session/undeclared-task: a task to poll, sent to a client that declared no Tasks support, is an error; other calls are not', async () => {
+  const r = await run(['session', '--auto', '--json', '--env', 'TASK=1', '--', process.execPath, server]);
+  const out = JSON.parse(r.stdout);
+  const step = out.steps.find((s) => s.label === 'call start_job');
+  assert.equal(step.input.outcome, 'task');
+  assert.deepEqual(step.input.task, { taskId: 'task-1', status: 'working' });
+  assert.equal(step.note, 'answered with a task to poll (resultType "task", taskId task-1, working), which the request didn\'t declare it could take');
+  const [f] = out.findings.filter((x) => x.rule === 'session/undeclared-task');
+  assert.equal(f.severity, 'error');
+  assert.equal(f.tool, 'start_job');
+  assert.match(f.message, /^start_job answered with a task to poll \(resultType "task", the Tasks extension\), though the request didn't declare io\.modelcontextprotocol\/tasks\./);
+  assert.match(f.fix, /return -32021 \(Missing Required Client Capability\) naming the extension\.$/);
+  // Without TASK, no tool answers with a task: quiet.
+  const quiet = JSON.parse((await run(['session', '--auto', '--json', '--', process.execPath, server])).stdout);
+  assert.equal(quiet.findings.filter((x) => x.rule === 'session/undeclared-task').length, 0);
+});

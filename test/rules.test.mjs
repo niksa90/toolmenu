@@ -268,16 +268,25 @@ test('menu/host-specific: a container or machine ID in a description is flagged'
   assert.equal(lint(fine).find((x) => x.rule === 'menu/host-specific'), undefined);
 });
 
-test('spec/server-info: a server that sends no name or version is told so', () => {
+test('spec/server-info: required in the 2025 handshake (warn), a SHOULD on 2026-07-28 (info); empty is said as empty', () => {
   const tools = [tool('get_form', ['form_id'], { annotations: { readOnlyHint: true } })];
-  const none = lint(tools, { serverInfo: {} }).find((f) => f.rule === 'spec/server-info');
+  const find = (ctx) => lint(tools, ctx).find((f) => f.rule === 'spec/server-info');
+  const none = find({ serverInfo: {} });
   assert.equal(none.severity, 'warn');
-  assert.match(none.message, /^The server's handshake has no serverInfo name or version, which the spec requires/);
+  assert.equal(none.message, "The server's handshake has no name and no version, which the 2025 handshake requires (initialize's serverInfo). Clients, logs and this report can't tell which server or release answered.");
   assert.match(none.fix, /Set serverInfo \{ name, version \}/);
-  const emptyVersion = lint(tools, { serverInfo: { name: 'docs-server', version: '' } }).find((f) => f.rule === 'spec/server-info');
-  assert.match(emptyVersion.message, /^The server's handshake has no serverInfo version/);
-  assert.equal(lint(tools, { serverInfo: { name: 'docs-server', version: '1.0.0' } }).find((f) => f.rule === 'spec/server-info'), undefined);
-  assert.equal(lint(tools).find((f) => f.rule === 'spec/server-info'), undefined, 'no handshake info, no finding');
+  const legacyEmpty = find({ serverInfo: { name: 'docs-server', version: '' } });
+  assert.equal(legacyEmpty.severity, 'warn');
+  assert.match(legacyEmpty.message, /^The server's handshake has an empty version \(docs-server\), which the 2025 handshake requires to be filled\./);
+  // 2026-07-28: Netlify sends no serverInfo; Kiwi and AWS's docs server an empty version.
+  const modernNone = find({ serverInfo: {}, era: 'modern' });
+  assert.equal(modernNone.severity, 'info');
+  assert.match(modernNone.message, /^The server sends no serverInfo, which 2026-07-28 says servers SHOULD include on every response/);
+  const modernEmpty = find({ serverInfo: { name: 'kiwicom-flight-search', version: '' }, era: 'modern' });
+  assert.equal(modernEmpty.severity, 'info');
+  assert.equal(modernEmpty.message, "The server's serverInfo has an empty version (kiwicom-flight-search). Valid, since it is a string, but clients, logs and this report can't tell which release answered.");
+  assert.equal(find({ serverInfo: { name: 'docs-server', version: '1.0.0' } }), undefined);
+  assert.equal(find({}), undefined, 'no handshake info, no finding');
 });
 
 test('write/no-dry-run tells annotated-destructive tools from destructive-by-default ones', () => {
