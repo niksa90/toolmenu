@@ -1037,3 +1037,14 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   only counts tools missing or added offline. A failed start is info, with a note
   when the command is a package runner (npx, uvx…), which may need the network itself.
 - **`session/server-unresponsive`**: 0.21's stop, under its own id.
+- **`menu/capability-dependent`**: every snapshot connection (main, process probe,
+  lists probe, invalid-credential, offline, identities) declares elicitation (form and
+  URL, answered "decline"; snapshot calls no tool). One more listing declares nothing.
+  Reversed from 0.16's choice to declare nothing: github-mcp-server 1.14 lists
+  `delete_repository` only to a client with elicitation, so a capability-less baseline
+  missed it.
+- **`ids/authored` operations**: string enum values of the form `verb_noun…` whose
+  verb is a collection verb (list, search, find, query, browse) become virtual tools
+  with the router's parameters. They count only when the kind appears after the verb
+  and the router doesn't need that same ID. The broad "a search that names nothing
+  finds any ID" rule doesn't apply to them (sapiens' `list_public`).

@@ -24,6 +24,21 @@ Three things the 0.21 corpus run found in real servers, now rules of their own.
   answering after a step (0.21 stopped the run there), under its own id rather than
   `session/step-failed`. fulcra-context-mcp polls its device-code sign-in on the
   event loop inside a tool call.
+- **`snapshot` lists as a client that supports elicitation**, and once more without
+  it: **`menu/capability-dependent`** (info) names the tools only one of them sees.
+  github-mcp-server 1.14 lists `delete_repository` only to a client that can ask the
+  user to confirm; toolmenu declared nothing until now, so a baseline missed the most
+  destructive tool on the server and `diff` could never see it change. The menu file
+  now holds the elicitation client's menu: a baseline from 0.21 or earlier may show
+  such tools as new in the first `diff` after upgrading. The extra listing isn't made
+  with `--processes 1`.
+- **`ids/authored` reads a router's operations**: an enum value like `list_workflows`
+  (github-mcp-server's `actions_list { method }`) or `list_project_views` counts as a
+  tool that lists that kind. It must name the kind after its verb (`list_public`
+  doesn't), and a router's `get_…` doesn't count, since it needs the ID. A
+  `commentNodeID` is a comment's ID. On github-mcp-server's full menu, 4 of the 8
+  notes were false and are gone; in the corpus, one other note (sapiens'
+  `toUserId`, listed by its `search_users` operation).
 - Corpus run (224 installed npm and PyPI servers, `snapshot --offline-check` and
   `session --auto`), every new finding read by hand:
   - `menu/network-dependent` on 3 servers: inite-visibility (3 tools offline, 10
