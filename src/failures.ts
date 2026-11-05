@@ -212,15 +212,28 @@ export function setupFailureAdvice(classes: Iterable<FailureClass>, transport: '
 
 const DENIED_CODES = /^(?:unauthori[sz]ed|unauthenticated|forbidden|invalid_auth|invalid_token|not_authed|authentication_(?:required|failed)|permission_denied)$/i;
 
+/** An HTTP error passed on as a tool's answer: what it said. */
+export interface StructuredError {
+  status?: number;
+  code?: string;
+  message?: string;
+  /** 401 or 403, or a code that says the credentials were refused. */
+  auth: boolean;
+  /** "HTTP 401: …", for a message. */
+  said: string;
+}
+
 /**
- * A result not marked isError whose content is an HTTP auth error in structured form:
- * the API the tool calls said 401 or 403 and the server passed the body on as an
+ * A result not marked isError whose content is an HTTP error in structured form: the
+ * API the tool calls answered 4xx or 5xx and the server passed the body on as an
  * answer. Notion's server returns `{"status":401,"object":"error","code":"unauthorized"}`
  * as a plain result. Only a JSON object whose own status or code says so counts, not
- * "401" anywhere in the data. Says what it saw, or undefined.
+ * "401" anywhere in the data, and a status needs a sign that the object is an error
+ * (`object: "error"`, an `error` field, a `message`, or sitting under `error`): a
+ * status alone may be what the tool was asked about. (A tool that fetches a URL is
+ * skipped by the caller: its answer is the page's.)
  */
-export function deniedAnswer(result: { content?: unknown; structuredContent?: unknown }): string | undefined {
-  // (A tool that fetches a URL is skipped by the caller: its answer is the page's.)
+export function structuredError(result: { content?: unknown; structuredContent?: unknown }): StructuredError | undefined {
   const objects: unknown[] = [result.structuredContent];
   for (const c of Array.isArray(result.content) ? result.content : []) {
     const text = c && typeof c === 'object' && 'text' in c && typeof c.text === 'string' ? c.text.trim() : '';
@@ -231,20 +244,32 @@ export function deniedAnswer(result: { content?: unknown; structuredContent?: un
       // not JSON
     }
   }
+  const errorStatus = (x: unknown) => {
+    const n = typeof x === 'number' ? x : typeof x === 'string' && /^\d{3}$/.test(x) ? Number(x) : NaN;
+    return n >= 400 && n <= 599 ? n : undefined;
+  };
+  let first: StructuredError | undefined;
   for (const o of objects) {
     if (!o || typeof o !== 'object' || Array.isArray(o)) continue;
     for (const v of [o as Record<string, unknown>, (o as Record<string, unknown>).error]) {
       if (!v || typeof v !== 'object' || Array.isArray(v)) continue;
       const r = v as Record<string, unknown>;
-      const status = [r.status, r.statusCode, r.status_code, r.code].find((x) => x === 401 || x === 403 || x === '401' || x === '403');
-      const code = [r.code, r.error, r.type].find((x) => typeof x === 'string' && DENIED_CODES.test(x));
-      // A status alone may be what the tool was asked to fetch ({"status":403,"body":…});
-      // with it, the object has to say it's an error.
+      const status = [r.status, r.statusCode, r.status_code, r.code].map(errorStatus).find((x) => x !== undefined);
+      const code = [r.code, r.error, r.type].find((x): x is string => typeof x === 'string' && DENIED_CODES.test(x));
       const isError = v !== o || r.object === 'error' || ![undefined, null, false, '', 0].includes(r.error as never) || typeof r.message === 'string';
       if (code === undefined && (status === undefined || !isError)) continue;
-      const message = typeof r.message === 'string' ? `: ${r.message}` : '';
-      return `${status !== undefined ? `HTTP ${status}` : String(code)}${message}`;
+      const message = typeof r.message === 'string' ? r.message : undefined;
+      const found: StructuredError = {
+        ...(status !== undefined ? { status } : {}),
+        ...(code !== undefined ? { code } : {}),
+        ...(message !== undefined ? { message } : {}),
+        auth: code !== undefined || status === 401 || status === 403,
+        said: `${status !== undefined ? `HTTP ${status}` : code}${message ? `: ${message}` : ''}`,
+      };
+      // An auth error anywhere wins: a 502 around a nested 401 is still the credentials.
+      if (found.auth) return found;
+      first ??= found;
     }
   }
-  return undefined;
+  return first;
 }

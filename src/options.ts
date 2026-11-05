@@ -5,6 +5,7 @@
 export const CLI_OPTIONS = {
   out: { type: 'string' },
   'out-dir': { type: 'string' },
+  'offline-check': { type: 'boolean' },
   concurrency: { type: 'string' },
   'no-write': { type: 'boolean' },
   routes: { type: 'string' },

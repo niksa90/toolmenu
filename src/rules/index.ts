@@ -5,6 +5,7 @@ import { connectionVariance, hostSpecific, nondeterministic, processVariance } f
 import { authoredIds } from './ids.js';
 import { clientName } from './clients.js';
 import { invalidCredential } from './auth.js';
+import { networkDependent } from './network.js';
 import { listSchema, listVariance } from './lists.js';
 import { handleLifetime } from './handles.js';
 import { authVariance, cacheScopePublic } from './identities.js';
@@ -48,6 +49,7 @@ export const MENU_RULES: Rule[] = [
   cacheHints,
   authVariance,
   invalidCredential,
+  networkDependent,
   listVariance,
   listSchema,
   cacheScopePublic,

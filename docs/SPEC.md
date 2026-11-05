@@ -1018,3 +1018,22 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   times out after a step ("running but never answered") stops the session like a rate
   limit, and the call's timeout at that step is folded into the one finding
   (fulcra-context-mcp's device-code sign-in blocks the server).
+
+## 28. 0.22: errors passed on as answers, menus that need the network
+
+- **`session/error-not-flagged`**: `structuredError(result)` reads each text content
+  that is a JSON object, and `structuredContent`. It matches the object, or its
+  `error` member, when it has an auth code, or an HTTP status 400–599 under
+  `status`/`statusCode`/`status_code`/`code` together with a sign of an error
+  (`object: "error"`, a non-empty `error`, a `message`, or sitting under `error`).
+  A status alone may be what the tool was asked about. Tools with a URL-like
+  parameter are skipped. The auth subset (`deniedAnswer`) keeps feeding
+  `session/untested`.
+- **`menu/network-dependent`**: `offlineEnvironment()` sets HTTP(S)_PROXY and ALL_PROXY,
+  in both cases, to `http://127.0.0.1:9`, sets NO_PROXY to loopback only (a server's
+  own local helper isn't the network: TabRunner's bridge), and sets
+  `NODE_USE_ENV_PROXY=1`. These win over `--env`, where a proxy would undo the cut. One more process is listed after the
+  others. A menu that already differs between processes (`menu/process-variance`)
+  only counts tools missing or added offline. A failed start is info, with a note
+  when the command is a package runner (npx, uvx…), which may need the network itself.
+- **`session/server-unresponsive`**: 0.21's stop, under its own id.

@@ -33,6 +33,8 @@ export interface Config {
   lists?: string[];
   /** snapshot: the client to check the menu for (claude-code, claude-api-search, openai). --client wins. */
   client?: string;
+  /** snapshot (stdio): also list the menu with the network cut off. --offline-check turns it on too. */
+  offlineCheck?: boolean;
   /** Server processes (stdio) or connections (HTTP) to compare, the main one included (default 2). */
   processes?: number;
   /**
@@ -72,6 +74,7 @@ export async function loadConfig(path?: string): Promise<Config> {
   if (config.lists !== undefined && !(Array.isArray(config.lists) && config.lists.every((l) => (LIST_WORDS as readonly string[]).includes(l)))) {
     throw new Error(`${file}: lists must be a list of ${LIST_WORDS.join(', ')}`);
   }
+  if (config.offlineCheck !== undefined && typeof config.offlineCheck !== 'boolean') throw new Error(`${file}: offlineCheck must be true or false`);
   if (config.client !== undefined && !(typeof config.client === 'string' && Object.hasOwn(CLIENTS, config.client))) {
     throw new Error(`${file}: client must be one of ${Object.keys(CLIENTS).join(', ')}`);
   }

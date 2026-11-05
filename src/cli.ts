@@ -91,6 +91,7 @@ export async function main(argv: string[]): Promise<number> {
   if (badList) throw new UsageError(`--lists takes ${LIST_WORDS.join(', ')}, comma-separated; not "${badList}"`);
   if (values.client !== undefined && sub !== 'snapshot') throw new UsageError('--client goes with snapshot.');
   if (values.client !== undefined && !Object.hasOwn(CLIENTS, values.client)) throw new UsageError(`--client must be one of ${CLIENT_NAMES.join(', ')}`);
+  if (values['offline-check'] && sub !== 'snapshot') throw new UsageError('--offline-check goes with snapshot.');
   if (values.as !== undefined && sub !== 'snapshot') throw new UsageError('--as goes with snapshot: it lists the menu once per identity.');
   if (values.elicitation !== undefined && sub !== 'session') throw new UsageError('--elicitation goes with session: only session calls tools.');
   // Only session calls tools, so only its targets declare elicitation and say how to answer.
@@ -123,6 +124,8 @@ export async function main(argv: string[]): Promise<number> {
       descriptionLimit: config.descriptionLimit,
       fullDescriptions: config.fullDescriptions,
       ...(config.client ? { client: config.client } : {}),
+      // stdio servers only: snapshot skips it for HTTP.
+      ...(config.offlineCheck ? { offlineCheck: true } : {}),
       onDone: (row, done, total) => {
         if (tty) process.stderr.write(`\r\x1b[K  ${done}/${total}  ${row.name}`);
       },
@@ -214,7 +217,7 @@ export async function main(argv: string[]): Promise<number> {
     const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
     const plan = planInit({ cwd: process.cwd(), target, out: values.out, session: values['with-session'] });
     if (plan.existing.length) throw new UsageError(existingMessage(plan));
-    const { menu, findings } = await snapshot(target, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+    const { menu, findings } = await snapshot(target, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions, ...(config.offlineCheck && target.kind === 'stdio' ? { offlineCheck: true } : {}) });
     await writeInit(plan, JSON.stringify(menu, null, 2) + '\n');
     process.stdout.write(initReport(plan, { server: menu.server.name, version: menu.server.version, tools: menu.tools.length, tokens: menu.totalTokens, counts: counts(findings) }, target));
     return 0;
@@ -318,7 +321,9 @@ export async function main(argv: string[]): Promise<number> {
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
   const client = values.client ?? config.client;
-  const { menu, findings, cost, notOffered } = await snapshot(target, { routes, timeoutMs, processes, identities, client, lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const offlineCheck = values['offline-check'] ?? config.offlineCheck;
+  if (values['offline-check'] && target.kind !== 'stdio') throw new UsageError("--offline-check goes with a stdio server: an HTTP server's network isn't this machine's to cut.");
+  const { menu, findings, cost, notOffered } = await snapshot(target, { offlineCheck: offlineCheck && target.kind === 'stdio', routes, timeoutMs, processes, identities, client, lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');

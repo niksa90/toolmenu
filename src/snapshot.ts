@@ -7,6 +7,7 @@ import { kindsToRead, readList, type ListKind } from './lists.js';
 import type { ListsContext } from './rules/lists.js';
 import type { IdentityMenu } from './rules/identities.js';
 import type { InvalidCredential } from './rules/auth.js';
+import type { OfflineMenu } from './rules/network.js';
 import { isCredentialHeader } from './explain.js';
 import { httpStatus } from './failures.js';
 import { clientCost, type ClientCost } from './clients.js';
@@ -37,6 +38,8 @@ export interface SnapshotOptions extends RuleSettings {
   lists?: string[];
   /** --client: check the menu for this client (src/clients.ts): its description cut, its search, its name format. */
   client?: string;
+  /** --offline-check (stdio): list the menu once more with the network cut off (menu/network-dependent). */
+  offlineCheck?: boolean;
 }
 
 export interface SnapshotResult {
@@ -116,6 +119,10 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   // server should refuse it, not serve a menu (rules/auth.ts).
   const invalid = target.kind === 'http' && connection.usedAuth && (options.processes ?? 2) > 1 ? await invalidCredentialProbe(target, options.timeoutMs ?? 30_000) : undefined;
 
+  // --offline-check: one more process with the network cut off (rules/network.ts).
+  // Not run when the rule is off: it's a whole server start.
+  const offline = options.offlineCheck && target.kind === 'stdio' && options.rules?.['menu/network-dependent'] !== 'off' ? (isContainerWrapper(target) ? { wrapper: true } : await offlineProbe(target, options.timeoutMs ?? 30_000)) : undefined;
+
   // Each other identity's menu, from its own process (stdio) or connection (HTTP).
   const identities: IdentityMenu[] | undefined = mainIdentity
     ? [{ name: mainIdentity.name, tools: menu.tools, tokens: menu.totalTokens, cacheScope: menu.listMeta?.cacheScope }]
@@ -153,6 +160,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       server: serverArgs(target),
       identities,
       ...(invalid ? { invalidCredential: invalid } : {}),
+      ...(offline ? { offline } : {}),
       ...(reads.length || undeclared.length ? { lists: { read: reads, undeclared } } : {}),
     },
     options,
@@ -192,6 +200,31 @@ export function withInvalidCredential(target: Extract<Target, { kind: 'http' }>)
   }
   if (!replaced) headers.Authorization = 'Bearer toolmenu-invalid-credential';
   return { ...target, headers, noAuth: true };
+}
+
+/**
+ * The proxy variables pointed at a port nothing listens on (the discard port): every
+ * client that honours them (Python requests and httpx, Go, curl, Node's fetch with
+ * NODE_USE_ENV_PROXY on 22.21+) fails to connect at once. Loopback stays exempt: a
+ * server's own local helper (TabRunner's bridge on 127.0.0.1) isn't the network.
+ * These win over --env: a proxy given there would undo the cut.
+ */
+const LOOPBACK = 'localhost,127.0.0.1,::1';
+
+export function offlineEnvironment(): Record<string, string> {
+  const dead = 'http://127.0.0.1:9';
+  return { HTTPS_PROXY: dead, https_proxy: dead, HTTP_PROXY: dead, http_proxy: dead, ALL_PROXY: dead, all_proxy: dead, NO_PROXY: LOOPBACK, no_proxy: LOOPBACK, NODE_USE_ENV_PROXY: '1' };
+}
+
+async function offlineProbe(target: Extract<Target, { kind: 'stdio' }>, timeoutMs: number): Promise<OfflineMenu> {
+  const launcher = /(?:^|[\\/])(?:npx|uvx|bunx|pnpx|pipx)(?:\.cmd|\.exe)?$/.test(target.command) || (/(?:^|[\\/])(?:pnpm|yarn|npm|bun)(?:\.cmd|\.exe)?$/.test(target.command) && /^(?:dlx|exec|x)$/.test(target.args[0] ?? ''));
+  try {
+    const m = await probeMenu(seeded({ ...target, env: { ...target.env, ...offlineEnvironment() } }, MAIN_SEED), timeoutMs);
+    return { tools: m.tools };
+  } catch (error) {
+    const e = error instanceof ConnectError ? error.headline : firstLine(error);
+    return { error: e.replace(/\.$/, ''), ...(launcher ? { launcher } : {}) };
+  }
 }
 
 async function invalidCredentialProbe(target: Extract<Target, { kind: 'http' }>, timeoutMs: number): Promise<InvalidCredential> {
