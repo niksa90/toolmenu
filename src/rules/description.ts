@@ -120,6 +120,7 @@ export function sentInFull(tool: MenuTool, patterns: string[] | undefined): bool
 
 export const buried: Rule = {
   id: 'description/buried',
+  scope: 'agent',
   severity: 'warn',
   lesson: 'truncated description',
   summary: 'Instructions to the agent sit past the point where your client cuts descriptions',
@@ -163,6 +164,7 @@ function aroundTheCut(text: string, at: number): string {
 
 export const cut: Rule = {
   id: 'description/cut',
+  scope: 'agent',
   severity: 'info',
   lesson: 'truncated description',
   summary: 'Descriptions longer than your client sends',
@@ -197,6 +199,7 @@ export const cut: Rule = {
 
 export const lateInstruction: Rule = {
   id: 'description/late-instruction',
+  scope: 'agent',
   severity: 'info',
   lesson: 'truncated description',
   summary: 'Instructions to the agent that a client cutting descriptions short would hide',

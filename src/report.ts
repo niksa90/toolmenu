@@ -1,4 +1,5 @@
 import type { ClientCost } from './clients.js';
+import { agentTools } from './apps.js';
 import type { DiffResult } from './diff.js';
 import type { HistoryResult, HistoryRow } from './history.js';
 import { clip, stepLabel, stepsText, type Scenario, type SessionResult } from './session.js';
@@ -38,7 +39,25 @@ function costLine(cost: ClientCost): string {
   return `as ${cost.label}: ${parts.join(' · ')}`;
 }
 
+/**
+ * The menu without MCP Apps app-only tools, which an Apps host keeps out of the agent's
+ * list (the breakdown is about what the agent pays for), and what was left out.
+ */
+function agentView(menu: Menu): { shown: Menu; appOnly?: { tools: number; tokens: number } } {
+  const tools = agentTools(menu.tools);
+  if (tools === menu.tools) return { shown: menu };
+  const tokens = tools.reduce((n, t) => n + t.tokens, 0);
+  return { shown: { ...menu, tools, totalTokens: tokens }, appOnly: { tools: menu.tools.length - tools.length, tokens: menu.totalTokens - tokens } };
+}
+
+/** " · 2 not shown to the agent (MCP Apps visibility without "model", ~60 tokens)", or nothing. */
+function appOnlyNote(menu: Menu): string {
+  const a = agentView(menu).appOnly;
+  return a ? ` · ${a.tools} not shown to the agent (MCP Apps visibility without "model", ~${a.tokens.toLocaleString('en-US')} tokens)` : '';
+}
+
 export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, outPath?: string, cost?: ClientCost, notOffered: string[] = []): string {
+  const view = agentView(menu);
   if (format === 'json') {
     return JSON.stringify(
       {
@@ -47,7 +66,8 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
         tools: menu.tools.length,
         totalTokens: menu.totalTokens,
         listMeta: menu.listMeta,
-        breakdown: breakdown(menu),
+        ...(view.appOnly ? { appOnly: view.appOnly } : {}),
+        breakdown: breakdown(view.shown),
         ...(cost ? { client: cost } : {}),
         ...(menu.prompts ? { prompts: menu.prompts.length } : {}),
         ...(menu.resources ? { resources: menu.resources.length } : {}),
@@ -67,19 +87,19 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
     return [
       `### toolmenu snapshot: \`${s.name ?? 'server'}\` ${s.version ?? ''}`.trimEnd(),
       '',
-      `Protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)`,
+      `Protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(menu)}`,
       ...(cost ? ['', `${costLine(cost)}. _${cost.basis}._`] : []),
       ...(otherLists(menu) ? ['', `Also listed: ${otherLists(menu)}`] : []),
       '',
       ...mdFindings(findings),
-      ...mdBreakdown(menu),
+      ...mdBreakdown(view.shown),
     ].join('\n');
   }
 
   const s = menu.server;
   const lines = [
     `toolmenu snapshot  ${s.name ?? 'unknown server'} ${s.version ?? ''}`.trimEnd(),
-    `  protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)`,
+    `  protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(menu)}`,
   ];
   if (cost) lines.push(`  ${costLine(cost)}`, `    ${cost.basis}`);
   const others = otherLists(menu);
@@ -88,7 +108,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
   if (others || caps.length) lines.push(`  ${[others ? `also listed: ${others}` : '', caps.length ? `no ${caps.join(' or ')} offered (not declared)` : ''].filter(Boolean).join(' · ')}`);
   if (outPath) lines.push(`  wrote ${outPath}`);
   lines.push('');
-  const where = breakdownLines(breakdown(menu), menu.tools.length);
+  const where = breakdownLines(breakdown(view.shown), view.shown.tools.length);
   if (where.length) lines.push(...where, '');
   lines.push(...findingLines(findings));
   lines.push(summaryLine(findings));

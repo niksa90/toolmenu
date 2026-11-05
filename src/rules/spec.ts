@@ -165,11 +165,29 @@ export const serverInfo: Rule = {
   summary: 'The handshake names the server and its version',
   run(ctx) {
     if (!ctx.serverInfo) return [];
-    const missing = [!ctx.serverInfo.name ? 'name' : '', !ctx.serverInfo.version ? 'version' : ''].filter(Boolean);
-    if (!missing.length) return [];
+    const { name, version } = ctx.serverInfo;
+    // undefined: not sent; '': sent empty (a string, so it passes the schema).
+    const gaps = [
+      name === undefined ? 'no name' : name === '' ? 'an empty name' : '',
+      version === undefined ? 'no version' : version === '' ? 'an empty version' : '',
+    ].filter(Boolean);
+    if (!gaps.length) return [];
+    const who = !name && !version ? 'server or release' : !name ? 'server' : 'release';
+    // 2026-07-28 moved serverInfo to each result's _meta, where it is a SHOULD ("Servers
+    // SHOULD include this field on every response"); the 2025 handshake requires it.
+    const modern = ctx.era === 'modern';
+    const absent = name === undefined && version === undefined;
+    const named = name ? ` (${name})` : '';
+    const cant = `Clients, logs and this report can't tell which ${who} answered.`;
+    const message = modern
+      ? absent
+        ? `The server sends no serverInfo, which 2026-07-28 says servers SHOULD include on every response (io.modelcontextprotocol/serverInfo). ${cant}`
+        : `The server's serverInfo has ${gaps.join(' and ')}${named}. ${gaps.every((g) => g.startsWith('an empty')) ? 'Valid, since it is a string, but' : 'The schema requires both when serverInfo is sent, and'} ${cant[0].toLowerCase()}${cant.slice(1)}`
+      : `The server's handshake has ${gaps.join(' and ')}${named}, which ${absent ? "the 2025 handshake requires (initialize's serverInfo)" : 'the 2025 handshake requires to be filled'}. ${cant}`;
     return [
       {
-        message: `The server's handshake has no serverInfo ${missing.join(' or ')}, which the spec requires. Clients, logs and this report can't tell which ${missing.length === 2 ? 'server or release' : missing[0] === 'name' ? 'server' : 'release'} answered${ctx.serverInfo.name ? ` (${ctx.serverInfo.name})` : ''}.`,
+        ...(modern ? { severity: 'info' as const } : {}),
+        message,
         fix: 'Set serverInfo { name, version } where the server is created, the version from its package.',
       },
     ];
@@ -198,5 +216,49 @@ export const cacheHints: Rule = {
       });
     }
     return findings;
+  },
+};
+
+// _meta key rules, which extension identifiers follow "with a mandatory prefix"
+// (2026-07-28 ServerCapabilities.extensions; MetaObject): labels that start with a
+// letter and end with a letter or digit, dots between, then a slash and a name that
+// starts and ends alphanumeric.
+const LABEL = '[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?';
+const EXTENSION_ID = new RegExp(`^${LABEL}(?:\\.${LABEL})*/[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$`);
+
+/**
+ * The extensions a server declares: each key an identifier in _meta key form with a
+ * vendor prefix (io.modelcontextprotocol/ui), each value a settings object ({} for none).
+ * A client looks an extension up by its exact identifier, so one spelled otherwise reads
+ * as not declared.
+ */
+export const extensionId: Rule = {
+  id: 'spec/extension-id',
+  severity: 'warn',
+  summary: 'Declared extensions are identified as the spec says: vendor-prefix/name, with a settings object',
+  run(ctx) {
+    const e = ctx.capabilities.extensions;
+    if (e === undefined) return [];
+    if (typeof e !== 'object' || e === null || Array.isArray(e)) {
+      return [
+        {
+          message: `capabilities.extensions is ${Array.isArray(e) ? 'a list' : JSON.stringify(e)}, not an object of extension identifiers, so clients find none of the extensions it means to declare.`,
+          fix: 'Declare extensions as an object: { "io.modelcontextprotocol/ui": {} }, one key per extension, {} when it has no settings.',
+        },
+      ];
+    }
+    const bad: string[] = [];
+    for (const [id, settings] of Object.entries(e as Record<string, unknown>)) {
+      if (!EXTENSION_ID.test(id)) bad.push(`"${id}": ${id.includes('/') ? 'not in vendor-prefix/name form (labels start with a letter; the name starts and ends alphanumeric)' : 'no vendor prefix (the spec makes one mandatory: io.modelcontextprotocol/ui, com.example/feature)'}`);
+      if (typeof settings !== 'object' || settings === null || Array.isArray(settings)) bad.push(`"${id}": its settings are ${JSON.stringify(settings)}, not an object ({} for none)`);
+    }
+    if (!bad.length) return [];
+    return [
+      {
+        message: `${bad.length === 1 ? 'An extension the server declares is' : `${bad.length} extensions the server declares are`} not identified as the spec says, so a client that looks ${bad.length === 1 ? 'it' : 'them'} up by identifier finds ${bad.length === 1 ? 'it' : 'them'} not declared: ${bad[0]}${bad.length > 1 ? '…' : '.'}`,
+        ...(bad.length > 1 ? { detail: bad } : {}),
+        fix: 'Use the identifier the extension\'s spec gives (io.modelcontextprotocol/ui for MCP Apps, io.modelcontextprotocol/tasks for Tasks), or your reverse-DNS prefix for your own, with {} or a settings object as the value.',
+      },
+    ];
   },
 };

@@ -8,6 +8,15 @@ const obj = (properties, required = Object.keys(properties)) => ({ type: 'object
 
 // Whether the client declared elicitation in initialize (the confirm fixture).
 let elicits = false;
+// Whether it declared the MCP Apps extension (the apps fixtures).
+let apps = false;
+const APP_MIME = 'text/html;profile=mcp-app';
+const ui = (resourceUri, extra = {}) => ({ _meta: { ui: { resourceUri, ...extra } } });
+// The UI resources the apps fixtures serve: chart as an app, table with the wrong type.
+const UI_RESOURCES = {
+  'ui://fx/chart': { mimeType: APP_MIME, text: '<!doctype html><html><body>chart</body></html>' },
+  'ui://fx/table': { mimeType: 'text/html', text: '<!doctype html><html><body>table</body></html>' },
+};
 
 const MENUS = {
   smells: () => [
@@ -33,6 +42,27 @@ const MENUS = {
   confirm: () => [
     { name: 'get_thing', description: 'Get a thing.', inputSchema: obj({}), annotations: { readOnlyHint: true } },
     ...(elicits ? [{ name: 'delete_thing', description: 'Delete a thing, after the user confirms.', inputSchema: obj({ thing: str }), annotations: { destructiveHint: true } }] : []),
+  ],
+  // MCP Apps, each way the apps/* rules fire. APPS_LEAK=1 lists the app-only tool to
+  // every client, not only to one that declared the extension.
+  apps: () => [
+    // A text variant to a client without Apps, the UI one to an Apps host.
+    apps
+      ? { name: 'show_chart', description: 'Show the chart as an interactive view.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('ui://fx/chart') }
+      : { name: 'show_chart', description: 'Show the chart as text.', inputSchema: obj({}), annotations: { readOnlyHint: true } },
+    // Named like a write, no annotations: the agent never sees it, so no write rule.
+    ...(apps || process.env.APPS_LEAK ? [{ name: 'update_chart_data', description: 'Called by the chart view.', inputSchema: obj({ series: str }), ...ui('ui://fx/chart', { visibility: ['app'] }) }] : []),
+    ...(apps ? [{ name: 'open_dashboard', description: 'Open the dashboard.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('ui://fx/chart') }] : []),
+    { name: 'show_map', description: 'Show a map.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('ui://fx/missing') },
+    { name: 'show_table', description: 'Show a table.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('ui://fx/table') },
+    { name: 'show_web', description: 'Show a page.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('https://example.com/view') },
+    { name: 'show_legacy', description: 'Show the old view.', inputSchema: obj({}), annotations: { readOnlyHint: true }, _meta: { 'ui/resourceUri': 'ui://fx/chart' } },
+    { name: 'hidden_tool', description: 'Nobody can call this.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('ui://fx/chart', { visibility: [] }) },
+  ],
+  // MCP Apps done right: quiet. The app-only tool is listed only to an Apps host.
+  'apps-clean': () => [
+    { name: 'show_chart', description: 'Show the chart.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('ui://fx/chart', { visibility: ['model', 'app'] }), ...{ _meta: { ui: { resourceUri: 'ui://fx/chart', visibility: ['model', 'app'] }, 'ui/resourceUri': 'ui://fx/chart' } } },
+    ...(apps ? [{ name: 'update_chart_data', description: 'Called by the chart view.', inputSchema: obj({ series: str }), ...ui('ui://fx/chart', { visibility: ['app'] }) }] : []),
   ],
   clean: () => [{ name: 'ping_service', description: 'Check the service is up.', inputSchema: obj({}), annotations: { readOnlyHint: true } }],
   // Search and execute, like Sentry (catalog: standard tool definitions) and
@@ -93,7 +123,14 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   if (msg.id === undefined) return; // notifications
   if (msg.method === 'initialize') {
     elicits = !!msg.params?.capabilities?.elicitation;
-    send({ id: msg.id, result: { protocolVersion: '2025-11-25', capabilities: process.env.NO_TOOLS_CAPABILITY ? {} : { tools: {} }, serverInfo: { name: `raw-${fixture}`, version: '0.0.1' } } });
+    apps = (msg.params?.capabilities?.extensions?.['io.modelcontextprotocol/ui']?.mimeTypes ?? []).includes(APP_MIME);
+    const caps = process.env.NO_TOOLS_CAPABILITY ? {} : { tools: {}, ...(fixture.startsWith('apps') ? { resources: {} } : {}) };
+    send({ id: msg.id, result: { protocolVersion: '2025-11-25', capabilities: caps, serverInfo: { name: `raw-${fixture}`, version: '0.0.1' } } });
+  } else if (msg.method === 'resources/read' && fixture.startsWith('apps')) {
+    const r = UI_RESOURCES[msg.params?.uri];
+    send(r ? { id: msg.id, result: { contents: [{ uri: msg.params.uri, ...r }] } } : { id: msg.id, error: { code: -32002, message: `Resource not found: ${msg.params?.uri}` } });
+  } else if (msg.method === 'resources/list' && fixture.startsWith('apps')) {
+    send({ id: msg.id, result: { resources: [] } });
   } else if (msg.method === 'tools/list') {
     calls++;
     send({ id: msg.id, result: { tools: MENUS[fixture](calls) } });

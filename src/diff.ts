@@ -1,3 +1,4 @@
+import { LEGACY_URI_KEY, resourceUriOf, uiMeta } from './apps.js';
 import { createHash } from 'node:crypto';
 import { canonical, compareMenus } from './compare.js';
 import { countTokens } from './menu.js';
@@ -62,6 +63,18 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/properties-opened': { severity: 'info', class: 'minor' },
   'diff/properties-closed': { severity: 'error', class: 'breaking' },
   'diff/annotations': { severity: 'info', class: 'notice' },
+  // MCP Apps (ext-apps): _meta.ui.visibility without "model" keeps a tool out of the
+  // agent's list on an Apps host, so losing "model" removes the tool for the agent.
+  'diff/apps-visibility': { severity: 'error', class: 'breaking' },
+  'diff/apps-visible': { severity: 'info', class: 'minor' },
+  // The UI a tool names (_meta.ui.resourceUri) added, removed or moved: what an Apps
+  // host renders changes; calls don't.
+  'diff/apps-ui': { severity: 'info', class: 'notice' },
+  // capabilities.extensions: an extension no longer declared is one clients stop using
+  // (no UI, no tasks); a warning, since core calls go on working.
+  'diff/extension-removed': { severity: 'warn', class: 'breaking' },
+  'diff/extension-added': { severity: 'info', class: 'minor' },
+  'diff/extension-settings': { severity: 'info', class: 'notice' },
   'diff/other': { severity: 'info', class: 'notice' },
   'diff/order': { severity: 'info', class: 'notice' },
   // A tool lost a parameter and gained a required one with a close name: likely a
@@ -256,6 +269,7 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
 
   raw.push(...compareCatalogs(before.catalog, after.catalog, ignored));
   raw.push(...compareLists(before, after));
+  raw.push(...compareExtensions(before, after));
 
   // Ignored tools leave the token counts and the budget too.
   const tokens = tokenChange(oldTools, newTools);
@@ -1520,10 +1534,13 @@ function compareRest(old: MenuTool, t: MenuTool): Raw[] {
     });
   }
 
-  const others = [...new Set([...Object.keys(old), ...Object.keys(t)])].filter((k) => !TOOL_FIELDS.has(k) && canonical(old[k]) !== canonical(t[k])).sort();
+  out.push(...compareApps(old, t));
+  // _meta.ui is compareApps'; the rest of _meta is compared as any other field.
+  const field = (tool: MenuTool, k: string) => (k === '_meta' ? withoutUi(tool._meta) : tool[k]);
+  const others = [...new Set([...Object.keys(old), ...Object.keys(t)])].filter((k) => !TOOL_FIELDS.has(k) && canonical(field(old, k)) !== canonical(field(t, k))).sort();
   if (others.length) {
     const what = others.map((k) => {
-      const pair = `${show(old[k])} → ${show(t[k])}`;
+      const pair = `${show(field(old, k))} → ${show(field(t, k))}`;
       return pair.length <= 60 ? `${k} ${pair}` : k;
     }).join(', ');
     out.push({
@@ -1535,6 +1552,84 @@ function compareRest(old: MenuTool, t: MenuTool): Raw[] {
   }
   return out;
 }
+
+/** _meta without MCP Apps' ui and the deprecated ui/resourceUri; undefined when nothing else is left. */
+function withoutUi(meta: unknown): unknown {
+  if (typeof meta !== 'object' || meta === null || Array.isArray(meta)) return meta;
+  const { ui: _ui, [LEGACY_URI_KEY]: _legacy, ...rest } = meta as Record<string, unknown>;
+  return Object.keys(rest).length ? rest : undefined;
+}
+
+/** Who sees the tool on an Apps host, as visibility says (default: both). */
+function seenBy(tool: MenuTool): string[] {
+  const v = uiMeta(tool)?.visibility;
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : ['model', 'app'];
+}
+
+/** MCP Apps: visibility and the UI a tool names. */
+function compareApps(old: MenuTool, t: MenuTool): Raw[] {
+  const out: Raw[] = [];
+  const name = t.name;
+  const a = seenBy(old);
+  const b = seenBy(t);
+  const pair = `${show(a)} → ${show(b)}`;
+  if (a.includes('model') && !b.includes('model')) {
+    out.push({
+      rule: 'diff/apps-visibility',
+      tool: name,
+      message: `${code(name)} is no longer shown to the agent (MCP Apps visibility ${pair}). An Apps host leaves it out of the agent's tool list, so agents, saved prompts and evals that call it now fail there.`,
+      fix: `Keep "model" in ${code(name)}'s visibility for one release, or ${BREAKING_RELEASE}.`,
+      across: { key: `apps-visibility\u0000${pair}`, say: (count, list) => `${count[0].toUpperCase()}${count.slice(1)} are no longer shown to the agent (MCP Apps visibility ${pair}): ${list}. An Apps host leaves them out of the agent's tool list, so calls to them from agents, saved prompts and evals now fail there.` },
+    });
+  } else if (!a.includes('model') && b.includes('model')) {
+    out.push({
+      rule: 'diff/apps-visible',
+      tool: name,
+      message: `${code(name)} is now shown to the agent (MCP Apps visibility ${pair}, ~${fmt(t.tokens)} tokens, estimate).`,
+    });
+  } else if (canonical(a) !== canonical(b)) {
+    out.push({ rule: 'diff/apps-ui', tool: name, message: `${code(name)}: MCP Apps visibility ${pair}. The agent sees it as before; ${b.includes('app') ? 'the app can now call it' : 'the app can no longer call it'}.` });
+  }
+  const ua = resourceUriOf(old);
+  const ub = resourceUriOf(t);
+  if (ua !== ub) {
+    const what = ua === undefined ? `now names a UI (${ub})` : ub === undefined ? `no longer names a UI (was ${ua})` : `names another UI (${ua} → ${ub})`;
+    out.push({
+      rule: 'diff/apps-ui',
+      tool: name,
+      message: `${code(name)} ${what}. What an MCP Apps host renders for it changes; calls don't.`,
+      across: { key: `apps-ui\u0000${ua === undefined ? 'added' : ub === undefined ? 'removed' : 'moved'}`, say: (count, list) => `${count[0].toUpperCase()}${count.slice(1)} ${ua === undefined ? 'now name a UI' : ub === undefined ? 'no longer name a UI' : 'name another UI'}: ${list}. What an MCP Apps host renders for them changes; calls don't.` },
+    });
+  }
+  return out;
+}
+
+/** capabilities.extensions, compared. Menu files from before 0.23 didn't record them: not compared. */
+function compareExtensions(before: Menu, after: Menu): Raw[] {
+  const a = before.server.extensions;
+  const b = after.server.extensions;
+  if (!a || !b) return [];
+  const out: Raw[] = [];
+  for (const id of Object.keys(a)) {
+    if (!(id in b)) {
+      out.push({
+        rule: 'diff/extension-removed',
+        message: `The server no longer declares the ${code(id)} extension. Clients stop using what it adds${EXTENSION_USE[id] ? ` (${EXTENSION_USE[id]})` : ''}; core requests go on working.`,
+        fix: `If it was dropped by mistake, declare ${code(id)} again; if on purpose, say so in the release notes, or ${BREAKING_RELEASE}.`,
+      });
+    } else if (canonical(a[id]) !== canonical(b[id])) {
+      out.push({ rule: 'diff/extension-settings', message: `The ${code(id)} extension's settings changed (${show(a[id])} → ${show(b[id])}).` });
+    }
+  }
+  for (const id of Object.keys(b)) if (!(id in a)) out.push({ rule: 'diff/extension-added', message: `The server now declares the ${code(id)} extension.` });
+  return out;
+}
+
+/** What clients lose with an official extension, for the message. */
+const EXTENSION_USE: Record<string, string> = {
+  'io.modelcontextprotocol/ui': 'MCP Apps: the UI of tools that name one',
+  'io.modelcontextprotocol/tasks': 'Tasks: long-running calls answered with a task to poll',
+};
 
 function readOnly(a: Record<string, unknown>): boolean {
   return a.readOnlyHint === true;

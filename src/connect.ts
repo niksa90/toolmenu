@@ -57,8 +57,13 @@ export type Elicitation = 'decline' | 'cancel';
 export const ELICITATIONS: readonly Elicitation[] = ['decline', 'cancel'];
 
 export type Target =
-  | { kind: 'stdio'; command: string; args: string[]; env?: Record<string, string>; cwd?: string; protocol?: Protocol; elicitation?: Elicitation }
-  | { kind: 'http'; url: string; headers?: Record<string, string>; noAuth?: boolean; protocol?: Protocol; elicitation?: Elicitation };
+  | { kind: 'stdio'; command: string; args: string[]; env?: Record<string, string>; cwd?: string; protocol?: Protocol; elicitation?: Elicitation; apps?: boolean }
+  | { kind: 'http'; url: string; headers?: Record<string, string>; noAuth?: boolean; protocol?: Protocol; elicitation?: Elicitation; apps?: boolean };
+
+/** The MCP Apps extension (ext-apps): interactive UI a tool names in _meta.ui.resourceUri. */
+export const APPS_EXTENSION = 'io.modelcontextprotocol/ui';
+/** The one content type an MCP App's resource may have. */
+export const APPS_MIME_TYPE = 'text/html;profile=mcp-app';
 
 export interface WireResponse {
   method: string;
@@ -145,7 +150,18 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
       // can be asked things (github-mcp-server's delete_repository). snapshot lists
       // once more without it (menu/capability-dependent).
       // Never roots or sampling: 2026-07-28 deprecates them (SEP-2577).
-      ...(target.elicitation ? { capabilities: { elicitation: { form: {}, url: {} } } } : {}),
+      // With target.apps, the MCP Apps extension too: a server MAY register different tools,
+      // or other variants of them, for a host that renders apps (ext-apps, "Servers SHOULD
+      // check client capabilities before registering UI-enabled tools"), so the baseline
+      // is listed as such a host, as for elicitation.
+      ...(target.elicitation || target.apps
+        ? {
+            capabilities: {
+              ...(target.elicitation ? { elicitation: { form: {}, url: {} } } : {}),
+              ...(target.apps ? { extensions: { [APPS_EXTENSION]: { mimeTypes: [APPS_MIME_TYPE] } } } : {}),
+            },
+          }
+        : {}),
     },
   );
   // A 2025 server asks with an elicitation/create request; 2026-07-28 ones embed it

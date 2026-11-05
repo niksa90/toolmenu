@@ -54,7 +54,17 @@ export type Era = 'modern' | 'legacy';
 
 export interface Menu {
   toolmenu: 1;
-  server: { name?: string; version?: string; protocolVersion?: string; era?: Era };
+  server: {
+    name?: string;
+    version?: string;
+    protocolVersion?: string;
+    era?: Era;
+    /**
+     * The extensions the server declares (capabilities.extensions: identifier → settings),
+     * {} for none. Absent in menu files from before 0.23, so diff can't tell those apart.
+     */
+    extensions?: Record<string, unknown>;
+  };
   capturedAt: string;
   /** In server order. Order is the point. */
   tools: MenuTool[];

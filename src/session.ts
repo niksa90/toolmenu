@@ -195,7 +195,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   // How every elicitation is answered: the same each run (--elicitation). Session
   // connections declare elicitation; snapshot's don't, so its menu is the one 0.14 saw.
   const answer: Elicitation = target.elicitation ?? 'decline';
-  target = { ...target, elicitation: answer };
+  // And MCP Apps, as snapshot's baseline is listed: the same tools, the same variants.
+  target = { ...target, elicitation: answer, apps: true };
   const mainTarget = seeded(target, MAIN_SEED);
   const waits = options.rateLimitWaitsMs ?? RATE_LIMIT_WAITS_MS;
   // Connecting and listing are read-only: a refusal for being too many is waited

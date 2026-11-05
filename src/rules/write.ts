@@ -25,6 +25,7 @@ const WHY =
 
 export const unannotated: Rule = {
   id: 'write/unannotated',
+  scope: 'agent',
   severity: 'warn',
   lesson: '02',
   summary: 'Tools that look like writes carry annotations',
@@ -71,6 +72,7 @@ export const unannotated: Rule = {
  */
 export const readOnlyMismatch: Rule = {
   id: 'write/read-only-mismatch',
+  scope: 'agent',
   severity: 'warn',
   summary: 'Tools marked read-only whose names say they write',
   run(ctx) {
@@ -93,6 +95,7 @@ export const readOnlyMismatch: Rule = {
 
 export const noDryRun: Rule = {
   id: 'write/no-dry-run',
+  scope: 'agent',
   severity: 'info',
   lesson: '02',
   summary: 'Destructive tools offer a way to look before leaping',

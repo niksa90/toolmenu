@@ -42,6 +42,8 @@ export interface RuleContext {
   descriptionLimit?: number | string;
   /** Tools (names or globs) the client sends uncut, so description/buried skips them. */
   fullDescriptions?: string[];
+  /** snapshot: what resources/read gave for each ui:// resource the tools name (MCP Apps). */
+  appResources?: import('../apps.js').AppResource[];
   /**
    * Set by runRules from the `ignore` setting. Rules that sum many tools up in
    * one finding use it to leave ignored tools out of the summary; findings about
@@ -60,6 +62,12 @@ export interface Rule {
   /** Spec version the rule applies from. Skipped for older servers. */
   since?: string;
   summary: string;
+  /**
+   * 'agent': the rule is about what the agent reads (names, descriptions, schemas), so
+   * it sees the menu without MCP Apps app-only tools (visibility without "model"),
+   * which an Apps host keeps out of the agent's list. Rules about the wire see them all.
+   */
+  scope?: 'agent';
   run(ctx: RuleContext): RuleFinding[];
 }
 

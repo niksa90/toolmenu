@@ -379,3 +379,51 @@ test('snapshot: a later process that ends on another protocol than the main one 
   // (0.22 before this fix sent no initialize after the main process: every later one stayed on 2026-07-28.)
   assert.ok(later.filter((m) => m === 'initialize').length >= 2, `the variance probe and the capability listing, each asked again on 2025: ${later.join(', ')}`);
 });
+
+// MCP Apps (ext-apps): the UI a tool names, who sees the tool, and what a client without Apps gets.
+test('apps/*: UI resources read as a host would, visibility, the deprecated key, app-only tools kept from the agent', async () => {
+  const raw = join(FIXTURES, 'raw-server.mjs');
+  const snap = async (...env) => JSON.parse((await run(['snapshot', '--json', '--no-write', ...env.flatMap((e) => ['--env', e]), '--', process.execPath, raw])).stdout);
+  const r = await snap('FIXTURE=apps');
+  const by = (rule) => r.findings.filter((f) => f.rule === rule);
+
+  const [res] = by('apps/resource');
+  assert.equal(res.severity, 'warn');
+  assert.match(res.message, /^3 tools name an MCP Apps UI that a host can't render: show_map, show_table and show_web\. An Apps host then shows no UI for the tool; the agent still gets its text result\.$/);
+  assert.deepEqual(res.detail, [
+    'show_map: resources/read of ui://fx/missing failed (Resource not found: ui://fx/missing): the spec says the resource MUST exist on the server',
+    'show_table: resources/read of ui://fx/table gave mimeType "text/html", not "text/html;profile=mcp-app"',
+    "show_web: https://example.com/view isn't a ui:// URI, which MCP Apps require",
+  ]);
+  assert.match(res.fix, /mimeType "text\/html;profile=mcp-app"/);
+
+  const [legacy] = by('apps/legacy-key');
+  assert.equal(legacy.tool, 'show_legacy');
+  assert.equal(legacy.severity, 'info');
+  assert.match(legacy.fix, /^Add _meta: \{ ui: \{ resourceUri/);
+
+  const [vis] = by('apps/visibility');
+  assert.equal(vis.tool, 'hidden_tool');
+  assert.match(vis.message, /names neither "model" nor "app", so no one can call it/);
+
+  // The agent never sees update_chart_data: no rule about what the agent reads looks at it.
+  assert.equal(by('write/unannotated').length, 0, 'update_chart_data is app-only');
+  assert.deepEqual(r.appOnly, { tools: 2, tokens: r.appOnly.tokens });
+  assert.ok(!r.breakdown.top.some((t) => t.name === 'update_chart_data'), 'not in the token breakdown');
+
+  // Listed only to an Apps host: open_dashboard; a UI variant of show_chart. Not the app-only tool.
+  const [cap] = by('menu/capability-dependent');
+  assert.match(cap.message, /^open_dashboard is listed only to a client that renders MCP Apps \(declares io\.modelcontextprotocol\/ui\); show_chart is listed with another definition to a client that renders MCP Apps/);
+  assert.match(cap.message, /A client without MCP Apps gets 6 tools, one of them different, not 8\./);
+  assert.equal(by('apps/app-only-listed').length, 0, 'update_chart_data goes only to Apps hosts');
+
+  // The same app-only tool listed to every client: said.
+  const leak = await snap('FIXTURE=apps', 'APPS_LEAK=1');
+  const [l] = leak.findings.filter((f) => f.rule === 'apps/app-only-listed');
+  assert.equal(l.tool, 'update_chart_data');
+  assert.match(l.message, /yet listed to a client that doesn't declare MCP Apps too/);
+
+  // Done right: no apps finding, no capability-dependent note for the app-only tool.
+  const clean = await snap('FIXTURE=apps-clean');
+  assert.deepEqual(clean.findings.filter((f) => f.rule.startsWith('apps/') || f.rule === 'menu/capability-dependent'), []);
+});

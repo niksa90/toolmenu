@@ -4,6 +4,7 @@ import { ConnectError } from './explain.js';
 import { buildMenu } from './menu.js';
 import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, PROBE_SEED, probeMenu, probeSameEra, probeVariance, seeded, type Identity } from './probe.js';
 import { kindsToRead, readList, type ListKind } from './lists.js';
+import { readAppResources, resourceUriOf, type AppResource } from './apps.js';
 import type { ListsContext } from './rules/lists.js';
 import type { IdentityMenu } from './rules/identities.js';
 import type { InvalidCredential } from './rules/auth.js';
@@ -71,6 +72,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   let first: Awaited<ReturnType<typeof listTools>>;
   const reads: ListsContext['read'] = [];
   let undeclared: ListKind[] = [];
+  let appResources: AppResource[] | undefined;
   try {
     first = await patiently(() => listTools(connection, options), { error: tooMany });
     const second = await patiently(() => listTools(connection, options), { error: tooMany });
@@ -79,6 +81,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       version: connection.server.version,
       protocolVersion: connection.protocolVersion,
       era: connection.era,
+      extensions: declaredExtensions(connection.capabilities),
     };
     menu = buildMenu(first.tools, server, first.listMeta);
     secondList = buildMenu(second.tools, server, second.listMeta).tools;
@@ -90,6 +93,11 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       const second = first.error ? undefined : await readList(connection, kind, options.timeoutMs);
       reads.push({ kind, first, ...(second ? { second } : {}) });
       if (!first.error) menu[kind] = first.items;
+    }
+    // MCP Apps: each ui:// resource a tool names, read as a host would before rendering
+    // it (apps/resource). A read, not a tool call.
+    if (options.rules?.['apps/resource'] !== 'off' && menu.tools.some((t) => resourceUriOf(t)?.startsWith('ui://'))) {
+      appResources = await readAppResources(connection, menu.tools, options.timeoutMs);
     }
     if (options.catalog) {
       menu.catalog = await readCatalog(connection, menu.tools, { ...(typeof options.catalog === 'object' ? options.catalog : {}), timeoutMs: options.timeoutMs });
@@ -132,9 +140,18 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   let plain: PlainMenu | undefined;
   if ((options.processes ?? 2) > 1 && options.rules?.['menu/capability-dependent'] !== 'off') {
     try {
-      plain = { tools: (await probeSameEra(seeded({ ...target, elicitation: undefined }, MAIN_SEED), connection.era, options.timeoutMs ?? 30_000, undefined, undefined, eras)).tools };
+      plain = { tools: (await probeSameEra(seeded({ ...target, elicitation: undefined, apps: undefined }, MAIN_SEED), connection.era, options.timeoutMs ?? 30_000, undefined, undefined, eras)).tools };
     } catch (error) {
       plain = { error: firstLine(error) };
+    }
+    // The menus differ: once more with elicitation alone, to tell which capability a tool
+    // depends on (MCP Apps or elicitation). Only then: it's one more process or connection.
+    if (plain.tools && differs(menu.tools, plain.tools)) {
+      try {
+        plain.elicitationOnly = (await probeSameEra(seeded({ ...target, apps: undefined }, MAIN_SEED), connection.era, options.timeoutMs ?? 30_000, undefined, undefined, eras)).tools;
+      } catch {
+        // Not attributed: the finding names both capabilities.
+      }
     }
   }
 
@@ -181,6 +198,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       ...(invalid ? { invalidCredential: invalid } : {}),
       ...(offline ? { offline } : {}),
       ...(plain ? { plain } : {}),
+      ...(appResources ? { appResources } : {}),
       ...(connection.era === 'legacy' && eras.has('modern') ? { laterModern: true } : {}),
       ...(reads.length || undeclared.length ? { lists: { read: reads, undeclared } } : {}),
     },
@@ -258,9 +276,26 @@ async function invalidCredentialProbe(target: Extract<Target, { kind: 'http' }>,
   }
 }
 
-/** The target, listed as a client that supports elicitation (answered "decline" if ever asked). */
+/**
+ * The target, listed as a client that supports elicitation (answered "decline" if ever
+ * asked) and renders MCP Apps: the client that sees every tool some client sees.
+ */
 function withElicitation<T extends AnyTarget>(t: T): T {
-  return t.elicitation ? t : { ...t, elicitation: 'decline' };
+  return { ...t, elicitation: t.elicitation ?? 'decline', apps: true };
+}
+
+/** capabilities.extensions as the server sent it: identifier → settings, {} for none. */
+export function declaredExtensions(capabilities: Record<string, unknown>): Record<string, unknown> {
+  const e = capabilities.extensions;
+  return typeof e === 'object' && e !== null && !Array.isArray(e) ? { ...(e as Record<string, unknown>) } : {};
+}
+
+/** Two listings differ in their tool names or in a tool's definition. */
+function differs(a: Menu['tools'], b: Menu['tools']): boolean {
+  if (a.length !== b.length) return true;
+  const key = (t: Menu['tools'][number]) => JSON.stringify(t);
+  const theirs = new Set(b.map(key));
+  return a.some((t) => !theirs.has(key(t)));
 }
 
 const firstLine = (error: unknown) => (error instanceof Error ? error.message : String(error)).split('\n')[0].trim();
