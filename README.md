@@ -1,4 +1,14 @@
-# toolmenu
+<p align="center">
+  <img src="https://raw.githubusercontent.com/niksa90/toolmenu/main/docs/logo.svg" width="120" height="120" alt="toolmenu logo: a plug with a list of tools, one checked">
+</p>
+
+<h1 align="center">toolmenu</h1>
+
+<p align="center">
+  <b>Checks for MCP servers' tool lists: changes that confuse agents, break prompt caches or break clients, caught before your users hit them.</b>
+</p>
+
+<p align="center">
 
 [![npm](https://img.shields.io/npm/v/toolmenu)](https://www.npmjs.com/package/toolmenu)
 [![ci](https://github.com/niksa90/toolmenu/actions/workflows/ci.yml/badge.svg)](https://github.com/niksa90/toolmenu/actions/workflows/ci.yml)
@@ -6,7 +16,7 @@
 [![MCP: 2026-07-28 and 2025](https://img.shields.io/badge/MCP-2026--07--28%20%C2%B7%202025-6E56CF)](https://modelcontextprotocol.io)
 [![toolmenu](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fniksa90%2Ftoolmenu%2Fmain%2Fdocs%2Ftoolmenu-badge.json)](https://github.com/niksa90/toolmenu)
 
-**Checks for MCP servers' tool lists: changes that confuse agents, break prompt caches or break clients, caught before your users hit them.**
+</p>
 
 Your MCP server's tool list is the menu every agent reads before it does anything.
 toolmenu checks that menu the way clients and agents will meet it: across calls,

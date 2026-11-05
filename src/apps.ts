@@ -86,6 +86,9 @@ export interface AppResource {
   otherUris?: string[];
 }
 
+/** Below this much time left before the deadline, a read isn't started. */
+const MIN_READ_MS = 10;
+
 /**
  * Read each `ui://` resource the menu's tools name (resources/read: a read, not a tool
  * call), at most `limit` of them. Each is read once, however many tools name it.
@@ -104,7 +107,8 @@ export async function readAppResources(connection: Connection, tools: MenuTool[]
   const readOne = async (i: number) => {
     const [uri, names] = queue[i];
     const left = deadline - Date.now();
-    if (left <= 0) {
+    // A read given a few milliseconds can only time out: past the deadline in all but name.
+    if (left < MIN_READ_MS) {
       out[i] = { uri, tools: names, error: `not read: the reads took longer than ${Math.round((2 * timeoutMs) / 1000)} s in all` };
       return;
     }
