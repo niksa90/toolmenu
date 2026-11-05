@@ -379,3 +379,16 @@ test('snapshot: a later process that ends on another protocol than the main one 
   // (0.22 before this fix sent no initialize after the main process: every later one stayed on 2026-07-28.)
   assert.ok(later.filter((m) => m === 'initialize').length >= 2, `the variance probe and the capability listing, each asked again on 2025: ${later.join(', ')}`);
 });
+
+// 2026-11-05: an option another command takes was ignored without a word (scan --no-auth).
+test('cli: an option for another command is ignored with a warning that names it', async () => {
+  const dir = tempDir();
+  const menu = join(dir, 'm.json');
+  writeFileSync(menu, JSON.stringify({ toolmenu: 1, server: { name: 's', version: '1' }, tools: [] }));
+  const r = await run(['diff', '--header', 'A: b', '--auto', menu, menu]);
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stderr, /^toolmenu: diff ignores --timeout, --header, --auto: they are for other commands\.\n  → Next: Leave them out to silence this; toolmenu diff --help lists the options diff takes\.\n/);
+  // The helper passes --timeout to every command; snapshot takes it, so only --release is named.
+  const one = await run(['snapshot', '--release', '1.0.0', '--no-write', '--', process.execPath, join(FIXTURES, 'client-server.mjs')]);
+  assert.match(one.stderr, /^toolmenu: snapshot ignores --release: it is for other commands\./);
+});

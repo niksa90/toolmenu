@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { hasLogin, listLogins, login, LoginNeededError, logout, StoredOAuthProvider } from '../dist/auth.js';
 import { snapshot } from '../dist/snapshot.js';
@@ -95,6 +95,27 @@ test('auth: without a login, a 401 says how to log in; logout removes it; --no-a
     assert.equal(await logout(server.url), true);
     assert.equal(hasLogin(server.url), false);
     assert.equal(await logout(server.url), false);
+  } finally {
+    await server.close();
+  }
+});
+
+// 2026-11-05 corpus run: scan took --no-auth without a word and used the stored logins anyway.
+test('scan --no-auth skips stored logins; without it scan uses them', async () => {
+  isolated();
+  const server = await start();
+  try {
+    await login(server.url, { port: port(), open: browser() });
+    const list = join(tempDir(), 'servers.txt');
+    writeFileSync(list, `api\t${server.url}\n`);
+    const used = JSON.parse((await run(['scan', '--json', list])).stdout).servers[0];
+    assert.equal(used.checked, true, JSON.stringify(used));
+    const skipped = await run(['scan', '--json', '--no-auth', list]);
+    const row = JSON.parse(skipped.stdout).servers[0];
+    assert.equal(row.checked, false);
+    assert.match(row.failed, /wants credentials: .*401/);
+    assert.doesNotMatch(skipped.stderr, /ignores/);
+    assert.equal(skipped.code, 2);
   } finally {
     await server.close();
   }
