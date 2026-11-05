@@ -1,5 +1,63 @@
 # Changelog
 
+## 0.23.0
+
+MCP extensions: Apps, Tasks, Server Cards, and the extension capability itself.
+These are live on real servers now, so toolmenu checks them too.
+
+- **MCP Apps** (`io.modelcontextprotocol/ui`). `snapshot` and `session` list as a
+  client that renders apps, as they already declared elicitation, so a baseline
+  holds the tools and UI variants a server keeps for Apps hosts.
+  - **`apps/resource`** (warn): each `ui://` resource a tool names is read with
+    `resources/read`, as a host does. It must exist, be
+    `text/html;profile=mcp-app` and carry text or a blob.
+  - **`apps/visibility`** (warn), **`apps/legacy-key`** (info), and
+    **`apps/app-only-listed`** (warn): a tool meant for the app only, listed to a
+    client without Apps, whose agent then gets it as a regular tool. GitHub's
+    hosted server lists its `ui_get` that way (reported upstream).
+  - Tools only the app sees (visibility without `"model"`) are left out of what the
+    agent reads: the naming, description, ID and search rules, the token breakdown,
+    the `--client` cost and `diff`'s token totals. The unannotated-tool and
+    read-only-mismatch rules still cover them: the host confirms the app's calls by
+    their annotations.
+  - **`menu/capability-dependent`** now says which capability a tool depends on,
+    elicitation or Apps, and covers tools that go away for a capable client
+    (Supabase's hosted server keeps `get_cost` and `confirm_cost` for clients it
+    can't ask).
+- **Extensions** (SEP-2133). The menu file records `capabilities.extensions`.
+  **`spec/extension-id`** (warn) checks each identifier's vendor-prefix/name form,
+  and that its settings are an object. `diff` reports an extension removed
+  (breaking), added or with new settings, a tool losing `"model"` from its
+  visibility (breaking), gaining it, or naming another UI. Menu files from before
+  0.23 have no extensions recorded and aren't compared on them.
+- **Tasks**. **`session/undeclared-task`** (error): a call answered with a task to
+  poll (`resultType: "task"`) although session declares no Tasks support, which
+  ext-tasks forbids. **`spec/task-required`** (info): a 2025-11-25 tool marked
+  `execution.taskSupport: "required"`, which a client without Tasks can't call.
+- **Server Cards** (SEP-2127). For an HTTP server, `snapshot` reads
+  `<url>/server-card` without credentials. **`spec/server-card`** (warn) reports a
+  card that fails the Server Card schema (bundled), or whose version or protocol
+  versions contradict the live server. No card says nothing.
+- **`spec/server-info`** is info on 2026-07-28, where serverInfo is a SHOULD, and
+  says an empty version is empty. It stays a warning on 2025, where it's required.
+- **`scan --no-auth`** skips stored logins (it used them anyway). An option that
+  belongs to another command is named on stderr, not ignored silently.
+- **The leading verb reads past a namespace prefix and an object-first name**
+  again (`kubectl_create`, `browserbase_session_create`), for the unannotated-tool
+  and read-only-mismatch rules and `--auto`'s read-only guard: a regression since
+  0.20.1.
+- **`write/read-only-mismatch`** leaves out a tool whose description says it only
+  reads. Vercel's `create_observability_query` runs a read-only query.
+- Checked on real servers:
+  - The 22-server bench, now declaring Apps: every server starts and lists as
+    before. Apify keeps two widget tools for Apps hosts; their UI resolves.
+  - Four servers with Apps UIs pass the `apps/*` rules. Five hosted servers serve a
+    Server Card (Context7, Hugging Face, Exa, GitHub, Notion); all agree with the
+    live server.
+  - Hosted and local servers with real credentials (GitHub, Atlassian, Sentry,
+    Notion, Supabase, Vercel), snapshot and `session --auto` on read-only tools:
+    the findings above, and none false.
+
 ## 0.22.0
 
 Three things the 0.21 corpus run found in real servers, now rules of their own.
