@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.25.0
 
 - **A README badge.** `snapshot --badge <path>` writes a shields.io endpoint file
   (`toolmenu | 12 tools · ~4.1K tokens · 2 warnings`, red with errors, yellow with
