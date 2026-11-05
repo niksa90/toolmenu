@@ -11,7 +11,8 @@
   of `snapshot`, `diff` or `session` as SARIF 2.1.0 beside the usual report;
   `--format sarif` prints it instead. Each result points at the menu file, at the line
   of the tool it's about (`--sarif-menu` names the committed one when the menu was
-  written elsewhere), with a fingerprint from its rule and tool so alerts track across
+  written elsewhere), with a fingerprint from its rule and tool (and which of that rule's findings on
+  the tool it is) so alerts track across
   runs. The Action's new `sarif` input writes `snapshot.sarif`, `diff.sarif` and
   `session.sarif` into a folder for `github/codeql-action/upload-sarif`.
 - **Plugin: two more skills, and evals.** `release-check` (before tagging or
