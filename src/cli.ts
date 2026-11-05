@@ -64,6 +64,20 @@ export async function main(argv: string[]): Promise<number> {
     return sub || values.help ? 0 : 2;
   }
 
+  // An option another command takes is ignored here: say so, or scan --no-auth reads as
+  // done while the stored logins are used anyway. A warning, not an error: CI scripts pass
+  // the shared options (--timeout) to every command.
+  const takes = new Set([...commandOptions(sub as Command), 'help', 'version']);
+  const at = (k: string) => before.findIndex((a) => a === `--${k}` || a.startsWith(`--${k}=`));
+  // In the order they were typed.
+  const stray = Object.keys(values).filter((k) => !takes.has(k)).sort((a, b) => at(a) - at(b)).map((k) => `--${k}`);
+  if (stray.length) {
+    const one = stray.length === 1;
+    process.stderr.write(
+      `toolmenu: ${sub} ignores ${stray.join(', ')}: ${one ? 'it is' : 'they are'} for other commands.\n  → Next: Leave ${one ? 'it' : 'them'} out to silence this; toolmenu ${sub} --help lists the options ${sub} takes.\n`,
+    );
+  }
+
   const format = (values.json ? 'json' : values.format ?? 'text') as Format;
   if (!['text', 'json', 'github', 'markdown'].includes(format)) throw new UsageError(`--format must be text, json, github or markdown`);
   const failOn = (values['fail-on'] ?? 'error') as Severity;
@@ -111,7 +125,11 @@ export async function main(argv: string[]): Promise<number> {
       if (error instanceof ListError) throw new UsageError(error.message);
       throw error;
     }
-    const withProtocol = entries.map((e) => (e.target && protocol !== 'auto' ? { ...e, target: { ...e.target, protocol } } : e));
+    const noAuth = values['no-auth'] === true;
+    const withProtocol = entries.map((e) => {
+      if (!e.target || e.target.kind !== 'http') return e.target && protocol !== 'auto' ? { ...e, target: { ...e.target, protocol } } : e;
+      return { ...e, target: { ...e.target, ...(protocol !== 'auto' ? { protocol } : {}), ...(noAuth ? { noAuth } : {}) } };
+    });
     const outDir = values['out-dir'];
     if (outDir) await mkdir(outDir, { recursive: true });
     const tty = process.stderr.isTTY;
