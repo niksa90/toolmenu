@@ -244,34 +244,32 @@ export function structuredError(result: { content?: unknown; structuredContent?:
       // not JSON
     }
   }
-  const httpStatus = (x: unknown) => {
+  const errorStatus = (x: unknown) => {
     const n = typeof x === 'number' ? x : typeof x === 'string' && /^\d{3}$/.test(x) ? Number(x) : NaN;
     return n >= 400 && n <= 599 ? n : undefined;
   };
+  let first: StructuredError | undefined;
   for (const o of objects) {
     if (!o || typeof o !== 'object' || Array.isArray(o)) continue;
     for (const v of [o as Record<string, unknown>, (o as Record<string, unknown>).error]) {
       if (!v || typeof v !== 'object' || Array.isArray(v)) continue;
       const r = v as Record<string, unknown>;
-      const status = [r.status, r.statusCode, r.status_code, r.code].map(httpStatus).find((x) => x !== undefined);
+      const status = [r.status, r.statusCode, r.status_code, r.code].map(errorStatus).find((x) => x !== undefined);
       const code = [r.code, r.error, r.type].find((x): x is string => typeof x === 'string' && DENIED_CODES.test(x));
       const isError = v !== o || r.object === 'error' || ![undefined, null, false, '', 0].includes(r.error as never) || typeof r.message === 'string';
       if (code === undefined && (status === undefined || !isError)) continue;
       const message = typeof r.message === 'string' ? r.message : undefined;
-      return {
+      const found: StructuredError = {
         ...(status !== undefined ? { status } : {}),
         ...(code !== undefined ? { code } : {}),
         ...(message !== undefined ? { message } : {}),
         auth: code !== undefined || status === 401 || status === 403,
         said: `${status !== undefined ? `HTTP ${status}` : code}${message ? `: ${message}` : ''}`,
       };
+      // An auth error anywhere wins: a 502 around a nested 401 is still the credentials.
+      if (found.auth) return found;
+      first ??= found;
     }
   }
-  return undefined;
-}
-
-/** A structured auth error (401, 403, an auth code) passed on as an answer: what it said, or undefined. */
-export function deniedAnswer(result: { content?: unknown; structuredContent?: unknown }): string | undefined {
-  const e = structuredError(result);
-  return e?.auth ? e.said : undefined;
+  return first;
 }

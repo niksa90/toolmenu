@@ -651,7 +651,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     raw.push(...inputFindings(inputs, answer));
     raw.push(...handleErrorFindings(handleErrors));
     raw.push(...roundtripFindings(roundtrips));
-    raw.push(...unflaggedFindings(unflagged));
+    // `ignore` is applied by tool name; this finding sums several tools up, so it's applied here.
+    const ignored = (options.ignore ?? []).map((g) => new RegExp('^' + g.split('*').map((x) => x.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
+    raw.push(...unflaggedFindings(unflagged.filter((u) => !ignored.some((re) => re.test(u.tool)))));
     if (explained.length) raw.push(knownVariance(explained));
     if (onWord.length) raw.push(onTheirWord(onWord, options.auto !== undefined));
     raw.push(...untested(steps, target));

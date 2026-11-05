@@ -854,3 +854,22 @@ test('write/unannotated: the verb a name leads with, not one in its object (perc
   assert.deepEqual(found([tool('percent_change', []), tool('score_status_update', [])]), []);
   assert.deepEqual(found([tool('create_order', [])]), ['create_order']);
 });
+
+// 0.22, from review: menu/network-dependent's words.
+test('menu/network-dependent: order is order, a different set isn\'t "the same", a container isn\'t checked', async () => {
+  const { MENU_RULES, runRules } = await import('../dist/rules/index.js');
+  const { menuOf, tool } = await import('./helpers.mjs');
+  const lint = (tools, offline, probes) => runRules(MENU_RULES, { menu: menuOf(tools), pages: [], capabilities: { tools: {} }, usedAuth: false, protocolVersion: '2025-11-25', era: 'legacy', offline, ...(probes ? { probes } : {}) }).filter((f) => f.rule === 'menu/network-dependent');
+  const [a, b, c] = [tool('a'), tool('b'), tool('c')];
+  const [moved] = lint([a, b], { tools: [b, a] });
+  assert.match(moved.message, /: the same 2 tools, in another order\./);
+  assert.deepEqual(moved.detail, []);
+  const [swapped] = lint([a, b], { tools: [a, c] });
+  assert.match(swapped.message, /: 2 tools, as many as with it \(1 missing, 1 only offline\)\./);
+  assert.deepEqual(lint([a, b], { tools: [a, b] }), []);
+  const [boxed] = lint([a], { wrapper: true });
+  assert.equal(boxed.severity, 'info');
+  assert.match(boxed.message, /^Not checked offline: the server runs in a container/);
+  // A menu that varies between processes anyway: only tools missing or added count.
+  assert.deepEqual(lint([a, b], { tools: [b, a] }, [{ tools: [b, a] }]), []);
+});

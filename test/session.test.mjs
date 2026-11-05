@@ -956,7 +956,8 @@ test('clip: a long path loses its middle, not the reason after it', () => {
 
 // 0.21, from the corpus run: Notion's server passes the API's 401 on as an answer.
 test('session: an auth error passed on as an answer, not isError, is a setup failure; data with 401 in it is not', async () => {
-  const { deniedAnswer } = await import('../dist/failures.js');
+  const { structuredError } = await import('../dist/failures.js');
+  const deniedAnswer = (r) => { const e = structuredError(r); return e?.auth ? e.said : undefined; };
   assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":401,"object":"error","code":"unauthorized","message":"bad"}' }] }), 'HTTP 401: bad');
   assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"error":{"code":"invalid_auth"}}' }] }), 'invalid_auth');
   assert.equal(deniedAnswer({ structuredContent: { statusCode: 403 } }), undefined, 'a status alone may be a fetched page\'s');
@@ -989,7 +990,8 @@ test('session: a server that stops answering after a call ends the run with one 
 });
 
 test('deniedAnswer: a fetched page\'s status isn\'t an auth error; one that says it\'s an error is', async () => {
-  const { deniedAnswer } = await import('../dist/failures.js');
+  const { structuredError } = await import('../dist/failures.js');
+  const deniedAnswer = (r) => { const e = structuredError(r); return e?.auth ? e.said : undefined; };
   assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"body":"<html>…"}' }] }), undefined);
   assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"status":403,"error":"Forbidden"}' }] }), 'HTTP 403');
   assert.equal(deniedAnswer({ content: [{ type: 'text', text: '{"error":{"status":401}}' }] }), 'HTTP 401');
@@ -1003,6 +1005,8 @@ test('session/error-not-flagged: an API\'s HTTP error passed on as a plain answe
   assert.deepEqual(structuredError({ content: [{ type: 'text', text: '{"error":{"status":500,"message":"Internal error"}}' }] }), { status: 500, message: 'Internal error', auth: false, said: 'HTTP 500: Internal error' });
   assert.equal(structuredError({ content: [{ type: 'text', text: '{"status":404}' }] }), undefined, 'a status alone');
   assert.equal(structuredError({ content: [{ type: 'text', text: '{"status":200,"object":"error"}' }] }), undefined, 'not an HTTP error status');
+  // An auth error nested under a non-auth one is still the credentials.
+  assert.equal(structuredError({ content: [{ type: 'text', text: '{"status":502,"message":"upstream","error":{"status":401,"code":"unauthorized"}}' }] }).auth, true);
   const server = join(FIXTURES, 'denied-server.mjs');
   const r = JSON.parse((await run(['session', '--auto', '--json', '--processes', '1', '--env', 'SERVER_ERROR=1', '--', process.execPath, server])).stdout);
   const [f] = r.findings.filter((x) => x.rule === 'session/error-not-flagged');
@@ -1013,4 +1017,11 @@ test('session/error-not-flagged: an API\'s HTTP error passed on as a plain answe
   // The 500 isn't a setup failure: untested counts only the 401s.
   assert.match(r.findings.find((x) => x.rule === 'session/untested').message, / on authentication\./);
   assert.doesNotMatch(r.findings.find((x) => x.rule === 'session/untested').detail.join(' '), /get_report|500/);
+  // `ignore` takes a tool out of the summed-up finding.
+  const dir = tempDir();
+  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ ignore: ['get_self', 'list_users'] }));
+  const ign = JSON.parse((await run(['session', '--auto', '--json', '--processes', '1', '--env', 'SERVER_ERROR=1', '--', process.execPath, server], { cwd: dir })).stdout);
+  const [only] = ign.findings.filter((x) => x.rule === 'session/error-not-flagged');
+  assert.equal(only.tool, 'get_report');
+  assert.match(only.message, /^get_report answered with an HTTP error/);
 });

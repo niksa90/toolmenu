@@ -217,7 +217,7 @@ export async function main(argv: string[]): Promise<number> {
     const target = parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol);
     const plan = planInit({ cwd: process.cwd(), target, out: values.out, session: values['with-session'] });
     if (plan.existing.length) throw new UsageError(existingMessage(plan));
-    const { menu, findings } = await snapshot(target, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+    const { menu, findings } = await snapshot(target, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions, ...(config.offlineCheck && target.kind === 'stdio' ? { offlineCheck: true } : {}) });
     await writeInit(plan, JSON.stringify(menu, null, 2) + '\n');
     process.stdout.write(initReport(plan, { server: menu.server.name, version: menu.server.version, tools: menu.tools.length, tokens: menu.totalTokens, counts: counts(findings) }, target));
     return 0;

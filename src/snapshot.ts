@@ -120,7 +120,8 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   const invalid = target.kind === 'http' && connection.usedAuth && (options.processes ?? 2) > 1 ? await invalidCredentialProbe(target, options.timeoutMs ?? 30_000) : undefined;
 
   // --offline-check: one more process with the network cut off (rules/network.ts).
-  const offline = options.offlineCheck && target.kind === 'stdio' ? await offlineProbe(target, options.timeoutMs ?? 30_000) : undefined;
+  // Not run when the rule is off: it's a whole server start.
+  const offline = options.offlineCheck && target.kind === 'stdio' && options.rules?.['menu/network-dependent'] !== 'off' ? (isContainerWrapper(target) ? { wrapper: true } : await offlineProbe(target, options.timeoutMs ?? 30_000)) : undefined;
 
   // Each other identity's menu, from its own process (stdio) or connection (HTTP).
   const identities: IdentityMenu[] | undefined = mainIdentity
@@ -216,7 +217,7 @@ export function offlineEnvironment(): Record<string, string> {
 }
 
 async function offlineProbe(target: Extract<Target, { kind: 'stdio' }>, timeoutMs: number): Promise<OfflineMenu> {
-  const launcher = /(?:^|[\\/])(?:npx|uvx|bunx|pnpx|pipx)(?:\.cmd)?$/.test(target.command) || (/(?:^|[\\/])(?:pnpm|yarn|npm|bun)(?:\.cmd)?$/.test(target.command) && /^(?:dlx|exec|x)$/.test(target.args[0] ?? ''));
+  const launcher = /(?:^|[\\/])(?:npx|uvx|bunx|pnpx|pipx)(?:\.cmd|\.exe)?$/.test(target.command) || (/(?:^|[\\/])(?:pnpm|yarn|npm|bun)(?:\.cmd|\.exe)?$/.test(target.command) && /^(?:dlx|exec|x)$/.test(target.args[0] ?? ''));
   try {
     const m = await probeMenu(seeded({ ...target, env: { ...target.env, ...offlineEnvironment() } }, MAIN_SEED), timeoutMs);
     return { tools: m.tools };
