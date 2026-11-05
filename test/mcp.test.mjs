@@ -190,7 +190,11 @@ test('the plugin runs the toolmenu release its lockfile pins, installed with it,
   assert.ok(pinned[0] < pkgVersion[0] || (pinned[0] === pkgVersion[0] && (pinned[1] < pkgVersion[1] || (pinned[1] === pkgVersion[1] && pinned[2] <= pkgVersion[2]))), 'the plugin pins a published release, not one ahead of this repo');
   const mcp = read('.mcp.json').mcpServers.toolmenu;
   assert.equal(mcp.command, 'node');
-  assert.deepEqual(mcp.args, ['${CLAUDE_PLUGIN_ROOT}/node_modules/toolmenu/dist/cli.js', 'mcp']);
+  // The directory wants the command to run a file the plugin ships, not one under node_modules.
+  assert.deepEqual(mcp.args, ['${CLAUDE_PLUGIN_ROOT}/bin/toolmenu-mcp.mjs']);
+  const launcher = readFileSync(join(ROOT, 'plugins/toolmenu/bin/toolmenu-mcp.mjs'), 'utf8');
+  assert.match(launcher, /await import\('toolmenu\/dist\/cli\.js'\)/);
+  assert.match(launcher, /'mcp'/);
 });
 
 test('TOOLMENU_MCP_ARGS: arguments the CLI takes from the environment, before "--"', async () => {

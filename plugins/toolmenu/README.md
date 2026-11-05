@@ -32,9 +32,9 @@ folder, with no download at start.
 
 ## What it runs, sends and stores
 
-- **Runs:** toolmenu's MCP server (`node node_modules/toolmenu/dist/cli.js mcp`),
-  installed from the npm registry at plugin install, as `package-lock.json` pins it
-  (source: https://github.com/niksa90/toolmenu, published with npm provenance).
+- **Runs:** toolmenu's MCP server, through `bin/toolmenu-mcp.mjs`, which starts
+  `toolmenu mcp` from the toolmenu package installed from the npm registry at plugin
+  install, as `package-lock.json` pins it (source: https://github.com/niksa90/toolmenu, published with npm provenance).
   `snapshot_menu` and `check_session` start the server command you give them, in the
   folder you give, or connect to the URL you give, as `toolmenu snapshot` does on the
   command line. Claude Code asks before each call unless you allow the tools.
