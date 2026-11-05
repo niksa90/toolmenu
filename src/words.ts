@@ -65,6 +65,25 @@ export function commonWords(names: string[]): Set<string> {
   return new Set([...counts].filter(([, n]) => names.length >= 4 && n >= names.length * 0.6).map(([w]) => w));
 }
 
+/**
+ * Words a name's leading verb is read after: those most of the menu's names share
+ * (commonWords), and a namespace prefix: a word, not a verb, that opens 3 or more
+ * names and is followed by a verb in 3 or more of them. kubectl_create leads with
+ * "create" although kubectl opens 10 of 23 names, under the 60% that makes it common.
+ * percent_change keeps "percent": a prefix of one or two names is not a namespace.
+ */
+export function prefixWords(names: string[]): Set<string> {
+  const out = commonWords(names);
+  const opened = new Map<string, number>();
+  for (const name of names) {
+    const [first, second] = words(name);
+    if (first === undefined || VERBS.has(first) || second === undefined || !VERBS.has(second)) continue;
+    opened.set(first, (opened.get(first) ?? 0) + 1);
+  }
+  for (const [w, n] of opened) if (n >= 3) out.add(w);
+  return out;
+}
+
 /** The tool's verb: the first word that is one, skipping prefixes like `API-`. */
 export function verbOf(name: string): string | undefined {
   return words(name).find((w) => VERBS.has(w));
@@ -76,9 +95,16 @@ export function verbOf(name: string): string | undefined {
  * in its object (score_status_update scores; "update" is what it scores).
  */
 export function leadingVerb(name: string, common: Set<string> = new Set()): string | undefined {
-  const first = words(name).find((w) => !common.has(w));
-  return first !== undefined && VERBS.has(first) ? first : undefined;
+  const rest = words(name).filter((w, i, all) => all.slice(0, i + 1).some((x) => !common.has(x)));
+  const [first, second] = rest;
+  if (first !== undefined && VERBS.has(first)) return first;
+  // Object first, then the verb (browserbase_session_create, session_close): only a word
+  // that can't be read as a noun, so percent_change still computes a change.
+  return first !== undefined && second !== undefined && ONLY_VERBS.has(second) ? second : undefined;
 }
+
+/** Verbs that aren't also nouns in tool names: not change, update, set, post, patch, copy or plan. */
+const ONLY_VERBS = new Set(['create', 'add', 'insert', 'upsert', 'modify', 'delete', 'remove', 'purge', 'destroy', 'revoke', 'cancel', 'close', 'send', 'publish', 'submit', 'upload', 'rename', 'assign', 'invite', 'approve', 'get', 'list', 'fetch', 'retrieve', 'describe']);
 
 /** The nouns in a tool name, singular: `list_team_audits` → team, audit. */
 export function nouns(name: string): string[] {

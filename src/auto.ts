@@ -4,7 +4,7 @@ import { synthesizeArgs } from './args.js';
 import { CREATABLE_KINDS, createdKinds, creatorOf, handleParams, type HandleProbe } from './rules/handles.js';
 import { MAX_UNLOCKS, unlockers, type Scenario, type Step } from './session.js';
 import type { JsonSchema, Menu, MenuTool } from './types.js';
-import { COLLECTION_VERBS, commonWords, leadingVerb, LOOKUP_VERBS, verbOf, WRITE_VERBS } from './words.js';
+import { COLLECTION_VERBS, commonWords, prefixWords, leadingVerb, LOOKUP_VERBS, verbOf, WRITE_VERBS } from './words.js';
 
 /** A value the user gave: `raw` is the text as typed on the command line, when it was typed. */
 export interface GivenValue {
@@ -107,7 +107,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   }
   // The server's readOnlyHint, but not against a name that says it writes: a hosted
   // server marked create_my_ideal_account read-only (write/read-only-mismatch).
-  const common = commonWords(menu.tools.map((t) => t.name));
+  const common = prefixWords(menu.tools.map((t) => t.name));
   const namedWrite = (t: MenuTool) => WRITE_VERBS.has(leadingVerb(t.name, common) ?? '');
   const readOnly = (t: MenuTool) => (t.annotations?.readOnlyHint === true && !namedWrite(t)) || assumed.has(t.name);
 

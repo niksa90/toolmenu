@@ -855,6 +855,20 @@ test('write/unannotated: the verb a name leads with, not one in its object (perc
   assert.deepEqual(found([tool('create_order', [])]), ['create_order']);
 });
 
+// 2026-11-05 corpus run: kubernetes' kubectl_create went unflagged once the leading verb
+// decided, since kubectl opens 10 of 23 names, under the 60% that makes a word common.
+test('write/unannotated: a namespace prefix is read past (kubectl_create), a one-off first word is not', () => {
+  const found = (tools) => lint(tools).flatMap((f) => (f.rule === 'write/unannotated' ? [f.tool ?? f.detail.join(' | ')] : []));
+  const k = (n, a) => tool(n, [], a ? { annotations: a } : {});
+  const menu = [k('kubectl_get', { readOnlyHint: true }), k('kubectl_describe', { readOnlyHint: true }), k('kubectl_delete', { destructiveHint: true }), k('kubectl_create'), k('ping', { readOnlyHint: true }), k('explain_resource', { readOnlyHint: true }), k('list_api_resources', { readOnlyHint: true })];
+  assert.deepEqual(found(menu), ['kubectl_create']);
+  assert.match(lint(menu).find((f) => f.rule === 'write/unannotated').message, /^kubectl_create is named like a write \("create"\)/);
+  // percent opens two names: not a namespace, so percent_change still computes a change.
+  assert.deepEqual(found([tool('percent_change', []), tool('percent_rank', []), tool('get_price', [])]), []);
+  // Object first, then a word that is only a verb: browserbase_session_create creates.
+  assert.deepEqual(found([tool('browserbase_session_create', []), tool('browserbase_screenshot', []), tool('browserbase_get_url', [], { annotations: { readOnlyHint: true } }), tool('browserbase_act', [])]), ['browserbase_session_create']);
+});
+
 // 0.22, from review: menu/network-dependent's words.
 test('menu/network-dependent: order is order, a different set isn\'t "the same", a container isn\'t checked', async () => {
   const { MENU_RULES, runRules } = await import('../dist/rules/index.js');

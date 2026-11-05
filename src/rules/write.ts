@@ -1,5 +1,5 @@
 import type { MenuTool } from '../types.js';
-import { WRITE_VERBS, commonWords, leadingVerb, nouns, verbOf, words } from '../words.js';
+import { WRITE_VERBS, commonWords, prefixWords, leadingVerb, nouns, verbOf, words } from '../words.js';
 import { count, kept, names, type Rule } from './rule.js';
 
 const DRY_RUN_PARAMS = /^(dry[_-]?run|preview|validate[_-]?only|simulate|plan|what[_-]?if)$/i;
@@ -29,7 +29,7 @@ export const unannotated: Rule = {
   lesson: '02',
   summary: 'Tools that look like writes carry annotations',
   run(ctx) {
-    const common = commonWords(ctx.menu.tools.map((t) => t.name));
+    const common = prefixWords(ctx.menu.tools.map((t) => t.name));
     const bare = kept(ctx.menu.tools, ctx).filter((t) => isWriteByName(t, common) && !hasAnnotations(t));
     if (bare.length === 0) return [];
     const additive = (t: MenuTool) => ADDITIVE_VERBS.has(leadingVerb(t.name, common)!);
@@ -74,7 +74,7 @@ export const readOnlyMismatch: Rule = {
   severity: 'warn',
   summary: 'Tools marked read-only whose names say they write',
   run(ctx) {
-    const common = commonWords(ctx.menu.tools.map((t) => t.name));
+    const common = prefixWords(ctx.menu.tools.map((t) => t.name));
     const lead = (t: MenuTool) => leadingVerb(t.name, common);
     const odd = kept(ctx.menu.tools, ctx).filter((t) => t.annotations?.readOnlyHint === true && WRITE_VERBS.has(lead(t) ?? ''));
     if (!odd.length) return [];
