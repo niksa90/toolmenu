@@ -738,15 +738,15 @@ function explainHttp(error: Error, trace: Trace, context: ExplainContext, target
 }
 
 /**
- * The server redirected to another origin. The MCP SDK follows a redirect only within
- * the request's origin (since 2.3: it re-sent custom headers, credentials included,
- * to wherever a redirect pointed), so clients built on it fail here too, not only toolmenu.
+ * The server redirected to another origin. The MCP TypeScript SDK follows a redirect
+ * only within the request's origin since 2.3 (before, it re-sent custom headers,
+ * credentials included, wherever a redirect pointed). Other clients may still follow it.
  */
 export function redirectError(r: { from: string; to: string; status: number }, cause?: unknown): ConnectError {
   return new ConnectError(
-    `The server redirects to another origin (HTTP ${r.status}), and MCP clients don't follow that: the official SDK, and so most clients, only follow a redirect within the same scheme, host and port.`,
+    `The server redirects to another origin (HTTP ${r.status}). toolmenu doesn't follow it, and neither do clients built on the MCP TypeScript SDK 2.3 or later (they won't re-send headers or credentials to another host).`,
     [['url', r.from], ['redirects to', r.to]],
-    `Use the URL it redirects to: toolmenu snapshot ${r.to}. Agents' clients configured with the old URL fail the same way, so publish the new one.`,
+    `Check with the URL it redirects to: toolmenu snapshot ${r.to}. If it's your server, give clients that URL: those on the TypeScript SDK can't reach the old one.`,
     'server/discover',
     { cause, status: r.status },
   );

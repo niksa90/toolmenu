@@ -35,9 +35,10 @@ test('snapshot: a redirect to another origin is an error naming the URL to use',
   try {
     const out = await run(['snapshot', '--no-write', '--timeout', '10000', r.url]);
     assert.equal(out.code, 2);
-    assert.match(out.stderr, /redirects to another origin \(HTTP 307\)/);
+    assert.match(out.stderr, /redirects to another origin \(HTTP 307\)\. toolmenu doesn't follow it, and neither do clients built on the MCP TypeScript SDK 2\.3 or later/);
     assert.ok(out.stderr.includes(`redirects to  ${s.url}`), out.stderr);
-    assert.ok(out.stderr.includes(`→ Next: Use the URL it redirects to: toolmenu snapshot ${s.url}`), out.stderr);
+    assert.ok(out.stderr.includes(`→ Next: Check with the URL it redirects to: toolmenu snapshot ${s.url}. If it's your server, give clients that URL`), out.stderr);
+    assert.doesNotMatch(out.stderr, /most clients/, 'only the TypeScript SDK is known not to follow it');
     assert.doesNotMatch(out.stderr, /timed out|firewall/);
   } finally {
     await r.close();

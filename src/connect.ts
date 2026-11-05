@@ -364,8 +364,8 @@ function tracedFetch(trace: Trace): typeof fetch {
     if (method) trace.send(method);
     const response = await fetch(input, init);
     // A redirect the SDK won't follow because it leaves the origin (2.3 and later). Its
-    // own error names the target; this one also says that agents' clients fail the
-    // same way, and what to run next. explain() returns it as it is.
+    // own error names the target; this one also says which clients fail the same way,
+    // and what to run next. explain() returns it as it is.
     const to = crossOriginRedirect(input, response);
     if (to) {
       trace.redirect ??= { ...to, status: response.status };

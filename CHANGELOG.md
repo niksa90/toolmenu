@@ -31,8 +31,9 @@ works, and a Claude Code plugin that installs it.
 - **A server that redirects to another origin now fails to connect**, where 0.23
   followed it: the SDK (2.3 and later) follows a redirect only within the same
   scheme, host and port (or http to https on the same host), so it doesn't re-send
-  headers and credentials elsewhere. Agents' clients on the SDK fail the same way.
-  toolmenu says so and names the URL to use (`toolmenu snapshot <that URL>`).
+  headers and credentials elsewhere. Clients built on the TypeScript SDK fail the
+  same way (others may still follow it). toolmenu says so and names the URL to use
+  (`toolmenu snapshot <that URL>`).
 - **`spec/x-mcp-header`**: a header on a `number` parameter is now like any other
   broken annotation (error over HTTP, warn on stdio), not a warning everywhere: the
   SDK client drops those tools too since 2.4.0. `diff/x-mcp-header-invalid` counts
