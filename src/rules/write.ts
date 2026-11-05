@@ -1,5 +1,5 @@
 import type { MenuTool } from '../types.js';
-import { WRITE_VERBS, commonWords, leadingVerb, nouns, verbOf, words } from '../words.js';
+import { WRITE_VERBS, commonWords, prefixWords, leadingVerb, nouns, verbOf, words } from '../words.js';
 import { count, kept, names, type Rule } from './rule.js';
 
 const DRY_RUN_PARAMS = /^(dry[_-]?run|preview|validate[_-]?only|simulate|plan|what[_-]?if)$/i;
@@ -31,7 +31,7 @@ export const unannotated: Rule = {
   lesson: '02',
   summary: 'Tools that look like writes carry annotations',
   run(ctx) {
-    const common = commonWords(ctx.menu.tools.map((t) => t.name));
+    const common = prefixWords(ctx.menu.tools.map((t) => t.name));
     const bare = kept(ctx.menu.tools, ctx).filter((t) => isWriteByName(t, common) && !hasAnnotations(t));
     if (bare.length === 0) return [];
     const additive = (t: MenuTool) => ADDITIVE_VERBS.has(leadingVerb(t.name, common)!);
@@ -69,16 +69,20 @@ export const unannotated: Rule = {
  * readOnlyHint: true on a tool whose name says it writes (create_, delete_, send_…).
  * The spec's readOnlyHint means "the tool does not modify its environment", and
  * clients and agents act on it: run it without asking, retry it, call it to explore.
- * Seen on a hosted server: create_my_ideal_account, marked read-only.
+ * Seen on a hosted server: create_my_ideal_account, marked read-only. Not when the
+ * description says it only reads: Vercel's create_observability_query "Run a read-only
+ * … query … without changing project configuration" names the query it makes.
  */
+const SAYS_READ_ONLY = /\bread[- ]only\b|\bwithout (?:changing|modifying|altering|writing)\b|\b(?:does not|doesn't|never) (?:change|modify|alter|write)\b/i;
+
 export const readOnlyMismatch: Rule = {
   id: 'write/read-only-mismatch',
   severity: 'warn',
   summary: 'Tools marked read-only whose names say they write',
   run(ctx) {
-    const common = commonWords(ctx.menu.tools.map((t) => t.name));
+    const common = prefixWords(ctx.menu.tools.map((t) => t.name));
     const lead = (t: MenuTool) => leadingVerb(t.name, common);
-    const odd = kept(ctx.menu.tools, ctx).filter((t) => t.annotations?.readOnlyHint === true && WRITE_VERBS.has(lead(t) ?? ''));
+    const odd = kept(ctx.menu.tools, ctx).filter((t) => t.annotations?.readOnlyHint === true && WRITE_VERBS.has(lead(t) ?? '') && !SAYS_READ_ONLY.test(t.description ?? ''));
     if (!odd.length) return [];
     const one = odd.length === 1;
     return [

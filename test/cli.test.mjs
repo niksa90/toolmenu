@@ -474,3 +474,16 @@ test('menu/capability-dependent: a tool listed only without elicitation names th
   assert.equal(f.tool, 'confirm_cost');
   assert.equal(f.message, "confirm_cost is listed only to a client that doesn't support elicitation. A client without elicitation gets 2 tools, not 1. The menu file holds the menu of a client with both, which doesn't have it, so diff doesn't see changes to it.");
 });
+
+// 2026-11-05: an option another command takes was ignored without a word (scan --no-auth).
+test('cli: an option for another command is ignored with a warning that names it', async () => {
+  const dir = tempDir();
+  const menu = join(dir, 'm.json');
+  writeFileSync(menu, JSON.stringify({ toolmenu: 1, server: { name: 's', version: '1' }, tools: [] }));
+  const r = await run(['diff', '--header', 'A: b', '--auto', menu, menu]);
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stderr, /^toolmenu: diff ignores --timeout, --header, --auto: they are for other commands\.\n  → Next: Leave them out to silence this; toolmenu diff --help lists the options diff takes\.\n/);
+  // The helper passes --timeout to every command; snapshot takes it, so only --release is named.
+  const one = await run(['snapshot', '--release', '1.0.0', '--no-write', '--', process.execPath, join(FIXTURES, 'client-server.mjs')]);
+  assert.match(one.stderr, /^toolmenu: snapshot ignores --release: it is for other commands\./);
+});

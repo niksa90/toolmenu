@@ -843,6 +843,9 @@ test('write/read-only-mismatch: a tool marked read-only whose name says it write
   assert.deepEqual(many[0].detail, ['upload_images, set_member']);
   // The verb the name leads with, not one in its object; after a prefix the menu's tools share.
   assert.deepEqual(lint([tool('score_status_update', [], ro)]).filter((f) => f.rule === 'write/read-only-mismatch'), []);
+  // The description says it only reads (Vercel's create_observability_query): the hint agrees with it.
+  assert.deepEqual(lint([tool('create_observability_query', [], { ...ro, description: 'Run a read-only observability query. Returns results without changing project configuration.' })]).filter((f) => f.rule === 'write/read-only-mismatch'), []);
+  assert.equal(lint([tool('create_report', [], { ...ro, description: 'Create a report and save it.' })]).filter((f) => f.rule === 'write/read-only-mismatch').length, 1);
   const prefixed = lint([tool('studio_clear_read_cache', [], ro), tool('studio_get_status', [], ro), tool('studio_list_envs', [], ro), tool('studio_get_bots', [], ro)]).filter((f) => f.rule === 'write/read-only-mismatch');
   assert.equal(prefixed[0]?.tool, 'studio_clear_read_cache');
 });
@@ -862,6 +865,20 @@ test('write/unannotated: the verb a name leads with, not one in its object (perc
   const found = (tools) => lint(tools).filter((f) => f.rule === 'write/unannotated').map((f) => f.tool ?? f.detail);
   assert.deepEqual(found([tool('percent_change', []), tool('score_status_update', [])]), []);
   assert.deepEqual(found([tool('create_order', [])]), ['create_order']);
+});
+
+// 2026-11-05 corpus run: kubernetes' kubectl_create went unflagged once the leading verb
+// decided, since kubectl opens 10 of 23 names, under the 60% that makes a word common.
+test('write/unannotated: a namespace prefix is read past (kubectl_create), a one-off first word is not', () => {
+  const found = (tools) => lint(tools).flatMap((f) => (f.rule === 'write/unannotated' ? [f.tool ?? f.detail.join(' | ')] : []));
+  const k = (n, a) => tool(n, [], a ? { annotations: a } : {});
+  const menu = [k('kubectl_get', { readOnlyHint: true }), k('kubectl_describe', { readOnlyHint: true }), k('kubectl_delete', { destructiveHint: true }), k('kubectl_create'), k('ping', { readOnlyHint: true }), k('explain_resource', { readOnlyHint: true }), k('list_api_resources', { readOnlyHint: true })];
+  assert.deepEqual(found(menu), ['kubectl_create']);
+  assert.match(lint(menu).find((f) => f.rule === 'write/unannotated').message, /^kubectl_create is named like a write \("create"\)/);
+  // percent opens two names: not a namespace, so percent_change still computes a change.
+  assert.deepEqual(found([tool('percent_change', []), tool('percent_rank', []), tool('get_price', [])]), []);
+  // Object first, then a word that is only a verb: browserbase_session_create creates.
+  assert.deepEqual(found([tool('browserbase_session_create', []), tool('browserbase_screenshot', []), tool('browserbase_get_url', [], { annotations: { readOnlyHint: true } }), tool('browserbase_act', [])]), ['browserbase_session_create']);
 });
 
 // 0.22, from review: menu/network-dependent's words.

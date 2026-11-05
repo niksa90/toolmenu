@@ -184,7 +184,7 @@ const HELP: Record<Command, CommandHelp> = {
       'started or read is a row that says why, and makes the exit code 2: it was not checked.',
     ],
     own: ['concurrency', 'out-dir'],
-    shared: ['config', 'format', 'json', 'fail-on', 'protocol', 'timeout', 'processes'],
+    shared: ['config', 'format', 'json', 'fail-on', 'no-auth', 'protocol', 'timeout', 'processes'],
     examples: ['toolmenu scan ~/Library/Application\\ Support/Claude/claude_desktop_config.json', 'toolmenu scan .mcp.json --format markdown', 'toolmenu scan servers.txt --concurrency 8 --out-dir menus'],
     exits: ['0  every server checked, no findings at or above --fail-on', '1  findings at or above --fail-on', "2  a server wasn't checked (couldn't start, couldn't connect, a variable not set), or bad usage"],
   },
