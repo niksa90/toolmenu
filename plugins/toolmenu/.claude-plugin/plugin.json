@@ -1,0 +1,13 @@
+{
+  "name": "toolmenu",
+  "version": "0.24.0",
+  "description": "Check the MCP server you're building: what agents misread, what breaks clients or prompt caches, and breaking changes between releases. No LLM involved.",
+  "author": {
+    "name": "Nikša Perović",
+    "url": "https://niksa.me"
+  },
+  "homepage": "https://github.com/niksa90/toolmenu",
+  "repository": "https://github.com/niksa90/toolmenu",
+  "license": "MIT",
+  "keywords": ["mcp", "model-context-protocol", "linter", "prompt-caching"]
+}

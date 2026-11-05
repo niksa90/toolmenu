@@ -5,7 +5,7 @@
  */
 import { VERSION } from './version.js';
 
-export const COMMANDS = ['init', 'snapshot', 'diff', 'session', 'history', 'auth', 'scan', 'explain'] as const;
+export const COMMANDS = ['init', 'snapshot', 'diff', 'session', 'history', 'auth', 'scan', 'explain', 'mcp'] as const;
 export type Command = (typeof COMMANDS)[number];
 
 /** Every option, once: its spelling and what it does (continuation lines are indented by the renderer). */
@@ -199,6 +199,20 @@ const HELP: Record<Command, CommandHelp> = {
     shared: ['format', 'json'],
     examples: ['toolmenu explain naming/vague-id', 'toolmenu explain handle-lifetime', 'toolmenu explain --json diff/param-required'],
     exits: ['0  explained', "2  no such rule (the closest ones are named), or bad usage"],
+  },
+  mcp: {
+    summary: 'serve toolmenu to an agent as an MCP server (stdio)',
+    usage: ['toolmenu mcp'],
+    about: [
+      'An MCP server over stdio, for the agent building your server: snapshot_menu, diff_menus,',
+      'check_session and explain_rule, each running the matching command. Relative paths and',
+      'toolmenu.config.json resolve from the folder it runs in, or a tool call\'s cwd.',
+      'Claude Code: claude mcp add toolmenu -- npx -y toolmenu mcp',
+    ],
+    own: [],
+    shared: [],
+    examples: ['claude mcp add toolmenu -- npx -y toolmenu mcp', '{"mcpServers": {"toolmenu": {"command": "npx", "args": ["-y", "toolmenu", "mcp"]}}}'],
+    exits: ['0  the client closed the connection', '2  bad usage'],
   },
 };
 

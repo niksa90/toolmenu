@@ -90,6 +90,13 @@ export async function main(argv: string[]): Promise<number> {
 
   if (sub === 'auth') return authCommand(rest, values);
   if (sub === 'explain') return explainCommand(rest, command, format);
+  if (sub === 'mcp') {
+    if (command || rest.length) throw new UsageError('mcp takes no server: it is one. Add it to a client as: npx -y toolmenu mcp');
+    // Loaded only here: the CLI's other commands don't need the server SDK.
+    const { serveMcp } = await import('./mcp.js');
+    await serveMcp();
+    return 0;
+  }
 
   // The invocation up to the server, for examples in messages: a session example
   // without --auto or --scenario wouldn't run.

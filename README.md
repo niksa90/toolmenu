@@ -160,6 +160,34 @@ makes the exit code 2, because it wasn't checked; one marked `disabled` is liste
 left alone. URLs are printed without their query, which can hold a key. Nothing is
 written unless `--out-dir` names a folder for each server's menu file.
 
+## For the agent building your server: `mcp`
+
+`toolmenu mcp` is toolmenu as an MCP server (stdio), so Claude Code, Cursor or any
+other client can check the server it's working on while it works. In Claude Code, as a
+plugin (the server, and a skill that says when to run it and how to read the report):
+
+```
+/plugin marketplace add niksa90/toolmenu
+/plugin install toolmenu@toolmenu
+```
+
+Or just the server, in any client: `claude mcp add toolmenu -- npx -y toolmenu mcp`, or
+`{"command": "npx", "args": ["-y", "toolmenu", "mcp"]}` in an `mcpServers` config.
+
+| Tool | Runs |
+|---|---|
+| `snapshot_menu` | `snapshot`: findings and token cost; writes the menu file only with `save_as` |
+| `diff_menus` | `diff`: breaking changes, the token change and the version bump between two menu files |
+| `check_session` | `session --auto`: calls the read-only tools and reports each menu change |
+| `explain_rule` | `explain`: what a rule checks and how to change its level |
+
+Each tool runs the CLI in a child process and returns its text report, so options,
+`toolmenu.config.json` and stored OAuth logins work as they do on the command line.
+Relative paths resolve from the folder `toolmenu mcp` runs in, or a call's `cwd`.
+`snapshot_menu` and `check_session` start the command you give them, as the CLI does;
+clients ask before each tool call unless you allow it. toolmenu's own menu passes its
+checks with no findings, on both protocols and in a session (the test suite checks).
+
 ## In CI: one PR comment
 
 ```yaml

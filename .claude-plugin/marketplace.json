@@ -1,0 +1,18 @@
+{
+  "name": "toolmenu",
+  "owner": {
+    "name": "Nikša Perović",
+    "url": "https://niksa.me"
+  },
+  "metadata": {
+    "description": "Checks for MCP servers' tool lists, for the agent building the server."
+  },
+  "plugins": [
+    {
+      "name": "toolmenu",
+      "source": "./plugins/toolmenu",
+      "description": "Check the MCP server you're building: what agents misread, what breaks clients or prompt caches, and breaking changes between releases. No LLM involved.",
+      "category": "development"
+    }
+  ]
+}

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- **`toolmenu mcp`**: toolmenu as an MCP server over stdio, for the agent building
+  your server. Four tools, `snapshot_menu`, `diff_menus`, `check_session` and
+  `explain_rule`, each running the matching command in a child process and
+  returning its report. Findings are a report, not a tool error; a server that
+  couldn't start or a bad path is. Its own menu has no findings at any level, on
+  both protocols and under `session --auto`, and a test keeps it that way.
+- **A Claude Code plugin** in this repository (`/plugin marketplace add
+  niksa90/toolmenu`): the server, and a `check-mcp-menu` skill that says when to
+  run it and how to read the report.
+- `@modelcontextprotocol/server` and `zod` are runtime dependencies now (the server).
+
 ## 0.23.0
 
 MCP extensions: Apps, Tasks, Server Cards, and the extension capability itself.
