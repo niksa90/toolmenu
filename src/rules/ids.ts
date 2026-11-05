@@ -67,6 +67,8 @@ export function idParams(tool: MenuTool): IdParam[] {
     while (kindWords.length > 1 && QUALIFIERS.has(kindWords[0])) kindWords.shift();
     // A qualifier alone (`parentId`, `targetId`) says how it relates, not what it is.
     if (kindWords.length === 1 && QUALIFIERS.has(kindWords[0])) kindWords.length = 0;
+    // A GraphQL node ID is the thing's own ID: commentNodeID is a comment's (GitHub).
+    if (kindWords.length > 1 && kindWords.at(-1) === 'node') kindWords.pop();
     const prefix = kindWords.join('_');
     // A bare `id` doesn't say what it identifies (naming/vague-id covers that), so no kind is guessed.
     params.push({ param, kind: prefix || undefined });
@@ -78,6 +80,30 @@ function looksLikeIdValue(schema: JsonSchema): boolean {
   if (schema.enum) return false; // a fixed set of values is chosen, not invented
   const type = schema.type;
   return type === undefined || type === 'string' || type === 'integer' || (Array.isArray(type) && type.includes('string'));
+}
+
+/**
+ * A tool's operations, when an enum lists them under their own names: a router such as
+ * github-mcp-server's actions_list { method: list_workflows | list_workflow_runs } lists
+ * workflows as surely as a list_workflows tool would. Each value that reads as a list
+ * or search (list_project_views) counts as a tool of that name, with the router's parameters.
+ */
+/** Marks a tool made from an enum value: it counts only when its name says the kind. */
+const OPERATION = Symbol('operation');
+
+function withOperations(tools: MenuTool[]): MenuTool[] {
+  const out = [...tools];
+  for (const t of tools) {
+    for (const schema of Object.values(t.inputSchema?.properties ?? {})) {
+      for (const v of Array.isArray(schema.enum) ? schema.enum : []) {
+        if (typeof v !== 'string' || !/^[a-z]+(?:_[a-z]+)+$/.test(v)) continue;
+        // Lists and searches only: a router's get_workflow needs the ID it would hand out.
+        if (!COLLECTION_VERBS.has(singular(v.split('_')[0]))) continue;
+        out.push({ ...t, name: v, outputSchema: undefined, [OPERATION]: true } as MenuTool);
+      }
+    }
+  }
+  return out;
 }
 
 /** Does some other tool look like it hands out IDs of this kind? */
@@ -92,6 +118,10 @@ function isReturnedBySomeTool(kind: string, self: MenuTool, tools: MenuTool[], c
     const lookup = verbs.some((v) => LOOKUP_VERBS.has(v));
     const collection = verbs.some((v) => COLLECTION_VERBS.has(v)) || w.includes('children');
     const needsSameId = idParams(other).some((p) => p.kind === kind);
+    // An operation from an enum counts only when it names the kind (list_workflows):
+    // sapiens' action: list_public or list_mine says nothing about which IDs it lists.
+    // And after its verb: list_public lists no "list" IDs.
+    if ((other as { [OPERATION]?: boolean })[OPERATION]) return lookup && `_${w.slice(1).join('_')}_`.includes(`_${kind}_`) && !needsSameId;
     // A list or search for that kind; a get that doesn't itself need the ID.
     if (lookup && mentionsKind && (collection || !needsSameId)) return true;
     // A search that names nothing in particular: that's how agents find IDs of any kind.
@@ -124,9 +154,10 @@ export const authoredIds: Rule = {
   run(ctx) {
     const byKind = new Map<string, { tool: string; param: string }[]>();
     const common = commonWords(ctx.menu.tools.map((t) => t.name));
+    const operations = withOperations(ctx.menu.tools);
     for (const tool of kept(ctx.menu.tools, ctx)) {
       for (const { param, kind } of idParams(tool)) {
-        if (!kind || isReturnedBySomeTool(kind, tool, ctx.menu.tools, common)) continue;
+        if (!kind || isReturnedBySomeTool(kind, tool, operations, common)) continue;
         const schema = tool.inputSchema?.properties?.[param];
         if (saysWhereItComesFrom(schema, ctx.menu.tools, tool.name)) continue;
         // Optional, and the description already tells the agent not to invent it.

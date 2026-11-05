@@ -873,3 +873,15 @@ test('menu/network-dependent: order is order, a different set isn\'t "the same",
   // A menu that varies between processes anyway: only tools missing or added count.
   assert.deepEqual(lint([a, b], { tools: [b, a] }, [{ tools: [b, a] }]), []);
 });
+
+// 0.22, from github-mcp-server 1.14: IDs a router lists through its method enum.
+test('ids/authored: a router\'s list operation in an enum lists that kind; one that names no kind doesn\'t; node IDs are the thing\'s', () => {
+  const ids = (tools) => runRules(MENU_RULES, { menu: menuOf(tools), pages: [], capabilities: { tools: {} }, usedAuth: false, protocolVersion: '2026-07-28', era: 'modern' }).filter((f) => f.rule === 'ids/authored').map((f) => f.message.split(' takes')[0]);
+  const router = (name, values) => tool(name, ['owner'], { inputSchema: { type: 'object', properties: { method: { type: 'string', enum: values }, owner: { type: 'string' } }, required: ['method'] } });
+  const trigger = tool('actions_run_trigger', ['workflow_id']);
+  assert.deepEqual(ids([trigger, router('actions_list', ['list_workflows', 'list_workflow_runs'])]), []);
+  assert.deepEqual(ids([trigger, router('actions_list', ['list_public', 'list_mine'])]), ['actions_run_trigger.workflow_id'], 'names no kind');
+  assert.deepEqual(ids([trigger, router('actions_get', ['get_workflow'])]), ['actions_run_trigger.workflow_id'], 'a get needs the ID');
+  assert.deepEqual(ids([tool('favorite_add', ['listId']), router('profile', ['list_public'])]), ['favorite_add.listId'], 'the verb is not the kind');
+  assert.deepEqual(ids([tool('discussion_comment_write', ['commentNodeID']), tool('get_discussion_comments', ['owner'])]), []);
+});
