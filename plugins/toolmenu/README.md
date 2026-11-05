@@ -36,12 +36,19 @@ Docs: https://github.com/niksa90/toolmenu#readme
 
 `evals/` holds cases for `claude plugin eval`: each skill must fire on its own
 prompts and no toolmenu skill on unrelated work, and `setup-ci` must give the right
-`init` command for a scaffolded project. From this folder:
+`init` command for a scaffolded project.
 
-```
-claude plugin eval . --scaffold --runs 3 -j 4
-```
+Every run is a real Claude session on the account running it: it counts against
+that account's usage (or API credits). Pick the size to fit, from this folder:
 
-It runs Claude on your account (about $2 for the suite) and compares each case with
-and without the plugin. `--scaffold` runs `evals/setup-ci/scaffold.sh`, which writes a
-small TypeScript project into the case's sandbox.
+| When | Command | Sessions |
+|---|---|---|
+| Editing a skill | `claude plugin eval . --scaffold --model haiku --runs 1 --ablation none` | 7 |
+| One case | `claude plugin eval . --case setup-ci --scaffold --model haiku --runs 1 --ablation none` | 1 |
+| Before a release | `claude plugin eval . --scaffold --model sonnet --runs 3 -j 4` | 42 |
+
+A run measures whether the model it runs on picks the skill up, so do the release
+pass on a model people use the plugin with (Sonnet, Opus), not only Haiku.
+`--ablation none` skips the without-plugin comparison; `--scaffold` runs
+`evals/setup-ci/scaffold.sh`, which writes a small TypeScript project into that
+case's sandbox. The evals don't run in CI.
