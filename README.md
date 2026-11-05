@@ -3,46 +3,69 @@
 [![npm](https://img.shields.io/npm/v/toolmenu)](https://www.npmjs.com/package/toolmenu)
 [![ci](https://github.com/niksa90/toolmenu/actions/workflows/ci.yml/badge.svg)](https://github.com/niksa90/toolmenu/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/niksa90/toolmenu/blob/main/LICENSE)
+[![MCP: 2026-07-28 and 2025](https://img.shields.io/badge/MCP-2026--07--28%20%C2%B7%202025-6E56CF)](https://modelcontextprotocol.io)
 
-**Lint your MCP server's tool menu for changes that confuse agents or break caches.**
+**Checks for MCP servers' tool lists: changes that confuse agents, break prompt caches or break clients, caught before your users hit them.**
 
-The MCP linters I found grade one snapshot of the menu an agent reads: tool names,
-descriptions, schemas. toolmenu observes how the menu behaves across calls,
-connections and releases, and checks **when** it changes:
+Your MCP server's tool list is the menu every agent reads before it does anything.
+toolmenu checks that menu the way clients and agents will meet it: across calls,
+connections, clients and releases. No LLM is involved, so the same inputs always give
+the same answer and it fits in CI.
 
-- **Mid-session.** A menu that changes after the conversation has started can
-  invalidate the cached conversation: most clients put the tool list at the start of
-  the prompt, so any change to it, even a tool added at the end, means everything
-  after it is processed again. In my logs, one mid-conversation unlock rewrote
-  40–57K tokens of cached prefix (from my own logs; more on this, with a benchmark
-  of the setups, in [this write-up](https://niksa.me/agent-tools-design-lessons)). `session` catches it, pins it to the step that
-  caused it, and says where in the list it happened.
-- **Ready for 2026-07-28.** That protocol version says the tool set **must not** vary
-  per connection or as a side effect of other requests (the 2025 versions allow it).
-  Per-session "unlock" designs, like the one I built, are ruled out. `session` tells you whether yours is one of them.
-  It also checks the menu clients will actually show: a broken `x-mcp-header` or a
-  `$ref` they can't resolve hides a tool or fails every call to it. And when a tool
-  stops to ask the user something, `session` answers "no" and says whether the tool
-  can take it. Handles a server mints (`session_id`) should say how long they last and
-  fail readably when unknown; menus that differ by who asks (`--as`) shouldn't be
-  cached as public; prompts and resources (`--lists`) are checked like tools. Run
-  against the reference server, `@modelcontextprotocol/server-everything` 2.1.0, with
-  no false findings ([bench/](bench/README.md)).
-- **For your client.** `--client claude-code | claude-api-search | openai` checks the
-  menu the way that client loads it, from its own docs: what it costs up front and per
-  tool a search loads, where it cuts descriptions, what its search can find, and names
-  its API refuses.
-- **Between releases.** `diff` finds breaking changes and token growth, and checks
-  the version bump.
+```sh
+npx toolmenu snapshot -- node dist/server.js      # or: npx toolmenu snapshot https://example.com/mcp
+npx toolmenu init -- node dist/server.js          # CI: a baseline, a workflow, a comment on every PR
+```
 
 ![toolmenu session output: tools inserted mid-list, a description edited, each pinned to the step that caused it](https://raw.githubusercontent.com/niksa90/toolmenu/main/docs/demo.svg)
 
-No LLM anywhere: the same inputs give the same answer, so it can sit in CI.
-(`history` installs old versions with today's dependencies, so it records what they
-serve now, which can differ from what they shipped with: FINDINGS F4.)
+## What it catches
 
-> **Status: 0.16, early.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md). What it has found on
-> real servers: [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
+| | |
+|---|---|
+| **A menu that changes mid-session** | `session` calls your tools and watches the list. A tool added mid-conversation can rewrite the whole cached prompt: one unlock cost 40–57K tokens of cache in my logs. |
+| **Breaking releases** | `diff` compares two menus: removed tools, new required parameters, narrowed types, token growth. It also says whether your version bump is big enough. |
+| **The 2026-07-28 protocol** | The tool set must not vary per connection, and results need `resultType`. Elicitation, multi round-trip input and `server/discover` are checked too, as are the 2025 handshakes. |
+| **MCP Apps, Tasks, Server Cards** | It reads `ui://` resources as a host does and checks who may see each tool. It catches tasks sent to clients that can't poll them, and Server Cards that contradict the live server. |
+| **Your client's view** | `--client claude-code \| claude-api-search \| openai` shows what each client loads, cuts, can find and refuses. |
+| **What agents misread** | It flags vague `id`s, IDs no tool returns, instructions buried late in descriptions, and writes without annotations or marked read-only. |
+| **Menus that drift** | It catches defaults built from the clock or a hash order, menus that differ per process, per connection or offline, and listings that depend on who asks. |
+
+Every finding says what's wrong, where it is and what toolmenu saw, and ends with a `→ Next:` step.
+It runs on the 22-server [bench](bench/README.md) and on hosted servers (GitHub, Atlassian, Sentry,
+Notion, Supabase, Vercel…). What it has found on real servers is in
+[docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
+
+> **Status: 0.23.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
+> every rule in [docs/RULES.md](docs/RULES.md), changes in [CHANGELOG.md](CHANGELOG.md).
+
+<details>
+<summary><b>Why "when it changes" matters</b></summary>
+
+The MCP linters I found grade one snapshot of the menu: tool names, descriptions,
+schemas. toolmenu also checks **when** the menu changes:
+
+- **Mid-session.** Most clients put the tool list at the start of the prompt, so any
+  change to it, even a tool added at the end, means everything after it is processed
+  again. More on this, with a benchmark of the setups, in
+  [this write-up](https://niksa.me/agent-tools-design-lessons). `session` pins each
+  change to the step that caused it, and says where in the list it happened.
+- **Per connection.** 2026-07-28 says the tool set **must not** vary per connection or
+  as a side effect of other requests (the 2025 versions allow it). Per-session
+  "unlock" designs, like the one I built, are ruled out. `session` tells you whether
+  yours is one of them. It also checks the menu clients will actually show: a broken
+  `x-mcp-header` or a `$ref` they can't resolve hides a tool or fails every call to
+  it. When a tool stops to ask the user something, `session` answers "no" and says
+  whether the tool can take it.
+- **Between releases.** `diff` finds breaking changes and token growth, and checks the
+  version bump. `history` does it across a package's published releases. It installs
+  old versions with today's dependencies, so it records what they serve now
+  (FINDINGS F4).
+
+Run against the reference server, `@modelcontextprotocol/server-everything`, it
+reports no false findings ([bench/](bench/README.md)).
+
+</details>
 
 ## Start here
 
