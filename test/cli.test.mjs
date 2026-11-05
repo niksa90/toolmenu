@@ -466,3 +466,11 @@ test('spec/server-card: a card at <url>/server-card that contradicts the live se
   assert.deepEqual(matching, []);
   assert.deepEqual(none, []);
 });
+
+// From Supabase's hosted server: tools listed only to a client that can't be asked.
+test('menu/capability-dependent: a tool listed only without elicitation names the capability it goes away with', async () => {
+  const r = JSON.parse((await run(['snapshot', '--json', '--no-write', '--env', 'FIXTURE=cost', '--', process.execPath, join(FIXTURES, 'raw-server.mjs')])).stdout);
+  const [f] = r.findings.filter((x) => x.rule === 'menu/capability-dependent');
+  assert.equal(f.tool, 'confirm_cost');
+  assert.equal(f.message, "confirm_cost is listed only to a client that doesn't support elicitation. A client without elicitation gets 2 tools, not 1. The menu file holds the menu of a client with both, which doesn't have it, so diff doesn't see changes to it.");
+});

@@ -26,6 +26,11 @@ const CAN: Record<Cause, string> = {
   apps: 'renders MCP Apps (declares io.modelcontextprotocol/ui)',
   either: 'supports elicitation and MCP Apps',
 };
+const CANNOT: Record<Cause, string> = {
+  elicitation: "doesn't support elicitation",
+  apps: "doesn't render MCP Apps",
+  either: 'supports neither elicitation nor MCP Apps',
+};
 const WITHOUT: Record<Cause, string> = {
   elicitation: 'A client without elicitation',
   apps: 'A client without MCP Apps',
@@ -80,25 +85,37 @@ export const capabilityDependent: Rule = {
       const c = cause(n, (m) => m !== undefined);
       byCause.set(c, [...(byCause.get(c) ?? []), n]);
     }
+    // A tool that goes away for a capable client (Supabase drops its cost-confirming tools
+    // when it can ask the user instead): the capability whose listing lacks it.
+    const withoutCause = new Map<Cause, string[]>();
+    for (const n of without) {
+      const c: Cause = !halfway ? 'either' : halfway.has(n) ? 'apps' : 'elicitation';
+      withoutCause.set(c, [...(withoutCause.get(c) ?? []), n]);
+    }
     const variantCause = new Map<Cause, string[]>();
     for (const n of variants) {
       const c = cause(n, (m) => m !== undefined && definition(m) === definition(mine.get(n)!));
       variantCause.set(c, [...(variantCause.get(c) ?? []), n]);
     }
-    const causes = new Set([...byCause.keys(), ...variantCause.keys()]);
+    const causes = new Set([...byCause.keys(), ...withoutCause.keys(), ...variantCause.keys()]);
     const overall: Cause = causes.size === 1 ? [...causes][0] : 'either';
     const parts: string[] = [];
     for (const [c, ns] of byCause) parts.push(`${names(ns, 10)} ${ns.length === 1 ? 'is' : 'are'} listed only to a client that ${CAN[c]}`);
-    if (without.length) parts.push(`${names(without, 10)} ${without.length === 1 ? 'is' : 'are'} listed only to a client that doesn't`);
+    for (const [c, ns] of withoutCause) parts.push(`${names(ns, 10)} ${ns.length === 1 ? 'is' : 'are'} listed only to a client that ${CANNOT[c]}`);
     for (const [c, ns] of variantCause) parts.push(`${names(ns, 10)} ${ns.length === 1 ? 'is' : 'are'} listed with another definition to a client that ${CAN[c]}`);
     const one = only.length + without.length + variants.length === 1;
     const sentence = parts.join('; ');
+    const seen = only.length + variants.length;
+    const tail =
+      seen > 0
+        ? `The menu file holds the menu of a client with both, so diff sees ${seen === 1 ? 'that tool' : 'those tools'} as such a client gets ${seen === 1 ? 'it' : 'them'}.`
+        : `The menu file holds the menu of a client with both, which doesn't have ${without.length === 1 ? 'it' : 'them'}, so diff doesn't see changes to ${without.length === 1 ? 'it' : 'them'}.`;
     return [
       {
         rule: 'menu/capability-dependent',
         severity: 'info',
         ...(one ? { tool: only[0] ?? without[0] ?? variants[0] } : {}),
-        message: `${sentence}. ${WITHOUT[overall]} gets ${plain.length} ${plain.length === 1 ? 'tool' : 'tools'}${variants.length ? `, ${variants.length === 1 ? 'one' : 'some'} of them different` : ''}, not ${ctx.menu.tools.length}. The menu file holds the menu of a client with both, so diff sees ${only.length + variants.length === 1 ? 'that tool' : 'those tools'} as such a client gets ${only.length + variants.length === 1 ? 'it' : 'them'}.`,
+        message: `${sentence}. ${WITHOUT[overall]} gets ${plain.length} ${plain.length === 1 ? 'tool' : 'tools'}${variants.length ? `, ${variants.length === 1 ? 'one' : 'some'} of them different` : ''}, not ${ctx.menu.tools.length}. ${tail}`,
         fix:
           overall === 'apps'
             ? 'Nothing to change if this is deliberate (a UI variant for Apps hosts). Keep a text-only variant that works without the UI, and say in the README which tools need an Apps host.'

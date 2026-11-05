@@ -43,6 +43,11 @@ const MENUS = {
     { name: 'get_thing', description: 'Get a thing.', inputSchema: obj({}), annotations: { readOnlyHint: true } },
     ...(elicits ? [{ name: 'delete_thing', description: 'Delete a thing, after the user confirms.', inputSchema: obj({ thing: str }), annotations: { destructiveHint: true } }] : []),
   ],
+  // Like Supabase's hosted server: a cost-confirming tool for a client that can't be asked (no elicitation).
+  cost: () => [
+    { name: 'create_project', description: 'Create a project.', inputSchema: obj({ name: str }), annotations: { destructiveHint: false } },
+    ...(elicits ? [] : [{ name: 'confirm_cost', description: 'Confirm the cost before creating.', inputSchema: obj({ amount: str }), annotations: { readOnlyHint: true } }]),
+  ],
   // MCP Apps, each way the apps/* rules fire. APPS_LEAK=1 lists the app-only tool to
   // every client, not only to one that declared the extension.
   apps: () => [
