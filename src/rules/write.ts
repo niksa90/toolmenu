@@ -67,8 +67,12 @@ export const unannotated: Rule = {
  * readOnlyHint: true on a tool whose name says it writes (create_, delete_, send_…).
  * The spec's readOnlyHint means "the tool does not modify its environment", and
  * clients and agents act on it: run it without asking, retry it, call it to explore.
- * Seen on a hosted server: create_my_ideal_account, marked read-only.
+ * Seen on a hosted server: create_my_ideal_account, marked read-only. Not when the
+ * description says it only reads: Vercel's create_observability_query "Run a read-only
+ * … query … without changing project configuration" names the query it makes.
  */
+const SAYS_READ_ONLY = /\bread[- ]only\b|\bwithout (?:changing|modifying|altering|writing)\b|\b(?:does not|doesn't|never) (?:change|modify|alter|write)\b/i;
+
 export const readOnlyMismatch: Rule = {
   id: 'write/read-only-mismatch',
   severity: 'warn',
@@ -76,7 +80,7 @@ export const readOnlyMismatch: Rule = {
   run(ctx) {
     const common = prefixWords(ctx.menu.tools.map((t) => t.name));
     const lead = (t: MenuTool) => leadingVerb(t.name, common);
-    const odd = kept(ctx.menu.tools, ctx).filter((t) => t.annotations?.readOnlyHint === true && WRITE_VERBS.has(lead(t) ?? ''));
+    const odd = kept(ctx.menu.tools, ctx).filter((t) => t.annotations?.readOnlyHint === true && WRITE_VERBS.has(lead(t) ?? '') && !SAYS_READ_ONLY.test(t.description ?? ''));
     if (!odd.length) return [];
     const one = odd.length === 1;
     return [

@@ -834,6 +834,9 @@ test('write/read-only-mismatch: a tool marked read-only whose name says it write
   assert.deepEqual(many[0].detail, ['upload_images, set_member']);
   // The verb the name leads with, not one in its object; after a prefix the menu's tools share.
   assert.deepEqual(lint([tool('score_status_update', [], ro)]).filter((f) => f.rule === 'write/read-only-mismatch'), []);
+  // The description says it only reads (Vercel's create_observability_query): the hint agrees with it.
+  assert.deepEqual(lint([tool('create_observability_query', [], { ...ro, description: 'Run a read-only observability query. Returns results without changing project configuration.' })]).filter((f) => f.rule === 'write/read-only-mismatch'), []);
+  assert.equal(lint([tool('create_report', [], { ...ro, description: 'Create a report and save it.' })]).filter((f) => f.rule === 'write/read-only-mismatch').length, 1);
   const prefixed = lint([tool('studio_clear_read_cache', [], ro), tool('studio_get_status', [], ro), tool('studio_list_envs', [], ro), tool('studio_get_bots', [], ro)]).filter((f) => f.rule === 'write/read-only-mismatch');
   assert.equal(prefixed[0]?.tool, 'studio_clear_read_cache');
 });
