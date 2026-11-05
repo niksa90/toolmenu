@@ -25,9 +25,24 @@ It adds:
 The first start downloads toolmenu from npm, which can take a few seconds; later
 starts use npx's cache.
 
-`snapshot_menu` and `check_session` start the server command you give them (or
-connect to its URL), as `toolmenu snapshot` does on the command line. Claude Code
-asks before each call unless you allow the tools.
+## What it runs, sends and stores
+
+- **Runs:** `npx -y toolmenu@<version> mcp`, downloaded once from the npm registry
+  (source: https://github.com/niksa90/toolmenu, published with npm provenance).
+  `snapshot_menu` and `check_session` start the server command you give them, in the
+  folder you give, or connect to the URL you give, as `toolmenu snapshot` does on the
+  command line. Claude Code asks before each call unless you allow the tools.
+- **Calls:** `check_session` calls only the tools your server marks `readOnlyHint`,
+  with arguments its schemas allow. `snapshot_menu` and `diff_menus` call none.
+- **Sends:** nothing to toolmenu or anyone else: no telemetry, no account. The only
+  network traffic is to the server URL you give (and its sign-in server, if you
+  signed in to it) and the npm download.
+- **Stores:** the menu files you ask it to write (`save_as`). If you sign in to a
+  server with `toolmenu login`, its tokens stay in `~/.config/toolmenu/auth` on your
+  machine, and the tools use them for that server.
+- **Credentials** you pass (`env`, `headers`) go only to the server you name. They
+  reach toolmenu through its environment, not its command line, so other processes
+  on the machine don't see them in a process list.
 
 Without the plugin: `claude mcp add toolmenu -- npx -y toolmenu mcp`.
 Docs: https://github.com/niksa90/toolmenu#readme
