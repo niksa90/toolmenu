@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **A README badge.** `snapshot --badge <path>` writes a shields.io endpoint file
+  (`toolmenu | 12 tools · ~4.1K tokens · 2 warnings`, red with errors, yellow with
+  warnings) and prints the README line, which reads it from GitHub on the default
+  branch. Committed with the baseline, it changes when the baseline does. toolmenu's
+  README shows its own MCP server's.
+- **SARIF output, for GitHub code scanning.** `--sarif <path>` writes the findings
+  of `snapshot`, `diff` or `session` as SARIF 2.1.0 beside the usual report;
+  `--format sarif` prints it instead. Each result points at the menu file, at the line
+  of the tool it's about (`--sarif-menu` names the committed one when the menu was
+  written elsewhere), with a fingerprint from its rule and tool so alerts track across
+  runs. The Action's new `sarif` input writes `snapshot.sarif`, `diff.sarif` and
+  `session.sarif` into a folder for `github/codeql-action/upload-sarif`.
 - **Plugin: two more skills, and evals.** `release-check` (before tagging or
   publishing: what changed since the last release, what breaks clients, the bump it
   needs) and `setup-ci` (adds toolmenu to CI with `toolmenu init`). `check-mcp-menu`

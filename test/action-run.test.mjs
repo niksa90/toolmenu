@@ -250,3 +250,18 @@ test('action: catalog true passes --catalog to snapshot', () => {
   assert.doesNotMatch(off.args, /--catalog/);
 });
 
+
+test('action: sarif writes one SARIF file per command into the folder, results at the baseline', () => {
+  const r = runAction({ ...url, TOOLMENU_SARIF: 'code scanning', TOOLMENU_BASELINE: 'server/menu.json' });
+  const lines = r.args.split('\n');
+  const at = lines.indexOf('--sarif');
+  assert.ok(at > 0, r.args);
+  assert.equal(lines[at + 1], 'code scanning/snapshot.sarif', 'a folder with a space stays one argument');
+  assert.equal(lines[lines.indexOf('--sarif-menu') + 1], 'server/menu.json');
+  assert.ok(existsSync(join(r.dir, 'code scanning')), 'the folder is made');
+});
+
+test('action: without sarif, no SARIF arguments', () => {
+  const r = runAction(url);
+  assert.doesNotMatch(r.args, /--sarif/);
+});

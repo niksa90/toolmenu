@@ -48,5 +48,9 @@ From init's output, tell the user:
   `localhost` URL, a local virtualenv), with its fix.
 - That the first pull request gets the comment; the baseline is updated by committing
   a new `menu.json` (`toolmenu snapshot`) when a change is intended.
+- Two options worth offering: a README badge (`npx -y toolmenu snapshot --badge
+  toolmenu-badge.json -- <command>`, committed with `menu.json`; it prints the README
+  line), and code scanning alerts (the Action's `sarif` input plus
+  `github/codeql-action/upload-sarif`, with `security-events: write`).
 
 Don't commit, push or add secrets yourself unless asked.

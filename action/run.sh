@@ -189,6 +189,20 @@ hint_target() {
 # With baseline-from: session, the menu that's diffed is every tool the scenario
 # saw (the union menu), so tools behind an unlock are compared too.
 FROM_SESSION=false
+# SARIF for code scanning, when asked: one file per command, results at the baseline file.
+sarif_args() {
+  [ -n "${TOOLMENU_SARIF:-}" ] || return 0
+  printf '%s\n' --sarif "$TOOLMENU_SARIF/$1.sarif" --sarif-menu "${TOOLMENU_BASELINE:-menu.json}"
+}
+SARIF_SESSION=(); SARIF_SNAPSHOT=(); SARIF_DIFF=()
+if [ -n "${TOOLMENU_SARIF:-}" ]; then
+  mkdir -p "$TOOLMENU_SARIF"
+  echo "sarif=$TOOLMENU_SARIF" >> "${GITHUB_OUTPUT:-/dev/null}"
+  # Arrays, so a folder with spaces in its name stays one argument.
+  mapfile -t SARIF_SESSION < <(sarif_args session)
+  mapfile -t SARIF_SNAPSHOT < <(sarif_args snapshot)
+  mapfile -t SARIF_DIFF < <(sarif_args diff)
+fi
 if [ "${TOOLMENU_BASELINE_FROM:-snapshot}" = "session" ]; then
   if [ -z "${TOOLMENU_SCENARIO:-}" ]; then
     echo "::error title=toolmenu::'baseline-from: session' needs a 'scenario' to run."
@@ -206,7 +220,7 @@ run_session() {
   [ "$FROM_SESSION" = true ] && union=(--union-out "$OUT/union.json")
   # scenario: auto builds the steps from the menu (read-only tools only).
   [ "$TOOLMENU_SCENARIO" = auto ] && steps=(--auto)
-  $CLI session "${steps[@]}" --format markdown --fail-on "$FAIL_ON" ${union[@]+"${union[@]}"} ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
+  $CLI session "${steps[@]}" --format markdown ${SARIF_SESSION[@]+"${SARIF_SESSION[@]}"} --fail-on "$FAIL_ON" ${union[@]+"${union[@]}"} ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
   SESSION_CODE=$?
   SESSION_RAN=true
 }
@@ -214,7 +228,7 @@ run_session() {
 # 1. Snapshot the menu this change produces.
 SNAPSHOT_OPTS=()
 [ "${TOOLMENU_CATALOG:-false}" = "true" ] && SNAPSHOT_OPTS+=(--catalog)
-$CLI snapshot ${SNAPSHOT_OPTS[@]+"${SNAPSHOT_OPTS[@]}"} --out "$OUT/current.json" --format markdown --fail-on "$FAIL_ON" ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
+$CLI snapshot ${SNAPSHOT_OPTS[@]+"${SNAPSHOT_OPTS[@]}"} --out "$OUT/current.json" --format markdown ${SARIF_SNAPSHOT[@]+"${SARIF_SNAPSHOT[@]}"} --fail-on "$FAIL_ON" ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
 SKIPPED=false
 ERROR_SHOWN=false
@@ -259,7 +273,7 @@ else
     note 2
   elif [ -n "$BASELINE" ]; then
     # shellcheck disable=SC2046
-    $CLI diff --format markdown --fail-on "$FAIL_ON" $(release_args) "$BASELINE" "$CURRENT" > "$OUT/diff.md" 2> "$OUT/diff.err"
+    $CLI diff --format markdown ${SARIF_DIFF[@]+"${SARIF_DIFF[@]}"} --fail-on "$FAIL_ON" $(release_args) "$BASELINE" "$CURRENT" > "$OUT/diff.md" 2> "$OUT/diff.err"
     code=$?; note "$code"
     if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { sed -e "s/pass --release/set the Action's \`release\` input/" -e "s/Check the --release order/Check the order in the Action's \`release\` input/" "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
   else
