@@ -3,51 +3,140 @@
  * server can check its menu while it works. Each tool runs the CLI in a child process
  * (no shell) and returns its report: the same checks, options, config and exit codes
  * as on the command line, and a crash or hang in one check can't take the server down.
+ *
+ * Each child runs in its own process group, so cancelling a call, its time running
+ * out, or the client closing the connection stops the child and the server it started.
  */
-import { execFile } from 'node:child_process';
-import { resolve } from 'node:path';
+import { spawn } from 'node:child_process';
+import { statSync } from 'node:fs';
+import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import * as z from 'zod';
 import { CLIENT_NAMES } from './clients.js';
 import { VERSION } from './version.js';
+import { SECRET_ARGS_ENV } from './mcp-env.js';
+
+export { SECRET_ARGS_ENV };
 
 const CLI = fileURLToPath(new URL('./cli.js', import.meta.url));
+
+/** A whole run's ceiling. Each request inside it already has the CLI's own --timeout. */
+export const RUN_LIMIT_MS = 10 * 60_000;
+const OUTPUT_LIMIT = 64 * 1024 * 1024;
 
 export interface CliRun {
   code: number;
   stdout: string;
   stderr: string;
+  /** Why the run was stopped, when toolmenu mcp stopped it. */
+  stopped?: string;
+}
+
+/**
+ * Process groups still running: each run's CLI and the server it started. A group is
+ * kept until nothing in it is alive, not until the CLI exits: a server that ignores
+ * SIGTERM outlives the CLI that started it.
+ */
+const groups = new Set<number>();
+
+/** Signal a whole process group. */
+function signalGroup(pgid: number, signal: NodeJS.Signals | 0): boolean {
+  try {
+    process.kill(-pgid, signal);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const groupAlive = (pgid: number) => signalGroup(pgid, 0);
+
+/** Stop a group: SIGTERM, then SIGKILL to whatever in it is still there 2 s later. */
+async function stopGroup(pgid: number): Promise<void> {
+  if (groupAlive(pgid)) {
+    signalGroup(pgid, 'SIGTERM');
+    const end = Date.now() + 2_000;
+    while (groupAlive(pgid) && Date.now() < end) await new Promise((r) => setTimeout(r, 50));
+    if (groupAlive(pgid)) signalGroup(pgid, 'SIGKILL');
+  }
+  groups.delete(pgid);
+}
+
+/** SIGKILL every group still running, at once: toolmenu mcp itself is exiting. */
+export function killAllNow(): void {
+  for (const pgid of groups) signalGroup(pgid, 'SIGKILL');
+}
+
+/** Stop every group still running, and wait for it: the client closed the connection. */
+export async function stopAll(): Promise<void> {
+  await Promise.all([...groups].map(stopGroup));
+}
+
+export interface RunOptions {
+  /** Arguments that carry credentials, passed through the environment (SECRET_ARGS_ENV). */
+  secretArgs?: string[];
+  signal?: AbortSignal;
+  limitMs?: number;
 }
 
 /** Run the toolmenu CLI with these arguments, from this folder. */
-export function runCli(args: string[], cwd: string): Promise<CliRun> {
+export function runCli(args: string[], cwd: string, options: RunOptions = {}): Promise<CliRun> {
+  const { secretArgs = [], signal, limitMs = RUN_LIMIT_MS } = options;
   return new Promise((done) => {
-    execFile(
-      process.execPath,
-      [CLI, ...args],
-      // NO_COLOR: the report goes to an agent, not a terminal.
-      { cwd, env: { ...process.env, NO_COLOR: '1' }, maxBuffer: 64 * 1024 * 1024 },
-      (error, stdout, stderr) => {
-        const code = error ? (typeof (error as { code?: unknown }).code === 'number' ? (error as { code: number }).code : 2) : 0;
-        done({ code, stdout: String(stdout), stderr: String(stderr) || (error && code === 2 ? error.message : '') });
-      },
-    );
+    if (signal?.aborted) return done({ code: 2, stdout: '', stderr: '', stopped: 'The call was cancelled before it started.' });
+    // NO_COLOR: the report goes to an agent, not a terminal.
+    const env: NodeJS.ProcessEnv = { ...process.env, NO_COLOR: '1' };
+    delete env[SECRET_ARGS_ENV];
+    if (secretArgs.length) env[SECRET_ARGS_ENV] = JSON.stringify(secretArgs);
+    const child = spawn(process.execPath, [CLI, ...args], { cwd, env, detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    if (child.pid) groups.add(child.pid);
+    let stdout = '';
+    let stderr = '';
+    let stopped: string | undefined;
+    const halt = (why: string) => {
+      stopped ??= why;
+      if (child.pid) void stopGroup(child.pid);
+    };
+    child.stdout!.on('data', (d) => {
+      stdout += d;
+      if (stdout.length > OUTPUT_LIMIT) halt(`The report passed ${OUTPUT_LIMIT / 1024 / 1024} MB, so the run was stopped.`);
+    });
+    child.stderr!.on('data', (d) => {
+      stderr += d;
+      if (stderr.length > OUTPUT_LIMIT) stderr = stderr.slice(-OUTPUT_LIMIT);
+    });
+    const timer = setTimeout(() => halt(`The run took longer than ${limitMs / 60_000} minutes, so it was stopped. A server that is slow to answer each request can be given a longer --timeout in toolmenu.config.json, or fewer calls (max_calls).`), limitMs);
+    const onAbort = () => halt('The call was cancelled, so the run was stopped.');
+    signal?.addEventListener('abort', onAbort, { once: true });
+    const finish = (code: number) => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+      // Whatever the CLI left behind (a server it couldn't stop) goes with it.
+      if (child.pid) void stopGroup(child.pid);
+      done({ code, stdout, stderr, ...(stopped ? { stopped } : {}) });
+    };
+    // Never Node's own error message: it repeats the command line.
+    child.on('error', (error: NodeJS.ErrnoException) => {
+      stderr += `toolmenu mcp couldn't start the toolmenu CLI (${error.code ?? 'error'}).`;
+      finish(2);
+    });
+    child.on('close', (code) => finish(stopped ? 2 : code ?? 2));
   });
 }
 
 type Text = { content: { type: 'text'; text: string }[]; isError?: boolean };
 
 /** A CLI run as a tool result. Findings are a report, not a failure: only exit 2 (couldn't run) is an error. */
-export function toResult(run: CliRun, failOnNote = true): Text {
+export function toResult(run: CliRun): Text {
   const out = run.stdout.trim();
   if (run.code === 2) {
-    const why = run.stderr.trim() || out || 'toolmenu exited with code 2.';
+    const why = [run.stopped, run.stderr.trim()].filter(Boolean).join('\n\n') || out || 'toolmenu exited with code 2.';
     return { content: [{ type: 'text', text: why }], isError: true };
   }
   const notes = run.stderr.trim();
-  const tail = run.code === 1 && failOnNote ? '\n\nExit 1: findings at or above --fail-on (error by default).' : '';
+  const tail = run.code === 1 ? '\n\nExit 1: there are error-level findings.' : '';
   return { content: [{ type: 'text', text: `${out || 'No output.'}${tail}${notes ? `\n\nNotes:\n${notes}` : ''}` }] };
 }
 
@@ -65,18 +154,44 @@ const serverShape = {
 
 type ServerArgs = { command?: string[]; url?: string; headers?: Record<string, string>; env?: Record<string, string>; cwd?: string };
 
-/** The CLI arguments that name the server, or why they can't. Server options come before "--". */
-export function serverArgs(a: ServerArgs): { before: string[]; after: string[] } | { error: string } {
+export interface ServerSpec {
+  /** Before "--": the URL, if any. */
+  before: string[];
+  /** Header and env values, passed through the environment. */
+  secret: string[];
+  /** "--" and the command, if any. */
+  after: string[];
+}
+
+/** The CLI arguments that name the server, or why they can't. */
+export function serverArgs(a: ServerArgs): ServerSpec | { error: string } {
   if (!a.command === !a.url) return { error: 'Give the server as command (a stdio server, e.g. ["node", "dist/server.js"]) or url (an HTTP server), one of the two.' };
   if (a.url) {
     if (a.env && Object.keys(a.env).length) return { error: 'env goes with command: an HTTP server is already running. Use headers for credentials.' };
-    return { before: [a.url, ...Object.entries(a.headers ?? {}).flatMap(([k, v]) => ['--header', `${k}: ${v}`])], after: [] };
+    if (!/^https?:\/\//.test(a.url)) return { error: `url must be an http(s) URL; got "${a.url}". For a stdio server, give command.` };
+    return { before: [a.url], secret: Object.entries(a.headers ?? {}).flatMap(([k, v]) => ['--header', `${k}: ${v}`]), after: [] };
   }
   if (a.headers && Object.keys(a.headers).length) return { error: 'headers go with url. Pass a stdio server its credentials with env.' };
-  return { before: Object.entries(a.env ?? {}).flatMap(([k, v]) => ['--env', `${k}=${v}`]), after: ['--', ...a.command!] };
+  return { before: [], secret: Object.entries(a.env ?? {}).flatMap(([k, v]) => ['--env', `${k}=${v}`]), after: ['--', ...a.command!] };
 }
 
+/** The folder a call runs in, or why it can't. */
+export function folder(baseCwd: string, cwd?: string): { dir: string } | { error: string } {
+  const dir = cwd ? resolve(baseCwd, cwd) : baseCwd;
+  try {
+    if (statSync(dir).isDirectory()) return { dir };
+    return { error: `cwd "${cwd ?? dir}" is a file, not a folder.` };
+  } catch {
+    return { error: `cwd "${cwd ?? dir}" doesn't exist (resolved to ${dir}). Give the server's project folder.` };
+  }
+}
+
+/** A path as an absolute one, so a value starting with "-" can't be read as an option. */
+const absolute = (dir: string, path: string) => (isAbsolute(path) ? path : resolve(dir, path));
+
 const failed = (text: string): Text => ({ content: [{ type: 'text', text }], isError: true });
+
+type Ctx = { mcpReq: { signal: AbortSignal } };
 
 export function build(baseCwd = process.cwd()): McpServer {
   const server = new McpServer(
@@ -91,7 +206,15 @@ export function build(baseCwd = process.cwd()): McpServer {
         'Each finding ends with a → Next: step; explain_rule says what a rule checks.',
     },
   );
-  const where = (cwd?: string) => (cwd ? resolve(baseCwd, cwd) : baseCwd);
+
+  /** Run a command for a server: the folder checked, credentials kept out of argv. */
+  const forServer = async (a: ServerArgs, ctx: Ctx, args: (dir: string, s: ServerSpec) => string[]) => {
+    const s = serverArgs(a);
+    if ('error' in s) return failed(s.error);
+    const f = folder(baseCwd, a.cwd);
+    if ('error' in f) return failed(f.error);
+    return toResult(await runCli([...args(f.dir, s), ...s.after], f.dir, { secretArgs: s.secret, signal: ctx.mcpReq.signal }));
+  };
 
   server.registerTool(
     'snapshot_menu',
@@ -107,14 +230,14 @@ export function build(baseCwd = process.cwd()): McpServer {
       },
       annotations: { title: 'Snapshot a server menu', readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
-    async (a) => {
-      const s = serverArgs(a);
-      if ('error' in s) return failed(s.error);
-      const args = ['snapshot', ...s.before, ...(a.save_as ? ['--out', a.save_as] : ['--no-write'])];
-      if (a.client) args.push('--client', a.client);
-      if (a.catalog) args.push('--catalog');
-      return toResult(await runCli([...args, ...s.after], where(a.cwd)));
-    },
+    (a, ctx) =>
+      forServer(a, ctx, (dir, s) => [
+        'snapshot',
+        ...s.before,
+        a.save_as ? `--out=${absolute(dir, a.save_as)}` : '--no-write',
+        ...(a.client ? [`--client=${a.client}`] : []),
+        ...(a.catalog ? ['--catalog'] : []),
+      ]),
   );
 
   server.registerTool(
@@ -130,10 +253,11 @@ export function build(baseCwd = process.cwd()): McpServer {
       },
       annotations: { title: 'Diff two menus', readOnlyHint: true, openWorldHint: false },
     },
-    async (a) => {
-      const args = ['diff', a.before, a.after];
-      if (a.release) args.push('--release', a.release);
-      return toResult(await runCli(args, where(a.cwd)));
+    async (a, ctx) => {
+      const f = folder(baseCwd, a.cwd);
+      if ('error' in f) return failed(f.error);
+      const args = ['diff', absolute(f.dir, a.before), absolute(f.dir, a.after), ...(a.release ? [`--release=${a.release}`] : [])];
+      return toResult(await runCli(args, f.dir, { signal: ctx.mcpReq.signal }));
     },
   );
 
@@ -150,14 +274,14 @@ export function build(baseCwd = process.cwd()): McpServer {
       },
       annotations: { title: 'Run a session against a server', readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
-    async (a) => {
-      const s = serverArgs(a);
-      if ('error' in s) return failed(s.error);
-      const args = ['session', '--auto', ...s.before];
-      if (a.max_calls) args.push('--max-calls', String(a.max_calls));
-      if (a.open_world) args.push('--open-world');
-      return toResult(await runCli([...args, ...s.after], where(a.cwd)));
-    },
+    (a, ctx) =>
+      forServer(a, ctx, (_dir, s) => [
+        'session',
+        '--auto',
+        ...s.before,
+        ...(a.max_calls ? [`--max-calls=${a.max_calls}`] : []),
+        ...(a.open_world ? ['--open-world'] : []),
+      ]),
   );
 
   server.registerTool(
@@ -167,18 +291,33 @@ export function build(baseCwd = process.cwd()): McpServer {
       inputSchema: { rule: z.string().optional().describe('The rule, as a finding names it: naming/vague-id, or just vague-id.') },
       annotations: { title: 'Explain a rule', readOnlyHint: true, openWorldHint: false },
     },
-    async (a) => toResult(await runCli(['explain', ...(a.rule ? [a.rule] : [])], baseCwd), false),
+    async (a, ctx) => {
+      if (a.rule !== undefined && !/^[a-z0-9][a-z0-9/_-]*$/i.test(a.rule)) return failed(`"${a.rule}" isn't a rule name. Rules look like naming/vague-id; call explain_rule without rule to list them.`);
+      return toResult(await runCli(['explain', ...(a.rule ? [a.rule] : [])], baseCwd, { signal: ctx.mcpReq.signal }));
+    },
   );
 
   return server;
 }
 
-/** Serve over stdio until the client closes stdin. */
+/**
+ * Serve over stdio until the client closes stdin, then stop every run still going.
+ * A client that closes stdin may send SIGTERM before the runs are stopped: on that, or
+ * on any exit, what's left is killed at once rather than left running.
+ */
 export async function serveMcp(): Promise<void> {
+  process.once('exit', killAllNow);
+  for (const [signal, code] of [['SIGTERM', 143], ['SIGINT', 130]] as const) {
+    process.once(signal, () => {
+      killAllNow();
+      process.exit(code);
+    });
+  }
   const handle = serveStdio(() => build());
   await new Promise<void>((done) => {
     process.stdin.once('end', done);
     process.stdin.once('close', done);
   });
+  await stopAll();
   await handle.close().catch(() => {});
 }

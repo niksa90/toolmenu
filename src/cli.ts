@@ -24,6 +24,7 @@ import { authDir, listLogins, login, logout } from './auth.js';
 import { existingMessage, initReport, planInit, shellWord, writeInit } from './init.js';
 import { SEVERITY_RANK, type MenuTool, type Severity } from './types.js';
 import { VERSION } from './version.js';
+import { SECRET_ARGS_ENV } from './mcp-env.js';
 import { CLI_OPTIONS } from './options.js';
 import { editDistance } from './words.js';
 import { formatScan, ListError, loadList, scan, scanExit } from './scan.js';
@@ -32,7 +33,8 @@ import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type 
 
 class UsageError extends Error {}
 
-export async function main(argv: string[]): Promise<number> {
+export async function main(given: string[]): Promise<number> {
+  const argv = withSecretArgs(given);
   const dash = argv.indexOf('--');
   const before = dash === -1 ? argv : argv.slice(0, dash);
   const command = dash === -1 ? undefined : argv.slice(dash + 1);
@@ -519,6 +521,26 @@ function commandIn(args: string[]): Command | undefined {
     if (isCommand(a)) return a;
   }
   return undefined;
+}
+
+/**
+ * toolmenu mcp passes header and env values (credentials) in TOOLMENU_MCP_ARGS, a JSON
+ * array of arguments, not on the command line: argv is readable by any local user.
+ * They go before the server command's "--". Removed from the environment once read.
+ */
+function withSecretArgs(argv: string[]): string[] {
+  const raw = process.env[SECRET_ARGS_ENV];
+  if (raw === undefined) return argv;
+  delete process.env[SECRET_ARGS_ENV];
+  let extra: unknown;
+  try {
+    extra = JSON.parse(raw);
+  } catch {
+    extra = undefined;
+  }
+  if (!Array.isArray(extra) || !extra.every((a) => typeof a === 'string')) throw new UsageError(`${SECRET_ARGS_ENV} must be a JSON array of strings.`);
+  const dash = argv.indexOf('--');
+  return dash === -1 ? [...argv, ...extra] : [...argv.slice(0, dash), ...extra, ...argv.slice(dash)];
 }
 
 function parseRelease(value: string): { before: string; after: string } {

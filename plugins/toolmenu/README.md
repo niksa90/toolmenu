@@ -12,7 +12,7 @@ give the same answer.
 
 It adds:
 
-- **The toolmenu MCP server** (`npx -y toolmenu@latest mcp`, Node 22 or later):
+- **The toolmenu MCP server** (`npx -y toolmenu@<this plugin's version> mcp`, Node 22 or later; a plugin update moves it to a new release):
   `snapshot_menu`, `diff_menus`, `check_session` and `explain_rule`.
 - **The `check-mcp-menu` skill**: when to run them while you work on a server's
   tools, and how to read the report.

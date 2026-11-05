@@ -1,7 +1,8 @@
 name: release
 
-# Push a tag like v0.4.0 to publish that version to npm, with provenance.
-# Needs one repository secret: NPM_TOKEN (an npm automation token).
+# Push a tag like v0.4.0 to publish that version to npm, with provenance, and to
+# create its GitHub Release. Needs one repository secret: NPM_TOKEN (an npm
+# automation token).
 on:
   push:
     tags: ['v*']
@@ -9,11 +10,14 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Read-only: npm ci and npm test run dependencies' code.
     permissions:
-      contents: write   # the GitHub Release
+      contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -26,16 +30,41 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version"
             exit 1
           fi
+      - name: CHANGELOG has this version
+        run: |
+          grep -qE "^## ${GITHUB_REF_NAME#v}( |$)" CHANGELOG.md || {
+            echo "::error::CHANGELOG.md has no '## ${GITHUB_REF_NAME#v}' section for the release notes"
+            exit 1
+          }
       - run: npm ci
       - run: npm test
       - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # The release page, with this version's CHANGELOG section as its notes.
-      - name: GitHub Release
+
+  # Its own job, the only one that can write to the repository, and safe to re-run on
+  # its own ("Re-run failed jobs") if it fails after the publish.
+  github-release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: GitHub Release, with this version's CHANGELOG section as its notes
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists."
+            exit 0
+          fi
           version="${GITHUB_REF_NAME#v}"
-          awk -v h="## $version" '$0 == h {on=1; next} on && /^## / {exit} on' CHANGELOG.md > notes.md
+          awk -v v="$version" '$1 == "##" && $2 == v {on=1; next} on && /^## / {exit} on' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::No notes for $version in CHANGELOG.md"
+            exit 1
+          fi
           gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag

@@ -11,10 +11,20 @@ works, and a Claude Code plugin that installs it.
   returning its report. Findings are a report, not a tool error; a server that
   couldn't start or a bad path is. Its own menu has no findings at any level, on
   both protocols and under `session --auto`, and a test keeps it that way.
+  - Each run is its own process group: a cancelled call, a run past 10 minutes and
+    the client disconnecting stop the run and the server it started, a server that
+    ignores SIGTERM included.
+  - Header and env values (credentials) reach the CLI through the environment, not
+    its command line, and a tool error never repeats the command line.
+  - Paths, rule names and option values from the agent are never read as options,
+    and a `cwd` that isn't a folder says so.
 - **A Claude Code plugin** in this repository (`/plugin marketplace add
-  niksa90/toolmenu`): the server, and a `check-mcp-menu` skill that says when to
+  niksa90/toolmenu`): the server, pinned to the plugin's version, and a `check-mcp-menu` skill that says when to
   run it and how to read the report.
 - `@modelcontextprotocol/server` and `zod` are runtime dependencies now (the server).
+- **Releases**: a tag push also creates the GitHub Release, with the version's
+  CHANGELOG section as its notes, in its own job: the only one with write access,
+  and safe to re-run after the npm publish.
 
 ## 0.23.0
 

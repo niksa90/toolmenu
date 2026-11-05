@@ -1092,10 +1092,21 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   (HTTP, with `headers`), exactly one; the wrong pairing is a tool error before
   anything runs.
 - **Each call runs the CLI** (`process.execPath dist/cli.js …`, no shell) in `cwd`,
-  resolved against the folder the server runs in, with `NO_COLOR=1`. Exit 0 and 1
-  return the report (1 with a line saying findings reached `--fail-on`); exit 2
-  returns stderr as a tool error. A crash or hang in one check stays in its process.
+  resolved against the folder the server runs in and checked to be a folder, with
+  `NO_COLOR=1`. Exit 0 and 1 return the report (1 with a line saying so); exit 2
+  returns stderr as a tool error, never Node's spawn error (it repeats the command
+  line).
+- **Arguments**: paths are made absolute and option values are passed as
+  `--name=value`, so nothing from the agent is read as an option; a rule must look
+  like one. Header and env values (credentials) go to the CLI in `TOOLMENU_MCP_ARGS`,
+  a JSON array the CLI puts before `--` and removes from its environment, not in argv,
+  which any local user can read.
+- **Stopping**: each child is its own process group, holding the server it starts.
+  A cancelled call, a run past 10 minutes, a report past 64 MB, and the client
+  closing stdin each send the group SIGTERM, then SIGKILL 2 s later; on close the
+  server waits for that before it exits.
 - **Its own menu** has no findings at any level on either protocol, and under
   `session --auto`; `test/mcp.test.mjs` checks it.
 - **The plugin**: `.claude-plugin/marketplace.json` lists `plugins/toolmenu`, which
-  holds the server (`npx -y toolmenu@latest mcp`) and the `check-mcp-menu` skill.
+  holds the server (`npx -y toolmenu@<version> mcp`, pinned to the plugin's
+  version, which matches package.json: a test checks) and the `check-mcp-menu` skill.

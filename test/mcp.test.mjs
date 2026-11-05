@@ -5,8 +5,8 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { connect } from '../dist/connect.js';
-import { serverArgs } from '../dist/mcp.js';
-import { CLI, FIXTURES, run, tempDir, TIMEOUT_MS } from './helpers.mjs';
+import { folder, serverArgs } from '../dist/mcp.js';
+import { CLI, FIXTURES, ROOT, run, tempDir, TIMEOUT_MS } from './helpers.mjs';
 
 const toolmenu = () => ({ kind: 'stdio', command: process.execPath, args: [CLI, 'mcp'] });
 const textOf = (r) => r.content.map((c) => c.text).join('\n');
@@ -76,12 +76,110 @@ test('the server is named by command or url, one of the two', () => {
   assert.match(serverArgs({ command: ['x'], url: 'https://e.com/mcp' }).error, /one of the two/);
   assert.match(serverArgs({ url: 'https://e.com/mcp', env: { A: '1' } }).error, /env goes with command/);
   assert.match(serverArgs({ command: ['x'], headers: { A: '1' } }).error, /headers go with url/);
-  assert.deepEqual(serverArgs({ url: 'https://e.com/mcp', headers: { Authorization: 'Bearer t' } }), { before: ['https://e.com/mcp', '--header', 'Authorization: Bearer t'], after: [] });
-  assert.deepEqual(serverArgs({ command: ['node', 's.js', '--flag'], env: { K: 'v' } }), { before: ['--env', 'K=v'], after: ['--', 'node', 's.js', '--flag'] });
+  assert.match(serverArgs({ url: '--config=x.json' }).error, /http\(s\) URL/);
+  // Credentials go in secret (the environment), never in argv.
+  assert.deepEqual(serverArgs({ url: 'https://e.com/mcp', headers: { Authorization: 'Bearer t' } }), { before: ['https://e.com/mcp'], secret: ['--header', 'Authorization: Bearer t'], after: [] });
+  assert.deepEqual(serverArgs({ command: ['node', 's.js', '--flag'], env: { K: 'v' } }), { before: [], secret: ['--env', 'K=v'], after: ['--', 'node', 's.js', '--flag'] });
 });
 
 test('toolmenu mcp takes no server', async () => {
   const r = await run(['mcp', '--', 'node', 'x.js']);
   assert.equal(r.code, 2);
   assert.match(r.stderr, /mcp takes no server/);
+});
+
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+async function until(check, ms = 15_000) {
+  const end = Date.now() + ms;
+  while (!check()) {
+    if (Date.now() > end) return false;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return true;
+}
+const hang = (cwd) => ({ command: [process.execPath, join(FIXTURES, 'hang-server.mjs')], env: { PID_FILE: join(cwd, 'pid.json'), SECRET: 'sk-test-not-in-argv' }, cwd });
+
+test('a cancelled call stops the run and the server it started, even one that ignores SIGTERM', async () => {
+  const cwd = tempDir();
+  const conn = await connect(toolmenu(), { timeoutMs: TIMEOUT_MS });
+  try {
+    const ac = new AbortController();
+    const call = conn.client.callTool({ name: 'snapshot_menu', arguments: hang(cwd) }, { signal: ac.signal, timeout: TIMEOUT_MS });
+    call.catch(() => {});
+    assert.ok(await until(() => existsSync(join(cwd, 'pid.json'))), 'the server started');
+    const { pid, parentArgs, secret } = JSON.parse(readFileSync(join(cwd, 'pid.json'), 'utf8'));
+    // The env values reached the server through the environment, not the CLI's argv.
+    assert.equal(secret, 'sk-test-not-in-argv');
+    if (parentArgs.length) assert.ok(!parentArgs.join(' ').includes('sk-test-not-in-argv'), parentArgs.join(' '));
+    ac.abort();
+    await assert.rejects(call);
+    assert.ok(await until(() => !alive(pid)), `server ${pid} still running after the call was cancelled`);
+    // The server still serves.
+    const ok = await conn.client.callTool({ name: 'explain_rule', arguments: { rule: 'vague-id' } }, { timeout: TIMEOUT_MS });
+    assert.equal(ok.isError, undefined);
+  } finally {
+    await conn.close();
+  }
+});
+
+test('closing the connection stops runs still going', async () => {
+  const cwd = tempDir();
+  const conn = await connect(toolmenu(), { timeoutMs: TIMEOUT_MS });
+  conn.client.callTool({ name: 'check_session', arguments: hang(cwd) }, { timeout: TIMEOUT_MS }).catch(() => {});
+  assert.ok(await until(() => existsSync(join(cwd, 'pid.json'))), 'the server started');
+  const { pid } = JSON.parse(readFileSync(join(cwd, 'pid.json'), 'utf8'));
+  await conn.close();
+  assert.ok(await until(() => !alive(pid)), `server ${pid} still running after the client closed`);
+});
+
+test('values from the agent are never read as options', async () => {
+  const cwd = tempDir();
+  await withServer(async (call) => {
+    const rule = await call('explain_rule', { rule: '--json' });
+    assert.equal(rule.isError, true);
+    assert.match(textOf(rule), /isn't a rule name/);
+    // A real after file, so the only path that can fail is before's.
+    const diff = await call('diff_menus', { before: '--config=other.json', after: join(FIXTURES, 'menus/server-filesystem-2026.8.31.json'), cwd });
+    assert.equal(diff.isError, true);
+    assert.match(textOf(diff), /--config=other\.json/);
+    assert.doesNotMatch(textOf(diff), /other\.json: ENOENT/, 'read as a path, not a config option');
+    const saved = await call('snapshot_menu', { command: [process.execPath, join(FIXTURES, 'sdk-server.mjs')], cwd, save_as: '-menu.json' });
+    assert.equal(saved.isError, undefined, textOf(saved));
+    assert.ok(existsSync(join(cwd, '-menu.json')));
+  });
+});
+
+test('a cwd that is not a folder says so', async () => {
+  const cwd = tempDir();
+  assert.match(folder(cwd, 'packages/sever').error, /doesn't exist/);
+  await withServer(async (call) => {
+    const r = await call('snapshot_menu', { command: ['node', 'x.js'], cwd: join(cwd, 'nope') });
+    assert.equal(r.isError, true);
+    assert.match(textOf(r), /cwd ".*nope" doesn't exist/);
+    assert.doesNotMatch(textOf(r), /ENOENT/);
+  });
+});
+
+test('the plugin runs the toolmenu version it is released with', () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  const plugin = JSON.parse(readFileSync(join(ROOT, 'plugins/toolmenu/.claude-plugin/plugin.json'), 'utf8'));
+  const mcp = JSON.parse(readFileSync(join(ROOT, 'plugins/toolmenu/.mcp.json'), 'utf8'));
+  assert.equal(plugin.version, pkg.version);
+  assert.deepEqual(mcp.mcpServers.toolmenu.args, ['-y', `toolmenu@${pkg.version}`, 'mcp']);
+});
+
+test('TOOLMENU_MCP_ARGS: arguments the CLI takes from the environment, before "--"', async () => {
+  const r = await run(['explain'], { env: { TOOLMENU_MCP_ARGS: '["--json"]' } });
+  assert.equal(r.code, 0, r.stderr);
+  assert.ok(Array.isArray(JSON.parse(r.stdout)));
+  const bad = await run(['explain'], { env: { TOOLMENU_MCP_ARGS: '{"no":1}' } });
+  assert.equal(bad.code, 2);
+  assert.match(bad.stderr, /JSON array of strings/);
 });
