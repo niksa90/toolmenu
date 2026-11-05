@@ -164,7 +164,7 @@ written unless `--out-dir` names a folder for each server's menu file.
 
 `toolmenu mcp` is toolmenu as an MCP server (stdio), so Claude Code, Cursor or any
 other client can check the server it's working on while it works. In Claude Code, as a
-plugin (the server, and a skill that says when to run it and how to read the report):
+plugin (the server, and skills for checking a change, checking a release, and setting up CI):
 
 ```
 /plugin marketplace add niksa90/toolmenu

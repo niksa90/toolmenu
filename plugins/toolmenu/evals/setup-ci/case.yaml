@@ -1,0 +1,31 @@
+schema_version: "1.0"
+name: setup-ci
+tags: [setup]
+context:
+  # A minimal TypeScript MCP server project, as the prompt describes it.
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 10
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Set up CI for this MCP server (TypeScript: `npm run build`, then `node dist/server.js`) so pull requests show whether a change to the tools breaks clients.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: setup-ci
+  # Deterministic checks on the final message: an LLM judge passed and failed the same answer.
+  - name: init-command
+    type: regex
+    pattern: 'toolmenu init -- node dist/server\.js'
+  - name: names-baseline
+    type: regex
+    pattern: 'menu\.json'
+  - name: names-workflow
+    type: regex
+    pattern: '\.github/workflows/toolmenu\.yml|workflow'
+    flags: i
+  - name: no-handwritten-workflow
+    type: regex
+    pattern: 'uses: *niksa90/toolmenu@'
+    match: not_contains

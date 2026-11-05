@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **Plugin: two more skills, and evals.** `release-check` (before tagging or
+  publishing: what changed since the last release, what breaks clients, the bump it
+  needs) and `setup-ci` (adds toolmenu to CI with `toolmenu init`). `check-mcp-menu`
+  names more of the moments it's for (a rename, a description edit, an agent picking
+  the wrong tool) and falls back to the CLI without the MCP tools.
+  `plugins/toolmenu/evals/` has seven cases for `claude plugin eval`: each skill fires
+  on its own prompts (3 of 3 runs, 0 of 3 without the plugin), none fires on unrelated
+  work, and `setup-ci` gives the right `init` command for a scaffolded project.
+
 ## 0.24.0
 
 toolmenu as an MCP server, so the agent building your server can check it while it

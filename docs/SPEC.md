@@ -1114,7 +1114,8 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   `session --auto`; `test/mcp.test.mjs` checks it.
 - **The plugin**: `.claude-plugin/marketplace.json` lists `plugins/toolmenu`, which
   holds the server (`npx -y toolmenu@<version> mcp`, pinned to the plugin's
-  version, which matches package.json: a test checks) and the `check-mcp-menu` skill.
+  version, which matches package.json: a test checks) and the skills
+  `check-mcp-menu`, `release-check` and `setup-ci`, with evals in `plugins/toolmenu/evals/`.
 - **Redirects** (HTTP): a 301, 302, 303, 307 or 308 whose `Location` leaves the
   request's origin, as the SDK judges it (same scheme and host:port, or http to https
   on the same host with default ports), stops the connection at once with a
