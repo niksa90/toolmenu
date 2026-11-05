@@ -26,3 +26,6 @@ asks before each call unless you allow the tools.
 
 Without the plugin: `claude mcp add toolmenu -- npx -y toolmenu mcp`.
 Docs: https://github.com/niksa90/toolmenu#readme
+
+The icon (`.claude-plugin/icon.png`) is a draft. The plugin directory keeps the icon
+from a plugin's first submission, so replace it before submitting if you want another.
