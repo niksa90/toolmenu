@@ -19,6 +19,7 @@ import { schemaRef } from './refs.js';
 import { findable } from './search.js';
 import { appsAppOnlyListed, appsLegacyKey, appsResource, appsVisibility } from './apps.js';
 import { agentTools } from '../apps.js';
+import { serverCard } from './card.js';
 import type { Rule, RuleContext } from './rule.js';
 
 export type { Rule, RuleContext } from './rule.js';
@@ -60,6 +61,7 @@ export const MENU_RULES: Rule[] = [
   serverInfo,
   extensionId,
   taskRequired,
+  serverCard,
   appsResource,
   appsLegacyKey,
   appsVisibility,

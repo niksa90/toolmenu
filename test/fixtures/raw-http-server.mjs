@@ -8,7 +8,8 @@
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 
-export async function start({ scope = 'local', vary = false, onePerClient = false } = {}) {
+// card: a Server Card served at /mcp/server-card (with cardType as its Content-Type).
+export async function start({ scope = 'local', vary = false, onePerClient = false, card, cardType = 'application/mcp-server-card+json' } = {}) {
   const sessions = new Map();
   const byClient = new Map();
   const global = { unlocked: false };
@@ -30,6 +31,10 @@ export async function start({ scope = 'local', vary = false, onePerClient = fals
     // DELETE ends a session (what a client sends when it's done with one).
     if (req.method === 'DELETE') {
       res.writeHead(sessions.delete(req.headers['mcp-session-id']) ? 200 : 404).end();
+      return;
+    }
+    if (req.method === 'GET' && req.url === '/mcp/server-card' && card) {
+      res.writeHead(200, { 'content-type': cardType }).end(JSON.stringify(card));
       return;
     }
     if (req.method !== 'POST') {

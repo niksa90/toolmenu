@@ -42,6 +42,10 @@ export interface RuleContext {
   descriptionLimit?: number | string;
   /** Tools (names or globs) the client sends uncut, so description/buried skips them. */
   fullDescriptions?: string[];
+  /** snapshot over HTTP: the Server Card at <url>/server-card, when the server answered with JSON there. */
+  serverCard?: import('../card.js').CardRead;
+  /** snapshot over HTTP: the URL connected to (no query), to find the card's remote for it. */
+  serverUrl?: string;
   /** snapshot: what resources/read gave for each ui:// resource the tools name (MCP Apps). */
   appResources?: import('../apps.js').AppResource[];
   /**

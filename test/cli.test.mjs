@@ -427,3 +427,37 @@ test('apps/*: UI resources read as a host would, visibility, the deprecated key,
   const clean = await snap('FIXTURE=apps-clean');
   assert.deepEqual(clean.findings.filter((f) => f.rule.startsWith('apps/') || f.rule === 'menu/capability-dependent'), []);
 });
+
+// ext-server-card: the card SHOULD NOT contradict the live server's version and protocol versions.
+test('spec/server-card: a card at <url>/server-card that contradicts the live server; a matching one and no card are quiet', async () => {
+  const card = (over) => ({ $schema: 'https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json', name: 'io.example/raw', description: 'A test server.', version: '0.0.1', ...over });
+  const cases = [
+    { card: card({ version: '9.9.9', remotes: [{ type: 'streamable-http', url: 'PLACEHOLDER', supportedProtocolVersions: ['2026-07-28'] }] }) },
+    { card: card({}), cardType: 'application/json' },
+    { card: { version: 3 } },
+    { card: card({}) },
+    {},
+  ];
+  const got = [];
+  for (const c of cases) {
+    const server = await startRaw(c);
+    try {
+      for (const r of c.card?.remotes ?? []) r.url = server.url;
+      const r = await run(['snapshot', '--no-write', '--json', server.url]);
+      got.push(JSON.parse(r.stdout).findings.filter((f) => f.rule === 'spec/server-card'));
+    } finally {
+      await server.close();
+    }
+  }
+  const [contradicts, wrongType, invalid, matching, none] = got;
+  assert.equal(contradicts.length, 1);
+  assert.equal(contradicts[0].severity, 'warn');
+  assert.match(contradicts[0].message, /^The Server Card at http:\/\/127\.0\.0\.1:\d+\/mcp\/server-card contradicts the live server \(version: the card says 9\.9\.9, the server 0\.0\.1; protocol: the card lists 2026-07-28 for http:\/\/127\.0\.0\.1:\d+\/mcp, the server negotiated 2025-11-25\)\./);
+  assert.match(contradicts[0].fix, /^Build the card from the same values the server reports/);
+  assert.deepEqual(wrongType.map((f) => [f.severity, f.message.replace(/\d+/g, 'N')]), [['info', 'The Server Card at http://N.N.N.N:N/mcp/server-card is served as application/json, not application/mcp-server-card+json, which ext-server-card says servers SHOULD use.']]);
+  assert.equal(invalid.length, 1);
+  assert.match(invalid[0].message, /doesn't match the Server Card schema/);
+  assert.ok(invalid[0].detail.length > 1);
+  assert.deepEqual(matching, []);
+  assert.deepEqual(none, []);
+});

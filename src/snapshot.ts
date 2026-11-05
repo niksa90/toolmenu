@@ -5,6 +5,7 @@ import { buildMenu } from './menu.js';
 import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, PROBE_SEED, probeMenu, probeSameEra, probeVariance, seeded, type Identity } from './probe.js';
 import { kindsToRead, readList, type ListKind } from './lists.js';
 import { readAppResources, resourceUriOf, type AppResource } from './apps.js';
+import { readServerCard, type CardRead } from './card.js';
 import type { ListsContext } from './rules/lists.js';
 import type { IdentityMenu } from './rules/identities.js';
 import type { InvalidCredential } from './rules/auth.js';
@@ -135,6 +136,9 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   // server should refuse it, not serve a menu (rules/auth.ts).
   const invalid = target.kind === 'http' && connection.usedAuth && (options.processes ?? 2) > 1 ? await invalidCredentialProbe(target, options.timeoutMs ?? 30_000) : undefined;
 
+  // The Server Card at its reserved location, compared with the live server (rules/card.ts).
+  const card: CardRead | undefined = target.kind === 'http' && options.rules?.['spec/server-card'] !== 'off' ? await readServerCard(target.url, Math.min(options.timeoutMs ?? 30_000, 10_000)) : undefined;
+
   // The menu a client without elicitation gets (rules/capabilities.ts).
   // Another process or connection: not with --processes 1 (one session per client), nor when the rule is off.
   let plain: PlainMenu | undefined;
@@ -199,6 +203,8 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       ...(offline ? { offline } : {}),
       ...(plain ? { plain } : {}),
       ...(appResources ? { appResources } : {}),
+      ...(card ? { serverCard: card } : {}),
+      ...(target.kind === 'http' ? { serverUrl: new URL(target.url).origin + new URL(target.url).pathname } : {}),
       ...(connection.era === 'legacy' && eras.has('modern') ? { laterModern: true } : {}),
       ...(reads.length || undeclared.length ? { lists: { read: reads, undeclared } } : {}),
     },
