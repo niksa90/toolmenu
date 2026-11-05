@@ -1048,3 +1048,34 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   with the router's parameters. They count only when the kind appears after the verb
   and the router doesn't need that same ID. The broad "a search that names nothing
   finds any ID" rule doesn't apply to them (sapiens' `list_public`).
+
+## 29. 0.23: MCP extensions
+
+- **Client capabilities**: `snapshot` and `session` declare
+  `extensions: {"io.modelcontextprotocol/ui": {"mimeTypes": ["text/html;profile=mcp-app"]}}`
+  alongside elicitation. The bare listing for `menu/capability-dependent` declares
+  neither. When the rule has something to say (`listingsDiffer`: tools only one
+  side lists, app-only tools aside, or same-name tools defined otherwise, token
+  estimates aside), a third listing with elicitation alone tells the capabilities
+  apart.
+- **The agent's view** (`agentMenu`): the menu without tools whose
+  `_meta.ui.visibility` is a list without `"model"`, its token total recomputed.
+  Rules with `scope: 'agent'` get it, as do the breakdown, the `--client` cost and
+  `diff`'s token totals.
+- **UI resources**: `_meta.ui.resourceUri`, else the deprecated
+  `_meta["ui/resourceUri"]` (an empty current key falls back). Each distinct
+  `ui://` URI, at most 50, is read with `resources/read`, 4 at a time, all within 2
+  × the request timeout.
+- **`diff`**: `_meta.ui`'s `resourceUri` and `visibility` are compared by the
+  `diff/apps-*` rules; the rest of `_meta.ui` stays with `diff/other`. Extensions
+  are compared only when both menu files record `server.extensions`.
+- **Tasks**: a `tools/call` result with `resultType: "task"` (on the wire, or as the
+  SDK returned it) ends the call with outcome `task`, its `taskId` and `status`
+  kept. Nothing is polled.
+- **Server Cards**: `GET <url>/server-card` (query dropped), `Accept:
+  application/mcp-server-card+json`, no credentials, at most 10 s. JSON counts as a
+  card when served as that media type or when its `$schema` names the Server Card
+  schema. The version is compared with serverInfo; the `supportedProtocolVersions`
+  of the remote whose URL is this one with the negotiated version, unless the
+  connection fell back to 2025 while a later one got 2026-07-28. The schema is
+  `schemas/server-card.json`, from modelcontextprotocol/ext-server-card at 526201bb.
