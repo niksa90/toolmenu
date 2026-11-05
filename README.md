@@ -4,6 +4,7 @@
 [![ci](https://github.com/niksa90/toolmenu/actions/workflows/ci.yml/badge.svg)](https://github.com/niksa90/toolmenu/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/niksa90/toolmenu/blob/main/LICENSE)
 [![MCP: 2026-07-28 and 2025](https://img.shields.io/badge/MCP-2026--07--28%20%C2%B7%202025-6E56CF)](https://modelcontextprotocol.io)
+[![toolmenu](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fniksa90%2Ftoolmenu%2Fmain%2Fdocs%2Ftoolmenu-badge.json)](https://github.com/niksa90/toolmenu)
 
 **Checks for MCP servers' tool lists: changes that confuse agents, break prompt caches or break clients, caught before your users hit them.**
 
@@ -36,7 +37,7 @@ It runs on the 22-server [bench](bench/README.md) and on hosted servers (GitHub,
 Notion, Supabase, Vercel…). What it has found on real servers is in
 [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
-> **Status: 0.24.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
+> **Status: 0.25.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
 > every rule in [docs/RULES.md](docs/RULES.md), changes in [CHANGELOG.md](CHANGELOG.md).
 
 <details>
@@ -164,7 +165,7 @@ written unless `--out-dir` names a folder for each server's menu file.
 
 `toolmenu mcp` is toolmenu as an MCP server (stdio), so Claude Code, Cursor or any
 other client can check the server it's working on while it works. In Claude Code, as a
-plugin (the server, and a skill that says when to run it and how to read the report):
+plugin (the server, and skills for checking a change, checking a release, and setting up CI):
 
 ```
 /plugin marketplace add niksa90/toolmenu
@@ -204,7 +205,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.16.1
+      - uses: niksa90/toolmenu@v0.25.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -229,7 +230,54 @@ and anything `session` caught. The same report goes to the job summary.
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
 | `fail-on` | `error` | Fail the job on findings at or above this level |
 | `comment` | `true` | Post and update the PR comment |
+| `sarif` | | A folder to also write the findings to as SARIF, for code scanning (below) |
 | `version` | the Action's own | toolmenu version from npm: by default the one matching the Action tag you pinned (`latest` for the newest). The Action installs toolmenu from npm, so it needs a published version |
+
+### In the Security tab: code scanning
+
+With `sarif`, findings also go to GitHub code scanning: alerts in the Security tab,
+each on the line of its tool in your `menu.json`, and a code scanning check on the pull
+request. GitHub shows an alert inline in the pull request only when that line changed in
+it, so most stay in the Security tab and the check. Run the workflow on pushes to your
+default branch too, so GitHub has a base to compare a pull request's alerts with. Code scanning is free for public repositories; private ones need GitHub Advanced
+Security.
+
+```yaml
+on:
+  pull_request:
+  push:
+    branches: [main]              # the base GitHub compares a pull request's alerts with
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write          # to upload SARIF
+steps:
+  # … checkout, build, as above
+  - uses: niksa90/toolmenu@v0.25.0
+    with:
+      command: node dist/server.js
+      sarif: toolmenu-sarif
+  - uses: github/codeql-action/upload-sarif@v4
+    if: always()                  # findings fail the toolmenu step; upload them anyway
+    with:
+      sarif_file: toolmenu-sarif
+```
+
+Outside the Action: `toolmenu snapshot --sarif toolmenu.sarif -- node dist/server.js`
+writes the file beside the usual report (`diff` and `session` take `--sarif` too), or
+`--format sarif` prints it instead.
+
+### A badge for your README
+
+```sh
+npx toolmenu snapshot --badge toolmenu-badge.json -- node dist/server.js
+```
+
+writes a [shields.io endpoint](https://shields.io/badges/endpoint-badge) file (tools,
+tokens, and errors or warnings, in red, yellow or green) and prints the README line
+for it. Commit it with `menu.json`: it changes when the baseline does, so nothing
+has to commit from CI. The badge at the top of this README is toolmenu's own MCP
+server (`toolmenu mcp`), checked by itself.
 
 Server behind auth, or PRs from forks and Dependabot? See [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md).
 Server that unlocks tools on request? Snapshot the full menu for the baseline and run the session on the default one: [servers that unlock tools](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#servers-that-unlock-tools).

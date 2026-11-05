@@ -14,8 +14,13 @@ It adds:
 
 - **The toolmenu MCP server** (`npx -y toolmenu@<this plugin's version> mcp`, Node 22 or later; a plugin update moves it to a new release):
   `snapshot_menu`, `diff_menus`, `check_session` and `explain_rule`.
-- **The `check-mcp-menu` skill**: when to run them while you work on a server's
-  tools, and how to read the report.
+- **Three skills**, each for one moment of work on an MCP server:
+  - `check-mcp-menu`: after changing tools (names, descriptions, schemas,
+    annotations), or when an agent picks the wrong tool.
+  - `release-check`: before tagging or publishing: what changed since the last
+    release, what breaks clients, and the version bump it needs.
+  - `setup-ci`: adds toolmenu to CI with `toolmenu init`, so every pull request gets
+    a comment.
 
 The first start downloads toolmenu from npm, which can take a few seconds; later
 starts use npx's cache.
@@ -26,3 +31,24 @@ asks before each call unless you allow the tools.
 
 Without the plugin: `claude mcp add toolmenu -- npx -y toolmenu mcp`.
 Docs: https://github.com/niksa90/toolmenu#readme
+
+## Evals
+
+`evals/` holds cases for `claude plugin eval`: each skill must fire on its own
+prompts and no toolmenu skill on unrelated work, and `setup-ci` must give the right
+`init` command for a scaffolded project.
+
+Every run is a real Claude session on the account running it: it counts against
+that account's usage (or API credits). Pick the size to fit, from this folder:
+
+| When | Command | Sessions |
+|---|---|---|
+| Editing a skill | `claude plugin eval . --scaffold --model haiku --runs 1 --ablation none` | 7 |
+| One case | `claude plugin eval . --case setup-ci --scaffold --model haiku --runs 1 --ablation none` | 1 |
+| Before a release | `claude plugin eval . --scaffold --model sonnet --runs 3 -j 4` | 42 |
+
+A run measures whether the model it runs on picks the skill up, so do the release
+pass on a model people use the plugin with (Sonnet, Opus), not only Haiku.
+`--ablation none` skips the without-plugin comparison; `--scaffold` runs
+`evals/setup-ci/scaffold.sh`, which writes a small TypeScript project into that
+case's sandbox. The evals don't run in CI.

@@ -1114,9 +1114,30 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   `session --auto`; `test/mcp.test.mjs` checks it.
 - **The plugin**: `.claude-plugin/marketplace.json` lists `plugins/toolmenu`, which
   holds the server (`npx -y toolmenu@<version> mcp`, pinned to the plugin's
-  version, which matches package.json: a test checks) and the `check-mcp-menu` skill.
+  version, which matches package.json: a test checks) and the skills
+  `check-mcp-menu`, `release-check` and `setup-ci`, with evals in `plugins/toolmenu/evals/`.
 - **Redirects** (HTTP): a 301, 302, 303, 307 or 308 whose `Location` leaves the
   request's origin, as the SDK judges it (same scheme and host:port, or http to https
   on the same host with default ports), stops the connection at once with a
   ConnectError that names both URLs and the one to use. Redirects within the origin
   are left to the SDK, which follows them.
+
+## 31. 0.25: SARIF and the badge
+
+- **SARIF** (`src/sarif.ts`): one run per command, `automationDetails.id`
+  `toolmenu/<command>/`, so code scanning keeps snapshot, diff and session apart.
+  Rules carry the RULES.md text and default level (its first word: error, warn → warning,
+  info → note). One result per tool a finding names (a diff change found in several
+  tools: one each). Location: the menu file, relative to the repository root (the
+  nearest `.git` up), `uriBaseId` `%SRCROOT%`, at the line of the tool's `"name"`
+  (`toolLines`: the first key of each object directly in `"tools"`), else line 1.
+  `partialFingerprints.toolmenuFinding/v1`: sha256 of rule and tool, not the message,
+  which carries counts. Unsure findings say so in the message.
+- **Badge** (`src/badge.ts`): shields endpoint JSON, `schemaVersion: 1`, label
+  `toolmenu`, message `<n> tools · <~tokens> tokens` plus errors, else warnings
+  (info isn't shown), colour red, yellow or brightgreen, `cacheSeconds: 3600`. Tokens
+  compact: `~980`, `~4.1K`, `~18K`. The README line reads
+  `raw.githubusercontent.com/<origin's owner/repo>/<origin/HEAD's branch, else the
+  current one>/<path from the repository root>` and links to toolmenu. Written by
+  `snapshot` only, to stderr's note; stdout stays the report.
+

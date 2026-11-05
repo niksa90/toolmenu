@@ -22,7 +22,9 @@ import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded, type
 import { autoScenario, loadValuesFile, parseAssumeReadOnly, parseValueFlag, scenarioYaml, type GivenValue } from './auto.js';
 import { authDir, listLogins, login, logout } from './auth.js';
 import { existingMessage, initReport, planInit, shellWord, writeInit } from './init.js';
-import { SEVERITY_RANK, type MenuTool, type Severity } from './types.js';
+import { SEVERITY_RANK, type Finding, type MenuTool, type Severity } from './types.js';
+import { toSarif } from './sarif.js';
+import { badge, badgeMarkdown } from './badge.js';
 import { VERSION } from './version.js';
 import { SECRET_ARGS_ENV } from './mcp-env.js';
 import { CLI_OPTIONS } from './options.js';
@@ -81,8 +83,22 @@ export async function main(given: string[]): Promise<number> {
     );
   }
 
-  const format = (values.json ? 'json' : values.format ?? 'text') as Format;
-  if (!['text', 'json', 'github', 'markdown'].includes(format)) throw new UsageError(`--format must be text, json, github or markdown`);
+  const asked = values.json ? 'json' : values.format ?? 'text';
+  if (!['text', 'json', 'github', 'markdown', 'sarif'].includes(asked)) throw new UsageError(`--format must be text, json, github, markdown or sarif`);
+  // SARIF is a findings file for code scanning: --format sarif prints it instead of the
+  // report, --sarif <path> writes it beside the report.
+  const sarifCommands = ['snapshot', 'diff', 'session'];
+  if ((asked === 'sarif' || values.sarif !== undefined || values['sarif-menu'] !== undefined) && !sarifCommands.includes(sub)) throw new UsageError(`SARIF output (--format sarif, --sarif, --sarif-menu) goes with snapshot, diff or session; ${sub} has none.`);
+  if (sub === 'session' && (values.plan || values.init) && (asked === 'sarif' || values.sarif !== undefined)) throw new UsageError('SARIF needs findings: --plan and --init run nothing.');
+  const sarifToStdout = asked === 'sarif';
+  const format = (sarifToStdout ? 'text' : asked) as Format;
+  /** Print the report, or the SARIF log with --format sarif; write --sarif's file too. */
+  const emit = async (report: string, findings: Finding[], command: string, menuPath: string | undefined) => {
+    const menu = values['sarif-menu'] ?? menuPath;
+    if (values.sarif !== undefined) await writeFile(values.sarif, toSarif(findings, { command, menuPath: menu }) + '\n');
+    if (sarifToStdout) process.stdout.write(toSarif(findings, { command, menuPath: menu }) + '\n');
+    else if (report) process.stdout.write(show(report) + '\n');
+  };
   // Colour for a report read in a terminal (colour.ts); piped, CI and other formats stay plain.
   const show = (report: string) => (format === 'text' && colourFor(process.stdout) ? colourise(report) : report);
   const failOn = (values['fail-on'] ?? 'error') as Severity;
@@ -178,7 +194,7 @@ export async function main(given: string[]): Promise<number> {
       release,
       serverVersionIsRelease: values['server-version-is-release'] ?? config.serverVersionIsRelease,
     });
-    process.stdout.write(show(formatDiff(result, before.tools.length, after.tools.length, format)) + '\n');
+    await emit(formatDiff(result, before.tools.length, after.tools.length, format), result.findings, 'diff', rest[1]);
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
@@ -319,8 +335,7 @@ export async function main(given: string[]): Promise<number> {
     auto.ignored = autoScenario(result.union, { values: given, assumeReadOnly }).ignored;
     result.auto = { ...result.auto, ...auto };
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
-    const output = formatSession(result, format);
-    if (output) process.stdout.write(show(output) + '\n');
+    await emit(formatSession(result, format), result.findings, 'session', values['union-out'] ?? (existsSync('menu.json') ? 'menu.json' : undefined));
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
@@ -340,8 +355,7 @@ export async function main(given: string[]): Promise<number> {
     const sessionTarget = answering(parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol));
     const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario, unionOut: !!values['union-out'] });
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
-    const output = formatSession(result, format);
-    if (output) process.stdout.write(show(output) + '\n');
+    await emit(formatSession(result, format), result.findings, 'session', values['union-out'] ?? (existsSync('menu.json') ? 'menu.json' : undefined));
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
@@ -358,8 +372,12 @@ export async function main(given: string[]): Promise<number> {
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');
 
-  const output = formatSnapshot(menu, findings, format, outPath, cost, notOffered);
-  if (output) process.stdout.write(show(output) + '\n');
+  await emit(formatSnapshot(menu, findings, format, outPath, cost, notOffered), findings, 'snapshot', outPath);
+  if (values.badge !== undefined) {
+    await writeFile(values.badge, JSON.stringify(badge(menu, findings), null, 2) + '\n');
+    // stderr: stdout stays the report (or the JSON/SARIF a script parses).
+    process.stderr.write(`toolmenu: wrote the badge to ${values.badge}. Commit it with the menu file; in the README:\n  ${badgeMarkdown(values.badge)}\n`);
+  }
   return findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
 }
 

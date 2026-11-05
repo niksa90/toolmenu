@@ -4,6 +4,9 @@
  */
 export const CLI_OPTIONS = {
   out: { type: 'string' },
+  sarif: { type: 'string' },
+  badge: { type: 'string' },
+  'sarif-menu': { type: 'string' },
   'out-dir': { type: 'string' },
   'offline-check': { type: 'boolean' },
   concurrency: { type: 'string' },

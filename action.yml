@@ -26,6 +26,13 @@ inputs:
     description: The committed menu file to diff against.
     required: false
     default: menu.json
+  sarif:
+    description: >-
+      A folder to also write the findings to as SARIF (snapshot.sarif, diff.sarif, session.sarif),
+      for GitHub code scanning: upload it with github/codeql-action/upload-sarif. Results point at
+      the baseline file. Empty (the default): none.
+    required: false
+    default: ''
   scenario:
     description: >-
       Optional scenario.yml for a session run (tools not marked readOnlyHint are refused
@@ -75,6 +82,9 @@ inputs:
     default: ${{ github.token }}
 
 outputs:
+  sarif:
+    description: The folder the SARIF files were written to, when the sarif input was set.
+    value: ${{ steps.run.outputs.sarif }}
   report:
     description: Path to the markdown report.
     value: ${{ steps.run.outputs.report }}
@@ -100,6 +110,7 @@ runs:
         TOOLMENU_ENV: ${{ inputs.env }}
         TOOLMENU_BASELINE: ${{ inputs.baseline }}
         TOOLMENU_SCENARIO: ${{ inputs.scenario }}
+        TOOLMENU_SARIF: ${{ inputs.sarif }}
         TOOLMENU_BASELINE_FROM: ${{ inputs.baseline-from }}
         TOOLMENU_CATALOG: ${{ inputs.catalog }}
         TOOLMENU_FAIL_ON: ${{ inputs.fail-on }}
