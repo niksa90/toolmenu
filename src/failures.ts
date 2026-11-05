@@ -205,7 +205,7 @@ export function setupFailureAdvice(classes: Iterable<FailureClass>, transport: '
   if (set.has('auth') || set.has('not-found')) steps.push(`If the errors are about credentials, rerun with real ones (${credentials}); a test account is enough.`);
   if (set.has('payment')) steps.push('If a tool asks for payment, it can\'t be checked without paying: leave it out of the scenario, or run with an account that has credit.');
   if (set.has('environment')) steps.push('If something is missing on this machine (a browser, a binary, a module), install it where the server runs, or run the server in its own container image.');
-  if (set.has('client')) steps.push("If a tool needs a client capability toolmenu doesn't declare (roots and sampling, which 2026-07-28 deprecates, or one the error names), those calls only checked that the menu stays put, and the server isn't at fault.");
+  if (set.has('client')) steps.push("If a tool needs a client capability toolmenu doesn't declare (roots and sampling, which 2026-07-28 deprecates, the Tasks extension, or one the error names), those calls only checked that the menu stays put, and the server isn't at fault.");
   if (set.has('network')) steps.push('If the server calls an upstream API, check this machine can reach it (DNS, proxy, firewall).');
   return { fix: steps.join(' ') || 'Check the quoted errors: they came from before the tool ran.', confidence: 'unsure' };
 }

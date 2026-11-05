@@ -33,7 +33,7 @@ export interface InputTrace {
    * bad-state: its requestState isn't a string, so it can't be echoed byte for byte;
    * calling again without it would run the tool again from scratch.
    */
-  outcome: 'none' | 'completed' | 'loop' | 'gave-up' | 'unfinished' | 'undeclared' | 'decline-failed' | 'bad-state';
+  outcome: 'none' | 'completed' | 'loop' | 'gave-up' | 'unfinished' | 'undeclared' | 'decline-failed' | 'bad-state' | 'task';
   /** Kinds asked for that the request didn't declare. */
   undeclared?: InputKind[];
   /** The protocol error a retry failed with (decline-failed): the server's words, and its JSON-RPC code. */
@@ -42,6 +42,21 @@ export interface InputTrace {
   continuations?: number;
   /** A raw result on the wire without resultType, which 2026-07-28 servers MUST send. */
   missingResultType?: boolean;
+  /**
+   * task: the server answered with a CreateTaskResult (resultType "task", ext-tasks),
+   * which it MUST NOT send to a client that didn't declare io.modelcontextprotocol/tasks.
+   */
+  task?: { taskId?: string; status?: string };
+}
+
+/** A CreateTaskResult (ext-tasks): resultType "task", with the task's id and status. */
+function taskOf(result: unknown): InputTrace['task'] | undefined {
+  if (!isObject(result) || result.resultType !== 'task') return undefined;
+  const task = isObject(result.task) ? result.task : result;
+  return {
+    ...(typeof task.taskId === 'string' ? { taskId: task.taskId } : {}),
+    ...(typeof task.status === 'string' ? { status: task.status } : {}),
+  };
 }
 
 type CallResult = Awaited<ReturnType<Connection['client']['callTool']>>;
@@ -137,6 +152,9 @@ export async function callWithInput(
       // What the server sent decides what failed, not the error the SDK raised.
       const wire = conn.wire.since(mark, 'tools/call').at(-1);
       const answered = wire?.result as unknown;
+      // A task handle toolmenu didn't ask for (it declares no Tasks support): nothing to poll.
+      const task = taskOf(answered);
+      if (task) return { input: trace('task', { task }) };
       if (isObject(answered) && !('resultType' in answered)) {
         // No resultType: the SDK client rejects it ("missing required resultType").
         // The server did answer; session/result-type says why clients won't take it.
@@ -161,6 +179,8 @@ export async function callWithInput(
         return { input: trace('decline-failed', { error: { message: firstLine(wire!.error!.message ?? error), ...(typeof code === 'number' ? { code } : {}) } }) };
       }
     }
+    const task = taskOf(conn.wire.since(mark, 'tools/call').at(-1)?.result ?? result);
+    if (task) return { input: trace('task', { task }) };
     if ((result as InputRequired).resultType !== 'input_required') return { result: result as CallResult, input: trace(finished()) };
     const required = result as InputRequired;
     // requestState as the server sent it: the SDK client drops one that isn't a string

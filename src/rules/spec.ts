@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { Ajv } from 'ajv';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import addFormatsImport from 'ajv-formats';
-import type { Rule, RuleFinding } from './rule.js';
+import { kept, names, type Rule, type RuleFinding } from './rule.js';
 
 // ajv-formats ships CommonJS; under NodeNext its default import is the module object.
 const addFormats = ((addFormatsImport as unknown as { default?: unknown }).default ?? addFormatsImport) as (ajv: Ajv | Ajv2020) => void;
@@ -258,6 +258,40 @@ export const extensionId: Rule = {
         message: `${bad.length === 1 ? 'An extension the server declares is' : `${bad.length} extensions the server declares are`} not identified as the spec says, so a client that looks ${bad.length === 1 ? 'it' : 'them'} up by identifier finds ${bad.length === 1 ? 'it' : 'them'} not declared: ${bad[0]}${bad.length > 1 ? '…' : '.'}`,
         ...(bad.length > 1 ? { detail: bad } : {}),
         fix: 'Use the identifier the extension\'s spec gives (io.modelcontextprotocol/ui for MCP Apps, io.modelcontextprotocol/tasks for Tasks), or your reverse-DNS prefix for your own, with {} or a settings object as the value.',
+      },
+    ];
+  },
+};
+
+/**
+ * 2025-11-25 tasks: a tool with execution.taskSupport "required" can only be called as
+ * a task ("Tool requires task-augmented execution"), so a client without Tasks support
+ * can't call it at all. 2026-07-28 moved Tasks to an extension with no per-tool flag:
+ * the server decides per request, so the field says nothing there.
+ */
+export const taskRequired: Rule = {
+  id: 'spec/task-required',
+  severity: 'info',
+  summary: 'Tools that only run as tasks (execution.taskSupport: "required")',
+  run(ctx) {
+    const required = kept(ctx.menu.tools, ctx).filter((t) => {
+      const e = t.execution as { taskSupport?: unknown } | undefined;
+      return typeof e === 'object' && e !== null && e.taskSupport === 'required';
+    });
+    if (!required.length) return [];
+    const list = required.map((t) => t.name);
+    const one = list.length === 1;
+    const modern = ctx.era === 'modern';
+    return [
+      {
+        ...(one ? { tool: list[0] } : {}),
+        message: modern
+          ? `${one ? `${list[0]} is` : `${names(list, 6)} are`} marked execution.taskSupport: "required", a 2025-11-25 field. 2026-07-28 moved Tasks to the io.modelcontextprotocol/tasks extension, where the server decides per request whether to answer with a task, so clients on 2026-07-28 ignore it.`
+          : `${one ? `${list[0]} runs` : `${names(list, 6)} run`} only as a task (execution.taskSupport: "required"), so a client without Tasks support can't call ${one ? 'it' : 'them'}: the call is refused, not run. Most clients don't support Tasks yet.`,
+        ...(one ? {} : { detail: [list.join(', ')] }),
+        fix: modern
+          ? 'Drop execution from the tool definitions; answer with a task only when the request declares the io.modelcontextprotocol/tasks extension.'
+          : `If ${one ? 'it' : 'they'} can also answer in one go, mark ${one ? 'it' : 'them'} "optional", so clients without Tasks can call ${one ? 'it' : 'them'}; otherwise say in the README which clients can.`,
       },
     ];
   },

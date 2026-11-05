@@ -73,3 +73,17 @@ test('spec/extension-id: identifiers need a vendor prefix and a settings object;
   const [list] = lint(['io.modelcontextprotocol/ui']);
   assert.match(list.message, /^capabilities\.extensions is a list, not an object/);
 });
+
+test('spec/task-required: a 2025-11-25 tool that runs only as a task; on 2026-07-28 the field means nothing', () => {
+  const tools = [tool('simulate_research', [], { execution: { taskSupport: 'required' } }), tool('quick', [], { execution: { taskSupport: 'optional' } }), tool('plain', [])];
+  const lint = (era, protocolVersion) => runRules(MENU_RULES, { menu: menuOf(tools), pages: [], capabilities: { tools: {} }, usedAuth: false, protocolVersion, era }).filter((f) => f.rule === 'spec/task-required');
+  const [legacy] = lint('legacy', '2025-11-25');
+  assert.equal(legacy.severity, 'info');
+  assert.equal(legacy.tool, 'simulate_research');
+  assert.equal(legacy.message, 'simulate_research runs only as a task (execution.taskSupport: "required"), so a client without Tasks support can\'t call it: the call is refused, not run. Most clients don\'t support Tasks yet.');
+  assert.match(legacy.fix, /mark it "optional"/);
+  const [modern] = lint('modern', '2026-07-28');
+  assert.match(modern.message, /a 2025-11-25 field\. 2026-07-28 moved Tasks to the io\.modelcontextprotocol\/tasks extension/);
+  assert.match(modern.fix, /^Drop execution from the tool definitions/);
+  assert.deepEqual(runRules(MENU_RULES, { menu: menuOf([tools[1], tools[2]]), pages: [], capabilities: { tools: {} }, usedAuth: false, protocolVersion: '2025-11-25', era: 'legacy' }).filter((f) => f.rule === 'spec/task-required'), []);
+});

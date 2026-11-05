@@ -11,7 +11,7 @@ import { listSchema, listVariance } from './lists.js';
 import { handleLifetime } from './handles.js';
 import { authVariance, cacheScopePublic } from './identities.js';
 import { route, sharedWord, vagueId } from './naming.js';
-import { cacheHints, deprecated, discover, duplicateName, extensionId, schema, serverInfo, toolsCapability } from './spec.js';
+import { cacheHints, deprecated, discover, duplicateName, extensionId, schema, serverInfo, taskRequired, toolsCapability } from './spec.js';
 import { noDryRun, readOnlyMismatch, unannotated } from './write.js';
 import { gated } from './gated.js';
 import { xMcpHeader } from './headers.js';
@@ -59,6 +59,7 @@ export const MENU_RULES: Rule[] = [
   cacheScopePublic,
   serverInfo,
   extensionId,
+  taskRequired,
   appsResource,
   appsLegacyKey,
   appsVisibility,
