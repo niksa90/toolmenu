@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { colourFor, colourise, colouriseError } from './colour.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -80,6 +81,8 @@ export async function main(argv: string[]): Promise<number> {
 
   const format = (values.json ? 'json' : values.format ?? 'text') as Format;
   if (!['text', 'json', 'github', 'markdown'].includes(format)) throw new UsageError(`--format must be text, json, github or markdown`);
+  // Colour for a report read in a terminal (colour.ts); piped, CI and other formats stay plain.
+  const show = (report: string) => (format === 'text' && colourFor(process.stdout) ? colourise(report) : report);
   const failOn = (values['fail-on'] ?? 'error') as Severity;
   if (!(failOn in SEVERITY_RANK)) throw new UsageError(`--fail-on must be error, warn or info`);
   const timeoutMs = values.timeout ? Number(values.timeout) : 30_000;
@@ -150,7 +153,7 @@ export async function main(argv: string[]): Promise<number> {
     });
     if (tty) process.stderr.write('\r\x1b[K');
     if (outDir) for (const r of rows) if (r.menu) await writeFile(join(outDir, `${r.name.replace(/[^\w.@-]+/g, '_')}.json`), JSON.stringify(r.menu, null, 2) + '\n');
-    process.stdout.write(formatScan(rows, format, rest[0]) + '\n');
+    process.stdout.write(show(formatScan(rows, format, rest[0])) + '\n');
     return scanExit(rows, failOn);
   }
 
@@ -166,7 +169,7 @@ export async function main(argv: string[]): Promise<number> {
       release,
       serverVersionIsRelease: values['server-version-is-release'] ?? config.serverVersionIsRelease,
     });
-    process.stdout.write(formatDiff(result, before.tools.length, after.tools.length, format) + '\n');
+    process.stdout.write(show(formatDiff(result, before.tools.length, after.tools.length, format)) + '\n');
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
@@ -195,7 +198,7 @@ export async function main(argv: string[]): Promise<number> {
       onProgress: format === 'text' ? (m) => process.stderr.write(m + '\n') : undefined,
     });
     if (values.csv) await writeFile(values.csv, historyCsv(result));
-    process.stdout.write(formatHistory(result, format, outDir, values.csv) + '\n');
+    process.stdout.write(show(formatHistory(result, format, outDir, values.csv)) + '\n');
     return result.rows.length > 0 && result.rows.every((r) => r.status === 'failed') ? 1 : 0;
   }
 
@@ -308,7 +311,7 @@ export async function main(argv: string[]): Promise<number> {
     result.auto = { ...result.auto, ...auto };
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
-    if (output) process.stdout.write(output + '\n');
+    if (output) process.stdout.write(show(output) + '\n');
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
@@ -329,7 +332,7 @@ export async function main(argv: string[]): Promise<number> {
     const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario, unionOut: !!values['union-out'] });
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
     const output = formatSession(result, format);
-    if (output) process.stdout.write(output + '\n');
+    if (output) process.stdout.write(show(output) + '\n');
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
@@ -347,7 +350,7 @@ export async function main(argv: string[]): Promise<number> {
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');
 
   const output = formatSnapshot(menu, findings, format, outPath, cost, notOffered);
-  if (output) process.stdout.write(output + '\n');
+  if (output) process.stdout.write(show(output) + '\n');
   return findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
 }
 
@@ -455,7 +458,8 @@ for (const method of ['log', 'info', 'debug'] as const) {
 }
 
 main(process.argv.slice(2)).then(exitWhenFlushed, (error: unknown) => {
-  process.stderr.write(`toolmenu: ${failureMessage(error)}\n`);
+  const message = `toolmenu: ${failureMessage(error)}`;
+  process.stderr.write(`${colourFor(process.stderr) ? colouriseError(message) : message}\n`);
   exitWhenFlushed(2);
 });
 
