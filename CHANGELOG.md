@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.24.0
+
+toolmenu as an MCP server, so the agent building your server can check it while it
+works, and a Claude Code plugin that installs it.
 
 - **`toolmenu mcp`**: toolmenu as an MCP server over stdio, for the agent building
   your server. Four tools, `snapshot_menu`, `diff_menus`, `check_session` and

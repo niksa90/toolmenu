@@ -36,7 +36,7 @@ It runs on the 22-server [bench](bench/README.md) and on hosted servers (GitHub,
 Notion, Supabase, Vercel…). What it has found on real servers is in
 [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
 
-> **Status: 0.23.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
+> **Status: 0.24.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
 > every rule in [docs/RULES.md](docs/RULES.md), changes in [CHANGELOG.md](CHANGELOG.md).
 
 <details>

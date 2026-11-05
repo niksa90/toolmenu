@@ -1079,3 +1079,23 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   of the remote whose URL is this one with the negotiated version, unless the
   connection fell back to 2025 while a later one got 2026-07-28. The schema is
   `schemas/server-card.json`, from modelcontextprotocol/ext-server-card at 526201bb.
+
+## 30. 0.24: toolmenu as an MCP server
+
+- **`toolmenu mcp`** serves over stdio (`serveStdio`: 2026-07-28, and 2025 for a
+  client that opens with `initialize`) until stdin closes. `tools/list` and
+  `server/discover` carry `ttlMs: 3600000`, `cacheScope: "public"`: the tool set is
+  fixed and the same for everyone.
+- **Tools** map onto commands: `snapshot_menu` → `snapshot` (`--no-write` unless
+  `save_as`), `diff_menus` → `diff`, `check_session` → `session --auto`,
+  `explain_rule` → `explain`. A server is `command` (stdio, with `env`) or `url`
+  (HTTP, with `headers`), exactly one; the wrong pairing is a tool error before
+  anything runs.
+- **Each call runs the CLI** (`process.execPath dist/cli.js …`, no shell) in `cwd`,
+  resolved against the folder the server runs in, with `NO_COLOR=1`. Exit 0 and 1
+  return the report (1 with a line saying findings reached `--fail-on`); exit 2
+  returns stderr as a tool error. A crash or hang in one check stays in its process.
+- **Its own menu** has no findings at any level on either protocol, and under
+  `session --auto`; `test/mcp.test.mjs` checks it.
+- **The plugin**: `.claude-plugin/marketplace.json` lists `plugins/toolmenu`, which
+  holds the server (`npx -y toolmenu@latest mcp`) and the `check-mcp-menu` skill.
