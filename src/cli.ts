@@ -99,11 +99,13 @@ export async function main(given: string[]): Promise<number> {
   /** Print the report, or the SARIF / JUnit file with --format sarif|junit; write --sarif's and --junit's files too. */
   const emit = async (report: string, findings: Finding[], command: string, menuPath: string | undefined) => {
     const menu = values['sarif-menu'] ?? menuPath;
-    const junit = () => toJunit(findings, { command, failOn, target: menuPath });
-    if (values.sarif !== undefined) await writeFile(values.sarif, toSarif(findings, { command, menuPath: menu }) + '\n');
-    if (values.junit !== undefined) await writeFile(values.junit, junit() + '\n');
-    if (sarifToStdout) process.stdout.write(toSarif(findings, { command, menuPath: menu }) + '\n');
-    else if (junitToStdout) process.stdout.write(junit() + '\n');
+    const sarif = values.sarif !== undefined || sarifToStdout ? toSarif(findings, { command, menuPath: menu }) + '\n' : undefined;
+    // session's menuPath is where SARIF points, not what it checked (a live server): no target there.
+    const junit = values.junit !== undefined || junitToStdout ? toJunit(findings, { command, failOn, target: command === 'session' ? undefined : menuPath }) + '\n' : undefined;
+    if (values.sarif !== undefined) await writeFile(values.sarif, sarif!);
+    if (values.junit !== undefined) await writeFile(values.junit, junit!);
+    if (sarifToStdout) process.stdout.write(sarif!);
+    else if (junitToStdout) process.stdout.write(junit!);
     else if (report) process.stdout.write(show(report) + '\n');
   };
   // Colour for a report read in a terminal (colour.ts); piped, CI and other formats stay plain.

@@ -219,10 +219,12 @@ console.log(diff.suggestedBump, diff.tokens);
 if (diff.findings.some((f) => f.severity === 'error')) process.exitCode = 1;
 ```
 
-`snapshot`, `diffMenus`, `session`, `history`, `compareMenus` and `runRules` take the
-same options as their commands (see each `*Options` type), and return the findings
-the reports print: each `Finding` has its `rule`, `severity`, `message`, `tool` and the
-`fix` shown as `→ Next:`. The `menu.json` format is the `Menu` type (`toolmenu: 1`);
+`snapshot`, `diffMenus`, `session` and `history` take the same options as their
+commands (`SnapshotOptions`, `DiffOptions`, `SessionOptions`, `HistoryOptions`) and
+return the findings the reports print: each `Finding` has its `rule`, `severity`,
+`message`, `tool` and the `fix` shown as `→ Next:`. Lower down, `compareMenus(before,
+after)` returns each tool's change (`ToolChange[]`) and `runRules` runs the menu rules
+on a menu you built. The `menu.json` format is the `Menu` type (`toolmenu: 1`);
 a later format will bump that number. Library functions don't print or exit: that's
 the CLI's job.
 
@@ -308,7 +310,7 @@ writes the file beside the usual report (`diff` and `session` take `--sarif` too
 
 GitLab, Jenkins, Azure DevOps, CircleCI and Buildkite show JUnit XML as test results.
 `--junit <path>` writes the findings of `snapshot`, `diff` or `session` as JUnit beside
-the usual report (`--format junit` prints it instead). Each finding is a test case named
+the usual report (`--format junit` prints it instead). New after 0.25.1. Each finding is a test case named
 after its tool, in a class named after its rule (`toolmenu.diff.diff/removed`), so the
 CI system tracks it across runs. Findings at or above `--fail-on` are failures, the rest
 pass with their text, so the test report agrees with the exit code. A clean run is one
@@ -320,8 +322,10 @@ toolmenu:
   image: node:22
   script:
     - npm ci && npm run build
-    - npx toolmenu@0.25.1 snapshot --out new-menu.json --junit snapshot.xml -- node dist/server.js
-    - npx toolmenu@0.25.1 diff menu.json new-menu.json --junit diff.xml
+    # Exit 1 means findings: keep going so both reports are written, then fail.
+    - npx toolmenu snapshot --out new-menu.json --junit snapshot.xml -- node dist/server.js || code=$?
+    - npx toolmenu diff menu.json new-menu.json --junit diff.xml || code=$?
+    - exit ${code:-0}
   artifacts:
     when: always
     reports:

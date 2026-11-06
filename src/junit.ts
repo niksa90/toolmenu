@@ -13,6 +13,7 @@
  */
 import { SEVERITY_RANK, type Finding, type Severity } from './types.js';
 import { VERSION } from './version.js';
+import { toolsOf } from './sarif.js';
 
 export interface JunitOptions {
   /** snapshot, diff or session: the suite's name. */
@@ -31,13 +32,6 @@ export function xml(text: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-/** The tools a finding is about: its tool, or each tool of a change found in several. */
-function toolsOf(f: Finding): string[] {
-  const several = (f as { tools?: unknown }).tools;
-  if (Array.isArray(several)) return several.filter((t): t is string => typeof t === 'string');
-  return f.tool ? [f.tool] : [];
 }
 
 function body(f: Finding): string {
