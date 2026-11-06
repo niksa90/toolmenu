@@ -15,6 +15,7 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/niksa90/toolmenu/blob/main/LICENSE)
 [![MCP: 2026-07-28 and 2025](https://img.shields.io/badge/MCP-2026--07--28%20%C2%B7%202025-6E56CF)](https://modelcontextprotocol.io)
 [![toolmenu](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fniksa90%2Ftoolmenu%2Fmain%2Fdocs%2Ftoolmenu-badge.json)](https://github.com/niksa90/toolmenu)
+[![toolmenu MCP server on Glama](https://glama.ai/mcp/servers/niksa90/toolmenu/badges/score.svg)](https://glama.ai/mcp/servers/niksa90/toolmenu)
 
 </p>
 
