@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.25.1
+
+- **In the MCP Registry.** `server.json` lists toolmenu's MCP server as
+  `io.github.niksa90/toolmenu`, and `package.json` gains the matching `mcpName`, which
+  is how the registry checks that the npm package is this server's. The release
+  workflow publishes the entry after npm, signed in with GitHub's OIDC token.
+- The npm page shows the logo and the Glama badge.
+
 ## 0.25.0
 
 - **A README badge.** `snapshot --badge <path>` writes a shields.io endpoint file

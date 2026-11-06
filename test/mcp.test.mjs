@@ -167,6 +167,22 @@ test('a cwd that is not a folder says so', async () => {
   });
 });
 
+test('server.json, the MCP Registry entry, names this package and version and starts `toolmenu mcp`', () => {
+  const server = JSON.parse(readFileSync(join(ROOT, 'server.json'), 'utf8'));
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  // The registry only takes the entry if the npm package's mcpName is the server's name.
+  assert.equal(pkg.mcpName, server.name);
+  assert.equal(server.version, pkg.version);
+  assert.ok(server.description.length <= 100, 'the registry caps the description at 100 characters');
+  assert.equal(server.packages.length, 1);
+  const [p] = server.packages;
+  assert.deepEqual(
+    { registryType: p.registryType, identifier: p.identifier, version: p.version, transport: p.transport },
+    { registryType: 'npm', identifier: pkg.name, version: pkg.version, transport: { type: 'stdio' } },
+  );
+  assert.deepEqual(p.packageArguments, [{ type: 'positional', value: 'mcp' }]);
+});
+
 test('the plugin runs the toolmenu release its lockfile pins, installed with it, never a newer one than this repo', () => {
   const dir = join(ROOT, 'plugins/toolmenu');
   const read = (f) => JSON.parse(readFileSync(join(dir, f), 'utf8'));
