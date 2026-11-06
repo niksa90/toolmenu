@@ -1,0 +1,36 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.niksa90/toolmenu",
+  "title": "toolmenu",
+  "description": "Checks MCP tool lists: what agents misread, what breaks clients or caches, breaking changes",
+  "repository": {
+    "url": "https://github.com/niksa90/toolmenu",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/niksa90/toolmenu#readme",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/niksa90/toolmenu/main/docs/logo.svg",
+      "mimeType": "image/svg+xml"
+    }
+  ],
+  "version": "0.25.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "toolmenu",
+      "version": "0.25.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ]
+    }
+  ]
+}

@@ -1,8 +1,9 @@
 name: release
 
 # Push a tag like v0.4.0 to publish that version to npm, with provenance, and to
-# create its GitHub Release. Needs one repository secret: NPM_TOKEN (an npm
-# automation token).
+# create its GitHub Release, then to list it in the MCP Registry (server.json). Needs
+# one repository secret: NPM_TOKEN (an npm automation token). The registry signs in
+# with the workflow's GitHub OIDC token: no secret.
 on:
   push:
     tags: ['v*']
@@ -68,3 +69,50 @@ jobs:
             exit 1
           fi
           gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+
+  # The MCP Registry entry (server.json), after npm has the version: the registry
+  # checks that the npm package's mcpName names this server. Safe to re-run on its own.
+  mcp-registry:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      MCP_PUBLISHER_VERSION: v1.8.7
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: server.json matches package.json
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          node -e '
+            const s = require("./server.json"), p = require("./package.json"), v = process.argv[1];
+            const bad = [s.version, s.packages[0].version, p.version].some((x) => x !== v) || s.name !== p.mcpName;
+            if (bad) { console.error("::error::server.json and package.json must both say " + v + " and the same name"); process.exit(1); }
+          ' "$version"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: mcp-publisher, its signature checked
+        run: |
+          set -euo pipefail
+          archive="mcp-publisher_linux_amd64.tar.gz"
+          base="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}"
+          curl -fsSL -o "$archive" "$base/$archive"
+          curl -fsSL -o "$archive.sigstore.json" "$base/$archive.sigstore.json"
+          cosign verify-blob --bundle "$archive.sigstore.json" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release.yml@refs/tags/${MCP_PUBLISHER_VERSION}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "$archive"
+          tar xzf "$archive" mcp-publisher
+      - name: Wait for npm to serve this version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          for i in $(seq 1 30); do
+            [ "$(npm view "toolmenu@$version" mcpName 2>/dev/null)" = "$(node -p "require('./package.json').mcpName")" ] && exit 0
+            sleep 10
+          done
+          echo "::error::npm doesn't serve toolmenu@$version with its mcpName yet"
+          exit 1
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish
