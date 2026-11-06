@@ -41,6 +41,7 @@ npx toolmenu init -- node dist/server.js          # CI: a baseline, a workflow, 
 | **MCP Apps, Tasks, Server Cards** | It reads `ui://` resources as a host does and checks who may see each tool. It catches tasks sent to clients that can't poll them, and Server Cards that contradict the live server. |
 | **Your client's view** | `--client claude-code \| claude-api-search \| openai` shows what each client loads, cuts, can find and refuses. |
 | **What agents misread** | It flags vague `id`s, IDs no tool returns, instructions buried late in descriptions, and writes without annotations or marked read-only. |
+| **Words routing to the wrong tool** | `routes.yml` pins which tool each keyword must (and must not) reach, the way a keyword or BM25 tool search sees the menu. A description edit that lets `get_audit_trail` win "audit" fails the check, with no model and no eval budget. [More](#snapshot-rules) |
 | **Menus that drift** | It catches defaults built from the clock or a hash order, menus that differ per process, per connection or offline, and listings that depend on who asks. |
 
 Every finding says what's wrong, where it is and what toolmenu saw, and ends with a `→ Next:` step.
@@ -200,6 +201,33 @@ Relative paths resolve from the folder `toolmenu mcp` runs in, or a call's `cwd`
 clients ask before each tool call unless you allow it. toolmenu's own menu passes its
 checks with no findings, on both protocols and in a session (the test suite checks).
 
+## As a library
+
+Everything the CLI does is exported from the `toolmenu` package, with types, for test
+suites and scripts of your own:
+
+```js
+import { snapshot, diffMenus, loadMenu, session, loadScenario } from 'toolmenu';
+
+// The menu and its findings, as `toolmenu snapshot` gives them.
+const { menu, findings } = await snapshot({ kind: 'stdio', command: 'node', args: ['dist/server.js'] });
+// or { kind: 'http', url: 'https://example.com/mcp', headers: { Authorization: `Bearer ${token}` } }
+
+// What changed since the committed baseline, and the version bump it needs.
+const diff = diffMenus(await loadMenu('menu.json'), menu);
+console.log(diff.suggestedBump, diff.tokens);
+if (diff.findings.some((f) => f.severity === 'error')) process.exitCode = 1;
+```
+
+`snapshot`, `diffMenus`, `session` and `history` take the same options as their
+commands (`SnapshotOptions`, `DiffOptions`, `SessionOptions`, `HistoryOptions`) and
+return the findings the reports print: each `Finding` has its `rule`, `severity`,
+`message`, `tool` and the `fix` shown as `→ Next:`. Lower down, `compareMenus(before,
+after)` returns each tool's change (`ToolChange[]`) and `runRules` runs the menu rules
+on a menu you built. The `menu.json` format is the `Menu` type (`toolmenu: 1`);
+a later format will bump that number. Library functions don't print or exit: that's
+the CLI's job.
+
 ## In CI: one PR comment
 
 ```yaml
@@ -277,6 +305,32 @@ steps:
 Outside the Action: `toolmenu snapshot --sarif toolmenu.sarif -- node dist/server.js`
 writes the file beside the usual report (`diff` and `session` take `--sarif` too), or
 `--format sarif` prints it instead.
+
+### Other CI systems: JUnit test reports
+
+GitLab, Jenkins, Azure DevOps, CircleCI and Buildkite show JUnit XML as test results.
+`--junit <path>` writes the findings of `snapshot`, `diff` or `session` as JUnit beside
+the usual report (`--format junit` prints it instead). New after 0.25.1. Each finding is a test case named
+after its tool, in a class named after its rule (`toolmenu.diff.diff/removed`), so the
+CI system tracks it across runs. Findings at or above `--fail-on` are failures, the rest
+pass with their text, so the test report agrees with the exit code. A clean run is one
+passing case.
+
+```yaml
+# .gitlab-ci.yml
+toolmenu:
+  image: node:22
+  script:
+    - npm ci && npm run build
+    # Exit 1 means findings: keep going so both reports are written, then fail.
+    - npx toolmenu snapshot --out new-menu.json --junit snapshot.xml -- node dist/server.js || code=$?
+    - npx toolmenu diff menu.json new-menu.json --junit diff.xml || code=$?
+    - exit ${code:-0}
+  artifacts:
+    when: always
+    reports:
+      junit: [snapshot.xml, diff.xml]
+```
 
 ### A badge for your README
 
@@ -656,7 +710,9 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --no-write          don't write the menu file
 --routes <path>     routes.yml
 --config <path>     config file (default: toolmenu.config.json, if present)
---format <fmt>      text (default), json, github (annotations) or markdown
+--format <fmt>      text (default), json, github (annotations), markdown, sarif
+                    (code scanning) or junit (CI test reports)
+--junit <path>      snapshot, diff, session: also write the findings as JUnit XML
 --fail-on <level>   error (default), warn or info
 --header <k: v>     HTTP header, repeatable
 --env <K=V>         env var for a stdio server, repeatable (it only gets a

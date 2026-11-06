@@ -55,8 +55,8 @@ export function toolLines(text: string): Map<string, number> {
   return lines;
 }
 
-/** The tools a finding is about: its tool, or each tool of a change found in several. */
-function toolsOf(f: Finding): string[] {
+/** The tools a finding is about: its tool, or each tool of a change found in several. JUnit uses it too. */
+export function toolsOf(f: Finding): string[] {
   const several = (f as { tools?: unknown }).tools;
   if (Array.isArray(several)) return several.filter((t): t is string => typeof t === 'string');
   return f.tool ? [f.tool] : [];

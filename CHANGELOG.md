@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- **JUnit output, for CI systems other than GitHub.** `--junit <path>` writes the
+  findings of `snapshot`, `diff` or `session` as JUnit XML beside the usual report;
+  `--format junit` prints it instead. Each finding is a test case named after its tool
+  (classname `toolmenu.<command>.<rule>`), failing at or above `--fail-on`, so GitLab,
+  Jenkins, Azure DevOps and CircleCI show them as test results that agree with the
+  exit code. The README has a GitLab CI example.
+- **README: toolmenu as a library.** The exported API (`snapshot`, `diffMenus`,
+  `session`, `history`…) was there but not documented; now it has a section. And
+  `routes.yml`, the keyword-routing check, is in the "What it catches" table.
+
 ## 0.25.1
 
 - **In the MCP Registry.** `server.json` lists toolmenu's MCP server as

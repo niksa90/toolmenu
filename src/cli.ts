@@ -24,6 +24,7 @@ import { authDir, listLogins, login, logout } from './auth.js';
 import { existingMessage, initReport, planInit, shellWord, writeInit } from './init.js';
 import { SEVERITY_RANK, type Finding, type MenuTool, type Severity } from './types.js';
 import { toSarif } from './sarif.js';
+import { toJunit } from './junit.js';
 import { badge, badgeMarkdown } from './badge.js';
 import { VERSION } from './version.js';
 import { SECRET_ARGS_ENV } from './mcp-env.js';
@@ -84,19 +85,27 @@ export async function main(given: string[]): Promise<number> {
   }
 
   const asked = values.json ? 'json' : values.format ?? 'text';
-  if (!['text', 'json', 'github', 'markdown', 'sarif'].includes(asked)) throw new UsageError(`--format must be text, json, github, markdown or sarif`);
-  // SARIF is a findings file for code scanning: --format sarif prints it instead of the
-  // report, --sarif <path> writes it beside the report.
-  const sarifCommands = ['snapshot', 'diff', 'session'];
-  if ((asked === 'sarif' || values.sarif !== undefined || values['sarif-menu'] !== undefined) && !sarifCommands.includes(sub)) throw new UsageError(`SARIF output (--format sarif, --sarif, --sarif-menu) goes with snapshot, diff or session; ${sub} has none.`);
+  if (!['text', 'json', 'github', 'markdown', 'sarif', 'junit'].includes(asked)) throw new UsageError(`--format must be text, json, github, markdown, sarif or junit`);
+  // SARIF and JUnit are findings files, for code scanning and CI test reports: --format
+  // sarif|junit prints one instead of the report, --sarif / --junit <path> writes it beside the report.
+  const fileCommands = ['snapshot', 'diff', 'session'];
+  if ((asked === 'sarif' || values.sarif !== undefined || values['sarif-menu'] !== undefined) && !fileCommands.includes(sub)) throw new UsageError(`SARIF output (--format sarif, --sarif, --sarif-menu) goes with snapshot, diff or session; ${sub} has none.`);
+  if ((asked === 'junit' || values.junit !== undefined) && !fileCommands.includes(sub)) throw new UsageError(`JUnit output (--format junit, --junit) goes with snapshot, diff or session; ${sub} has none.`);
   if (sub === 'session' && (values.plan || values.init) && (asked === 'sarif' || values.sarif !== undefined)) throw new UsageError('SARIF needs findings: --plan and --init run nothing.');
+  if (sub === 'session' && (values.plan || values.init) && (asked === 'junit' || values.junit !== undefined)) throw new UsageError('JUnit needs findings: --plan and --init run nothing.');
   const sarifToStdout = asked === 'sarif';
-  const format = (sarifToStdout ? 'text' : asked) as Format;
-  /** Print the report, or the SARIF log with --format sarif; write --sarif's file too. */
+  const junitToStdout = asked === 'junit';
+  const format = (sarifToStdout || junitToStdout ? 'text' : asked) as Format;
+  /** Print the report, or the SARIF / JUnit file with --format sarif|junit; write --sarif's and --junit's files too. */
   const emit = async (report: string, findings: Finding[], command: string, menuPath: string | undefined) => {
     const menu = values['sarif-menu'] ?? menuPath;
-    if (values.sarif !== undefined) await writeFile(values.sarif, toSarif(findings, { command, menuPath: menu }) + '\n');
-    if (sarifToStdout) process.stdout.write(toSarif(findings, { command, menuPath: menu }) + '\n');
+    const sarif = values.sarif !== undefined || sarifToStdout ? toSarif(findings, { command, menuPath: menu }) + '\n' : undefined;
+    // session's menuPath is where SARIF points, not what it checked (a live server): no target there.
+    const junit = values.junit !== undefined || junitToStdout ? toJunit(findings, { command, failOn, target: command === 'session' ? undefined : menuPath }) + '\n' : undefined;
+    if (values.sarif !== undefined) await writeFile(values.sarif, sarif!);
+    if (values.junit !== undefined) await writeFile(values.junit, junit!);
+    if (sarifToStdout) process.stdout.write(sarif!);
+    else if (junitToStdout) process.stdout.write(junit!);
     else if (report) process.stdout.write(show(report) + '\n');
   };
   // Colour for a report read in a terminal (colour.ts); piped, CI and other formats stay plain.
