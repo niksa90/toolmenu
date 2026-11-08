@@ -2,13 +2,15 @@ name: release
 
 # Push a tag like v0.4.0 to publish that version to npm, with provenance, and to
 # create its GitHub Release, then to list it in the MCP Registry (server.json). Needs
-# one repository secret: NPM_TOKEN (an npm automation token). The registry signs in
-# with the workflow's GitHub OIDC token: no secret.
+# one repository secret: NPM_TOKEN (an npm token that can publish toolmenu, nothing
+# else). The registry signs in with the workflow's GitHub OIDC token: no secret.
 #
-# Built and tested in one job, published from another: dependencies' code runs only
-# in the build job, which has no OIDC token and no npm token, and the publish job
-# runs nothing but npm publish on the tarball the build job packed. No dependency
-# cache in either: a poisoned cache entry would reach the published package.
+# Three jobs. build installs without scripts and compiles, so only the TypeScript
+# compiler (and scripts/rule-docs.mjs) touches the files that are published; test runs
+# the tests, and with them the dependencies' code, apart from those files; publish
+# runs nothing but npm publish on the tarball build packed, once both passed. No job
+# with dependency code has the OIDC token or the npm token, and no job uses a
+# dependency cache: a poisoned cache entry would reach the published package.
 on:
   push:
     tags: ['v*']
@@ -41,10 +43,9 @@ jobs:
             echo "::error::CHANGELOG.md has no '## ${GITHUB_REF_NAME#v}' section for the release notes"
             exit 1
           }
-      # No install scripts: toolmenu's dependencies need none, and a compromised one
-      # would otherwise run before the tests.
+      # No install scripts: toolmenu's dependencies need none.
       - run: npm ci --ignore-scripts
-      - run: npm test
+      - run: npm run build
       - name: Pack the package that will be published
         run: |
           npm pack --ignore-scripts
@@ -56,8 +57,24 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # The tests, in a job of their own: they load every dependency, and none of that
+  # can reach the tarball build packed.
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts
+      - run: npm test
+
   publish:
-    needs: build
+    needs: [build, test]
     runs-on: ubuntu-latest
     # OIDC for npm's provenance; nothing in this job runs a dependency.
     permissions:

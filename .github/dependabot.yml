@@ -6,6 +6,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # A release gets a week before it's proposed: time for a bad one to be pulled.
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ['*']

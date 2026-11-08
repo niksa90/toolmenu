@@ -1247,7 +1247,12 @@ everything a PR controls is untrusted. What changed:
 - **Workflows**: `ci.yml` is read-only at the top (`permissions: contents: read`),
   checkouts don't keep credentials except where the Action under test fetches the
   base branch, and every action is pinned to a release's commit (Dependabot keeps
-  them current; `test/init.test.mjs` checks the format). `release.yml` builds, tests
-  and packs in a job with no OIDC or npm token (`npm ci --ignore-scripts`, no cache),
-  and publishes that tarball from a job that runs no dependency. `toolmenu init`'s
+  them current; `test/init.test.mjs` checks the format). `release.yml` has three jobs:
+  build installs without scripts and compiles, so only the TypeScript compiler (and
+  `scripts/rule-docs.mjs`) writes the published files, then packs; test runs the tests
+  (every dependency's code) apart from those files; publish runs only `npm publish`
+  on build's tarball, after both. No job running dependency code has the OIDC or npm
+  token, and none uses a dependency cache. `pins.yml` never runs: it lists the actions
+  only `toolmenu init` uses, so Dependabot updates them, and `test/init.test.mjs`
+  fails until `ACTIONS` in `src/init.ts` matches the pins in the workflows. `toolmenu init`'s
   workflow pins the actions it adds the same way (`ACTIONS` in `src/init.ts`).

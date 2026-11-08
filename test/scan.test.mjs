@@ -208,3 +208,8 @@ test('scan --allow-env through the CLI: comma-separated, repeated, and *', async
   assert.deepEqual(blockedOrNot(await failed(['--allow-env', 'SCAN_A', '--allow-env=SCAN_C'])), { a: 'filled', b: 'blocked', c: 'filled' });
   assert.deepEqual(blockedOrNot(await failed(['--allow-env', '*'])), { a: 'filled', b: 'filled', c: 'filled' });
 });
+
+test('scan: a url that is not a string is passed over for the one that is', () => {
+  const [e] = parseList(JSON.stringify({ mcpServers: { s: { url: 5, serverUrl: 'https://h.example/mcp' } } }), 'mcp.json', {});
+  assert.equal(e.target.url, 'https://h.example/mcp');
+});

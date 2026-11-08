@@ -76,7 +76,8 @@ function fromConfig(name: string, raw: unknown, env: NodeJS.ProcessEnv, allow: A
   let target: Target;
   if (typeof s.url === 'string' || typeof s.serverUrl === 'string' || typeof s.httpUrl === 'string') {
     if (type === 'sse') return { name, problem: 'HTTP+SSE transport, which toolmenu doesn\'t speak (Streamable HTTP only)' };
-    const url = x((s.url ?? s.serverUrl ?? s.httpUrl) as string);
+    const raw = [s.url, s.serverUrl, s.httpUrl].find((u): u is string => typeof u === 'string')!;
+    const url = x(raw);
     const headers = map(record(s.headers));
     target = { kind: 'http', url, ...(headers && Object.keys(headers).length ? { headers } : {}) };
   } else if (typeof s.command === 'string') {
@@ -98,10 +99,10 @@ function fromConfig(name: string, raw: unknown, env: NodeJS.ProcessEnv, allow: A
   // A missing variable would send an empty credential: say so instead of checking a server set up wrong.
   if (missing.size) return { name, problem: `${[...missing].join(', ')} ${missing.size === 1 ? 'is' : 'are'} not set (the config refers to ${missing.size === 1 ? 'it' : 'them'})` };
   // The URL as the config writes it: a filled-in ${VAR} may be a secret.
-  if (target.kind === 'http' && !/^https?:\/\//.test(target.url)) return { name, problem: `"${clean(String(s.url ?? s.serverUrl ?? s.httpUrl), 60)}" isn't an http(s) URL` };
+  if (target.kind === 'http' && !/^https?:\/\//.test(target.url)) return { name, problem: `"${clean([s.url, s.serverUrl, s.httpUrl].find((u): u is string => typeof u === 'string')!, 60)}" isn't an http(s) URL` };
   const shown: Target =
     target.kind === 'http'
-      ? { kind: 'http', url: (s.url ?? s.serverUrl ?? s.httpUrl) as string }
+      ? { kind: 'http', url: [s.url, s.serverUrl, s.httpUrl].find((u): u is string => typeof u === 'string')! }
       : { kind: 'stdio', command: s.command as string, args: (s.args as string[] | undefined) ?? [] };
   return { name, target, shown };
 }

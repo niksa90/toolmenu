@@ -363,10 +363,14 @@ test('the workflow init writes pins every third-party action to a commit', async
   for (const [k, v] of Object.entries(ACTIONS)) assert.match(v, /^[\w.-]+\/[\w.-]+@[0-9a-f]{40} # v\d+(\.\d+)*$/, k);
   const { readFileSync } = await import('node:fs');
   // The repository's own workflows pin the same way (only `uses: ./`, the Action under test, isn't).
-  for (const f of ['.github/workflows/ci.yml', '.github/workflows/release.yml']) {
+  const pins = new Set();
+  for (const f of ['.github/workflows/ci.yml', '.github/workflows/release.yml', '.github/workflows/pins.yml']) {
     for (const line of readFileSync(new URL(`../${f}`, import.meta.url), 'utf8').split('\n').filter((l) => /^\s*- uses: /.test(l))) {
       if (/uses: \.\/$/.test(line)) continue;
       assert.match(line, /@[0-9a-f]{40} # v\d/, `${f}: ${line.trim()}`);
+      pins.add(line.replace(/^\s*- uses: /, '').trim());
     }
   }
+  // Dependabot updates the workflows, not src/init.ts: each pin init writes must match one there.
+  for (const [k, v] of Object.entries(ACTIONS)) assert.ok(pins.has(v), `ACTIONS.${k} (${v}) isn't the pin in .github/workflows: update src/init.ts`);
 });
