@@ -300,7 +300,13 @@ OUTPUTS_WRITTEN=true
 
 # 4. One PR comment, updated in place on every push.
 if [ "${TOOLMENU_COMMENT:-true}" = "true" ] && [ -n "${TOOLMENU_PR:-}" ] && [ -n "${GH_TOKEN:-}" ]; then
-  existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" --paginate --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" 2>/dev/null | head -1)
+  # Only a comment this token wrote is updated: anyone can post a comment with the
+  # marker in it, and editing theirs would put the report under their name, for
+  # them to rewrite. A personal token: its own login. The job's token or an app's
+  # (no /user): a bot's comment, which only an app installed on the repository can write.
+  author=$(gh api user --jq .login 2>/dev/null)
+  if [[ "$author" =~ ^[A-Za-z0-9-]+$ ]]; then mine=".user.login == \"$author\""; else mine='.user.type == "Bot"'; fi
+  existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" --paginate --jq ".[] | select($mine and (.body | startswith(\"$MARKER\"))) | .id" 2>/dev/null | head -1)
   if [ -n "$existing" ]; then
     gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't update the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
   else

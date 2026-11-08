@@ -265,3 +265,51 @@ test('action: without sarif, no SARIF arguments', () => {
   const r = runAction(url);
   assert.doesNotMatch(r.args, /--sarif/);
 });
+
+/** The PR comment step, with a `gh` stub: `api user` answers GH_USER (or fails, like the job's token), the comments list is COMMENTS, run through the script's own --jq filter. */
+function runComment(comments, user) {
+  return runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_COMMENT: 'true', TOOLMENU_PR: '7', GH_TOKEN: 't', GITHUB_REPOSITORY: 'o/r' }, (dir) => {
+    const bin = join(dir, 'bin');
+    mkdirSync(bin);
+    writeFileSync(join(dir, 'comments.json'), JSON.stringify(comments));
+    writeFileSync(
+      join(bin, 'gh'),
+      [
+        '#!/usr/bin/env bash',
+        'printf "%s\\n" "$*" >> "$GH_LOG"',
+        'if [ "$2" = user ]; then [ -n "$GH_USER" ] && { echo "$GH_USER"; exit 0; }; echo "Resource not accessible by integration" >&2; exit 1; fi',
+        'for ((i=1;i<=$#;i++)); do if [ "${!i}" = --jq ]; then j=$((i+1)); jq -r "${!j}" "$GH_COMMENTS"; exit; fi; done',
+        'exit 0',
+      ].join('\n'),
+    );
+    chmodSync(join(bin, 'gh'), 0o755);
+    return { PATH: `${bin}:${process.env.PATH}`, GH_LOG: join(dir, 'gh.log'), GH_COMMENTS: join(dir, 'comments.json'), GH_USER: user ?? '' };
+  });
+}
+const ghCalls = (r) => readFileSync(join(r.dir, 'gh.log'), 'utf8');
+const MARKER = '<!-- toolmenu-report -->';
+const hasJq = spawnSync('jq', ['--version']).status === 0;
+
+test('action: the PR comment updated is the bot\'s own, never one anyone else wrote with the marker', { skip: !hasJq && 'needs jq' }, () => {
+  const someone = { id: 11, user: { login: 'mallory', type: 'User' }, body: `${MARKER}\nall clear` };
+  const bot = { id: 22, user: { login: 'github-actions[bot]', type: 'Bot' }, body: `${MARKER}\n## toolmenu` };
+  // Only someone else's: a new comment, theirs untouched.
+  let r = runComment([someone]);
+  assert.match(ghCalls(r), /--method POST repos\/o\/r\/issues\/7\/comments/);
+  assert.doesNotMatch(ghCalls(r), /PATCH/);
+  // Theirs first, then the bot's: the bot's is updated.
+  r = runComment([someone, bot]);
+  assert.match(ghCalls(r), /--method PATCH repos\/o\/r\/issues\/comments\/22/);
+  assert.doesNotMatch(ghCalls(r), /comments\/11/);
+  // The marker quoted in the middle of a bot's comment isn't the report.
+  r = runComment([{ ...bot, id: 33, body: `see ${MARKER}` }]);
+  assert.match(ghCalls(r), /--method POST/);
+});
+
+test('action: with a personal token, only that account\'s comment is updated', { skip: !hasJq && 'needs jq' }, () => {
+  const mine = { id: 44, user: { login: 'maintainer', type: 'User' }, body: `${MARKER}\n## toolmenu` };
+  const otherBot = { id: 55, user: { login: 'other-app[bot]', type: 'Bot' }, body: `${MARKER}\nfake` };
+  const r = runComment([otherBot, mine], 'maintainer');
+  assert.match(ghCalls(r), /--method PATCH repos\/o\/r\/issues\/comments\/44/);
+  assert.doesNotMatch(ghCalls(r), /comments\/55/);
+});
