@@ -9,19 +9,25 @@
  */
 
 /**
- * What a terminal (or GitHub's log parser) would act on instead of printing: C0 and
- * C1 controls, DEL, and the bidirectional overrides and isolates that reorder what's
- * shown ("Trojan Source"). Newline and tab are in it: a server's newline would start
- * a line of its own (a fake finding, a `::error::` workflow command).
+ * Characters a terminal (or GitHub's log parser) acts on, or a reader can't see:
+ * controls (C0, C1, DEL), format characters (the bidi overrides and isolates that
+ * reorder what's shown, "Trojan Source"; zero-width spaces and joiners; the soft
+ * hyphen; tag characters), line and paragraph separators, everything Unicode says
+ * renders as nothing (variation selectors, Hangul fillers), and the blank braille
+ * cell. Newline and tab are in it: a server's newline would start a line of its own
+ * (a fake finding, a `::error::` workflow command). spec/tool-name uses the same class.
  */
-// eslint-disable-next-line no-control-regex
-const UNSAFE = /[\u0000-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]/g;
-// The same without newline and tab, for a report whose own lines are already made.
-// eslint-disable-next-line no-control-regex
-const UNSAFE_IN_REPORT = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]/g;
+export const HIDDEN_SOURCE = '[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}\\p{Default_Ignorable_Code_Point}\\u2800]';
+const UNSAFE = new RegExp(HIDDEN_SOURCE, 'gu');
+// The same but newline and tab, for a report whose own lines are already made.
+const UNSAFE_IN_REPORT = new RegExp(`(?![\\n\\t])${HIDDEN_SOURCE}`, 'gu');
 
 const NAMED: Record<string, string> = { '\n': '\\n', '\r': '\\r', '\t': '\\t' };
-const visible = (c: string) => NAMED[c] ?? `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`;
+/** A character as an escape: \u001b, or \u{e0041} past the first plane. */
+const visible = (c: string) => {
+  const code = c.codePointAt(0)!;
+  return NAMED[c] ?? (code > 0xffff ? `\\u{${code.toString(16)}}` : `\\u${code.toString(16).padStart(4, '0')}`);
+};
 
 /** One field of server text, for the terminal: every control character shown as an escape. */
 export function plain(text: string): string {

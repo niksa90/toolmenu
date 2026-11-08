@@ -1219,12 +1219,14 @@ everything a PR controls is untrusted. What changed:
     backtick can only move where code starts; every piece is inert either way.
     `mdCode()` fences a name with more backticks than it holds. JSON, SARIF, JUnit and
     the HTML report escape on their own.
-- **`spec/tool-name`** (warn): a tool name outside the spec's format (2025-11-25,
-  SEP-986: 1 to 128 of `A-Z a-z 0-9 _ - .`), on every protocol version. An error when
-  a name has control, invisible or text-direction characters (C0/C1, U+00AD, U+200B–
-  U+200F, U+2028–U+202E, U+2060–U+2069, U+FEFF…): it can pass for another tool or
-  for nothing. `naming/client-name` (with `--client`) still says what a client's
-  model API refuses.
+- **`spec/tool-name`** (warn): a tool name outside the format the spec recommends from
+  2025-11-25 (SEP-986: 1 to 128 of `A-Z a-z 0-9 _ - .`; a SHOULD), info on older
+  protocols. An error on any protocol when a name has hidden characters: `HIDDEN_SOURCE`
+  in `src/sanitize.ts` (`\p{Cc}`, `\p{Cf}`, `\p{Zl}`, `\p{Zp}`,
+  `\p{Default_Ignorable_Code_Point}`, the blank braille cell), the same class reports
+  escape, so what's flagged is what's shown escaped. Length counts characters, not
+  UTF-16 units. `naming/client-name` (with `--client`) still says what a client's model
+  API refuses; a name can get both.
 - **`scan`** fills a config's `${VAR}` only from variables named with `--allow-env`
   (comma-separated or repeated, `'*'` for all). The config picks where each value goes
   (a URL, a header, an argument), so one from someone else could send any of your

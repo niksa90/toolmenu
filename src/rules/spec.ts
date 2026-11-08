@@ -4,6 +4,7 @@ import { Ajv } from 'ajv';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import addFormatsImport from 'ajv-formats';
 import { kept, names, type Rule, type RuleFinding } from './rule.js';
+import { HIDDEN_SOURCE } from '../sanitize.js';
 
 // ajv-formats ships CommonJS; under NodeNext its default import is the module object.
 const addFormats = ((addFormatsImport as unknown as { default?: unknown }).default ?? addFormatsImport) as (ajv: Ajv | Ajv2020) => void;
@@ -111,45 +112,56 @@ export const duplicateName: Rule = {
   },
 };
 
-/** The tool-name format the spec gives from 2025-11-25 (SEP-986): 1 to 128 of A-Z a-z 0-9 _ - . */
+/** The tool-name format the spec recommends from 2025-11-25 (SEP-986): 1 to 128 of A-Z a-z 0-9 _ - . */
 const TOOL_NAME = /^[A-Za-z0-9_.-]{1,128}$/;
-// eslint-disable-next-line no-control-regex
-const HIDDEN = /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/u;
+/** The characters reports show as escapes (sanitize.ts): one class, so what's flagged is what's escaped. */
+const HIDDEN = new RegExp(HIDDEN_SOURCE, 'u');
+const codePoint = (c: string) => `U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`;
 
-/** What's wrong with a tool name, in words, or undefined when it fits the spec's format. */
-export function toolNameProblem(name: string): string | undefined {
+/**
+ * What's wrong with a tool name, or undefined when it fits the spec's format. `hidden`:
+ * it has characters that act on a terminal or can't be seen, so it can pass for
+ * another name or for none.
+ */
+export function toolNameProblem(name: string): { why: string; hidden: boolean } | undefined {
   if (TOOL_NAME.test(name)) return undefined;
-  if (name.length === 0) return 'it is empty';
-  const hidden = [...new Set([...name].filter((c) => HIDDEN.test(c)))];
-  if (hidden.length) {
-    const codes = hidden.map((c) => `U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`).join(', ');
-    return `it has characters a terminal or a reader acts on or can't see (${codes}): control characters, invisible ones or text-direction overrides, which make a name look like another or like nothing`;
-  }
-  const other = [...new Set([...name].filter((c) => !/[A-Za-z0-9_.-]/.test(c)))];
-  const shown = other.map((c) => (c === ' ' ? 'a space' : `"${c}"`)).join(', ');
-  if (name.length > 128 && !other.length) return `it is ${name.length} characters long, over 128`;
-  return `it has ${shown}${name.length > 128 ? `, and is ${name.length} characters long, over 128` : ''}`;
+  const chars = [...name];
+  if (chars.length === 0) return { why: 'it is empty', hidden: false };
+  const hidden = [...new Set(chars.filter((c) => HIDDEN.test(c)))];
+  const other = [...new Set(chars.filter((c) => !HIDDEN.test(c) && !/[A-Za-z0-9_.-]/.test(c)))];
+  // Printable ASCII as itself; anything else by code point too, so a lookalike can't hide.
+  const shown = other.map((c) => (c === ' ' ? 'a space' : /^[!-~]$/.test(c) ? `"${c}"` : `${codePoint(c)} "${c}"`));
+  const parts = [
+    ...(hidden.length ? [`characters a terminal acts on or a reader can't see (${hidden.map(codePoint).join(', ')}: controls, invisible or text-direction characters)`] : []),
+    ...(shown.length ? [shown.join(', ')] : []),
+  ];
+  const long = chars.length > 128 ? `${chars.length} characters long, over 128` : '';
+  return { why: parts.length ? `it has ${parts.join('; and ')}${long ? `, and is ${long}` : ''}` : `it is ${long}`, hidden: hidden.length > 0 };
 }
 
 export const toolName: Rule = {
   id: 'spec/tool-name',
   severity: 'warn',
-  summary: "Tool names fit the spec's format: 1 to 128 of A-Z, a-z, 0-9, _, - and .",
+  summary: "Tool names fit the format the spec recommends: 1 to 128 of A-Z, a-z, 0-9, _, - and .",
   run(ctx) {
-    const bad = kept(ctx.menu.tools, ctx)
-      .map((t) => ({ tool: t.name, why: toolNameProblem(t.name) }))
-      .filter((b): b is { tool: string; why: string } => !!b.why);
+    const bad = kept(ctx.menu.tools, ctx).flatMap((t) => {
+      const p = toolNameProblem(t.name);
+      return p ? [{ tool: t.name, ...p }] : [];
+    });
     if (!bad.length) return [];
-    // A name with hidden characters is worth an error of its own: it can pass for another tool.
-    const hidden = bad.filter((b) => b.why.startsWith('it has characters a terminal'));
+    // Hidden characters are an error on any protocol: the name can pass for another tool's.
+    // Otherwise a recommendation from 2025-11-25 on; before that the spec gave no format.
+    const hidden = bad.filter((b) => b.hidden);
+    const older = !!ctx.protocolVersion && ctx.protocolVersion < '2025-11-25';
     return [
       {
         ...(bad.length === 1 ? { tool: bad[0].tool } : {}),
-        ...(hidden.length ? { severity: 'error' as const } : {}),
+        ...(hidden.length ? { severity: 'error' as const } : older ? { severity: 'info' as const } : {}),
         message:
-          `${bad.length === 1 ? `The tool name ${bad[0].tool} doesn't` : `${bad.length} tool names don't`} fit the tool name format the MCP spec gives (2025-11-25: 1 to 128 characters, A-Z, a-z, 0-9, _, - and .). ` +
+          `${bad.length === 1 ? `The tool name ${bad[0].tool} doesn't` : `${bad.length} tool names don't`} fit the tool name format the MCP spec recommends from 2025-11-25 (1 to 128 characters, A-Z, a-z, 0-9, _, - and .)` +
+          `${older ? `; this server speaks ${ctx.protocolVersion}, which gave no format, so it's for the move to 2025-11-25` : ''}. ` +
           (hidden.length
-            ? `${hidden.length === 1 ? 'One has' : `${hidden.length} have`} characters that are hidden or act on the screen, so what an agent or a person reads isn't the name the server takes. `
+            ? `${hidden.length === 1 ? (bad.length === 1 ? 'It has' : 'One has') : `${hidden.length} have`} characters that are hidden or act on the screen, so what an agent or a person reads isn't the name the server takes. `
             : '') +
           'Clients may refuse such a tool, rename it, or pass it to a model API that refuses it.',
         detail: bad.slice(0, 12).map((b) => `${b.tool}: ${b.why}`).concat(bad.length > 12 ? [`and ${bad.length - 12} more`] : []),

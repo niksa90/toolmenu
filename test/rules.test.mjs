@@ -912,26 +912,46 @@ test('ids/authored: a router\'s list operation in an enum lists that kind; one t
   assert.deepEqual(ids([tool('discussion_comment_write', ['commentNodeID']), tool('get_discussion_comments', ['owner'])]), []);
 });
 
-test('spec/tool-name: names outside the spec\'s format warn; hidden characters are an error', async () => {
+test("spec/tool-name: names outside the spec's format warn; hidden characters are an error", async () => {
   const { toolNameProblem } = await import('../dist/rules/spec.js');
   for (const ok of ['files_read', 'files.read', 'get-user', 'A1', 'x'.repeat(128)]) assert.equal(toolNameProblem(ok), undefined, ok);
-  assert.match(toolNameProblem(''), /empty/);
-  assert.match(toolNameProblem('get user'), /a space/);
-  assert.match(toolNameProblem('x'.repeat(129)), /129 characters/);
-  assert.match(toolNameProblem('safe‮exe'), /U\+202E/);
-  assert.match(toolNameProblem('a​b'), /U\+200B/);
-  assert.match(toolNameProblem('a\u001b[2J'), /U\+001B/);
+  const why = (n) => toolNameProblem(n).why;
+  assert.match(why(''), /empty/);
+  assert.match(why('get user'), /a space/);
+  assert.equal(toolNameProblem('get user').hidden, false);
+  assert.match(why('x'.repeat(129)), /129 characters/);
+  // Characters, not UTF-16 units: 127 x and one emoji is 128.
+  assert.doesNotMatch(why('x'.repeat(127) + '\u{1F600}'), /characters long/);
+  // Each of these is hidden or acts on the screen.
+  for (const c of ['\u202e', '\u200b', '\u001b', '\u00ad', '\u3164', '\u115f', '\uffa0', '\u034f', '\ufe0f', '\u{e0041}', '\u2028', '\u2800']) {
+    const p = toolNameProblem(`a${c}b`);
+    assert.equal(p.hidden, true, c.codePointAt(0).toString(16));
+    assert.match(p.why, new RegExp(`U\\+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`));
+  }
+  // A lookalike that isn't hidden is named by code point, so it can't pass for a letter.
+  assert.match(why('g\u0435t'), /U\+0435/);
+  // Hidden and too long: both said.
+  assert.match(why('\u200b' + 'x'.repeat(130)), /U\+200B.*131 characters long/);
 
   const read = { annotations: { readOnlyHint: true } };
-  const warned = lint([tool('get user', [], read), tool('list_forms', [], read)]).filter((f) => f.rule === 'spec/tool-name');
+  const spec = (tools, ctx, settings) => lint(tools, ctx, settings).filter((f) => f.rule === 'spec/tool-name');
+  const warned = spec([tool('get user', [], read), tool('list_forms', [], read)]);
   assert.equal(warned.length, 1);
   assert.equal(warned[0].severity, 'warn');
   assert.equal(warned[0].tool, 'get user');
-  const hidden = lint([tool('get_form', [], read), tool('get​_form', [], read), tool('a b', [], read)]).filter((f) => f.rule === 'spec/tool-name');
+  assert.match(warned[0].message, /recommends/);
+  // Before 2025-11-25 the spec gave no format: info, unless a name hides something.
+  assert.equal(spec([tool('get user', [], read)], { protocolVersion: '2025-06-18' })[0].severity, 'info');
+  assert.equal(spec([tool('get\u200b_form', [], read)], { protocolVersion: '2025-06-18' })[0].severity, 'error');
+  const hidden = spec([tool('get_form', [], read), tool('get\u200b_form', [], read), tool('a b', [], read)]);
   assert.equal(hidden.length, 1);
   assert.equal(hidden[0].severity, 'error');
   assert.match(hidden[0].message, /2 tool names/);
   assert.equal(hidden[0].detail.length, 2);
-  // Ignored tools are left out.
-  assert.deepEqual(lint([tool('get user', [], read)], {}, { ignore: ['get user'] }).filter((f) => f.rule === 'spec/tool-name'), []);
+  // Ignored tools are left out; the user's level wins over the rule's own.
+  assert.deepEqual(spec([tool('get user', [], read)], {}, { ignore: ['get user'] }), []);
+  assert.equal(spec([tool('get\u200b_form', [], read)], {}, { rules: { 'spec/tool-name': 'info' } })[0].severity, 'info');
+  // More than 12: the rest counted.
+  const many = spec(Array.from({ length: 14 }, (_, i) => tool(`t ${i}`, [], read)));
+  assert.equal(many[0].detail.at(-1), 'and 2 more');
 });

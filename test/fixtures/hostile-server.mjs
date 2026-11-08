@@ -7,7 +7,7 @@ const NAMES = {
   escape: 'a\u001b]0;PWNED\u0007\u001b[2Jb',
   markdown: 'x` ![t](https://evil.example/t.png) @org/team [Approve](https://evil.example) #12 `',
   newline: 'c\n::error::forged\nd',
-  bidi: 'safe‮exe.txt',
+  bidi: 'safe\u202eexe.txt',
 };
 const tools = Object.values(NAMES).map((name) => ({ name, description: `Read things. <img src=x> **bold** www.evil.example`, inputSchema: { type: 'object' }, annotations: { readOnlyHint: true } }));
 const serverName = process.env.HOSTILE_NAME ?? 'srv` ![t](https://evil.example/s.png) @org/team `';

@@ -8,7 +8,7 @@ import { mdCode, mdText, plain, terminalSafe } from '../dist/sanitize.js';
 import { FIXTURES, run, tempDir } from './helpers.mjs';
 
 // eslint-disable-next-line no-control-regex
-const RAW_CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f‪-‮⁦-⁩]/;
+const RAW_CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/;
 const hostile = ['--protocol', 'legacy', '--', process.execPath, join(FIXTURES, 'hostile-server.mjs')];
 
 /** Markdown with code spans and code blocks taken out: what GitHub would render as text. */
@@ -19,7 +19,7 @@ function outsideCode(md) {
 test('plain: control characters, newlines and bidi overrides are shown as escapes', () => {
   assert.equal(plain('a\u001b[2Jb'), 'a\\u001b[2Jb');
   assert.equal(plain('c\n::error::x'), 'c\\n::error::x');
-  assert.equal(plain('x‮y'), 'x\\u202ey');
+  assert.equal(plain('x\u202ey'), 'x\\u202ey');
   assert.equal(plain('get_form · ~309 → ok'), 'get_form · ~309 → ok');
   // A report keeps its own lines; what a field still carries is escaped.
   assert.equal(terminalSafe('line one\n\tline \u0007two'), 'line one\n\tline \\u0007two');
