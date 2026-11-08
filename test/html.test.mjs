@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { copyFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { esc, snapshotHtml } from '../dist/html.js';
+import { diffHtml, esc, sessionHtml, snapshotHtml } from '../dist/html.js';
+import { diffMenus } from '../dist/diff.js';
 import { stepMenu } from '../dist/session.js';
 import { FIXTURES, ROOT, menuOf, run, tempDir, tool } from './helpers.mjs';
 
@@ -27,6 +28,12 @@ test('stepMenu: what a step did to each tool, in list order', () => {
   ]);
   assert.deepEqual(menu.map((m) => [m.name, m.change]), [['a', undefined], ['x', 'inserted'], ['b', 'edited'], ['c', 'moved'], ['y', 'appended']]);
   assert.deepEqual(stepMenu([t('a')]), [{ name: 'a', tokens: 10 }], 'no changes, no marks');
+});
+
+test('stepMenu: by position, so a second tool of the same name marks only itself', () => {
+  const t = (name) => ({ name, tokens: 10 });
+  const menu = stepMenu([t('search'), t('a'), t('search')], [{ kind: 'added', tool: 'search', position: 2 }]);
+  assert.deepEqual(menu.map((m) => m.change), [undefined, undefined, 'appended']);
 });
 
 test('esc: markup in tool names and messages is text', () => {
@@ -90,6 +97,51 @@ test('session without --html records no step menus: the JSON output is unchanged
   copyFileSync(join(ROOT, 'examples/unlock.scenario.yml'), join(cwd, 'unlock.scenario.yml'));
   const r = await run(['session', '--scenario', 'unlock.scenario.yml', '--format', 'json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')], { cwd });
   assert.ok(JSON.parse(r.stdout).steps.every((s) => s.menu === undefined));
+});
+
+test('snapshot html: the menu the agent is shown, as the text report counts it', () => {
+  const app = tool('app_refresh', [], { _meta: { ui: { resourceUri: 'ui://x', visibility: ['app'] } } });
+  const html = snapshotHtml(menuOf([tool('list_forms'), app]), []);
+  assert.doesNotMatch(html, /<td class="name">app_refresh/);
+  assert.match(html, /1 more tool isn&#39;t shown to the agent/);
+  assert.match(html, /<span class="t-title-1">1 tool<\/span>/);
+});
+
+test('diff html: ignored tools left out, a rename one row, growth from nothing in tokens', () => {
+  const before = menuOf([tool('get_user', ['id']), tool('debug_dump')]);
+  const after = menuOf([tool('fetch_user', ['id']), tool('list_forms')]);
+  const ignore = ['debug_*'];
+  const html = diffHtml(diffMenus(before, after, { ignore }), before, after, { ignore });
+  assert.doesNotMatch(html, /debug_dump/, 'ignored, as diff ignores it');
+  assert.match(html, /fetch_user<span class="chip sm rose" title="Was get_user">Renamed/);
+  assert.doesNotMatch(html, /get_user<\/td>/, 'the old name is not a removed row');
+  assert.match(html, /list_forms<\/td>.*?New/s);
+  const empty = menuOf([]);
+  const grown = diffHtml(diffMenus(empty, after), empty, after);
+  assert.doesNotMatch(grown, /\+0%/, 'no percentage of nothing');
+});
+
+test('session html: a finding over several steps is linked from each; linked info findings start open', () => {
+  const step = (index) => ({ index, label: `call t${index}`, status: 'ok', outcome: 'answered', changed: false, listChanged: 0, tools: 1, tokens: 10 });
+  const result = {
+    scenario: 's.yml', server: { name: 'x' }, transport: 'stdio', listening: true,
+    baseline: { tools: 1, tokens: 10 }, final: { tools: 1, tokens: 10 },
+    steps: [step(1), step(2), step(3)],
+    findings: [{ rule: 'session/tool-error', severity: 'warn', message: 'm', step: 1, steps: [1, 3] }, { rule: 'session/known-variance', severity: 'info', message: 'v', step: 2 }],
+    union: menuOf([]),
+  };
+  const html = sessionHtml(result);
+  assert.equal(html.match(/href="#finding-1"/g).length, 2, 'steps 1 and 3');
+  assert.match(html, /Steps 1 and 3/);
+  assert.match(html, /<details class="more" open>/);
+});
+
+test('session --html --json: the JSON has no step menus either', async () => {
+  const cwd = tempDir();
+  copyFileSync(join(ROOT, 'examples/unlock.scenario.yml'), join(cwd, 'unlock.scenario.yml'));
+  const r = await run(['session', '--scenario', 'unlock.scenario.yml', '--html', 'r.html', '--format', 'json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')], { cwd });
+  assert.ok(JSON.parse(r.stdout).steps.every((s) => s.menu === undefined));
+  assert.match(readFileSync(join(cwd, 'r.html'), 'utf8'), /class="inserted"/);
 });
 
 test('--html goes with snapshot, diff and session only', async () => {

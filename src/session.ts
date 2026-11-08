@@ -141,13 +141,15 @@ export interface StepTool {
 
 /** What a step's changes did to each tool of the menu after it. An added tool is appended when only added tools follow it. */
 export function stepMenu(tools: MenuTool[], changes: ToolChange[] = []): StepTool[] {
-  const added = new Set(changes.filter((c) => c.kind === 'added').map((c) => c.tool));
-  const moved = new Set(changes.filter((c) => c.kind === 'moved').map((c) => c.tool));
-  const edited = new Set(changes.filter((c) => c.kind !== 'added' && c.kind !== 'removed' && c.kind !== 'moved' && c.kind !== 'serialization').map((c) => c.tool));
+  // By position in the newer menu, not by name: two tools can share a name.
+  const at = (kinds: (k: ToolChange['kind']) => boolean) => new Set(changes.filter((c) => kinds(c.kind)).map((c) => c.position));
+  const added = at((k) => k === 'added');
+  const moved = at((k) => k === 'moved');
+  const edited = at((k) => k !== 'added' && k !== 'removed' && k !== 'moved' && k !== 'serialization');
   return tools.map((t, i) => {
-    const change = added.has(t.name)
-      ? tools.slice(i + 1).every((u) => added.has(u.name)) ? 'appended' : 'inserted'
-      : moved.has(t.name) ? 'moved' : edited.has(t.name) ? 'edited' : undefined;
+    const change = added.has(i)
+      ? tools.every((_, j) => j <= i || added.has(j)) ? 'appended' : 'inserted'
+      : moved.has(i) ? 'moved' : edited.has(i) ? 'edited' : undefined;
     return { name: t.name, tokens: t.tokens, ...(change ? { change } : {}) };
   });
 }

@@ -9,8 +9,9 @@
  * panel), with its accent re-tinted to the toolmenu logo's violet and the logo's mint
  * check on clean rows. Light and dark follow the viewer's system setting.
  */
-import type { DiffResult } from './diff.js';
-import type { SessionResult, StepTool } from './session.js';
+import { agentMenu, agentTools } from './apps.js';
+import { findRenames, ignoreMatcher, type DiffResult } from './diff.js';
+import { stepsText, type SessionResult, type StepTool } from './session.js';
 import type { Finding, Menu, MenuTool, Severity } from './types.js';
 import { basename } from 'node:path';
 import { VERSION } from './version.js';
@@ -22,6 +23,7 @@ export function esc(text: unknown): string {
 const md = (text: string) => esc(text).replace(/`([^`]+)`/g, '<code>$1</code>');
 const num = (n: number) => n.toLocaleString('en-US');
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const upper = (text: string) => text[0].toUpperCase() + text.slice(1);
 const pct = (part: number, whole: number) => (whole > 0 ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0).toFixed(2);
 
 const SEVERITY: Record<Severity, [string, string]> = { error: ['rose', 'Error'], warn: ['yellow', 'Warning'], info: ['neutral', 'Info'] };
@@ -71,8 +73,9 @@ function toolsOf(f: Finding): string[] {
 
 function tile(f: Finding, id?: string): string {
   const tools = toolsOf(f);
+  const steps = f.steps?.length ? f.steps : f.step !== undefined ? [f.step] : [];
   const where = [
-    f.steps && f.steps.length > 1 ? `Steps ${f.steps[0]}–${f.steps[f.steps.length - 1]}` : f.step !== undefined ? `Step ${f.step}` : '',
+    steps.length ? upper(stepsText(steps)) : '',
     tools.length === 1 ? tools[0] : tools.length > 1 ? `${tools.length} tools` : '',
   ].filter(Boolean);
   const [color, label] = SEVERITY[f.severity];
@@ -86,7 +89,7 @@ ${f.fix ? `<p class="t-body2 next"><b>Next:</b> ${md(f.fix)}</p>` : ''}
 </article>`;
 }
 
-function panel(title: string, findings: Finding[], ids?: Map<Finding, string>): string {
+function panel(title: string, findings: Finding[], ids?: Map<Finding, string>, openInfo = false): string {
   const loud = findings.filter((f) => f.severity !== 'info');
   const info = findings.filter((f) => f.severity === 'info');
   const c = counts(findings);
@@ -94,7 +97,7 @@ function panel(title: string, findings: Finding[], ids?: Map<Finding, string>): 
   return `<section class="panel" aria-label="${esc(title)}">
 <div class="panel-head"><p class="t-body-m sec">${esc(title)}</p><p class="t-title-1">${summary}</p></div>
 ${loud.map((f) => tile(f, ids?.get(f))).join('\n')}
-${info.length ? `<details class="more"${loud.length ? '' : ' open'}><summary><span class="row-gap"><span class="t-body-m">${loud.length ? 'Info findings' : 'All findings are info'}</span>${chip('neutral', String(info.length))}</span>${CHEVRON}</summary><div class="list">${info.map((f) => tile(f, ids?.get(f))).join('\n')}</div></details>` : ''}
+${info.length ? `<details class="more"${loud.length && !openInfo ? '' : ' open'}><summary><span class="row-gap"><span class="t-body-m">${loud.length ? 'Info findings' : 'All findings are info'}</span>${chip('neutral', String(info.length))}</span>${CHEVRON}</summary><div class="list">${info.map((f) => tile(f, ids?.get(f))).join('\n')}</div></details>` : ''}
 ${findings.length ? '' : `<div class="empty">${CHECK}<span class="t-body-m">No findings</span></div>`}
 </section>`;
 }
@@ -138,7 +141,9 @@ export interface SnapshotHtmlOptions {
   transport?: string;
 }
 
-export function snapshotHtml(menu: Menu, findings: Finding[], options: SnapshotHtmlOptions = {}): string {
+export function snapshotHtml(full: Menu, findings: Finding[], options: SnapshotHtmlOptions = {}): string {
+  // The menu the agent is shown, as the text report counts it: MCP Apps' app-only tools left out.
+  const { shown: menu, appOnly } = agentMenu(full);
   const c = counts(findings);
   const max = Math.max(1, ...menu.tools.map((t) => t.tokens));
   const writes = menu.tools.filter(isWrite).length;
@@ -146,8 +151,8 @@ export function snapshotHtml(menu: Menu, findings: Finding[], options: SnapshotH
     .map((t, i) => `<tr><td class="pos">${i}</td><td class="name">${esc(t.name)}${isWrite(t) ? chip('purple', 'Writes') : ''}</td><td class="bar"><div class="meter"><span style="width:${pct(t.tokens, max)}%"></span></div></td><td class="num">~${num(t.tokens)}</td><td class="status">${statusOf(findings, t.name)}</td></tr>`)
     .join('\n');
   const table = `<table><thead><tr><th>#</th><th>Tool</th><th>Share of tokens</th><th class="num">Tokens</th><th class="status"><span class="sr">Status</span></th></tr></thead><tbody>${rows}</tbody></table>`;
-  const name = menu.server.name ?? 'MCP server';
-  const body = `${heading(name, menu.server.version, ['Snapshot', protocolLine(menu.server), esc(options.transport ?? '')].filter(Boolean))}
+  const name = full.server.name ?? 'MCP server';
+  const body = `${heading(name, full.server.version, ['Snapshot', protocolLine(menu.server), esc(options.transport ?? '')].filter(Boolean))}
 <div class="stats">
 ${stat('tools', 'Tools', String(menu.tools.length), writes ? ['purple', `${writes} write`] : undefined)}
 ${stat('tokens', 'Tokens up front', `~${num(menu.totalTokens)}`, ['neutral', 'estimate'])}
@@ -155,7 +160,7 @@ ${stat('error', 'Errors', String(c.error), c.error ? undefined : ['lime', 'None'
 ${stat('warn', 'Warnings', String(c.warn), c.warn ? undefined : ['lime', 'None'])}
 </div>
 <div class="main">
-${card('Tool menu, in server order', plural(menu.tools.length, 'tool', 'tools'), undefined, table)}
+${card('Tool menu, in server order', plural(menu.tools.length, 'tool', 'tools'), appOnly ? `${plural(appOnly.tools, 'more tool isn\'t', 'more tools aren\'t')} shown to the agent (MCP Apps visibility without "model", ~${num(appOnly.tokens)} tokens).` : undefined, table)}
 ${panel('Findings', findings)}
 </div>`;
   return page(`toolmenu snapshot: ${name}`, body);
@@ -164,29 +169,45 @@ ${panel('Findings', findings)}
 export interface DiffHtmlOptions {
   /** The two menu files, as given on the command line. */
   paths?: [string, string];
+  /** The config's ignore globs, as given to diffMenus, so the table counts what the findings do. */
+  ignore?: string[];
 }
 
-export function diffHtml(result: DiffResult, before: Menu, after: Menu, options: DiffHtmlOptions = {}): string {
+export function diffHtml(result: DiffResult, beforeMenu: Menu, afterMenu: Menu, options: DiffHtmlOptions = {}): string {
+  // The tools diffMenus compares (ignore globs out) and counts tokens for (app-only tools out too).
+  const ignored = ignoreMatcher(options.ignore);
+  const kept0 = beforeMenu.tools.filter((t) => !ignored(t.name));
+  const kept1 = afterMenu.tools.filter((t) => !ignored(t.name));
+  const before = { tools: agentTools(kept0) };
+  const after = { tools: agentTools(kept1) };
+  const names0 = new Set(kept0.map((t) => t.name));
+  const names1 = new Set(kept1.map((t) => t.name));
+  const renames = findRenames(kept0.filter((t) => !names1.has(t.name)), kept1.filter((t) => !names0.has(t.name)));
+  const renamedTo = new Map(renames.map((r) => [r.to.name, r.from]));
+  const renamedFrom = new Set(renames.map((r) => r.from.name));
   const old = new Map(before.tools.map((t) => [t.name, t.tokens]));
   const now = new Set(after.tools.map((t) => t.name));
-  const removed = before.tools.filter((t) => !now.has(t.name));
-  const added = after.tools.filter((t) => !old.has(t.name)).length;
+  const removed = before.tools.filter((t) => !now.has(t.name) && !renamedFrom.has(t.name));
+  const added = after.tools.filter((t) => !old.has(t.name) && !renamedTo.has(t.name)).length;
   const described = new Set(result.findings.filter((f) => f.rule === 'diff/description').flatMap(toolsOf));
   const max = Math.max(1, ...after.tools.map((t) => t.tokens), ...removed.map((t) => t.tokens));
   const rows = after.tools.map((t, i) => {
-    const was = old.get(t.name);
+    const from = renamedTo.get(t.name);
+    const was = from ? from.tokens : old.get(t.name);
     const kept = was === undefined ? 0 : Math.min(was, t.tokens);
     const delta = was === undefined ? undefined : t.tokens - was;
     const change = was === undefined ? chip('lime', 'New') : delta! > 0 ? chip('yellow', `+${num(delta!)}`) : delta! < 0 ? chip('soft', `−${num(-delta!)}`) : '<span class="ter">0</span>';
-    return `<tr><td class="pos">${i}</td><td class="name">${esc(t.name)}${described.has(t.name) ? chip('purple', 'Description') : ''}</td><td class="bar"><div class="meter"><span class="grow" style="width:${pct(t.tokens, max)}%"></span><span style="width:${pct(kept, max)}%"></span></div></td><td class="num sec">${was === undefined ? '–' : `~${num(was)}`}</td><td class="num">~${num(t.tokens)}</td><td class="num">${change}</td></tr>`;
+    const tag = from ? `<span class="chip sm rose" title="Was ${esc(from.name)}">Renamed</span>` : described.has(t.name) ? chip('purple', 'Description') : '';
+    return `<tr><td class="pos">${i}</td><td class="name">${esc(t.name)}${tag}${from ? `<div class="t-body2 sec">was ${esc(from.name)}</div>` : ''}</td><td class="bar"><div class="meter"><span class="grow" style="width:${pct(t.tokens, max)}%"></span><span style="width:${pct(kept, max)}%"></span></div></td><td class="num sec">${was === undefined ? '–' : `~${num(was)}`}</td><td class="num">~${num(t.tokens)}</td><td class="num">${change}</td></tr>`;
   });
   for (const t of removed) {
     rows.push(`<tr class="gone"><td class="pos">–</td><td class="name">${esc(t.name)}</td><td class="bar"><div class="meter"><span class="ghost" style="width:${pct(t.tokens, max)}%"></span></div></td><td class="num sec">~${num(t.tokens)}</td><td class="num sec">–</td><td class="num">${chip('rose', 'Removed')}</td></tr>`);
   }
   const table = `<table><thead><tr><th>#</th><th>Tool</th><th>Now</th><th class="num">Before</th><th class="num">After</th><th class="num">Change</th></tr></thead><tbody>${rows.join('\n')}</tbody></table>`;
   const t = result.tokens;
-  const growth = t.before > 0 ? Math.round((t.delta / t.before) * 100) : 0;
-  const grew = after.tools.filter((x) => old.has(x.name) && x.tokens > old.get(x.name)!).length;
+  const share = t.before > 0 ? (Math.abs(t.delta) / t.before) * 100 : 0;
+  const growth = t.before === 0 ? `${t.delta > 0 ? '+' : '−'}${num(Math.abs(t.delta))}` : `${t.delta > 0 ? '+' : '−'}${share > 0 && share < 1 ? '<1' : Math.round(share)}%`;
+  const grew = after.tools.filter((x) => (old.has(x.name) || renamedTo.has(x.name)) && x.tokens > (renamedTo.get(x.name)?.tokens ?? old.get(x.name)!)).length;
   const k = result.classes;
   const bump = result.suggestedBump;
   const [v0, v1] = [result.before.version, result.after.version];
@@ -199,11 +220,11 @@ export function diffHtml(result: DiffResult, before: Menu, after: Menu, options:
 <div class="stats">
 ${stat('break', 'Breaking changes', String(k.breaking.changes), k.breaking.changes ? ['rose', plural(k.breaking.tools, 'tool', 'tools')] : ['lime', 'None'])}
 ${stat('tag', 'Suggested bump', bump === 'none' ? 'None' : bump[0].toUpperCase() + bump.slice(1), k.minor.changes ? ['soft', plural(k.minor.changes, 'minor change', 'minor changes')] : undefined)}
-${stat('tools', 'Tools', String(after.tools.length), after.tools.length !== before.tools.length || added ? [removed.length > added ? 'rose' : 'lime', `${signed(after.tools.length - before.tools.length)}${removed.length && added ? ` (${added} new, ${removed.length} gone)` : ''}`] : undefined)}
-${stat('tokens', 'Tokens up front', `~${num(t.after)}`, t.delta ? [t.delta > 0 ? 'yellow' : 'lime', `${t.delta > 0 ? '+' : '−'}${Math.abs(growth)}%`] : ['soft', 'unchanged'])}
+${stat('tools', 'Tools', String(after.tools.length), after.tools.length !== before.tools.length || added ? [removed.length > added ? 'rose' : 'lime', `${signed(after.tools.length - before.tools.length)}${removed.length && added ? ` (${added} new, ${removed.length} gone)` : ''}`] : renames.length ? ['rose', plural(renames.length, 'rename', 'renames')] : undefined)}
+${stat('tokens', 'Tokens up front', `~${num(t.after)}`, t.delta ? [t.delta > 0 ? 'yellow' : 'lime', growth] : ['soft', 'unchanged'])}
 </div>
 <div class="main">
-${card('Token change, per tool', `${signed(t.delta)} tokens`, `${plural(grew, 'tool', 'tools')} grew, ${added} new, ${removed.length} removed · ~${num(t.before)} → ~${num(t.after)}`, table, '<span><i class="k-bar"></i>Before</span><span><i class="k-mint"></i>Added since</span>')}
+${card('Token change, per tool', `${signed(t.delta)} tokens`, `${plural(grew, 'tool', 'tools')} grew, ${added} new, ${removed.length} removed${renames.length ? `, ${renames.length} renamed` : ''} · ~${num(t.before)} → ~${num(t.after)}`, table, '<span><i class="k-bar"></i>Before</span><span><i class="k-mint"></i>Added since</span>')}
 ${panel('Changes', result.findings)}
 </div>`;
   return page(`toolmenu diff: ${name}`, body);
@@ -214,7 +235,7 @@ export function sessionHtml(result: SessionResult): string {
   const ids = new Map(result.findings.map((f, i) => [f, `finding-${i + 1}`]));
   const max = Math.max(1, result.final.tokens, ...result.steps.map((s) => s.tokens));
   const changed = result.steps.filter((s) => s.changed).map((s) => s.index);
-  const span = changed.length ? (changed.length === 1 ? `Step ${changed[0]}` : changed.every((n, i) => !i || n === changed[i - 1] + 1) ? `Steps ${changed[0]}–${changed[changed.length - 1]}` : `${changed.length} steps`) : 'No';
+  const span = changed.length ? upper(stepsText(changed)) : 'No';
   const strip = (menu: StepTool[] | undefined) =>
     menu ? `<div class="strip" aria-hidden="true">${menu.map((t) => `<span class="${t.change ?? ''}" style="flex:0 0 calc(${pct(t.tokens, max)}% - 2px)" title="${esc(t.name)}, ~${t.tokens}"></span>`).join('')}</div>` : '<span class="ter">–</span>';
   const outcome = (s: SessionResult['steps'][number]) =>
@@ -225,7 +246,7 @@ export function sessionHtml(result: SessionResult): string {
             : s.outcome === 'needs-input' ? chip('purple', 'Asked for input')
               : '<span class="ter">–</span>';
   const rows = result.steps.map((s) => {
-    const here = result.findings.filter((f) => f.step === s.index);
+    const here = result.findings.filter((f) => f.step === s.index || f.steps?.includes(s.index));
     const tags = here.map((f) => `<a class="chip sm ${SEVERITY[f.severity][0]}" href="#${ids.get(f)}">${esc(f.rule)}</a>`).join('');
     return `<tr class="${s.changed ? 'changed' : ''}"><td class="pos">${s.index}</td><td class="step"><code>${esc(s.label)}</code>${s.note ? `<div class="t-body2 sec">${esc(s.note)}</div>` : ''}${tags ? `<div class="tags">${tags}</div>` : ''}</td><td>${outcome(s)}</td><td>${strip(s.menu)}</td><td class="num">${s.tools}</td><td class="num">~${num(s.tokens)}</td></tr>`;
   });
@@ -242,7 +263,7 @@ ${stat('tokens', 'Tokens up front', `~${num(result.final.tokens)}`, grew ? [grew
 </div>
 <div class="main">
 ${card('The scenario, step by step', `${result.baseline.tools} → ${plural(result.final.tools, 'tool', 'tools')}`, fresh, table, '<span><i class="k-bar"></i>A tool, sized by tokens</span><span><i class="k-ins"></i>Inserted mid-list</span><span><i class="k-app"></i>Appended</span><span><i class="k-edit"></i>Definition edited or moved</span>')}
-${panel('Findings', result.findings, ids)}
+${panel('Findings', result.findings, ids, result.findings.some((f) => f.severity === 'info' && (f.step !== undefined || f.steps?.length)))}
 </div>`;
   return page(`toolmenu session: ${name}`, body);
 }

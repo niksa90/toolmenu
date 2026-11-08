@@ -390,7 +390,9 @@ function ghEscape(text: string): string {
 export function formatSession(s: SessionResult, format: Format): string {
   if (format === 'json') {
     // The union menu itself goes to --union-out; the report says how big it is.
+    // Step menus are recorded for --html only; the JSON stays the same with or without it.
     const { union, ...rest } = s;
+    rest.steps = rest.steps.map(({ menu: _menu, ...step }) => step);
     return JSON.stringify({ command: 'session', ...rest, union: { tools: union.tools.length, totalTokens: union.totalTokens }, counts: counts(s.findings) }, null, 2);
   }
   if (format === 'github') {

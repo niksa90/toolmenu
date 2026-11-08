@@ -1660,7 +1660,7 @@ function isEmptySchema(schema: JsonSchema | undefined): boolean {
 }
 
 /** Removed + added tools with the same non-empty parameter names and required set. */
-function findRenames(removed: MenuTool[], added: MenuTool[]): { from: MenuTool; to: MenuTool }[] {
+export function findRenames(removed: MenuTool[], added: MenuTool[]): { from: MenuTool; to: MenuTool }[] {
   const pairs: { from: MenuTool; to: MenuTool }[] = [];
   const used = new Set<string>();
   for (const from of removed) {
@@ -1859,7 +1859,7 @@ export function versionBump(before: string | undefined, after: string | undefine
   return 'none';
 }
 
-function ignoreMatcher(globs: string[] | undefined): (name: string) => boolean {
+export function ignoreMatcher(globs: string[] | undefined): (name: string) => boolean {
   const res = (globs ?? []).map((g) => new RegExp('^' + g.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
   return (name) => res.some((re) => re.test(name));
 }

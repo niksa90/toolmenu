@@ -207,7 +207,7 @@ export async function main(given: string[]): Promise<number> {
       release,
       serverVersionIsRelease: values['server-version-is-release'] ?? config.serverVersionIsRelease,
     });
-    await emit(formatDiff(result, before.tools.length, after.tools.length, format), result.findings, 'diff', rest[1], () => diffHtml(result, before, after, { paths: [rest[0], rest[1]] }));
+    await emit(formatDiff(result, before.tools.length, after.tools.length, format), result.findings, 'diff', rest[1], () => diffHtml(result, before, after, { paths: [rest[0], rest[1]], ignore: config.ignore }));
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 

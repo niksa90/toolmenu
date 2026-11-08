@@ -1148,15 +1148,20 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   `<code>`. Light and dark by `prefers-color-scheme`. Layout: a heading (server name
   and version, the command and protocol), four stat cards, a table card, and a
   findings panel (non-info findings as tiles, info folded in a `<details>`, open when
-  it's all there is). Snapshot rows: position, tool (`Writes` for readOnlyHint:
-  false), token share of the largest tool, tokens, status (error dot, warning dot, or
-  the check). Diff rows: the newer menu in order, before/after tokens from the two
-  menu files, `New`, `Description` (a diff/description finding), then removed tools
-  struck through. Session rows: each step with its outcome, a strip of the menu after
+  it's all there is, or when a step links to one). Snapshot rows: the menu the agent
+  is shown (`agentMenu`: app-only tools out, said under the title), with position,
+  tool (`Writes` for readOnlyHint: false), token share of the largest tool, tokens,
+  status (error dot, warning dot, or the check). Diff rows: the tools diffMenus counts
+  (config `ignore` out, then app-only tools out), the newer menu in order, before and
+  after tokens, `New`, `Renamed` (findRenames, as diff/tool-renamed: one row, "was
+  <old>"), `Description` (a diff/description finding), then removed tools struck
+  through. Growth: a percentage of the old total, `<1%` below one, or tokens when the
+  old menu had none. Session rows: each step with its outcome, a strip of the menu after
   it (`StepRecord.menu`, recorded with `stepMenus`; `stepMenu` marks a tool added with
   only added tools after it `appended`, other added tools `inserted`, `moved`, and any
-  other change but serialization `edited`), and links to the step's findings
-  (`#finding-<n>`).
+  other change but serialization `edited`, by position so duplicate names mark only
+  their own copy), and links to every finding whose `step` or `steps` names it
+  (`#finding-<n>`). Step menus never reach the JSON output.
 - **Badge** (`src/badge.ts`): shields endpoint JSON, `schemaVersion: 1`, label
   `toolmenu`, message `<n> tools · <~tokens> tokens` plus errors, else warnings
   (info isn't shown), colour red, yellow or brightgreen, `cacheSeconds: 3600`. Tokens
