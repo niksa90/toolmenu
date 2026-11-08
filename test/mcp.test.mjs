@@ -79,6 +79,14 @@ test('the server is named by command or url, one of the two', () => {
   assert.match(serverArgs({ url: '--config=x.json' }).error, /http\(s\) URL/);
   // Credentials go in secret (the environment), never in argv.
   assert.deepEqual(serverArgs({ url: 'https://e.com/mcp', headers: { Authorization: 'Bearer t' } }), { before: ['https://e.com/mcp'], secret: ['--header', 'Authorization: Bearer t'], after: [] });
+  // Credentials embedded in the URL would land in argv: refused, and not echoed back.
+  for (const url of ['https://user@e.com/mcp', 'https://:pw@e.com/mcp', 'https://user:pw@e.com/mcp', 'http://user:pw@e.com/mcp']) {
+    const r = serverArgs({ url });
+    assert.match(r.error, /headers, not embedded in the URL/);
+    assert.doesNotMatch(r.error, /pw|user@/);
+  }
+  assert.match(serverArgs({ url: 'https://' }).error, /not a valid URL/);
+  assert.deepEqual(serverArgs({ url: 'https://e.com/mcp?x=1' }), { before: ['https://e.com/mcp?x=1'], secret: [], after: [] });
   assert.deepEqual(serverArgs({ command: ['node', 's.js', '--flag'], env: { K: 'v' } }), { before: [], secret: ['--env', 'K=v'], after: ['--', 'node', 's.js', '--flag'] });
 });
 

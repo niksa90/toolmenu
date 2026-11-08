@@ -196,6 +196,14 @@ export function serverArgs(a: ServerArgs): ServerSpec | { error: string } {
   if (a.url) {
     if (a.env && Object.keys(a.env).length) return { error: 'env goes with command: an HTTP server is already running. Use headers for credentials.' };
     if (!/^https?:\/\//.test(a.url)) return { error: `url must be an http(s) URL; got "${a.url}". For a stdio server, give command.` };
+    let parsed: URL;
+    try {
+      parsed = new URL(a.url);
+    } catch {
+      return { error: 'url is not a valid URL. Give a Streamable HTTP endpoint such as https://example.com/mcp.' };
+    }
+    // Arguments are visible to other local users (ps), so credentials can't ride in the URL.
+    if (parsed.username || parsed.password) return { error: 'Credentials must be passed using headers, not embedded in the URL: drop the user:password@ part and give e.g. {"Authorization": "Basic ..."} in headers.' };
     return { before: [a.url], secret: Object.entries(a.headers ?? {}).flatMap(([k, v]) => ['--header', `${k}: ${v}`]), after: [] };
   }
   if (a.headers && Object.keys(a.headers).length) return { error: 'headers go with url. Pass a stdio server its credentials with env.' };
