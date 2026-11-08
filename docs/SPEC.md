@@ -1231,6 +1231,8 @@ everything a PR controls is untrusted. What changed:
   (comma-separated or repeated, `'*'` for all). The config picks where each value goes
   (a URL, a header, an argument), so one from someone else could send any of your
   environment to a server of theirs. An entry using a variable that is set but not
-  allowed isn't checked and names the `--allow-env` it needs; an unset one with a
-  `:-default` gets the default, as before. `scan` starts every command in its list:
+  allowed isn't checked and names the `--allow-env` it needs. A variable that isn't
+  allowed is never read: with a `:-default` it gets the default whether it's set or
+  not, so a server can't learn from the URL it's sent which variables exist. Problem
+  messages quote the config as written, never a filled-in value. `scan` starts every command in its list:
   the README and `--help` say so.

@@ -171,3 +171,40 @@ test('scan --allow-env: names, comma-separated or repeated, or *; anything else 
   const blocked = await run(['scan', '--json', file], { env: { SCAN_A: 'x' } });
   assert.match(JSON.parse(blocked.stdout).servers[0].failed, /SCAN_A is set, but not passed in/);
 });
+
+test('scan --allow-env: a variable that is not allowed is never read, and an allowed secret is never echoed', () => {
+  const env = { SECRET: 'topsecret', OTHER: 'o' };
+  const one = (server, allow) => parseList(JSON.stringify({ mcpServers: { s: server } }), 'mcp.json', env, allow)[0];
+  // ${VAR:-default}, not allowed: the default whether or not VAR is set (no set/unset oracle).
+  assert.equal(one({ url: 'https://h.example/mcp?p=${SECRET:-0}' }).target.url, 'https://h.example/mcp?p=0');
+  assert.equal(one({ url: 'https://h.example/mcp?p=${UNSET_X:-0}' }).target.url, 'https://h.example/mcp?p=0');
+  // Allowed: the value, as before.
+  assert.equal(one({ url: 'https://h.example/mcp?p=${SECRET:-0}' }, new Set(['SECRET'])).target.url, 'https://h.example/mcp?p=topsecret');
+  // Every field, and VS Code's ${env:VAR}, is blocked the same way.
+  for (const server of [
+    { url: 'https://h.example/mcp', headers: { Authorization: 'Bearer ${SECRET}' } },
+    { command: 'node', args: ['s.js'], cwd: '/tmp/${env:SECRET}' },
+    { command: '${SECRET}' },
+  ]) {
+    const e = one(server);
+    assert.equal(e.target, undefined, JSON.stringify(server));
+    assert.match(e.problem, /SECRET is set, but not passed in/);
+  }
+  // A URL that isn't http(s) is quoted as the config writes it, not with the secret filled in.
+  const ftp = one({ url: 'ftp://x/${SECRET}' }, new Set(['SECRET']));
+  assert.match(ftp.problem, /isn't an http\(s\) URL/);
+  assert.doesNotMatch(ftp.problem, /topsecret/);
+});
+
+test('scan --allow-env through the CLI: comma-separated, repeated, and *', async () => {
+  const dir = tempDir();
+  const file = join(dir, 'mcp.json');
+  writeFileSync(file, JSON.stringify({ mcpServers: { a: { url: 'ftp://a/${SCAN_A}' }, b: { url: 'ftp://b/${SCAN_B}' }, c: { url: 'ftp://c/${SCAN_C}' } } }));
+  const env = { SCAN_A: '1', SCAN_B: '2', SCAN_C: '3' };
+  const failed = async (args) => Object.fromEntries(JSON.parse((await run(['scan', '--json', ...args, file], { env })).stdout).servers.map((s) => [s.name, s.failed]));
+  // Allowed ones get past the variable check (and fail on the scheme instead).
+  const blockedOrNot = (f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, /not passed in/.test(v) ? 'blocked' : 'filled']));
+  assert.deepEqual(blockedOrNot(await failed(['--allow-env', 'SCAN_A,SCAN_B'])), { a: 'filled', b: 'filled', c: 'blocked' });
+  assert.deepEqual(blockedOrNot(await failed(['--allow-env', 'SCAN_A', '--allow-env=SCAN_C'])), { a: 'filled', b: 'blocked', c: 'filled' });
+  assert.deepEqual(blockedOrNot(await failed(['--allow-env', '*'])), { a: 'filled', b: 'filled', c: 'filled' });
+});

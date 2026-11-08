@@ -38,9 +38,13 @@ export type AllowEnv = ReadonlySet<string> | '*';
 /** `${VAR}`, `${VAR:-default}` (Claude Code) and `${env:VAR}` (VS Code), from the environment, where allowed. */
 function expand(value: string, env: NodeJS.ProcessEnv, missing: Set<string>, allow: AllowEnv, blocked: Set<string>): string {
   return value.replace(/\$\{(?:env:)?([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}/g, (_, name: string, fallback: string | undefined) => {
+    const allowed = allow === '*' || allow.has(name);
+    // Not allowed: the environment isn't read at all. With a default, the default, set
+    // or not, so a server can't learn which variables exist from which URL it gets.
+    if (!allowed && fallback !== undefined) return fallback;
     const v = env[name];
     if (v !== undefined && v !== '') {
-      if (allow === '*' || allow.has(name)) return v;
+      if (allowed) return v;
       blocked.add(name);
       return '';
     }
@@ -93,7 +97,8 @@ function fromConfig(name: string, raw: unknown, env: NodeJS.ProcessEnv, allow: A
   }
   // A missing variable would send an empty credential: say so instead of checking a server set up wrong.
   if (missing.size) return { name, problem: `${[...missing].join(', ')} ${missing.size === 1 ? 'is' : 'are'} not set (the config refers to ${missing.size === 1 ? 'it' : 'them'})` };
-  if (target.kind === 'http' && !/^https?:\/\//.test(target.url)) return { name, problem: `"${clean(target.url, 60)}" isn't an http(s) URL` };
+  // The URL as the config writes it: a filled-in ${VAR} may be a secret.
+  if (target.kind === 'http' && !/^https?:\/\//.test(target.url)) return { name, problem: `"${clean(String(s.url ?? s.serverUrl ?? s.httpUrl), 60)}" isn't an http(s) URL` };
   const shown: Target =
     target.kind === 'http'
       ? { kind: 'http', url: (s.url ?? s.serverUrl ?? s.httpUrl) as string }
