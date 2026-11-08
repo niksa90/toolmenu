@@ -255,7 +255,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.25.2
+      - uses: niksa90/toolmenu@v0.26.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -303,7 +303,7 @@ permissions:
   security-events: write          # to upload SARIF
 steps:
   # … checkout, build, as above
-  - uses: niksa90/toolmenu@v0.25.2
+  - uses: niksa90/toolmenu@v0.26.0
     with:
       command: node dist/server.js
       sarif: toolmenu-sarif

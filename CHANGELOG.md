@@ -1,7 +1,63 @@
 # Changelog
 
-## Unreleased
+## 0.26.0
 
+### Security
+
+From a security audit of the repository.
+
+- **`auth login` opens only `https` login addresses** (or `http` to this machine).
+  The address comes from the server's OAuth metadata, and the browser opener does
+  whatever its scheme says: a hostile server could have `xdg-open`, `open` or
+  `rundll32` open a `file:`, `smb:` or app link, which on Windows can start a program.
+  It's refused before anything is opened or printed.
+- **`toolmenu mcp`: honest annotations, `save_as` inside `cwd`.** `snapshot_menu` and
+  `check_session` run the command they're given, but were annotated
+  `destructiveHint: false`, so a client that auto-approves non-destructive tools would
+  let a prompt-injected agent run anything. They're `destructiveHint: true` now.
+  `save_as` writes only inside `cwd` (symlinks followed): a new file, or an existing
+  menu file, never a shell profile or a source file.
+- **Reports show a server's text; they never act on it.** Tool names, descriptions,
+  `serverInfo` and error text went into reports as sent. In a terminal, escape
+  sequences could change the title, clear the screen or fake links, and a newline
+  could forge a finding or a `::error::` line in a CI log. In markdown (the Action's
+  PR comment) a backtick ended the code span, and images, links, @mentions and
+  #references rendered, posted by github-actions. Now control, invisible and
+  text-direction characters are shown as escapes (`\u001b`, `\n`), markdown is escaped
+  around toolmenu's own `code`, and every write to stdout and stderr goes through the
+  same escaping. JSON output stays the same JSON. The menu file keeps the exact bytes.
+- **The Action's PR comment can't be taken over.** It edited the first comment with
+  its marker, whoever wrote it; now only one its own token wrote.
+- **The Action keeps PR text out of its arguments and its markdown**: `--release` is
+  one argument (a `package.json` version with spaces added arguments), and error
+  output goes in a code block its backticks can't close.
+- **`scan` fills `${VAR}` only from variables you name** with `--allow-env` (or `'*'`).
+  A config decides where each value goes, a URL included, so scanning someone else's
+  `.mcp.json` could send any secret in your environment to their server.
+- **Credentials off the command line.** `TOOLMENU_ARGS` (a JSON array of arguments)
+  keeps `--header`, `--env` and `--client-secret` values out of `ps`; the Action passes
+  its `headers` and `env` that way.
+- **Release and CI workflows**: least-privilege tokens, every action pinned to a
+  commit (Dependabot keeps them current), and the npm package built in a job apart
+  from the tests and published from a job that runs no dependency. `toolmenu init`
+  pins the actions it writes the same way.
+- Smaller: a menu file that isn't JSON is reported without quoting it; `history` uses
+  only semver-shaped registry versions; macOS runners (bash 3.2) get their SARIF files.
+
+### Breaking
+
+- `scan`: a config that uses `${VAR}` needs `--allow-env VAR` (or `--allow-env '*'`
+  for the old behaviour). The entry says which.
+- `toolmenu mcp`: `save_as` outside `cwd`, or over a file that isn't a menu, is an
+  error. The release-check skill keeps its baseline inside the worktree.
+- `snapshot` exits 1 on a server whose tool names hold control, invisible or
+  text-direction characters (`spec/tool-name`, below).
+
+### Also
+
+- **`spec/tool-name`**: a tool name outside the format the spec recommends from
+  2025-11-25 (1 to 128 of `A-Z a-z 0-9 _ - .`) is a warning (info on older
+  protocols), and an error when it hides characters.
 - **An HTML report.** `--html <path>` writes the run of `snapshot`, `diff` or `session`
   as one self-contained page beside the usual report: stat cards (errors, warnings,
   tools, tokens; breaking changes and the suggested bump for `diff`), the menu as a
