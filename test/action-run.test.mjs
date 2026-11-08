@@ -382,3 +382,14 @@ test('action: when the token\'s account can\'t be told, no comment is edited or 
   assert.doesNotMatch(ghCalls(r), /PATCH|POST/);
   assert.match(r.stdout, /::warning title=toolmenu::Couldn't tell which account the token belongs to.*rate limit/);
 });
+
+test('action: error text in the report stays text: backticks can\'t close its code block', () => {
+  const hostile = '```\n![x](https://evil.example/t.png) [Approve](https://evil.example) @org/team\n````';
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', STUB_CODE: '2', STUB_ERR: hostile });
+  const block = /\n(`{3,})\n([\s\S]*?)\n\1\n/.exec(r.comment);
+  assert.ok(block, r.comment);
+  assert.ok(block[1].length > 4, `fence ${block[1]} is longer than the text's own backticks`);
+  assert.match(block[2], /!\[x\]\(https:\/\/evil\.example/);
+  // Nothing of it outside the block.
+  assert.doesNotMatch(r.comment.replace(block[0], ''), /evil\.example|@org/);
+});

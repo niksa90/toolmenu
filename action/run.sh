@@ -78,6 +78,16 @@ else
   exit 2
 fi
 
+# Text from a run (the server's stderr, toolmenu's error) as a code block in the
+# report, so markdown, links and @mentions in it stay text. The fence is longer than
+# any run of backticks in the text, so the text can't close it.
+fenced() {
+  local text fence='```' run
+  text=$(cat)
+  while IFS= read -r run; do [ "${#run}" -ge "${#fence}" ] && fence="${run}\`"; done < <(grep -oE '`+' <<< "$text")
+  printf '%s\n%s\n%s\n' "$fence" "$text" "$fence"
+}
+
 status=0
 note() { [ "$1" -gt "$status" ] && status=$1; }
 
@@ -258,7 +268,7 @@ if [ "$code" -eq 2 ] && [ "${TOOLMENU_NO_SECRETS:-false}" = "true" ] && missing_
   } >> "$BODY"
   echo "::notice title=toolmenu::Skipped: this PR runs without the repository's secrets, so the server couldn't be reached."
 elif [ "$code" -eq 2 ]; then
-  { echo "**Couldn't snapshot the server.**"; echo; echo '```'; tail -20 "$OUT/snapshot.err"; echo '```'; } >> "$BODY"
+  { echo "**Couldn't snapshot the server.**"; echo; tail -20 "$OUT/snapshot.err" | fenced; } >> "$BODY"
   note 2
 else
   note "$code"
@@ -289,7 +299,7 @@ else
     release_args
     $CLI diff --format markdown ${SARIF_DIFF[@]+"${SARIF_DIFF[@]}"} --fail-on "$FAIL_ON" ${RELEASE_ARGS[@]+"${RELEASE_ARGS[@]}"} "$BASELINE" "$CURRENT" > "$OUT/diff.md" 2> "$OUT/diff.err"
     code=$?; note "$code"
-    if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { sed -e "s/pass --release/set the Action's \`release\` input/" -e "s/Check the --release order/Check the order in the Action's \`release\` input/" "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
+    if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:**"; echo; head -1 "$OUT/diff.err" | fenced; echo; } >> "$BODY"; else { sed -e "s/pass --release/set the Action's \`release\` input/" -e "s/Check the --release order/Check the order in the Action's \`release\` input/" "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
   else
     if [ "$FROM_SESSION" = true ]; then hint="npx toolmenu session $([ "$TOOLMENU_SCENARIO" = auto ] && echo --auto || echo "--scenario $TOOLMENU_SCENARIO") --union-out ${TOOLMENU_BASELINE:-menu.json} $(hint_target)"; else hint="npx toolmenu snapshot $(hint_target)"; fi
     { echo "No baseline at \`${TOOLMENU_BASELINE:-menu.json}\`, so there's nothing to compare with yet. Commit the $([ "$FROM_SESSION" = true ] && echo "session's union menu" || echo snapshot) to start tracking changes:"; echo; echo '```sh'; echo "$hint"; echo '```'; echo; } >> "$BODY"
@@ -301,7 +311,7 @@ fi
 if [ -n "${TOOLMENU_SCENARIO:-}" ] && [ "$SKIPPED" = false ]; then
   [ "$SESSION_RAN" = true ] || run_session
   code=$SESSION_CODE; note "$code"
-  if [ "$code" -eq 2 ]; then { echo "**Session didn't run:** $(head -3 "$OUT/session.err")"; echo; } >> "$BODY"; else { cat "$OUT/session.md"; echo; } >> "$BODY"; fi
+  if [ "$code" -eq 2 ]; then { echo "**Session didn't run:**"; echo; head -3 "$OUT/session.err" | fenced; echo; } >> "$BODY"; else { cat "$OUT/session.md"; echo; } >> "$BODY"; fi
 fi
 
 echo "<sub>[toolmenu](https://github.com/niksa90/toolmenu) · token counts are estimates</sub>" >> "$BODY"
