@@ -30,6 +30,7 @@ import type { StepTool } from './session.js';
 import { badge, badgeMarkdown } from './badge.js';
 import { VERSION } from './version.js';
 import { SECRET_ARGS_ENV } from './mcp-env.js';
+import { plain, terminalSafe } from './sanitize.js';
 import { CLI_OPTIONS } from './options.js';
 import { editDistance } from './words.js';
 import { formatScan, ListError, loadList, scan, scanExit } from './scan.js';
@@ -116,7 +117,12 @@ export async function main(given: string[]): Promise<number> {
     else if (report) process.stdout.write(show(report) + '\n');
   };
   // Colour for a report read in a terminal (colour.ts); piped, CI and other formats stay plain.
-  const show = (report: string) => (format === 'text' && colourFor(process.stdout) ? colourise(report) : report);
+  // terminalSafe first: a control character a server's text still carries is shown, never acted on. JSON escapes its own.
+  const show = (report: string) => {
+    if (format === 'json') return report;
+    const safe = terminalSafe(report);
+    return format === 'text' && colourFor(process.stdout) ? colourise(safe) : safe;
+  };
   const failOn = (values['fail-on'] ?? 'error') as Severity;
   if (!(failOn in SEVERITY_RANK)) throw new UsageError(`--fail-on must be error, warn or info`);
   const timeoutMs = values.timeout ? Number(values.timeout) : 30_000;
@@ -189,7 +195,7 @@ export async function main(given: string[]): Promise<number> {
       // stdio servers only: snapshot skips it for HTTP.
       ...(config.offlineCheck ? { offlineCheck: true } : {}),
       onDone: (row, done, total) => {
-        if (tty) process.stderr.write(`\r\x1b[K  ${done}/${total}  ${row.name}`);
+        if (tty) process.stderr.write(`\r\x1b[K  ${done}/${total}  ${plain(row.name)}`);
       },
     });
     if (tty) process.stderr.write('\r\x1b[K');
@@ -501,7 +507,8 @@ for (const method of ['log', 'info', 'debug'] as const) {
 }
 
 main(process.argv.slice(2)).then(exitWhenFlushed, (error: unknown) => {
-  const message = `toolmenu: ${failureMessage(error)}`;
+  // An error can quote what a server said: shown, never acted on by the terminal.
+  const message = terminalSafe(`toolmenu: ${failureMessage(error)}`);
   process.stderr.write(`${colourFor(process.stderr) ? colouriseError(message) : message}\n`);
   exitWhenFlushed(2);
 });

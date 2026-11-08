@@ -9,6 +9,7 @@ import { readFile } from 'node:fs/promises';
 import type { Target } from './connect.js';
 import { ConnectError, clean, commandLine } from './explain.js';
 import { counts, findingLines, githubLines, mdFindings, type Format } from './report.js';
+import { mdCode, mdText, plain } from './sanitize.js';
 import { snapshot, type SnapshotOptions } from './snapshot.js';
 import { SEVERITY_RANK, type Finding, type Menu, type Severity } from './types.js';
 
@@ -311,30 +312,32 @@ export function formatScan(rows: ScanRow[], format: Format, file: string): strin
   if (format === 'github') {
     const lines: string[] = [];
     for (const r of rows) {
-      if (r.failed) lines.push(`::error title=toolmenu scan ${r.name}::${status(r)}`);
+      // The title ends at the first comma or "::": the name goes in the message.
+      if (r.failed) lines.push(`::error title=toolmenu scan::${plain(`${r.name}: ${status(r)}`).replace(/%/g, '%25')}`);
       lines.push(...githubLines(r.findings.map((f) => ({ ...f, message: `${r.name}: ${f.message}` }))));
     }
     return lines.join('\n');
   }
   if (format === 'markdown') {
-    const cell = (t: string) => t.replace(/\|/g, '\\|').replace(/\n/g, ' ');
-    const lines = [`### toolmenu scan: ${cell(file)}`, '', '| Server | Tools | Tokens | Findings |', '|---|--:|--:|---|'];
-    for (const r of rows) lines.push(`| \`${cell(r.name)}\` | ${r.menu ? r.menu.tools.length : '–'} | ${r.menu ? `~${tokens(r.menu.totalTokens)}` : '–'} | ${cell(status(r))} |`);
+    const cell = (t: string) => mdText(t, { cell: true });
+    const lines = [`### toolmenu scan: ${mdText(file)}`, '', '| Server | Tools | Tokens | Findings |', '|---|--:|--:|---|'];
+    for (const r of rows) lines.push(`| ${mdCode(r.name, { cell: true })} | ${r.menu ? r.menu.tools.length : '–'} | ${r.menu ? `~${tokens(r.menu.totalTokens)}` : '–'} | ${cell(status(r))} |`);
     lines.push('', totals(rows));
-    for (const r of rows.filter((x) => x.findings.length)) lines.push('', `#### \`${cell(r.name)}\``, '', ...mdFindings(r.findings));
+    for (const r of rows.filter((x) => x.findings.length)) lines.push('', `#### ${mdCode(r.name)}`, '', ...mdFindings(r.findings));
     return lines.join('\n');
   }
-  const nameWidth = Math.min(32, Math.max(6, ...rows.map((r) => r.name.length)));
-  const lines = [`toolmenu scan  ${file}`, ''];
+  const nameWidth = Math.min(32, Math.max(6, ...rows.map((r) => plain(r.name).length)));
+  const lines = [`toolmenu scan  ${plain(file)}`, ''];
   lines.push(`  ${'server'.padEnd(nameWidth)}  ${'tools'.padStart(5)}  ${'tokens'.padStart(6)}  findings`);
   for (const r of rows) {
-    const name = r.name.length > nameWidth ? `${r.name.slice(0, nameWidth - 1)}…` : r.name;
-    lines.push(`  ${name.padEnd(nameWidth)}  ${(r.menu ? String(r.menu.tools.length) : '–').padStart(5)}  ${(r.menu ? `~${tokens(r.menu.totalTokens)}` : '–').padStart(6)}  ${status(r)}`);
+    const shown = plain(r.name);
+    const name = shown.length > nameWidth ? `${shown.slice(0, nameWidth - 1)}…` : shown;
+    lines.push(`  ${name.padEnd(nameWidth)}  ${(r.menu ? String(r.menu.tools.length) : '–').padStart(5)}  ${(r.menu ? `~${tokens(r.menu.totalTokens)}` : '–').padStart(6)}  ${plain(status(r))}`);
   }
   lines.push('', totals(rows));
   for (const r of rows.filter((x) => x.findings.length)) {
     const s = r.menu!.server;
-    lines.push('', `── ${r.name}  ${s.name ?? ''} ${s.version ?? ''} · protocol ${s.protocolVersion ?? 'unknown'}`.trimEnd(), '');
+    lines.push('', `── ${plain(r.name)}  ${plain(s.name ?? '')} ${plain(s.version ?? '')} · protocol ${plain(s.protocolVersion ?? 'unknown')}`.trimEnd(), '');
     lines.push(...findingLines(r.findings).filter((l, i, all) => !(i === all.length - 1 && l === '')));
   }
   if (rows.some((r) => r.wantsCredentials)) lines.push('', 'A server that wants credentials: toolmenu auth login <url> once (OAuth), or its headers in the config.');

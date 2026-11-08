@@ -1188,3 +1188,34 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   current one>/<path from the repository root>` and links to toolmenu. Written by
   `snapshot` only, to stderr's note; stdout stays the report.
 
+
+## 32. 0.26: security fixes, from an audit
+
+Everything a server says (tool names, descriptions, `serverInfo`, error output) and
+everything a PR controls is untrusted. What changed:
+
+- **`auth login`** opens or prints an authorization URL only if it is `https:`, or
+  `http:` to a loopback host, with no credentials in it (`unsafeAuthorizationUrl`).
+  The server picks that URL, and `xdg-open`, `open` and `rundll32 url.dll,
+  FileProtocolHandler` do whatever its scheme says (`file:`, `smb:`, an app's own).
+- **`toolmenu mcp`**: see §30 (`save_as` inside `cwd`; the two tools that start a
+  server are annotated destructive).
+- **The Action**: the PR comment it updates is only one this token wrote (the job's
+  token: `github-actions[bot]`; a personal token: its login; an app's: a bot; unknown:
+  none, with a warning). `--release` is one `--release=<value>` argument, and a
+  manifest version must start with a digit and have no spaces. Error text goes in the
+  comment as a code block whose fence is longer than any backtick run in it.
+- **Reports** (`src/sanitize.ts`). Server text is shown as escapes, never dropped:
+  the report says what the server sent, and two names never look alike. The menu
+  file keeps the exact bytes.
+  - Text and `--format github`: `plain()` per field shows C0/C1 controls, DEL and
+    bidi overrides as `\u001b`, `\n`… (a newline can't start a line of its own, so
+    no forged finding or `::error::` workflow command). `terminalSafe()` over the
+    whole report, before colour, catches any field missed. Errors on stderr too.
+  - Markdown: `mdText()` keeps toolmenu's own `` `code` `` and escapes the rest:
+    `[ ] ! < > & | * \`, `@` and `#<digit>` broken with `&#8203;` (no mention, no
+    cross-reference), bare URLs and `www.` unlinked unless toolmenu's own. `_` and `~`
+    aren't escaped: they're in most tool names and only change formatting. A server's
+    backtick can only move where code starts; every piece is inert either way.
+    `mdCode()` fences a name with more backticks than it holds. JSON, SARIF, JUnit and
+    the HTML report escape on their own.
