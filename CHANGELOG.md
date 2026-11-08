@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **An HTML report.** `--html <path>` writes the run of `snapshot`, `diff` or `session`
+  as one self-contained page beside the usual report: stat cards (errors, warnings,
+  tools, tokens; breaking changes and the suggested bump for `diff`), the menu as a
+  table in server order with each tool's share of the tokens, and the findings with
+  their next steps. `diff` shows each tool before and after; `session` has a row per
+  step with the menu after it, marking tools inserted, appended or edited, and links
+  each step to its findings. No script and nothing fetched, so it opens offline from a
+  CI artifact; light and dark follow the viewer. The design follows the Board UI
+  design system, in the logo's colours.
+- `session` records the menu after each step (`StepRecord.menu`) only when asked
+  (`stepMenus`, which `--html` sets), so its JSON output is unchanged.
+
 ## 0.25.2
 
 - **JUnit output, for CI systems other than GitHub.** `--junit <path>` writes the

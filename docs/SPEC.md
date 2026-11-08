@@ -1141,6 +1141,22 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   `toolmenu explain <rule>`; below: a passing case with that text in `<system-out>`. No
   findings: one passing case named `no findings`. Properties: `toolmenu.version`,
   `fail-on`, and `target` (the menu file) for snapshot and diff.
+- **HTML** (`src/html.ts`, after 0.25.2): `--html <path>` for snapshot, diff and
+  session writes one document: `<!doctype html>`, inline CSS, inline SVG icons and
+  logo, no script, no external resource (fonts by name: Inter, JetBrains Mono, then
+  system stacks). Every server-provided string is escaped; backticks in messages become
+  `<code>`. Light and dark by `prefers-color-scheme`. Layout: a heading (server name
+  and version, the command and protocol), four stat cards, a table card, and a
+  findings panel (non-info findings as tiles, info folded in a `<details>`, open when
+  it's all there is). Snapshot rows: position, tool (`Writes` for readOnlyHint:
+  false), token share of the largest tool, tokens, status (error dot, warning dot, or
+  the check). Diff rows: the newer menu in order, before/after tokens from the two
+  menu files, `New`, `Description` (a diff/description finding), then removed tools
+  struck through. Session rows: each step with its outcome, a strip of the menu after
+  it (`StepRecord.menu`, recorded with `stepMenus`; `stepMenu` marks a tool added with
+  only added tools after it `appended`, other added tools `inserted`, `moved`, and any
+  other change but serialization `edited`), and links to the step's findings
+  (`#finding-<n>`).
 - **Badge** (`src/badge.ts`): shields endpoint JSON, `schemaVersion: 1`, label
   `toolmenu`, message `<n> tools · <~tokens> tokens` plus errors, else warnings
   (info isn't shown), colour red, yellow or brightgreen, `cacheSeconds: 3600`. Tokens
