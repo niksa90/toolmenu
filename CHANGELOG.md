@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- **`wait_for: tools_list_changed` after a call sees the notification that call
+  caused.** It counted only notifications that arrived after it started, but a call's
+  `list_changed` usually arrives while the call step runs, so the README's own
+  scenario (`call: unlock_toolset`, then `wait_for`) waited out its timeout and said
+  `timed-out`. It now counts from the start of the last call, or from the end of the
+  last `wait_for`.
+- **`diff/param-type` names only the types calls lose.** `null|string → string` said
+  "Calls that send a null|string fail validation"; it now says "a null".
+
+### Docs
+
+- README: what a finding looks like and how much each rule family can be trusted,
+  near the top; the real-server testing in its own section; the session flow as a
+  step-by-step diagram.
+
 ## 0.26.0
 
 ### Security

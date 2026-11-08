@@ -33,6 +33,53 @@ npx toolmenu init -- node dist/server.js          # CI: a baseline, a workflow, 
 
 ![toolmenu session output: tools inserted mid-list, a description edited, each pinned to the step that caused it](https://raw.githubusercontent.com/niksa90/toolmenu/main/docs/demo.svg)
 
+> **Status: 0.26.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
+> every rule in [docs/RULES.md](docs/RULES.md), changes in [CHANGELOG.md](CHANGELOG.md).
+
+**Contents:** [A finding](#what-a-finding-looks-like) ·
+[What it catches](#what-it-catches) · [Why "when it changes" matters](#why-when-it-changes-matters) ·
+[Tested on real servers](#tested-on-real-servers) · [Start here](#start-here) ·
+[CI](#in-ci-one-pr-comment) · [`session`](#session-the-menu-changing-while-the-agent-works) ·
+[`diff`](#diff-compare-releases) · [`snapshot` rules](#snapshot-rules) ·
+[What it can't catch](#what-toolmenu-cant-catch) · [Options](#options)
+
+## What a finding looks like
+
+A server whose `unlock_toolset` tool adds two tools to the menu mid-conversation, run
+with `toolmenu session`:
+
+```
+step 3: call unlock_toolset {"toolset":"audits"} · answered · menu changed · +2 tools · list_changed received
+  ERROR  session/mid-insert
+         +2 tools inserted at position 1 (list_team_audits, get_team_audit). Invalidates the cached prompt:
+         the tool list and the conversation after it are processed again.
+           cost: the whole tool list (this server's part: ~406 tokens, estimate) and the conversation after it
+         → Next: Add new tools at the end of the list, not in the middle; better, list them from the start.
+  WARN   session/unlock-coverage · unsure
+         unlock_toolset looks like it unlocks tools, and the run got through 1 of its 2 toolset values. […]
+           not unlocked: "reports"
+         → Next: Unlock every value: session --init puts each one in the starter.
+```
+
+Every finding has the same parts: a **level** (`ERROR`, `WARN`, `INFO`; `--fail-on`
+decides which fail the run), a **rule id** you can look up (`toolmenu explain
+session/mid-insert`) or turn off in the config, **where** it happened (the step, the
+tool, the parameter path), **what toolmenu saw**, and a **`→ Next:`** step.
+
+How much to trust a finding depends on what it rests on, and the rule id's prefix says which:
+
+| Rule family | What it rests on |
+|---|---|
+| `spec/`, `apps/`, `lists/schema` | The protocol: the official JSON schema for the server's version (pinned in `schemas/`), a MUST/SHOULD in the spec, or the MCP Apps extension |
+| `diff/` | Two menus compared. A **breaking** change is one where a call that passed validation before now fails it |
+| `session/`, `menu/`, `lists/variance`, `auth/`, `catalog/` | Behaviour toolmenu observed: the menu changing after a step, between two calls, between two processes or connections, or served to a bad credential. The finding names the step or the call |
+| `naming/`, `ids/`, `description/`, `write/`, `search/` | How agents read the menu: names, words, descriptions. Tuned on real servers, but heuristics |
+
+A finding marked **`· unsure`**, in any family, rests on names and words rather than on
+something toolmenu saw happen (above: "looks like it unlocks tools"). It says what was
+seen, not what it means. No LLM is involved anywhere: the same server gives the same
+findings on every run.
+
 ## What it catches
 
 | | |
@@ -46,16 +93,7 @@ npx toolmenu init -- node dist/server.js          # CI: a baseline, a workflow, 
 | **Words routing to the wrong tool** | `routes.yml` pins which tool each keyword must (and must not) reach, the way a keyword or BM25 tool search sees the menu. A description edit that lets `get_audit_trail` win "audit" fails the check, with no model and no eval budget. [More](#snapshot-rules) |
 | **Menus that drift** | It catches defaults built from the clock or a hash order, menus that differ per process, per connection or offline, and listings that depend on who asks. |
 
-Every finding says what's wrong, where it is and what toolmenu saw, and ends with a `→ Next:` step.
-It runs on the 22-server [bench](bench/README.md) and on hosted servers (GitHub, Atlassian, Sentry,
-Notion, Supabase, Vercel…). What it has found on real servers is in
-[docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
-
-> **Status: 0.25.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
-> every rule in [docs/RULES.md](docs/RULES.md), changes in [CHANGELOG.md](CHANGELOG.md).
-
-<details>
-<summary><b>Why "when it changes" matters</b></summary>
+## Why "when it changes" matters
 
 The MCP linters I found grade one snapshot of the menu: tool names, descriptions,
 schemas. toolmenu also checks **when** the menu changes:
@@ -77,10 +115,32 @@ schemas. toolmenu also checks **when** the menu changes:
   old versions with today's dependencies, so it records what they serve now
   (FINDINGS F4).
 
-Run against the reference server, `@modelcontextprotocol/server-everything`, it
-reports no false findings ([bench/](bench/README.md)).
+## Tested on real servers
 
-</details>
+Every rule change is run against real MCP servers before it ships, and every finding
+that changes on one of them is read by hand; a change has to say why in the
+[changelog](CHANGELOG.md). The corpus is pinned to exact versions, so a rerun checks the
+same code ([bench/README.md](bench/README.md) has the commands):
+
+| Corpus | Servers | Checked with |
+|---|---|---|
+| The reference server, `@modelcontextprotocol/server-everything` 2.1.0 (2026-07-28) | 1 | `snapshot --lists`, `session --auto`, and a scenario that answers its elicitation demos. **No false findings**: a change that makes one appear is wrong until shown otherwise |
+| Recent stdio servers from the MCP registry that start without credentials | 86 | `snapshot` |
+| The servers across the stdio lists (registry, popular npm, PyPI) that answer the 2026-07-28 handshake | 39 | `session --auto` |
+| Named servers run in a container: GitHub, Atlassian, Sentry, Notion, Supabase, Playwright, MongoDB… ([`bench/servers.txt`](bench/servers.txt)) | 22 | `snapshot`, `session --init`, `session` |
+| Hosted (Streamable HTTP) servers from the registry that need no headers, sampled with a fixed seed | 200 | `snapshot`, read-only `session --auto --max-calls 10` |
+| Hosted servers behind OAuth: Sentry, GitHub, Atlassian (F14) | 3 | `auth login`, then `snapshot` |
+
+What those runs found is in [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md),
+including what toolmenu itself got wrong and how it was fixed. A few:
+
+- **mcp-atlassian serves a different menu every time it starts**: a default built from a
+  Python set, in a new order each process, so every restart misses the cache (F12).
+- **Atlassian Rovo served 4 tools to any `Authorization` header**, valid or not, so a
+  client whose token expired gets fewer tools instead of a reason to log in again (`auth/invalid-accepted`).
+- **The official filesystem server has reported `0.2.0` for 19 releases**, so a
+  server's self-reported version can't be used for semver checks (F5).
+- **Notion's server ships the same 9 unused `$defs` in all 24 tools**: 72% of its menu.
 
 ## Start here
 
@@ -136,11 +196,9 @@ CI, where nobody can sign in, pass a token as a header.
 Both protocol generations are supported: 2026-07-28 (`server/discover`, stateless)
 and the 2025 `initialize` handshake, through the official TypeScript SDK.
 
-Every finding and error says what's wrong, where, what toolmenu saw, and ends in a
-`→ Next:` step. Findings marked `· unsure` are heuristics (names and words): they say
-what was seen, not what it means. `toolmenu explain <rule>` says what a rule checks,
-its default level and how to change it (every rule is in [docs/RULES.md](docs/RULES.md)).
-Every command has its own help: `toolmenu history --help`.
+How to read a finding is [above](#what-a-finding-looks-like). `toolmenu explain <rule>`
+says what a rule checks, its default level and how to change it (every rule is in
+[docs/RULES.md](docs/RULES.md)). Every command has its own help: `toolmenu history --help`.
 
 Behind a proxy (`HTTPS_PROXY`), stdio servers get the proxy and CA settings
 (`HTTPS_PROXY`, `NO_PROXY`, `NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`…)
@@ -381,6 +439,22 @@ PRs without secrets are skipped, and a skipped check still passes; the `skipped`
 
 `session` runs a scripted session (the scenario *is* the agent), lists the menu
 after every step, and reports each change with the step that caused it.
+
+```
+ step   the scenario (the agent)          the menu the client sees          toolmenu
+ ────   ───────────────────────────────   ───────────────────────────────   ─────────────────────────────
+  1     list                              search_forms, get_form, …         baseline: 5 tools
+  2     call search_forms                 (unchanged)                       no change
+  3     call unlock_toolset audits        search_forms, list_team_audits,   +2 tools at position 1:
+                                          get_team_audit, get_form, …       session/mid-insert (error)
+                                                                            fresh process: not there →
+                                                                            session/side-effect (warn)
+```
+
+Each step's menu is compared with the one before it, so a change is pinned to the call
+that caused it, with where in the list it starts and what it costs the prompt cache.
+toolmenu then starts a second process (or opens a second connection) to see whether
+the change is global, or only this session's, which 2026-07-28 rules out.
 
 ```yaml
 # scenario.yml
