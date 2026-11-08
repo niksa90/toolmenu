@@ -2,7 +2,7 @@
 // passes toolmenu's checks.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, linkSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { connect } from '../dist/connect.js';
 import { folder, savePath, serverArgs } from '../dist/mcp.js';
@@ -271,6 +271,15 @@ test('save_as writes only inside cwd: a new file, or a menu file it replaces', a
   assert.match(savePath(cwd, 'notes.txt').error, /isn't a toolmenu menu/);
   assert.match(savePath(cwd, 'sub').error, /not a file/);
   assert.match(savePath(cwd, 'nope/x.json').error, /doesn't exist/);
+  // A dangling symlink: writing it would create its target, wherever that is.
+  symlinkSync(join(elsewhere, 'not-yet.json'), join(cwd, 'dangling.json'));
+  assert.match(savePath(cwd, 'dangling.json').error, /symbolic link/);
+  assert.ok(!existsSync(join(elsewhere, 'not-yet.json')));
+  // A hard link to a menu file outside cwd: same file, so refused.
+  linkSync(join(elsewhere, 'target.json'), join(cwd, 'hard.json'));
+  assert.match(savePath(cwd, 'hard.json').error, /hard link/);
+  // A name that starts with two dots is still inside.
+  assert.ok('path' in savePath(cwd, '..menu.json'));
 
   await withServer(async (call) => {
     const server = [process.execPath, join(FIXTURES, 'sdk-server.mjs')];
@@ -281,6 +290,9 @@ test('save_as writes only inside cwd: a new file, or a menu file it replaces', a
     const out = await call('snapshot_menu', { command: server, cwd, save_as: '../escape.json' });
     assert.equal(out.isError, true);
     assert.ok(!existsSync(join(cwd, '..', 'escape.json')));
+    const badCwd = await call('snapshot_menu', { command: server, cwd: join(cwd, 'missing'), save_as: 'menu.json' });
+    assert.equal(badCwd.isError, true);
+    assert.match(textOf(badCwd), /doesn't exist/);
     const replaced = await call('snapshot_menu', { command: server, cwd, save_as: 'menu.json' });
     assert.equal(replaced.isError, undefined, textOf(replaced));
     assert.equal(JSON.parse(readFileSync(join(cwd, 'menu.json'), 'utf8')).tools.length, 3);

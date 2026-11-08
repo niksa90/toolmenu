@@ -9,7 +9,7 @@
  */
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
-import { dirname, isAbsolute, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
@@ -227,7 +227,7 @@ const absolute = (dir: string, path: string) => (isAbsolute(path) ? path : resol
 /** Whether `path` is `dir` itself or inside it, by path alone. */
 const inside = (dir: string, path: string) => {
   const rel = relative(dir, path);
-  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+  return rel === '' || (rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
 };
 
 /**
@@ -255,6 +255,8 @@ export function savePath(dir: string, saveAs: string): { path: string } | { erro
     return { path };
   }
   if (existing.isSymbolicLink() || !existing.isFile()) return { error: `save_as "${saveAs}" is ${existing.isSymbolicLink() ? 'a symbolic link' : 'not a file'}; toolmenu only writes a new file or replaces a menu file.` };
+  // A hard link: writing it would rewrite the same file wherever else it's linked.
+  if (existing.nlink > 1) return { error: `save_as "${saveAs}" is a file with other names (a hard link), so writing it would change it there too. Pick a new name, e.g. new-menu.json.` };
   let menu = false;
   try {
     menu = (JSON.parse(readFileSync(path, 'utf8')) as { toolmenu?: unknown })?.toolmenu === 1;

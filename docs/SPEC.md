@@ -1089,8 +1089,10 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
 - **Tools** map onto commands: `snapshot_menu` → `snapshot` (`--no-write` unless
   `save_as`), `diff_menus` → `diff`, `check_session` → `session --auto`,
   `explain_rule` → `explain`. `save_as` writes only inside `cwd` (symlinks
-  followed): a new file, or an existing toolmenu menu file; anything else is a tool
-  error and nothing is written. `snapshot_menu` and `check_session` run the command
+  followed): a new file, or an existing toolmenu menu file that has no other hard
+  links; anything else is a tool error and nothing is written. The agent picks `cwd`
+  too, so this keeps save_as from overwriting the user's files, not from creating a
+  new menu file in another folder. `snapshot_menu` and `check_session` run the command
   they're given, so they're annotated `destructiveHint: true`, `idempotentHint:
   false`. A server is `command` (stdio, with `env`) or `url`
   (HTTP, with `headers`), exactly one; the wrong pairing is a tool error before
