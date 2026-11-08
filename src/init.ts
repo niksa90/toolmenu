@@ -6,6 +6,21 @@ import { parse as parseYaml } from 'yaml';
 import type { Target } from './connect.js';
 import { VERSION } from './version.js';
 
+/**
+ * The actions the workflow uses, pinned to the commit of a release (the version in a
+ * comment): a tag can be moved to other code, a commit can't. Dependabot's
+ * github-actions updates keep pins like these current. The toolmenu Action itself is
+ * named by its version tag: this release's commit isn't known when it's built.
+ */
+export const ACTIONS = {
+  checkout: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1',
+  node: 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0',
+  pnpm: 'pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1',
+  uv: 'astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0',
+  python: 'actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0',
+  go: 'actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0',
+} as const;
+
 export type ProjectKind = 'node' | 'python' | 'go' | 'rust' | 'unknown';
 
 export interface Project {
@@ -75,8 +90,8 @@ export function detectProject(dir: string, root: string = dir): Project {
       runs,
       creates: [...new Set([at(installDir, 'node_modules'), at(rel, 'node_modules'), ...(build ? [rel] : [])])],
       setup: [
-        ...(pm === 'pnpm' ? ['- uses: pnpm/action-setup@v6'] : []),
-        '- uses: actions/setup-node@v7',
+        ...(pm === 'pnpm' ? [`- uses: ${ACTIONS.pnpm}`] : []),
+        `- uses: ${ACTIONS.node}`,
         `  with: { node-version: 22${cache} }`,
         ...(installDir === rel ? step(runs[0], rel) : [...step(install, installDir), ...(build ? step(build, rel) : [])]),
       ],
@@ -96,13 +111,13 @@ export function detectProject(dir: string, root: string = dir): Project {
       creates: uvLock ? [at(uvLock.dir, '.venv')] : [],
       // setup-uv has no floating major tag (v10): only full versions resolve.
       setup: uv
-        ? ['- uses: astral-sh/setup-uv@v10.2.0', ...step(run, rel)]
-        : ['- uses: actions/setup-python@v7', "  with: { python-version: '3.12' }", ...step(run, rel)],
+        ? [`- uses: ${ACTIONS.uv}`, ...step(run, rel)]
+        : [`- uses: ${ACTIONS.python}`, "  with: { python-version: '3.12' }", ...step(run, rel)],
     };
   }
   if (has('go.mod')) {
     // go build ./... keeps no binary unless it matches one main package: nothing counted.
-    return { kind: 'go', file: at(rel, 'go.mod'), dir: rel, runs: ['go build ./...'], creates: [], setup: ['- uses: actions/setup-go@v7', `  with: { go-version-file: ${at(rel, 'go.mod')} }`, ...step('go build ./...', rel)] };
+    return { kind: 'go', file: at(rel, 'go.mod'), dir: rel, runs: ['go build ./...'], creates: [], setup: [`- uses: ${ACTIONS.go}`, `  with: { go-version-file: ${at(rel, 'go.mod')} }`, ...step('go build ./...', rel)] };
   }
   if (has('Cargo.toml')) return { kind: 'rust', file: at(rel, 'Cargo.toml'), dir: rel, runs: ['cargo build --release'], creates: [at(rel, 'target')], setup: step('cargo build --release', rel) };
   return { kind: 'unknown', file: '', dir: rel, runs: [], creates: [], setup: [`# TODO: install and build your server here${rel ? ` (it lives in ${rel})` : ''}`] };
@@ -193,7 +208,7 @@ export function workflowYaml(opts: WorkflowOptions): string {
     '  toolmenu:',
     '    runs-on: ubuntu-latest',
     '    steps:',
-    '      - uses: actions/checkout@v7',
+    `      - uses: ${ACTIONS.checkout}`,
     ...(t.kind === 'stdio' ? opts.project.setup.map((l) => `      ${l}`) : []),
     `      - uses: niksa90/toolmenu@v${VERSION}`,
     '        with:',

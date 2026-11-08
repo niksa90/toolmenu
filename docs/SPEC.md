@@ -1236,3 +1236,10 @@ everything a PR controls is untrusted. What changed:
   not, so a server can't learn from the URL it's sent which variables exist. Problem
   messages quote the config as written, never a filled-in value. `scan` starts every command in its list:
   the README and `--help` say so.
+- **Workflows**: `ci.yml` is read-only at the top (`permissions: contents: read`),
+  checkouts don't keep credentials except where the Action under test fetches the
+  base branch, and every action is pinned to a release's commit (Dependabot keeps
+  them current; `test/init.test.mjs` checks the format). `release.yml` builds, tests
+  and packs in a job with no OIDC or npm token (`npm ci --ignore-scripts`, no cache),
+  and publishes that tarball from a job that runs no dependency. `toolmenu init`'s
+  workflow pins the actions it adds the same way (`ACTIONS` in `src/init.ts`).

@@ -4,26 +4,30 @@ name: release
 # create its GitHub Release, then to list it in the MCP Registry (server.json). Needs
 # one repository secret: NPM_TOKEN (an npm automation token). The registry signs in
 # with the workflow's GitHub OIDC token: no secret.
+#
+# Built and tested in one job, published from another: dependencies' code runs only
+# in the build job, which has no OIDC token and no npm token, and the publish job
+# runs nothing but npm publish on the tarball the build job packed. No dependency
+# cache in either: a poisoned cache entry would reach the published package.
 on:
   push:
     tags: ['v*']
 
+permissions:
+  contents: read
+
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
-    # Read-only: npm ci and npm test run dependencies' code.
     permissions:
       contents: read
-      id-token: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
-          cache: npm
       - name: Tag matches package.json
         run: |
           version="$(node -p "require('./package.json').version")"
@@ -37,9 +41,41 @@ jobs:
             echo "::error::CHANGELOG.md has no '## ${GITHUB_REF_NAME#v}' section for the release notes"
             exit 1
           }
-      - run: npm ci
+      # No install scripts: toolmenu's dependencies need none, and a compromised one
+      # would otherwise run before the tests.
+      - run: npm ci --ignore-scripts
       - run: npm test
-      - run: npm publish --provenance --access public
+      - name: Pack the package that will be published
+        run: |
+          npm pack --ignore-scripts
+          ls -l toolmenu-*.tgz
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: package
+          path: toolmenu-*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    # OIDC for npm's provenance; nothing in this job runs a dependency.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: package
+      - name: Publish the tarball the build job tested
+        run: |
+          tarball="toolmenu-${GITHUB_REF_NAME#v}.tgz"
+          [ -f "$tarball" ] || { echo "::error::No $tarball from the build job"; ls -l; exit 1; }
+          npm publish "./$tarball" --provenance --access public --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -51,7 +87,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: GitHub Release, with this version's CHANGELOG section as its notes
@@ -81,7 +117,7 @@ jobs:
     env:
       MCP_PUBLISHER_VERSION: v1.8.7
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: server.json matches package.json
