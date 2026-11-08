@@ -337,8 +337,13 @@ const diffArgs = (r) => readFileSync(join(r.dir, 'stub-cli.sh.diff.args'), 'utf8
 test('action: release auto passes the two versions as one --release value', () => {
   const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main' }, releaseRepo('1.0.0', '1.1.0'));
   assert.ok(r.ran('diff'), r.stdout + r.stderr);
-  const args = diffArgs(r);
-  assert.equal(args[args.indexOf('--release') + 1], '1.0.0..1.1.0');
+  assert.ok(diffArgs(r).includes('--release=1.0.0..1.1.0'), diffArgs(r).join(' '));
+});
+
+test('action: release auto takes Python-style versions without a warning', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main' }, releaseRepo('1.2.3rc1', '1.2.3.post1'));
+  assert.ok(diffArgs(r).includes('--release=1.2.3rc1..1.2.3.post1'), diffArgs(r).join(' '));
+  assert.doesNotMatch(r.stdout, /::warning/);
 });
 
 test('action: a manifest version with spaces or options in it adds no CLI arguments', () => {
@@ -346,14 +351,16 @@ test('action: a manifest version with spaces or options in it adds no CLI argume
   assert.ok(r.ran('diff'), r.stdout + r.stderr);
   const args = diffArgs(r);
   assert.ok(!args.includes('--html'), args.join(' '));
-  assert.ok(!args.includes('--release'), 'not checked with a version that isn\'t one');
-  assert.match(r.stdout, /::warning title=toolmenu::package\.json's version isn't a plain version number/);
+  assert.ok(!args.some((a) => a.startsWith('--release')), 'not checked with a version that isn\'t one');
+  assert.match(r.stdout, /::warning title=toolmenu::package\.json's version, on the base branch or here, doesn't read as a version number/);
 });
 
 test('action: the release input is passed as one argument, glob characters and all', () => {
   const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main', TOOLMENU_RELEASE: '1.0.0..2.0.0 *' }, releaseRepo('1.0.0', '1.1.0'));
-  const args = diffArgs(r);
-  assert.equal(args[args.indexOf('--release') + 1], '1.0.0..2.0.0 *');
+  assert.ok(diffArgs(r).includes('--release=1.0.0..2.0.0 *'), diffArgs(r).join(' '));
+  // Read as its value, even one that starts with "-".
+  const dash = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main', TOOLMENU_RELEASE: '-x' }, releaseRepo('1.0.0', '1.1.0'));
+  assert.ok(diffArgs(dash).includes('--release=-x'), diffArgs(dash).join(' '));
 });
 
 test('action: with the job\'s own token, only github-actions[bot]\'s comment counts', { skip: !hasJq && 'needs jq' }, () => {

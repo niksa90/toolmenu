@@ -117,9 +117,10 @@ base_ref() {
   fi
 }
 
-# A version as the release check reads it: 1.2.3, v1.2, 1.2.3-rc.1+build. Anything
-# else (spaces, a leading "-") is refused, so a manifest can't add CLI arguments.
-is_version() { [[ "$1" =~ ^v?[0-9]+(\.[0-9]+){0,2}([-+][0-9A-Za-z.+-]+)?$ ]]; }
+# A version from a manifest: it starts with a digit and has no spaces (1.2.3,
+# v1.2, 1.2.3-rc.1+build, 1.2.3rc1, 1!2.0). It's passed as one argument anyway; this
+# keeps text that isn't a version out of the check. diff says if it isn't semver.
+is_version() { [[ "$1" =~ ^v?[0-9][0-9A-Za-z.+!_-]*$ ]]; }
 
 # RELEASE_ARGS: --release and its value, as one array element each, or nothing.
 release_args() {
@@ -127,12 +128,12 @@ release_args() {
   local release="${TOOLMENU_RELEASE:-auto}"
   if [ "$release" = "off" ] || [ -z "$release" ]; then return; fi
   # The workflow's own value, as one argument: diff says what's wrong with it.
-  if [ "$release" != "auto" ]; then RELEASE_ARGS=(--release "$release"); return; fi
+  if [ "$release" != "auto" ]; then RELEASE_ARGS=("--release=$release"); return; fi
   local version="${TOOLMENU_VERSION_SCRIPT:-$(dirname "$0")/version.mjs}"
   local base="$BASE"
   [ -n "$base" ] || return
   if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
-    RELEASE_ARGS=(--release "$base..${GITHUB_REF#refs/tags/}")
+    RELEASE_ARGS=("--release=$base..${GITHUB_REF#refs/tags/}")
     return
   fi
   local file before after
@@ -142,10 +143,10 @@ release_args() {
     before=$(git show "$base:$file" 2>/dev/null | node "$version" "$file")
     if [ -n "$before" ] && [ -n "$after" ]; then
       if ! is_version "$before" || ! is_version "$after"; then
-        echo "::warning title=toolmenu::$file's version isn't a plain version number on the base branch or here, so the version bump wasn't checked. Set the Action's 'release' input to check it."
+        echo "::warning title=toolmenu::$file's version, on the base branch or here, doesn't read as a version number (it has spaces, or doesn't start with a digit), so the version bump wasn't checked. Set the Action's 'release' input to check it."
         return
       fi
-      RELEASE_ARGS=(--release "$before..$after")
+      RELEASE_ARGS=("--release=$before..$after")
       return
     fi
   done
@@ -222,10 +223,11 @@ SARIF_SESSION=(); SARIF_SNAPSHOT=(); SARIF_DIFF=()
 if [ -n "${TOOLMENU_SARIF:-}" ]; then
   mkdir -p "$TOOLMENU_SARIF"
   echo "sarif=$TOOLMENU_SARIF" >> "${GITHUB_OUTPUT:-/dev/null}"
-  # Arrays, so a folder with spaces in its name stays one argument.
-  mapfile -t SARIF_SESSION < <(sarif_args session)
-  mapfile -t SARIF_SNAPSHOT < <(sarif_args snapshot)
-  mapfile -t SARIF_DIFF < <(sarif_args diff)
+  # Arrays, so a folder with spaces in its name stays one argument. Not mapfile:
+  # macOS runners have bash 3.2, which has none.
+  while IFS= read -r a; do SARIF_SESSION+=("$a"); done < <(sarif_args session)
+  while IFS= read -r a; do SARIF_SNAPSHOT+=("$a"); done < <(sarif_args snapshot)
+  while IFS= read -r a; do SARIF_DIFF+=("$a"); done < <(sarif_args diff)
 fi
 if [ "${TOOLMENU_BASELINE_FROM:-snapshot}" = "session" ]; then
   if [ -z "${TOOLMENU_SCENARIO:-}" ]; then
@@ -284,7 +286,8 @@ else
   # A tag that isn't a version tag (e.g. a monorepo's mcp-v1.3.0) has no previous
   # release to find, so it too would compare the change with itself.
   if [[ "${GITHUB_REF:-}" == refs/tags/* ]] && ! [[ "$TAG" =~ ^v?[0-9]+\.[0-9]+ ]]; then
-    { echo "**\`$TAG\` isn't a version tag, so there's no previous release to compare with.** The Action compares a tag with the previous \`v1.2.3\` or \`1.2.3\` tag. Run it on pull requests, or only on version tags: see [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#the-version-check-release-auto)."; echo; } >> "$BODY"
+    # A tag name may hold backticks; shown as quotes, so it can't end the code span.
+    { echo "**\`${TAG//\`/\'}\` isn't a version tag, so there's no previous release to compare with.** The Action compares a tag with the previous \`v1.2.3\` or \`1.2.3\` tag. Run it on pull requests, or only on version tags: see [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#the-version-check-release-auto)."; echo; } >> "$BODY"
     echo "::error title=toolmenu::'$TAG' isn't a version tag (v1.2.3 or 1.2.3), so there's no previous release to compare with. See docs/github-action.md."
     ERROR_SHOWN=true
     note 2
