@@ -20,8 +20,10 @@ The menu of the last release, in this order:
    current folder, not the repository root).
 2. No baseline: build the last release in a separate worktree
    (`git worktree add /tmp/last-release <last tag>`), build it there, snapshot it with
-   `snapshot_menu` (`cwd` that worktree, `save_as` an absolute path outside the repo),
-   then `git worktree remove /tmp/last-release`.
+   `snapshot_menu` (`cwd` that worktree, `save_as: "baseline.json"`: save_as must be
+   inside `cwd`), and use `/tmp/last-release/baseline.json` as the baseline. After the
+   comparison, `git worktree remove --force /tmp/last-release` (`--force`: the baseline
+   file is untracked there).
 3. A package with releases on npm and no tags: `npx -y toolmenu history <package>`
    researches the published versions.
 

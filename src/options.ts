@@ -12,6 +12,7 @@ export const CLI_OPTIONS = {
   'out-dir': { type: 'string' },
   'offline-check': { type: 'boolean' },
   concurrency: { type: 'string' },
+  'allow-env': { type: 'string', multiple: true },
   'no-write': { type: 'boolean' },
   routes: { type: 'string' },
   config: { type: 'string' },

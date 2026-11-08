@@ -25,6 +25,9 @@ export interface PackageSource {
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
+/** A registry version as npm publishes them: 1.2.3, 1.2.3-rc.1, 1.2.3+build. */
+const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+
 /** The npm registry, through the user's own npm (their config, proxy and registry). */
 export const npmSource: PackageSource = {
   async versions(pkg) {
@@ -133,8 +136,11 @@ export async function history(pkg: string, options: HistoryOptions): Promise<His
   const all = await source.versions(pkg);
   // Version order, not publish order: a backport (1.0.1 after 2.0.0) is diffed
   // against 1.0.0, not against 2.0.0.
+  // Only versions shaped like semver: each is used in a file name and an npm argument
+  // (through a shell on Windows), and a registry is another party.
   const candidates = all
     .map((v, index) => ({ v, index }))
+    .filter(({ v }) => SEMVER.test(v.version))
     .filter(({ v }) => options.includePrereleases || !v.version.includes('-'))
     .sort((a, b) => compareVersions(a.v.version, b.v.version) || a.index - b.index)
     .map(({ v }) => v);

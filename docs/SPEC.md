@@ -634,7 +634,7 @@ Things building `snapshot` settled or changed. The spec above is updated to matc
   baseline, optional session, one PR comment updated in place, the job summary.
   toolmenu's own CI runs it on every PR against a fixture server.
 - **Release:** pushing a `v*` tag that matches `package.json` publishes to npm with
-  provenance (`NPM_TOKEN` secret).
+  provenance (from 0.26.0, npm trusted publishing: no `NPM_TOKEN` secret).
 - **`--versions all`** for `history`.
 - **Not done: `--sandbox docker`.** No Docker daemon was available to test it, and it
   won't ship untested.
@@ -1088,7 +1088,13 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   fixed and the same for everyone.
 - **Tools** map onto commands: `snapshot_menu` → `snapshot` (`--no-write` unless
   `save_as`), `diff_menus` → `diff`, `check_session` → `session --auto`,
-  `explain_rule` → `explain`. A server is `command` (stdio, with `env`) or `url`
+  `explain_rule` → `explain`. `save_as` writes only inside `cwd` (symlinks
+  followed): a new file, or an existing toolmenu menu file that has no other hard
+  links; anything else is a tool error and nothing is written. The agent picks `cwd`
+  too, so this keeps save_as from overwriting the user's files, not from creating a
+  new menu file in another folder. `snapshot_menu` and `check_session` run the command
+  they're given, so they're annotated `destructiveHint: true`, `idempotentHint:
+  false`. A server is `command` (stdio, with `env`) or `url`
   (HTTP, with `headers`), exactly one; the wrong pairing is a tool error before
   anything runs.
 - **Each call runs the CLI** (`process.execPath dist/cli.js …`, no shell) in `cwd`,
@@ -1182,3 +1188,90 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   current one>/<path from the repository root>` and links to toolmenu. Written by
   `snapshot` only, to stderr's note; stdout stays the report.
 
+
+## 32. 0.26: security fixes, from an audit
+
+Everything a server says (tool names, descriptions, `serverInfo`, error output) and
+everything a PR controls is untrusted. What changed:
+
+- **`auth login`** opens or prints an authorization URL only if it is `https:`, or
+  `http:` to a loopback host, with no credentials in it (`unsafeAuthorizationUrl`).
+  The server picks that URL, and `xdg-open`, `open` and `rundll32 url.dll,
+  FileProtocolHandler` do whatever its scheme says (`file:`, `smb:`, an app's own).
+- **`toolmenu mcp`**: see §30 (`save_as` inside `cwd`; the two tools that start a
+  server are annotated destructive).
+- **The Action**: the PR comment it updates is only one this token wrote (the job's
+  token: `github-actions[bot]`; a personal token: its login; an app's: a bot; unknown:
+  none, with a warning). `--release` is one `--release=<value>` argument, and a
+  manifest version must start with a digit and have no spaces. Error text goes in the
+  comment as a code block whose fence is longer than any backtick run in it.
+- **Reports** (`src/sanitize.ts`). Server text is shown as escapes, never dropped:
+  the report says what the server sent, and two names never look alike. The menu
+  file keeps the exact bytes.
+  - Text and `--format github`: `plain()` per field shows C0/C1 controls, DEL and
+    bidi overrides as `\u001b`, `\n`… (a newline can't start a line of its own, so
+    no forged finding or `::error::` workflow command). `terminalSafe()` over the
+    whole report, before colour, catches any field missed. Errors on stderr too.
+  - Markdown: `mdText()` keeps toolmenu's own `` `code` `` and escapes the rest:
+    `[ ] ! < > & | * \`, `@` and `#<digit>` broken with `&#8203;` (no mention, no
+    cross-reference), bare URLs and `www.` unlinked unless toolmenu's own. `_` and `~`
+    aren't escaped: they're in most tool names and only change formatting. A server's
+    backtick can only move where code starts; every piece is inert either way.
+    `mdCode()` fences a name with more backticks than it holds. JSON, SARIF, JUnit and
+    the HTML report escape on their own. GitHub's `GH-<n>` references are broken too;
+    toolmenu's own links stay links only on their own path (no `/../`, `%2e`).
+  - The net: after `toolmenu mcp` (whose stdout is the protocol), the CLI's stdout and
+    stderr go through `terminalSafe()` whatever writes to them (`guardStream`), so a
+    field a report forgot is still shown as escapes. Characters past the first plane
+    are written as their UTF-16 pair (`\udb40\udc41`), which JSON reads back as the
+    same character: JSON output stays the same JSON. Only text already made safe, with
+    toolmenu's own colour added, is written past it (`writeUnguarded`). Server stderr
+    quoted in an error is marked `│` on every line.
+- **`spec/tool-name`** (warn): a tool name outside the format the spec recommends from
+  2025-11-25 (SEP-986: 1 to 128 of `A-Z a-z 0-9 _ - .`; a SHOULD), info on older
+  protocols. An error on any protocol when a name has hidden characters: `HIDDEN_SOURCE`
+  in `src/sanitize.ts` (`\p{Cc}`, `\p{Cf}`, `\p{Zl}`, `\p{Zp}`,
+  `\p{Default_Ignorable_Code_Point}`, the blank braille cell), the same class reports
+  escape, so what's flagged is what's shown escaped. Length counts characters, not
+  UTF-16 units. `naming/client-name` (with `--client`) still says what a client's model
+  API refuses; a name can get both.
+- **`scan`** fills a config's `${VAR}` only from variables named with `--allow-env`
+  (comma-separated or repeated, `'*'` for all). The config picks where each value goes
+  (a URL, a header, an argument), so one from someone else could send any of your
+  environment to a server of theirs. An entry using a variable that is set but not
+  allowed isn't checked and names the `--allow-env` it needs. A variable that isn't
+  allowed is never read: with a `:-default` it gets the default whether it's set or
+  not, so a server can't learn from the URL it's sent which variables exist. Problem
+  messages quote the config as written, never a filled-in value. `scan` starts every command in its list:
+  the README and `--help` say so.
+- **Workflows**: `ci.yml` is read-only at the top (`permissions: contents: read`),
+  checkouts don't keep credentials except where the Action under test fetches the
+  base branch, and every action is pinned to a release's commit (Dependabot keeps
+  them current; `test/init.test.mjs` checks the format). `release.yml` has three jobs:
+  build installs without scripts and compiles, so only the TypeScript compiler (and
+  `scripts/rule-docs.mjs`) writes the published files, then packs; test runs the tests
+  (every dependency's code) apart from those files; publish runs only `npm publish`
+  on build's tarball, after both, with npm's trusted publishing (OIDC; the trusted
+  publisher names `release.yml` and the `npm` environment; npm 11.21.1 pinned, since
+  Node 22's npm 10 can't), so no npm token exists to leak. No job running dependency
+  code has the OIDC token, and none uses a dependency cache. `pins.yml` never runs: it lists the actions
+  only `toolmenu init` uses, so Dependabot updates them, and `test/init.test.mjs`
+  fails until `ACTIONS` in `src/init.ts` matches the pins in the workflows. `toolmenu init`'s
+  workflow pins the actions it adds the same way (`ACTIONS` in `src/init.ts`).
+- **Credentials off argv**: the CLI reads `TOOLMENU_ARGS` as well as `TOOLMENU_MCP_ARGS`
+  (each a JSON array of toolmenu options and their values, put before `--`; no `--`
+  and no stray word in it). argv is readable by every user (`ps`); an environment only
+  by its own user, so this keeps credentials from other users, not from processes of
+  the same user (`/proc/<pid>/environ` keeps the value after `delete process.env`).
+  The Action passes `headers` and `env` this way to 0.26.0 and later; an older
+  `version` gets them as arguments, with a warning. `toolmenu mcp` clears both
+  variables for the runs it starts.
+- **File contents stay out of errors**: a menu file, `toolmenu.config.json` or a scan
+  list that isn't JSON is reported with where it broke (`jsonErrorAt`), never Node's
+  quote of the text around it. JUnit output writes CR, DEL, C1 and format characters
+  as character references.
+- **Smaller ones**: a menu file that isn't JSON is reported with where it broke, never
+  Node's quote of its first bytes (`diff_menus` reads any path an agent gives it).
+  `history` uses only registry versions shaped like semver (a file name and an npm
+  argument, through a shell on Windows). A proxy URL with a password in it reaches the
+  stdio server under test, as the proxy settings do: the README says so.

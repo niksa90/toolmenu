@@ -4,6 +4,7 @@ import { CLIENTS } from './clients.js';
 import { LIST_WORDS } from './lists.js';
 import { CLIENT_LIMITS } from './rules/description.js';
 import type { Severity } from './types.js';
+import { jsonErrorAt } from './menu.js';
 
 export interface Config {
   rules?: Record<string, Severity | 'off'>;
@@ -54,6 +55,11 @@ export async function loadConfig(path?: string): Promise<Config> {
   try {
     config = JSON.parse(await readFile(file, 'utf8')) as Config;
   } catch (error) {
+    // Unreadable: Node's own words (ENOENT…). Not JSON: where, never what it holds.
+    if (error instanceof SyntaxError) {
+      const at = jsonErrorAt(error);
+      throw new Error(`${file} isn't valid JSON${at ? ` (${at})` : ''}.`);
+    }
     throw new Error(`${file}: ${error instanceof Error ? error.message : String(error)}`);
   }
   for (const [id, value] of Object.entries(config.rules ?? {})) {

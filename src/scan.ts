@@ -9,7 +9,9 @@ import { readFile } from 'node:fs/promises';
 import type { Target } from './connect.js';
 import { ConnectError, clean, commandLine } from './explain.js';
 import { counts, findingLines, githubLines, mdFindings, type Format } from './report.js';
+import { mdCode, mdText, plain } from './sanitize.js';
 import { snapshot, type SnapshotOptions } from './snapshot.js';
+import { jsonErrorAt } from './menu.js';
 import { SEVERITY_RANK, type Finding, type Menu, type Severity } from './types.js';
 
 export interface ScanEntry {
@@ -26,11 +28,27 @@ export interface ScanEntry {
 
 export class ListError extends Error {}
 
-/** `${VAR}`, `${VAR:-default}` (Claude Code) and `${env:VAR}` (VS Code), from the environment. */
-function expand(value: string, env: NodeJS.ProcessEnv, missing: Set<string>): string {
+/**
+ * Which environment variables a config's ${VAR} may be filled from: the names given
+ * with --allow-env, or all of them ('*'). None by default: the config file picks
+ * where each value goes (a URL, a header, a server's arguments), so a config from
+ * someone else could send any of your environment to a server of theirs.
+ */
+export type AllowEnv = ReadonlySet<string> | '*';
+
+/** `${VAR}`, `${VAR:-default}` (Claude Code) and `${env:VAR}` (VS Code), from the environment, where allowed. */
+function expand(value: string, env: NodeJS.ProcessEnv, missing: Set<string>, allow: AllowEnv, blocked: Set<string>): string {
   return value.replace(/\$\{(?:env:)?([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}/g, (_, name: string, fallback: string | undefined) => {
+    const allowed = allow === '*' || allow.has(name);
+    // Not allowed: the environment isn't read at all. With a default, the default, set
+    // or not, so a server can't learn which variables exist from which URL it gets.
+    if (!allowed && fallback !== undefined) return fallback;
     const v = env[name];
-    if (v !== undefined && v !== '') return v;
+    if (v !== undefined && v !== '') {
+      if (allowed) return v;
+      blocked.add(name);
+      return '';
+    }
     if (fallback !== undefined) return fallback;
     missing.add(name);
     return '';
@@ -47,18 +65,20 @@ function record(v: unknown): Record<string, string> | undefined {
 }
 
 /** One server from a client config: `{ command, args, env, cwd }` or `{ url, headers }`. */
-function fromConfig(name: string, raw: unknown, env: NodeJS.ProcessEnv): ScanEntry {
+function fromConfig(name: string, raw: unknown, env: NodeJS.ProcessEnv, allow: AllowEnv): ScanEntry {
   if (!raw || typeof raw !== 'object') return { name, problem: 'not an object' };
   const s = raw as Record<string, unknown>;
   if (s.disabled === true || s.enabled === false) return { name, disabled: true };
   const missing = new Set<string>();
-  const x = (v: string) => expand(v, env, missing);
+  const blocked = new Set<string>();
+  const x = (v: string) => expand(v, env, missing, allow, blocked);
   const map = (r: Record<string, string> | undefined) => (r ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, x(v)])) : undefined);
   const type = typeof s.type === 'string' ? s.type : typeof s.transport === 'string' ? s.transport : undefined;
   let target: Target;
   if (typeof s.url === 'string' || typeof s.serverUrl === 'string' || typeof s.httpUrl === 'string') {
     if (type === 'sse') return { name, problem: 'HTTP+SSE transport, which toolmenu doesn\'t speak (Streamable HTTP only)' };
-    const url = x((s.url ?? s.serverUrl ?? s.httpUrl) as string);
+    const raw = [s.url, s.serverUrl, s.httpUrl].find((u): u is string => typeof u === 'string')!;
+    const url = x(raw);
     const headers = map(record(s.headers));
     target = { kind: 'http', url, ...(headers && Object.keys(headers).length ? { headers } : {}) };
   } else if (typeof s.command === 'string') {
@@ -72,12 +92,18 @@ function fromConfig(name: string, raw: unknown, env: NodeJS.ProcessEnv): ScanEnt
       ...(typeof s.cwd === 'string' ? { cwd: x(s.cwd) } : {}),
     };
   } else return { name, problem: 'neither a command nor a url' };
+  // Set but not allowed: not checked, rather than checked with the value left out.
+  if (blocked.size) {
+    const list = [...blocked].sort();
+    return { name, problem: `${list.join(', ')} ${list.length === 1 ? 'is' : 'are'} set, but not passed in: scan fills \${VAR} only from the variables named with --allow-env (--allow-env ${list.join(',')}), so a config can't send the rest of your environment anywhere` };
+  }
   // A missing variable would send an empty credential: say so instead of checking a server set up wrong.
   if (missing.size) return { name, problem: `${[...missing].join(', ')} ${missing.size === 1 ? 'is' : 'are'} not set (the config refers to ${missing.size === 1 ? 'it' : 'them'})` };
-  if (target.kind === 'http' && !/^https?:\/\//.test(target.url)) return { name, problem: `"${clean(target.url, 60)}" isn't an http(s) URL` };
+  // The URL as the config writes it: a filled-in ${VAR} may be a secret.
+  if (target.kind === 'http' && !/^https?:\/\//.test(target.url)) return { name, problem: `"${clean([s.url, s.serverUrl, s.httpUrl].find((u): u is string => typeof u === 'string')!, 60)}" isn't an http(s) URL` };
   const shown: Target =
     target.kind === 'http'
-      ? { kind: 'http', url: (s.url ?? s.serverUrl ?? s.httpUrl) as string }
+      ? { kind: 'http', url: [s.url, s.serverUrl, s.httpUrl].find((u): u is string => typeof u === 'string')! }
       : { kind: 'stdio', command: s.command as string, args: (s.args as string[] | undefined) ?? [] };
   return { name, target, shown };
 }
@@ -155,7 +181,7 @@ function fromLines(text: string): ScanEntry[] {
 }
 
 /** The servers in a list file, unique names (a repeat gets #2, #3). */
-export function parseList(text: string, file: string, env: NodeJS.ProcessEnv = process.env): ScanEntry[] {
+export function parseList(text: string, file: string, env: NodeJS.ProcessEnv = process.env, allow: AllowEnv = new Set()): ScanEntry[] {
   let entries: ScanEntry[];
   if (/\.jsonc?$/i.test(file) || /^\s*\{/.test(text)) {
     let json: unknown;
@@ -163,12 +189,13 @@ export function parseList(text: string, file: string, env: NodeJS.ProcessEnv = p
       // .jsonc and VS Code's settings allow comments; strip whole-line ones.
       json = JSON.parse(text.replace(/^\s*\/\/.*$/gm, ''));
     } catch (error) {
-      throw new ListError(`${file} isn't valid JSON: ${(error as Error).message}`);
+      const at = jsonErrorAt(error);
+      throw new ListError(`${file} isn't valid JSON${at ? ` (${at})` : ''}`);
     }
     const j = json as Record<string, unknown>;
     const servers = j.mcpServers ?? j.servers ?? (j.mcp as Record<string, unknown> | undefined)?.servers ?? j['mcp.servers'];
     if (!servers || typeof servers !== 'object' || Array.isArray(servers)) throw new ListError(`${file} has no mcpServers or servers object, the key MCP clients keep their servers under`);
-    entries = Object.entries(servers as Record<string, unknown>).map(([name, raw]) => fromConfig(name, raw, env));
+    entries = Object.entries(servers as Record<string, unknown>).map(([name, raw]) => fromConfig(name, raw, env, allow));
   } else entries = fromLines(text);
   if (!entries.length) throw new ListError(`${file} lists no servers`);
   const seen = new Map<string, number>();
@@ -179,14 +206,14 @@ export function parseList(text: string, file: string, env: NodeJS.ProcessEnv = p
   });
 }
 
-export async function loadList(file: string): Promise<ScanEntry[]> {
+export async function loadList(file: string, allow: AllowEnv = new Set()): Promise<ScanEntry[]> {
   let text: string;
   try {
     text = await readFile(file, 'utf8');
   } catch (error) {
     throw new ListError(`couldn't read ${file}: ${(error as NodeJS.ErrnoException).code ?? (error as Error).message}`);
   }
-  return parseList(text, file);
+  return parseList(text, file, process.env, allow);
 }
 
 export interface ScanRow {
@@ -311,30 +338,32 @@ export function formatScan(rows: ScanRow[], format: Format, file: string): strin
   if (format === 'github') {
     const lines: string[] = [];
     for (const r of rows) {
-      if (r.failed) lines.push(`::error title=toolmenu scan ${r.name}::${status(r)}`);
+      // The title ends at the first comma or "::": the name goes in the message.
+      if (r.failed) lines.push(`::error title=toolmenu scan::${plain(`${r.name}: ${status(r)}`).replace(/%/g, '%25')}`);
       lines.push(...githubLines(r.findings.map((f) => ({ ...f, message: `${r.name}: ${f.message}` }))));
     }
     return lines.join('\n');
   }
   if (format === 'markdown') {
-    const cell = (t: string) => t.replace(/\|/g, '\\|').replace(/\n/g, ' ');
-    const lines = [`### toolmenu scan: ${cell(file)}`, '', '| Server | Tools | Tokens | Findings |', '|---|--:|--:|---|'];
-    for (const r of rows) lines.push(`| \`${cell(r.name)}\` | ${r.menu ? r.menu.tools.length : '–'} | ${r.menu ? `~${tokens(r.menu.totalTokens)}` : '–'} | ${cell(status(r))} |`);
+    const cell = (t: string) => mdText(t, { cell: true });
+    const lines = [`### toolmenu scan: ${mdText(file)}`, '', '| Server | Tools | Tokens | Findings |', '|---|--:|--:|---|'];
+    for (const r of rows) lines.push(`| ${mdCode(r.name, { cell: true })} | ${r.menu ? r.menu.tools.length : '–'} | ${r.menu ? `~${tokens(r.menu.totalTokens)}` : '–'} | ${cell(status(r))} |`);
     lines.push('', totals(rows));
-    for (const r of rows.filter((x) => x.findings.length)) lines.push('', `#### \`${cell(r.name)}\``, '', ...mdFindings(r.findings));
+    for (const r of rows.filter((x) => x.findings.length)) lines.push('', `#### ${mdCode(r.name)}`, '', ...mdFindings(r.findings));
     return lines.join('\n');
   }
-  const nameWidth = Math.min(32, Math.max(6, ...rows.map((r) => r.name.length)));
-  const lines = [`toolmenu scan  ${file}`, ''];
+  const nameWidth = Math.min(32, Math.max(6, ...rows.map((r) => plain(r.name).length)));
+  const lines = [`toolmenu scan  ${plain(file)}`, ''];
   lines.push(`  ${'server'.padEnd(nameWidth)}  ${'tools'.padStart(5)}  ${'tokens'.padStart(6)}  findings`);
   for (const r of rows) {
-    const name = r.name.length > nameWidth ? `${r.name.slice(0, nameWidth - 1)}…` : r.name;
-    lines.push(`  ${name.padEnd(nameWidth)}  ${(r.menu ? String(r.menu.tools.length) : '–').padStart(5)}  ${(r.menu ? `~${tokens(r.menu.totalTokens)}` : '–').padStart(6)}  ${status(r)}`);
+    const shown = plain(r.name);
+    const name = shown.length > nameWidth ? `${shown.slice(0, nameWidth - 1)}…` : shown;
+    lines.push(`  ${name.padEnd(nameWidth)}  ${(r.menu ? String(r.menu.tools.length) : '–').padStart(5)}  ${(r.menu ? `~${tokens(r.menu.totalTokens)}` : '–').padStart(6)}  ${plain(status(r))}`);
   }
   lines.push('', totals(rows));
   for (const r of rows.filter((x) => x.findings.length)) {
     const s = r.menu!.server;
-    lines.push('', `── ${r.name}  ${s.name ?? ''} ${s.version ?? ''} · protocol ${s.protocolVersion ?? 'unknown'}`.trimEnd(), '');
+    lines.push('', `── ${plain(r.name)}  ${plain(s.name ?? '')} ${plain(s.version ?? '')} · protocol ${plain(s.protocolVersion ?? 'unknown')}`.trimEnd(), '');
     lines.push(...findingLines(r.findings).filter((l, i, all) => !(i === all.length - 1 && l === '')));
   }
   if (rows.some((r) => r.wantsCredentials)) lines.push('', 'A server that wants credentials: toolmenu auth login <url> once (OAuth), or its headers in the config.');

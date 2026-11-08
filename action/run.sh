@@ -54,10 +54,45 @@ FAIL_ON="${TOOLMENU_FAIL_ON:-error}"
 
 # Connection options, one per line: HTTP headers ("Name: value", e.g. an API key
 # from a secret) and environment variables for a stdio server ("KEY=value"). They
-# go to the CLI as arguments and never into the report.
+# go to the CLI in its environment, and never into the report.
 CONN=()
 while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--header "$line"); done <<< "${TOOLMENU_HEADERS:-}"
 while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--env "$line"); done <<< "${TOOLMENU_ENV:-}"
+# Not as arguments: argv is readable by every user on the machine (ps). The CLI takes
+# them from TOOLMENU_ARGS, a JSON array, from 0.26.0 on; an older one (the version
+# input) gets them as arguments, as it always did, since it would ignore TOOLMENU_ARGS
+# and run without them.
+CONN_JSON=""
+CONN_IN_ARGS=false
+cli_version="${TOOLMENU_VERSION#v}"
+if [ -z "${TOOLMENU_CLI:-}" ] && [[ "$cli_version" =~ ^[0-9]+\.[0-9]+ ]] && [ "$(printf '%s\n%s\n' "$cli_version" 0.26.0 | sort -V | head -1)" != 0.26.0 ]; then
+  CONN_IN_ARGS=true
+  if [ "${#CONN[@]}" -gt 0 ]; then echo "::warning title=toolmenu::toolmenu $cli_version takes headers and env as arguments, which other users of the runner can read; 0.26.0 and later take them from the environment."; fi
+elif [ "${#CONN[@]}" -gt 0 ]; then
+  CONN_JSON=$(printf '%s\0' "${CONN[@]}" | node -e 'process.stdin.setEncoding("utf8"); let d = ""; process.stdin.on("data", (c) => (d += c)).on("end", () => process.stdout.write(JSON.stringify(d.split("\0").slice(0, -1))))')
+fi
+# Run the CLI with the connection options (the CLI command is word-split on purpose):
+# in TOOLMENU_ARGS, or for an older CLI before the server command's "--".
+run_cli() {
+  if [ -n "$CONN_JSON" ]; then
+    TOOLMENU_ARGS="$CONN_JSON" "$@"
+  elif [ "$CONN_IN_ARGS" = true ] && [ "${#CONN[@]}" -gt 0 ]; then
+    # Before "--" (a command), or before the URL, the last argument: where they went before 0.26.0.
+    local args=() a seen=false n=0
+    for a in "$@"; do [ "$a" = -- ] && seen=true; done
+    for a in "$@"; do
+      n=$((n + 1))
+      if { [ "$seen" = true ] && [ "$a" = -- ]; } || { [ "$seen" = false ] && [ "$n" -eq "$#" ]; }; then
+        args+=("${CONN[@]}")
+        seen=done
+      fi
+      args+=("$a")
+    done
+    "${args[@]}"
+  else
+    "$@"
+  fi
+}
 # Each only applies to one kind of server: say so instead of ignoring it quietly.
 HEADERS_SET="${TOOLMENU_HEADERS:-}"; HEADERS_SET="${HEADERS_SET//[[:space:]]/}"
 ENV_SET="${TOOLMENU_ENV:-}"; ENV_SET="${ENV_SET//[[:space:]]/}"
@@ -77,6 +112,16 @@ else
   echo "::error title=toolmenu::Set either 'command' (how to start the server) or 'url'."
   exit 2
 fi
+
+# Text from a run (the server's stderr, toolmenu's error) as a code block in the
+# report, so markdown, links and @mentions in it stay text. The fence is longer than
+# any run of backticks in the text, so the text can't close it.
+fenced() {
+  local text fence='```' run
+  text=$(cat)
+  while IFS= read -r run; do [ "${#run}" -ge "${#fence}" ] && fence="${run}\`"; done < <(grep -oE '`+' <<< "$text")
+  printf '%s\n%s\n%s\n' "$fence" "$text" "$fence"
+}
 
 status=0
 note() { [ "$1" -gt "$status" ] && status=$1; }
@@ -107,15 +152,23 @@ base_ref() {
   fi
 }
 
+# A version from a manifest: it starts with a digit and has no spaces (1.2.3,
+# v1.2, 1.2.3-rc.1+build, 1.2.3rc1, 1!2.0). It's passed as one argument anyway; this
+# keeps text that isn't a version out of the check. diff says if it isn't semver.
+is_version() { [[ "$1" =~ ^v?[0-9][0-9A-Za-z.+!_-]*$ ]]; }
+
+# RELEASE_ARGS: --release and its value, as one array element each, or nothing.
 release_args() {
+  RELEASE_ARGS=()
   local release="${TOOLMENU_RELEASE:-auto}"
   if [ "$release" = "off" ] || [ -z "$release" ]; then return; fi
-  if [ "$release" != "auto" ]; then echo "--release $release"; return; fi
+  # The workflow's own value, as one argument: diff says what's wrong with it.
+  if [ "$release" != "auto" ]; then RELEASE_ARGS=("--release=$release"); return; fi
   local version="${TOOLMENU_VERSION_SCRIPT:-$(dirname "$0")/version.mjs}"
   local base="$BASE"
   [ -n "$base" ] || return
   if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
-    echo "--release $base..${GITHUB_REF#refs/tags/}"
+    RELEASE_ARGS=("--release=$base..${GITHUB_REF#refs/tags/}")
     return
   fi
   local file before after
@@ -123,7 +176,14 @@ release_args() {
     [ -f "$file" ] || continue
     after=$(node "$version" "$file" < "$file")
     before=$(git show "$base:$file" 2>/dev/null | node "$version" "$file")
-    if [ -n "$before" ] && [ -n "$after" ]; then echo "--release $before..$after"; return; fi
+    if [ -n "$before" ] && [ -n "$after" ]; then
+      if ! is_version "$before" || ! is_version "$after"; then
+        echo "::warning title=toolmenu::$file's version, on the base branch or here, doesn't read as a version number (it has spaces, or doesn't start with a digit), so the version bump wasn't checked. Set the Action's 'release' input to check it."
+        return
+      fi
+      RELEASE_ARGS=("--release=$before..$after")
+      return
+    fi
   done
 }
 
@@ -198,10 +258,11 @@ SARIF_SESSION=(); SARIF_SNAPSHOT=(); SARIF_DIFF=()
 if [ -n "${TOOLMENU_SARIF:-}" ]; then
   mkdir -p "$TOOLMENU_SARIF"
   echo "sarif=$TOOLMENU_SARIF" >> "${GITHUB_OUTPUT:-/dev/null}"
-  # Arrays, so a folder with spaces in its name stays one argument.
-  mapfile -t SARIF_SESSION < <(sarif_args session)
-  mapfile -t SARIF_SNAPSHOT < <(sarif_args snapshot)
-  mapfile -t SARIF_DIFF < <(sarif_args diff)
+  # Arrays, so a folder with spaces in its name stays one argument. Not mapfile:
+  # macOS runners have bash 3.2, which has none.
+  while IFS= read -r a; do SARIF_SESSION+=("$a"); done < <(sarif_args session)
+  while IFS= read -r a; do SARIF_SNAPSHOT+=("$a"); done < <(sarif_args snapshot)
+  while IFS= read -r a; do SARIF_DIFF+=("$a"); done < <(sarif_args diff)
 fi
 if [ "${TOOLMENU_BASELINE_FROM:-snapshot}" = "session" ]; then
   if [ -z "${TOOLMENU_SCENARIO:-}" ]; then
@@ -220,7 +281,7 @@ run_session() {
   [ "$FROM_SESSION" = true ] && union=(--union-out "$OUT/union.json")
   # scenario: auto builds the steps from the menu (read-only tools only).
   [ "$TOOLMENU_SCENARIO" = auto ] && steps=(--auto)
-  $CLI session "${steps[@]}" --format markdown ${SARIF_SESSION[@]+"${SARIF_SESSION[@]}"} --fail-on "$FAIL_ON" ${union[@]+"${union[@]}"} ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
+  run_cli $CLI session "${steps[@]}" --format markdown ${SARIF_SESSION[@]+"${SARIF_SESSION[@]}"} --fail-on "$FAIL_ON" ${union[@]+"${union[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
   SESSION_CODE=$?
   SESSION_RAN=true
 }
@@ -228,7 +289,7 @@ run_session() {
 # 1. Snapshot the menu this change produces.
 SNAPSHOT_OPTS=()
 [ "${TOOLMENU_CATALOG:-false}" = "true" ] && SNAPSHOT_OPTS+=(--catalog)
-$CLI snapshot ${SNAPSHOT_OPTS[@]+"${SNAPSHOT_OPTS[@]}"} --out "$OUT/current.json" --format markdown ${SARIF_SNAPSHOT[@]+"${SARIF_SNAPSHOT[@]}"} --fail-on "$FAIL_ON" ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
+run_cli $CLI snapshot ${SNAPSHOT_OPTS[@]+"${SNAPSHOT_OPTS[@]}"} --out "$OUT/current.json" --format markdown ${SARIF_SNAPSHOT[@]+"${SARIF_SNAPSHOT[@]}"} --fail-on "$FAIL_ON" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
 SKIPPED=false
 ERROR_SHOWN=false
@@ -244,7 +305,7 @@ if [ "$code" -eq 2 ] && [ "${TOOLMENU_NO_SECRETS:-false}" = "true" ] && missing_
   } >> "$BODY"
   echo "::notice title=toolmenu::Skipped: this PR runs without the repository's secrets, so the server couldn't be reached."
 elif [ "$code" -eq 2 ]; then
-  { echo "**Couldn't snapshot the server.**"; echo; echo '```'; tail -20 "$OUT/snapshot.err"; echo '```'; } >> "$BODY"
+  { echo "**Couldn't snapshot the server.**"; echo; tail -20 "$OUT/snapshot.err" | fenced; } >> "$BODY"
   note 2
 else
   note "$code"
@@ -260,7 +321,8 @@ else
   # A tag that isn't a version tag (e.g. a monorepo's mcp-v1.3.0) has no previous
   # release to find, so it too would compare the change with itself.
   if [[ "${GITHUB_REF:-}" == refs/tags/* ]] && ! [[ "$TAG" =~ ^v?[0-9]+\.[0-9]+ ]]; then
-    { echo "**\`$TAG\` isn't a version tag, so there's no previous release to compare with.** The Action compares a tag with the previous \`v1.2.3\` or \`1.2.3\` tag. Run it on pull requests, or only on version tags: see [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#the-version-check-release-auto)."; echo; } >> "$BODY"
+    # A tag name may hold backticks; shown as quotes, so it can't end the code span.
+    { echo "**\`${TAG//\`/\'}\` isn't a version tag, so there's no previous release to compare with.** The Action compares a tag with the previous \`v1.2.3\` or \`1.2.3\` tag. Run it on pull requests, or only on version tags: see [docs/github-action.md](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#the-version-check-release-auto)."; echo; } >> "$BODY"
     echo "::error title=toolmenu::'$TAG' isn't a version tag (v1.2.3 or 1.2.3), so there's no previous release to compare with. See docs/github-action.md."
     ERROR_SHOWN=true
     note 2
@@ -272,10 +334,10 @@ else
     ERROR_SHOWN=true
     note 2
   elif [ -n "$BASELINE" ]; then
-    # shellcheck disable=SC2046
-    $CLI diff --format markdown ${SARIF_DIFF[@]+"${SARIF_DIFF[@]}"} --fail-on "$FAIL_ON" $(release_args) "$BASELINE" "$CURRENT" > "$OUT/diff.md" 2> "$OUT/diff.err"
+    release_args
+    $CLI diff --format markdown ${SARIF_DIFF[@]+"${SARIF_DIFF[@]}"} --fail-on "$FAIL_ON" ${RELEASE_ARGS[@]+"${RELEASE_ARGS[@]}"} "$BASELINE" "$CURRENT" > "$OUT/diff.md" 2> "$OUT/diff.err"
     code=$?; note "$code"
-    if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { sed -e "s/pass --release/set the Action's \`release\` input/" -e "s/Check the --release order/Check the order in the Action's \`release\` input/" "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
+    if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:**"; echo; head -1 "$OUT/diff.err" | fenced; echo; } >> "$BODY"; else { sed -e "s/pass --release/set the Action's \`release\` input/" -e "s/Check the --release order/Check the order in the Action's \`release\` input/" "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
   else
     if [ "$FROM_SESSION" = true ]; then hint="npx toolmenu session $([ "$TOOLMENU_SCENARIO" = auto ] && echo --auto || echo "--scenario $TOOLMENU_SCENARIO") --union-out ${TOOLMENU_BASELINE:-menu.json} $(hint_target)"; else hint="npx toolmenu snapshot $(hint_target)"; fi
     { echo "No baseline at \`${TOOLMENU_BASELINE:-menu.json}\`, so there's nothing to compare with yet. Commit the $([ "$FROM_SESSION" = true ] && echo "session's union menu" || echo snapshot) to start tracking changes:"; echo; echo '```sh'; echo "$hint"; echo '```'; echo; } >> "$BODY"
@@ -287,7 +349,7 @@ fi
 if [ -n "${TOOLMENU_SCENARIO:-}" ] && [ "$SKIPPED" = false ]; then
   [ "$SESSION_RAN" = true ] || run_session
   code=$SESSION_CODE; note "$code"
-  if [ "$code" -eq 2 ]; then { echo "**Session didn't run:** $(head -3 "$OUT/session.err")"; echo; } >> "$BODY"; else { cat "$OUT/session.md"; echo; } >> "$BODY"; fi
+  if [ "$code" -eq 2 ]; then { echo "**Session didn't run:**"; echo; head -3 "$OUT/session.err" | fenced; echo; } >> "$BODY"; else { cat "$OUT/session.md"; echo; } >> "$BODY"; fi
 fi
 
 echo "<sub>[toolmenu](https://github.com/niksa90/toolmenu) · token counts are estimates</sub>" >> "$BODY"
@@ -300,11 +362,30 @@ OUTPUTS_WRITTEN=true
 
 # 4. One PR comment, updated in place on every push.
 if [ "${TOOLMENU_COMMENT:-true}" = "true" ] && [ -n "${TOOLMENU_PR:-}" ] && [ -n "${GH_TOKEN:-}" ]; then
-  existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" --paginate --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" 2>/dev/null | head -1)
-  if [ -n "$existing" ]; then
-    gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't update the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
+  # Only a comment this token wrote is updated: anyone can post a comment with the
+  # marker in it, and editing theirs would put the report under their name, for
+  # them to rewrite. The job's own token: github-actions[bot]. A personal token: its
+  # login. An app's token (it can't read /user): a bot's comment, which only an app
+  # installed on the repository can write.
+  mine=""
+  if [ -n "${TOOLMENU_JOB_TOKEN:-}" ] && [ "$GH_TOKEN" = "$TOOLMENU_JOB_TOKEN" ]; then
+    mine='.user.login == "github-actions[bot]"'
+  elif who=$(gh api user --jq .login 2> "$OUT/gh-user.err"); then
+    [[ "$who" =~ ^[A-Za-z0-9_-]+$ ]] && mine=".user.login == \"$who\""
+  # gh prints the error body on stdout and its own message on stderr: either may say it.
+  elif who="$who $(cat "$OUT/gh-user.err" 2>/dev/null)"; [[ "$who" == *"Resource not accessible by integration"* ]]; then
+    mine='.user.type == "Bot"'
+  fi
+  if [ -z "$mine" ]; then
+    # Not knowing whose comment is whose, touch none: the report is still in the job summary.
+    echo "::warning title=toolmenu::Couldn't tell which account the token belongs to (GitHub said: $(echo "$who" | head -1 | cut -c1-200)), so the report wasn't posted as a PR comment. It's in the job summary."
   else
-    gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't post the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
+    existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" --paginate --jq ".[] | select($mine and (.body | startswith(\"$MARKER\"))) | .id" 2>/dev/null | head -1)
+    if [ -n "$existing" ]; then
+      gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't update the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
+    else
+      gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't post the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
+    fi
   fi
 fi
 

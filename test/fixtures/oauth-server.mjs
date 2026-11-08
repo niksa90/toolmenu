@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { createMcpHandler } from '@modelcontextprotocol/server';
 import { build } from './forms.mjs';
 
-export async function start({ tokenLifetime = 3600, registration = true, preRegistered } = {}) {
+export async function start({ tokenLifetime = 3600, registration = true, preRegistered, authorizationEndpoint } = {}) {
   const handler = createMcpHandler(build);
   const clients = new Map();
   // An app registered by hand, as GitHub requires: { client_id, client_secret, redirect_uris }.
@@ -42,7 +42,8 @@ export async function start({ tokenLifetime = 3600, registration = true, preRegi
     if (url.pathname === '/.well-known/oauth-authorization-server') {
       return json(res, 200, {
         issuer: base,
-        authorization_endpoint: `${base}/authorize`,
+        // authorizationEndpoint: a hostile server's, for the scheme check.
+        authorization_endpoint: authorizationEndpoint ?? `${base}/authorize`,
         token_endpoint: `${base}/token`,
         ...(registration ? { registration_endpoint: `${base}/register` } : {}),
         response_types_supported: ['code'],

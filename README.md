@@ -146,12 +146,14 @@ Behind a proxy (`HTTPS_PROXY`), stdio servers get the proxy and CA settings
 (`HTTPS_PROXY`, `NO_PROXY`, `NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`…)
 along with the minimal environment, and `NODE_USE_ENV_PROXY=1` so a Node server's
 `fetch` uses the proxy. Without them a server that calls an API can't reach it, and
-fails as if it were broken.
+fails as if it were broken. A proxy URL with a password in it
+(`https://user:pass@proxy:8080`) reaches the server that way too: give a server you
+don't trust a proxy without one, or `--env HTTPS_PROXY=` to leave it out.
 
 ### Every server you use: `scan`
 
 ```sh
-npx toolmenu scan ~/Library/Application\ Support/Claude/claude_desktop_config.json
+npx toolmenu scan ~/Library/Application\ Support/Claude/claude_desktop_config.json --allow-env LINEAR_API_KEY
 npx toolmenu scan .mcp.json --format markdown
 ```
 
@@ -167,6 +169,13 @@ findings, like this:
   filesystem      11  ~2.1K   no findings
   linear           –      –   not checked: LINEAR_API_KEY is not set (the config refers to it)
 ```
+
+`scan` starts every command the list names, so scan only lists you'd run yourself (not
+a `.mcp.json` from a repository you haven't read). A config's `${VAR}` is filled only
+from the variables you name with `--allow-env` (comma-separated, or `'*'` for all): the
+config decides where each value goes, a URL or a header included, so one from someone
+else could otherwise send your environment to a server of theirs. An entry that uses
+a variable you didn't allow isn't checked, and says which `--allow-env` it needs.
 
 `${VAR}`, `${VAR:-default}` and `${env:VAR}` in the config are filled from the
 environment. A server whose variable isn't set isn't started with an empty
@@ -246,7 +255,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.25.2
+      - uses: niksa90/toolmenu@v0.26.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -294,7 +303,7 @@ permissions:
   security-events: write          # to upload SARIF
 steps:
   # … checkout, build, as above
-  - uses: niksa90/toolmenu@v0.25.2
+  - uses: niksa90/toolmenu@v0.26.0
     with:
       command: node dist/server.js
       sarif: toolmenu-sarif
@@ -753,10 +762,26 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --offline-check     snapshot (stdio): also list the menu with the network cut off
 --concurrency <n>   scan: servers checked at a time (default: 4)
 --out-dir <dir>     scan: write each server's menu file there, as <name>.json
+--allow-env <names> scan: variables a config's ${VAR} may be filled from (default:
+                    none; '*' for all)
 ```
 
 Exit codes: `0` clean · `1` findings at or above `--fail-on` · `2` couldn't connect
 (for `scan`: a server wasn't checked) or bad usage. `toolmenu <command> --help` lists that command's own options.
+
+Credentials on the command line (`--header`, `--env`, `--client-secret`) can be read by
+every user of the machine while toolmenu runs (`ps`). To keep them off it, put the
+options in `TOOLMENU_ARGS`, a JSON array of toolmenu options and their values; they go
+before the server command's `--`. A process's environment is readable only by its own
+user (and root), so this keeps them from other users, not from other processes of
+yours. jq builds the array whatever the token holds:
+
+```sh
+TOOLMENU_ARGS=$(jq -cn --arg t "$TOKEN" '["--header", "Authorization: Bearer " + $t]') npx toolmenu snapshot https://example.com/mcp
+```
+
+The GitHub Action passes its `headers` and `env` this way (to toolmenu 0.26.0 and
+later; an older `version` gets them as arguments, with a warning).
 
 ## Limitations
 

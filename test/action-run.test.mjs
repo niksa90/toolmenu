@@ -14,7 +14,8 @@ function runAction(env, setup) {
   // Records its arguments, prints STUB_ERR to stderr and exits with STUB_CODE,
   // like a failed snapshot.
   // Also writes the file --union-out names, like session does.
-  writeFileSync(stub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$0.$1.args"\nfor ((i=1;i<$#;i++)); do if [ "${!i}" = --union-out ]; then j=$((i+1)); echo "{}" > "${!j}"; fi; done\nprintf "%s\\n" "$STUB_ERR" >&2\nexit "${STUB_CODE:-0}"\n');
+  // Also records TOOLMENU_ARGS, the connection options the Action passes in the environment.
+  writeFileSync(stub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$0.$1.args"\nprintf "%s" "${TOOLMENU_ARGS-unset}" > "$0.$1.env"\nfor ((i=1;i<$#;i++)); do if [ "${!i}" = --union-out ]; then j=$((i+1)); echo "{}" > "${!j}"; fi; done\nprintf "%s\\n" "$STUB_ERR" >&2\nexit "${STUB_CODE:-0}"\n');
   chmodSync(stub, 0o755);
   const r = spawnSync('bash', [join(ROOT, 'action/run.sh')], {
     cwd: dir,
@@ -264,4 +265,166 @@ test('action: sarif writes one SARIF file per command into the folder, results a
 test('action: without sarif, no SARIF arguments', () => {
   const r = runAction(url);
   assert.doesNotMatch(r.args, /--sarif/);
+});
+
+/** The PR comment step, with a `gh` stub: `api user` answers GH_USER (or fails, like the job's token), the comments list is COMMENTS, run through the script's own --jq filter. */
+function runComment(comments, user, { jobToken, userError = 'Resource not accessible by integration' } = {}) {
+  return runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_COMMENT: 'true', TOOLMENU_PR: '7', GH_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', ...(jobToken ? { TOOLMENU_JOB_TOKEN: jobToken } : {}) }, (dir) => {
+    const bin = join(dir, 'bin');
+    mkdirSync(bin);
+    writeFileSync(join(dir, 'comments.json'), JSON.stringify(comments));
+    writeFileSync(
+      join(bin, 'gh'),
+      [
+        '#!/usr/bin/env bash',
+        'printf "%s\\n" "$*" >> "$GH_LOG"',
+        // Like gh: the error body on stdout, its own line on stderr.
+        'if [ "$2" = user ]; then [ -n "$GH_USER" ] && { echo "$GH_USER"; exit 0; }; printf \'{"message":"%s","status":"403"}\\n\' "$GH_USER_ERROR"; echo "gh: $GH_USER_ERROR (HTTP 403)" >&2; exit 1; fi',
+        'for ((i=1;i<=$#;i++)); do if [ "${!i}" = --jq ]; then j=$((i+1)); jq -r "${!j}" "$GH_COMMENTS"; exit; fi; done',
+        'exit 0',
+      ].join('\n'),
+    );
+    chmodSync(join(bin, 'gh'), 0o755);
+    return { PATH: `${bin}:${process.env.PATH}`, GH_LOG: join(dir, 'gh.log'), GH_COMMENTS: join(dir, 'comments.json'), GH_USER: user ?? '', GH_USER_ERROR: userError };
+  });
+}
+const ghCalls = (r) => readFileSync(join(r.dir, 'gh.log'), 'utf8');
+const MARKER = '<!-- toolmenu-report -->';
+// jq is on GitHub's runners: in CI a missing jq fails these tests instead of skipping them.
+const hasJq = spawnSync('jq', ['--version']).status === 0 || !!process.env.CI;
+
+test('action: the PR comment updated is the bot\'s own, never one anyone else wrote with the marker', { skip: !hasJq && 'needs jq' }, () => {
+  const someone = { id: 11, user: { login: 'mallory', type: 'User' }, body: `${MARKER}\nall clear` };
+  const bot = { id: 22, user: { login: 'github-actions[bot]', type: 'Bot' }, body: `${MARKER}\n## toolmenu` };
+  // Only someone else's: a new comment, theirs untouched.
+  let r = runComment([someone]);
+  assert.match(ghCalls(r), /--method POST repos\/o\/r\/issues\/7\/comments/);
+  assert.doesNotMatch(ghCalls(r), /PATCH/);
+  // Theirs first, then the bot's: the bot's is updated.
+  r = runComment([someone, bot]);
+  assert.match(ghCalls(r), /--method PATCH repos\/o\/r\/issues\/comments\/22/);
+  assert.doesNotMatch(ghCalls(r), /comments\/11/);
+  // The marker quoted in the middle of a bot's comment isn't the report.
+  r = runComment([{ ...bot, id: 33, body: `see ${MARKER}` }]);
+  assert.match(ghCalls(r), /--method POST/);
+});
+
+test('action: with a personal token, only that account\'s comment is updated', { skip: !hasJq && 'needs jq' }, () => {
+  const mine = { id: 44, user: { login: 'maintainer', type: 'User' }, body: `${MARKER}\n## toolmenu` };
+  const otherBot = { id: 55, user: { login: 'other-app[bot]', type: 'Bot' }, body: `${MARKER}\nfake` };
+  const r = runComment([otherBot, mine], 'maintainer');
+  assert.match(ghCalls(r), /--method PATCH repos\/o\/r\/issues\/comments\/44/);
+  assert.doesNotMatch(ghCalls(r), /comments\/55/);
+});
+
+/** A checkout whose base branch (main, fetched from origin) has package.json at `before`; the working tree has `after`. */
+function releaseRepo(before, after) {
+  return (dir) => {
+    const git = (...a) => spawnSync('git', ['-C', dir, ...a], { encoding: 'utf8' });
+    git('init', '-q', '-b', 'main');
+    git('config', 'user.email', 't@example.com');
+    git('config', 'user.name', 't');
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'x', version: before }));
+    writeFileSync(join(dir, 'menu.json'), JSON.stringify({ toolmenu: 1, tools: [] }));
+    git('add', 'package.json', 'menu.json');
+    git('commit', '-q', '-m', 'base');
+    git('remote', 'add', 'origin', dir);
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'x', version: after }));
+    return {};
+  };
+}
+const diffArgs = (r) => readFileSync(join(r.dir, 'stub-cli.sh.diff.args'), 'utf8').trim().split('\n');
+
+test('action: release auto passes the two versions as one --release value', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main' }, releaseRepo('1.0.0', '1.1.0'));
+  assert.ok(r.ran('diff'), r.stdout + r.stderr);
+  assert.ok(diffArgs(r).includes('--release=1.0.0..1.1.0'), diffArgs(r).join(' '));
+});
+
+test('action: release auto takes Python-style versions without a warning', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main' }, releaseRepo('1.2.3rc1', '1.2.3.post1'));
+  assert.ok(diffArgs(r).includes('--release=1.2.3rc1..1.2.3.post1'), diffArgs(r).join(' '));
+  assert.doesNotMatch(r.stdout, /::warning/);
+});
+
+test('action: a manifest version with spaces or options in it adds no CLI arguments', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main' }, releaseRepo('1.0.0', '1.1.0 --html /tmp/pwned.html *'));
+  assert.ok(r.ran('diff'), r.stdout + r.stderr);
+  const args = diffArgs(r);
+  assert.ok(!args.includes('--html'), args.join(' '));
+  assert.ok(!args.some((a) => a.startsWith('--release')), 'not checked with a version that isn\'t one');
+  assert.match(r.stdout, /::warning title=toolmenu::package\.json's version, on the base branch or here, doesn't read as a version number/);
+});
+
+test('action: the release input is passed as one argument, glob characters and all', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main', TOOLMENU_RELEASE: '1.0.0..2.0.0 *' }, releaseRepo('1.0.0', '1.1.0'));
+  assert.ok(diffArgs(r).includes('--release=1.0.0..2.0.0 *'), diffArgs(r).join(' '));
+  // Read as its value, even one that starts with "-".
+  const dash = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main', TOOLMENU_RELEASE: '-x' }, releaseRepo('1.0.0', '1.1.0'));
+  assert.ok(diffArgs(dash).includes('--release=-x'), diffArgs(dash).join(' '));
+});
+
+test('action: with the job\'s own token, only github-actions[bot]\'s comment counts', { skip: !hasJq && 'needs jq' }, () => {
+  const otherBot = { id: 66, user: { login: 'echo-bot[bot]', type: 'Bot' }, body: `${MARKER}\nfake` };
+  const actions = { id: 77, user: { login: 'github-actions[bot]', type: 'Bot' }, body: `${MARKER}\n## toolmenu` };
+  let r = runComment([otherBot, actions], undefined, { jobToken: 't' });
+  assert.match(ghCalls(r), /--method PATCH repos\/o\/r\/issues\/comments\/77/);
+  assert.doesNotMatch(ghCalls(r), /comments\/66|api user/);
+  r = runComment([otherBot], undefined, { jobToken: 't' });
+  assert.match(ghCalls(r), /--method POST/);
+});
+
+test('action: a personal token never takes another person\'s comment; enterprise logins work', { skip: !hasJq && 'needs jq' }, () => {
+  const other = { id: 88, user: { login: 'mallory', type: 'User' }, body: `${MARKER}\nall clear` };
+  const mine = { id: 99, user: { login: 'jdoe_acme', type: 'User' }, body: `${MARKER}\n## toolmenu` };
+  let r = runComment([other], 'jdoe_acme');
+  assert.match(ghCalls(r), /--method POST/);
+  assert.doesNotMatch(ghCalls(r), /PATCH/);
+  r = runComment([other, mine], 'jdoe_acme');
+  assert.match(ghCalls(r), /--method PATCH repos\/o\/r\/issues\/comments\/99/);
+});
+
+test('action: when the token\'s account can\'t be told, no comment is edited or posted', { skip: !hasJq && 'needs jq' }, () => {
+  const bot = { id: 22, user: { login: 'github-actions[bot]', type: 'Bot' }, body: `${MARKER}\n## toolmenu` };
+  const r = runComment([bot], undefined, { userError: 'API rate limit exceeded' });
+  assert.doesNotMatch(ghCalls(r), /PATCH|POST/);
+  assert.match(r.stdout, /::warning title=toolmenu::Couldn't tell which account the token belongs to.*rate limit/);
+});
+
+test('action: error text in the report stays text: backticks can\'t close its code block', () => {
+  const hostile = '```\n![x](https://evil.example/t.png) [Approve](https://evil.example) @org/team\n````';
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', STUB_CODE: '2', STUB_ERR: hostile });
+  const block = /\n(`{3,})\n([\s\S]*?)\n\1\n/.exec(r.comment);
+  assert.ok(block, r.comment);
+  assert.ok(block[1].length > 4, `fence ${block[1]} is longer than the text's own backticks`);
+  assert.match(block[2], /!\[x\]\(https:\/\/evil\.example/);
+  // Nothing of it outside the block.
+  assert.doesNotMatch(r.comment.replace(block[0], ''), /evil\.example|@org/);
+});
+
+test('action: headers and env reach the CLI in TOOLMENU_ARGS, never on its command line', () => {
+  const r = runAction({ ...url, TOOLMENU_HEADERS: 'Authorization: Bearer s3cret\nx-team: a b' });
+  const args = readFileSync(join(r.dir, 'stub-cli.sh.snapshot.args'), 'utf8');
+  assert.doesNotMatch(args, /s3cret|--header/);
+  assert.deepEqual(JSON.parse(readFileSync(join(r.dir, 'stub-cli.sh.snapshot.env'), 'utf8')), ['--header', 'Authorization: Bearer s3cret', '--header', 'x-team: a b']);
+  const stdio = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_ENV: 'API_KEY=k1' });
+  assert.deepEqual(JSON.parse(readFileSync(join(stdio.dir, 'stub-cli.sh.snapshot.env'), 'utf8')), ['--env', 'API_KEY=k1']);
+  // Without any, the variable isn't set at all (an empty one would be an error).
+  const none = runAction({ TOOLMENU_COMMAND: 'node server.js' });
+  assert.equal(readFileSync(join(none.dir, 'stub-cli.sh.snapshot.env'), 'utf8'), 'unset');
+});
+
+test('action: an older toolmenu (the version input) gets headers as arguments, with a warning', () => {
+  const r = runAction({ ...url, TOOLMENU_CLI: '', TOOLMENU_VERSION: '0.25.2', TOOLMENU_HEADERS: 'x-api-key: k1' }, (dir) => {
+    // npx stands in for the CLI: the stub records its arguments the same way.
+    const bin = join(dir, 'bin');
+    mkdirSync(bin);
+    writeFileSync(join(bin, 'npx'), `#!/usr/bin/env bash\nshift; shift; exec "${join(dir, 'stub-cli.sh')}" "$@"\n`);
+    chmodSync(join(bin, 'npx'), 0o755);
+    return { PATH: `${bin}:${process.env.PATH}` };
+  });
+  const args = readFileSync(join(r.dir, 'stub-cli.sh.snapshot.args'), 'utf8').trim().split('\n');
+  assert.deepEqual(args.slice(-3), ['--header', 'x-api-key: k1', 'https://example.com/mcp']);
+  assert.equal(readFileSync(join(r.dir, 'stub-cli.sh.snapshot.env'), 'utf8'), 'unset');
+  assert.match(r.stdout, /::warning title=toolmenu::toolmenu 0\.25\.2 takes headers and env as arguments/);
 });

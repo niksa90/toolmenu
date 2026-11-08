@@ -156,7 +156,7 @@ test('cli: a broken config file is named in the error', async () => {
   writeFileSync(join(cwd, 'toolmenu.config.json'), '{"rules": {');
   const r = await run(['diff', 'a.json', 'b.json'], { cwd });
   assert.equal(r.code, 2);
-  assert.match(r.stderr, /toolmenu\.config\.json: /);
+  assert.match(r.stderr, /toolmenu\.config\.json isn't valid JSON/);
 });
 
 test('cli: --version is package.json\'s version', async () => {
@@ -486,4 +486,13 @@ test('cli: an option for another command is ignored with a warning that names it
   // The helper passes --timeout to every command; snapshot takes it, so only --release is named.
   const one = await run(['snapshot', '--release', '1.0.0', '--no-write', '--', process.execPath, join(FIXTURES, 'client-server.mjs')]);
   assert.match(one.stderr, /^toolmenu: snapshot ignores --release: it is for other commands\./);
+});
+
+test('a toolmenu.config.json that isn\'t JSON: where it broke, never what it holds', async () => {
+  const dir = tempDir();
+  writeFileSync(join(dir, 'toolmenu.config.json'), '//registry.npmjs.org/:_authToken=npm_S3CRET\n');
+  const r = await run(['snapshot', '--no-write', '--', process.execPath, '-e', '0'], { cwd: dir });
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /toolmenu\.config\.json isn't valid JSON/);
+  assert.doesNotMatch(r.stderr, /S3CRET|registry/);
 });

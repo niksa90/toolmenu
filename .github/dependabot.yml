@@ -1,0 +1,14 @@
+# Actions are pinned to commit SHAs (with the version in a comment): Dependabot
+# keeps the pins current, one PR a week for all of them.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # A release gets a week before it's proposed: time for a bad one to be pulled.
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ['*']

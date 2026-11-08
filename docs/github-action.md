@@ -189,3 +189,21 @@ don't include, and Node's builds from nodejs.org (the ones `actions/setup-node`
 installs too) don't run on Alpine. Install both from Alpine's own packages before
 the Action, `apk add bash nodejs npm` (check that its `nodejs` is 22 or later), or
 use a Debian-based image.
+
+## Pinning
+
+A tag can be moved to other code; a commit can't. For a workflow that runs with
+secrets, pin the Action (and every other action) to the commit of a release, with the
+version in a comment, and let Dependabot's `github-actions` updates keep the pins
+current:
+
+```yaml
+      - uses: niksa90/toolmenu@<commit SHA of the release> # v0.26.0
+```
+
+`toolmenu init` writes the actions it sets up (checkout, setup-node, …) pinned this
+way. toolmenu itself is named by its version tag there, since a release can't know its
+own commit: replace it with the SHA if you pin everything.
+
+The PR comment step only ever edits a comment the token wrote itself (see
+[PRs from forks and Dependabot](#prs-from-forks-and-dependabot) for which token that is).

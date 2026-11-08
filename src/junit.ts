@@ -11,6 +11,7 @@
  * tool), not the message: messages carry counts that change between runs, and CI
  * systems track a test's history by its name.
  */
+import { HIDDEN_SOURCE } from './sanitize.js';
 import { SEVERITY_RANK, type Finding, type Severity } from './types.js';
 import { VERSION } from './version.js';
 import { toolsOf } from './sarif.js';
@@ -24,14 +25,23 @@ export interface JunitOptions {
   target?: string;
 }
 
-/** Text that is safe inside an XML attribute or element, control characters dropped. */
+/** Hidden characters but tab and newline, which XML keeps as they are. */
+const HIDDEN_IN_XML = new RegExp(`(?![\\t\\n])${HIDDEN_SOURCE}`, 'gu');
+
+/**
+ * Text that is safe inside an XML attribute or element: C0 controls XML can't hold are
+ * dropped; the rest a terminal or a reader would act on or not see (CR, DEL, C1, bidi
+ * and other format characters; the same class reports escape) as character references,
+ * so --format junit printed to a terminal carries none of them raw.
+ */
 export function xml(text: string): string {
   return text
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(HIDDEN_IN_XML, (c) => `&#x${c.codePointAt(0)!.toString(16)};`);
 }
 
 function body(f: Finding): string {

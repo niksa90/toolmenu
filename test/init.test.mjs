@@ -23,7 +23,8 @@ test('detectProject: how CI builds each kind of server', () => {
   const uv = detectProject(dir({ 'pyproject.toml': '', 'uv.lock': '' })).setup;
   assert.ok(uv.includes('- run: uv sync'));
   // A tag that resolves: setup-uv publishes no floating v10.
-  assert.ok(uv.some((l) => /astral-sh\/setup-uv@v\d+\.\d+\.\d+$/.test(l)));
+  // Pinned to a commit, the release in a comment.
+  assert.ok(uv.some((l) => /astral-sh\/setup-uv@[0-9a-f]{40} # v\d+\.\d+\.\d+$/.test(l)));
   assert.ok(detectProject(dir({ 'requirements.txt': '' })).setup.includes('- run: pip install -r requirements.txt'));
   assert.equal(detectProject(dir({ 'go.mod': '' })).kind, 'go');
   assert.equal(detectProject(dir({})).kind, 'unknown');
@@ -356,3 +357,20 @@ function hasGit() {
     return false;
   }
 }
+
+test('the workflow init writes pins every third-party action to a commit', async () => {
+  const { ACTIONS } = await import('../dist/init.js');
+  for (const [k, v] of Object.entries(ACTIONS)) assert.match(v, /^[\w.-]+\/[\w.-]+@[0-9a-f]{40} # v\d+(\.\d+)*$/, k);
+  const { readFileSync } = await import('node:fs');
+  // The repository's own workflows pin the same way (only `uses: ./`, the Action under test, isn't).
+  const pins = new Set();
+  for (const f of ['.github/workflows/ci.yml', '.github/workflows/release.yml', '.github/workflows/pins.yml']) {
+    for (const line of readFileSync(new URL(`../${f}`, import.meta.url), 'utf8').split('\n').filter((l) => /^\s*- uses: /.test(l))) {
+      if (/uses: \.\/$/.test(line)) continue;
+      assert.match(line, /@[0-9a-f]{40} # v\d/, `${f}: ${line.trim()}`);
+      pins.add(line.replace(/^\s*- uses: /, '').trim());
+    }
+  }
+  // Dependabot updates the workflows, not src/init.ts: each pin init writes must match one there.
+  for (const [k, v] of Object.entries(ACTIONS)) assert.ok(pins.has(v), `ACTIONS.${k} (${v}) isn't the pin in .github/workflows: update src/init.ts`);
+});

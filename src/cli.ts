@@ -29,10 +29,11 @@ import { diffHtml, sessionHtml, snapshotHtml } from './html.js';
 import type { StepTool } from './session.js';
 import { badge, badgeMarkdown } from './badge.js';
 import { VERSION } from './version.js';
-import { SECRET_ARGS_ENV } from './mcp-env.js';
+import { ARGS_ENV, SECRET_ARGS_ENV } from './mcp-env.js';
+import { guardStream, plain, terminalSafe, writeUnguarded } from './sanitize.js';
 import { CLI_OPTIONS } from './options.js';
 import { editDistance } from './words.js';
-import { formatScan, ListError, loadList, scan, scanExit } from './scan.js';
+import { formatScan, ListError, loadList, scan, scanExit, type AllowEnv } from './scan.js';
 import { explain, findRule, formatExplained, listRules, ruleDocs } from './rule-docs.js';
 import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type Command } from './help.js';
 
@@ -112,18 +113,24 @@ export async function main(given: string[]): Promise<number> {
     if (values.sarif !== undefined) await writeFile(values.sarif, sarif!);
     if (values.junit !== undefined) await writeFile(values.junit, junit!);
     if (sarifToStdout) process.stdout.write(sarif!);
-    else if (junitToStdout) process.stdout.write(junit!);
-    else if (report) process.stdout.write(show(report) + '\n');
+    // JUnit is XML, escaped its own way; the report is already safe, its colour toolmenu's.
+    else if (junitToStdout) writeUnguarded(process.stdout, junit!);
+    else if (report) writeUnguarded(process.stdout, show(report) + '\n');
   };
   // Colour for a report read in a terminal (colour.ts); piped, CI and other formats stay plain.
-  const show = (report: string) => (format === 'text' && colourFor(process.stdout) ? colourise(report) : report);
+  // terminalSafe first: a control character a server's text still carries is shown, never acted on. JSON escapes its own.
+  const show = (report: string) => {
+    // JSON too: JSON.stringify leaves bidi and other format characters raw, and the
+    // escapes terminalSafe writes read back as the same characters.
+    const safe = terminalSafe(report);
+    if (format === 'json') return safe;
+    return format === 'text' && colourFor(process.stdout) ? colourise(safe) : safe;
+  };
   const failOn = (values['fail-on'] ?? 'error') as Severity;
   if (!(failOn in SEVERITY_RANK)) throw new UsageError(`--fail-on must be error, warn or info`);
   const timeoutMs = values.timeout ? Number(values.timeout) : 30_000;
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new UsageError(`--timeout must be a positive number of milliseconds`);
 
-  if (sub === 'auth') return authCommand(rest, values);
-  if (sub === 'explain') return explainCommand(rest, command, format);
   if (sub === 'mcp') {
     if (command || rest.length) throw new UsageError('mcp takes no server: it is one. Add it to a client as: npx -y toolmenu mcp');
     // Loaded only here: the CLI's other commands don't need the server SDK.
@@ -131,6 +138,13 @@ export async function main(given: string[]): Promise<number> {
     await serveMcp();
     return 0;
   }
+  // Every command's output, whatever writes it: a server's text that reaches a line
+  // some report forgot is shown as escapes, never acted on by the terminal. Not toolmenu
+  // mcp's stdout above: that's the protocol.
+  guardStream(process.stdout);
+  guardStream(process.stderr);
+  if (sub === 'auth') return authCommand(rest, values);
+  if (sub === 'explain') return explainCommand(rest, command, format);
 
   // The invocation up to the server, for examples in messages: a session example
   // without --auto or --scenario wouldn't run.
@@ -162,9 +176,13 @@ export async function main(given: string[]): Promise<number> {
     if (rest.length !== 1) throw new UsageError('scan needs one list: an MCP client config (mcp.json) or a text file with a server per line.');
     const concurrency = values.concurrency !== undefined ? Number(values.concurrency) : 4;
     if (!Number.isInteger(concurrency) || concurrency < 1) throw new UsageError('--concurrency must be a whole number, 1 or more');
+    const names = (values['allow-env'] ?? []).flatMap((v) => v.split(',')).map((v) => v.trim()).filter(Boolean);
+    const bad = names.find((n) => n !== '*' && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(n));
+    if (bad) throw new UsageError(`--allow-env takes environment variable names, comma-separated, or '*' for all; "${bad}" isn't one.`);
+    const allow: AllowEnv = names.includes('*') ? '*' : new Set(names);
     let entries;
     try {
-      entries = await loadList(rest[0]);
+      entries = await loadList(rest[0], allow);
     } catch (error) {
       if (error instanceof ListError) throw new UsageError(error.message);
       throw error;
@@ -189,12 +207,12 @@ export async function main(given: string[]): Promise<number> {
       // stdio servers only: snapshot skips it for HTTP.
       ...(config.offlineCheck ? { offlineCheck: true } : {}),
       onDone: (row, done, total) => {
-        if (tty) process.stderr.write(`\r\x1b[K  ${done}/${total}  ${row.name}`);
+        if (tty) writeUnguarded(process.stderr, `\r\x1b[K  ${done}/${total}  ${plain(row.name)}`);
       },
     });
-    if (tty) process.stderr.write('\r\x1b[K');
+    if (tty) writeUnguarded(process.stderr, '\r\x1b[K');
     if (outDir) for (const r of rows) if (r.menu) await writeFile(join(outDir, `${r.name.replace(/[^\w.@-]+/g, '_')}.json`), JSON.stringify(r.menu, null, 2) + '\n');
-    process.stdout.write(show(formatScan(rows, format, rest[0])) + '\n');
+    writeUnguarded(process.stdout, show(formatScan(rows, format, rest[0])) + '\n');
     return scanExit(rows, failOn);
   }
 
@@ -239,7 +257,7 @@ export async function main(given: string[]): Promise<number> {
       onProgress: format === 'text' ? (m) => process.stderr.write(m + '\n') : undefined,
     });
     if (values.csv) await writeFile(values.csv, historyCsv(result));
-    process.stdout.write(show(formatHistory(result, format, outDir, values.csv)) + '\n');
+    writeUnguarded(process.stdout, show(formatHistory(result, format, outDir, values.csv)) + '\n');
     return result.rows.length > 0 && result.rows.every((r) => r.status === 'failed') ? 1 : 0;
   }
 
@@ -261,7 +279,7 @@ export async function main(given: string[]): Promise<number> {
           const found = result.isError ? [] : valuesFromListing(result);
           if (found.length) {
             unlockValues[unlock] = found;
-            read.push(`${found.length} values for ${unlock} from ${lister}`);
+            read.push(`${found.length} values for ${plain(unlock)} from ${plain(lister)}`);
           }
         } catch {
           // Left as TODO in the scenario.
@@ -281,7 +299,7 @@ export async function main(given: string[]): Promise<number> {
     if (plan.existing.length) throw new UsageError(existingMessage(plan));
     const { menu, findings } = await snapshot(target, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions, ...(config.offlineCheck && target.kind === 'stdio' ? { offlineCheck: true } : {}) });
     await writeInit(plan, JSON.stringify(menu, null, 2) + '\n');
-    process.stdout.write(initReport(plan, { server: menu.server.name, version: menu.server.version, tools: menu.tools.length, tokens: menu.totalTokens, counts: counts(findings) }, target));
+    process.stdout.write(initReport(plan, { server: menu.server.name === undefined ? undefined : plain(menu.server.name), version: menu.server.version === undefined ? undefined : plain(menu.server.version), tools: menu.tools.length, tokens: menu.totalTokens, counts: counts(findings) }, target));
     return 0;
   }
 
@@ -433,7 +451,7 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
   if (port !== undefined && !(Number.isInteger(port) && port > 0 && port < 65536)) throw new UsageError('--port must be a port number');
   if (values['client-secret'] && !values['client-id']) throw new UsageError('--client-secret goes with --client-id');
   const result = await login(url, { port, scope: values.scope, clientId: values['client-id'], clientSecret: values['client-secret'], noBrowser: values['no-browser'] });
-  process.stdout.write(`Logged in to ${result.name ?? url} (${url}): it lists ${result.tools} tool${result.tools === 1 ? '' : 's'} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`);
+  process.stdout.write(`Logged in to ${plain(result.name ?? url)} (${url}): it lists ${result.tools} tool${result.tools === 1 ? '' : 's'} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`);
   return 0;
 }
 
@@ -501,8 +519,9 @@ for (const method of ['log', 'info', 'debug'] as const) {
 }
 
 main(process.argv.slice(2)).then(exitWhenFlushed, (error: unknown) => {
-  const message = `toolmenu: ${failureMessage(error)}`;
-  process.stderr.write(`${colourFor(process.stderr) ? colouriseError(message) : message}\n`);
+  // An error can quote what a server said: shown, never acted on by the terminal.
+  const message = terminalSafe(`toolmenu: ${failureMessage(error)}`);
+  writeUnguarded(process.stderr, `${colourFor(process.stderr) ? colouriseError(message) : message}\n`);
   exitWhenFlushed(2);
 });
 
@@ -558,21 +577,39 @@ function commandIn(args: string[]): Command | undefined {
 }
 
 /**
- * toolmenu mcp passes header and env values (credentials) in TOOLMENU_MCP_ARGS, a JSON
- * array of arguments, not on the command line: argv is readable by any local user.
- * They go before the server command's "--". Removed from the environment once read.
+ * Arguments the CLI takes from the environment, each a JSON array of arguments that
+ * goes before the server command's "--": TOOLMENU_ARGS, for anyone who'd rather keep
+ * --header, --env or --client-secret values off the command line (argv is readable by
+ * any local user), and TOOLMENU_MCP_ARGS, which toolmenu mcp passes credentials in.
+ * Each is removed from the environment once read.
  */
 function withSecretArgs(argv: string[]): string[] {
-  const raw = process.env[SECRET_ARGS_ENV];
-  if (raw === undefined) return argv;
-  delete process.env[SECRET_ARGS_ENV];
-  let extra: unknown;
-  try {
-    extra = JSON.parse(raw);
-  } catch {
-    extra = undefined;
+  const extra: string[] = [];
+  for (const name of [ARGS_ENV, SECRET_ARGS_ENV]) {
+    const raw = process.env[name];
+    if (raw === undefined) continue;
+    delete process.env[name];
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = undefined;
+    }
+    if (!Array.isArray(parsed) || !parsed.every((a) => typeof a === 'string')) throw new UsageError(`${name} must be a JSON array of strings, e.g. ["--header", "Authorization: Bearer …"].`);
+    // Options and their values only: no "--" (it would move where the server command
+    // starts) and no stray word, which parseArgs would quote back, value and all.
+    for (let i = 0; i < parsed.length; i++) {
+      const option = /^--([^=]+)(=|$)/.exec(parsed[i]);
+      const known = option ? (CLI_OPTIONS as Record<string, { type: string } | undefined>)[option[1]] : undefined;
+      if (!option || !known) throw new UsageError(`${name} holds only toolmenu options and their values; item ${i + 1} isn't one${option ? ` (--${option[1]} isn't an option)` : ''}.`);
+      if (known.type === 'string' && option[2] !== '=') {
+        if (i + 1 >= parsed.length) throw new UsageError(`${name}: --${option[1]} needs a value after it.`);
+        i++;
+      }
+    }
+    extra.push(...parsed);
   }
-  if (!Array.isArray(extra) || !extra.every((a) => typeof a === 'string')) throw new UsageError(`${SECRET_ARGS_ENV} must be a JSON array of strings.`);
+  if (!extra.length) return argv;
   const dash = argv.indexOf('--');
   return dash === -1 ? [...argv, ...extra] : [...argv.slice(0, dash), ...extra, ...argv.slice(dash)];
 }

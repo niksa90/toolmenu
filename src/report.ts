@@ -6,6 +6,7 @@ import { clip, stepLabel, stepsText, type Scenario, type SessionResult } from '.
 import { SEVERITY_RANK, type Finding, type Menu, type Severity } from './types.js';
 import { breakdown, breakdownLines, breakdownMarkdown } from './breakdown.js';
 import { autoSummary } from './auto.js';
+import { mdCode, mdText, plain } from './sanitize.js';
 
 export type Format = 'text' | 'json' | 'github' | 'markdown';
 
@@ -31,10 +32,10 @@ function otherLists(menu: Menu): string {
 }
 
 /** --client: "as Claude Code: up front ~N tokens (…) · on demand ~M per tool loaded (largest: x, ~K)". */
-export function costLine(cost: ClientCost): string {
+export function costLine(cost: ClientCost, name: (tool: string) => string = plain): string {
   const parts = [
     cost.upfront !== undefined ? `up front ~${cost.upfront.toLocaleString('en-US')} tokens${cost.loaded.length ? ` (names, and ${plural(cost.loaded.length, 'tool')} loaded in full)` : ''}` : '',
-    `on demand ~${cost.perTool.toLocaleString('en-US')} per tool a search loads${cost.largest ? ` (largest: ${cost.largest.tool}, ~${cost.largest.tokens.toLocaleString('en-US')})` : ''}`,
+    `on demand ~${cost.perTool.toLocaleString('en-US')} per tool a search loads${cost.largest ? ` (largest: ${name(cost.largest.tool)}, ~${cost.largest.tokens.toLocaleString('en-US')})` : ''}`,
   ].filter(Boolean);
   return `as ${cost.label}: ${parts.join(' · ')}`;
 }
@@ -73,10 +74,10 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
   if (format === 'markdown') {
     const s = menu.server;
     return [
-      `### toolmenu snapshot: \`${s.name ?? 'server'}\` ${s.version ?? ''}`.trimEnd(),
+      `### toolmenu snapshot: ${mdCode(s.name ?? 'server')} ${mdText(s.version ?? '')}`.trimEnd(),
       '',
-      `Protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(view.appOnly)}`,
-      ...(cost ? ['', `${costLine(cost)}. _${cost.basis}._`] : []),
+      `Protocol ${mdText(s.protocolVersion ?? 'unknown')} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(view.appOnly)}`,
+      ...(cost ? ['', `${costLine(cost, mdCode)}. _${cost.basis}._`] : []),
       ...(otherLists(menu) ? ['', `Also listed: ${otherLists(menu)}`] : []),
       '',
       ...mdFindings(findings),
@@ -86,8 +87,8 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
 
   const s = menu.server;
   const lines = [
-    `toolmenu snapshot  ${s.name ?? 'unknown server'} ${s.version ?? ''}`.trimEnd(),
-    `  protocol ${s.protocolVersion ?? 'unknown'} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(view.appOnly)}`,
+    `toolmenu snapshot  ${plain(s.name ?? 'unknown server')} ${plain(s.version ?? '')}`.trimEnd(),
+    `  protocol ${plain(s.protocolVersion ?? 'unknown')} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(view.appOnly)}`,
   ];
   if (cost) lines.push(`  ${costLine(cost)}`, `    ${cost.basis}`);
   const others = otherLists(menu);
@@ -111,9 +112,9 @@ export function findingLines(findings: Finding[]): string[] {
   const lines: string[] = [];
   for (const f of findings) {
     lines.push(`${LABEL[f.severity]}  ${f.rule}${unsureMark(f)}`);
-    lines.push(`       ${f.message}`);
-    for (const d of f.detail ?? []) lines.push(`         ${d}`);
-    if (f.fix) lines.push(`       → Next: ${f.fix}`);
+    lines.push(`       ${plain(f.message)}`);
+    for (const d of f.detail ?? []) lines.push(`         ${plain(d)}`);
+    if (f.fix) lines.push(`       → Next: ${plain(f.fix)}`);
   }
   lines.push(findings.length ? '' : 'No findings.');
   return lines;
@@ -129,7 +130,8 @@ function summaryLine(findings: Finding[]): string {
 export function githubLines(findings: Finding[]): string[] {
   return findings.map((f) => {
     const level = f.severity === 'error' ? 'error' : f.severity === 'warn' ? 'warning' : 'notice';
-    const body = [f.message, ...(f.detail ?? []), ...(f.fix ? [`→ Next: ${f.fix}`] : [])].join('\n').replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+    // plain(): a newline in the server's text is shown, not a line of the annotation.
+    const body = [f.message, ...(f.detail ?? []), ...(f.fix ? [`→ Next: ${f.fix}`] : [])].map(plain).join('\n').replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
     return `::${level} title=toolmenu ${f.rule}${unsureMark(f)}::${body}`;
   });
 }
@@ -160,19 +162,22 @@ function classLine(d: DiffResult): string {
  */
 function bumpVerdict(d: DiffResult, md = false): { line: string; short: boolean } {
   const b = (s: string) => (md ? `**${s}**` : s);
+  /** A version, as given: from --release or the server. */
+  const v = (s: string) => (md ? mdText(s) : plain(s));
   const suggested = `suggested bump: ${b(d.suggestedBump)}`;
   if (!d.actualBump || !d.release) return { line: `${suggested} · not checked (${d.bumpNotChecked ?? 'pass --release old..new'})`, short: false };
-  const pair = `${d.release.before} → ${d.release.after} is a ${d.actualBump} bump`;
+  const pair = `${v(d.release.before)} → ${v(d.release.after)} is a ${d.actualBump} bump`;
   const required = d.requiredBump ?? d.suggestedBump;
   const below1 = required !== d.suggestedBump ? ` (under 1.0.0 ${required === 'none' ? 'anything goes' : `a ${required} is enough`})` : '';
   const rank = { none: 0, patch: 1, minor: 2, major: 3 } as const;
   if (rank[d.actualBump] >= rank[required]) return { line: `${suggested} · ${pair}: enough${below1}`, short: false };
-  return { line: `${suggested} · ${pair}: ${b(`too small, release ${d.releaseAs ?? `a ${required}`}`)}${below1}`, short: true };
+  return { line: `${suggested} · ${pair}: ${b(`too small, release ${d.releaseAs ? v(d.releaseAs) : `a ${required}`}`)}${below1}`, short: true };
 }
 
-function releasePair(d: DiffResult): string {
+function releasePair(d: DiffResult, md = false): string {
+  const v = (s: string) => (md ? mdText(s) : plain(s));
   // Name the release versions when there are some; otherwise say whose version this is.
-  return d.release?.source === 'release' ? `${d.release.before} → ${d.release.after}` : `${d.before.version ?? '?'} → ${d.after.version ?? '?'} (server-reported)`;
+  return d.release?.source === 'release' ? `${v(d.release.before)} → ${v(d.release.after)}` : `${v(d.before.version ?? '?')} → ${v(d.after.version ?? '?')} (server-reported)`;
 }
 
 export function formatDiff(d: DiffResult, beforeTools: number, afterTools: number, format: Format): string {
@@ -185,12 +190,12 @@ export function formatDiff(d: DiffResult, beforeTools: number, afterTools: numbe
   const tokenLine = `~${d.tokens.before.toLocaleString('en-US')} → ~${d.tokens.after.toLocaleString('en-US')} (${signed(d.tokens.delta)}, estimate): ${tokenSentence(d)}`;
 
   if (format === 'github') {
-    return [...githubLines(d.findings), `::notice title=toolmenu diff::${name} ${pair}. Changes: ${classLine(d)}. Tokens: ${tokenLine}. Version: ${verdict.line}.`].join('\n');
+    return [...githubLines(d.findings), `::notice title=toolmenu diff::${ghEscape(`${name} ${pair}. Changes: ${classLine(d)}. Tokens: ${tokenLine}. Version: ${verdict.line}.`)}`].join('\n');
   }
   if (format === 'markdown') return mdDiff(d, beforeTools, afterTools);
 
   const lines = [
-    `toolmenu diff  ${name} ${pair}`,
+    `toolmenu diff  ${plain(name)} ${pair}`,
     `  changes  ${classLine(d)}`,
     `  version  ${verdict.line}`,
     `  tokens   ${tokenLine}`,
@@ -200,7 +205,7 @@ export function formatDiff(d: DiffResult, beforeTools: number, afterTools: numbe
   ];
   if (d.tokens.tools.length) {
     lines.push('Token change by tool (estimate):');
-    for (const t of d.tokens.tools.slice(0, 10)) lines.push(`  ${signed(t.delta).padStart(7)}  ${t.name}`);
+    for (const t of d.tokens.tools.slice(0, 10)) lines.push(`  ${signed(t.delta).padStart(7)}  ${plain(t.name)}`);
     if (d.tokens.tools.length > 10) lines.push(`  …and ${d.tokens.tools.length - 10} more`);
     lines.push('');
   }
@@ -220,7 +225,7 @@ function mdDiff(d: DiffResult, beforeTools: number, afterTools: number): string 
     `**${signed(d.tokens.delta)} tokens** (~${d.tokens.before.toLocaleString('en-US')} → ~${d.tokens.after.toLocaleString('en-US')}, estimate)`,
     `${beforeTools} → ${afterTools} tools`,
   ].join(' · ');
-  const lines = [`### toolmenu diff: \`${name}\` ${releasePair(d)}`, '', headline, '', `> **Version:** ${verdict.line}`, ''];
+  const lines = [`### toolmenu diff: ${mdCode(name)} ${releasePair(d, true)}`, '', headline, '', `> **Version:** ${verdict.line}`, ''];
   if (d.tokens.delta !== 0) lines.splice(lines.length - 1, 0, '>', `> **Tokens:** ${tokenSentence(d)}.`);
 
   const table = (findings: typeof d.findings) => ['| | Rule | Change |', '|---|---|---|', ...findings.map(mdDiffRow)];
@@ -239,7 +244,7 @@ function mdDiff(d: DiffResult, beforeTools: number, afterTools: number): string 
   if (!d.findings.length) lines.push('No findings.', '');
   if (d.tokens.tools.length) {
     lines.push('<details><summary>Token change by tool (estimate)</summary>', '', '| Tool | Before | After | Change |', '|---|---:|---:|---:|');
-    for (const t of d.tokens.tools.slice(0, 30)) lines.push(`| \`${t.name}\` | ${t.before.toLocaleString('en-US')} | ${t.after.toLocaleString('en-US')} | ${signed(t.delta)} |`);
+    for (const t of d.tokens.tools.slice(0, 30)) lines.push(`| ${mdCode(t.name, { cell: true })} | ${t.before.toLocaleString('en-US')} | ${t.after.toLocaleString('en-US')} | ${signed(t.delta)} |`);
     if (d.tokens.tools.length > 30) lines.push(`| …and ${d.tokens.tools.length - 30} more | | | |`);
     lines.push('', '</details>', '');
   }
@@ -252,7 +257,7 @@ function mdDiffRow(f: DiffResult['findings'][number]): string {
   const detail = (f.detail ?? []).map((line) => {
     const list = /^(tools|operations|moved): (.*)$/.exec(line);
     if (list) return `<details><summary>all ${list[2].split(', ').length} ${list[1] === 'moved' ? 'moved tools' : list[1]}</summary>${mdCell(list[2])}</details>`;
-    return `<br><sub>${mdCell(line).replace(/</g, '&lt;')}</sub>`;
+    return `<br><sub>${mdCell(line)}</sub>`;
   });
   const sev = f.severity === 'error' ? '**error**' : f.severity;
   return `| ${sev} | \`${f.rule}\`${f.confidence === 'unsure' ? ' · _unsure_' : ''} | ${mdCell(f.message)}${detail.join('')}${f.fix ? `<br>**→ Next:** ${mdCell(f.fix)}` : ''} |`;
@@ -303,7 +308,7 @@ export function formatHistory(h: HistoryResult, format: Format, outDir: string, 
 
   if (format === 'markdown') {
     const lines = [
-      `### toolmenu history: \`${h.package}\``,
+      `### toolmenu history: ${mdCode(h.package)}`,
       '',
       `${scope.charAt(0).toUpperCase()}${scope.slice(1)}.`,
       '',
@@ -314,22 +319,22 @@ export function formatHistory(h: HistoryResult, format: Format, outDir: string, 
     if (breaking.length) {
       lines.push('', '**Breaking changes**', '');
       for (const r of breaking) {
-        for (const m of r.diff!.breakingChanges.slice(0, BREAKING_SHOWN)) lines.push(`- \`${r.version}\` (vs ${r.diff!.from}): ${mdCell(m)}`);
-        if (r.diff!.breakingChanges.length > BREAKING_SHOWN) lines.push(`- \`${r.version}\`: …and ${r.diff!.breakingChanges.length - BREAKING_SHOWN} more (all in history.json)`);
+        for (const m of r.diff!.breakingChanges.slice(0, BREAKING_SHOWN)) lines.push(`- ${mdCode(r.version)} (vs ${mdText(r.diff!.from)}): ${mdCell(m)}`);
+        if (r.diff!.breakingChanges.length > BREAKING_SHOWN) lines.push(`- ${mdCode(r.version)}: …and ${r.diff!.breakingChanges.length - BREAKING_SHOWN} more (all in history.json)`);
       }
     }
     if (failed.length) {
       lines.push('', `**Failed** (${failed.length} of ${h.rows.length})`, '');
-      for (const g of failureGroups(failed, failure)) lines.push(`- \`${g.versions}\` · ${g.row.reason}${g.row.confidence === 'unsure' ? ' · _unsure_' : ''}: ${mdCell(g.message)}${g.fix ? `<br>**→ Next:** ${mdCell(g.fix)}` : ''}`);
+      for (const g of failureGroups(failed, failure)) lines.push(`- ${mdCode(g.versions)} · ${g.row.reason}${g.row.confidence === 'unsure' ? ' · _unsure_' : ''}: ${mdCell(g.message)}${g.fix ? `<br>**→ Next:** ${mdCell(g.fix)}` : ''}`);
     }
     lines.push('', `**${summary}**`, '', `<sub>${saved.charAt(0).toUpperCase()}${saved.slice(1)}.</sub>`);
     return lines.join('\n');
   }
 
-  const table = [head, ...h.rows.map(cells)];
+  const table = [head, ...h.rows.map((r) => cells(r).map(plain))];
   const widths = table[0].map((_, c) => Math.max(...table.map((row) => row[c].length)));
   const lines = [
-    `toolmenu history  ${h.package}`,
+    `toolmenu history  ${plain(h.package)}`,
     `  ${scope}`,
     '',
     ...table.map((row) => '  ' + row.map((cell, c) => cell.padEnd(widths[c])).join('  ').trimEnd()),
@@ -338,17 +343,17 @@ export function formatHistory(h: HistoryResult, format: Format, outDir: string, 
   if (breaking.length) {
     lines.push('Breaking changes:');
     for (const r of breaking) {
-      for (const m of r.diff!.breakingChanges.slice(0, BREAKING_SHOWN)) lines.push(`  ${r.version} (vs ${r.diff!.from}): ${m}`);
-      if (r.diff!.breakingChanges.length > BREAKING_SHOWN) lines.push(`  ${r.version}: …and ${r.diff!.breakingChanges.length - BREAKING_SHOWN} more (all in history.json)`);
+      for (const m of r.diff!.breakingChanges.slice(0, BREAKING_SHOWN)) lines.push(`  ${plain(r.version)} (vs ${plain(r.diff!.from)}): ${plain(m)}`);
+      if (r.diff!.breakingChanges.length > BREAKING_SHOWN) lines.push(`  ${plain(r.version)}: …and ${r.diff!.breakingChanges.length - BREAKING_SHOWN} more (all in history.json)`);
     }
     lines.push('');
   }
   if (failed.length) {
     lines.push(`Failed (${failed.length} of ${h.rows.length}):`);
     for (const g of failureGroups(failed, failure)) {
-      lines.push(`  ${g.versions}  ${g.row.reason}${g.row.confidence === 'unsure' ? ' · unsure' : ''}`);
-      lines.push(`      ${g.message}`);
-      if (g.fix) lines.push(`      → Next: ${g.fix}`);
+      lines.push(`  ${plain(g.versions)}  ${g.row.reason}${g.row.confidence === 'unsure' ? ' · unsure' : ''}`);
+      lines.push(`      ${plain(g.message)}`);
+      if (g.fix) lines.push(`      → Next: ${plain(g.fix)}`);
     }
     lines.push('');
   }
@@ -384,7 +389,7 @@ function failureGroups(failed: HistoryRow[], failure: (r: HistoryRow) => string)
 }
 
 function ghEscape(text: string): string {
-  return text.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+  return plain(text).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
 }
 
 export function formatSession(s: SessionResult, format: Format): string {
@@ -398,11 +403,11 @@ export function formatSession(s: SessionResult, format: Format): string {
   }
   if (format === 'markdown') {
     const lines = [
-      `### toolmenu session: \`${s.scenario}\``,
+      `### toolmenu session: ${mdCode(s.scenario)}`,
       '',
-      `\`${s.server.name ?? 'server'}\` ${s.server.version ?? ''} · protocol ${s.server.protocolVersion ?? '?'} · ${s.transport} · ${s.baseline.tools} → ${s.final.tools} tools · ~${s.baseline.tokens.toLocaleString('en-US')} → ~${s.final.tokens.toLocaleString('en-US')} tokens (estimate)`,
+      `${mdCode(s.server.name ?? 'server')} ${mdText(s.server.version ?? '')} · protocol ${mdText(s.server.protocolVersion ?? '?')} · ${s.transport} · ${s.baseline.tools} → ${s.final.tools} tools · ~${s.baseline.tokens.toLocaleString('en-US')} → ~${s.final.tokens.toLocaleString('en-US')} tokens (estimate)`,
       '',
-      ...(s.auto ? [...autoSummary(s.auto).map((l, i) => (i === 0 ? `**${l.replace(/^auto: /, 'auto:** ')}` : `- ${l.trim()}`)), ''] : []),
+      ...(s.auto ? [...autoSummary(s.auto).map((l, i) => (i === 0 ? `**auto:** ${mdText(l.replace(/^auto: /, ''))}` : `- ${mdText(l.trim())}`)), ''] : []),
       ...(callCounts(s) ? [`**Calls:** ${callCounts(s)}`, ''] : []),
       ...(menuChange(s) ? [`**Menu:** ${menuChange(s)}`, ''] : []),
       ...causes(s.findings, (count, f, where, text) =>
@@ -410,7 +415,7 @@ export function formatSession(s: SessionResult, format: Format): string {
       ),
       '| Step | Menu | list_changed | Scope |',
       '|---|---|---|---|',
-      ...s.steps.map((st) => `| ${st.index}. ${mdCell(st.label)} | ${st.status !== 'ok' ? st.status : st.changed ? `changed (${st.tools} tools)` : 'no change'} | ${st.changed ? (st.listChanged ? 'received' : '**missing**') : ''} | ${st.scope ?? ''} |`),
+      ...s.steps.map((st) => `| ${st.index}. ${mdCell(st.label)} | ${st.status !== 'ok' ? st.status : st.changed ? `changed (${st.tools} tools)` : 'no change'} | ${st.changed ? (st.listChanged ? 'received' : '**missing**') : ''} | ${mdCell(st.scope ?? '')} |`),
       '',
       ...mdFindings(s.findings.map((f) => ({ ...f, message: stepPrefix(f, `Step ${f.step}: `) }))),
     ];
@@ -418,24 +423,24 @@ export function formatSession(s: SessionResult, format: Format): string {
   }
   const tok = (n: number) => `~${n.toLocaleString('en-US')}`;
   const lines = [
-    `toolmenu session  ${s.scenario}`,
-    `  ${s.server.name ?? 'server'} ${s.server.version ?? ''} · protocol ${s.server.protocolVersion ?? '?'} · ${s.transport}`,
+    `toolmenu session  ${plain(s.scenario)}`,
+    `  ${plain(s.server.name ?? 'server')} ${plain(s.server.version ?? '')} · protocol ${plain(s.server.protocolVersion ?? '?')} · ${s.transport}`,
     `  baseline: ${plural(s.baseline.tools, 'tool')} · ${tok(s.baseline.tokens)} tokens (estimate) · listening for list_changed: ${s.listening ? 'yes' : 'no'}`,
-    ...(s.auto ? autoSummary(s.auto).map((l, i) => (i === 0 ? `  ${l}` : `    ${l}`)) : []),
+    ...(s.auto ? autoSummary(s.auto).map((l, i) => (i === 0 ? `  ${plain(l)}` : `    ${plain(l)}`)) : []),
     ...(callCounts(s) ? [`  calls: ${callCounts(s)}`] : []),
     // Before the first step only: what a fresh one sees after a change is each step's scope.
     `  fresh-${s.transport === 'stdio' ? 'process' : 'connection'} check of the starting menu: ${s.connectionCheck === undefined ? 'not checked' : s.connectionCheck === 'same' ? 'the same' : 'DIFFERENT'}`,
     '',
     ...(menuChange(s) ? [`menu: ${menuChange(s)}`] : []),
-    ...causes(s.findings, (count, f, where, text) => (count ? `${count}:` : `  ${LABEL[f!.severity]}  ${f!.rule} · ${where} · ${text}`)),
+    ...causes(s.findings, (count, f, where, text) => (count ? `${count}:` : `  ${LABEL[f!.severity]}  ${f!.rule} · ${where} · ${plain(text!)}`)),
   ];
   const at = (step: number) => s.findings.filter((f) => f.step === step);
   const block = (findings: Finding[]) => {
     for (const f of findings) {
       lines.push(`  ${LABEL[f.severity]}  ${f.rule}${unsureMark(f)}`);
-      lines.push(`         ${f.message}`);
-      for (const d of f.detail ?? []) lines.push(`           ${d}`);
-      if (f.fix) lines.push(`         → Next: ${f.fix}`);
+      lines.push(`         ${plain(f.message)}`);
+      for (const d of f.detail ?? []) lines.push(`           ${plain(d)}`);
+      if (f.fix) lines.push(`         → Next: ${plain(f.fix)}`);
     }
   };
   block(at(0));
@@ -451,9 +456,9 @@ export function formatSession(s: SessionResult, format: Format): string {
       step.changed ? `menu changed${delta ? ` · ${delta > 0 ? '+' : '−'}${plural(Math.abs(delta), 'tool')}` : ''}` : step.status === 'ok' ? 'no change' : '',
       step.changed ? (step.listChanged ? 'list_changed received' : 'no list_changed') : '',
       step.scope ? `scope: ${step.scope}` : '',
-      step.note ?? '',
+      plain(step.note ?? ''),
     ].filter(Boolean);
-    lines.push(`step ${step.index}: ${step.label} · ${facts.join(' · ')}`);
+    lines.push(`step ${step.index}: ${plain(step.label)} · ${facts.join(' · ')}`);
     block(at(step.index));
   }
   // Findings about the whole run (session/untested), after the steps.
@@ -531,7 +536,7 @@ function callCounts(s: SessionResult): string | undefined {
 
 export function formatPlan(scenario: Scenario, name: string): string {
   const lines = [`toolmenu session --plan  ${name}`, `  allow_writes: ${scenario.allowWrites}${scenario.allowWrites ? '' : ' (tools not marked readOnlyHint will be refused)'}`, ''];
-  scenario.steps.forEach((step, i) => lines.push(`step ${i + 1}: ${stepLabel(step)}${step.kind === 'wait_for' ? ` (up to ${step.timeoutMs} ms)` : ''}`));
+  scenario.steps.forEach((step, i) => lines.push(`step ${i + 1}: ${plain(stepLabel(step))}${step.kind === 'wait_for' ? ` (up to ${step.timeoutMs} ms)` : ''}`));
   lines.push('', 'After every step the menu is listed and compared with the one before. Nothing was run.');
   return lines.join('\n');
 }
@@ -547,8 +552,9 @@ function stepPrefix(f: Finding, prefix: string): string {
   return prefix + f.message;
 }
 
+/** Text in a table cell: escaped (sanitize.ts), so a server's words stay words. */
 function mdCell(text: string): string {
-  return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+  return mdText(text, { cell: true });
 }
 
 export function mdFindings(findings: Finding[]): string[] {

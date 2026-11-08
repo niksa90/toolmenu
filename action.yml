@@ -126,3 +126,5 @@ runs:
         # triggers, which only gets Dependabot secrets.
         TOOLMENU_NO_SECRETS: ${{ (github.event.pull_request.number > 0 && github.event_name != 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository) || github.actor == 'dependabot[bot]' }}
         GH_TOKEN: ${{ inputs.token }}
+        # To tell the job's own token (comments by github-actions[bot]) from one passed in.
+        TOOLMENU_JOB_TOKEN: ${{ github.token }}

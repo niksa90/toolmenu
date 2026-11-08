@@ -1,3 +1,4 @@
+import { mdCode, mdText, plain } from './sanitize.js';
 import { canonical } from './compare.js';
 import { usedEntries } from './schema-ref.js';
 import { countTokens } from './menu.js';
@@ -187,7 +188,7 @@ interface Item {
 
 const tok = (x: number) => `~${x.toLocaleString('en-US')}`;
 const pct = (x: number) => `${Math.round(x * 100)}%`;
-const list = (names: string[], total: number) => `${names.join(', ')}${total > names.length ? ', …' : ''}`;
+const list = (names: string[], total: number) => `${names.map(plain).join(', ')}${total > names.length ? ', …' : ''}`;
 
 /** A tool's schema can't refer to another tool's: said once, after the repeated blocks that span tools. */
 const ACROSS_TOOLS = "A tool's schema can't $ref another tool's, so a block shared across tools is paid once per tool: only a smaller block saves tokens there.";
@@ -203,13 +204,13 @@ function items(b: Breakdown, tools: number): { title: string; items: Item[] } | 
       }]
     : [];
   // Two different blocks under the same name ("form") are told apart by where the first one is.
-  const label = (r: Repeated) => (b.repeated.filter((x) => x.tools > 1 && x.param === r.param).length > 1 && r.where[0] ? `${r.param} at ${r.where[0]}` : r.param);
+  const label = (r: Repeated) => plain(b.repeated.filter((x) => x.tools > 1 && x.param === r.param).length > 1 && r.where[0] ? `${r.param} at ${r.where[0]}` : r.param);
   const repeated: Item[] = b.repeated.map((r) => {
     if (r.tools === 1) {
       const places = list(r.where.map((w) => w.slice(r.withinTool.length + 1)), r.count);
-      return { kind: 'repeated', text: `repeated: one ${tok(r.tokens)}-token block ×${r.count} in ${r.withinTool} (${places})${r.saving > 0 ? `: a $defs entry could save ${tok(r.saving)}` : ''}`, ...(r.saving > 0 ? { fix: `Move the block into ${r.withinTool}'s $defs once and $ref it.` } : {}) };
+      return { kind: 'repeated', text: `repeated: one ${tok(r.tokens)}-token block ×${r.count} in ${plain(r.withinTool)} (${places})${r.saving > 0 ? `: a $defs entry could save ${tok(r.saving)}` : ''}`, ...(r.saving > 0 ? { fix: `Move the block into ${plain(r.withinTool)}'s $defs once and $ref it.` } : {}) };
     }
-    const inside = r.within > 1 ? `, ×${r.within} inside ${r.withinTool}${r.saving > 0 ? `: a $defs entry there could save ${tok(r.saving)}` : ''}` : '';
+    const inside = r.within > 1 ? `, ×${r.within} inside ${plain(r.withinTool)}${r.saving > 0 ? `: a $defs entry there could save ${tok(r.saving)}` : ''}` : '';
     return { kind: 'repeated', text: `repeated: ${label(r)} (${tok(r.tokens)} tokens) in ${r.tools} tools, ${tok(r.total)} in all${inside}` };
   });
   // A small menu gets no breakdown, but waste inside one tool is worth a line anyway.
@@ -218,9 +219,9 @@ function items(b: Breakdown, tools: number): { title: string; items: Item[] } | 
     return within.length ? { title: 'Where the tokens go (estimate):', items: within } : undefined;
   }
   const topShare = b.top.reduce((s, t) => s + t.share, 0);
-  const width = Math.min(40, Math.max(...b.top.map((t) => t.name.length)));
-  const top: Item[] = b.top.map((t) => ({ kind: 'top', text: `${pct(t.share).padStart(4)}  ${t.name.padEnd(width)}  ${tok(t.tokens).padStart(7)} tokens (description ${tok(t.description)}, schema ${tok(t.schema)})` }));
-  const enums: Item[] = b.enums.map((e) => ({ kind: 'enum', text: `enum: ${e.tool}.${e.param} has ${e.values} values, ${tok(e.tokens)} tokens` }));
+  const width = Math.min(40, Math.max(...b.top.map((t) => plain(t.name).length)));
+  const top: Item[] = b.top.map((t) => ({ kind: 'top', text: `${pct(t.share).padStart(4)}  ${plain(t.name).padEnd(width)}  ${tok(t.tokens).padStart(7)} tokens (description ${tok(t.description)}, schema ${tok(t.schema)})` }));
+  const enums: Item[] = b.enums.map((e) => ({ kind: 'enum', text: `enum: ${plain(`${e.tool}.${e.param}`)} has ${e.values} values, ${tok(e.tokens)} tokens` }));
   const note: Item[] = b.repeated.some((r) => r.tools > 1) ? [{ kind: 'note', text: ACROSS_TOOLS }] : [];
   return { title: `Where the tokens go (estimate): the top ${b.top.length} tools are ${pct(topShare)} of the menu`, items: [...top, ...unused, ...enums, ...repeated, ...note] };
 }
@@ -242,12 +243,12 @@ export function breakdownLines(b: Breakdown, tools: number): string[] {
 export function breakdownMarkdown(b: Breakdown, tools: number): string[] {
   const found = items(b, tools);
   if (!found) return [];
-  const cell = (t: string) => t.replace(/\|/g, '\\|');
-  const code = (t: string) => t.replace(/\$defs/g, '`$defs`');
+  // The text has the server's names in it (escaped for the terminal already): made inert for markdown, $defs as code.
+  const code = (t: string) => mdText(t.replace(/\$defs/g, '`$defs`'));
   const lines = ['', `<details><summary>${found.title}</summary>`, ''];
   if (tools >= 5) {
     lines.push('| Share | Tool | Tokens | Description | Schema |', '|---:|---|---:|---:|---:|');
-    for (const t of b.top) lines.push(`| ${pct(t.share)} | \`${cell(t.name)}\` | ${tok(t.tokens)} | ${tok(t.description)} | ${tok(t.schema)} |`);
+    for (const t of b.top) lines.push(`| ${pct(t.share)} | ${mdCode(t.name, { cell: true })} | ${tok(t.tokens)} | ${tok(t.description)} | ${tok(t.schema)} |`);
     lines.push('');
   }
   for (const item of found.items.filter((i) => i.kind !== 'top' && i.kind !== 'note')) {

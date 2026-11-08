@@ -4,6 +4,7 @@ import { Ajv } from 'ajv';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import addFormatsImport from 'ajv-formats';
 import { kept, names, type Rule, type RuleFinding } from './rule.js';
+import { HIDDEN_SOURCE } from '../sanitize.js';
 
 // ajv-formats ships CommonJS; under NodeNext its default import is the module object.
 const addFormats = ((addFormatsImport as unknown as { default?: unknown }).default ?? addFormatsImport) as (ajv: Ajv | Ajv2020) => void;
@@ -108,6 +109,65 @@ export const duplicateName: Rule = {
         message: `${at.length} tools are named ${name} (positions ${at.join(', ')}). A call names the tool, so only one of them can be reached; clients may keep either, or reject the whole list (Claude's API refuses duplicate tool names).`,
         fix: `Give each ${name} its own name, or drop the copy if it's the same tool listed twice.`,
       }));
+  },
+};
+
+/** The tool-name format the spec recommends from 2025-11-25 (SEP-986): 1 to 128 of A-Z a-z 0-9 _ - . */
+const TOOL_NAME = /^[A-Za-z0-9_.-]{1,128}$/;
+/** The characters reports show as escapes (sanitize.ts): one class, so what's flagged is what's escaped. */
+const HIDDEN = new RegExp(HIDDEN_SOURCE, 'u');
+const codePoint = (c: string) => `U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`;
+
+/**
+ * What's wrong with a tool name, or undefined when it fits the spec's format. `hidden`:
+ * it has characters that act on a terminal or can't be seen, so it can pass for
+ * another name or for none.
+ */
+export function toolNameProblem(name: string): { why: string; hidden: boolean } | undefined {
+  if (TOOL_NAME.test(name)) return undefined;
+  const chars = [...name];
+  if (chars.length === 0) return { why: 'it is empty', hidden: false };
+  const hidden = [...new Set(chars.filter((c) => HIDDEN.test(c)))];
+  const other = [...new Set(chars.filter((c) => !HIDDEN.test(c) && !/[A-Za-z0-9_.-]/.test(c)))];
+  // Printable ASCII as itself; anything else by code point too, so a lookalike can't hide.
+  const shown = other.map((c) => (c === ' ' ? 'a space' : /^[!-~]$/.test(c) ? `"${c}"` : `${codePoint(c)} "${c}"`));
+  const parts = [
+    ...(hidden.length ? [`characters a terminal acts on or a reader can't see (${hidden.map(codePoint).join(', ')}: controls, invisible or text-direction characters)`] : []),
+    ...(shown.length ? [shown.join(', ')] : []),
+  ];
+  const long = chars.length > 128 ? `${chars.length} characters long, over 128` : '';
+  return { why: parts.length ? `it has ${parts.join('; and ')}${long ? `, and is ${long}` : ''}` : `it is ${long}`, hidden: hidden.length > 0 };
+}
+
+export const toolName: Rule = {
+  id: 'spec/tool-name',
+  severity: 'warn',
+  summary: "Tool names fit the format the spec recommends: 1 to 128 of A-Z, a-z, 0-9, _, - and .",
+  run(ctx) {
+    const bad = kept(ctx.menu.tools, ctx).flatMap((t) => {
+      const p = toolNameProblem(t.name);
+      return p ? [{ tool: t.name, ...p }] : [];
+    });
+    if (!bad.length) return [];
+    // Hidden characters are an error on any protocol: the name can pass for another tool's.
+    // Otherwise a recommendation from 2025-11-25 on; before that the spec gave no format.
+    const hidden = bad.filter((b) => b.hidden);
+    const older = !!ctx.protocolVersion && ctx.protocolVersion < '2025-11-25';
+    return [
+      {
+        ...(bad.length === 1 ? { tool: bad[0].tool } : {}),
+        ...(hidden.length ? { severity: 'error' as const } : older ? { severity: 'info' as const } : {}),
+        message:
+          `${bad.length === 1 ? `The tool name ${bad[0].tool} doesn't` : `${bad.length} tool names don't`} fit the tool name format the MCP spec recommends from 2025-11-25 (1 to 128 characters, A-Z, a-z, 0-9, _, - and .)` +
+          `${older ? `; this server speaks ${ctx.protocolVersion}, which gave no format, so it's for the move to 2025-11-25` : ''}. ` +
+          (hidden.length
+            ? `${hidden.length === 1 ? (bad.length === 1 ? 'It has' : 'One has') : `${hidden.length} have`} characters that are hidden or act on the screen, so what an agent or a person reads isn't the name the server takes. `
+            : '') +
+          'Clients may refuse such a tool, rename it, or pass it to a model API that refuses it.',
+        detail: bad.slice(0, 12).map((b) => `${b.tool}: ${b.why}`).concat(bad.length > 12 ? [`and ${bad.length - 12} more`] : []),
+        fix: 'Name tools with letters, digits, _, - and . only (files_read or files.read, not "files read"), at most 128 characters.',
+      },
+    ];
   },
 };
 

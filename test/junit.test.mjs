@@ -55,3 +55,8 @@ test('JUnit output goes with snapshot, diff and session only', async () => {
   assert.equal(r.code, 2);
   assert.match(r.stderr, /JUnit output .* goes with snapshot, diff or session/);
 });
+
+test('junit: characters a terminal acts on are character references', () => {
+  const out = xml(`a${String.fromCharCode(0x202e)}b${String.fromCharCode(0x9b)}c${String.fromCharCode(13)}d${String.fromCharCode(0x7f)}e\tf\ng`);
+  assert.equal(out, 'a&#x202e;b&#x9b;c&#xd;d&#x7f;e\tf\ng');
+});
