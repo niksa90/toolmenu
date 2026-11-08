@@ -96,6 +96,21 @@ test('session over stdio (2026-07-28): each change is pinned to the step that ca
   assert.equal(r.final.tools, 8);
 });
 
+for (const legacy of [false, true]) {
+  test(`session (${legacy ? '2025' : '2026-07-28'}): wait_for after a call sees the list_changed that call caused`, async () => {
+    // The README's own scenario: the unlock's notification arrives while the call
+    // step runs, before the wait_for begins. A second wait_for needs a new one.
+    const scenario = parseScenario({
+      steps: ['list', { call: 'unlock_toolset', args: { toolset: 'audits' } }, { wait_for: 'tools_list_changed', timeout_ms: 2000 }, { wait_for: 'tools_list_changed', timeout_ms: 200 }],
+    });
+    const started = Date.now();
+    const r = await session(stdio(legacy ? { LEGACY: '1' } : {}), scenario, { timeoutMs: TIMEOUT_MS, processes: 1 });
+    assert.ok(r.steps[1].listChanged > 0, 'the call step got the notification');
+    assert.deepEqual(r.steps.map((s) => s.status), ['ok', 'ok', 'ok', 'timed-out']);
+    assert.ok(Date.now() - started < 2000, 'the first wait_for did not wait out its timeout');
+  });
+}
+
 test('session: a server that holds a lock still gets its report, with the scope left unchecked', async () => {
   const lock = join(tempDir(), 'db.lock');
   const r = await session(stdio({ LOCKFILE: lock }), UNLOCK, { timeoutMs: TIMEOUT_MS });

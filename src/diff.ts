@@ -998,7 +998,10 @@ function compareSchema(w: Walk, at: string, before: JsonSchema, after: JsonSchem
       const pair = `${oldType || 'any'} → ${newType || 'any'}`;
       if (accepts(after, before)) say(w, 'diff/type-widened', at, ` now accepts more types: ${pair}`, '', [before, after]);
       else {
-        say(w, 'diff/param-type', at, ` changed type: ${pair}`, `Calls that send ${oldType ? `${article(oldType)} ${oldType}` : 'any other type'} fail validation.`, [before, after], {
+        // Only the types the new schema no longer takes: null|string → string loses null.
+        const newTypes = new Set(typesOf(after) ?? []);
+        const lost = [...new Set(typesOf(before) ?? [])].filter((t) => !newTypes.has(t) && !(t === 'integer' && newTypes.has('number'))).sort().join(' or ');
+        say(w, 'diff/param-type', at, ` changed type: ${pair}`, `Calls that send ${lost ? `${article(lost)} ${lost}` : 'any other type'} fail validation.`, [before, after], {
           fix: oldType && newType ? `Accept both (${[...new Set([...oldType.split('|'), ...newType.split('|')])].join('|')}) for one release, or ${BREAKING_RELEASE}.` : `Restore the old type, or ${BREAKING_RELEASE}.`,
         });
       }

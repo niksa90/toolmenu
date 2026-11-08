@@ -363,6 +363,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     const tried = new Set<string>();
     const quiet = new Set<string>();
     const stopped = new Map<string, number>();
+    // Where a wait_for starts counting list_changed: from the start of the last call,
+    // or from the end of the last wait_for. The notification a call causes usually
+    // arrives while the call step runs, before the wait_for after it begins.
+    let waitFrom = conn.wire.notifications.length;
     for (const [i, step] of scenario.steps.entries()) {
       const index = i + 1;
       if (step.kind === 'call' && step.tentative) {
@@ -385,6 +389,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       };
 
       if (step.kind === 'call') {
+        waitFrom = mark;
         const tool = current.tools.find((t) => t.name === step.tool);
         const write = tool ? writeSign(tool) : undefined;
         word = !!tool && tool.annotations?.readOnlyHint !== true && assumed.has(step.tool) && !write && !scenario.allowWrites;
@@ -560,8 +565,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           }
         }
       } else if (step.kind === 'wait_for') {
-        const arrived = await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, step.timeoutMs);
-        if (!arrived) {
+        const arrived = await waitFor(() => conn.wire.notificationsSince(waitFrom, LIST_CHANGED) > 0, step.timeoutMs);
+        if (arrived) waitFrom = conn.wire.notifications.length;
+        else {
           record.status = 'timed-out';
           record.note = `no list_changed within ${step.timeoutMs} ms`;
         }

@@ -300,6 +300,18 @@ test('a wide union where every option changed stays fast (review of #15: 36 s at
   assert.equal(d.suggestedBump, 'major');
 });
 
+test('param-type names only the types calls lose: null|string → string fails calls that send null', () => {
+  const d = diffMenus(
+    menu([{ name: 't', description: 'T.', inputSchema: schema({ x: { type: ['string', 'null'] }, y: { type: ['string', 'integer', 'boolean'] } }) }]),
+    menu([{ name: 't', description: 'T.', inputSchema: schema({ x: { type: 'string' }, y: { type: 'number' } }) }], '2.0.0'),
+  );
+  const said = d.findings.filter((f) => f.rule === 'diff/param-type').map((f) => plain(f.message)).sort();
+  assert.deepEqual(said, [
+    't.x changed type: null|string → string. Calls that send a null fail validation.',
+    't.y changed type: boolean|integer|string → number. Calls that send a boolean or string fail validation.',
+  ]);
+});
+
 test('a schema too large to expand on one side is compared as written, and says so (review of #15)', () => {
   const big = (n) => {
     const $defs = { [`D${n}`]: { type: 'string' } };
