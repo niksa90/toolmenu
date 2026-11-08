@@ -181,6 +181,9 @@ export class StoredOAuthProvider implements OAuthClientProvider {
     if (!this.options.interactive) {
       throw new LoginNeededError(this.serverUrl, whyLoginNeeded(await this.stored(), this.removedLogin));
     }
+    // The URL comes from the server's metadata: checked before anything opens or prints it.
+    const refused = unsafeAuthorizationUrl(authorizationUrl);
+    if (refused) throw new Error(`${this.serverUrl} sent a login address toolmenu won't open: ${refused}.\n→ Next: Check the server is the one you meant. If it is, ask its authors to serve the authorization endpoint over https.`);
     await this.options.onRedirect?.(authorizationUrl);
   }
 
@@ -223,6 +226,28 @@ export class StoredOAuthProvider implements OAuthClientProvider {
     if (scope === 'discovery') patch.discoveryState = undefined;
     await this.update(patch);
   }
+}
+
+/** Hosts that only reach this machine: plain http is fine there (RFC 8252, OAuth 2.1). */
+function isLoopback(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/\.$/, '');
+  return h === 'localhost' || h.endsWith('.localhost') || /^127(\.\d{1,3}){3}$/.test(h) || h === '[::1]';
+}
+
+/**
+ * Why an authorization URL from a server's metadata mustn't be opened, or undefined
+ * when it may be. Only https (or http to a loopback address): any other scheme
+ * (file:, smb:, an app's own) would have the system open a file or start a program,
+ * and the browser opener (xdg-open, open, rundll32) does whatever the scheme says.
+ */
+export function unsafeAuthorizationUrl(url: URL): string | undefined {
+  const shown = url.href.length > 200 ? `${url.href.slice(0, 199)}…` : url.href;
+  if (url.protocol === 'https:') return url.username || url.password ? `it carries credentials (${url.protocol}//user:password@…)` : undefined;
+  if (url.protocol === 'http:') {
+    if (url.username || url.password) return `it carries credentials (${url.protocol}//user:password@…)`;
+    return isLoopback(url.hostname) ? undefined : `it's plain http to another machine (${JSON.stringify(shown)}); only https, or http to this machine, is opened`;
+  }
+  return `its scheme is ${JSON.stringify(url.protocol)} (${JSON.stringify(shown)}), not https`;
 }
 
 /**

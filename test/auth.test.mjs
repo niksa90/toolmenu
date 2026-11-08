@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { hasLogin, listLogins, login, LoginNeededError, logout, StoredOAuthProvider } from '../dist/auth.js';
+import { hasLogin, listLogins, login, LoginNeededError, logout, StoredOAuthProvider, unsafeAuthorizationUrl } from '../dist/auth.js';
 import { snapshot } from '../dist/snapshot.js';
 import { start } from './fixtures/oauth-server.mjs';
 import { CLI, run, tempDir, TIMEOUT_MS } from './helpers.mjs';
@@ -305,5 +305,38 @@ test('auth login --no-browser: a bad line, then the address, piped in: the secon
     assert.doesNotMatch(stderr, /Nothing can be pasted/);
   } finally {
     await server.close();
+  }
+});
+
+test('unsafeAuthorizationUrl: https, or http to this machine; never another scheme', () => {
+  for (const ok of ['https://auth.example.com/authorize?x=1', 'http://127.0.0.1:9000/authorize', 'http://localhost/a', 'http://app.localhost/a', 'http://[::1]:8080/a']) {
+    assert.equal(unsafeAuthorizationUrl(new URL(ok)), undefined, ok);
+  }
+  for (const bad of ['file:///C:/Windows/System32/calc.exe', 'smb://evil.example/share/x.exe', 'ms-officecmd:x', 'search-ms:query=x', 'http://evil.example/authorize', 'http://127.0.0.1.evil.example/a', 'https://user:pw@auth.example.com/a']) {
+    assert.ok(unsafeAuthorizationUrl(new URL(bad)), bad);
+  }
+});
+
+test('auth login: a login address that is not https is never opened or printed', async () => {
+  for (const endpoint of ['file:///C:/Windows/System32/calc.exe', 'smb://evil.example/share/run.exe', 'http://evil.example/authorize']) {
+    isolated();
+    const server = await start({ authorizationEndpoint: endpoint });
+    try {
+      let opened = false;
+      await assert.rejects(login(server.url, { port: port(), open: () => (opened = true) }), (e) => /won't open/.test(e.message) && /https/.test(e.message));
+      assert.equal(opened, false, endpoint);
+      // --no-browser prints the address instead: refused before that too.
+      const err = process.stderr.write;
+      let printed = '';
+      process.stderr.write = (chunk, ...rest) => ((printed += chunk), true);
+      try {
+        await assert.rejects(login(server.url, { port: port(), noBrowser: true, paste: async () => 'never' }), /won't open/);
+      } finally {
+        process.stderr.write = err;
+      }
+      assert.doesNotMatch(printed, /Open this address/, endpoint);
+    } finally {
+      await server.close();
+    }
   }
 });
