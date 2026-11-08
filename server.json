@@ -14,13 +14,13 @@
       "mimeType": "image/svg+xml"
     }
   ],
-  "version": "0.25.1",
+  "version": "0.25.2",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "toolmenu",
-      "version": "0.25.1",
+      "version": "0.25.2",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

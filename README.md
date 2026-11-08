@@ -246,7 +246,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.25.1
+      - uses: niksa90/toolmenu@v0.25.2
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -294,7 +294,7 @@ permissions:
   security-events: write          # to upload SARIF
 steps:
   # … checkout, build, as above
-  - uses: niksa90/toolmenu@v0.25.1
+  - uses: niksa90/toolmenu@v0.25.2
     with:
       command: node dist/server.js
       sarif: toolmenu-sarif
@@ -312,7 +312,7 @@ writes the file beside the usual report (`diff` and `session` take `--sarif` too
 
 GitLab, Jenkins, Azure DevOps, CircleCI and Buildkite show JUnit XML as test results.
 `--junit <path>` writes the findings of `snapshot`, `diff` or `session` as JUnit beside
-the usual report (`--format junit` prints it instead). New after 0.25.1. Each finding is a test case named
+the usual report (`--format junit` prints it instead). New in 0.25.2. Each finding is a test case named
 after its tool, in a class named after its rule (`toolmenu.diff.diff/removed`), so the
 CI system tracks it across runs. Findings at or above `--fail-on` are failures, the rest
 pass with their text, so the test report agrees with the exit code. A clean run is one

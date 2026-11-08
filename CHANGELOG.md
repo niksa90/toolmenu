@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.25.2
 
 - **JUnit output, for CI systems other than GitHub.** `--junit <path>` writes the
   findings of `snapshot`, `diff` or `session` as JUnit XML beside the usual report;
@@ -11,6 +11,11 @@
 - **README: toolmenu as a library.** The exported API (`snapshot`, `diffMenus`,
   `session`, `history`…) was there but not documented; now it has a section. And
   `routes.yml`, the keyword-routing check, is in the "What it catches" table.
+- **The MCP server refuses a URL with credentials in it.** `snapshot_menu`,
+  `diff_menus` and `check_session` passed `url` to the CLI as an argument, where other
+  local users can read it (`ps`). A `https://user:password@host/mcp` URL is now an
+  error that points to `headers`, which travel through the environment; the error
+  doesn't repeat the URL. An unparsable URL is refused too.
 
 ## 0.25.1
 
