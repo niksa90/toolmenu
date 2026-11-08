@@ -911,3 +911,27 @@ test('ids/authored: a router\'s list operation in an enum lists that kind; one t
   assert.deepEqual(ids([tool('favorite_add', ['listId']), router('profile', ['list_public'])]), ['favorite_add.listId'], 'the verb is not the kind');
   assert.deepEqual(ids([tool('discussion_comment_write', ['commentNodeID']), tool('get_discussion_comments', ['owner'])]), []);
 });
+
+test('spec/tool-name: names outside the spec\'s format warn; hidden characters are an error', async () => {
+  const { toolNameProblem } = await import('../dist/rules/spec.js');
+  for (const ok of ['files_read', 'files.read', 'get-user', 'A1', 'x'.repeat(128)]) assert.equal(toolNameProblem(ok), undefined, ok);
+  assert.match(toolNameProblem(''), /empty/);
+  assert.match(toolNameProblem('get user'), /a space/);
+  assert.match(toolNameProblem('x'.repeat(129)), /129 characters/);
+  assert.match(toolNameProblem('safe‮exe'), /U\+202E/);
+  assert.match(toolNameProblem('a​b'), /U\+200B/);
+  assert.match(toolNameProblem('a\u001b[2J'), /U\+001B/);
+
+  const read = { annotations: { readOnlyHint: true } };
+  const warned = lint([tool('get user', [], read), tool('list_forms', [], read)]).filter((f) => f.rule === 'spec/tool-name');
+  assert.equal(warned.length, 1);
+  assert.equal(warned[0].severity, 'warn');
+  assert.equal(warned[0].tool, 'get user');
+  const hidden = lint([tool('get_form', [], read), tool('get​_form', [], read), tool('a b', [], read)]).filter((f) => f.rule === 'spec/tool-name');
+  assert.equal(hidden.length, 1);
+  assert.equal(hidden[0].severity, 'error');
+  assert.match(hidden[0].message, /2 tool names/);
+  assert.equal(hidden[0].detail.length, 2);
+  // Ignored tools are left out.
+  assert.deepEqual(lint([tool('get user', [], read)], {}, { ignore: ['get user'] }).filter((f) => f.rule === 'spec/tool-name'), []);
+});

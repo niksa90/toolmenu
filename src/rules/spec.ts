@@ -111,6 +111,54 @@ export const duplicateName: Rule = {
   },
 };
 
+/** The tool-name format the spec gives from 2025-11-25 (SEP-986): 1 to 128 of A-Z a-z 0-9 _ - . */
+const TOOL_NAME = /^[A-Za-z0-9_.-]{1,128}$/;
+// eslint-disable-next-line no-control-regex
+const HIDDEN = /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/u;
+
+/** What's wrong with a tool name, in words, or undefined when it fits the spec's format. */
+export function toolNameProblem(name: string): string | undefined {
+  if (TOOL_NAME.test(name)) return undefined;
+  if (name.length === 0) return 'it is empty';
+  const hidden = [...new Set([...name].filter((c) => HIDDEN.test(c)))];
+  if (hidden.length) {
+    const codes = hidden.map((c) => `U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`).join(', ');
+    return `it has characters a terminal or a reader acts on or can't see (${codes}): control characters, invisible ones or text-direction overrides, which make a name look like another or like nothing`;
+  }
+  const other = [...new Set([...name].filter((c) => !/[A-Za-z0-9_.-]/.test(c)))];
+  const shown = other.map((c) => (c === ' ' ? 'a space' : `"${c}"`)).join(', ');
+  if (name.length > 128 && !other.length) return `it is ${name.length} characters long, over 128`;
+  return `it has ${shown}${name.length > 128 ? `, and is ${name.length} characters long, over 128` : ''}`;
+}
+
+export const toolName: Rule = {
+  id: 'spec/tool-name',
+  severity: 'warn',
+  summary: "Tool names fit the spec's format: 1 to 128 of A-Z, a-z, 0-9, _, - and .",
+  run(ctx) {
+    const bad = kept(ctx.menu.tools, ctx)
+      .map((t) => ({ tool: t.name, why: toolNameProblem(t.name) }))
+      .filter((b): b is { tool: string; why: string } => !!b.why);
+    if (!bad.length) return [];
+    // A name with hidden characters is worth an error of its own: it can pass for another tool.
+    const hidden = bad.filter((b) => b.why.startsWith('it has characters a terminal'));
+    return [
+      {
+        ...(bad.length === 1 ? { tool: bad[0].tool } : {}),
+        ...(hidden.length ? { severity: 'error' as const } : {}),
+        message:
+          `${bad.length === 1 ? `The tool name ${bad[0].tool} doesn't` : `${bad.length} tool names don't`} fit the tool name format the MCP spec gives (2025-11-25: 1 to 128 characters, A-Z, a-z, 0-9, _, - and .). ` +
+          (hidden.length
+            ? `${hidden.length === 1 ? 'One has' : `${hidden.length} have`} characters that are hidden or act on the screen, so what an agent or a person reads isn't the name the server takes. `
+            : '') +
+          'Clients may refuse such a tool, rename it, or pass it to a model API that refuses it.',
+        detail: bad.slice(0, 12).map((b) => `${b.tool}: ${b.why}`).concat(bad.length > 12 ? [`and ${bad.length - 12} more`] : []),
+        fix: 'Name tools with letters, digits, _, - and . only (files_read or files.read, not "files read"), at most 128 characters.',
+      },
+    ];
+  },
+};
+
 export const discover: Rule = {
   id: 'spec/discover',
   severity: 'info',

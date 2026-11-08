@@ -49,7 +49,7 @@ test('snapshot and diff text reports show a hostile server\'s names as escapes',
   const dir = tempDir();
   const menu = join(dir, 'menu.json');
   const snap = await run(['snapshot', '--out', menu, ...hostile]);
-  assert.equal(snap.code, 0, snap.stderr);
+  assert.equal(snap.code, 1, snap.stderr); // spec/tool-name: an error for the hidden characters
   assert.doesNotMatch(snap.stdout, RAW_CONTROL);
   assert.match(snap.stdout, /1\.0\.0\\u001b\[31m/);
   writeFileSync(join(dir, 'empty.json'), JSON.stringify({ toolmenu: 1, server: {}, tools: [] }));
