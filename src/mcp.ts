@@ -8,8 +8,8 @@
  * out, or the client closing the connection stops the child and the server it started.
  */
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
-import { statSync } from 'node:fs';
-import { isAbsolute, resolve } from 'node:path';
+import { lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
@@ -224,6 +224,46 @@ export function folder(baseCwd: string, cwd?: string): { dir: string } | { error
 /** A path as an absolute one, so a value starting with "-" can't be read as an option. */
 const absolute = (dir: string, path: string) => (isAbsolute(path) ? path : resolve(dir, path));
 
+/** Whether `path` is `dir` itself or inside it, by path alone. */
+const inside = (dir: string, path: string) => {
+  const rel = relative(dir, path);
+  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+};
+
+/**
+ * Where save_as may write, or why it can't: a file inside the call's folder (symlinks
+ * followed), either new or a toolmenu menu file already. The agent picks the path, so
+ * it can't be used to overwrite anything else (a shell profile, a source file).
+ */
+export function savePath(dir: string, saveAs: string): { path: string } | { error: string } {
+  const path = absolute(dir, saveAs);
+  const outside = { error: `save_as "${saveAs}" is outside the folder the call runs in (${dir}). Give a path inside it, e.g. new-menu.json.` };
+  if (!inside(dir, path)) return outside;
+  let realDir: string;
+  let realParent: string;
+  try {
+    realDir = realpathSync(dir);
+    realParent = realpathSync(dirname(path));
+  } catch {
+    return { error: `save_as "${saveAs}": the folder ${dirname(path)} doesn't exist.` };
+  }
+  if (!inside(realDir, realParent)) return outside;
+  let existing;
+  try {
+    existing = lstatSync(path);
+  } catch {
+    return { path };
+  }
+  if (existing.isSymbolicLink() || !existing.isFile()) return { error: `save_as "${saveAs}" is ${existing.isSymbolicLink() ? 'a symbolic link' : 'not a file'}; toolmenu only writes a new file or replaces a menu file.` };
+  let menu = false;
+  try {
+    menu = (JSON.parse(readFileSync(path, 'utf8')) as { toolmenu?: unknown })?.toolmenu === 1;
+  } catch {
+    // not JSON: not a menu
+  }
+  return menu ? { path } : { error: `save_as "${saveAs}" already exists and isn't a toolmenu menu file, so it wasn't overwritten. Pick a new name, e.g. new-menu.json.` };
+}
+
 const failed = (text: string): Text => ({ content: [{ type: 'text', text }], isError: true });
 
 type Ctx = { mcpReq: { signal: AbortSignal } };
@@ -256,23 +296,33 @@ export function build(baseCwd = process.cwd()): McpServer {
     {
       description:
         "Check an MCP server's tool list: start or connect to it, list its tools, and report findings (what agents misread, what breaks clients or prompt caches) and the token cost. " +
-        'Writes the menu file only when save_as is given (the baseline for diff_menus).',
+        'A command server is started by running command as given, so only pass a command you would run yourself. ' +
+        'Writes the menu file only when save_as is given (the baseline for diff_menus): a new file inside cwd, or an existing menu file there.',
       inputSchema: {
         ...serverShape,
-        save_as: z.string().optional().describe('Write the menu here (menu.json for a baseline), relative to cwd. Default: not written.'),
+        save_as: z.string().optional().describe('Write the menu here (menu.json for a baseline), relative to cwd and inside it: a new file, or a menu file to replace. Default: not written.'),
         client: z.enum(CLIENT_NAMES as [string, ...string[]]).optional().describe('Also check the menu as this client loads it: what it cuts, finds and refuses.'),
         catalog: z.boolean().optional().describe('Also read the operations behind a search tool or command routers.'),
       },
-      annotations: { title: 'Snapshot a server menu', readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      // It runs an arbitrary command: destructive as far as a client deciding what to approve can know.
+      annotations: { title: 'Snapshot a server menu', readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
     },
-    (a, ctx) =>
-      forServer(a, ctx, (dir, s) => [
+    (a, ctx) => {
+      let out = '--no-write';
+      if (a.save_as) {
+        const f = folder(baseCwd, a.cwd);
+        const p = 'error' in f ? undefined : savePath(f.dir, a.save_as);
+        if (p && 'error' in p) return failed(p.error);
+        if (p) out = `--out=${p.path}`;
+      }
+      return forServer(a, ctx, (_dir, s) => [
         'snapshot',
         ...s.before,
-        a.save_as ? `--out=${absolute(dir, a.save_as)}` : '--no-write',
+        out,
         ...(a.client ? [`--client=${a.client}`] : []),
         ...(a.catalog ? ['--catalog'] : []),
-      ]),
+      ]);
+    },
   );
 
   server.registerTool(
@@ -301,13 +351,13 @@ export function build(baseCwd = process.cwd()): McpServer {
     {
       description:
         "Check whether an MCP server's menu changes while an agent works: call its tools marked readOnlyHint whose arguments the schema can fill, list the menu after each call, and report each change with the call that caused it. " +
-        'Calls only read-only tools; never one marked openWorldHint unless open_world is set.',
+        'Calls only read-only tools; never one marked openWorldHint unless open_world is set. A command server is started by running command as given, so only pass a command you would run yourself.',
       inputSchema: {
         ...serverShape,
         max_calls: z.number().int().min(1).optional().describe('At most this many calls (default 20).'),
         open_world: z.boolean().optional().describe('Also call read-only tools marked openWorldHint (web search, fetch): they may cost API credits.'),
       },
-      annotations: { title: 'Run a session against a server', readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      annotations: { title: 'Run a session against a server', readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
     },
     (a, ctx) =>
       forServer(a, ctx, (_dir, s) => [

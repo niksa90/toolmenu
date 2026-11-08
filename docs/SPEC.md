@@ -1088,7 +1088,11 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   fixed and the same for everyone.
 - **Tools** map onto commands: `snapshot_menu` → `snapshot` (`--no-write` unless
   `save_as`), `diff_menus` → `diff`, `check_session` → `session --auto`,
-  `explain_rule` → `explain`. A server is `command` (stdio, with `env`) or `url`
+  `explain_rule` → `explain`. `save_as` writes only inside `cwd` (symlinks
+  followed): a new file, or an existing toolmenu menu file; anything else is a tool
+  error and nothing is written. `snapshot_menu` and `check_session` run the command
+  they're given, so they're annotated `destructiveHint: true`, `idempotentHint:
+  false`. A server is `command` (stdio, with `env`) or `url`
   (HTTP, with `headers`), exactly one; the wrong pairing is a tool error before
   anything runs.
 - **Each call runs the CLI** (`process.execPath dist/cli.js …`, no shell) in `cwd`,

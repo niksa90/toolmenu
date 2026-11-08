@@ -2,10 +2,10 @@
 // passes toolmenu's checks.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { connect } from '../dist/connect.js';
-import { folder, serverArgs } from '../dist/mcp.js';
+import { folder, savePath, serverArgs } from '../dist/mcp.js';
 import { CLI, FIXTURES, ROOT, run, tempDir, TIMEOUT_MS } from './helpers.mjs';
 
 const toolmenu = () => ({ kind: 'stdio', command: process.execPath, args: [CLI, 'mcp'] });
@@ -20,11 +20,16 @@ async function withServer(fn) {
   }
 }
 
-test('its own menu: no findings, at any level, on either protocol', async () => {
+test('its own menu: no findings on either protocol, but the dry-run hint for the two tools that start a server', async () => {
   for (const protocol of ['modern', 'auto']) {
-    const r = await run(['snapshot', '--no-write', '--fail-on', 'info', '--protocol', protocol, '--', process.execPath, CLI, 'mcp']);
+    const r = await run(['snapshot', '--no-write', '--format', 'json', '--protocol', protocol, '--', process.execPath, CLI, 'mcp']);
     assert.equal(r.code, 0, r.stdout + r.stderr);
-    assert.match(r.stdout, /4 tools/);
+    const report = JSON.parse(r.stdout);
+    assert.equal(report.tools, 4);
+    // snapshot_menu and check_session run a command, so they're marked destructive; a dry
+    // run of "start this server and list its tools" isn't a thing, so this info stays.
+    assert.deepEqual(report.findings.map((f) => [f.rule, f.severity]), [['write/no-dry-run', 'info']], r.stdout);
+    assert.deepEqual(report.findings[0].detail, ['snapshot_menu, check_session']);
   }
 });
 
@@ -228,4 +233,56 @@ test('TOOLMENU_MCP_ARGS: arguments the CLI takes from the environment, before "-
   const bad = await run(['explain'], { env: { TOOLMENU_MCP_ARGS: '{"no":1}' } });
   assert.equal(bad.code, 2);
   assert.match(bad.stderr, /JSON array of strings/);
+});
+
+test('the tools that start a server say so: destructive, not idempotent', async () => {
+  const conn = await connect(toolmenu(), { timeoutMs: TIMEOUT_MS });
+  try {
+    const { tools } = await conn.client.listTools();
+    for (const name of ['snapshot_menu', 'check_session']) {
+      const a = tools.find((t) => t.name === name).annotations;
+      assert.equal(a.destructiveHint, true, name);
+      assert.equal(a.idempotentHint, false, name);
+      assert.equal(a.readOnlyHint, false, name);
+    }
+    for (const name of ['diff_menus', 'explain_rule']) assert.equal(tools.find((t) => t.name === name).annotations.readOnlyHint, true, name);
+  } finally {
+    await conn.close();
+  }
+});
+
+test('save_as writes only inside cwd: a new file, or a menu file it replaces', async () => {
+  const cwd = tempDir();
+  const elsewhere = tempDir();
+  mkdirSync(join(cwd, 'sub'));
+  writeFileSync(join(cwd, 'notes.txt'), 'keep me');
+  writeFileSync(join(cwd, 'menu.json'), JSON.stringify({ toolmenu: 1, tools: [] }));
+  writeFileSync(join(elsewhere, 'target.json'), JSON.stringify({ toolmenu: 1, tools: [] }));
+  symlinkSync(join(elsewhere, 'target.json'), join(cwd, 'link.json'));
+  symlinkSync(elsewhere, join(cwd, 'out'));
+
+  assert.ok('path' in savePath(cwd, 'new-menu.json'));
+  assert.ok('path' in savePath(cwd, 'sub/new.json'));
+  assert.ok('path' in savePath(cwd, 'menu.json'), 'an existing menu file is replaced');
+  assert.match(savePath(cwd, '../escape.json').error, /outside the folder/);
+  assert.match(savePath(cwd, join(elsewhere, 'abs.json')).error, /outside the folder/);
+  assert.match(savePath(cwd, 'out/through-symlinked-folder.json').error, /outside the folder/);
+  assert.match(savePath(cwd, 'link.json').error, /symbolic link/);
+  assert.match(savePath(cwd, 'notes.txt').error, /isn't a toolmenu menu/);
+  assert.match(savePath(cwd, 'sub').error, /not a file/);
+  assert.match(savePath(cwd, 'nope/x.json').error, /doesn't exist/);
+
+  await withServer(async (call) => {
+    const server = [process.execPath, join(FIXTURES, 'sdk-server.mjs')];
+    const refused = await call('snapshot_menu', { command: server, cwd, save_as: 'notes.txt' });
+    assert.equal(refused.isError, true);
+    assert.match(textOf(refused), /wasn't overwritten/);
+    assert.equal(readFileSync(join(cwd, 'notes.txt'), 'utf8'), 'keep me');
+    const out = await call('snapshot_menu', { command: server, cwd, save_as: '../escape.json' });
+    assert.equal(out.isError, true);
+    assert.ok(!existsSync(join(cwd, '..', 'escape.json')));
+    const replaced = await call('snapshot_menu', { command: server, cwd, save_as: 'menu.json' });
+    assert.equal(replaced.isError, undefined, textOf(replaced));
+    assert.equal(JSON.parse(readFileSync(join(cwd, 'menu.json'), 'utf8')).tools.length, 3);
+  });
 });
