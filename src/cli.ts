@@ -7,7 +7,7 @@ import { CLIENT_NAMES, CLIENTS } from './clients.js';
 import { LIST_WORDS } from './lists.js';
 import { loadConfig, type Config } from './config.js';
 import { ELICITATIONS, PROTOCOLS, type Elicitation, type Protocol, type Target } from './connect.js';
-import { diffMenus } from './diff.js';
+import { comparedTools, diffMenus } from './diff.js';
 import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
 import { counts, formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
@@ -27,7 +27,6 @@ import { toSarif } from './sarif.js';
 import { toJunit } from './junit.js';
 import { diffHtml, sessionHtml, snapshotHtml } from './html.js';
 import type { StepTool } from './session.js';
-import type { DiffTools } from './diff.js';
 import { badge, badgeMarkdown } from './badge.js';
 import { VERSION } from './version.js';
 import { SECRET_ARGS_ENV } from './mcp-env.js';
@@ -101,9 +100,9 @@ export async function main(given: string[]): Promise<number> {
   const sarifToStdout = asked === 'sarif';
   const junitToStdout = asked === 'junit';
   const format = (sarifToStdout || junitToStdout ? 'text' : asked) as Format;
-  /** Print the report, or the SARIF / JUnit file with --format sarif|junit; write --sarif's and --junit's files too. */
   /** session --html: the menu after each step, for the page only. */
   const stepMenus = new Map<number, StepTool[]>();
+  /** Print the report, or the SARIF / JUnit file with --format sarif|junit; write --sarif's, --junit's and --html's files too. */
   const emit = async (report: string, findings: Finding[], command: string, menuPath: string | undefined, html?: () => string) => {
     if (values.html !== undefined && html) await writeFile(values.html, html());
     const menu = values['sarif-menu'] ?? menuPath;
@@ -204,16 +203,14 @@ export async function main(given: string[]): Promise<number> {
     if (rest.length !== 2) throw new UsageError('diff needs two menu files: toolmenu diff <old.json> <new.json>');
     const [before, after] = await Promise.all(rest.map((path) => loadMenu(path)));
     const release = values.release ? parseRelease(values.release) : undefined;
-    let compared: DiffTools | undefined;
     const result = diffMenus(before, after, {
-      onTools: (tools) => (compared = tools),
       rules: config.rules,
       ignore: config.ignore,
       tokenBudget: config.tokenBudget,
       release,
       serverVersionIsRelease: values['server-version-is-release'] ?? config.serverVersionIsRelease,
     });
-    await emit(formatDiff(result, before.tools.length, after.tools.length, format), result.findings, 'diff', rest[1], () => diffHtml(result, compared!, { paths: [rest[0], rest[1]] }));
+    await emit(formatDiff(result, before.tools.length, after.tools.length, format), result.findings, 'diff', rest[1], () => diffHtml(result, comparedTools(before, after, config.ignore), { paths: [rest[0], rest[1]] }));
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
@@ -391,7 +388,7 @@ export async function main(given: string[]): Promise<number> {
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');
 
-  await emit(formatSnapshot(menu, findings, format, outPath, cost, notOffered), findings, 'snapshot', outPath, () => snapshotHtml(menu, findings, { transport: target.kind, cost }));
+  await emit(formatSnapshot(menu, findings, format, outPath, cost, notOffered), findings, 'snapshot', outPath, () => snapshotHtml(menu, findings, { transport: target.kind, cost, notOffered, outPath }));
   if (values.badge !== undefined) {
     await writeFile(values.badge, JSON.stringify(badge(menu, findings), null, 2) + '\n');
     // stderr: stdout stays the report (or the JSON/SARIF a script parses).

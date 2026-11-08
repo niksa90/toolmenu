@@ -12,9 +12,11 @@
   CI artifact; light and dark follow the viewer. The design follows the Board UI
   design system, in the logo's colours.
 - Library: `session` takes `onStepMenu` (the menu after each step, with what the step
-  inserted, appended, moved, edited or removed) and `diffMenus` takes `onTools` (the
-  tools it compared after the ignore globs, and which were added, removed and
-  renamed). Neither is part of the result, so the JSON output is unchanged.
+  inserted, appended, moved, edited or removed; `stepMenu` and `StepTool` are
+  exported), kept out of the result so the JSON output is unchanged. New
+  `comparedTools(before, after, ignore)` returns the tools `diffMenus` compares (after
+  the ignore globs, with their served positions) and which were added, removed and
+  renamed; `diffMenus` uses it too.
 
 ## 0.25.2
 

@@ -11,8 +11,10 @@
  */
 import { agentMenu, isAppOnly } from './apps.js';
 import type { ClientCost } from './clients.js';
+import { autoSummary } from './auto.js';
 import type { DiffResult, DiffTools } from './diff.js';
 import { costLine, counts } from './report.js';
+import { toolsOf } from './sarif.js';
 import { stepsText, type SessionResult, type StepTool } from './session.js';
 import type { Finding, Menu, MenuTool, Severity } from './types.js';
 import { basename } from 'node:path';
@@ -54,22 +56,22 @@ function heading(name: string, version: string | undefined, sub: string[]): stri
   return `<header class="head"><h1 class="t-title-1">${esc(name)}${version ? ` <span class="sec">${esc(version)}</span>` : ''}</h1><p class="sub t-body sec">${sub.map((s) => `<span>${s}</span>`).join('')}</p></header>`;
 }
 
-function statusOf(findings: Finding[], tool: string): string {
-  const about = findings.filter((f) => f.tool === tool || toolsOf(f).includes(tool));
-  if (about.some((f) => f.severity === 'error')) return '<span class="sdot rose" role="img" aria-label="Has an error"></span>';
-  if (about.some((f) => f.severity === 'warn')) return '<span class="sdot yellow" role="img" aria-label="Has a warning"></span>';
-  return CHECK;
+/** Each tool's status mark: an error dot, a warning dot, or the check. One pass over the findings. */
+function statuses(findings: Finding[]): (tool: string) => string {
+  const worst = new Map<string, Severity>();
+  for (const f of findings) for (const t of toolsOf(f)) if (f.severity !== 'info' && worst.get(t) !== 'error') worst.set(t, f.severity);
+  return (tool) =>
+    worst.get(tool) === 'error' ? '<span class="sdot rose" role="img" aria-label="Has an error"></span>'
+      : worst.get(tool) === 'warn' ? '<span class="sdot yellow" role="img" aria-label="Has a warning"></span>'
+        : CHECK;
 }
 
-function toolsOf(f: Finding): string[] {
-  const several = (f as { tools?: unknown }).tools;
-  if (Array.isArray(several)) return several.filter((t): t is string => typeof t === 'string');
-  return f.tool ? [f.tool] : [];
-}
+/** The steps a finding is at: all of them for one found at several. */
+const stepsOf = (f: Finding): number[] => (f.steps?.length ? f.steps : f.step !== undefined ? [f.step] : []);
 
 function tile(f: Finding, id?: string): string {
   const tools = toolsOf(f);
-  const steps = f.steps?.length ? f.steps : f.step !== undefined ? [f.step] : [];
+  const steps = stepsOf(f);
   const where = [
     steps.length ? upper(stepsText(steps)) : '',
     tools.length === 1 ? tools[0] : tools.length > 1 ? `${tools.length} tools` : '',
@@ -98,9 +100,10 @@ ${findings.length ? '' : `<div class="empty">${CHECK}<span class="t-body-m">No f
 </section>`;
 }
 
-function card(label: string, value: string, note: string | undefined, table: string, legend?: string): string {
+function card(label: string, value: string, note: string | undefined, table: string, legend?: string, extra = ''): string {
   return `<section class="card">
 <div class="card-head"><span class="t-body-m sec">${esc(label)}</span><span class="t-title-1">${esc(value)}</span>${note ? `<span class="t-body2 sec">${esc(note)}</span>` : ''}</div>
+${extra}
 <div class="scroll">${table}</div>
 ${legend ? `<div class="card-foot legend t-cap-m sec">${legend}</div>` : ''}
 </section>`;
@@ -139,6 +142,10 @@ export interface SnapshotHtmlOptions {
   transport?: string;
   /** --client: what the menu costs under that client. */
   cost?: ClientCost;
+  /** --lists asked for that the server doesn't offer. */
+  notOffered?: string[];
+  /** Where the menu file was written. */
+  outPath?: string;
 }
 
 /** The snapshot page. It counts as the text report does: every tool the server lists, app-only ones marked. */
@@ -147,8 +154,9 @@ export function snapshotHtml(menu: Menu, findings: Finding[], options: SnapshotH
   const { appOnly } = agentMenu(menu);
   const max = Math.max(1, ...menu.tools.map((t) => t.tokens));
   const writes = menu.tools.filter(isWrite).length;
+  const status = statuses(findings);
   const rows = menu.tools
-    .map((t, i) => `<tr><td class="pos">${i}</td><td class="name">${esc(t.name)}${isAppOnly(t) ? appOnlyChip : isWrite(t) ? chip('purple', 'Writes') : ''}</td><td class="bar"><div class="meter"><span style="width:${pct(t.tokens, max)}%"></span></div></td><td class="num">~${num(t.tokens)}</td><td class="status">${statusOf(findings, t.name)}</td></tr>`)
+    .map((t, i) => `<tr><td class="pos">${i}</td><td class="name">${esc(t.name)}${isAppOnly(t) ? appOnlyChip : isWrite(t) ? chip('purple', 'Writes') : ''}</td><td class="bar"><div class="meter"><span style="width:${pct(t.tokens, max)}%"></span></div></td><td class="num">~${num(t.tokens)}</td><td class="status">${status(t.name)}</td></tr>`)
     .join('\n');
   const table = `<table><thead><tr><th>#</th><th>Tool</th><th>Share of tokens</th><th class="num">Tokens</th><th class="status"><span class="sr">Status</span></th></tr></thead><tbody>${rows}</tbody></table>`;
   const lists = [menu.prompts && plural(menu.prompts.length, 'prompt', 'prompts'), menu.resources && plural(menu.resources.length, 'resource', 'resources'), menu.resourceTemplates && plural(menu.resourceTemplates.length, 'resource template', 'resource templates')].filter(Boolean);
@@ -156,12 +164,14 @@ export function snapshotHtml(menu: Menu, findings: Finding[], options: SnapshotH
     appOnly ? `${plural(appOnly.tools, 'tool isn\'t', 'tools aren\'t')} shown to the agent (MCP Apps visibility without "model", ~${num(appOnly.tokens)} tokens).` : '',
     options.cost ? `${upper(costLine(options.cost))}.` : '',
     lists.length ? `Also listed: ${lists.join(', ')}.` : '',
+    options.notOffered?.length ? `Not offered by the server: ${options.notOffered.join(', ')}.` : '',
+    options.outPath ? `Menu written to ${options.outPath}.` : '',
   ].filter(Boolean);
   const name = menu.server.name ?? 'MCP server';
   const body = `${heading(name, menu.server.version, ['Snapshot', protocolLine(menu.server), esc(options.transport ?? '')].filter(Boolean))}
 <div class="stats">
-${stat('tools', 'Tools', String(menu.tools.length), writes ? ['purple', `${writes} write`] : undefined)}
-${stat('tokens', 'Tokens up front', `~${num(menu.totalTokens)}`, ['neutral', 'estimate'])}
+${stat('tools', 'Tools', String(menu.tools.length), writes ? ['purple', plural(writes, 'write tool', 'write tools')] : undefined)}
+${options.cost?.upfront !== undefined ? stat('tokens', `Up front, as ${options.cost.label}`, `~${num(options.cost.upfront)}`, ['neutral', `of ~${num(menu.totalTokens)}`]) : stat('tokens', 'Tokens up front', `~${num(menu.totalTokens)}`, ['neutral', 'estimate'])}
 ${stat('error', 'Errors', String(c.error), c.error ? undefined : ['lime', 'None'])}
 ${stat('warn', 'Warnings', String(c.warn), c.warn ? undefined : ['lime', 'None'])}
 </div>
@@ -186,7 +196,8 @@ export function diffHtml(result: DiffResult, tools: DiffTools, options: DiffHtml
   const old = new Map(tools.before.map((t) => [t.name, t]));
   const added = new Set(tools.added);
   const renamedTo = new Map(tools.renamed.map((r) => [r.to, r.from]));
-  const removed = tools.before.filter((t) => tools.removed.includes(t.name));
+  const gone = new Set(tools.removed);
+  const removed = tools.before.filter((t) => gone.has(t.name));
   const described = new Set(result.findings.filter((f) => f.rule === 'diff/description').flatMap(toolsOf));
   const max = Math.max(1, ...tools.after.map((t) => t.tokens), ...removed.map((t) => t.tokens));
   const rows = tools.after.map((t, i) => {
@@ -196,7 +207,7 @@ export function diffHtml(result: DiffResult, tools: DiffTools, options: DiffHtml
     const delta = was === undefined ? undefined : t.tokens - was;
     const change = was === undefined ? chip('lime', 'New') : delta! > 0 ? chip('yellow', `+${num(delta!)}`) : delta! < 0 ? chip('soft', `−${num(-delta!)}`) : '<span class="ter">0</span>';
     const tag = from ? `<span class="chip sm rose" title="Was ${esc(from)}">Renamed</span>` : isAppOnly(t) ? appOnlyChip : described.has(t.name) ? chip('purple', 'Description') : '';
-    return `<tr><td class="pos">${i}</td><td class="name">${esc(t.name)}${tag}${from ? `<div class="t-body2 sec">was ${esc(from)}</div>` : ''}</td><td class="bar"><div class="meter"><span class="grow" style="width:${pct(t.tokens, max)}%"></span><span style="width:${pct(kept, max)}%"></span></div></td><td class="num sec">${was === undefined ? '–' : `~${num(was)}`}</td><td class="num">~${num(t.tokens)}</td><td class="num">${change}</td></tr>`;
+    return `<tr><td class="pos">${tools.positions[i] ?? i}</td><td class="name">${esc(t.name)}${tag}${from ? `<div class="t-body2 sec">was ${esc(from)}</div>` : ''}</td><td class="bar"><div class="meter"><span class="grow" style="width:${pct(t.tokens, max)}%"></span><span style="width:${pct(kept, max)}%"></span></div></td><td class="num sec">${was === undefined ? '–' : `~${num(was)}`}</td><td class="num">~${num(t.tokens)}</td><td class="num">${change}</td></tr>`;
   });
   for (const t of removed) {
     rows.push(`<tr class="gone"><td class="pos">–</td><td class="name">${esc(t.name)}</td><td class="bar"><div class="meter"><span class="ghost" style="width:${pct(t.tokens, max)}%"></span></div></td><td class="num sec">~${num(t.tokens)}</td><td class="num sec">–</td><td class="num">${chip('rose', 'Removed')}</td></tr>`);
@@ -212,10 +223,9 @@ export function diffHtml(result: DiffResult, tools: DiffTools, options: DiffHtml
   const versions = v0 && v1 ? (v0 === v1 ? `Both report ${esc(v1)}` : `${esc(v0)} → ${esc(v1)}`) : '';
   const file = (path: string) => `<code title="${esc(path)}">${esc(basename(path))}</code>`;
   const files = options.paths ? `${file(options.paths[0])} → ${file(options.paths[1])}` : '';
-  const toolsDelta = tools.after.length - tools.before.length;
-  const toolsChip: [string, string] | undefined = added.size || removed.length
-    ? [removed.length > added.size ? 'rose' : 'lime', `${signed(toolsDelta)}${removed.length && added.size ? ` (${added.size} new, ${removed.length} gone)` : ''}`]
-    : tools.renamed.length ? ['rose', plural(tools.renamed.length, 'rename', 'renames')] : undefined;
+  // Removing or renaming a tool breaks callers: rose whenever either happened, whatever was added.
+  const moves = [added.size && `${added.size} new`, removed.length && `${removed.length} gone`, tools.renamed.length && `${tools.renamed.length} renamed`].filter(Boolean);
+  const toolsChip: [string, string] | undefined = moves.length ? [removed.length || tools.renamed.length ? 'rose' : 'lime', moves.join(', ')] : tools.ignored ? ['soft', `${tools.ignored} ignored`] : undefined;
   const name = result.after.name ?? result.before.name ?? 'MCP server';
   const body = `${heading(name, undefined, ['Diff', files, versions].filter(Boolean))}
 <div class="stats">
@@ -236,22 +246,29 @@ export function sessionHtml(result: SessionResult, menus: Map<number, StepTool[]
   const c = counts(result.findings);
   const ids = new Map(result.findings.map((f, i) => [f, `finding-${i + 1}`]));
   const stepsOf = (f: Finding) => (f.steps?.length ? f.steps : f.step !== undefined ? [f.step] : []);
-  const before = result.findings.filter((f) => stepsOf(f).includes(0));
+  const byStep = new Map<number, Finding[]>();
+  for (const f of result.findings) for (const n of stepsOf(f)) byStep.set(n, [...(byStep.get(n) ?? []), f]);
+  const before = byStep.get(0) ?? [];
   const shown = new Set([...result.steps.map((s) => s.index), ...(before.length ? [0] : [])]);
-  const max = Math.max(1, ...[...menus.values()].map((m) => m.reduce((n, t) => n + t.tokens, 0)));
+  // One scale for every strip: the tools after a step and those it removed, against the largest.
+  const total = (menu: StepTool[]) => menu.reduce((n, t) => n + t.tokens, 0);
+  const max = Math.max(1, ...[...menus.values()].map(total));
   const changed = result.steps.filter((s) => s.changed).map((s) => s.index);
   const span = changed.length ? upper(stepsText(changed)) : 'No';
   const strip = (menu: StepTool[] | undefined) =>
-    menu ? `<div class="strip" aria-hidden="true">${menu.map((t) => `<span class="${t.change ?? ''}" style="flex-grow:${Math.max(t.tokens, 1)}" title="${esc(t.name)}, ~${t.tokens}${t.change === 'removed' ? ', removed' : ''}"></span>`).join('')}</div>` : '<span class="ter">–</span>';
-  const fill = (menu: StepTool[] | undefined) => (menu ? `<div class="fill" style="width:${pct(menu.filter((t) => t.change !== 'removed').reduce((n, t) => n + t.tokens, 0), max)}%">${strip(menu)}</div>` : strip(menu));
+    menu ? `<div class="strip" aria-hidden="true">${menu.map((t) => `<span class="${t.change ?? ''}" style="flex-grow:${Math.max(t.tokens, 1)}" title="${esc(t.name)}, ~${num(t.tokens)}${t.change === 'removed' ? ', removed' : ''}"></span>`).join('')}</div>` : '<span class="ter">–</span>';
+  const fill = (menu: StepTool[] | undefined) => (menu ? `<div class="fill" style="width:${pct(total(menu), max)}%">${strip(menu)}</div>` : strip(menu));
+  // The step's status first: a call answered before the menu couldn't be listed still failed.
   const outcome = (s: SessionResult['steps'][number]) =>
-    s.outcome === 'answered' ? chip('soft', 'Answered')
+    s.status === 'timed-out' ? chip('yellow', 'Timed out')
+      : s.status === 'failed' && s.outcome === 'answered' ? '<span class="chip sm rose" title="The call was answered; listing the menu after it failed">Failed after</span>'
+        : s.outcome === 'answered' ? chip('soft', 'Answered')
       : s.outcome === 'tool-error' ? chip('yellow', 'Tool error')
         : s.outcome === 'failed' ? chip('rose', 'Failed')
           : s.outcome === 'not-sent' ? chip('rose', 'Not sent')
             : s.outcome === 'needs-input' ? chip('purple', 'Asked for input')
               : '<span class="ter">–</span>';
-  const links = (index: number) => result.findings.filter((f) => stepsOf(f).includes(index)).map((f) => `<a class="chip sm ${SEVERITY[f.severity][0]}" href="#${ids.get(f)}">${esc(f.rule)}</a>`).join('');
+  const links = (index: number) => (byStep.get(index) ?? []).map((f) => `<a class="chip sm ${SEVERITY[f.severity][0]}" href="#${ids.get(f)}">${esc(f.rule)}</a>`).join('');
   const rows = result.steps.map((s) => {
     const tags = links(s.index);
     return `<tr class="${s.changed ? 'changed' : ''}"><td class="pos">${s.index}</td><td class="step"><code>${esc(s.label)}</code>${s.note ? `<div class="t-body2 sec">${esc(s.note)}</div>` : ''}${tags ? `<div class="tags">${tags}</div>` : ''}</td><td>${outcome(s)}</td><td>${fill(menus.get(s.index))}</td><td class="num">${s.tools}</td><td class="num">~${num(s.tokens)}</td></tr>`;
@@ -262,6 +279,9 @@ export function sessionHtml(result: SessionResult, menus: Map<number, StepTool[]
   const fresh = result.connectionCheck === 'same' ? 'A fresh process starts with the same menu.' : result.connectionCheck === 'different' ? 'A fresh process starts with a different menu.' : undefined;
   // Info findings start folded, unless a step row links into them.
   const linkedInfo = result.findings.some((f) => f.severity === 'info' && stepsOf(f).some((n) => shown.has(n)));
+  // --auto: what it called and what it left out, as the text report says it.
+  const auto = result.auto ? autoSummary(result.auto) : [];
+  const autoBlock = auto.length ? `<details class="auto"><summary class="t-body-m">${esc(upper(auto[0].replace(/^auto: /, '')))}</summary>${auto.length > 1 ? `<ul class="t-body2 sec">${auto.slice(1).map((l) => `<li>${esc(l.trim())}</li>`).join('')}</ul>` : ''}</details>` : '';
   const name = result.server.name ?? 'MCP server';
   const body = `${heading(name, result.server.version, ['Session', `<code>${esc(result.scenario)}</code>`, protocolLine(result.server), esc(result.transport)].filter(Boolean))}
 <div class="stats">
@@ -271,7 +291,7 @@ ${stat('steps', 'Menu changed', span, ['soft', plural(result.steps.length, 'step
 ${stat('tokens', 'Tokens up front', `~${num(result.final.tokens)}`, grew ? [grew > 0 ? 'yellow' : 'lime', `${signed(grew)} in the session`] : ['soft', 'unchanged'])}
 </div>
 <div class="main">
-${card('The scenario, step by step', `${result.baseline.tools} → ${plural(result.final.tools, 'tool', 'tools')}`, fresh, table, '<span><i class="k-bar"></i>A tool, sized by tokens</span><span><i class="k-ins"></i>Inserted mid-list</span><span><i class="k-app"></i>Appended</span><span><i class="k-edit"></i>Edited or moved</span><span><i class="k-rem"></i>Removed</span>')}
+${card('The scenario, step by step', `${result.baseline.tools} → ${plural(result.final.tools, 'tool', 'tools')}`, fresh, table, '<span><i class="k-bar"></i>A tool, sized by tokens</span><span><i class="k-ins"></i>Inserted mid-list</span><span><i class="k-app"></i>Appended</span><span><i class="k-edit"></i>Edited or moved</span><span><i class="k-rem"></i>Removed</span>', autoBlock)}
 ${panel('Findings', result.findings, ids, linkedInfo)}
 </div>`;
   return page(`toolmenu session: ${name}`, body);
@@ -279,7 +299,7 @@ ${panel('Findings', result.findings, ids, linkedInfo)}
 
 const CSS = `
 :root{--accent-500:#6E56CF;--mint:#5EEAB5;--text-primary:#0A0A0A;--text-secondary:#737373;--text-tertiary:#A3A3A3;--bg-full:#FFFFFF;--bg-primary:#FFFFFF;--bg-secondary:#F7F7F7;--bg-tertiary:#EBEBEB;--bg-inner:#FFFFFF;--border:#EBEBEB;--separator:#EBEBEB;--track:#EBEBEB;--bar:#6E56CF;--bar-soft:#EBE7FB;--lime-bg:#D9F99D;--lime-text:#3F6212;--rose-bg:#FECDD3;--rose-text:#9F1239;--yellow-bg:#FEF08A;--yellow-text:#854D0E;--purple-bg:#F3E8FF;--purple-text:#9333EA;--dot-rose:#F43F5E;--dot-rose-halo:#FFE4E6;--dot-yellow:#EAB308;--dot-yellow-halo:#FEF9C3;--shadow-card:0 1px 1px 0 rgb(0 0 0 / .05);--font-sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--text-primary:#FAFAFA;--text-tertiary:#525252;--bg-full:#121212;--bg-primary:#262626;--bg-secondary:#171717;--bg-tertiary:#262626;--bg-inner:#262626;--border:#404040;--separator:#262626;--track:#333333;--bar:#9580E2;--bar-soft:#4B3F82;--lime-bg:rgb(26 46 5 / .6);--lime-text:#84CC16;--rose-bg:rgb(76 5 25 / .6);--rose-text:#F43F5E;--yellow-bg:rgb(66 32 6 / .6);--yellow-text:#EAB308;--purple-bg:rgb(88 28 135 / .5);--purple-text:#D8B4FE;--dot-rose-halo:rgb(76 5 25 / .8);--dot-yellow-halo:rgb(66 32 6 / .8);--shadow-card:0 0 0 1px rgb(255 255 255 / .04);color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root{--text-primary:#FAFAFA;--text-secondary:#A3A3A3;--text-tertiary:#8F8F8F;--bg-full:#121212;--bg-primary:#262626;--bg-secondary:#171717;--bg-tertiary:#3A3A3A;--bg-inner:#262626;--border:#404040;--separator:#3A3A3A;--track:#333333;--bar:#9580E2;--bar-soft:#4B3F82;--lime-bg:rgb(26 46 5 / .6);--lime-text:#84CC16;--rose-bg:rgb(76 5 25 / .6);--rose-text:#F43F5E;--yellow-bg:rgb(66 32 6 / .6);--yellow-text:#EAB308;--purple-bg:rgb(88 28 135 / .5);--purple-text:#D8B4FE;--dot-rose-halo:rgb(76 5 25 / .8);--dot-yellow-halo:rgb(66 32 6 / .8);--shadow-card:0 0 0 1px rgb(255 255 255 / .04);color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg-full);color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased}
 p{margin:0}
@@ -337,7 +357,6 @@ td.bar{width:34%}
 .fill{min-width:4px}
 .strip{display:flex;overflow:hidden;border-radius:3px;min-width:0}
 .strip span{flex-basis:0;min-width:0;height:8px;background:var(--bar-soft);box-shadow:inset -1px 0 0 var(--bg-primary)}
-td .fill{min-width:4px}
 td:has(.fill){min-width:150px}
 tr.changed .strip span{background:var(--bar)}
 .strip .inserted,tr.changed .strip .inserted{background:var(--dot-rose)}
@@ -362,6 +381,9 @@ details.more[open]>summary svg{transform:rotate(180deg)}
 details.more[open]>summary{margin-bottom:8px}
 details.more .list{display:grid;gap:8px}
 .row-gap{display:flex;gap:8px;align-items:center}
+details.auto{margin:0 20px 14px;padding:10px 12px;border-radius:10px;background:var(--bg-secondary)}
+details.auto summary{cursor:pointer}
+details.auto ul{margin:8px 0 0;padding-left:18px;display:grid;gap:2px}
 .empty{display:flex;gap:8px;align-items:center;padding:12px;border-radius:10px;background:var(--bg-inner);box-shadow:var(--shadow-card)}
 .foot{display:flex;flex-wrap:wrap;gap:4px 20px}.foot a{color:var(--accent-500)}
 @media (max-width:1000px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.main{grid-template-columns:minmax(0,1fr)}}

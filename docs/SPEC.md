@@ -1153,11 +1153,14 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   only` for MCP Apps tools the agent isn't shown, `Writes` for readOnlyHint: false),
   token share of the largest tool, tokens, status (error dot, warning dot, or the
   check); under the title, the app-only count, the `--client` cost line and the other
-  lists. Diff: from diffMenus' `onTools` (the tools compared after the ignore globs,
-  and the added, removed and renamed names), so the table never disagrees with the
-  findings: the newer menu in order with before and after tokens, `New`, `Renamed`
+  lists; with `--client`, the up-front stat is the client's (`of ~<total>`). Diff:
+  from `comparedTools` (what diffMenus compares: the tools after the ignore globs,
+  their served positions, the ignored count, and the added, removed and renamed
+  names), so the table never disagrees with the findings: the newer menu in order,
+  `#` as served, with before and after tokens, `New`, `Renamed`
   (one row, "was <old>"), `App only`, `Description` (a diff/description finding), then
-  removed tools struck through. Token totals are the result's. Growth: a percentage
+  removed tools struck through. The Tools chip lists new, gone and renamed, rose when
+  anything was removed or renamed. Token totals are the result's. Growth: a percentage
   of the old total, `<1%` below one, or tokens when the old menu had none. Session
   rows: each step with its outcome, a strip of the menu after it (from session's
   `onStepMenu`; `stepMenu` marks, by position, the trailing run of added tools
@@ -1166,7 +1169,10 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   segments grow by tokens, and the strip's length is the step's total against the
   largest), links to every finding whose `step` or `steps` names it
   (`#finding-<n>`), and a row 0 ("Before the first step") when a finding is at step 0.
-  Step menus are never part of the result, so no report carries them. Print opens
+  Step menus are never part of the result, so no report carries them. The Call
+  column shows the step's status first (`Timed out`; `Failed after` for a call answered
+  before the relisting failed). `--auto` adds its summary (autoSummary) above the
+  table. Print opens
   folded findings where the browser supports `::details-content`.
 - **Badge** (`src/badge.ts`): shields endpoint JSON, `schemaVersion: 1`, label
   `toolmenu`, message `<n> tools · <~tokens> tokens` plus errors, else warnings

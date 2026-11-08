@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { copyFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { diffHtml, esc, sessionHtml, snapshotHtml } from '../dist/html.js';
-import { diffMenus } from '../dist/diff.js';
+import { comparedTools, diffMenus } from '../dist/diff.js';
 import { stepMenu } from '../dist/session.js';
 import { FIXTURES, ROOT, menuOf, run, tempDir, tool } from './helpers.mjs';
 
@@ -92,18 +92,9 @@ test('session --html: one row per step, with the menu after it and its findings 
   assert.match(html, new RegExp(`<article class="tile" id="${link[1]}">`));
 });
 
-test('session without --html records no step menus: the JSON output is unchanged', async () => {
-  const cwd = tempDir();
-  copyFileSync(join(ROOT, 'examples/unlock.scenario.yml'), join(cwd, 'unlock.scenario.yml'));
-  const r = await run(['session', '--scenario', 'unlock.scenario.yml', '--format', 'json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')], { cwd });
-  assert.ok(JSON.parse(r.stdout).steps.every((s) => s.menu === undefined));
-});
-
 /** diffHtml as the CLI calls it: with the tools diffMenus compared. */
 function diffPage(before, after, options = {}) {
-  let tools;
-  const result = diffMenus(before, after, { ...options, onTools: (t) => (tools = t) });
-  return diffHtml(result, tools);
+  return diffHtml(diffMenus(before, after, options), comparedTools(before, after, options.ignore));
 }
 
 test('stepMenu: removed tools follow, marked; a long run of appended tools stays linear', () => {
@@ -126,6 +117,7 @@ test('snapshot html: counts as the text report does, every tool listed, app-only
   assert.match(html, new RegExp(`~${menu.totalTokens}<`), 'the full total, as the text report says it');
   assert.match(html, /1 tool isn&#39;t shown to the agent/);
   assert.match(html, /As Claude Code: up front ~40 tokens/);
+  assert.match(html, /Up front, as Claude Code<\/p><div class="val"><span class="t-title-1 tnum">~40</, "one up-front number, the client's");
 });
 
 test('diff html: what diffMenus compared: ignored tools out, a rename one row, visibility no add', () => {
@@ -155,12 +147,41 @@ test('session html: links from every step a finding names, a row for step 0, inf
   assert.match(unlinked, /<details class="more">/, 'no step links to it: folded');
 });
 
-test('session --html --json: the JSON has no step menus either', async () => {
+test('session --json is the same with --html as without: step menus never reach it', async () => {
   const cwd = tempDir();
   copyFileSync(join(ROOT, 'examples/unlock.scenario.yml'), join(cwd, 'unlock.scenario.yml'));
-  const r = await run(['session', '--scenario', 'unlock.scenario.yml', '--html', 'r.html', '--format', 'json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')], { cwd });
-  assert.ok(JSON.parse(r.stdout).steps.every((s) => s.menu === undefined));
-  assert.match(readFileSync(join(cwd, 'r.html'), 'utf8'), /class="inserted"/);
+  const args = ['session', '--scenario', 'unlock.scenario.yml', '--format', 'json'];
+  const server = ['--', process.execPath, join(FIXTURES, 'session-server.mjs')];
+  const plain = JSON.parse((await run([...args, ...server], { cwd })).stdout);
+  const withHtml = JSON.parse((await run([...args, '--html', 'r.html', ...server], { cwd })).stdout);
+  // The same keys all the way down; values that vary per run (timings) aside.
+  const keys = (o) => (Array.isArray(o) ? o.map(keys) : o && typeof o === 'object' ? Object.fromEntries(Object.keys(o).sort().map((k) => [k, keys(o[k])])) : typeof o);
+  assert.deepEqual(keys(withHtml), keys(plain));
+  assert.match(readFileSync(join(cwd, 'r.html'), 'utf8'), /class="inserted"/, 'while the page has them');
+});
+
+test('session html: a step\'s status shows, strips share one scale with removed tools in it, --auto summarized', () => {
+  const step = (index, extra = {}) => ({ index, label: `call t${index}`, status: 'ok', outcome: 'answered', changed: false, listChanged: 0, tools: 1, tokens: 10, ...extra });
+  const result = {
+    scenario: 's.yml', server: { name: 'x' }, transport: 'stdio', listening: true, baseline: { tools: 2, tokens: 1000 }, final: { tools: 1, tokens: 500 },
+    steps: [step(1, { status: 'timed-out', outcome: undefined }), step(2, { status: 'failed', changed: true })], findings: [], union: menuOf([]),
+    auto: { called: ['a'], skipped: [{ tool: 'b', reason: 'writes' }] },
+  };
+  const menus = new Map([[1, [{ name: 'a', tokens: 500 }, { name: 'b', tokens: 500 }]], [2, [{ name: 'a', tokens: 500 }, { name: 'b', tokens: 500, change: 'removed' }]]]);
+  const html = sessionHtml(result, menus);
+  assert.match(html, /Timed out/);
+  assert.match(html, />Failed after</);
+  assert.equal(html.match(/<div class="fill" style="width:100\.00%">/g).length, 2, 'removed tools count in the strip\'s length, so both rows share the scale');
+  assert.match(html, /<details class="auto"><summary class="t-body-m">/);
+});
+
+test('diff html: positions as served, ignored tools counted; a removal is never a green badge', () => {
+  const before = menuOf([tool('debug_dump'), tool('a'), tool('b', ['x'])]);
+  const after = menuOf([tool('debug_dump'), tool('a'), tool('c', ['y', 'z'])]);
+  const html = diffPage(before, after, { ignore: ['debug_*'] });
+  assert.match(html, /<td class="pos">1<\/td><td class="name">a</, 'a is at position 1 in the menu served');
+  assert.match(html, /<span class="chip rose">1 new, 1 gone<\/span>/);
+  assert.match(diffPage(after, after, { ignore: ['debug_*'] }), /<span class="chip soft">1 ignored<\/span>/);
 });
 
 test('--html goes with snapshot, diff and session only', async () => {

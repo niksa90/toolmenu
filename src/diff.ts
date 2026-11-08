@@ -102,13 +102,43 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/lists-unread': { severity: 'info' },
 };
 
-/** The tools a diff compared, after the ignore globs, and how they changed by name. */
+/** The tools a diff compares, after the ignore globs, and how they changed by name. */
 export interface DiffTools {
   before: MenuTool[];
   after: MenuTool[];
+  /** Each of `after`'s position in the newer menu as served, ignored tools included. */
+  positions: number[];
+  /** How many tools of the newer menu the ignore globs left out. */
+  ignored: number;
   added: string[];
   removed: string[];
   renamed: { from: string; to: string }[];
+}
+
+/**
+ * The tools diffMenus compares and how they changed: ignored tools leave the
+ * comparison entirely, so they can't pair into a rename or show up as a reorder.
+ * The HTML report shows the same.
+ */
+export function comparedTools(before: Menu, after: Menu, ignore?: string[]): DiffTools {
+  const ignored = ignoreMatcher(ignore);
+  const oldTools = before.tools.filter((t) => !ignored(t.name));
+  const positions: number[] = [];
+  const newTools = after.tools.filter((t, i) => !ignored(t.name) && positions.push(i) > 0);
+  const oldNames = new Set(oldTools.map((t) => t.name));
+  const newNames = new Set(newTools.map((t) => t.name));
+  const renames = findRenames(oldTools.filter((t) => !newNames.has(t.name)), newTools.filter((t) => !oldNames.has(t.name)));
+  const from = new Set(renames.map((r) => r.from.name));
+  const to = new Set(renames.map((r) => r.to.name));
+  return {
+    before: oldTools,
+    after: newTools,
+    positions,
+    ignored: after.tools.length - newTools.length,
+    added: newTools.filter((t) => !oldNames.has(t.name) && !to.has(t.name)).map((t) => t.name),
+    removed: oldTools.filter((t) => !newNames.has(t.name) && !from.has(t.name)).map((t) => t.name),
+    renamed: renames.map((r) => ({ from: r.from.name, to: r.to.name })),
+  };
 }
 
 export interface TokenChange {
@@ -149,8 +179,6 @@ export interface DiffResult {
 export interface DiffOptions {
   rules?: Record<string, Severity | 'off'>;
   ignore?: string[];
-  /** Called with the tools compared (ignore globs out) and what was added, removed and renamed, for the HTML report. Not part of the result. */
-  onTools?: (tools: DiffTools) => void;
   tokenBudget?: number;
   /**
    * The release (artifact) versions: npm, a git tag. The server-reported
@@ -208,26 +236,18 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   const modern = isModern(after);
   // A tool the old release already lost to a bad annotation isn't news; on a 2025 server it lost nothing.
   const headers = { headers: modern, oldHeaders: isModern(before) };
-  // Ignored tools leave the comparison entirely, so they can't pair into a
-  // rename or show up as a reorder.
   const ignored = ignoreMatcher(options.ignore);
-  const oldTools = before.tools.filter((t) => !ignored(t.name));
-  const newTools = after.tools.filter((t) => !ignored(t.name));
+  const compared = comparedTools(before, after, options.ignore);
+  const oldTools = compared.before;
+  const newTools = compared.after;
   const oldByName = new Map(oldTools.map((t) => [t.name, t]));
   const newByName = new Map(newTools.map((t) => [t.name, t]));
 
   const removed = oldTools.filter((t) => !newByName.has(t.name));
   const added = newTools.filter((t) => !oldByName.has(t.name));
-  const renames = findRenames(removed, added);
+  const renames = compared.renamed.map((r) => ({ from: oldByName.get(r.from)!, to: newByName.get(r.to)! }));
   const renamedFrom = new Set(renames.map((r) => r.from.name));
   const renamedTo = new Set(renames.map((r) => r.to.name));
-  options.onTools?.({
-    before: oldTools,
-    after: newTools,
-    added: added.filter((t) => !renamedTo.has(t.name)).map((t) => t.name),
-    removed: removed.filter((t) => !renamedFrom.has(t.name)).map((t) => t.name),
-    renamed: renames.map((r) => ({ from: r.from.name, to: r.to.name })),
-  });
 
   for (const { from, to } of renames) {
     raw.push({
