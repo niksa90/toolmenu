@@ -634,7 +634,7 @@ Things building `snapshot` settled or changed. The spec above is updated to matc
   baseline, optional session, one PR comment updated in place, the job summary.
   toolmenu's own CI runs it on every PR against a fixture server.
 - **Release:** pushing a `v*` tag that matches `package.json` publishes to npm with
-  provenance (`NPM_TOKEN` secret).
+  provenance (from 0.26.0, npm trusted publishing: no `NPM_TOKEN` secret).
 - **`--versions all`** for `history`.
 - **Not done: `--sandbox docker`.** No Docker daemon was available to test it, and it
   won't ship untested.
@@ -1251,8 +1251,10 @@ everything a PR controls is untrusted. What changed:
   build installs without scripts and compiles, so only the TypeScript compiler (and
   `scripts/rule-docs.mjs`) writes the published files, then packs; test runs the tests
   (every dependency's code) apart from those files; publish runs only `npm publish`
-  on build's tarball, after both. No job running dependency code has the OIDC or npm
-  token, and none uses a dependency cache. `pins.yml` never runs: it lists the actions
+  on build's tarball, after both, with npm's trusted publishing (OIDC; the trusted
+  publisher names `release.yml` and the `npm` environment; npm 11.21.1 pinned, since
+  Node 22's npm 10 can't), so no npm token exists to leak. No job running dependency
+  code has the OIDC token, and none uses a dependency cache. `pins.yml` never runs: it lists the actions
   only `toolmenu init` uses, so Dependabot updates them, and `test/init.test.mjs`
   fails until `ACTIONS` in `src/init.ts` matches the pins in the workflows. `toolmenu init`'s
   workflow pins the actions it adds the same way (`ACTIONS` in `src/init.ts`).

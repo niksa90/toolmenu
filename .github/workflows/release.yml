@@ -1,9 +1,10 @@
 name: release
 
 # Push a tag like v0.4.0 to publish that version to npm, with provenance, and to
-# create its GitHub Release, then to list it in the MCP Registry (server.json). Needs
-# one repository secret: NPM_TOKEN (an npm token that can publish toolmenu, nothing
-# else). The registry signs in with the workflow's GitHub OIDC token: no secret.
+# create its GitHub Release, then to list it in the MCP Registry (server.json). No
+# secrets: npm trusts this workflow (trusted publishing: niksa90/toolmenu,
+# release.yml, environment npm) and the registry signs in with the same GitHub OIDC
+# token. The npm environment (Settings → Environments) limits publishing to v* tags.
 #
 # Three jobs. build installs without scripts and compiles, so only the TypeScript
 # compiler (and scripts/rule-docs.mjs) touches the files that are published; test runs
@@ -76,7 +77,11 @@ jobs:
   publish:
     needs: [build, test]
     runs-on: ubuntu-latest
-    # OIDC for npm's provenance; nothing in this job runs a dependency.
+    # npm's trusted publisher names this environment: no other job, and no workflow on
+    # another ref the environment doesn't allow, can publish.
+    environment: npm
+    # OIDC: npm exchanges it for a one-time publish token and signs the provenance.
+    # Nothing in this job runs a dependency.
     permissions:
       contents: read
       id-token: write
@@ -85,16 +90,19 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or later; Node 22 ships npm 10. Pinned.
+      - name: npm that can publish with OIDC
+        run: |
+          npm install --global npm@11.21.1 --ignore-scripts --no-audit --no-fund
+          npm --version
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: package
-      - name: Publish the tarball the build job tested
+      - name: Publish the tarball the build job built
         run: |
           tarball="toolmenu-${GITHUB_REF_NAME#v}.tgz"
           [ -f "$tarball" ] || { echo "::error::No $tarball from the build job"; ls -l; exit 1; }
           npm publish "./$tarball" --provenance --access public --ignore-scripts
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # Its own job, the only one that can write to the repository, and safe to re-run on
   # its own ("Re-run failed jobs") if it fails after the publish.

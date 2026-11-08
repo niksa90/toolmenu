@@ -40,7 +40,8 @@ From a security audit of the repository.
   `env` that way (to an older `version` still as arguments, with a warning).
 - **Release and CI workflows**: least-privilege tokens, every action pinned to a
   commit (Dependabot keeps them current), and the npm package built in a job apart
-  from the tests and published from a job that runs no dependency. `toolmenu init`
+  from the tests and published from a job that runs no dependency, with npm's trusted
+  publishing: no long-lived npm token anymore. `toolmenu init`
   pins the actions it writes the same way.
 - Smaller: a menu file, `toolmenu.config.json` or scan list that isn't JSON is
   reported without quoting it; JUnit output escapes characters a terminal acts on;
