@@ -33,7 +33,7 @@ import { SECRET_ARGS_ENV } from './mcp-env.js';
 import { plain, terminalSafe } from './sanitize.js';
 import { CLI_OPTIONS } from './options.js';
 import { editDistance } from './words.js';
-import { formatScan, ListError, loadList, scan, scanExit } from './scan.js';
+import { formatScan, ListError, loadList, scan, scanExit, type AllowEnv } from './scan.js';
 import { explain, findRule, formatExplained, listRules, ruleDocs } from './rule-docs.js';
 import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type Command } from './help.js';
 
@@ -168,9 +168,13 @@ export async function main(given: string[]): Promise<number> {
     if (rest.length !== 1) throw new UsageError('scan needs one list: an MCP client config (mcp.json) or a text file with a server per line.');
     const concurrency = values.concurrency !== undefined ? Number(values.concurrency) : 4;
     if (!Number.isInteger(concurrency) || concurrency < 1) throw new UsageError('--concurrency must be a whole number, 1 or more');
+    const names = (values['allow-env'] ?? []).flatMap((v) => v.split(',')).map((v) => v.trim()).filter(Boolean);
+    const bad = names.find((n) => n !== '*' && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(n));
+    if (bad) throw new UsageError(`--allow-env takes environment variable names, comma-separated, or '*' for all; "${bad}" isn't one.`);
+    const allow: AllowEnv = names.includes('*') ? '*' : new Set(names);
     let entries;
     try {
-      entries = await loadList(rest[0]);
+      entries = await loadList(rest[0], allow);
     } catch (error) {
       if (error instanceof ListError) throw new UsageError(error.message);
       throw error;

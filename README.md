@@ -151,7 +151,7 @@ fails as if it were broken.
 ### Every server you use: `scan`
 
 ```sh
-npx toolmenu scan ~/Library/Application\ Support/Claude/claude_desktop_config.json
+npx toolmenu scan ~/Library/Application\ Support/Claude/claude_desktop_config.json --allow-env LINEAR_API_KEY
 npx toolmenu scan .mcp.json --format markdown
 ```
 
@@ -167,6 +167,13 @@ findings, like this:
   filesystem      11  ~2.1K   no findings
   linear           –      –   not checked: LINEAR_API_KEY is not set (the config refers to it)
 ```
+
+`scan` starts every command the list names, so scan only lists you'd run yourself (not
+a `.mcp.json` from a repository you haven't read). A config's `${VAR}` is filled only
+from the variables you name with `--allow-env` (comma-separated, or `'*'` for all): the
+config decides where each value goes, a URL or a header included, so one from someone
+else could otherwise send your environment to a server of theirs. An entry that uses
+a variable you didn't allow isn't checked, and says which `--allow-env` it needs.
 
 `${VAR}`, `${VAR:-default}` and `${env:VAR}` in the config are filled from the
 environment. A server whose variable isn't set isn't started with an empty
@@ -753,6 +760,8 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --offline-check     snapshot (stdio): also list the menu with the network cut off
 --concurrency <n>   scan: servers checked at a time (default: 4)
 --out-dir <dir>     scan: write each server's menu file there, as <name>.json
+--allow-env <names> scan: variables a config's ${VAR} may be filled from (default:
+                    none; '*' for all)
 ```
 
 Exit codes: `0` clean · `1` findings at or above `--fail-on` · `2` couldn't connect

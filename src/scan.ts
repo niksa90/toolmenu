@@ -27,11 +27,23 @@ export interface ScanEntry {
 
 export class ListError extends Error {}
 
-/** `${VAR}`, `${VAR:-default}` (Claude Code) and `${env:VAR}` (VS Code), from the environment. */
-function expand(value: string, env: NodeJS.ProcessEnv, missing: Set<string>): string {
+/**
+ * Which environment variables a config's ${VAR} may be filled from: the names given
+ * with --allow-env, or all of them ('*'). None by default: the config file picks
+ * where each value goes (a URL, a header, a server's arguments), so a config from
+ * someone else could send any of your environment to a server of theirs.
+ */
+export type AllowEnv = ReadonlySet<string> | '*';
+
+/** `${VAR}`, `${VAR:-default}` (Claude Code) and `${env:VAR}` (VS Code), from the environment, where allowed. */
+function expand(value: string, env: NodeJS.ProcessEnv, missing: Set<string>, allow: AllowEnv, blocked: Set<string>): string {
   return value.replace(/\$\{(?:env:)?([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}/g, (_, name: string, fallback: string | undefined) => {
     const v = env[name];
-    if (v !== undefined && v !== '') return v;
+    if (v !== undefined && v !== '') {
+      if (allow === '*' || allow.has(name)) return v;
+      blocked.add(name);
+      return '';
+    }
     if (fallback !== undefined) return fallback;
     missing.add(name);
     return '';
@@ -48,12 +60,13 @@ function record(v: unknown): Record<string, string> | undefined {
 }
 
 /** One server from a client config: `{ command, args, env, cwd }` or `{ url, headers }`. */
-function fromConfig(name: string, raw: unknown, env: NodeJS.ProcessEnv): ScanEntry {
+function fromConfig(name: string, raw: unknown, env: NodeJS.ProcessEnv, allow: AllowEnv): ScanEntry {
   if (!raw || typeof raw !== 'object') return { name, problem: 'not an object' };
   const s = raw as Record<string, unknown>;
   if (s.disabled === true || s.enabled === false) return { name, disabled: true };
   const missing = new Set<string>();
-  const x = (v: string) => expand(v, env, missing);
+  const blocked = new Set<string>();
+  const x = (v: string) => expand(v, env, missing, allow, blocked);
   const map = (r: Record<string, string> | undefined) => (r ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, x(v)])) : undefined);
   const type = typeof s.type === 'string' ? s.type : typeof s.transport === 'string' ? s.transport : undefined;
   let target: Target;
@@ -73,6 +86,11 @@ function fromConfig(name: string, raw: unknown, env: NodeJS.ProcessEnv): ScanEnt
       ...(typeof s.cwd === 'string' ? { cwd: x(s.cwd) } : {}),
     };
   } else return { name, problem: 'neither a command nor a url' };
+  // Set but not allowed: not checked, rather than checked with the value left out.
+  if (blocked.size) {
+    const list = [...blocked].sort();
+    return { name, problem: `${list.join(', ')} ${list.length === 1 ? 'is' : 'are'} set, but not passed in: scan fills \${VAR} only from the variables named with --allow-env (--allow-env ${list.join(',')}), so a config can't send the rest of your environment anywhere` };
+  }
   // A missing variable would send an empty credential: say so instead of checking a server set up wrong.
   if (missing.size) return { name, problem: `${[...missing].join(', ')} ${missing.size === 1 ? 'is' : 'are'} not set (the config refers to ${missing.size === 1 ? 'it' : 'them'})` };
   if (target.kind === 'http' && !/^https?:\/\//.test(target.url)) return { name, problem: `"${clean(target.url, 60)}" isn't an http(s) URL` };
@@ -156,7 +174,7 @@ function fromLines(text: string): ScanEntry[] {
 }
 
 /** The servers in a list file, unique names (a repeat gets #2, #3). */
-export function parseList(text: string, file: string, env: NodeJS.ProcessEnv = process.env): ScanEntry[] {
+export function parseList(text: string, file: string, env: NodeJS.ProcessEnv = process.env, allow: AllowEnv = new Set()): ScanEntry[] {
   let entries: ScanEntry[];
   if (/\.jsonc?$/i.test(file) || /^\s*\{/.test(text)) {
     let json: unknown;
@@ -169,7 +187,7 @@ export function parseList(text: string, file: string, env: NodeJS.ProcessEnv = p
     const j = json as Record<string, unknown>;
     const servers = j.mcpServers ?? j.servers ?? (j.mcp as Record<string, unknown> | undefined)?.servers ?? j['mcp.servers'];
     if (!servers || typeof servers !== 'object' || Array.isArray(servers)) throw new ListError(`${file} has no mcpServers or servers object, the key MCP clients keep their servers under`);
-    entries = Object.entries(servers as Record<string, unknown>).map(([name, raw]) => fromConfig(name, raw, env));
+    entries = Object.entries(servers as Record<string, unknown>).map(([name, raw]) => fromConfig(name, raw, env, allow));
   } else entries = fromLines(text);
   if (!entries.length) throw new ListError(`${file} lists no servers`);
   const seen = new Map<string, number>();
@@ -180,14 +198,14 @@ export function parseList(text: string, file: string, env: NodeJS.ProcessEnv = p
   });
 }
 
-export async function loadList(file: string): Promise<ScanEntry[]> {
+export async function loadList(file: string, allow: AllowEnv = new Set()): Promise<ScanEntry[]> {
   let text: string;
   try {
     text = await readFile(file, 'utf8');
   } catch (error) {
     throw new ListError(`couldn't read ${file}: ${(error as NodeJS.ErrnoException).code ?? (error as Error).message}`);
   }
-  return parseList(text, file);
+  return parseList(text, file, process.env, allow);
 }
 
 export interface ScanRow {

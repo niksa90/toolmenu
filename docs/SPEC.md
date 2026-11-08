@@ -1225,3 +1225,10 @@ everything a PR controls is untrusted. What changed:
   U+200F, U+2028–U+202E, U+2060–U+2069, U+FEFF…): it can pass for another tool or
   for nothing. `naming/client-name` (with `--client`) still says what a client's
   model API refuses.
+- **`scan`** fills a config's `${VAR}` only from variables named with `--allow-env`
+  (comma-separated or repeated, `'*'` for all). The config picks where each value goes
+  (a URL, a header, an argument), so one from someone else could send any of your
+  environment to a server of theirs. An entry using a variable that is set but not
+  allowed isn't checked and names the `--allow-env` it needs; an unset one with a
+  `:-default` gets the default, as before. `scan` starts every command in its list:
+  the README and `--help` say so.
