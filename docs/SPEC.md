@@ -1133,7 +1133,7 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   (`toolLines`: the first key of each object directly in `"tools"`), else line 1.
   `partialFingerprints.toolmenuFinding/v1`: sha256 of rule and tool, not the message,
   which carries counts. Unsure findings say so in the message.
-- **JUnit** (`src/junit.ts`, after 0.25.1): one `<testsuite>` per command, named
+- **JUnit** (`src/junit.ts`, since 0.25.2): one `<testsuite>` per command, named
   `toolmenu <command>`. One `<testcase>` per tool a finding names (as SARIF), classname
   `toolmenu.<command>.<rule>`, name the tool (`(menu)` for none), ` #2`, ` #3`… for a
   rule's later findings on the same tool, in the order found. At or above `--fail-on`:
