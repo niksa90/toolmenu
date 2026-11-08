@@ -32,10 +32,10 @@ function otherLists(menu: Menu): string {
 }
 
 /** --client: "as Claude Code: up front ~N tokens (…) · on demand ~M per tool loaded (largest: x, ~K)". */
-export function costLine(cost: ClientCost): string {
+export function costLine(cost: ClientCost, name: (tool: string) => string = plain): string {
   const parts = [
     cost.upfront !== undefined ? `up front ~${cost.upfront.toLocaleString('en-US')} tokens${cost.loaded.length ? ` (names, and ${plural(cost.loaded.length, 'tool')} loaded in full)` : ''}` : '',
-    `on demand ~${cost.perTool.toLocaleString('en-US')} per tool a search loads${cost.largest ? ` (largest: ${cost.largest.tool}, ~${cost.largest.tokens.toLocaleString('en-US')})` : ''}`,
+    `on demand ~${cost.perTool.toLocaleString('en-US')} per tool a search loads${cost.largest ? ` (largest: ${name(cost.largest.tool)}, ~${cost.largest.tokens.toLocaleString('en-US')})` : ''}`,
   ].filter(Boolean);
   return `as ${cost.label}: ${parts.join(' · ')}`;
 }
@@ -77,7 +77,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
       `### toolmenu snapshot: ${mdCode(s.name ?? 'server')} ${mdText(s.version ?? '')}`.trimEnd(),
       '',
       `Protocol ${mdText(s.protocolVersion ?? 'unknown')} · ${plural(menu.tools.length, 'tool')} · ~${menu.totalTokens.toLocaleString('en-US')} tokens (estimate)${appOnlyNote(view.appOnly)}`,
-      ...(cost ? ['', `${costLine(cost)}. _${cost.basis}._`] : []),
+      ...(cost ? ['', `${costLine(cost, mdCode)}. _${cost.basis}._`] : []),
       ...(otherLists(menu) ? ['', `Also listed: ${otherLists(menu)}`] : []),
       '',
       ...mdFindings(findings),
@@ -190,7 +190,7 @@ export function formatDiff(d: DiffResult, beforeTools: number, afterTools: numbe
   const tokenLine = `~${d.tokens.before.toLocaleString('en-US')} → ~${d.tokens.after.toLocaleString('en-US')} (${signed(d.tokens.delta)}, estimate): ${tokenSentence(d)}`;
 
   if (format === 'github') {
-    return [...githubLines(d.findings), `::notice title=toolmenu diff::${plain(name)} ${pair}. Changes: ${classLine(d)}. Tokens: ${tokenLine}. Version: ${verdict.line}.`].join('\n');
+    return [...githubLines(d.findings), `::notice title=toolmenu diff::${ghEscape(`${name} ${pair}. Changes: ${classLine(d)}. Tokens: ${tokenLine}. Version: ${verdict.line}.`)}`].join('\n');
   }
   if (format === 'markdown') return mdDiff(d, beforeTools, afterTools);
 

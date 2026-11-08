@@ -10,6 +10,7 @@ import type { OAuthClientInformationContext, OAuthClientMetadata, OAuthClientPro
 import { VERSION } from './version.js';
 import { endSession } from './close.js';
 import { quietExclusions } from './connect.js';
+import { plain } from './sanitize.js';
 
 /**
  * The redirect port. Fixed, not random: dynamic registration records the exact
@@ -506,7 +507,7 @@ function openInBrowser(url: URL): void {
   const scope = url.searchParams.get('scope');
   // toolmenu only lists tools and calls read-only ones, but it asks for the
   // server's default scopes, as other clients do: some servers show tools by scope.
-  if (scope) process.stderr.write(`Asking for the server's default scopes: ${scope} (narrower: --scope; toolmenu never calls a write tool on its own)\n`);
+  if (scope) process.stderr.write(`Asking for the server's default scopes: ${plain(scope)} (narrower: --scope; toolmenu never calls a write tool on its own)\n`);
   process.stderr.write(`Opening your browser to log in. If it doesn't open, visit:\n  ${url.href}\n`);
   // Not `cmd /c start` on Windows: cmd reads the URL's `&` as a command separator,
   // cutting the URL, and the URL comes from the server's metadata. rundll32 opens

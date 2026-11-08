@@ -23,11 +23,14 @@ const UNSAFE = new RegExp(HIDDEN_SOURCE, 'gu');
 const UNSAFE_IN_REPORT = new RegExp(`(?![\\n\\t])${HIDDEN_SOURCE}`, 'gu');
 
 const NAMED: Record<string, string> = { '\n': '\\n', '\r': '\\r', '\t': '\\t' };
-/** A character as an escape: \u001b, or \u{e0041} past the first plane. */
-const visible = (c: string) => {
-  const code = c.codePointAt(0)!;
-  return NAMED[c] ?? (code > 0xffff ? `\\u{${code.toString(16)}}` : `\\u${code.toString(16).padStart(4, '0')}`);
-};
+/**
+ * A character as an escape: \u001b; past the first plane as its UTF-16 pair
+ * (\udb40\udc41), which JSON and JavaScript read back as the same character, so a
+ * JSON report run through terminalSafe() is still the same JSON.
+ */
+const visible = (c: string) =>
+  NAMED[c] ??
+  [...Array(c.length).keys()].map((i) => `\\u${c.charCodeAt(i).toString(16).padStart(4, '0')}`).join('');
 
 /** One field of server text, for the terminal: every control character shown as an escape. */
 export function plain(text: string): string {
@@ -52,12 +55,21 @@ const OWN_LINKS = ['https://github.com/niksa90/toolmenu', 'https://code.claude.c
  * ~: they're in most tool names, and at worst they italicize or strike text through.
  */
 const MD_SPECIAL = /[\\`*[\]<>!|&]/;
-/** MD_SPECIAL, and what GitHub links on its own: @mentions, #refs, bare URLs. */
-const MD_INERT = new RegExp(`${MD_SPECIAL.source}|@|#(?=\\d)|:\\/\\/|\\bwww\\.`, 'gi');
+/** MD_SPECIAL, and what GitHub links on its own: @mentions, #refs and GH-refs, bare URLs. */
+const MD_INERT = new RegExp(`${MD_SPECIAL.source}|@|#(?=\\d)|\\bGH-(?=\\d)|:\\/\\/|\\bwww\\.`, 'gi');
 const MD_ESCAPE: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
 
 /** A zero-width space, as an entity: breaks a mention, reference or autolink without showing. */
 const ZWSP = '&#8203;';
+
+/**
+ * A link toolmenu's own messages make: one of OWN_LINKS, then the end, "/", "#" or "?",
+ * with no dot segments (/../ would leave the path the prefix names) and nothing that
+ * markdown or a URL parser reads specially.
+ */
+function ownLink(url: string): boolean {
+  return OWN_LINKS.some((p) => url.startsWith(p) && (p.endsWith('/') || url.length === p.length || '/#?'.includes(url[p.length]))) && !/(^|[\\/])\.\.?([\\/?#]|$)|%2e|[\\\\*[\]!&@]/i.test(url);
+}
 
 /** Plain text (no backticks in it) as inert markdown. */
 function mdPlain(text: string): string {
@@ -65,13 +77,14 @@ function mdPlain(text: string): string {
   // A link toolmenu itself makes stays a link; anything else that would autolink doesn't.
   const parts = text.split(/(https?:\/\/[^\s<>()|`]+)/);
   parts.forEach((part, i) => {
-    if (i % 2 === 1 && OWN_LINKS.some((p) => part.startsWith(p)) && !/[\\*[\]!&@]/.test(part)) {
+    if (i % 2 === 1 && ownLink(part)) {
       out += part;
       return;
     }
     // One pass, so no replacement sees another's output (the # of an entity).
     out += part.replace(MD_INERT, (m) => {
       if (m === '@' || m === '#') return `${m}${ZWSP}`; // no mention or mailto link; no cross-reference on an issue
+      if (/^GH-$/i.test(m)) return `${m.slice(0, 2)}${ZWSP}-`;
       if (m === '://') return `:${ZWSP}//`; // https://…: shown, not linked
       if (/^www\./i.test(m)) return `${m.slice(0, 3)}${ZWSP}.`;
       return MD_ESCAPE[m] ?? `\\${m}`;
@@ -93,7 +106,9 @@ export interface MdOptions {
 export function mdCode(text: string, options: MdOptions = {}): string {
   const shown = plain(text);
   if (!shown) return '';
-  const longest = Math.max(0, ...(shown.match(/`+/g) ?? []).map((r) => r.length));
+  // A loop, not Math.max(...runs): a name with 100k backtick runs would overflow the stack.
+  let longest = 0;
+  for (const run of shown.matchAll(/`+/g)) longest = Math.max(longest, run[0].length);
   const fence = '`'.repeat(longest + 1);
   const pad = /^[`\s]|[`\s]$/.test(shown) ? ' ' : '';
   const body = options.cell ? shown.replace(/\|/g, '\\|') : shown;
@@ -117,4 +132,24 @@ export function mdText(text: string, options: MdOptions = {}): string {
       return unpaired && last ? `\\\`${escaped}` : escaped;
     })
     .join('');
+}
+
+type Write = (chunk: string | Uint8Array, ...rest: unknown[]) => boolean;
+const unguarded = new WeakMap<NodeJS.WritableStream, Write>();
+
+/**
+ * The net under every field: from here on, text written to `stream` goes through
+ * terminalSafe(). For the CLI's stdout and stderr, whatever the command; JSON stays
+ * the same JSON (its escapes read back as the same characters). Twice is once.
+ */
+export function guardStream(stream: NodeJS.WritableStream): void {
+  if (unguarded.has(stream)) return;
+  const write = stream.write.bind(stream) as Write;
+  unguarded.set(stream, write);
+  (stream as { write: Write }).write = (chunk, ...rest) => write(typeof chunk === 'string' ? terminalSafe(chunk) : chunk, ...rest);
+}
+
+/** Write past the net: only text already made safe, with toolmenu's own colour codes added. */
+export function writeUnguarded(stream: NodeJS.WritableStream, text: string): void {
+  (unguarded.get(stream) ?? (stream.write.bind(stream) as Write))(text);
 }

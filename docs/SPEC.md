@@ -1218,7 +1218,15 @@ everything a PR controls is untrusted. What changed:
     aren't escaped: they're in most tool names and only change formatting. A server's
     backtick can only move where code starts; every piece is inert either way.
     `mdCode()` fences a name with more backticks than it holds. JSON, SARIF, JUnit and
-    the HTML report escape on their own.
+    the HTML report escape on their own. GitHub's `GH-<n>` references are broken too;
+    toolmenu's own links stay links only on their own path (no `/../`, `%2e`).
+  - The net: after `toolmenu mcp` (whose stdout is the protocol), the CLI's stdout and
+    stderr go through `terminalSafe()` whatever writes to them (`guardStream`), so a
+    field a report forgot is still shown as escapes. Characters past the first plane
+    are written as their UTF-16 pair (`\udb40\udc41`), which JSON reads back as the
+    same character: JSON output stays the same JSON. Only text already made safe, with
+    toolmenu's own colour added, is written past it (`writeUnguarded`). Server stderr
+    quoted in an error is marked `│` on every line.
 - **`spec/tool-name`** (warn): a tool name outside the format the spec recommends from
   2025-11-25 (SEP-986: 1 to 128 of `A-Z a-z 0-9 _ - .`; a SHOULD), info on older
   protocols. An error on any protocol when a name has hidden characters: `HIDDEN_SOURCE`

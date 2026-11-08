@@ -106,7 +106,8 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   } catch (error) {
     const stderr = connection.stderr().trim();
     // A ConnectError already shows the stderr lines that matter.
-    if (stderr && error instanceof Error && !(error instanceof ConnectError)) error.message += `\nserver stderr:\n${stderr}`;
+    // Each line marked, as ConnectError does: a server's line can't pass for toolmenu's.
+    if (stderr && error instanceof Error && !(error instanceof ConnectError)) error.message += `\nserver stderr:\n${stderr.split('\n').map((l) => `  │ ${l}`).join('\n')}`;
     throw error;
   } finally {
     await connection.close().catch(() => {});
