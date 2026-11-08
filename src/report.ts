@@ -31,7 +31,7 @@ function otherLists(menu: Menu): string {
 }
 
 /** --client: "as Claude Code: up front ~N tokens (…) · on demand ~M per tool loaded (largest: x, ~K)". */
-function costLine(cost: ClientCost): string {
+export function costLine(cost: ClientCost): string {
   const parts = [
     cost.upfront !== undefined ? `up front ~${cost.upfront.toLocaleString('en-US')} tokens${cost.loaded.length ? ` (names, and ${plural(cost.loaded.length, 'tool')} loaded in full)` : ''}` : '',
     `on demand ~${cost.perTool.toLocaleString('en-US')} per tool a search loads${cost.largest ? ` (largest: ${cost.largest.tool}, ~${cost.largest.tokens.toLocaleString('en-US')})` : ''}`,
@@ -390,9 +390,7 @@ function ghEscape(text: string): string {
 export function formatSession(s: SessionResult, format: Format): string {
   if (format === 'json') {
     // The union menu itself goes to --union-out; the report says how big it is.
-    // Step menus are recorded for --html only; the JSON stays the same with or without it.
     const { union, ...rest } = s;
-    rest.steps = rest.steps.map(({ menu: _menu, ...step }) => step);
     return JSON.stringify({ command: 'session', ...rest, union: { tools: union.tools.length, totalTokens: union.totalTokens }, counts: counts(s.findings) }, null, 2);
   }
   if (format === 'github') {

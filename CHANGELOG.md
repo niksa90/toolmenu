@@ -11,8 +11,10 @@
   each step to its findings. No script and nothing fetched, so it opens offline from a
   CI artifact; light and dark follow the viewer. The design follows the Board UI
   design system, in the logo's colours.
-- `session` records the menu after each step (`StepRecord.menu`) only when asked
-  (`stepMenus`, which `--html` sets), so its JSON output is unchanged.
+- Library: `session` takes `onStepMenu` (the menu after each step, with what the step
+  inserted, appended, moved, edited or removed) and `diffMenus` takes `onTools` (the
+  tools it compared after the ignore globs, and which were added, removed and
+  renamed). Neither is part of the result, so the JSON output is unchanged.
 
 ## 0.25.2
 

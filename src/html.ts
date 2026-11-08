@@ -9,8 +9,10 @@
  * panel), with its accent re-tinted to the toolmenu logo's violet and the logo's mint
  * check on clean rows. Light and dark follow the viewer's system setting.
  */
-import { agentMenu, agentTools } from './apps.js';
-import { findRenames, ignoreMatcher, type DiffResult } from './diff.js';
+import { agentMenu, isAppOnly } from './apps.js';
+import type { ClientCost } from './clients.js';
+import type { DiffResult, DiffTools } from './diff.js';
+import { costLine, counts } from './report.js';
 import { stepsText, type SessionResult, type StepTool } from './session.js';
 import type { Finding, Menu, MenuTool, Severity } from './types.js';
 import { basename } from 'node:path';
@@ -27,12 +29,6 @@ const upper = (text: string) => text[0].toUpperCase() + text.slice(1);
 const pct = (part: number, whole: number) => (whole > 0 ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0).toFixed(2);
 
 const SEVERITY: Record<Severity, [string, string]> = { error: ['rose', 'Error'], warn: ['yellow', 'Warning'], info: ['neutral', 'Info'] };
-
-function counts(findings: Finding[]): Record<Severity, number> {
-  const c = { error: 0, warn: 0, info: 0 };
-  for (const f of findings) c[f.severity]++;
-  return c;
-}
 
 const ICON = {
   tools: '<path d="M7.5 5.5h9M7.5 10h9M7.5 14.5h9"/><circle cx="4" cy="5.5" r=".9" fill="currentColor" stroke="none"/><circle cx="4" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="4" cy="14.5" r=".9" fill="currentColor" stroke="none"/>',
@@ -135,24 +131,34 @@ ${body}
 
 const isWrite = (t: MenuTool) => (t.annotations as { readOnlyHint?: unknown } | undefined)?.readOnlyHint === false;
 const protocolLine = (server: Menu['server']) => (server.protocolVersion ? `Protocol ${esc(server.protocolVersion)}${server.era === 'legacy' ? ', 2025 handshake' : ''}` : '');
+const appOnlyChip = '<span class="chip sm neutral" title="MCP Apps visibility without &quot;model&quot;: the agent isn\'t shown it">App only</span>';
+const signed = (n: number) => (n > 0 ? `+${num(n)}` : n < 0 ? `−${num(-n)}` : '0');
 
 export interface SnapshotHtmlOptions {
   /** stdio or http, for the subtitle. */
   transport?: string;
+  /** --client: what the menu costs under that client. */
+  cost?: ClientCost;
 }
 
-export function snapshotHtml(full: Menu, findings: Finding[], options: SnapshotHtmlOptions = {}): string {
-  // The menu the agent is shown, as the text report counts it: MCP Apps' app-only tools left out.
-  const { shown: menu, appOnly } = agentMenu(full);
+/** The snapshot page. It counts as the text report does: every tool the server lists, app-only ones marked. */
+export function snapshotHtml(menu: Menu, findings: Finding[], options: SnapshotHtmlOptions = {}): string {
   const c = counts(findings);
+  const { appOnly } = agentMenu(menu);
   const max = Math.max(1, ...menu.tools.map((t) => t.tokens));
   const writes = menu.tools.filter(isWrite).length;
   const rows = menu.tools
-    .map((t, i) => `<tr><td class="pos">${i}</td><td class="name">${esc(t.name)}${isWrite(t) ? chip('purple', 'Writes') : ''}</td><td class="bar"><div class="meter"><span style="width:${pct(t.tokens, max)}%"></span></div></td><td class="num">~${num(t.tokens)}</td><td class="status">${statusOf(findings, t.name)}</td></tr>`)
+    .map((t, i) => `<tr><td class="pos">${i}</td><td class="name">${esc(t.name)}${isAppOnly(t) ? appOnlyChip : isWrite(t) ? chip('purple', 'Writes') : ''}</td><td class="bar"><div class="meter"><span style="width:${pct(t.tokens, max)}%"></span></div></td><td class="num">~${num(t.tokens)}</td><td class="status">${statusOf(findings, t.name)}</td></tr>`)
     .join('\n');
   const table = `<table><thead><tr><th>#</th><th>Tool</th><th>Share of tokens</th><th class="num">Tokens</th><th class="status"><span class="sr">Status</span></th></tr></thead><tbody>${rows}</tbody></table>`;
-  const name = full.server.name ?? 'MCP server';
-  const body = `${heading(name, full.server.version, ['Snapshot', protocolLine(menu.server), esc(options.transport ?? '')].filter(Boolean))}
+  const lists = [menu.prompts && plural(menu.prompts.length, 'prompt', 'prompts'), menu.resources && plural(menu.resources.length, 'resource', 'resources'), menu.resourceTemplates && plural(menu.resourceTemplates.length, 'resource template', 'resource templates')].filter(Boolean);
+  const notes = [
+    appOnly ? `${plural(appOnly.tools, 'tool isn\'t', 'tools aren\'t')} shown to the agent (MCP Apps visibility without "model", ~${num(appOnly.tokens)} tokens).` : '',
+    options.cost ? `${upper(costLine(options.cost))}.` : '',
+    lists.length ? `Also listed: ${lists.join(', ')}.` : '',
+  ].filter(Boolean);
+  const name = menu.server.name ?? 'MCP server';
+  const body = `${heading(name, menu.server.version, ['Snapshot', protocolLine(menu.server), esc(options.transport ?? '')].filter(Boolean))}
 <div class="stats">
 ${stat('tools', 'Tools', String(menu.tools.length), writes ? ['purple', `${writes} write`] : undefined)}
 ${stat('tokens', 'Tokens up front', `~${num(menu.totalTokens)}`, ['neutral', 'estimate'])}
@@ -160,7 +166,7 @@ ${stat('error', 'Errors', String(c.error), c.error ? undefined : ['lime', 'None'
 ${stat('warn', 'Warnings', String(c.warn), c.warn ? undefined : ['lime', 'None'])}
 </div>
 <div class="main">
-${card('Tool menu, in server order', plural(menu.tools.length, 'tool', 'tools'), appOnly ? `${plural(appOnly.tools, 'more tool isn\'t', 'more tools aren\'t')} shown to the agent (MCP Apps visibility without "model", ~${num(appOnly.tokens)} tokens).` : undefined, table)}
+${card('Tool menu, in server order', plural(menu.tools.length, 'tool', 'tools'), notes.join(' ') || undefined, table)}
 ${panel('Findings', findings)}
 </div>`;
   return page(`toolmenu snapshot: ${name}`, body);
@@ -169,36 +175,28 @@ ${panel('Findings', findings)}
 export interface DiffHtmlOptions {
   /** The two menu files, as given on the command line. */
   paths?: [string, string];
-  /** The config's ignore globs, as given to diffMenus, so the table counts what the findings do. */
-  ignore?: string[];
 }
 
-export function diffHtml(result: DiffResult, beforeMenu: Menu, afterMenu: Menu, options: DiffHtmlOptions = {}): string {
-  // The tools diffMenus compares (ignore globs out) and counts tokens for (app-only tools out too).
-  const ignored = ignoreMatcher(options.ignore);
-  const kept0 = beforeMenu.tools.filter((t) => !ignored(t.name));
-  const kept1 = afterMenu.tools.filter((t) => !ignored(t.name));
-  const before = { tools: agentTools(kept0) };
-  const after = { tools: agentTools(kept1) };
-  const names0 = new Set(kept0.map((t) => t.name));
-  const names1 = new Set(kept1.map((t) => t.name));
-  const renames = findRenames(kept0.filter((t) => !names1.has(t.name)), kept1.filter((t) => !names0.has(t.name)));
-  const renamedTo = new Map(renames.map((r) => [r.to.name, r.from]));
-  const renamedFrom = new Set(renames.map((r) => r.from.name));
-  const old = new Map(before.tools.map((t) => [t.name, t.tokens]));
-  const now = new Set(after.tools.map((t) => t.name));
-  const removed = before.tools.filter((t) => !now.has(t.name) && !renamedFrom.has(t.name));
-  const added = after.tools.filter((t) => !old.has(t.name) && !renamedTo.has(t.name)).length;
+/**
+ * The diff page, from what diffMenus compared and decided (`tools`, from its onTools):
+ * the tools after the ignore globs, and which were added, removed and renamed. Token
+ * totals are the result's, which leave app-only tools out, as the text report's do.
+ */
+export function diffHtml(result: DiffResult, tools: DiffTools, options: DiffHtmlOptions = {}): string {
+  const old = new Map(tools.before.map((t) => [t.name, t]));
+  const added = new Set(tools.added);
+  const renamedTo = new Map(tools.renamed.map((r) => [r.to, r.from]));
+  const removed = tools.before.filter((t) => tools.removed.includes(t.name));
   const described = new Set(result.findings.filter((f) => f.rule === 'diff/description').flatMap(toolsOf));
-  const max = Math.max(1, ...after.tools.map((t) => t.tokens), ...removed.map((t) => t.tokens));
-  const rows = after.tools.map((t, i) => {
+  const max = Math.max(1, ...tools.after.map((t) => t.tokens), ...removed.map((t) => t.tokens));
+  const rows = tools.after.map((t, i) => {
     const from = renamedTo.get(t.name);
-    const was = from ? from.tokens : old.get(t.name);
+    const was = added.has(t.name) ? undefined : old.get(from ?? t.name)?.tokens;
     const kept = was === undefined ? 0 : Math.min(was, t.tokens);
     const delta = was === undefined ? undefined : t.tokens - was;
     const change = was === undefined ? chip('lime', 'New') : delta! > 0 ? chip('yellow', `+${num(delta!)}`) : delta! < 0 ? chip('soft', `−${num(-delta!)}`) : '<span class="ter">0</span>';
-    const tag = from ? `<span class="chip sm rose" title="Was ${esc(from.name)}">Renamed</span>` : described.has(t.name) ? chip('purple', 'Description') : '';
-    return `<tr><td class="pos">${i}</td><td class="name">${esc(t.name)}${tag}${from ? `<div class="t-body2 sec">was ${esc(from.name)}</div>` : ''}</td><td class="bar"><div class="meter"><span class="grow" style="width:${pct(t.tokens, max)}%"></span><span style="width:${pct(kept, max)}%"></span></div></td><td class="num sec">${was === undefined ? '–' : `~${num(was)}`}</td><td class="num">~${num(t.tokens)}</td><td class="num">${change}</td></tr>`;
+    const tag = from ? `<span class="chip sm rose" title="Was ${esc(from)}">Renamed</span>` : isAppOnly(t) ? appOnlyChip : described.has(t.name) ? chip('purple', 'Description') : '';
+    return `<tr><td class="pos">${i}</td><td class="name">${esc(t.name)}${tag}${from ? `<div class="t-body2 sec">was ${esc(from)}</div>` : ''}</td><td class="bar"><div class="meter"><span class="grow" style="width:${pct(t.tokens, max)}%"></span><span style="width:${pct(kept, max)}%"></span></div></td><td class="num sec">${was === undefined ? '–' : `~${num(was)}`}</td><td class="num">~${num(t.tokens)}</td><td class="num">${change}</td></tr>`;
   });
   for (const t of removed) {
     rows.push(`<tr class="gone"><td class="pos">–</td><td class="name">${esc(t.name)}</td><td class="bar"><div class="meter"><span class="ghost" style="width:${pct(t.tokens, max)}%"></span></div></td><td class="num sec">~${num(t.tokens)}</td><td class="num sec">–</td><td class="num">${chip('rose', 'Removed')}</td></tr>`);
@@ -206,38 +204,46 @@ export function diffHtml(result: DiffResult, beforeMenu: Menu, afterMenu: Menu, 
   const table = `<table><thead><tr><th>#</th><th>Tool</th><th>Now</th><th class="num">Before</th><th class="num">After</th><th class="num">Change</th></tr></thead><tbody>${rows.join('\n')}</tbody></table>`;
   const t = result.tokens;
   const share = t.before > 0 ? (Math.abs(t.delta) / t.before) * 100 : 0;
-  const growth = t.before === 0 ? `${t.delta > 0 ? '+' : '−'}${num(Math.abs(t.delta))}` : `${t.delta > 0 ? '+' : '−'}${share > 0 && share < 1 ? '<1' : Math.round(share)}%`;
-  const grew = after.tools.filter((x) => (old.has(x.name) || renamedTo.has(x.name)) && x.tokens > (renamedTo.get(x.name)?.tokens ?? old.get(x.name)!)).length;
+  const growth = t.before === 0 ? signed(t.delta) : `${t.delta > 0 ? '+' : '−'}${share < 1 ? '<1' : Math.round(share)}%`;
+  const grew = tools.after.filter((x) => !added.has(x.name) && x.tokens > (old.get(renamedTo.get(x.name) ?? x.name)?.tokens ?? Infinity)).length;
   const k = result.classes;
   const bump = result.suggestedBump;
   const [v0, v1] = [result.before.version, result.after.version];
   const versions = v0 && v1 ? (v0 === v1 ? `Both report ${esc(v1)}` : `${esc(v0)} → ${esc(v1)}`) : '';
   const file = (path: string) => `<code title="${esc(path)}">${esc(basename(path))}</code>`;
   const files = options.paths ? `${file(options.paths[0])} → ${file(options.paths[1])}` : '';
-  const signed = (n: number) => (n > 0 ? `+${num(n)}` : n < 0 ? `−${num(-n)}` : '0');
+  const toolsDelta = tools.after.length - tools.before.length;
+  const toolsChip: [string, string] | undefined = added.size || removed.length
+    ? [removed.length > added.size ? 'rose' : 'lime', `${signed(toolsDelta)}${removed.length && added.size ? ` (${added.size} new, ${removed.length} gone)` : ''}`]
+    : tools.renamed.length ? ['rose', plural(tools.renamed.length, 'rename', 'renames')] : undefined;
   const name = result.after.name ?? result.before.name ?? 'MCP server';
   const body = `${heading(name, undefined, ['Diff', files, versions].filter(Boolean))}
 <div class="stats">
 ${stat('break', 'Breaking changes', String(k.breaking.changes), k.breaking.changes ? ['rose', plural(k.breaking.tools, 'tool', 'tools')] : ['lime', 'None'])}
-${stat('tag', 'Suggested bump', bump === 'none' ? 'None' : bump[0].toUpperCase() + bump.slice(1), k.minor.changes ? ['soft', plural(k.minor.changes, 'minor change', 'minor changes')] : undefined)}
-${stat('tools', 'Tools', String(after.tools.length), after.tools.length !== before.tools.length || added ? [removed.length > added ? 'rose' : 'lime', `${signed(after.tools.length - before.tools.length)}${removed.length && added ? ` (${added} new, ${removed.length} gone)` : ''}`] : renames.length ? ['rose', plural(renames.length, 'rename', 'renames')] : undefined)}
+${stat('tag', 'Suggested bump', bump === 'none' ? 'None' : upper(bump), k.minor.changes ? ['soft', plural(k.minor.changes, 'minor change', 'minor changes')] : undefined)}
+${stat('tools', 'Tools', String(tools.after.length), toolsChip)}
 ${stat('tokens', 'Tokens up front', `~${num(t.after)}`, t.delta ? [t.delta > 0 ? 'yellow' : 'lime', growth] : ['soft', 'unchanged'])}
 </div>
 <div class="main">
-${card('Token change, per tool', `${signed(t.delta)} tokens`, `${plural(grew, 'tool', 'tools')} grew, ${added} new, ${removed.length} removed${renames.length ? `, ${renames.length} renamed` : ''} · ~${num(t.before)} → ~${num(t.after)}`, table, '<span><i class="k-bar"></i>Before</span><span><i class="k-mint"></i>Added since</span>')}
+${card('Token change, per tool', `${signed(t.delta)} tokens`, `${plural(grew, 'tool', 'tools')} grew, ${added.size} new, ${removed.length} removed${tools.renamed.length ? `, ${tools.renamed.length} renamed` : ''} · ~${num(t.before)} → ~${num(t.after)}`, table, '<span><i class="k-bar"></i>Before</span><span><i class="k-mint"></i>Added since</span>')}
 ${panel('Changes', result.findings)}
 </div>`;
   return page(`toolmenu diff: ${name}`, body);
 }
 
-export function sessionHtml(result: SessionResult): string {
+/** The session page. `menus`: the menu after each step, from session's onStepMenu. */
+export function sessionHtml(result: SessionResult, menus: Map<number, StepTool[]> = new Map()): string {
   const c = counts(result.findings);
   const ids = new Map(result.findings.map((f, i) => [f, `finding-${i + 1}`]));
-  const max = Math.max(1, result.final.tokens, ...result.steps.map((s) => s.tokens));
+  const stepsOf = (f: Finding) => (f.steps?.length ? f.steps : f.step !== undefined ? [f.step] : []);
+  const before = result.findings.filter((f) => stepsOf(f).includes(0));
+  const shown = new Set([...result.steps.map((s) => s.index), ...(before.length ? [0] : [])]);
+  const max = Math.max(1, ...[...menus.values()].map((m) => m.reduce((n, t) => n + t.tokens, 0)));
   const changed = result.steps.filter((s) => s.changed).map((s) => s.index);
   const span = changed.length ? upper(stepsText(changed)) : 'No';
   const strip = (menu: StepTool[] | undefined) =>
-    menu ? `<div class="strip" aria-hidden="true">${menu.map((t) => `<span class="${t.change ?? ''}" style="flex:0 0 calc(${pct(t.tokens, max)}% - 2px)" title="${esc(t.name)}, ~${t.tokens}"></span>`).join('')}</div>` : '<span class="ter">–</span>';
+    menu ? `<div class="strip" aria-hidden="true">${menu.map((t) => `<span class="${t.change ?? ''}" style="flex-grow:${Math.max(t.tokens, 1)}" title="${esc(t.name)}, ~${t.tokens}${t.change === 'removed' ? ', removed' : ''}"></span>`).join('')}</div>` : '<span class="ter">–</span>';
+  const fill = (menu: StepTool[] | undefined) => (menu ? `<div class="fill" style="width:${pct(menu.filter((t) => t.change !== 'removed').reduce((n, t) => n + t.tokens, 0), max)}%">${strip(menu)}</div>` : strip(menu));
   const outcome = (s: SessionResult['steps'][number]) =>
     s.outcome === 'answered' ? chip('soft', 'Answered')
       : s.outcome === 'tool-error' ? chip('yellow', 'Tool error')
@@ -245,25 +251,28 @@ export function sessionHtml(result: SessionResult): string {
           : s.outcome === 'not-sent' ? chip('rose', 'Not sent')
             : s.outcome === 'needs-input' ? chip('purple', 'Asked for input')
               : '<span class="ter">–</span>';
+  const links = (index: number) => result.findings.filter((f) => stepsOf(f).includes(index)).map((f) => `<a class="chip sm ${SEVERITY[f.severity][0]}" href="#${ids.get(f)}">${esc(f.rule)}</a>`).join('');
   const rows = result.steps.map((s) => {
-    const here = result.findings.filter((f) => f.step === s.index || f.steps?.includes(s.index));
-    const tags = here.map((f) => `<a class="chip sm ${SEVERITY[f.severity][0]}" href="#${ids.get(f)}">${esc(f.rule)}</a>`).join('');
-    return `<tr class="${s.changed ? 'changed' : ''}"><td class="pos">${s.index}</td><td class="step"><code>${esc(s.label)}</code>${s.note ? `<div class="t-body2 sec">${esc(s.note)}</div>` : ''}${tags ? `<div class="tags">${tags}</div>` : ''}</td><td>${outcome(s)}</td><td>${strip(s.menu)}</td><td class="num">${s.tools}</td><td class="num">~${num(s.tokens)}</td></tr>`;
+    const tags = links(s.index);
+    return `<tr class="${s.changed ? 'changed' : ''}"><td class="pos">${s.index}</td><td class="step"><code>${esc(s.label)}</code>${s.note ? `<div class="t-body2 sec">${esc(s.note)}</div>` : ''}${tags ? `<div class="tags">${tags}</div>` : ''}</td><td>${outcome(s)}</td><td>${fill(menus.get(s.index))}</td><td class="num">${s.tools}</td><td class="num">~${num(s.tokens)}</td></tr>`;
   });
+  if (before.length) rows.unshift(`<tr><td class="pos">0</td><td class="step"><span class="sec">Before the first step</span><div class="tags">${links(0)}</div></td><td><span class="ter">–</span></td><td><span class="ter">–</span></td><td class="num">${result.baseline.tools}</td><td class="num">~${num(result.baseline.tokens)}</td></tr>`);
   const table = `<table><thead><tr><th>#</th><th>Step</th><th>Call</th><th>Menu after it</th><th class="num">Tools</th><th class="num">Tokens</th></tr></thead><tbody>${rows.join('\n')}</tbody></table>`;
   const grew = result.final.tokens - result.baseline.tokens;
   const fresh = result.connectionCheck === 'same' ? 'A fresh process starts with the same menu.' : result.connectionCheck === 'different' ? 'A fresh process starts with a different menu.' : undefined;
+  // Info findings start folded, unless a step row links into them.
+  const linkedInfo = result.findings.some((f) => f.severity === 'info' && stepsOf(f).some((n) => shown.has(n)));
   const name = result.server.name ?? 'MCP server';
   const body = `${heading(name, result.server.version, ['Session', `<code>${esc(result.scenario)}</code>`, protocolLine(result.server), esc(result.transport)].filter(Boolean))}
 <div class="stats">
 ${stat('error', 'Errors', String(c.error), c.error ? undefined : ['lime', 'None'])}
 ${stat('warn', 'Warnings', String(c.warn), c.warn ? undefined : ['lime', 'None'])}
 ${stat('steps', 'Menu changed', span, ['soft', plural(result.steps.length, 'step', 'steps')])}
-${stat('tokens', 'Tokens up front', `~${num(result.final.tokens)}`, grew ? [grew > 0 ? 'yellow' : 'lime', `${grew > 0 ? '+' : '−'}${num(Math.abs(grew))} in the session`] : ['soft', 'unchanged'])}
+${stat('tokens', 'Tokens up front', `~${num(result.final.tokens)}`, grew ? [grew > 0 ? 'yellow' : 'lime', `${signed(grew)} in the session`] : ['soft', 'unchanged'])}
 </div>
 <div class="main">
-${card('The scenario, step by step', `${result.baseline.tools} → ${plural(result.final.tools, 'tool', 'tools')}`, fresh, table, '<span><i class="k-bar"></i>A tool, sized by tokens</span><span><i class="k-ins"></i>Inserted mid-list</span><span><i class="k-app"></i>Appended</span><span><i class="k-edit"></i>Definition edited or moved</span>')}
-${panel('Findings', result.findings, ids, result.findings.some((f) => f.severity === 'info' && (f.step !== undefined || f.steps?.length)))}
+${card('The scenario, step by step', `${result.baseline.tools} → ${plural(result.final.tools, 'tool', 'tools')}`, fresh, table, '<span><i class="k-bar"></i>A tool, sized by tokens</span><span><i class="k-ins"></i>Inserted mid-list</span><span><i class="k-app"></i>Appended</span><span><i class="k-edit"></i>Edited or moved</span><span><i class="k-rem"></i>Removed</span>')}
+${panel('Findings', result.findings, ids, linkedInfo)}
 </div>`;
   return page(`toolmenu session: ${name}`, body);
 }
@@ -309,7 +318,7 @@ main{display:grid;gap:24px}
 .card-head{display:flex;flex-direction:column;gap:2px;padding:18px 20px 14px}
 .card-foot{display:flex;flex-wrap:wrap;gap:6px 16px;padding:12px 20px 16px;border-top:1px solid var(--separator)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
-.k-bar{background:var(--bar)}.k-mint{background:var(--mint)}.k-ins{background:var(--dot-rose)}.k-app{background:var(--dot-yellow)}.k-edit{box-shadow:inset 0 0 0 1.5px var(--dot-rose)}
+.k-bar{background:var(--bar)}.k-mint{background:var(--mint)}.k-ins{background:var(--dot-rose)}.k-app{background:var(--dot-yellow)}.k-edit{box-shadow:inset 0 0 0 1.5px var(--dot-rose)}.k-rem{background:repeating-linear-gradient(135deg,var(--dot-rose) 0 2px,transparent 2px 4px)}
 .scroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse;text-align:left}
 th{padding:10px 12px;font-size:14px;line-height:20px;font-weight:500;color:var(--text-tertiary);white-space:nowrap;background:var(--bg-secondary);border-top:1px solid var(--separator);border-bottom:1px solid var(--separator)}
@@ -325,12 +334,16 @@ tr.gone td.name{color:var(--text-secondary);text-decoration:line-through}
 .meter span{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--bar)}
 .meter span.grow{background:var(--mint)}.meter span.ghost{background:var(--text-tertiary)}
 td.bar{width:34%}
-.strip{display:flex;gap:2px;min-width:150px}
-.strip span{height:8px;border-radius:2px;background:var(--bar-soft)}
+.fill{min-width:4px}
+.strip{display:flex;overflow:hidden;border-radius:3px;min-width:0}
+.strip span{flex-basis:0;min-width:0;height:8px;background:var(--bar-soft);box-shadow:inset -1px 0 0 var(--bg-primary)}
+td .fill{min-width:4px}
+td:has(.fill){min-width:150px}
 tr.changed .strip span{background:var(--bar)}
 .strip .inserted,tr.changed .strip .inserted{background:var(--dot-rose)}
 .strip .appended,tr.changed .strip .appended{background:var(--dot-yellow)}
 .strip .edited,.strip .moved,tr.changed .strip .edited,tr.changed .strip .moved{background:transparent;box-shadow:inset 0 0 0 1.5px var(--dot-rose)}
+.strip .removed,tr.changed .strip .removed{background:repeating-linear-gradient(135deg,var(--dot-rose) 0 2px,transparent 2px 4px);opacity:.7}
 td.step{max-width:280px}td.step code{overflow-wrap:anywhere}
 .tags{display:flex;gap:6px;flex-wrap:wrap}td .tags{margin-top:6px}
 .panel{background:var(--bg-secondary);border-radius:24px;padding:8px;display:grid;gap:8px}
@@ -354,5 +367,5 @@ details.more .list{display:grid;gap:8px}
 @media (max-width:1000px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.main{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:480px){.stat{min-height:116px;padding:14px}.stat .t-title-1{font-size:20px;line-height:28px}td.bar{min-width:110px}}
 @media (prefers-reduced-motion:reduce){details.more>summary svg{transition:none}}
-@media print{.card,.panel,.stat{break-inside:avoid}details.more .list{display:grid}}
+@media print{.card,.panel,.stat{break-inside:avoid}details.more::details-content{content-visibility:visible;display:block}}
 `;

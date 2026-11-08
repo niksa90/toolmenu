@@ -99,41 +99,60 @@ test('session without --html records no step menus: the JSON output is unchanged
   assert.ok(JSON.parse(r.stdout).steps.every((s) => s.menu === undefined));
 });
 
-test('snapshot html: the menu the agent is shown, as the text report counts it', () => {
-  const app = tool('app_refresh', [], { _meta: { ui: { resourceUri: 'ui://x', visibility: ['app'] } } });
-  const html = snapshotHtml(menuOf([tool('list_forms'), app]), []);
-  assert.doesNotMatch(html, /<td class="name">app_refresh/);
-  assert.match(html, /1 more tool isn&#39;t shown to the agent/);
-  assert.match(html, /<span class="t-title-1">1 tool<\/span>/);
+/** diffHtml as the CLI calls it: with the tools diffMenus compared. */
+function diffPage(before, after, options = {}) {
+  let tools;
+  const result = diffMenus(before, after, { ...options, onTools: (t) => (tools = t) });
+  return diffHtml(result, tools);
+}
+
+test('stepMenu: removed tools follow, marked; a long run of appended tools stays linear', () => {
+  const t = (name, tokens = 10) => ({ name, tokens });
+  const menu = stepMenu([t('a')], [{ kind: 'removed', tool: 'b', position: 1 }], [t('a'), t('b', 30)]);
+  assert.deepEqual(menu, [{ name: 'a', tokens: 10 }, { name: 'b', tokens: 30, change: 'removed' }]);
+  const many = Array.from({ length: 20000 }, (_, i) => t(`t${i}`));
+  const started = Date.now();
+  const marked = stepMenu(many, many.slice(1).map((x, i) => ({ kind: 'added', tool: x.name, position: i + 1 })));
+  assert.ok(Date.now() - started < 1000, 'not quadratic');
+  assert.equal(marked.filter((m) => m.change === 'appended').length, 19999);
 });
 
-test('diff html: ignored tools left out, a rename one row, growth from nothing in tokens', () => {
-  const before = menuOf([tool('get_user', ['id']), tool('debug_dump')]);
-  const after = menuOf([tool('fetch_user', ['id']), tool('list_forms')]);
-  const ignore = ['debug_*'];
-  const html = diffHtml(diffMenus(before, after, { ignore }), before, after, { ignore });
+test('snapshot html: counts as the text report does, every tool listed, app-only ones marked', () => {
+  const app = tool('app_refresh', [], { _meta: { ui: { resourceUri: 'ui://x', visibility: ['app'] } } });
+  const menu = menuOf([tool('list_forms'), app]);
+  const html = snapshotHtml(menu, [], { cost: { client: 'claude-code', label: 'Claude Code', upfront: 40, loaded: [], perTool: 25, basis: 'b' } });
+  assert.match(html, /app_refresh<span class="chip sm neutral"[^>]*>App only/);
+  assert.match(html, /<span class="t-title-1">2 tools<\/span>/);
+  assert.match(html, new RegExp(`~${menu.totalTokens}<`), 'the full total, as the text report says it');
+  assert.match(html, /1 tool isn&#39;t shown to the agent/);
+  assert.match(html, /As Claude Code: up front ~40 tokens/);
+});
+
+test('diff html: what diffMenus compared: ignored tools out, a rename one row, visibility no add', () => {
+  const before = menuOf([tool('get_user', ['id']), tool('debug_dump'), tool('panel', [], { _meta: { ui: { resourceUri: 'ui://p', visibility: ['app'] } } })]);
+  const after = menuOf([tool('fetch_user', ['id']), tool('list_forms'), tool('panel')]);
+  const html = diffPage(before, after, { ignore: ['debug_*'] });
   assert.doesNotMatch(html, /debug_dump/, 'ignored, as diff ignores it');
   assert.match(html, /fetch_user<span class="chip sm rose" title="Was get_user">Renamed/);
   assert.doesNotMatch(html, /get_user<\/td>/, 'the old name is not a removed row');
   assert.match(html, /list_forms<\/td>.*?New/s);
+  assert.doesNotMatch(html, /panel<\/td>.*?New/s, 'shown to the agent now, but not added: diff says so too');
+  assert.match(html, /1 new, 0 removed, 1 renamed/);
   const empty = menuOf([]);
-  const grown = diffHtml(diffMenus(empty, after), empty, after);
-  assert.doesNotMatch(grown, /\+0%/, 'no percentage of nothing');
+  assert.doesNotMatch(diffPage(empty, after), /\+0%/, 'no percentage of nothing');
 });
 
-test('session html: a finding over several steps is linked from each; linked info findings start open', () => {
+test('session html: links from every step a finding names, a row for step 0, info open only when linked', () => {
   const step = (index) => ({ index, label: `call t${index}`, status: 'ok', outcome: 'answered', changed: false, listChanged: 0, tools: 1, tokens: 10 });
-  const result = {
-    scenario: 's.yml', server: { name: 'x' }, transport: 'stdio', listening: true,
-    baseline: { tools: 1, tokens: 10 }, final: { tools: 1, tokens: 10 },
-    steps: [step(1), step(2), step(3)],
-    findings: [{ rule: 'session/tool-error', severity: 'warn', message: 'm', step: 1, steps: [1, 3] }, { rule: 'session/known-variance', severity: 'info', message: 'v', step: 2 }],
-    union: menuOf([]),
-  };
-  const html = sessionHtml(result);
+  const base = { scenario: 's.yml', server: { name: 'x' }, transport: 'stdio', listening: true, baseline: { tools: 1, tokens: 10 }, final: { tools: 1, tokens: 10 }, steps: [step(1), step(2), step(3)], union: menuOf([]) };
+  const html = sessionHtml({ ...base, findings: [{ rule: 'session/tool-error', severity: 'warn', message: 'm', step: 1, steps: [1, 3] }, { rule: 'session/known-variance', severity: 'info', message: 'v', step: 2 }] });
   assert.equal(html.match(/href="#finding-1"/g).length, 2, 'steps 1 and 3');
   assert.match(html, /Steps 1 and 3/);
-  assert.match(html, /<details class="more" open>/);
+  assert.match(html, /<details class="more" open>/, 'a step links into the info findings');
+  const zero = sessionHtml({ ...base, findings: [{ rule: 'session/a', severity: 'warn', message: 'w', step: 1 }, { rule: 'session/b', severity: 'info', message: 'i', step: 0 }] });
+  assert.match(zero, /<td class="pos">0<\/td><td class="step"><span class="sec">Before the first step/);
+  const unlinked = sessionHtml({ ...base, findings: [{ rule: 'session/a', severity: 'warn', message: 'w', step: 1 }, { rule: 'session/c', severity: 'info', message: 'i' }] });
+  assert.match(unlinked, /<details class="more">/, 'no step links to it: folded');
 });
 
 test('session --html --json: the JSON has no step menus either', async () => {

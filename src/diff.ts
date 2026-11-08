@@ -102,6 +102,15 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/lists-unread': { severity: 'info' },
 };
 
+/** The tools a diff compared, after the ignore globs, and how they changed by name. */
+export interface DiffTools {
+  before: MenuTool[];
+  after: MenuTool[];
+  added: string[];
+  removed: string[];
+  renamed: { from: string; to: string }[];
+}
+
 export interface TokenChange {
   before: number;
   after: number;
@@ -140,6 +149,8 @@ export interface DiffResult {
 export interface DiffOptions {
   rules?: Record<string, Severity | 'off'>;
   ignore?: string[];
+  /** Called with the tools compared (ignore globs out) and what was added, removed and renamed, for the HTML report. Not part of the result. */
+  onTools?: (tools: DiffTools) => void;
   tokenBudget?: number;
   /**
    * The release (artifact) versions: npm, a git tag. The server-reported
@@ -210,6 +221,13 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
   const renames = findRenames(removed, added);
   const renamedFrom = new Set(renames.map((r) => r.from.name));
   const renamedTo = new Set(renames.map((r) => r.to.name));
+  options.onTools?.({
+    before: oldTools,
+    after: newTools,
+    added: added.filter((t) => !renamedTo.has(t.name)).map((t) => t.name),
+    removed: removed.filter((t) => !renamedFrom.has(t.name)).map((t) => t.name),
+    renamed: renames.map((r) => ({ from: r.from.name, to: r.to.name })),
+  });
 
   for (const { from, to } of renames) {
     raw.push({
@@ -1660,7 +1678,7 @@ function isEmptySchema(schema: JsonSchema | undefined): boolean {
 }
 
 /** Removed + added tools with the same non-empty parameter names and required set. */
-export function findRenames(removed: MenuTool[], added: MenuTool[]): { from: MenuTool; to: MenuTool }[] {
+function findRenames(removed: MenuTool[], added: MenuTool[]): { from: MenuTool; to: MenuTool }[] {
   const pairs: { from: MenuTool; to: MenuTool }[] = [];
   const used = new Set<string>();
   for (const from of removed) {
@@ -1859,7 +1877,7 @@ export function versionBump(before: string | undefined, after: string | undefine
   return 'none';
 }
 
-export function ignoreMatcher(globs: string[] | undefined): (name: string) => boolean {
+function ignoreMatcher(globs: string[] | undefined): (name: string) => boolean {
   const res = (globs ?? []).map((g) => new RegExp('^' + g.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
   return (name) => res.some((re) => re.test(name));
 }

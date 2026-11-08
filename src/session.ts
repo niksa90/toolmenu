@@ -128,30 +128,42 @@ export interface StepRecord {
   scope?: Scope;
   tools: number;
   tokens: number;
-  /** With stepMenus (for --html): the menu after this step, in list order, and what this step did to each tool. */
-  menu?: StepTool[];
 }
 
-/** A tool in the menu after a step: its tokens, and whether this step inserted, appended, moved or edited it. */
+/**
+ * A tool in the menu after a step: its tokens, and whether this step inserted, appended,
+ * moved or edited it. Tools the step removed come last, marked removed.
+ */
 export interface StepTool {
   name: string;
   tokens: number;
-  change?: 'inserted' | 'appended' | 'moved' | 'edited';
+  change?: 'inserted' | 'appended' | 'moved' | 'edited' | 'removed';
 }
 
-/** What a step's changes did to each tool of the menu after it. An added tool is appended when only added tools follow it. */
-export function stepMenu(tools: MenuTool[], changes: ToolChange[] = []): StepTool[] {
-  // By position in the newer menu, not by name: two tools can share a name.
-  const at = (kinds: (k: ToolChange['kind']) => boolean) => new Set(changes.filter((c) => kinds(c.kind)).map((c) => c.position));
-  const added = at((k) => k === 'added');
-  const moved = at((k) => k === 'moved');
-  const edited = at((k) => k !== 'added' && k !== 'removed' && k !== 'moved' && k !== 'serialization');
-  return tools.map((t, i) => {
-    const change = added.has(i)
-      ? tools.every((_, j) => j <= i || added.has(j)) ? 'appended' : 'inserted'
-      : moved.has(i) ? 'moved' : edited.has(i) ? 'edited' : undefined;
+/**
+ * What a step's changes did to each tool of the menu after it, by position (two tools
+ * can share a name). An added tool is appended when only added tools follow it. The
+ * tools it removed (from `before`, the menu before the step) follow, marked removed.
+ */
+export function stepMenu(tools: MenuTool[], changes: ToolChange[] = [], before: MenuTool[] = []): StepTool[] {
+  const added = new Set<number>();
+  const moved = new Set<number>();
+  const edited = new Set<number>();
+  const removed: StepTool[] = [];
+  for (const c of changes) {
+    if (c.kind === 'added') added.add(c.position);
+    else if (c.kind === 'moved') moved.add(c.position);
+    else if (c.kind === 'removed') removed.push({ name: c.tool, tokens: before[c.position]?.tokens ?? 0, change: 'removed' });
+    else if (c.kind !== 'serialization') edited.add(c.position);
+  }
+  // Where the trailing run of added tools starts: those are appended, earlier ones inserted.
+  let tail = tools.length;
+  while (tail > 0 && added.has(tail - 1)) tail--;
+  const menu = tools.map((t, i): StepTool => {
+    const change = added.has(i) ? (i >= tail ? 'appended' : 'inserted') : moved.has(i) ? 'moved' : edited.has(i) ? 'edited' : undefined;
     return { name: t.name, tokens: t.tokens, ...(change ? { change } : {}) };
   });
+  return [...menu, ...removed];
 }
 
 export interface SessionResult {
@@ -192,8 +204,8 @@ export interface SessionOptions {
   unionOut?: boolean;
   /** session --auto: what the plan called and skipped, so a run that called nothing isn't a clean one. */
   auto?: AutoSummary;
-  /** Record the menu after each step on its StepRecord (`menu`), for the HTML report. */
-  stepMenus?: boolean;
+  /** Called with the menu after each step that listed it (stepMenu), for the HTML report. Not part of the result, so no report carries it. */
+  onStepMenu?: (step: number, menu: StepTool[]) => void;
   /** Waits before retrying a request refused for being too many (default 2, 4, 8, 16, 32 s: a per-minute limit clears within them). */
   rateLimitWaitsMs?: number[];
 }
@@ -364,6 +376,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       const label = stepLabel(step);
       const record: StepRecord = { index, label, status: 'ok', changed: false, listChanged: 0, tools: current.tools.length, tokens: current.totalTokens };
       let stepChanges: ToolChange[] = [];
+      let stepBefore: MenuTool[] = [];
       const mark = conn.wire.notifications.length;
       let word = false;
       const done = () => {
@@ -609,6 +622,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       }
       const changes = compareMenus(current.tools, next.tools);
       stepChanges = changes;
+      stepBefore = current.tools;
       if (changes.length) {
         record.changed = true;
         const paths = variedPaths(current.tools, next.tools, changes);
@@ -672,7 +686,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       record.listChanged = conn.wire.notificationsSince(mark, LIST_CHANGED);
       record.tools = current.tools.length;
       record.tokens = current.totalTokens;
-      if (options.stepMenus) record.menu = stepMenu(current.tools, stepChanges);
+      options.onStepMenu?.(index, stepMenu(current.tools, stepChanges, stepBefore));
       if (firstTry && !record.changed && record.status === 'ok' && !record.failure && record.outcome !== 'needs-input') quiet.add((step as { tool: string }).tool);
       done();
     }
