@@ -334,6 +334,24 @@ toolmenu:
       junit: [snapshot.xml, diff.xml]
 ```
 
+### A report to keep: HTML
+
+`--html <path>` writes the run of `snapshot`, `diff` or `session` as one HTML page
+beside the usual report: the numbers that matter at the top (errors, warnings, tools,
+tokens; for `diff`, breaking changes and the suggested bump), the menu as a table in
+server order with each tool's share of the tokens, and the findings with their next
+steps. `diff` shows each tool before and after, new and removed tools marked. `session`
+has a row per step with the menu after it, tools inserted, appended or edited marked,
+and links from a step to its findings.
+
+The page has no script and loads nothing, so it opens offline: keep it as a CI artifact
+(GitLab `artifacts: paths`, `actions/upload-artifact`) or attach it to an issue for a
+server's maintainer. It follows the viewer's light or dark setting.
+
+```sh
+npx toolmenu diff menu.json new-menu.json --html diff.html
+```
+
 ### A badge for your README
 
 ```sh
@@ -715,6 +733,7 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --format <fmt>      text (default), json, github (annotations), markdown, sarif
                     (code scanning) or junit (CI test reports)
 --junit <path>      snapshot, diff, session: also write the findings as JUnit XML
+--html <path>       snapshot, diff, session: also write the report as one HTML page
 --fail-on <level>   error (default), warn or info
 --header <k: v>     HTTP header, repeatable
 --env <K=V>         env var for a stdio server, repeatable (it only gets a

@@ -7,7 +7,7 @@ import { CLIENT_NAMES, CLIENTS } from './clients.js';
 import { LIST_WORDS } from './lists.js';
 import { loadConfig, type Config } from './config.js';
 import { ELICITATIONS, PROTOCOLS, type Elicitation, type Protocol, type Target } from './connect.js';
-import { diffMenus } from './diff.js';
+import { comparedTools, diffMenus } from './diff.js';
 import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
 import { counts, formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
@@ -25,6 +25,8 @@ import { existingMessage, initReport, planInit, shellWord, writeInit } from './i
 import { SEVERITY_RANK, type Finding, type MenuTool, type Severity } from './types.js';
 import { toSarif } from './sarif.js';
 import { toJunit } from './junit.js';
+import { diffHtml, sessionHtml, snapshotHtml } from './html.js';
+import type { StepTool } from './session.js';
 import { badge, badgeMarkdown } from './badge.js';
 import { VERSION } from './version.js';
 import { SECRET_ARGS_ENV } from './mcp-env.js';
@@ -93,11 +95,16 @@ export async function main(given: string[]): Promise<number> {
   if ((asked === 'junit' || values.junit !== undefined) && !fileCommands.includes(sub)) throw new UsageError(`JUnit output (--format junit, --junit) goes with snapshot, diff or session; ${sub} has none.`);
   if (sub === 'session' && (values.plan || values.init) && (asked === 'sarif' || values.sarif !== undefined)) throw new UsageError('SARIF needs findings: --plan and --init run nothing.');
   if (sub === 'session' && (values.plan || values.init) && (asked === 'junit' || values.junit !== undefined)) throw new UsageError('JUnit needs findings: --plan and --init run nothing.');
+  if (values.html !== undefined && !fileCommands.includes(sub)) throw new UsageError(`The HTML report (--html) goes with snapshot, diff or session; ${sub} has none.`);
+  if (sub === 'session' && (values.plan || values.init) && values.html !== undefined) throw new UsageError('The HTML report needs a run: --plan and --init run nothing.');
   const sarifToStdout = asked === 'sarif';
   const junitToStdout = asked === 'junit';
   const format = (sarifToStdout || junitToStdout ? 'text' : asked) as Format;
-  /** Print the report, or the SARIF / JUnit file with --format sarif|junit; write --sarif's and --junit's files too. */
-  const emit = async (report: string, findings: Finding[], command: string, menuPath: string | undefined) => {
+  /** session --html: the menu after each step, for the page only. */
+  const stepMenus = new Map<number, StepTool[]>();
+  /** Print the report, or the SARIF / JUnit file with --format sarif|junit; write --sarif's, --junit's and --html's files too. */
+  const emit = async (report: string, findings: Finding[], command: string, menuPath: string | undefined, html?: () => string) => {
+    if (values.html !== undefined && html) await writeFile(values.html, html());
     const menu = values['sarif-menu'] ?? menuPath;
     const sarif = values.sarif !== undefined || sarifToStdout ? toSarif(findings, { command, menuPath: menu }) + '\n' : undefined;
     // session's menuPath is where SARIF points, not what it checked (a live server): no target there.
@@ -203,7 +210,7 @@ export async function main(given: string[]): Promise<number> {
       release,
       serverVersionIsRelease: values['server-version-is-release'] ?? config.serverVersionIsRelease,
     });
-    await emit(formatDiff(result, before.tools.length, after.tools.length, format), result.findings, 'diff', rest[1]);
+    await emit(formatDiff(result, before.tools.length, after.tools.length, format), result.findings, 'diff', rest[1], () => diffHtml(result, comparedTools(before, after, config.ignore), { paths: [rest[0], rest[1]] }));
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
@@ -338,13 +345,13 @@ export async function main(given: string[]): Promise<number> {
       if (more.assumed.length) plan.scenario.assumeReadOnly = [...(plan.scenario.assumeReadOnly ?? []), ...more.assumed];
       return more.scenario.steps;
     };
-    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'], auto, replan });
+    const result = await session(autoTarget, plan.scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: 'auto', unionOut: !!values['union-out'], auto, replan, onStepMenu: values.html !== undefined ? (step, menu) => stepMenus.set(step, menu) : undefined });
     // A --value or --assume-read-only for a tool behind an unlock isn't unused: check
     // them against every tool the session saw, not just the starting menu.
     auto.ignored = autoScenario(result.union, { values: given, assumeReadOnly }).ignored;
     result.auto = { ...result.auto, ...auto };
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
-    await emit(formatSession(result, format), result.findings, 'session', values['union-out'] ?? (existsSync('menu.json') ? 'menu.json' : undefined));
+    await emit(formatSession(result, format), result.findings, 'session', values['union-out'] ?? (existsSync('menu.json') ? 'menu.json' : undefined), () => sessionHtml(result, stepMenus));
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
@@ -362,9 +369,9 @@ export async function main(given: string[]): Promise<number> {
       return 0;
     }
     const sessionTarget = answering(parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol));
-    const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario, unionOut: !!values['union-out'] });
+    const result = await session(sessionTarget, scenario, { timeoutMs, processes, rules: config.rules, ignore: config.ignore, scenarioName: values.scenario, unionOut: !!values['union-out'], onStepMenu: values.html !== undefined ? (step, menu) => stepMenus.set(step, menu) : undefined });
     if (values['union-out']) await writeFile(values['union-out'], JSON.stringify(result.union, null, 2) + '\n');
-    await emit(formatSession(result, format), result.findings, 'session', values['union-out'] ?? (existsSync('menu.json') ? 'menu.json' : undefined));
+    await emit(formatSession(result, format), result.findings, 'session', values['union-out'] ?? (existsSync('menu.json') ? 'menu.json' : undefined), () => sessionHtml(result, stepMenus));
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
   }
 
@@ -381,7 +388,7 @@ export async function main(given: string[]): Promise<number> {
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');
 
-  await emit(formatSnapshot(menu, findings, format, outPath, cost, notOffered), findings, 'snapshot', outPath);
+  await emit(formatSnapshot(menu, findings, format, outPath, cost, notOffered), findings, 'snapshot', outPath, () => snapshotHtml(menu, findings, { transport: target.kind, cost, notOffered, outPath }));
   if (values.badge !== undefined) {
     await writeFile(values.badge, JSON.stringify(badge(menu, findings), null, 2) + '\n');
     // stderr: stdout stays the report (or the JSON/SARIF a script parses).

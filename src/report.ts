@@ -31,7 +31,7 @@ function otherLists(menu: Menu): string {
 }
 
 /** --client: "as Claude Code: up front ~N tokens (…) · on demand ~M per tool loaded (largest: x, ~K)". */
-function costLine(cost: ClientCost): string {
+export function costLine(cost: ClientCost): string {
   const parts = [
     cost.upfront !== undefined ? `up front ~${cost.upfront.toLocaleString('en-US')} tokens${cost.loaded.length ? ` (names, and ${plural(cost.loaded.length, 'tool')} loaded in full)` : ''}` : '',
     `on demand ~${cost.perTool.toLocaleString('en-US')} per tool a search loads${cost.largest ? ` (largest: ${cost.largest.tool}, ~${cost.largest.tokens.toLocaleString('en-US')})` : ''}`,

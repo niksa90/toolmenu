@@ -1141,6 +1141,39 @@ server with `--mode all` serves them as 418 plain tools, which makes it a ground
   `toolmenu explain <rule>`; below: a passing case with that text in `<system-out>`. No
   findings: one passing case named `no findings`. Properties: `toolmenu.version`,
   `fail-on`, and `target` (the menu file) for snapshot and diff.
+- **HTML** (`src/html.ts`, after 0.25.2): `--html <path>` for snapshot, diff and
+  session writes one document: `<!doctype html>`, inline CSS, inline SVG icons and
+  logo, no script, no external resource (fonts by name: Inter, JetBrains Mono, then
+  system stacks). Every server-provided string is escaped; backticks in messages become
+  `<code>`. Light and dark by `prefers-color-scheme`. Layout: a heading (server name
+  and version, the command and protocol), four stat cards, a table card, and a
+  findings panel (non-info findings as tiles, info folded in a `<details>`, open when
+  it's all there is, or when a step row links to one). Snapshot: counted as the text
+  report counts (every tool listed, the full total); rows give position, tool (`App
+  only` for MCP Apps tools the agent isn't shown, `Writes` for readOnlyHint: false),
+  token share of the largest tool, tokens, status (error dot, warning dot, or the
+  check); under the title, the app-only count, the `--client` cost line and the other
+  lists; with `--client`, the up-front stat is the client's (`of ~<total>`). Diff:
+  from `comparedTools` (what diffMenus compares: the tools after the ignore globs,
+  their served positions, the ignored count, and the added, removed and renamed
+  names), so the table never disagrees with the findings: the newer menu in order,
+  `#` as served, with before and after tokens, `New`, `Renamed`
+  (one row, "was <old>"), `App only`, `Description` (a diff/description finding), then
+  removed tools struck through. The Tools chip lists new, gone and renamed, rose when
+  anything was removed or renamed. Token totals are the result's. Growth: a percentage
+  of the old total, `<1%` below one, or tokens when the old menu had none. Session
+  rows: each step with its outcome, a strip of the menu after it (from session's
+  `onStepMenu`; `stepMenu` marks, by position, the trailing run of added tools
+  `appended`, other added tools `inserted`, `moved`, any other change but
+  serialization `edited`, and appends the tools the step removed, `removed`;
+  segments grow by tokens, and the strip's length is the step's total against the
+  largest), links to every finding whose `step` or `steps` names it
+  (`#finding-<n>`), and a row 0 ("Before the first step") when a finding is at step 0.
+  Step menus are never part of the result, so no report carries them. The Call
+  column shows the step's status first (`Timed out`; `Failed after` for a call answered
+  before the relisting failed). `--auto` adds its summary (autoSummary) above the
+  table. Print opens
+  folded findings where the browser supports `::details-content`.
 - **Badge** (`src/badge.ts`): shields endpoint JSON, `schemaVersion: 1`, label
   `toolmenu`, message `<n> tools · <~tokens> tokens` plus errors, else warnings
   (info isn't shown), colour red, yellow or brightgreen, `cacheSeconds: 3600`. Tokens
