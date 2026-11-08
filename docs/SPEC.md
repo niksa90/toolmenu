@@ -1257,9 +1257,17 @@ everything a PR controls is untrusted. What changed:
   fails until `ACTIONS` in `src/init.ts` matches the pins in the workflows. `toolmenu init`'s
   workflow pins the actions it adds the same way (`ACTIONS` in `src/init.ts`).
 - **Credentials off argv**: the CLI reads `TOOLMENU_ARGS` as well as `TOOLMENU_MCP_ARGS`
-  (each a JSON array of arguments, put before `--` and dropped from the environment
-  once read). The Action passes `headers` and `env` in it instead of on the command
-  line, which any process on the runner can read.
+  (each a JSON array of toolmenu options and their values, put before `--`; no `--`
+  and no stray word in it). argv is readable by every user (`ps`); an environment only
+  by its own user, so this keeps credentials from other users, not from processes of
+  the same user (`/proc/<pid>/environ` keeps the value after `delete process.env`).
+  The Action passes `headers` and `env` this way to 0.26.0 and later; an older
+  `version` gets them as arguments, with a warning. `toolmenu mcp` clears both
+  variables for the runs it starts.
+- **File contents stay out of errors**: a menu file, `toolmenu.config.json` or a scan
+  list that isn't JSON is reported with where it broke (`jsonErrorAt`), never Node's
+  quote of the text around it. JUnit output writes CR, DEL, C1 and format characters
+  as character references.
 - **Smaller ones**: a menu file that isn't JSON is reported with where it broke, never
   Node's quote of its first bytes (`diff_menus` reads any path an agent gives it).
   `history` uses only registry versions shaped like semver (a file name and an npm

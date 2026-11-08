@@ -307,3 +307,20 @@ test('save_as writes only inside cwd: a new file, or a menu file it replaces', a
     assert.equal(JSON.parse(readFileSync(join(cwd, 'menu.json'), 'utf8')).tools.length, 3);
   });
 });
+
+test('TOOLMENU_ARGS holds only options and their values: no "--", no stray word, never echoed', async () => {
+  for (const [args, said] of [
+    [['--env', 'X=1', 'S3CRET'], /item 3 isn't one/],
+    [['--', 'node', 'evil.js'], /item 1 isn't one/],
+    [['--nope=S3CRET'], /--nope isn't an option/],
+    [['--header'], /needs a value/],
+  ]) {
+    const r = await run(['explain'], { env: { TOOLMENU_ARGS: JSON.stringify(args) } });
+    assert.equal(r.code, 2, JSON.stringify(args));
+    assert.match(r.stderr, said);
+    assert.doesNotMatch(r.stderr, /S3CRET|evil/);
+  }
+  // An option's value may start with "--" (it's the value): still fine.
+  const ok = await run(['explain'], { env: { TOOLMENU_ARGS: JSON.stringify(['--format', 'json']) } });
+  assert.equal(ok.code, 0, ok.stderr);
+});

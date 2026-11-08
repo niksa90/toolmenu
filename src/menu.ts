@@ -50,6 +50,15 @@ export function eraOf(protocolVersion: string | undefined): Era | undefined {
   return protocolVersion >= '2026-07-28' ? 'modern' : 'legacy';
 }
 
+/**
+ * Where JSON.parse gave up, "at position 12 (line 1 column 13)", or '' when Node didn't
+ * say. Never its whole message: Node quotes the text around the error, and the file may
+ * be one the user didn't mean to show (a symlink, a path an agent gave).
+ */
+export function jsonErrorAt(error: unknown): string {
+  return /at position \d+(?: \(line \d+ column \d+\))?/.exec(error instanceof Error ? error.message : '')?.[0] ?? '';
+}
+
 /** Read a menu.json written by `toolmenu snapshot`. */
 export async function loadMenu(path: string): Promise<Menu> {
   const { readFile } = await import('node:fs/promises');
@@ -66,7 +75,7 @@ export async function loadMenu(path: string): Promise<Menu> {
   } catch (error) {
     // Where, not what: Node's message quotes the file's first bytes, and the path may be
     // any file (toolmenu mcp's diff_menus takes one from an agent).
-    const at = /at position \d+(?: \(line \d+ column \d+\))?/.exec(error instanceof Error ? error.message : '')?.[0];
+    const at = jsonErrorAt(error);
     throw new Error(`${path} isn't valid JSON${at ? ` (${at})` : ''}. If it was cut short or edited by hand, write it again with \`toolmenu snapshot\`.`);
   }
   const menu = data as Partial<Menu>;

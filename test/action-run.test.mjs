@@ -413,3 +413,18 @@ test('action: headers and env reach the CLI in TOOLMENU_ARGS, never on its comma
   const none = runAction({ TOOLMENU_COMMAND: 'node server.js' });
   assert.equal(readFileSync(join(none.dir, 'stub-cli.sh.snapshot.env'), 'utf8'), 'unset');
 });
+
+test('action: an older toolmenu (the version input) gets headers as arguments, with a warning', () => {
+  const r = runAction({ ...url, TOOLMENU_CLI: '', TOOLMENU_VERSION: '0.25.2', TOOLMENU_HEADERS: 'x-api-key: k1' }, (dir) => {
+    // npx stands in for the CLI: the stub records its arguments the same way.
+    const bin = join(dir, 'bin');
+    mkdirSync(bin);
+    writeFileSync(join(bin, 'npx'), `#!/usr/bin/env bash\nshift; shift; exec "${join(dir, 'stub-cli.sh')}" "$@"\n`);
+    chmodSync(join(bin, 'npx'), 0o755);
+    return { PATH: `${bin}:${process.env.PATH}` };
+  });
+  const args = readFileSync(join(r.dir, 'stub-cli.sh.snapshot.args'), 'utf8').trim().split('\n');
+  assert.deepEqual(args.slice(-3), ['--header', 'x-api-key: k1', 'https://example.com/mcp']);
+  assert.equal(readFileSync(join(r.dir, 'stub-cli.sh.snapshot.env'), 'utf8'), 'unset');
+  assert.match(r.stdout, /::warning title=toolmenu::toolmenu 0\.25\.2 takes headers and env as arguments/);
+});

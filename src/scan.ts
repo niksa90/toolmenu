@@ -11,6 +11,7 @@ import { ConnectError, clean, commandLine } from './explain.js';
 import { counts, findingLines, githubLines, mdFindings, type Format } from './report.js';
 import { mdCode, mdText, plain } from './sanitize.js';
 import { snapshot, type SnapshotOptions } from './snapshot.js';
+import { jsonErrorAt } from './menu.js';
 import { SEVERITY_RANK, type Finding, type Menu, type Severity } from './types.js';
 
 export interface ScanEntry {
@@ -188,7 +189,8 @@ export function parseList(text: string, file: string, env: NodeJS.ProcessEnv = p
       // .jsonc and VS Code's settings allow comments; strip whole-line ones.
       json = JSON.parse(text.replace(/^\s*\/\/.*$/gm, ''));
     } catch (error) {
-      throw new ListError(`${file} isn't valid JSON: ${(error as Error).message}`);
+      const at = jsonErrorAt(error);
+      throw new ListError(`${file} isn't valid JSON${at ? ` (${at})` : ''}`);
     }
     const j = json as Record<string, unknown>;
     const servers = j.mcpServers ?? j.servers ?? (j.mcp as Record<string, unknown> | undefined)?.servers ?? j['mcp.servers'];

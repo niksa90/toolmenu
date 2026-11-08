@@ -770,15 +770,18 @@ Exit codes: `0` clean · `1` findings at or above `--fail-on` · `2` couldn't co
 (for `scan`: a server wasn't checked) or bad usage. `toolmenu <command> --help` lists that command's own options.
 
 Credentials on the command line (`--header`, `--env`, `--client-secret`) can be read by
-any other user of the machine while toolmenu runs (`ps`). To keep them off it, put the
-options in `TOOLMENU_ARGS`, a JSON array the CLI reads and then drops from its
-environment; they go before the server command's `--`:
+every user of the machine while toolmenu runs (`ps`). To keep them off it, put the
+options in `TOOLMENU_ARGS`, a JSON array of toolmenu options and their values; they go
+before the server command's `--`. A process's environment is readable only by its own
+user (and root), so this keeps them from other users, not from other processes of
+yours. jq builds the array whatever the token holds:
 
 ```sh
-TOOLMENU_ARGS='["--header", "Authorization: Bearer '"$TOKEN"'"]' npx toolmenu snapshot https://example.com/mcp
+TOOLMENU_ARGS=$(jq -cn --arg t "$TOKEN" '["--header", "Authorization: Bearer " + $t]') npx toolmenu snapshot https://example.com/mcp
 ```
 
-The GitHub Action passes its `headers` and `env` this way.
+The GitHub Action passes its `headers` and `env` this way (to toolmenu 0.26.0 and
+later; an older `version` gets them as arguments, with a warning).
 
 ## Limitations
 

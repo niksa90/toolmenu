@@ -58,14 +58,41 @@ FAIL_ON="${TOOLMENU_FAIL_ON:-error}"
 CONN=()
 while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--header "$line"); done <<< "${TOOLMENU_HEADERS:-}"
 while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--env "$line"); done <<< "${TOOLMENU_ENV:-}"
-# Not as arguments: any process on the runner can read another's argv (ps). The CLI
-# takes them from TOOLMENU_ARGS, a JSON array, and drops it from its environment.
+# Not as arguments: argv is readable by every user on the machine (ps). The CLI takes
+# them from TOOLMENU_ARGS, a JSON array, from 0.26.0 on; an older one (the version
+# input) gets them as arguments, as it always did, since it would ignore TOOLMENU_ARGS
+# and run without them.
 CONN_JSON=""
-if [ "${#CONN[@]}" -gt 0 ]; then
-  CONN_JSON=$(printf '%s\0' "${CONN[@]}" | node -e 'let d = ""; process.stdin.on("data", (c) => (d += c)).on("end", () => process.stdout.write(JSON.stringify(d.split("\0").slice(0, -1))))')
+CONN_IN_ARGS=false
+cli_version="${TOOLMENU_VERSION#v}"
+if [ -z "${TOOLMENU_CLI:-}" ] && [[ "$cli_version" =~ ^[0-9]+\.[0-9]+ ]] && [ "$(printf '%s\n%s\n' "$cli_version" 0.26.0 | sort -V | head -1)" != 0.26.0 ]; then
+  CONN_IN_ARGS=true
+  if [ "${#CONN[@]}" -gt 0 ]; then echo "::warning title=toolmenu::toolmenu $cli_version takes headers and env as arguments, which other users of the runner can read; 0.26.0 and later take them from the environment."; fi
+elif [ "${#CONN[@]}" -gt 0 ]; then
+  CONN_JSON=$(printf '%s\0' "${CONN[@]}" | node -e 'process.stdin.setEncoding("utf8"); let d = ""; process.stdin.on("data", (c) => (d += c)).on("end", () => process.stdout.write(JSON.stringify(d.split("\0").slice(0, -1))))')
 fi
-# Run the CLI with the connection options (the CLI command is word-split on purpose).
-run_cli() { if [ -n "$CONN_JSON" ]; then TOOLMENU_ARGS="$CONN_JSON" "$@"; else "$@"; fi; }
+# Run the CLI with the connection options (the CLI command is word-split on purpose):
+# in TOOLMENU_ARGS, or for an older CLI before the server command's "--".
+run_cli() {
+  if [ -n "$CONN_JSON" ]; then
+    TOOLMENU_ARGS="$CONN_JSON" "$@"
+  elif [ "$CONN_IN_ARGS" = true ] && [ "${#CONN[@]}" -gt 0 ]; then
+    # Before "--" (a command), or before the URL, the last argument: where they went before 0.26.0.
+    local args=() a seen=false n=0
+    for a in "$@"; do [ "$a" = -- ] && seen=true; done
+    for a in "$@"; do
+      n=$((n + 1))
+      if { [ "$seen" = true ] && [ "$a" = -- ]; } || { [ "$seen" = false ] && [ "$n" -eq "$#" ]; }; then
+        args+=("${CONN[@]}")
+        seen=done
+      fi
+      args+=("$a")
+    done
+    "${args[@]}"
+  else
+    "$@"
+  fi
+}
 # Each only applies to one kind of server: say so instead of ignoring it quietly.
 HEADERS_SET="${TOOLMENU_HEADERS:-}"; HEADERS_SET="${HEADERS_SET//[[:space:]]/}"
 ENV_SET="${TOOLMENU_ENV:-}"; ENV_SET="${ENV_SET//[[:space:]]/}"

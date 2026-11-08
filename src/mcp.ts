@@ -16,7 +16,7 @@ import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import * as z from 'zod';
 import { CLIENT_NAMES } from './clients.js';
 import { VERSION } from './version.js';
-import { SECRET_ARGS_ENV } from './mcp-env.js';
+import { ARGS_ENV, SECRET_ARGS_ENV } from './mcp-env.js';
 
 export { SECRET_ARGS_ENV };
 
@@ -110,6 +110,7 @@ export function runCli(args: string[], cwd: string, options: RunOptions = {}): P
     // were. Neither reaches the server under test: it gets a minimal environment.
     const env: NodeJS.ProcessEnv = { ...process.env, NO_COLOR: '1', NODE_NO_WARNINGS: '1' };
     delete env[SECRET_ARGS_ENV];
+    delete env[ARGS_ENV];
     if (secretArgs.length) env[SECRET_ARGS_ENV] = JSON.stringify(secretArgs);
     // detached: its own process group (Linux, macOS). On Windows it would open a console
     // window for every run instead, so there the run stays attached and hidden.

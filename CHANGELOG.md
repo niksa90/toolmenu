@@ -34,15 +34,18 @@ From a security audit of the repository.
 - **`scan` fills `${VAR}` only from variables you name** with `--allow-env` (or `'*'`).
   A config decides where each value goes, a URL included, so scanning someone else's
   `.mcp.json` could send any secret in your environment to their server.
-- **Credentials off the command line.** `TOOLMENU_ARGS` (a JSON array of arguments)
-  keeps `--header`, `--env` and `--client-secret` values out of `ps`; the Action passes
-  its `headers` and `env` that way.
+- **Credentials off the command line.** `TOOLMENU_ARGS` (a JSON array of options and
+  their values) keeps `--header`, `--env` and `--client-secret` values out of `ps`,
+  where every user of the machine can read them; the Action passes its `headers` and
+  `env` that way (to an older `version` still as arguments, with a warning).
 - **Release and CI workflows**: least-privilege tokens, every action pinned to a
   commit (Dependabot keeps them current), and the npm package built in a job apart
   from the tests and published from a job that runs no dependency. `toolmenu init`
   pins the actions it writes the same way.
-- Smaller: a menu file that isn't JSON is reported without quoting it; `history` uses
-  only semver-shaped registry versions; macOS runners (bash 3.2) get their SARIF files.
+- Smaller: a menu file, `toolmenu.config.json` or scan list that isn't JSON is
+  reported without quoting it; JUnit output escapes characters a terminal acts on;
+  `history` uses only semver-shaped registry versions; macOS runners (bash 3.2) get
+  their SARIF files.
 
 ### Breaking
 

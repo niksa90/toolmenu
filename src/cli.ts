@@ -257,7 +257,7 @@ export async function main(given: string[]): Promise<number> {
       onProgress: format === 'text' ? (m) => process.stderr.write(m + '\n') : undefined,
     });
     if (values.csv) await writeFile(values.csv, historyCsv(result));
-    process.stdout.write(show(formatHistory(result, format, outDir, values.csv)) + '\n');
+    writeUnguarded(process.stdout, show(formatHistory(result, format, outDir, values.csv)) + '\n');
     return result.rows.length > 0 && result.rows.every((r) => r.status === 'failed') ? 1 : 0;
   }
 
@@ -596,6 +596,17 @@ function withSecretArgs(argv: string[]): string[] {
       parsed = undefined;
     }
     if (!Array.isArray(parsed) || !parsed.every((a) => typeof a === 'string')) throw new UsageError(`${name} must be a JSON array of strings, e.g. ["--header", "Authorization: Bearer …"].`);
+    // Options and their values only: no "--" (it would move where the server command
+    // starts) and no stray word, which parseArgs would quote back, value and all.
+    for (let i = 0; i < parsed.length; i++) {
+      const option = /^--([^=]+)(=|$)/.exec(parsed[i]);
+      const known = option ? (CLI_OPTIONS as Record<string, { type: string } | undefined>)[option[1]] : undefined;
+      if (!option || !known) throw new UsageError(`${name} holds only toolmenu options and their values; item ${i + 1} isn't one${option ? ` (--${option[1]} isn't an option)` : ''}.`);
+      if (known.type === 'string' && option[2] !== '=') {
+        if (i + 1 >= parsed.length) throw new UsageError(`${name}: --${option[1]} needs a value after it.`);
+        i++;
+      }
+    }
     extra.push(...parsed);
   }
   if (!extra.length) return argv;
