@@ -107,15 +107,22 @@ base_ref() {
   fi
 }
 
+# A version as the release check reads it: 1.2.3, v1.2, 1.2.3-rc.1+build. Anything
+# else (spaces, a leading "-") is refused, so a manifest can't add CLI arguments.
+is_version() { [[ "$1" =~ ^v?[0-9]+(\.[0-9]+){0,2}([-+][0-9A-Za-z.+-]+)?$ ]]; }
+
+# RELEASE_ARGS: --release and its value, as one array element each, or nothing.
 release_args() {
+  RELEASE_ARGS=()
   local release="${TOOLMENU_RELEASE:-auto}"
   if [ "$release" = "off" ] || [ -z "$release" ]; then return; fi
-  if [ "$release" != "auto" ]; then echo "--release $release"; return; fi
+  # The workflow's own value, as one argument: diff says what's wrong with it.
+  if [ "$release" != "auto" ]; then RELEASE_ARGS=(--release "$release"); return; fi
   local version="${TOOLMENU_VERSION_SCRIPT:-$(dirname "$0")/version.mjs}"
   local base="$BASE"
   [ -n "$base" ] || return
   if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
-    echo "--release $base..${GITHUB_REF#refs/tags/}"
+    RELEASE_ARGS=(--release "$base..${GITHUB_REF#refs/tags/}")
     return
   fi
   local file before after
@@ -123,7 +130,14 @@ release_args() {
     [ -f "$file" ] || continue
     after=$(node "$version" "$file" < "$file")
     before=$(git show "$base:$file" 2>/dev/null | node "$version" "$file")
-    if [ -n "$before" ] && [ -n "$after" ]; then echo "--release $before..$after"; return; fi
+    if [ -n "$before" ] && [ -n "$after" ]; then
+      if ! is_version "$before" || ! is_version "$after"; then
+        echo "::warning title=toolmenu::$file's version isn't a plain version number on the base branch or here, so the version bump wasn't checked. Set the Action's 'release' input to check it."
+        return
+      fi
+      RELEASE_ARGS=(--release "$before..$after")
+      return
+    fi
   done
 }
 
@@ -272,8 +286,8 @@ else
     ERROR_SHOWN=true
     note 2
   elif [ -n "$BASELINE" ]; then
-    # shellcheck disable=SC2046
-    $CLI diff --format markdown ${SARIF_DIFF[@]+"${SARIF_DIFF[@]}"} --fail-on "$FAIL_ON" $(release_args) "$BASELINE" "$CURRENT" > "$OUT/diff.md" 2> "$OUT/diff.err"
+    release_args
+    $CLI diff --format markdown ${SARIF_DIFF[@]+"${SARIF_DIFF[@]}"} --fail-on "$FAIL_ON" ${RELEASE_ARGS[@]+"${RELEASE_ARGS[@]}"} "$BASELINE" "$CURRENT" > "$OUT/diff.md" 2> "$OUT/diff.err"
     code=$?; note "$code"
     if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:** $(head -1 "$OUT/diff.err")"; echo; } >> "$BODY"; else { sed -e "s/pass --release/set the Action's \`release\` input/" -e "s/Check the --release order/Check the order in the Action's \`release\` input/" "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
   else

@@ -313,3 +313,43 @@ test('action: with a personal token, only that account\'s comment is updated', {
   assert.match(ghCalls(r), /--method PATCH repos\/o\/r\/issues\/comments\/44/);
   assert.doesNotMatch(ghCalls(r), /comments\/55/);
 });
+
+/** A checkout whose base branch (main, fetched from origin) has package.json at `before`; the working tree has `after`. */
+function releaseRepo(before, after) {
+  return (dir) => {
+    const git = (...a) => spawnSync('git', ['-C', dir, ...a], { encoding: 'utf8' });
+    git('init', '-q', '-b', 'main');
+    git('config', 'user.email', 't@example.com');
+    git('config', 'user.name', 't');
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'x', version: before }));
+    writeFileSync(join(dir, 'menu.json'), JSON.stringify({ toolmenu: 1, tools: [] }));
+    git('add', 'package.json', 'menu.json');
+    git('commit', '-q', '-m', 'base');
+    git('remote', 'add', 'origin', dir);
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'x', version: after }));
+    return {};
+  };
+}
+const diffArgs = (r) => readFileSync(join(r.dir, 'stub-cli.sh.diff.args'), 'utf8').trim().split('\n');
+
+test('action: release auto passes the two versions as one --release value', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main' }, releaseRepo('1.0.0', '1.1.0'));
+  assert.ok(r.ran('diff'), r.stdout + r.stderr);
+  const args = diffArgs(r);
+  assert.equal(args[args.indexOf('--release') + 1], '1.0.0..1.1.0');
+});
+
+test('action: a manifest version with spaces or options in it adds no CLI arguments', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main' }, releaseRepo('1.0.0', '1.1.0 --html /tmp/pwned.html *'));
+  assert.ok(r.ran('diff'), r.stdout + r.stderr);
+  const args = diffArgs(r);
+  assert.ok(!args.includes('--html'), args.join(' '));
+  assert.ok(!args.includes('--release'), 'not checked with a version that isn\'t one');
+  assert.match(r.stdout, /::warning title=toolmenu::package\.json's version isn't a plain version number/);
+});
+
+test('action: the release input is passed as one argument, glob characters and all', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main', TOOLMENU_RELEASE: '1.0.0..2.0.0 *' }, releaseRepo('1.0.0', '1.1.0'));
+  const args = diffArgs(r);
+  assert.equal(args[args.indexOf('--release') + 1], '1.0.0..2.0.0 *');
+});
