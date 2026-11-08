@@ -160,3 +160,20 @@ test('cli: history usage errors exit 2', async () => {
   assert.equal((await run(['history', '--versions', '0', 'pkg'])).code, 2);
   assert.equal((await run(['history', '--', 'node', 'x.js'])).code, 2);
 });
+
+test('history passes over registry versions that aren\'t semver, before anything uses them', async () => {
+  const root = tempDir();
+  const installs = [];
+  const source = {
+    async versions() {
+      return ['1.0.0', '../../escape', '1.0.1 && calc', '2.0.0'].map((version) => ({ version }));
+    },
+    async install(pkg, version) {
+      installs.push(version);
+      throw new Error('not installed in this test');
+    },
+  };
+  const h = await history('fx-mcp', { outDir: join(root, 'out'), source, versions: 10, timeoutMs: 1000 });
+  assert.deepEqual(installs, ['1.0.0', '2.0.0']);
+  assert.deepEqual(h.rows.map((r) => r.version), ['1.0.0', '2.0.0']);
+});

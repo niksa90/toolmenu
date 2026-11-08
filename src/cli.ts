@@ -29,7 +29,7 @@ import { diffHtml, sessionHtml, snapshotHtml } from './html.js';
 import type { StepTool } from './session.js';
 import { badge, badgeMarkdown } from './badge.js';
 import { VERSION } from './version.js';
-import { SECRET_ARGS_ENV } from './mcp-env.js';
+import { ARGS_ENV, SECRET_ARGS_ENV } from './mcp-env.js';
 import { guardStream, plain, terminalSafe, writeUnguarded } from './sanitize.js';
 import { CLI_OPTIONS } from './options.js';
 import { editDistance } from './words.js';
@@ -577,21 +577,28 @@ function commandIn(args: string[]): Command | undefined {
 }
 
 /**
- * toolmenu mcp passes header and env values (credentials) in TOOLMENU_MCP_ARGS, a JSON
- * array of arguments, not on the command line: argv is readable by any local user.
- * They go before the server command's "--". Removed from the environment once read.
+ * Arguments the CLI takes from the environment, each a JSON array of arguments that
+ * goes before the server command's "--": TOOLMENU_ARGS, for anyone who'd rather keep
+ * --header, --env or --client-secret values off the command line (argv is readable by
+ * any local user), and TOOLMENU_MCP_ARGS, which toolmenu mcp passes credentials in.
+ * Each is removed from the environment once read.
  */
 function withSecretArgs(argv: string[]): string[] {
-  const raw = process.env[SECRET_ARGS_ENV];
-  if (raw === undefined) return argv;
-  delete process.env[SECRET_ARGS_ENV];
-  let extra: unknown;
-  try {
-    extra = JSON.parse(raw);
-  } catch {
-    extra = undefined;
+  const extra: string[] = [];
+  for (const name of [ARGS_ENV, SECRET_ARGS_ENV]) {
+    const raw = process.env[name];
+    if (raw === undefined) continue;
+    delete process.env[name];
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = undefined;
+    }
+    if (!Array.isArray(parsed) || !parsed.every((a) => typeof a === 'string')) throw new UsageError(`${name} must be a JSON array of strings, e.g. ["--header", "Authorization: Bearer …"].`);
+    extra.push(...parsed);
   }
-  if (!Array.isArray(extra) || !extra.every((a) => typeof a === 'string')) throw new UsageError(`${SECRET_ARGS_ENV} must be a JSON array of strings.`);
+  if (!extra.length) return argv;
   const dash = argv.indexOf('--');
   return dash === -1 ? [...argv, ...extra] : [...argv.slice(0, dash), ...extra, ...argv.slice(dash)];
 }

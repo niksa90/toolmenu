@@ -64,7 +64,10 @@ export async function loadMenu(path: string): Promise<Menu> {
   try {
     data = JSON.parse(text);
   } catch (error) {
-    throw new Error(`${path} isn't valid JSON: ${error instanceof Error ? error.message : String(error)}. If it was cut short or edited by hand, write it again with \`toolmenu snapshot\`.`);
+    // Where, not what: Node's message quotes the file's first bytes, and the path may be
+    // any file (toolmenu mcp's diff_menus takes one from an agent).
+    const at = /at position \d+(?: \(line \d+ column \d+\))?/.exec(error instanceof Error ? error.message : '')?.[0];
+    throw new Error(`${path} isn't valid JSON${at ? ` (${at})` : ''}. If it was cut short or edited by hand, write it again with \`toolmenu snapshot\`.`);
   }
   const menu = data as Partial<Menu>;
   if (menu?.toolmenu !== 1 || !Array.isArray(menu.tools)) {

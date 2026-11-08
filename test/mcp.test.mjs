@@ -235,6 +235,15 @@ test('TOOLMENU_MCP_ARGS: arguments the CLI takes from the environment, before "-
   assert.match(bad.stderr, /JSON array of strings/);
 });
 
+test('TOOLMENU_ARGS: the same for anyone, alongside TOOLMENU_MCP_ARGS', async () => {
+  const r = await run(['explain'], { env: { TOOLMENU_ARGS: '["--json"]' } });
+  assert.equal(r.code, 0, r.stderr);
+  assert.ok(Array.isArray(JSON.parse(r.stdout)));
+  const bad = await run(['explain'], { env: { TOOLMENU_ARGS: '"--json"' } });
+  assert.equal(bad.code, 2);
+  assert.match(bad.stderr, /TOOLMENU_ARGS must be a JSON array of strings/);
+});
+
 test('the tools that start a server say so: destructive, not idempotent', async () => {
   const conn = await connect(toolmenu(), { timeoutMs: TIMEOUT_MS });
   try {

@@ -146,7 +146,9 @@ Behind a proxy (`HTTPS_PROXY`), stdio servers get the proxy and CA settings
 (`HTTPS_PROXY`, `NO_PROXY`, `NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`…)
 along with the minimal environment, and `NODE_USE_ENV_PROXY=1` so a Node server's
 `fetch` uses the proxy. Without them a server that calls an API can't reach it, and
-fails as if it were broken.
+fails as if it were broken. A proxy URL with a password in it
+(`https://user:pass@proxy:8080`) reaches the server that way too: give a server you
+don't trust a proxy without one, or `--env HTTPS_PROXY=` to leave it out.
 
 ### Every server you use: `scan`
 
@@ -766,6 +768,17 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 
 Exit codes: `0` clean · `1` findings at or above `--fail-on` · `2` couldn't connect
 (for `scan`: a server wasn't checked) or bad usage. `toolmenu <command> --help` lists that command's own options.
+
+Credentials on the command line (`--header`, `--env`, `--client-secret`) can be read by
+any other user of the machine while toolmenu runs (`ps`). To keep them off it, put the
+options in `TOOLMENU_ARGS`, a JSON array the CLI reads and then drops from its
+environment; they go before the server command's `--`:
+
+```sh
+TOOLMENU_ARGS='["--header", "Authorization: Bearer '"$TOKEN"'"]' npx toolmenu snapshot https://example.com/mcp
+```
+
+The GitHub Action passes its `headers` and `env` this way.
 
 ## Limitations
 

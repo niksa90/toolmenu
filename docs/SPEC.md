@@ -1256,3 +1256,12 @@ everything a PR controls is untrusted. What changed:
   only `toolmenu init` uses, so Dependabot updates them, and `test/init.test.mjs`
   fails until `ACTIONS` in `src/init.ts` matches the pins in the workflows. `toolmenu init`'s
   workflow pins the actions it adds the same way (`ACTIONS` in `src/init.ts`).
+- **Credentials off argv**: the CLI reads `TOOLMENU_ARGS` as well as `TOOLMENU_MCP_ARGS`
+  (each a JSON array of arguments, put before `--` and dropped from the environment
+  once read). The Action passes `headers` and `env` in it instead of on the command
+  line, which any process on the runner can read.
+- **Smaller ones**: a menu file that isn't JSON is reported with where it broke, never
+  Node's quote of its first bytes (`diff_menus` reads any path an agent gives it).
+  `history` uses only registry versions shaped like semver (a file name and an npm
+  argument, through a shell on Windows). A proxy URL with a password in it reaches the
+  stdio server under test, as the proxy settings do: the README says so.

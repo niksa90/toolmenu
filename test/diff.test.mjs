@@ -816,3 +816,13 @@ test('resolveRefs: a bad percent-escape no longer stops expansion; anchors and $
   const data = resolveRefs({ type: 'object', properties: { c: { enum: [{ $ref: '#/$defs/B' }] } }, $defs: { B: { type: 'string' } } });
   assert.deepEqual(data.properties.c.enum, [{ $ref: '#/$defs/B' }]);
 });
+
+test('a menu file that isn\'t JSON: where it broke, never what the file holds', async () => {
+  const dir = tempDir();
+  const file = join(dir, 'secret.txt');
+  writeFileSync(file, 'root:x:0:0:root:/root:/bin/bash\n');
+  const r = await run(['diff', file, file]);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /isn't valid JSON/);
+  assert.doesNotMatch(r.stderr, /root:x|bin\/bash/);
+});

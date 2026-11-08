@@ -54,10 +54,18 @@ FAIL_ON="${TOOLMENU_FAIL_ON:-error}"
 
 # Connection options, one per line: HTTP headers ("Name: value", e.g. an API key
 # from a secret) and environment variables for a stdio server ("KEY=value"). They
-# go to the CLI as arguments and never into the report.
+# go to the CLI in its environment, and never into the report.
 CONN=()
 while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--header "$line"); done <<< "${TOOLMENU_HEADERS:-}"
 while IFS= read -r line; do [ -n "${line// }" ] && CONN+=(--env "$line"); done <<< "${TOOLMENU_ENV:-}"
+# Not as arguments: any process on the runner can read another's argv (ps). The CLI
+# takes them from TOOLMENU_ARGS, a JSON array, and drops it from its environment.
+CONN_JSON=""
+if [ "${#CONN[@]}" -gt 0 ]; then
+  CONN_JSON=$(printf '%s\0' "${CONN[@]}" | node -e 'let d = ""; process.stdin.on("data", (c) => (d += c)).on("end", () => process.stdout.write(JSON.stringify(d.split("\0").slice(0, -1))))')
+fi
+# Run the CLI with the connection options (the CLI command is word-split on purpose).
+run_cli() { if [ -n "$CONN_JSON" ]; then TOOLMENU_ARGS="$CONN_JSON" "$@"; else "$@"; fi; }
 # Each only applies to one kind of server: say so instead of ignoring it quietly.
 HEADERS_SET="${TOOLMENU_HEADERS:-}"; HEADERS_SET="${HEADERS_SET//[[:space:]]/}"
 ENV_SET="${TOOLMENU_ENV:-}"; ENV_SET="${ENV_SET//[[:space:]]/}"
@@ -246,7 +254,7 @@ run_session() {
   [ "$FROM_SESSION" = true ] && union=(--union-out "$OUT/union.json")
   # scenario: auto builds the steps from the menu (read-only tools only).
   [ "$TOOLMENU_SCENARIO" = auto ] && steps=(--auto)
-  $CLI session "${steps[@]}" --format markdown ${SARIF_SESSION[@]+"${SARIF_SESSION[@]}"} --fail-on "$FAIL_ON" ${union[@]+"${union[@]}"} ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
+  run_cli $CLI session "${steps[@]}" --format markdown ${SARIF_SESSION[@]+"${SARIF_SESSION[@]}"} --fail-on "$FAIL_ON" ${union[@]+"${union[@]}"} "${TARGET[@]}" > "$OUT/session.md" 2> "$OUT/session.err"
   SESSION_CODE=$?
   SESSION_RAN=true
 }
@@ -254,7 +262,7 @@ run_session() {
 # 1. Snapshot the menu this change produces.
 SNAPSHOT_OPTS=()
 [ "${TOOLMENU_CATALOG:-false}" = "true" ] && SNAPSHOT_OPTS+=(--catalog)
-$CLI snapshot ${SNAPSHOT_OPTS[@]+"${SNAPSHOT_OPTS[@]}"} --out "$OUT/current.json" --format markdown ${SARIF_SNAPSHOT[@]+"${SARIF_SNAPSHOT[@]}"} --fail-on "$FAIL_ON" ${CONN[@]+"${CONN[@]}"} "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
+run_cli $CLI snapshot ${SNAPSHOT_OPTS[@]+"${SNAPSHOT_OPTS[@]}"} --out "$OUT/current.json" --format markdown ${SARIF_SNAPSHOT[@]+"${SARIF_SNAPSHOT[@]}"} --fail-on "$FAIL_ON" "${TARGET[@]}" > "$OUT/snapshot.md" 2> "$OUT/snapshot.err"
 code=$?
 SKIPPED=false
 ERROR_SHOWN=false

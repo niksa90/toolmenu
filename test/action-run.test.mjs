@@ -14,7 +14,8 @@ function runAction(env, setup) {
   // Records its arguments, prints STUB_ERR to stderr and exits with STUB_CODE,
   // like a failed snapshot.
   // Also writes the file --union-out names, like session does.
-  writeFileSync(stub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$0.$1.args"\nfor ((i=1;i<$#;i++)); do if [ "${!i}" = --union-out ]; then j=$((i+1)); echo "{}" > "${!j}"; fi; done\nprintf "%s\\n" "$STUB_ERR" >&2\nexit "${STUB_CODE:-0}"\n');
+  // Also records TOOLMENU_ARGS, the connection options the Action passes in the environment.
+  writeFileSync(stub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$0.$1.args"\nprintf "%s" "${TOOLMENU_ARGS-unset}" > "$0.$1.env"\nfor ((i=1;i<$#;i++)); do if [ "${!i}" = --union-out ]; then j=$((i+1)); echo "{}" > "${!j}"; fi; done\nprintf "%s\\n" "$STUB_ERR" >&2\nexit "${STUB_CODE:-0}"\n');
   chmodSync(stub, 0o755);
   const r = spawnSync('bash', [join(ROOT, 'action/run.sh')], {
     cwd: dir,
@@ -399,4 +400,16 @@ test('action: error text in the report stays text: backticks can\'t close its co
   assert.match(block[2], /!\[x\]\(https:\/\/evil\.example/);
   // Nothing of it outside the block.
   assert.doesNotMatch(r.comment.replace(block[0], ''), /evil\.example|@org/);
+});
+
+test('action: headers and env reach the CLI in TOOLMENU_ARGS, never on its command line', () => {
+  const r = runAction({ ...url, TOOLMENU_HEADERS: 'Authorization: Bearer s3cret\nx-team: a b' });
+  const args = readFileSync(join(r.dir, 'stub-cli.sh.snapshot.args'), 'utf8');
+  assert.doesNotMatch(args, /s3cret|--header/);
+  assert.deepEqual(JSON.parse(readFileSync(join(r.dir, 'stub-cli.sh.snapshot.env'), 'utf8')), ['--header', 'Authorization: Bearer s3cret', '--header', 'x-team: a b']);
+  const stdio = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_ENV: 'API_KEY=k1' });
+  assert.deepEqual(JSON.parse(readFileSync(join(stdio.dir, 'stub-cli.sh.snapshot.env'), 'utf8')), ['--env', 'API_KEY=k1']);
+  // Without any, the variable isn't set at all (an empty one would be an error).
+  const none = runAction({ TOOLMENU_COMMAND: 'node server.js' });
+  assert.equal(readFileSync(join(none.dir, 'stub-cli.sh.snapshot.env'), 'utf8'), 'unset');
 });
