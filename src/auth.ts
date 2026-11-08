@@ -231,7 +231,8 @@ export class StoredOAuthProvider implements OAuthClientProvider {
 /** Hosts that only reach this machine: plain http is fine there (RFC 8252, OAuth 2.1). */
 function isLoopback(hostname: string): boolean {
   const h = hostname.toLowerCase().replace(/\.$/, '');
-  return h === 'localhost' || h.endsWith('.localhost') || /^127(\.\d{1,3}){3}$/.test(h) || h === '[::1]';
+  // [::ffff:7f00:1]: 127.0.0.1 written as IPv6 (the URL parser normalizes [::ffff:127.0.0.1] to it).
+  return h === 'localhost' || h.endsWith('.localhost') || /^127(\.\d{1,3}){3}$/.test(h) || h === '[::1]' || /^\[::ffff:7f[0-9a-f]{2}:[0-9a-f]{1,4}\]$/.test(h);
 }
 
 /**

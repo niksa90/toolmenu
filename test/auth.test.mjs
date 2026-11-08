@@ -309,10 +309,10 @@ test('auth login --no-browser: a bad line, then the address, piped in: the secon
 });
 
 test('unsafeAuthorizationUrl: https, or http to this machine; never another scheme', () => {
-  for (const ok of ['https://auth.example.com/authorize?x=1', 'http://127.0.0.1:9000/authorize', 'http://localhost/a', 'http://app.localhost/a', 'http://[::1]:8080/a']) {
+  for (const ok of ['https://auth.example.com/authorize?x=1', 'http://127.0.0.1:9000/authorize', 'http://localhost/a', 'http://app.localhost/a', 'http://[::1]:8080/a', 'http://[::ffff:127.0.0.1]/a']) {
     assert.equal(unsafeAuthorizationUrl(new URL(ok)), undefined, ok);
   }
-  for (const bad of ['file:///C:/Windows/System32/calc.exe', 'smb://evil.example/share/x.exe', 'ms-officecmd:x', 'search-ms:query=x', 'http://evil.example/authorize', 'http://127.0.0.1.evil.example/a', 'https://user:pw@auth.example.com/a']) {
+  for (const bad of ['file:///C:/Windows/System32/calc.exe', 'smb://evil.example/share/x.exe', 'ms-officecmd:x', 'search-ms:query=x', 'http://evil.example/authorize', 'http://127.0.0.1.evil.example/a', 'https://user:pw@auth.example.com/a', 'http://[::ffff:10.0.0.1]/a']) {
     assert.ok(unsafeAuthorizationUrl(new URL(bad)), bad);
   }
 });
@@ -323,14 +323,15 @@ test('auth login: a login address that is not https is never opened or printed',
     const server = await start({ authorizationEndpoint: endpoint });
     try {
       let opened = false;
-      await assert.rejects(login(server.url, { port: port(), open: () => (opened = true) }), (e) => /won't open/.test(e.message) && /https/.test(e.message));
+      // A short timeout: if the check ever regressed, this fails at once instead of waiting for a callback.
+      await assert.rejects(login(server.url, { port: port(), timeoutMs: 2000, open: () => (opened = true) }), (e) => /won't open/.test(e.message) && /https/.test(e.message));
       assert.equal(opened, false, endpoint);
       // --no-browser prints the address instead: refused before that too.
       const err = process.stderr.write;
       let printed = '';
       process.stderr.write = (chunk, ...rest) => ((printed += chunk), true);
       try {
-        await assert.rejects(login(server.url, { port: port(), noBrowser: true, paste: async () => 'never' }), /won't open/);
+        await assert.rejects(login(server.url, { port: port(), noBrowser: true, timeoutMs: 2000, paste: async () => 'never' }), /won't open/);
       } finally {
         process.stderr.write = err;
       }
