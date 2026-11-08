@@ -316,15 +316,28 @@ OUTPUTS_WRITTEN=true
 if [ "${TOOLMENU_COMMENT:-true}" = "true" ] && [ -n "${TOOLMENU_PR:-}" ] && [ -n "${GH_TOKEN:-}" ]; then
   # Only a comment this token wrote is updated: anyone can post a comment with the
   # marker in it, and editing theirs would put the report under their name, for
-  # them to rewrite. A personal token: its own login. The job's token or an app's
-  # (no /user): a bot's comment, which only an app installed on the repository can write.
-  author=$(gh api user --jq .login 2>/dev/null)
-  if [[ "$author" =~ ^[A-Za-z0-9-]+$ ]]; then mine=".user.login == \"$author\""; else mine='.user.type == "Bot"'; fi
-  existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" --paginate --jq ".[] | select($mine and (.body | startswith(\"$MARKER\"))) | .id" 2>/dev/null | head -1)
-  if [ -n "$existing" ]; then
-    gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't update the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
+  # them to rewrite. The job's own token: github-actions[bot]. A personal token: its
+  # login. An app's token (it can't read /user): a bot's comment, which only an app
+  # installed on the repository can write.
+  mine=""
+  if [ -n "${TOOLMENU_JOB_TOKEN:-}" ] && [ "$GH_TOKEN" = "$TOOLMENU_JOB_TOKEN" ]; then
+    mine='.user.login == "github-actions[bot]"'
+  elif who=$(gh api user --jq .login 2> "$OUT/gh-user.err"); then
+    [[ "$who" =~ ^[A-Za-z0-9_-]+$ ]] && mine=".user.login == \"$who\""
+  # gh prints the error body on stdout and its own message on stderr: either may say it.
+  elif who="$who $(cat "$OUT/gh-user.err" 2>/dev/null)"; [[ "$who" == *"Resource not accessible by integration"* ]]; then
+    mine='.user.type == "Bot"'
+  fi
+  if [ -z "$mine" ]; then
+    # Not knowing whose comment is whose, touch none: the report is still in the job summary.
+    echo "::warning title=toolmenu::Couldn't tell which account the token belongs to (GitHub said: $(echo "$who" | head -1 | cut -c1-200)), so the report wasn't posted as a PR comment. It's in the job summary."
   else
-    gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't post the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
+    existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" --paginate --jq ".[] | select($mine and (.body | startswith(\"$MARKER\"))) | .id" 2>/dev/null | head -1)
+    if [ -n "$existing" ]; then
+      gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't update the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
+    else
+      gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$TOOLMENU_PR/comments" -F "body=@$BODY" > /dev/null || echo "::warning title=toolmenu::Couldn't post the PR comment: the token needs pull-requests: write (PRs from forks and Dependabot get a read-only one). The report is in the job summary."
+    fi
   fi
 fi
 

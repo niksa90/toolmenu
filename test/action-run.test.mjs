@@ -267,8 +267,8 @@ test('action: without sarif, no SARIF arguments', () => {
 });
 
 /** The PR comment step, with a `gh` stub: `api user` answers GH_USER (or fails, like the job's token), the comments list is COMMENTS, run through the script's own --jq filter. */
-function runComment(comments, user) {
-  return runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_COMMENT: 'true', TOOLMENU_PR: '7', GH_TOKEN: 't', GITHUB_REPOSITORY: 'o/r' }, (dir) => {
+function runComment(comments, user, { jobToken, userError = 'Resource not accessible by integration' } = {}) {
+  return runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_COMMENT: 'true', TOOLMENU_PR: '7', GH_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', ...(jobToken ? { TOOLMENU_JOB_TOKEN: jobToken } : {}) }, (dir) => {
     const bin = join(dir, 'bin');
     mkdirSync(bin);
     writeFileSync(join(dir, 'comments.json'), JSON.stringify(comments));
@@ -277,18 +277,20 @@ function runComment(comments, user) {
       [
         '#!/usr/bin/env bash',
         'printf "%s\\n" "$*" >> "$GH_LOG"',
-        'if [ "$2" = user ]; then [ -n "$GH_USER" ] && { echo "$GH_USER"; exit 0; }; echo "Resource not accessible by integration" >&2; exit 1; fi',
+        // Like gh: the error body on stdout, its own line on stderr.
+        'if [ "$2" = user ]; then [ -n "$GH_USER" ] && { echo "$GH_USER"; exit 0; }; printf \'{"message":"%s","status":"403"}\\n\' "$GH_USER_ERROR"; echo "gh: $GH_USER_ERROR (HTTP 403)" >&2; exit 1; fi',
         'for ((i=1;i<=$#;i++)); do if [ "${!i}" = --jq ]; then j=$((i+1)); jq -r "${!j}" "$GH_COMMENTS"; exit; fi; done',
         'exit 0',
       ].join('\n'),
     );
     chmodSync(join(bin, 'gh'), 0o755);
-    return { PATH: `${bin}:${process.env.PATH}`, GH_LOG: join(dir, 'gh.log'), GH_COMMENTS: join(dir, 'comments.json'), GH_USER: user ?? '' };
+    return { PATH: `${bin}:${process.env.PATH}`, GH_LOG: join(dir, 'gh.log'), GH_COMMENTS: join(dir, 'comments.json'), GH_USER: user ?? '', GH_USER_ERROR: userError };
   });
 }
 const ghCalls = (r) => readFileSync(join(r.dir, 'gh.log'), 'utf8');
 const MARKER = '<!-- toolmenu-report -->';
-const hasJq = spawnSync('jq', ['--version']).status === 0;
+// jq is on GitHub's runners: in CI a missing jq fails these tests instead of skipping them.
+const hasJq = spawnSync('jq', ['--version']).status === 0 || !!process.env.CI;
 
 test('action: the PR comment updated is the bot\'s own, never one anyone else wrote with the marker', { skip: !hasJq && 'needs jq' }, () => {
   const someone = { id: 11, user: { login: 'mallory', type: 'User' }, body: `${MARKER}\nall clear` };
@@ -352,4 +354,31 @@ test('action: the release input is passed as one argument, glob characters and a
   const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_BASE_REF: 'main', TOOLMENU_RELEASE: '1.0.0..2.0.0 *' }, releaseRepo('1.0.0', '1.1.0'));
   const args = diffArgs(r);
   assert.equal(args[args.indexOf('--release') + 1], '1.0.0..2.0.0 *');
+});
+
+test('action: with the job\'s own token, only github-actions[bot]\'s comment counts', { skip: !hasJq && 'needs jq' }, () => {
+  const otherBot = { id: 66, user: { login: 'echo-bot[bot]', type: 'Bot' }, body: `${MARKER}\nfake` };
+  const actions = { id: 77, user: { login: 'github-actions[bot]', type: 'Bot' }, body: `${MARKER}\n## toolmenu` };
+  let r = runComment([otherBot, actions], undefined, { jobToken: 't' });
+  assert.match(ghCalls(r), /--method PATCH repos\/o\/r\/issues\/comments\/77/);
+  assert.doesNotMatch(ghCalls(r), /comments\/66|api user/);
+  r = runComment([otherBot], undefined, { jobToken: 't' });
+  assert.match(ghCalls(r), /--method POST/);
+});
+
+test('action: a personal token never takes another person\'s comment; enterprise logins work', { skip: !hasJq && 'needs jq' }, () => {
+  const other = { id: 88, user: { login: 'mallory', type: 'User' }, body: `${MARKER}\nall clear` };
+  const mine = { id: 99, user: { login: 'jdoe_acme', type: 'User' }, body: `${MARKER}\n## toolmenu` };
+  let r = runComment([other], 'jdoe_acme');
+  assert.match(ghCalls(r), /--method POST/);
+  assert.doesNotMatch(ghCalls(r), /PATCH/);
+  r = runComment([other, mine], 'jdoe_acme');
+  assert.match(ghCalls(r), /--method PATCH repos\/o\/r\/issues\/comments\/99/);
+});
+
+test('action: when the token\'s account can\'t be told, no comment is edited or posted', { skip: !hasJq && 'needs jq' }, () => {
+  const bot = { id: 22, user: { login: 'github-actions[bot]', type: 'Bot' }, body: `${MARKER}\n## toolmenu` };
+  const r = runComment([bot], undefined, { userError: 'API rate limit exceeded' });
+  assert.doesNotMatch(ghCalls(r), /PATCH|POST/);
+  assert.match(r.stdout, /::warning title=toolmenu::Couldn't tell which account the token belongs to.*rate limit/);
 });
