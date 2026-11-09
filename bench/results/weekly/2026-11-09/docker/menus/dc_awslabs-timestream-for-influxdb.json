@@ -1,0 +1,1949 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "awslabs.timestream-for-influxdb-mcp-server",
+    "version": "1.23.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:16:44.191Z",
+  "tools": [
+    {
+      "name": "CreateDbCluster",
+      "description": "Create a new Timestream for InfluxDB database cluster.",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "description": "The name that uniquely identifies the DB cluster when interacting with the Amazon Timestream for InfluxDB API and CLI commands. This name will also be a prefix included in the endpoint.",
+            "title": "Name",
+            "type": "string"
+          },
+          "db_instance_type": {
+            "description": "The Timestream for InfluxDB DB instance type to run InfluxDB on.",
+            "title": "Db Instance Type",
+            "type": "string"
+          },
+          "password": {
+            "description": "The password of the initial admin user created in InfluxDB. This password will allow you to access the InfluxDB UI to perform various administrative task and also use the InfluxDB CLI to create an operator token.",
+            "title": "Password",
+            "type": "string"
+          },
+          "allocated_storage_gb": {
+            "description": "The amount of storage to allocate for your DB storage type in GiB (gibibytes).",
+            "title": "Allocated Storage Gb",
+            "type": "integer"
+          },
+          "vpc_security_group_ids": {
+            "description": "A list of VPC security group IDs to associate with the DB.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Vpc Security Group Ids",
+            "type": "array"
+          },
+          "vpc_subnet_ids": {
+            "description": "A list of VPC subnet IDs to associate with the DB. Provide at least two VPC subnet IDs in different Availability Zones when deploying with a Multi-AZ standby.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Vpc Subnet Ids",
+            "type": "array"
+          },
+          "publicly_accessible": {
+            "default": true,
+            "description": "Configures the DB with a public IP to facilitate access from outside the VPC.",
+            "title": "Publicly Accessible",
+            "type": "boolean"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The username of the initial admin user created in InfluxDB.",
+            "title": "Username"
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The name of the initial organization for the initial admin user in InfluxDB.An InfluxDB organization is a workspace for a group of users",
+            "title": "Organization"
+          },
+          "bucket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The name of the initial InfluxDB bucket.",
+            "title": "Bucket"
+          },
+          "db_storage_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The Timestream for InfluxDB DB storage type to read and write InfluxDB data.",
+            "title": "Db Storage Type"
+          },
+          "deployment_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specifies whether the DB instance will be deployed as a standalone instance or with a Multi-AZ standby for high availability.",
+            "title": "Deployment Type"
+          },
+          "networkType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specifies whether the network type of the Timestream for InfluxDB cluster is IPv4 or DUAL.",
+            "title": "Networktype"
+          },
+          "port": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The port number on which InfluxDB accepts connections. Default: 8086",
+            "title": "Port"
+          },
+          "db_parameter_group_identifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The id of the DB parameter group to assign to your DB.",
+            "title": "Db Parameter Group Identifier"
+          },
+          "failover_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specifies the behavior of failure recovery when the primary node of the cluster fails.",
+            "title": "Failover Mode"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "A list of tags to assign to the DB.",
+            "title": "Tags"
+          },
+          "log_delivery_configuration": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Configuration for sending InfluxDB engine logs to a specified S3 bucket.",
+            "title": "Log Delivery Configuration"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "db_instance_type",
+          "password",
+          "allocated_storage_gb",
+          "vpc_security_group_ids",
+          "vpc_subnet_ids"
+        ],
+        "title": "create_db_clusterArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "create_db_clusterOutput",
+        "type": "object"
+      },
+      "tokens": 949
+    },
+    {
+      "name": "CreateDbInstance",
+      "description": "Create a new Timestream for InfluxDB database instance",
+      "inputSchema": {
+        "properties": {
+          "db_instance_name": {
+            "description": "The name that uniquely identifies the DB instance. This name will also be a prefix included in the endpoint. DB instance names must be unique per customer and per region.",
+            "title": "Db Instance Name",
+            "type": "string"
+          },
+          "db_instance_type": {
+            "description": "The Timestream for InfluxDB DB instance type to run InfluxDB on.",
+            "title": "Db Instance Type",
+            "type": "string"
+          },
+          "password": {
+            "description": "The password of the initial admin user created in InfluxDB. This password will allow you to access the InfluxDB UI to perform various administrative task and also use the InfluxDB CLI to create an operator token.",
+            "title": "Password",
+            "type": "string"
+          },
+          "allocated_storage_gb": {
+            "description": "The amount of storage to allocate for your DB storage type in GiB (gibibytes).",
+            "title": "Allocated Storage Gb",
+            "type": "integer"
+          },
+          "vpc_security_group_ids": {
+            "description": "A list of VPC security group IDs to associate with the DB.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Vpc Security Group Ids",
+            "type": "array"
+          },
+          "vpc_subnet_ids": {
+            "description": "A list of VPC subnet IDs to associate with the DB. Provide at least two VPC subnet IDs in different Availability Zones when deploying with a Multi-AZ standby.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Vpc Subnet Ids",
+            "type": "array"
+          },
+          "publicly_accessible": {
+            "default": true,
+            "description": "Configures the DB with a public IP to facilitate access from outside the VPC.",
+            "title": "Publicly Accessible",
+            "type": "boolean"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The username of the initial admin user created in InfluxDB.",
+            "title": "Username"
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The name of the initial organization for the initial admin user in InfluxDB.An InfluxDB organization is a workspace for a group of users",
+            "title": "Organization"
+          },
+          "bucket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The name of the initial InfluxDB bucket.",
+            "title": "Bucket"
+          },
+          "db_storage_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The Timestream for InfluxDB DB storage type to read and write InfluxDB data.",
+            "title": "Db Storage Type"
+          },
+          "deployment_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specifies whether the DB instance will be deployed as a standalone instance or with a Multi-AZ standby for high availability.",
+            "title": "Deployment Type"
+          },
+          "networkType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specifies whether the network type of the Timestream for InfluxDB cluster is IPv4 or DUAL.",
+            "title": "Networktype"
+          },
+          "port": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The port number on which InfluxDB accepts connections. Default: 8086",
+            "title": "Port"
+          },
+          "db_parameter_group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The id of the DB parameter group to assign to your DB.",
+            "title": "Db Parameter Group Id"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "A list of tags to assign to the DB.",
+            "title": "Tags"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "db_instance_name",
+          "db_instance_type",
+          "password",
+          "allocated_storage_gb",
+          "vpc_security_group_ids",
+          "vpc_subnet_ids"
+        ],
+        "title": "create_db_instanceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "create_db_instanceOutput",
+        "type": "object"
+      },
+      "tokens": 855
+    },
+    {
+      "name": "LsInstancesOfCluster",
+      "description": "List all Timestream for InfluxDB instances belonging to a specific DB cluster.",
+      "inputSchema": {
+        "properties": {
+          "db_cluster_id": {
+            "description": "Service-generated unique identifier of the DB cluster.",
+            "title": "Db Cluster Id",
+            "type": "string"
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The pagination token. To resume pagination, provide the next-token value as an argument of a subsequent API invocation.",
+            "title": "Next Token"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The maximum number of items to return in the output. If the total number of items available is more than the value specified, a nextToken is provided in the output.",
+            "title": "Max Results"
+          }
+        },
+        "required": [
+          "db_cluster_id"
+        ],
+        "title": "list_db_instances_for_clusterArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_db_instances_for_clusterOutput",
+        "type": "object"
+      },
+      "tokens": 190
+    },
+    {
+      "name": "ListDbInstances",
+      "description": "List all Timestream for InfluxDB DB instances",
+      "inputSchema": {
+        "properties": {
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The pagination token. To resume pagination, provide the next-token value as an argument of a subsequent API invocation.",
+            "title": "Next Token"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The maximum number of items to return in the output. If the total number of items available is more than the value specified, a nextToken is provided in the output.",
+            "title": "Max Results"
+          }
+        },
+        "title": "list_db_instancesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_db_instancesOutput",
+        "type": "object"
+      },
+      "tokens": 149
+    },
+    {
+      "name": "ListDbClusters",
+      "description": "List all Timestream for InfluxDB DB clusters.",
+      "inputSchema": {
+        "properties": {
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The pagination token. To resume pagination, provide the next-token value as an argument of a subsequent API invocation.",
+            "title": "Next Token"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The maximum number of items to return in the output. If the total number of items available is more than the value specified, a nextToken is provided in the output.",
+            "title": "Max Results"
+          }
+        },
+        "title": "list_db_clustersArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_db_clustersOutput",
+        "type": "object"
+      },
+      "tokens": 149
+    },
+    {
+      "name": "GetDbParameterGroup",
+      "description": "Get a Timestream for InfluxDB DB parameter group details for a db_parameter_group_id",
+      "inputSchema": {
+        "properties": {
+          "identifier": {
+            "description": "The id of the DB parameter group.",
+            "title": "Identifier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "get_db_parameter_groupArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_db_parameter_groupOutput",
+        "type": "object"
+      },
+      "tokens": 73
+    },
+    {
+      "name": "GetDbInstance",
+      "description": "Returns a Timestream for InfluxDB DB instance details by the instance-identifier",
+      "inputSchema": {
+        "properties": {
+          "identifier": {
+            "description": "The id of the DB instance.",
+            "title": "Identifier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "get_db_instanceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_db_instanceOutput",
+        "type": "object"
+      },
+      "tokens": 68
+    },
+    {
+      "name": "GetDbCluster",
+      "description": "Returns a Timestream for InfluxDB DB cluster details by the db_cluster_id",
+      "inputSchema": {
+        "properties": {
+          "db_cluster_id": {
+            "description": "Service-generated unique identifier of the DB cluster.",
+            "title": "Db Cluster Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "db_cluster_id"
+        ],
+        "title": "get_db_clusterArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_db_clusterOutput",
+        "type": "object"
+      },
+      "tokens": 76
+    },
+    {
+      "name": "DeleteDbInstance",
+      "description": "Deletes a Timestream for InfluxDB DB instance by the instance-identifier",
+      "inputSchema": {
+        "properties": {
+          "identifier": {
+            "description": "The id of the DB instance.",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "delete_db_instanceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "delete_db_instanceOutput",
+        "type": "object"
+      },
+      "tokens": 115
+    },
+    {
+      "name": "DeleteDbCluster",
+      "description": "Deletes a Timestream for InfluxDB cluster by the db_cluster_id",
+      "inputSchema": {
+        "properties": {
+          "db_cluster_id": {
+            "description": "Service-generated unique identifier of the DB cluster.",
+            "title": "Db Cluster Id",
+            "type": "string"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "db_cluster_id"
+        ],
+        "title": "delete_db_clusterArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "delete_db_clusterOutput",
+        "type": "object"
+      },
+      "tokens": 122
+    },
+    {
+      "name": "ListDbParamGroups",
+      "description": "List all Timestream for InfluxDB DB parameter groups.",
+      "inputSchema": {
+        "properties": {
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The pagination token. To resume pagination, provide the next-token value as an argument of a subsequent API invocation.",
+            "title": "Next Token"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The maximum number of items to return in the output. If the total number of items available is more than the value specified, a nextToken is provided in the output.",
+            "title": "Max Results"
+          }
+        },
+        "title": "list_db_parameter_groupsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_db_parameter_groupsOutput",
+        "type": "object"
+      },
+      "tokens": 152
+    },
+    {
+      "name": "ListTagsForResource",
+      "description": "A list of tags applied to the resource.",
+      "inputSchema": {
+        "properties": {
+          "resource_arn": {
+            "description": "The Amazon Resource Name (ARN) of the tagged resource.",
+            "title": "Resource Arn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_arn"
+        ],
+        "title": "list_tags_for_resourceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_tags_for_resourceOutput",
+        "type": "object"
+      },
+      "tokens": 71
+    },
+    {
+      "name": "TagResource",
+      "description": "Tags are composed of a Key/Value pairs. Apply them to Timestream for InfluxDB resource.",
+      "inputSchema": {
+        "properties": {
+          "resource_arn": {
+            "description": "The Amazon Resource Name (ARN) of the tagged resource.",
+            "title": "Resource Arn",
+            "type": "string"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "A list of key-value pairs as tags.",
+            "title": "Tags",
+            "type": "object"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "resource_arn",
+          "tags"
+        ],
+        "title": "tag_resourceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "tag_resourceOutput",
+        "type": "object"
+      },
+      "tokens": 160
+    },
+    {
+      "name": "UntagResource",
+      "description": "Removes the tags, identified by the keys, from the specified resource.",
+      "inputSchema": {
+        "properties": {
+          "resource_arn": {
+            "description": "The Amazon Resource Name (ARN) of the tagged resource.",
+            "title": "Resource Arn",
+            "type": "string"
+          },
+          "tag_keys": {
+            "description": "The keys used to identify the tags to remove.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Tag Keys",
+            "type": "array"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "resource_arn",
+          "tag_keys"
+        ],
+        "title": "untag_resourceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "untag_resourceOutput",
+        "type": "object"
+      },
+      "tokens": 158
+    },
+    {
+      "name": "UpdateDbCluster",
+      "description": "Updates a Timestream for InfluxDB cluster.",
+      "inputSchema": {
+        "properties": {
+          "db_cluster_id": {
+            "description": "Service-generated unique identifier of the DB cluster.",
+            "title": "Db Cluster Id",
+            "type": "string"
+          },
+          "db_instance_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Update the DB cluster to use the specified DB instance Type.",
+            "title": "Db Instance Type"
+          },
+          "db_parameter_group_identifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Update the DB cluster to use the specified DB parameter group.",
+            "title": "Db Parameter Group Identifier"
+          },
+          "port": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Update the DB cluster to use the specified port.",
+            "title": "Port"
+          },
+          "failover_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Update the DB cluster's failover behavior.",
+            "title": "Failover Mode"
+          },
+          "log_delivery_configuration": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The log delivery configuration to apply to the DB cluster.",
+            "title": "Log Delivery Configuration"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "db_cluster_id"
+        ],
+        "title": "update_db_clusterArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "update_db_clusterOutput",
+        "type": "object"
+      },
+      "tokens": 324
+    },
+    {
+      "name": "UpdateDbInstance",
+      "description": "Updates a Timestream for InfluxDB DB instance.",
+      "inputSchema": {
+        "properties": {
+          "identifier": {
+            "description": "The id of the DB instance.",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "db_instance_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Update the DB cluster to use the specified DB instance Type.",
+            "title": "Db Instance Type"
+          },
+          "db_parameter_group_identifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The id of the DB parameter group to assign to your DB.",
+            "title": "Db Parameter Group Identifier"
+          },
+          "port": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The port number on which InfluxDB accepts connections. Default: 8086",
+            "title": "Port"
+          },
+          "allocated_storage_gb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The amount of storage to allocate for your DB storage type (in gibibytes).",
+            "title": "Allocated Storage Gb"
+          },
+          "db_storage_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The Timestream for InfluxDB DB storage type to read and write InfluxDB data.",
+            "title": "Db Storage Type"
+          },
+          "deployment_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specifies whether the DB instance will be deployed as a standalone instance or with a Multi-AZ standby for high availability.",
+            "title": "Deployment Type"
+          },
+          "log_delivery_configuration": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Configuration for sending InfluxDB engine logs to a specified S3 bucket.",
+            "title": "Log Delivery Configuration"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "update_db_instanceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "update_db_instanceOutput",
+        "type": "object"
+      },
+      "tokens": 441
+    },
+    {
+      "name": "LsInstancesByStatus",
+      "description": "Returns a list of Timestream for InfluxDB DB instances filtered by status (case-insensitive).",
+      "inputSchema": {
+        "properties": {
+          "status": {
+            "description": "The status to filter DB instances by (case-insensitive).",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "list_db_instances_by_statusArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_db_instances_by_statusOutput",
+        "type": "object"
+      },
+      "tokens": 81
+    },
+    {
+      "name": "ListClustersByStatus",
+      "description": "Returns a list of Timestream for InfluxDB DB clusters filtered by status (case-insensitive).",
+      "inputSchema": {
+        "properties": {
+          "status": {
+            "description": "The status to filter DB clusters by (case-insensitive).",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "list_db_clusters_by_statusArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_db_clusters_by_statusOutput",
+        "type": "object"
+      },
+      "tokens": 81
+    },
+    {
+      "name": "CreateDbParamGroup",
+      "description": "Creates a new Timestream for InfluxDB DB parameter group to associate with DB instances.",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "description": "The name of the DB parameter group. The name must be unique per customer and per region.",
+            "title": "Name",
+            "type": "string"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "A description of the DB parameter group.",
+            "title": "Description"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "A list of the parameters that comprise the DB parameter group.",
+            "title": "Parameters"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "A list of tags to assign to the DB.",
+            "title": "Tags"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "create_db_parameter_groupArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "create_db_parameter_groupOutput",
+        "type": "object"
+      },
+      "tokens": 252
+    },
+    {
+      "name": "InfluxDBWritePoints",
+      "description": "Write data points to InfluxDB endpoint.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The URL of the InfluxDB server. Falls back to INFLUXDB_URL env var if not provided.",
+            "title": "Url"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The authentication token. Falls back to INFLUXDB_TOKEN env var if not provided.",
+            "title": "Token"
+          },
+          "bucket": {
+            "description": "The destination bucket for writes.",
+            "title": "Bucket",
+            "type": "string"
+          },
+          "org": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The organization name. Falls back to INFLUXDB_ORG env var if not provided.",
+            "title": "Org"
+          },
+          "points": {
+            "description": "List of data points to write. Each point should be a dictionary with measurement, tags, fields, and optional time.",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "time_precision": {
+            "default": "ns",
+            "description": "The precision for the unix timestamps within the body line-protocol. One of: ns, us, ms, s (default is ns).",
+            "title": "Time Precision",
+            "type": "string"
+          },
+          "sync_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "synchronous",
+            "description": "The synchronization mode, either 'synchronous' or 'asynchronous'.",
+            "title": "Sync Mode"
+          },
+          "verify_ssl": {
+            "default": true,
+            "description": "Whether to verify SSL with https connections.",
+            "title": "Verify Ssl",
+            "type": "boolean"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bucket",
+          "points"
+        ],
+        "title": "influxdb_write_pointsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "influxdb_write_pointsOutput",
+        "type": "object"
+      },
+      "tokens": 419
+    },
+    {
+      "name": "InfluxDBWriteLP",
+      "description": "Write data in Line Protocol format to InfluxDB.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The URL of the InfluxDB server. Falls back to INFLUXDB_URL env var if not provided.",
+            "title": "Url"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The authentication token. Falls back to INFLUXDB_TOKEN env var if not provided.",
+            "title": "Token"
+          },
+          "bucket": {
+            "description": "The destination bucket for writes.",
+            "title": "Bucket",
+            "type": "string"
+          },
+          "org": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The organization name. Falls back to INFLUXDB_ORG env var if not provided.",
+            "title": "Org"
+          },
+          "data_line_protocol": {
+            "description": "Data in InfluxDB Line Protocol format.",
+            "title": "Data Line Protocol",
+            "type": "string"
+          },
+          "time_precision": {
+            "default": "ns",
+            "description": "The precision for the unix timestamps within the body line-protocol. One of: ns, us, ms, s (default is ns).",
+            "title": "Time Precision",
+            "type": "string"
+          },
+          "sync_mode": {
+            "default": "synchronous",
+            "description": "The synchronization mode, either 'synchronous' or 'asynchronous'.",
+            "title": "Sync Mode",
+            "type": "string"
+          },
+          "verify_ssl": {
+            "default": true,
+            "description": "Whether to verify SSL with https connections.",
+            "title": "Verify Ssl",
+            "type": "boolean"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bucket",
+          "data_line_protocol"
+        ],
+        "title": "influxdb_write_line_protocolArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "influxdb_write_line_protocolOutput",
+        "type": "object"
+      },
+      "tokens": 392
+    },
+    {
+      "name": "InfluxDBQuery",
+      "description": "Query data from InfluxDB using Flux query language.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The URL of the InfluxDB server. Falls back to INFLUXDB_URL env var if not provided.",
+            "title": "Url"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The authentication token. Falls back to INFLUXDB_TOKEN env var if not provided.",
+            "title": "Token"
+          },
+          "org": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The organization name. Falls back to INFLUXDB_ORG env var if not provided.",
+            "title": "Org"
+          },
+          "query": {
+            "description": "The Flux query string.",
+            "title": "Query",
+            "type": "string"
+          },
+          "verify_ssl": {
+            "default": true,
+            "description": "Whether to verify SSL with https connections.",
+            "title": "Verify Ssl",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "influxdb_queryArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "influxdb_queryOutput",
+        "type": "object"
+      },
+      "tokens": 227
+    },
+    {
+      "name": "InfluxDBListBuckets",
+      "description": "List all buckets in InfluxDB.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The URL of the InfluxDB server. Falls back to INFLUXDB_URL env var if not provided.",
+            "title": "Url"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The authentication token. Falls back to INFLUXDB_TOKEN env var if not provided.",
+            "title": "Token"
+          },
+          "org": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The organization name. Falls back to INFLUXDB_ORG env var if not provided.",
+            "title": "Org"
+          },
+          "verify_ssl": {
+            "default": true,
+            "description": "Whether to verify SSL with https connections.",
+            "title": "Verify Ssl",
+            "type": "boolean"
+          }
+        },
+        "title": "influxdb_list_bucketsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "influxdb_list_bucketsOutput",
+        "type": "object"
+      },
+      "tokens": 204
+    },
+    {
+      "name": "InfluxDBCreateBucket",
+      "description": "Create a new bucket in InfluxDB.",
+      "inputSchema": {
+        "properties": {
+          "bucket_name": {
+            "description": "The name of the bucket to create.",
+            "title": "Bucket Name",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The URL of the InfluxDB server. Falls back to INFLUXDB_URL env var if not provided.",
+            "title": "Url"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The authentication token. Falls back to INFLUXDB_TOKEN env var if not provided.",
+            "title": "Token"
+          },
+          "org": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The organization name. Falls back to INFLUXDB_ORG env var if not provided.",
+            "title": "Org"
+          },
+          "retention_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Retention period in seconds. 0 or None means infinite retention.",
+            "title": "Retention Seconds"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Description of the bucket.",
+            "title": "Description"
+          },
+          "verify_ssl": {
+            "default": true,
+            "description": "Whether to verify SSL with https connections.",
+            "title": "Verify Ssl",
+            "type": "boolean"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bucket_name"
+        ],
+        "title": "influxdb_create_bucketArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "influxdb_create_bucketOutput",
+        "type": "object"
+      },
+      "tokens": 354
+    },
+    {
+      "name": "InfluxDBListOrgs",
+      "description": "List all organizations in InfluxDB.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The URL of the InfluxDB server. Falls back to INFLUXDB_URL env var if not provided.",
+            "title": "Url"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The authentication token. Falls back to INFLUXDB_TOKEN env var if not provided.",
+            "title": "Token"
+          },
+          "verify_ssl": {
+            "default": true,
+            "description": "Whether to verify SSL with https connections.",
+            "title": "Verify Ssl",
+            "type": "boolean"
+          }
+        },
+        "title": "influxdb_list_orgsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "influxdb_list_orgsOutput",
+        "type": "object"
+      },
+      "tokens": 160
+    },
+    {
+      "name": "InfluxDBCreateOrg",
+      "description": "Create a new organization in InfluxDB.",
+      "inputSchema": {
+        "properties": {
+          "org_name": {
+            "description": "The name of the organization to create.",
+            "title": "Org Name",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The URL of the InfluxDB server. Falls back to INFLUXDB_URL env var if not provided.",
+            "title": "Url"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The authentication token. Falls back to INFLUXDB_TOKEN env var if not provided.",
+            "title": "Token"
+          },
+          "verify_ssl": {
+            "default": true,
+            "description": "Whether to verify SSL with https connections.",
+            "title": "Verify Ssl",
+            "type": "boolean"
+          },
+          "tool_write_mode": {
+            "default": false,
+            "description": "Tool is run in write mode and will be able to perform any create/update/delete operations. Default is read-only mode (False)",
+            "title": "Tool Write Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "org_name"
+        ],
+        "title": "influxdb_create_orgArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "influxdb_create_orgOutput",
+        "type": "object"
+      },
+      "tokens": 236
+    }
+  ],
+  "totalTokens": 6458,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

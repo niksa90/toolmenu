@@ -1,0 +1,2265 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "paper_search_server",
+    "version": "1.28.1",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:57:01.937Z",
+  "tools": [
+    {
+      "name": "search_papers",
+      "description": "Unified top-level search across all configured academic platforms.\n\n    Args:\n        query: Search query string.\n        max_results_per_source: Max results to fetch from each selected source.\n        sources: Comma-separated source names or 'all'.\n            Available: arxiv,pubmed,biorxiv,medrxiv,google_scholar,iacr,semantic,crossref,openalex,pmc,core,europepmc,dblp,openaire,citeseerx,doaj,base,zenodo,hal,ssrn,unpaywall\n        year: Optional year filter for Semantic Scholar only.\n    Returns:\n        Aggregated dictionary with per-source stats, errors, and deduplicated papers.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results_per_source": {
+            "default": 5,
+            "title": "Max Results Per Source",
+            "type": "integer"
+          },
+          "sources": {
+            "default": "all",
+            "title": "Sources",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Year"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_papersArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_papersOutput",
+        "type": "object"
+      },
+      "tokens": 259
+    },
+    {
+      "name": "search_arxiv",
+      "description": "Search academic papers from arXiv.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n        sort_by: Sort criterion — 'relevance', 'submittedDate', or 'lastUpdatedDate' (default: 'relevance').\n        sort_order: Sort direction — 'descending' or 'ascending' (default: 'descending').\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "sort_by": {
+            "default": "relevance",
+            "title": "Sort By",
+            "type": "string"
+          },
+          "sort_order": {
+            "default": "descending",
+            "title": "Sort Order",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_arxivArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_arxivOutput",
+        "type": "object"
+      },
+      "tokens": 208
+    },
+    {
+      "name": "search_pubmed",
+      "description": "Search academic papers from PubMed.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n        sort: Sort order — 'relevance' or 'pub_date' (default: 'relevance').\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "sort": {
+            "default": "relevance",
+            "title": "Sort",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_pubmedArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_pubmedOutput",
+        "type": "object"
+      },
+      "tokens": 160
+    },
+    {
+      "name": "search_biorxiv",
+      "description": "Search academic papers from bioRxiv.\n\n    Note: bioRxiv API filters by category name within the last 30 days, not full-text\n    keyword search. Use a category keyword such as 'bioinformatics', 'neuroscience',\n    'cell biology', etc.\n\n    Args:\n        query: Category name to filter by (e.g., 'bioinformatics', 'neuroscience').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_biorxivArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_biorxivOutput",
+        "type": "object"
+      },
+      "tokens": 182
+    },
+    {
+      "name": "search_medrxiv",
+      "description": "Search academic papers from medRxiv.\n\n    Note: medRxiv API filters by category name within the last 30 days, not full-text\n    keyword search. Use a category keyword such as 'infectious_diseases',\n    'cardiovascular_medicine', 'oncology', etc.\n\n    Args:\n        query: Category name to filter by (e.g., 'infectious_diseases', 'oncology').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_medrxivArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_medrxivOutput",
+        "type": "object"
+      },
+      "tokens": 189
+    },
+    {
+      "name": "search_google_scholar",
+      "description": "Search academic papers from Google Scholar.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_google_scholarArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_google_scholarOutput",
+        "type": "object"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "search_iacr",
+      "description": "Search academic papers from IACR ePrint Archive.\n\n    Args:\n        query: Search query string (e.g., 'cryptography', 'secret sharing').\n        max_results: Maximum number of papers to return (default: 10).\n        fetch_details: Whether to fetch detailed information for each paper (default: True).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "fetch_details": {
+            "default": true,
+            "title": "Fetch Details",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_iacrArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_iacrOutput",
+        "type": "object"
+      },
+      "tokens": 163
+    },
+    {
+      "name": "download_arxiv",
+      "description": "Download PDF of an arXiv paper.\n\n    Args:\n        paper_id: arXiv paper ID (e.g., '2106.12345').\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        Path to the downloaded PDF file.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_arxivArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_arxivOutput",
+        "type": "object"
+      },
+      "tokens": 131
+    },
+    {
+      "name": "download_pubmed",
+      "description": "Attempt to download PDF of a PubMed paper.\n\n    Args:\n        paper_id: PubMed ID (PMID).\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        str: Message indicating that direct PDF download is not supported.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_pubmedArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_pubmedOutput",
+        "type": "object"
+      },
+      "tokens": 127
+    },
+    {
+      "name": "download_biorxiv",
+      "description": "Download PDF of a bioRxiv paper.\n\n    Args:\n        paper_id: bioRxiv DOI.\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        Path to the downloaded PDF file.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_biorxivArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_biorxivOutput",
+        "type": "object"
+      },
+      "tokens": 121
+    },
+    {
+      "name": "download_medrxiv",
+      "description": "Download PDF of a medRxiv paper.\n\n    Args:\n        paper_id: medRxiv DOI.\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        Path to the downloaded PDF file.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_medrxivArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_medrxivOutput",
+        "type": "object"
+      },
+      "tokens": 121
+    },
+    {
+      "name": "download_iacr",
+      "description": "Download PDF of an IACR ePrint paper.\n\n    Args:\n        paper_id: IACR paper ID (e.g., '2009/101').\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        Path to the downloaded PDF file.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_iacrArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_iacrOutput",
+        "type": "object"
+      },
+      "tokens": 132
+    },
+    {
+      "name": "read_arxiv_paper",
+      "description": "Read and extract text content from an arXiv paper PDF.\n\n    Args:\n        paper_id: arXiv paper ID (e.g., '2106.12345').\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: The extracted text content of the paper.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_arxiv_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_arxiv_paperOutput",
+        "type": "object"
+      },
+      "tokens": 146
+    },
+    {
+      "name": "read_pubmed_paper",
+      "description": "Read and extract text content from a PubMed paper.\n\n    Args:\n        paper_id: PubMed ID (PMID).\n        save_path: Directory where the PDF would be saved (unused).\n    Returns:\n        str: Message indicating that direct paper reading is not supported.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_pubmed_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_pubmed_paperOutput",
+        "type": "object"
+      },
+      "tokens": 130
+    },
+    {
+      "name": "read_biorxiv_paper",
+      "description": "Read and extract text content from a bioRxiv paper PDF.\n\n    Args:\n        paper_id: bioRxiv DOI.\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: The extracted text content of the paper.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_biorxiv_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_biorxiv_paperOutput",
+        "type": "object"
+      },
+      "tokens": 136
+    },
+    {
+      "name": "read_medrxiv_paper",
+      "description": "Read and extract text content from a medRxiv paper PDF.\n\n    Args:\n        paper_id: medRxiv DOI.\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: The extracted text content of the paper.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_medrxiv_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_medrxiv_paperOutput",
+        "type": "object"
+      },
+      "tokens": 136
+    },
+    {
+      "name": "read_iacr_paper",
+      "description": "Read and extract text content from an IACR ePrint paper PDF.\n\n    Args:\n        paper_id: IACR paper ID (e.g., '2009/101').\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: The extracted text content of the paper.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_iacr_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_iacr_paperOutput",
+        "type": "object"
+      },
+      "tokens": 147
+    },
+    {
+      "name": "search_semantic",
+      "description": "Search academic papers from Semantic Scholar.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        year: Optional year filter (e.g., '2019', '2016-2020', '2010-', '-2015').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Year"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_semanticArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_semanticOutput",
+        "type": "object"
+      },
+      "tokens": 175
+    },
+    {
+      "name": "download_semantic",
+      "description": "Download PDF of a Semantic Scholar paper.    \n\n    Args:\n        paper_id: Semantic Scholar paper ID, Paper identifier in one of the following formats:\n            - Semantic Scholar ID (e.g., \"649def34f8be52c8b66281af98ae884c09aef38b\")\n            - DOI:<doi> (e.g., \"DOI:10.18653/v1/N18-3011\")\n            - ARXIV:<id> (e.g., \"ARXIV:2106.15928\")\n            - MAG:<id> (e.g., \"MAG:112218234\")\n            - ACL:<id> (e.g., \"ACL:W12-3903\")\n            - PMID:<id> (e.g., \"PMID:19872477\")\n            - PMCID:<id> (e.g., \"PMCID:2323736\")\n            - URL:<url> (e.g., \"URL:https://arxiv.org/abs/2106.15928v1\")\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        Path to the downloaded PDF file.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_semanticArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_semanticOutput",
+        "type": "object"
+      },
+      "tokens": 328
+    },
+    {
+      "name": "read_semantic_paper",
+      "description": "Read and extract text content from a Semantic Scholar paper. \n\n    Args:\n        paper_id: Semantic Scholar paper ID, Paper identifier in one of the following formats:\n            - Semantic Scholar ID (e.g., \"649def34f8be52c8b66281af98ae884c09aef38b\")\n            - DOI:<doi> (e.g., \"DOI:10.18653/v1/N18-3011\")\n            - ARXIV:<id> (e.g., \"ARXIV:2106.15928\")\n            - MAG:<id> (e.g., \"MAG:112218234\")\n            - ACL:<id> (e.g., \"ACL:W12-3903\")\n            - PMID:<id> (e.g., \"PMID:19872477\")\n            - PMCID:<id> (e.g., \"PMCID:2323736\")\n            - URL:<url> (e.g., \"URL:https://arxiv.org/abs/2106.15928v1\")\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: The extracted text content of the paper.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_semantic_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_semantic_paperOutput",
+        "type": "object"
+      },
+      "tokens": 341
+    },
+    {
+      "name": "search_crossref",
+      "description": "Search academic papers from CrossRef database.\n    \n    CrossRef is a scholarly infrastructure organization that provides \n    persistent identifiers (DOIs) for scholarly content and metadata.\n    It's one of the largest citation databases covering millions of \n    academic papers, journals, books, and other scholarly content.\n\n    Args:\n        query: Search query string (e.g., 'machine learning', 'climate change').\n        max_results: Maximum number of papers to return (default: 10, max: 1000).\n        filter: CrossRef filter string (e.g., 'has-full-text:true,from-pub-date:2020').\n        sort: Sort field ('relevance', 'published', 'updated', 'deposited', etc.).\n        order: Sort order ('asc' or 'desc').\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Filter"
+          },
+          "sort": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sort"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Order"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_crossrefArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_crossrefOutput",
+        "type": "object"
+      },
+      "tokens": 325
+    },
+    {
+      "name": "get_crossref_paper_by_doi",
+      "description": "Get a specific paper from CrossRef by its DOI.\n\n    Args:\n        doi: Digital Object Identifier (e.g., '10.1038/nature12373').\n    Returns:\n        Paper metadata in dictionary format, or empty dict if not found.\n        \n    Example:\n        get_crossref_paper_by_doi(\"10.1038/nature12373\")\n    ",
+      "inputSchema": {
+        "properties": {
+          "doi": {
+            "title": "Doi",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doi"
+        ],
+        "title": "get_crossref_paper_by_doiArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_crossref_paper_by_doiOutput",
+        "type": "object"
+      },
+      "tokens": 140
+    },
+    {
+      "name": "download_crossref",
+      "description": "Attempt to download PDF of a CrossRef paper.\n\n    Args:\n        paper_id: CrossRef DOI (e.g., '10.1038/nature12373').\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        str: Message indicating that direct PDF download is not supported.\n        \n    Note:\n        CrossRef is a citation database and doesn't provide direct PDF downloads.\n        Use the DOI to access the paper through the publisher's website.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_crossrefArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_crossrefOutput",
+        "type": "object"
+      },
+      "tokens": 175
+    },
+    {
+      "name": "download_scihub",
+      "description": "Download paper PDF via Sci-Hub (optional fallback connector).\n\n    Args:\n        identifier: DOI, title, PMID, or paper URL.\n        save_path: Directory to save the PDF.\n        base_url: Sci-Hub mirror URL.\n    Returns:\n        Downloaded PDF path on success; error message on failure.\n    ",
+      "inputSchema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          },
+          "base_url": {
+            "default": "https://sci-hub.se",
+            "title": "Base Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "download_scihubArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_scihubOutput",
+        "type": "object"
+      },
+      "tokens": 158
+    },
+    {
+      "name": "download_with_fallback",
+      "description": "Try source-native download, OA repositories, Unpaywall, then optional Sci-Hub.\n\n    Args:\n        source: Source name (arxiv, biorxiv, medrxiv, iacr, semantic, crossref, pubmed, pmc, core, europepmc, citeseerx, doaj, base, zenodo, hal, ssrn).\n        paper_id: Source-native paper identifier.\n        doi: Optional DOI used for repository/unpaywall/Sci-Hub fallback.\n        title: Optional title used for repository/Sci-Hub fallback when DOI is unavailable.\n        save_path: Directory to save downloaded files.\n        use_scihub: Whether to fallback to Sci-Hub after OA attempts fail.\n        scihub_base_url: Sci-Hub mirror URL for fallback.\n    Returns:\n        Download path on success or explanatory error message.\n    ",
+      "inputSchema": {
+        "properties": {
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "doi": {
+            "default": "",
+            "title": "Doi",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          },
+          "use_scihub": {
+            "default": true,
+            "title": "Use Scihub",
+            "type": "boolean"
+          },
+          "scihub_base_url": {
+            "default": "https://sci-hub.se",
+            "title": "Scihub Base Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "paper_id"
+        ],
+        "title": "download_with_fallbackArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_with_fallbackOutput",
+        "type": "object"
+      },
+      "tokens": 342
+    },
+    {
+      "name": "read_crossref_paper",
+      "description": "Attempt to read and extract text content from a CrossRef paper.\n\n    Args:\n        paper_id: CrossRef DOI (e.g., '10.1038/nature12373').\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: Message indicating that direct paper reading is not supported.\n        \n    Note:\n        CrossRef is a citation database and doesn't provide direct paper content.\n        Use the DOI to access the paper through the publisher's website.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_crossref_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_crossref_paperOutput",
+        "type": "object"
+      },
+      "tokens": 186
+    },
+    {
+      "name": "search_openalex",
+      "description": "Search academic papers from OpenAlex.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_openalexArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_openalexOutput",
+        "type": "object"
+      },
+      "tokens": 120
+    },
+    {
+      "name": "search_pmc",
+      "description": "Search academic papers from PubMed Central (PMC).\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_pmcArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_pmcOutput",
+        "type": "object"
+      },
+      "tokens": 123
+    },
+    {
+      "name": "search_core",
+      "description": "Search academic papers from CORE.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_coreArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_coreOutput",
+        "type": "object"
+      },
+      "tokens": 117
+    },
+    {
+      "name": "search_europepmc",
+      "description": "Search academic papers from Europe PMC.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_europepmcArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_europepmcOutput",
+        "type": "object"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "search_dblp",
+      "description": "Search academic papers from dblp computer science bibliography.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_dblpArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_dblpOutput",
+        "type": "object"
+      },
+      "tokens": 125
+    },
+    {
+      "name": "search_openaire",
+      "description": "Search academic papers from OpenAIRE European Open Access infrastructure.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_openaireArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_openaireOutput",
+        "type": "object"
+      },
+      "tokens": 125
+    },
+    {
+      "name": "search_citeseerx",
+      "description": "Search academic papers from CiteSeerX digital library.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_citeseerxArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_citeseerxOutput",
+        "type": "object"
+      },
+      "tokens": 130
+    },
+    {
+      "name": "search_doaj",
+      "description": "Search academic papers from DOAJ (Directory of Open Access Journals).\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_doajArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_doajOutput",
+        "type": "object"
+      },
+      "tokens": 127
+    },
+    {
+      "name": "search_base",
+      "description": "Search academic papers from BASE (Bielefeld Academic Search Engine).\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_baseArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_baseOutput",
+        "type": "object"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "search_zenodo",
+      "description": "Search academic papers from Zenodo open repository.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_zenodoArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_zenodoOutput",
+        "type": "object"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "search_hal",
+      "description": "Search academic papers from HAL open archive.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_halArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_halOutput",
+        "type": "object"
+      },
+      "tokens": 119
+    },
+    {
+      "name": "search_ssrn",
+      "description": "Search metadata records from SSRN.\n\n    Note: SSRN connector is metadata-only and does not support direct PDF download.\n\n    Args:\n        query: Search query string (e.g., 'machine learning').\n        max_results: Maximum number of papers to return (default: 10).\n    Returns:\n        List of paper metadata in dictionary format.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_ssrnArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_ssrnOutput",
+        "type": "object"
+      },
+      "tokens": 139
+    },
+    {
+      "name": "search_unpaywall",
+      "description": "Lookup a DOI via Unpaywall and return OA metadata.\n\n    Unpaywall is DOI-centric and does not support generic keyword search.\n    This tool extracts the first DOI from `query` and returns at most one record.\n\n    Args:\n        query: DOI string or text containing a DOI.\n        max_results: Kept for API consistency; Unpaywall returns max 1 record.\n    Returns:\n        List with one paper metadata dict when DOI is resolvable, else empty list.\n    ",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_unpaywallArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_unpaywallOutput",
+        "type": "object"
+      },
+      "tokens": 171
+    },
+    {
+      "name": "read_dblp_paper",
+      "description": "Attempt to read and extract text content from a dblp paper.\n\n    Note: dblp doesn't provide direct paper content access.\n    This function returns an informative message.\n\n    Args:\n        paper_id: dblp paper identifier.\n        save_path: Directory where the PDF would be saved (unused).\n    Returns:\n        str: Message indicating that direct paper reading is not supported.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_dblp_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_dblp_paperOutput",
+        "type": "object"
+      },
+      "tokens": 155
+    },
+    {
+      "name": "download_dblp",
+      "description": "Download PDF for a paper from dblp.\n\n    Note: dblp doesn't provide direct PDF access.\n    This function returns an informative message.\n\n    Args:\n        paper_id: dblp paper identifier.\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        str: Message indicating that direct PDF download is not supported.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_dblpArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_dblpOutput",
+        "type": "object"
+      },
+      "tokens": 148
+    },
+    {
+      "name": "read_openaire_paper",
+      "description": "Attempt to read and extract text content from an OpenAIRE paper.\n\n    Args:\n        paper_id: OpenAIRE paper identifier.\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: Extracted text or error message.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_openaire_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_openaire_paperOutput",
+        "type": "object"
+      },
+      "tokens": 135
+    },
+    {
+      "name": "download_openaire",
+      "description": "Download PDF for a paper from OpenAIRE.\n\n    Args:\n        paper_id: OpenAIRE paper identifier.\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        str: Path to downloaded PDF or error message.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_openaireArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_openaireOutput",
+        "type": "object"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "read_citeseerx_paper",
+      "description": "Read and extract text content from a CiteSeerX paper.\n\n    Args:\n        paper_id: CiteSeerX paper identifier.\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: Extracted text or fallback abstract/error message.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_citeseerx_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_citeseerx_paperOutput",
+        "type": "object"
+      },
+      "tokens": 143
+    },
+    {
+      "name": "download_citeseerx",
+      "description": "Download PDF for a paper from CiteSeerX.\n\n    Args:\n        paper_id: CiteSeerX paper identifier.\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        str: Path to downloaded PDF or error message.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_citeseerxArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_citeseerxOutput",
+        "type": "object"
+      },
+      "tokens": 132
+    },
+    {
+      "name": "read_doaj_paper",
+      "description": "Read and extract text content from a DOAJ paper.\n\n    Args:\n        paper_id: DOAJ paper identifier.\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: Extracted text content.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_doaj_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_doaj_paperOutput",
+        "type": "object"
+      },
+      "tokens": 129
+    },
+    {
+      "name": "download_doaj",
+      "description": "Download PDF for a paper from DOAJ.\n\n    Args:\n        paper_id: DOAJ paper identifier.\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        str: Path to downloaded PDF.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_doajArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_doajOutput",
+        "type": "object"
+      },
+      "tokens": 119
+    },
+    {
+      "name": "read_base_paper",
+      "description": "Read and extract text content from a BASE paper.\n\n    Args:\n        paper_id: BASE paper identifier.\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: Extracted text content.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_base_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_base_paperOutput",
+        "type": "object"
+      },
+      "tokens": 125
+    },
+    {
+      "name": "download_base",
+      "description": "Download PDF for a paper from BASE.\n\n    Args:\n        paper_id: BASE paper identifier.\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        str: Path to downloaded PDF.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_baseArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_baseOutput",
+        "type": "object"
+      },
+      "tokens": 115
+    },
+    {
+      "name": "read_zenodo_paper",
+      "description": "Read and extract text content from a Zenodo paper.\n\n    Args:\n        paper_id: Zenodo paper identifier.\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: Extracted text content.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_zenodo_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_zenodo_paperOutput",
+        "type": "object"
+      },
+      "tokens": 131
+    },
+    {
+      "name": "download_zenodo",
+      "description": "Download PDF for a paper from Zenodo.\n\n    Args:\n        paper_id: Zenodo paper identifier.\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        str: Path to downloaded PDF.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_zenodoArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_zenodoOutput",
+        "type": "object"
+      },
+      "tokens": 121
+    },
+    {
+      "name": "read_hal_paper",
+      "description": "Read and extract text content from a HAL paper.\n\n    Args:\n        paper_id: HAL paper identifier.\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: Extracted text content.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_hal_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_hal_paperOutput",
+        "type": "object"
+      },
+      "tokens": 125
+    },
+    {
+      "name": "download_hal",
+      "description": "Download PDF for a paper from HAL.\n\n    Args:\n        paper_id: HAL paper identifier.\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        str: Path to downloaded PDF.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_halArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_halOutput",
+        "type": "object"
+      },
+      "tokens": 115
+    },
+    {
+      "name": "read_ssrn_paper",
+      "description": "Read paper content from SSRN.\n\n    Note: SSRN connector is metadata-only and read is not supported.\n\n    Args:\n        paper_id: SSRN paper identifier.\n        save_path: Directory where the PDF is/will be saved (unused).\n    Returns:\n        str: Error message from metadata-only SSRN connector.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_ssrn_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_ssrn_paperOutput",
+        "type": "object"
+      },
+      "tokens": 142
+    },
+    {
+      "name": "download_ssrn",
+      "description": "Download PDF for a paper from SSRN.\n\n    Note: SSRN connector is metadata-only and download is not supported.\n\n    Args:\n        paper_id: SSRN paper identifier.\n        save_path: Directory to save the PDF (unused).\n    Returns:\n        str: Error message from metadata-only SSRN connector.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_ssrnArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_ssrnOutput",
+        "type": "object"
+      },
+      "tokens": 136
+    },
+    {
+      "name": "read_openalex_paper",
+      "description": "Attempt to read and extract text content from an OpenAlex paper.\n\n    Args:\n        paper_id: OpenAlex paper ID.\n        save_path: Directory where the PDF is/will be saved (default: './downloads').\n    Returns:\n        str: Message indicating that direct paper reading is not supported natively.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "read_openalex_paperArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "read_openalex_paperOutput",
+        "type": "object"
+      },
+      "tokens": 138
+    },
+    {
+      "name": "download_openalex",
+      "description": "Download PDF for a paper from OpenAlex.\n\n    Args:\n        paper_id: OpenAlex paper ID.\n        save_path: Directory to save the PDF (default: './downloads').\n    Returns:\n        str: Error message, typically OpenAlex relies on extracted pdf_url instead of direct downloads.\n    ",
+      "inputSchema": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "save_path": {
+            "default": "./downloads",
+            "title": "Save Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id"
+        ],
+        "title": "download_openalexArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "download_openalexOutput",
+        "type": "object"
+      },
+      "tokens": 130
+    }
+  ],
+  "totalTokens": 8813,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

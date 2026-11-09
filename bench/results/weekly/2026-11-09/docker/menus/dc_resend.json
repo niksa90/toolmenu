@@ -1,0 +1,68 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "email-sending-service",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:11:25.917Z",
+  "tools": [
+    {
+      "name": "send-email",
+      "description": "Send an email using Resend",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string",
+            "format": "email",
+            "description": "Recipient email address"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject line"
+          },
+          "text": {
+            "type": "string",
+            "description": "Plain text email content"
+          },
+          "html": {
+            "type": "string",
+            "description": "HTML email content. When provided, the plain text argument MUST be provided as well."
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "description": "Optional array of CC email addresses. You MUST ask the user for this parameter. Under no circumstance provide it yourself"
+          },
+          "bcc": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "description": "Optional array of BCC email addresses. You MUST ask the user for this parameter. Under no circumstance provide it yourself"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "description": "Optional parameter to schedule the email. This uses natural language. Examples would be 'tomorrow at 10am' or 'in 2 hours' or 'next day at 9am PST' or 'Friday at 3pm ET'."
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "text"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 271
+    }
+  ],
+  "totalTokens": 271
+}

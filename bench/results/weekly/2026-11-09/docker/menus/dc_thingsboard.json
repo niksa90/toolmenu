@@ -1,0 +1,1929 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "thingsboard-mcp-server",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:31:18.313Z",
+  "tools": [
+    {
+      "name": "getDevicesByIds",
+      "description": "Get Devices By Ids. Requested devices must be owned by tenant or assigned to customer which user is performing the request. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "devicesIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of assets ids, separated by comma ','"
+          }
+        },
+        "required": [
+          "devicesIds"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 102
+    },
+    {
+      "name": "getAlarms",
+      "description": "Get a page of alarms for the selected entity. Specifying both parameters 'searchStatus' and 'status' at the same time will cause an error. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "searchStatus": {
+            "type": "string",
+            "description": "A string value representing one of the AlarmSearchStatus enumeration value. Allowed values: 'ANY', 'ACTIVE', 'CLEARED', 'ACK', 'UNACK'"
+          },
+          "status": {
+            "type": "string",
+            "description": "A string value representing one of the AlarmStatus enumeration value. Allowed values: 'ACTIVE_UNACK', 'ACTIVE_ACK', 'CLEARED_UNACK', 'CLEARED_ACK'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on of next alarm fields: type, severity or status"
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'startTs', 'endTs', 'ackTs', 'clearTs', 'severity', 'status'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          },
+          "startTs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The start timestamp in milliseconds of the search time range over the Alarm class field: 'createdTime'."
+          },
+          "endTs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The end timestamp in milliseconds of the search time range over the Alarm class field: 'createdTime'."
+          },
+          "fetchOriginator": {
+            "type": "boolean",
+            "description": "A boolean value to specify if the alarm originator name will be filled in the AlarmInfo object  field: 'originatorName' or will returns as null."
+          }
+        },
+        "required": [
+          "entityType",
+          "entityId",
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 549
+    },
+    {
+      "name": "getSecuritySettings",
+      "description": "Get the Security settings object that contains password policy, lockout limits, notification email, mobile secret key length, and TTL values for activation & password-reset tokens (1–24 hours). \n\nAvailable for users with 'SYS_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tokens": 78
+    },
+    {
+      "name": "getAttributeKeys",
+      "description": "Returns a set of unique attribute key names for the selected entity. The response will include merged key names set for all attribute scopes:\n\n * SERVER_SCOPE - supported for all entity types;\n * CLIENT_SCOPE - supported for devices;\n * SHARED_SCOPE - supported for devices. \n\nReferencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 201
+    },
+    {
+      "name": "findByToWithRelationType",
+      "description": "Returns list of relation objects for the specified entity by the 'to' direction and relation type. \n\nIf the user has the authority of 'System Administrator', the server checks that 'from' and 'to' entities are owned by the sysadmin. If the user has the authority of 'Tenant Administrator', the server checks that 'from' and 'to' entities are owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the 'from' and 'to' entities are assigned to the same customer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strToId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "strToType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "relationType": {
+            "type": "string",
+            "description": "A string value representing relation type between entities. For example, 'Contains', 'Manages'. It can be any string value."
+          },
+          "strRelationTypeGroup": {
+            "type": "string",
+            "description": "A string value representing relation type group. For example, 'COMMON'"
+          }
+        },
+        "required": [
+          "strToId",
+          "strToType",
+          "relationType"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 289
+    },
+    {
+      "name": "getAllAlarms",
+      "description": "Get a page of alarms that belongs to the current user owner. If the user has the authority of 'Tenant Administrator', the server returns alarms that belongs to the tenant of current user. If the user has the authority of 'Customer User', the server returns alarms that belongs to the customer of current user. Specifying both parameters 'searchStatus' and 'status' at the same time will cause an error. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchStatus": {
+            "type": "string",
+            "description": "A string value representing one of the AlarmSearchStatus enumeration value. Allowed values: 'ANY', 'ACTIVE', 'CLEARED', 'ACK', 'UNACK'"
+          },
+          "status": {
+            "type": "string",
+            "description": "A string value representing one of the AlarmStatus enumeration value. Allowed values: 'ACTIVE_UNACK', 'ACTIVE_ACK', 'CLEARED_UNACK', 'CLEARED_ACK'"
+          },
+          "assigneeId": {
+            "type": "string",
+            "description": "A string value representing the assignee user id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on of next alarm fields: type, severity or status"
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'startTs', 'endTs', 'ackTs', 'clearTs', 'severity', 'status'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          },
+          "startTs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The start timestamp in milliseconds of the search time range over the Alarm class field: 'createdTime'."
+          },
+          "endTs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The end timestamp in milliseconds of the search time range over the Alarm class field: 'createdTime'."
+          },
+          "fetchOriginator": {
+            "type": "boolean",
+            "description": "A boolean value to specify if the alarm originator name will be filled in the AlarmInfo object  field: 'originatorName' or will returns as null."
+          }
+        },
+        "required": [
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 573
+    },
+    {
+      "name": "getUserDevices",
+      "description": "Returns a page of device objects available for the current user. Available only in Professional edition (PE). You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "type": {
+            "type": "string",
+            "description": "Asset type"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the asset name."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'name', 'type', 'deviceProfileName', 'label', 'customerTitle'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 256
+    },
+    {
+      "name": "getCustomerAssets",
+      "description": "Returns a page of assets objects assigned to customer. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "A string value representing the customer id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "type": {
+            "type": "string",
+            "description": "Asset type"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the asset name."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'name', 'type', 'label', 'customerTitle'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "customerId",
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 290
+    },
+    {
+      "name": "getEntityGroupByOwnerAndNameAndType",
+      "description": "Fetch the Entity Group object based on the provided owner, type and name. Available only in Professional edition (PE). Entity group allows you to group multiple entities of the same entity type (Device, Asset, Customer, User, Dashboard, etc). Entity Group always have an owner - particular Tenant or Customer. Each entity may belong to multiple groups simultaneously.Entity Group Info extends Entity Group object and adds 'ownerIds' - a list of owner ids.\n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for specified group.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strOwnerType": {
+            "type": "string",
+            "description": "Tenant or Customer"
+          },
+          "strOwnerId": {
+            "type": "string",
+            "description": "A string value representing the Tenant or Customer id"
+          },
+          "entityType": {
+            "type": "string",
+            "description": "Entity Group type. Allowed types: 'CUSTOMER', 'ASSET', 'DEVICE', 'USER', 'ENTITY_VIEW', 'DASHBOARD', 'EDGE'"
+          },
+          "name": {
+            "type": "string",
+            "description": "Entity Group name"
+          }
+        },
+        "required": [
+          "strOwnerType",
+          "strOwnerId",
+          "entityType",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 264
+    },
+    {
+      "name": "getAttributesByScope",
+      "description": "Returns all attributes of a specified scope that belong to specified entity. List of possible attribute scopes depends on the entity type: \n\n * SERVER_SCOPE - supported for all entity types;\n * SHARED_SCOPE - supported for devices;\n * CLIENT_SCOPE - supported for devices. \n\nUse optional 'keys' parameter to return specific attributes.\n Example of the result: \n\n```json\n[\n  {\"key\": \"stringAttributeKey\", \"value\": \"value\", \"lastUpdateTs\": 1609459200000},\n  {\"key\": \"booleanAttributeKey\", \"value\": false, \"lastUpdateTs\": 1609459200001},\n  {\"key\": \"doubleAttributeKey\", \"value\": 42.2, \"lastUpdateTs\": 1609459200002},\n  {\"key\": \"longKeyExample\", \"value\": 73, \"lastUpdateTs\": 1609459200003},\n  {\"key\": \"jsonKeyExample\",\n    \"value\": {\n      \"someNumber\": 42,\n      \"someArray\": [1,2,3],\n      \"someNestedObject\": {\"key\": \"value\"}\n    },\n    \"lastUpdateTs\": 1609459200004\n  }\n]\n```\n\n Referencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "scope": {
+            "type": "string",
+            "description": "A string value representing the attributes scope. For example, 'SERVER_SCOPE'. Allowable values: 'SERVER_SCOPE', 'SHARED_SCOPE', 'CLIENT_SCOPE'"
+          },
+          "keys": {
+            "type": "string",
+            "description": "A string value representing the comma-separated list of attributes keys. For example, 'active,inactivityAlarmTime'."
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr",
+          "scope"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 505
+    },
+    {
+      "name": "getAssetsByIds",
+      "description": "Get Assets By Ids. Requested assets must be owned by tenant or assigned to customer which user is performing the request. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of assets ids, separated by comma ','"
+          }
+        },
+        "required": [
+          "assetIds"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 102
+    },
+    {
+      "name": "getTenantDevices",
+      "description": "Returns a page of devices owned by tenant. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "type": {
+            "type": "string",
+            "description": "Asset type"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the asset name."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'name', 'deviceProfileName', 'label', 'customerTitle'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 236
+    },
+    {
+      "name": "getAllCustomerUsers",
+      "description": "Returns a page of users for the current tenant with authority 'CUSTOMER_USER'. Available only in Professional edition (PE). You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for the entity (entities).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'firstName', 'lastName', 'email'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 263
+    },
+    {
+      "name": "findInfoByTo",
+      "description": "Returns list of relation info objects for the specified entity by the 'to' direction. \n\nIf the user has the authority of 'System Administrator', the server checks that 'from' and 'to' entities are owned by the sysadmin. If the user has the authority of 'Tenant Administrator', the server checks that 'from' and 'to' entities are owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the 'from' and 'to' entities are assigned to the same customer. Relation Info is an extension of the default Relation object that contains information about the 'from' and 'to' entity names. ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strToId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "strToType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "strRelationTypeGroup": {
+            "type": "string",
+            "description": "A string value representing relation type group. For example, 'COMMON'"
+          }
+        },
+        "required": [
+          "strToId",
+          "strToType"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 272
+    },
+    {
+      "name": "getUsers",
+      "description": "Returns a page of users owned by tenant or customer. The scope depends on authority of the user that performs the request. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'firstName', 'lastName', 'email'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 234
+    },
+    {
+      "name": "getEntityGroupsByType",
+      "description": "Fetch the list of Entity Group Info objects based on the provided Entity Type. Available only in Professional edition (PE). Entity group allows you to group multiple entities of the same entity type (Device, Asset, Customer, User, Dashboard, etc). Entity Group always have an owner - particular Tenant or Customer. Each entity may belong to multiple groups simultaneously.Entity Group Info extends Entity Group object and adds 'ownerIds' - a list of owner ids.\n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for specified group.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "Entity Group type. Allowed types: 'CUSTOMER', 'ASSET', 'DEVICE', 'USER', 'ENTITY_VIEW', 'DASHBOARD', 'EDGE'"
+          }
+        },
+        "required": [
+          "entityType"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 201
+    },
+    {
+      "name": "getTenantAdmins",
+      "description": "Returns a page of tenant administrator users assigned to the specified tenant. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "description": "A string value representing the tenant id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'firstName', 'lastName', 'email'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "tenantId",
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 273
+    },
+    {
+      "name": "getCustomerUsers",
+      "description": "Returns a page of users assigned to the specified customer. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "A string value representing the customer id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'firstName', 'lastName', 'email'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "customerId",
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 277
+    },
+    {
+      "name": "getTenantDevice",
+      "description": "Requested device must be owned by tenant that the user belongs to. Device name is an unique property of device. So it can be used to identify the device.\n\nAvailable for users with 'TENANT_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "deviceName": {
+            "type": "string",
+            "description": "A string value representing the Device name."
+          }
+        },
+        "required": [
+          "deviceName"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 93
+    },
+    {
+      "name": "getAssetsByEntityGroupId",
+      "description": "Returns a page of asset objects that belongs to specified Entity Group Id. Available only in Professional edition (PE). You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for specified group.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityGroupId": {
+            "type": "string",
+            "description": "A string value representing the Entity Group Id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'firstName', 'lastName', 'email'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "entityGroupId",
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 312
+    },
+    {
+      "name": "findInfoByFrom",
+      "description": "Returns list of relation info objects for the specified entity by the 'from' direction. \n\nIf the user has the authority of 'System Administrator', the server checks that 'from' and 'to' entities are owned by the sysadmin. If the user has the authority of 'Tenant Administrator', the server checks that 'from' and 'to' entities are owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the 'from' and 'to' entities are assigned to the same customer. Relation Info is an extension of the default Relation object that contains information about the 'from' and 'to' entity names. ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strFromId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "strFromType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "strRelationTypeGroup": {
+            "type": "string",
+            "description": "A string value representing relation type group. For example, 'COMMON'"
+          }
+        },
+        "required": [
+          "strFromId",
+          "strFromType"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 272
+    },
+    {
+      "name": "getDevicesByEntityGroupId",
+      "description": "Returns a page of device objects that belongs to specified Entity Group Id. Available only in Professional edition (PE). You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for specified group.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityGroupId": {
+            "type": "string",
+            "description": "A string value representing the Entity Group Id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'firstName', 'lastName', 'email'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "entityGroupId",
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 312
+    },
+    {
+      "name": "getAttributes",
+      "description": "Returns all attributes that belong to specified entity. Use optional 'keys' parameter to return specific attributes.\n Example of the result: \n\n```json\n[\n  {\"key\": \"stringAttributeKey\", \"value\": \"value\", \"lastUpdateTs\": 1609459200000},\n  {\"key\": \"booleanAttributeKey\", \"value\": false, \"lastUpdateTs\": 1609459200001},\n  {\"key\": \"doubleAttributeKey\", \"value\": 42.2, \"lastUpdateTs\": 1609459200002},\n  {\"key\": \"longKeyExample\", \"value\": 73, \"lastUpdateTs\": 1609459200003},\n  {\"key\": \"jsonKeyExample\",\n    \"value\": {\n      \"someNumber\": 42,\n      \"someArray\": [1,2,3],\n      \"someNestedObject\": {\"key\": \"value\"}\n    },\n    \"lastUpdateTs\": 1609459200004\n  }\n]\n```\n\n Referencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "keys": {
+            "type": "string",
+            "description": "A string value representing the comma-separated list of attributes keys. For example, 'active,inactivityAlarmTime'."
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 409
+    },
+    {
+      "name": "getAttributeKeysByScope",
+      "description": "Returns a set of unique attribute key names for the selected entity and attributes scope: \n\n * SERVER_SCOPE - supported for all entity types;\n * CLIENT_SCOPE - supported for devices;\n * SHARED_SCOPE - supported for devices. \n\nReferencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "scope": {
+            "type": "string",
+            "description": "A string value representing the attributes scope. For example, 'SERVER_SCOPE'. Allowable values: 'SERVER_SCOPE', 'SHARED_SCOPE', 'CLIENT_SCOPE'"
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr",
+          "scope"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 238
+    },
+    {
+      "name": "getTimeseries",
+      "description": "Returns a range of time series values for specified entity. Returns not aggregated data by default. Use aggregation function ('agg') and aggregation interval ('interval') to enable aggregation of the results on the database / server side. The aggregation is generally more efficient then fetching all records. \n\n```json\n{\n  \"temperature\": [\n    {\n      \"value\": 36.7,\n      \"ts\": 1609459200000\n    },\n    {\n      \"value\": 36.6,\n      \"ts\": 1609459201000\n    }\n  ]\n}\n```\n\nReferencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "keys": {
+            "type": "string",
+            "description": "A string value representing the comma-separated list of telemetry keys. If keys are not selected, the result will return all latest time series. For example, 'temperature,humidity'."
+          },
+          "startTs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "A long value representing the start timestamp of the time range in milliseconds, UTC."
+          },
+          "endTs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "A long value representing the end timestamp of the time range in milliseconds, UTC."
+          },
+          "intervalType": {
+            "type": "string",
+            "description": "A string value representing the type fo the interval. Allowed values: 'MILLISECONDS', 'WEEK', 'WEEK_ISO', 'MONTH', 'QUARTER'"
+          },
+          "interval": {
+            "type": "integer",
+            "format": "int64",
+            "description": "A long value representing the aggregation interval range in milliseconds."
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "A string value representing the timezone that will be used to calculate exact timestamps for 'WEEK', 'WEEK_ISO', 'MONTH' and 'QUARTER' interval types."
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "An integer value that represents a max number of time series data points to fetch. This parameter is used only in the case if 'agg' parameter is set to 'NONE'. "
+          },
+          "agg": {
+            "type": "string",
+            "description": "A string value representing the aggregation function. If the interval is not specified, 'agg' parameter will use 'NONE' value. Allowed value: 'MIN', 'MAX', 'SUM', 'AVG', 'COUNT', 'NONE'"
+          },
+          "orderBy": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          },
+          "useStrictDataTypes": {
+            "type": "boolean",
+            "description": "Enables/disables conversion of telemetry values to strings. Conversion is enabled by default. Set parameter to 'true' in order to disable the conversion."
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr",
+          "keys",
+          "startTs",
+          "endTs"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 683
+    },
+    {
+      "name": "getCustomerDevices",
+      "description": "Returns a page of devices objects assigned to customer. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "A string value representing the customer id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "type": {
+            "type": "string",
+            "description": "Asset type"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the asset name."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'name', 'deviceProfileName', 'label', 'customerTitle'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "customerId",
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 292
+    },
+    {
+      "name": "getAlarmById",
+      "description": "Get the Alarm object based on the provided alarm id. If the user has the authority of 'Tenant Administrator', the server checks that the originator of alarm is owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the originator of alarm belongs to the customer. ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "alarmId": {
+            "type": "string",
+            "description": "A string value representing the alarm id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          }
+        },
+        "required": [
+          "alarmId"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 140
+    },
+    {
+      "name": "getUsageInfo",
+      "description": "Retrieves usage statistics for the current tenant, including number of devices, assets, customers, users, dashboards, edges, transportMessages, jsExecutions, tbelExecutions, emails, sms, alarms. \n\nAvailable for users with 'TENANT_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tokens": 84
+    },
+    {
+      "name": "getUsersByEntityGroupId",
+      "description": "Returns a page of user objects that belongs to specified Entity Group Id. Available only in Professional edition (PE). You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for specified group.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityGroupId": {
+            "type": "string",
+            "description": "A string value representing the Entity Group Id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'firstName', 'lastName', 'email'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "entityGroupId",
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 312
+    },
+    {
+      "name": "getTimeseriesKeys",
+      "description": "Returns a set of unique time series key names for the selected entity. \n\nReferencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 159
+    },
+    {
+      "name": "getAlarmInfoById",
+      "description": "Get the Alarm info object based on the provided alarm id. If the user has the authority of 'Tenant Administrator', the server checks that the originator of alarm is owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the originator of alarm belongs to the customer. Alarm Info is an extension of the default Alarm object that also contains name of the alarm originator.\n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "alarmId": {
+            "type": "string",
+            "description": "A string value representing the alarm id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          }
+        },
+        "required": [
+          "alarmId"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 180
+    },
+    {
+      "name": "getAlarmTypes",
+      "description": "Get a set of unique alarm types based on alarms that are either owned by tenant or assigned to the customer which user is performing the request. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on of next alarm fields: type, severity or status"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 181
+    },
+    {
+      "name": "getRelation",
+      "description": "Returns relation object between two specified entities if present. Otherwise throws exception. \n\nIf the user has the authority of 'System Administrator', the server checks that 'from' and 'to' entities are owned by the sysadmin. If the user has the authority of 'Tenant Administrator', the server checks that 'from' and 'to' entities are owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the 'from' and 'to' entities are assigned to the same customer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strFromId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "strFromType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "relationType": {
+            "type": "string",
+            "description": "A string value representing relation type between entities. For example, 'Contains', 'Manages'. It can be any string value."
+          },
+          "strRelationTypeGroup": {
+            "type": "string",
+            "description": "A string value representing relation type group. For example, 'COMMON'"
+          },
+          "strToId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "strToType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          }
+        },
+        "required": [
+          "strFromId",
+          "strFromType",
+          "relationType",
+          "strToId",
+          "strToType"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 361
+    },
+    {
+      "name": "getEntityGroupById",
+      "description": "Fetch the Entity Group object based on the provided Entity Group Id. Available only in Professional edition (PE). Entity group allows you to group multiple entities of the same entity type (Device, Asset, Customer, User, Dashboard, etc). Entity Group always have an owner - particular Tenant or Customer. Each entity may belong to multiple groups simultaneously.Entity Group Info extends Entity Group object and adds 'ownerIds' - a list of owner ids.\n\nEntity group name is unique in the scope of owner and entity type. For example, you can't create two tenant device groups called 'Water meters'. However, you may create device and asset group with the same name. And also you may create groups with the same name for two different customers of the same tenant. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for specified group.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityGroupId": {
+            "type": "string",
+            "description": "entityGroupId"
+          }
+        },
+        "required": [
+          "entityGroupId"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 236
+    },
+    {
+      "name": "getUserById",
+      "description": "Fetch the User object based on the provided User Id. If the user has the authority of 'SYS_ADMIN', the server does not perform additional checks. If the user has the authority of 'TENANT_ADMIN', the server checks that the requested user is owned by the same tenant. If the user has the authority of 'CUSTOMER_USER', the server checks that the requested user is owned by the same customer. ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "A string value representing the user id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          }
+        },
+        "required": [
+          "userId"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 159
+    },
+    {
+      "name": "getUserAssets",
+      "description": "Returns a page of assets objects available for the current user. Available only in Professional edition (PE). You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "type": {
+            "type": "string",
+            "description": "Asset type"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the asset name."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'name', 'type', 'label', 'customerTitle'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 251
+    },
+    {
+      "name": "getHighestAlarmSeverity",
+      "description": "Get highest alarm severity by originator ('entityType' and 'entityId') and optional 'status' and 'searchStatus' filters and returns the highest AlarmSeverity(CRITICAL, MAJOR, MINOR, WARNING or INDETERMINATE).Specifying both parameters 'searchStatus' and 'status' at the same time will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "searchStatus": {
+            "type": "string",
+            "description": "A string value representing one of the AlarmSearchStatus enumeration value. Allowed values: 'ANY', 'ACTIVE', 'CLEARED', 'ACK', 'UNACK'"
+          },
+          "status": {
+            "type": "string",
+            "description": "A string value representing one of the AlarmStatus enumeration value. Allowed values: 'ACTIVE_UNACK', 'ACTIVE_ACK', 'CLEARED_UNACK', 'CLEARED_ACK'"
+          }
+        },
+        "required": [
+          "entityType",
+          "entityId"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 285
+    },
+    {
+      "name": "getTenantCustomer",
+      "description": "Get the Customer using Customer Title. \n\nAvailable for users with 'TENANT_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerTitle": {
+            "type": "string",
+            "description": "A string value representing the Customer title."
+          }
+        },
+        "required": [
+          "customerTitle"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 69
+    },
+    {
+      "name": "findByFromWithRelationType",
+      "description": "Returns list of relation objects for the specified entity by the 'from' direction and relation type. \n\nIf the user has the authority of 'System Administrator', the server checks that 'from' and 'to' entities are owned by the sysadmin. If the user has the authority of 'Tenant Administrator', the server checks that 'from' and 'to' entities are owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the 'from' and 'to' entities are assigned to the same customer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strFromId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "strFromType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "relationType": {
+            "type": "string",
+            "description": "A string value representing relation type between entities. For example, 'Contains', 'Manages'. It can be any string value."
+          },
+          "strRelationTypeGroup": {
+            "type": "string",
+            "description": "A string value representing relation type group. For example, 'COMMON'"
+          }
+        },
+        "required": [
+          "strFromId",
+          "strFromType",
+          "relationType"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 289
+    },
+    {
+      "name": "saveDeviceAttributes",
+      "description": "Creates or updates the device attributes based on device id and specified attribute scope. The request payload is a JSON object with key-value format of attributes to create or update. For example:\n\n```json\n{\n \"stringKey\":\"value1\", \n \"booleanKey\":true, \n \"doubleKey\":42.0, \n \"longKey\":73, \n \"jsonKey\": {\n    \"someNumber\": 42,\n    \"someArray\": [1,2,3],\n    \"someNestedObject\": {\"key\": \"value\"}\n }\n}\n```\n\n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "description": "A string value representing the device id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "scope": {
+            "type": "string",
+            "description": "A string value representing the attributes scope. For example, 'SERVER_SCOPE'. Allowable values: 'SERVER_SCOPE', 'SHARED_SCOPE'"
+          },
+          "jsonBody": {
+            "type": "string",
+            "description": "A string value representing the json object. For example, '{\"key\":\"value\"}'. See API call description for more details."
+          }
+        },
+        "required": [
+          "deviceId",
+          "scope",
+          "jsonBody"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 303
+    },
+    {
+      "name": "getCustomerById",
+      "description": "Get the Customer object based on the provided Customer Id. If the user has the authority of 'Tenant Administrator', the server checks that the customer is owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the user belongs to the customer.\n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "A string value representing the customer id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          }
+        },
+        "required": [
+          "customerId"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 152
+    },
+    {
+      "name": "findByFrom",
+      "description": "Returns list of relation objects for the specified entity by the 'from' direction. \n\nIf the user has the authority of 'System Administrator', the server checks that 'from' and 'to' entities are owned by the sysadmin. If the user has the authority of 'Tenant Administrator', the server checks that 'from' and 'to' entities are owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the 'from' and 'to' entities are assigned to the same customer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strFromId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "strFromType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "strRelationTypeGroup": {
+            "type": "string",
+            "description": "A string value representing relation type group. For example, 'COMMON'"
+          }
+        },
+        "required": [
+          "strFromId",
+          "strFromType"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 244
+    },
+    {
+      "name": "getCustomers",
+      "description": "Returns a page of customers owned by tenant. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'title', 'email', 'country', 'city'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 220
+    },
+    {
+      "name": "getTenantAsset",
+      "description": "Get tenant asset. Requested asset must be owned by tenant that the user belongs to. Asset name is a unique property of asset. So it can be used to identify the asset.\n\nAvailable for users with 'TENANT_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetName": {
+            "type": "string",
+            "description": "A string value representing the Asset name."
+          }
+        },
+        "required": [
+          "assetName"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 97
+    },
+    {
+      "name": "getLatestTimeseries",
+      "description": "Returns all time series that belong to specified entity. Use optional 'keys' parameter to return specific time series. The result is a JSON object. The format of the values depends on the 'useStrictDataTypes' parameter. By default, all time series values are converted to strings: \n\n```json\n{\n  \"stringTsKey\": [{ \"value\": \"value\", \"ts\": 1609459200000}],\n  \"booleanTsKey\": [{ \"value\": \"false\", \"ts\": 1609459200000}],\n  \"doubleTsKey\": [{ \"value\": \"42.2\", \"ts\": 1609459200000}],\n  \"longTsKey\": [{ \"value\": \"73\", \"ts\": 1609459200000}],\n  \"jsonTsKey\": [{ \"value\": \"{\\\"someNumber\\\": 42,\\\"someArray\\\": [1,2,3],\\\"someNestedObject\\\": {\\\"key\\\": \\\"value\\\"}}\", \"ts\": 1609459200000}]\n}\n\n```\n\n However, it is possible to request the values without conversion ('useStrictDataTypes'=true): \n\n```json\n{\n  \"stringTsKey\": [{ \"value\": \"value\", \"ts\": 1609459200000}],\n  \"booleanTsKey\": [{ \"value\": false, \"ts\": 1609459200000}],\n  \"doubleTsKey\": [{ \"value\": 42.2, \"ts\": 1609459200000}],\n  \"longTsKey\": [{ \"value\": 73, \"ts\": 1609459200000}],\n  \"jsonTsKey\": [{ \n    \"value\": {\n      \"someNumber\": 42,\n      \"someArray\": [1,2,3],\n      \"someNestedObject\": {\"key\": \"value\"}\n    }, \n    \"ts\": 1609459200000}]\n}\n\n```\n\n Referencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "keys": {
+            "type": "string",
+            "description": "A string value representing the comma-separated list of telemetry keys. If keys are not selected, the result will return all latest time series. For example, 'temperature,humidity'."
+          },
+          "useStrictDataTypes": {
+            "type": "boolean",
+            "description": "Enables/disables conversion of telemetry values to strings. Conversion is enabled by default. Set parameter to 'true' in order to disable the conversion."
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 675
+    },
+    {
+      "name": "getAssetById",
+      "description": "Get the Asset object based on the provided Asset Id. If the user has the authority of 'Tenant Administrator', the server checks that the asset is owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the asset is assigned to the same customer.\n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "description": "A string value representing the asset id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          }
+        },
+        "required": [
+          "assetId"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 154
+    },
+    {
+      "name": "getEntityGroupsByOwnerAndType",
+      "description": "Fetch the list of Entity Group Info objects based on the provided Owner Id and Entity Type. Available only in Professional edition (PE). Entity group allows you to group multiple entities of the same entity type (Device, Asset, Customer, User, Dashboard, etc). Entity Group always have an owner - particular Tenant or Customer. Each entity may belong to multiple groups simultaneously.Entity Group Info extends Entity Group object and adds 'ownerIds' - a list of owner ids.\n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for specified group.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strOwnerType": {
+            "type": "string",
+            "description": "Tenant or Customer"
+          },
+          "strOwnerId": {
+            "type": "string",
+            "description": "A string value representing the Tenant or Customer id"
+          },
+          "entityType": {
+            "type": "string",
+            "description": "Entity Group type. Allowed types: 'CUSTOMER', 'ASSET', 'DEVICE', 'USER', 'ENTITY_VIEW', 'DASHBOARD', 'EDGE'"
+          }
+        },
+        "required": [
+          "strOwnerType",
+          "strOwnerId",
+          "entityType"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 250
+    },
+    {
+      "name": "getUserCustomers",
+      "description": "Returns a page of customers available for the user. Available only in Professional edition (PE). You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for the entity (entities).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'title', 'email', 'country', 'city'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 257
+    },
+    {
+      "name": "getEntityGroupsForEntity",
+      "description": "Returns a list of groups that contain the specified Entity Id. For example, all device groups that contain specific device. The list always contain at least one element - special group 'All'.Available only in Professional edition (PE). You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for the entity (entities).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "Entity Group type. Allowed types: 'CUSTOMER', 'ASSET', 'DEVICE', 'USER', 'ENTITY_VIEW', 'DASHBOARD', 'EDGE'"
+          },
+          "strEntityId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          }
+        },
+        "required": [
+          "entityType",
+          "strEntityId"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 247
+    },
+    {
+      "name": "getTenantAssets",
+      "description": "Returns a page of assets owned by tenant. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "type": {
+            "type": "string",
+            "description": "Asset type"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the asset name."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'name', 'type', 'label', 'customerTitle'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 234
+    },
+    {
+      "name": "saveEntityAttributesV2",
+      "description": "Creates or updates the entity attributes based on Entity Id and the specified attribute scope.  List of possible attribute scopes depends on the entity type: \n\n * SERVER_SCOPE - supported for all entity types;\n * SHARED_SCOPE - supported for devices.\n\nThe request payload is a JSON object with key-value format of attributes to create or update. For example:\n\n```json\n{\n \"stringKey\":\"value1\", \n \"booleanKey\":true, \n \"doubleKey\":42.0, \n \"longKey\":73, \n \"jsonKey\": {\n    \"someNumber\": 42,\n    \"someArray\": [1,2,3],\n    \"someNestedObject\": {\"key\": \"value\"}\n }\n}\n```\nReferencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "scope": {
+            "type": "string",
+            "description": "A string value representing the attributes scope. For example, 'SERVER_SCOPE'. Allowable values: 'SERVER_SCOPE', 'SHARED_SCOPE'"
+          },
+          "jsonBody": {
+            "type": "string",
+            "description": "A string value representing the json object. For example, '{\"key\":\"value\"}'. See API call description for more details."
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr",
+          "scope",
+          "jsonBody"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 390
+    },
+    {
+      "name": "getAdminSettings",
+      "description": "Get the Administration Settings object using specified string key. Referencing non-existing key will cause an error. \n\nAvailable for users with 'SYS_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "A string value of the key (e.g. 'general', 'mail', 'notifications', 'sms', 'entitiesVersionControl', 'connectivity', 'jwt', etc"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 106
+    },
+    {
+      "name": "getDeviceCredentialsByDeviceId",
+      "description": "Get device credentials by device id. If during device creation there wasn't specified any credentials, platform generates random 'ACCESS_TOKEN' credentials. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "description": "A string value representing the device id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          }
+        },
+        "required": [
+          "deviceId"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 124
+    },
+    {
+      "name": "saveEntityAttributesV1",
+      "description": "Creates or updates the entity attributes based on Entity Id and the specified attribute scope.  List of possible attribute scopes depends on the entity type: \n\n * SERVER_SCOPE - supported for all entity types;\n * SHARED_SCOPE - supported for devices.\n\nThe request payload is a JSON object with key-value format of attributes to create or update. For example:\n\n```json\n{\n \"stringKey\":\"value1\", \n \"booleanKey\":true, \n \"doubleKey\":42.0, \n \"longKey\":73, \n \"jsonKey\": {\n    \"someNumber\": 42,\n    \"someArray\": [1,2,3],\n    \"someNestedObject\": {\"key\": \"value\"}\n }\n}\n```\nReferencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "scope": {
+            "type": "string",
+            "description": "A string value representing the attributes scope. For example, 'SERVER_SCOPE'. Allowable values: 'SERVER_SCOPE', 'SHARED_SCOPE'"
+          },
+          "jsonBody": {
+            "type": "string",
+            "description": "A string value representing the json object. For example, '{\"key\":\"value\"}'. See API call description for more details."
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr",
+          "scope",
+          "jsonBody"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 390
+    },
+    {
+      "name": "getDeviceById",
+      "description": "Fetch the Device object based on the provided Device Id. If the user has the authority of 'TENANT_ADMIN', the server checks that the device is owned by the same tenant. If the user has the authority of 'CUSTOMER_USER', the server checks that the device is assigned to the same customer.\n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "description": "A string value representing the device id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          }
+        },
+        "required": [
+          "deviceId"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 156
+    },
+    {
+      "name": "getCustomersByEntityGroupId",
+      "description": "Returns a page of Customer objects that belongs to specified Entity Group Id. Available only in Professional edition (PE). You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for specified group.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityGroupId": {
+            "type": "string",
+            "description": "A string value representing the Entity Group Id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'title', 'email', 'country', 'city'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "entityGroupId",
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 313
+    },
+    {
+      "name": "getUsersForAssign",
+      "description": "Returns page of user data objects that can be assigned to provided alarmId. Search is been executed by email, firstName and lastName fields. You can specify parameters to filter the results. The result is wrapped with PageData object that allows you to iterate over result set using pagination. See response schema for more details. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "alarmId": {
+            "type": "string",
+            "description": "A string value representing the alarm id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum amount of entities in a one page"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sequence number of page starting from 0"
+          },
+          "textSearch": {
+            "type": "string",
+            "description": "The case insensitive 'substring' filter based on the customer title."
+          },
+          "sortProperty": {
+            "type": "string",
+            "description": "Property of entity to sort by. Allowed values: 'createdTime', 'firstName', 'lastName', 'email'"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order. ASC (ASCENDING) or DESC (DESCENDING)"
+          }
+        },
+        "required": [
+          "alarmId",
+          "pageSize",
+          "page"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 296
+    },
+    {
+      "name": "findByTo",
+      "description": "Returns list of relation objects for the specified entity by the 'to' direction. \n\nIf the user has the authority of 'System Administrator', the server checks that 'from' and 'to' entities are owned by the sysadmin. If the user has the authority of 'Tenant Administrator', the server checks that 'from' and 'to' entities are owned by the same tenant. If the user has the authority of 'Customer User', the server checks that the 'from' and 'to' entities are assigned to the same customer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strToId": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "strToType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "strRelationTypeGroup": {
+            "type": "string",
+            "description": "A string value representing relation type group. For example, 'COMMON'"
+          }
+        },
+        "required": [
+          "strToId",
+          "strToType"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 244
+    },
+    {
+      "name": "saveEntityTelemetry",
+      "description": "Creates or updates the entity time series data based on the Entity Id and request payload.The request payload is a JSON document with three possible formats:\n\nSimple format without timestamp. In such a case, current server time will be used: \n\n```json\n{\"temperature\": 26}\n```\n\n Single JSON object with timestamp: \n\n```json\n{\"ts\":1634712287000,\"values\":{\"temperature\":26, \"humidity\":87}}\n```\n\n JSON array with timestamps: \n\n```json\n[{\"ts\":1634712287000,\"values\":{\"temperature\":26, \"humidity\":87}}, {\"ts\":1634712588000,\"values\":{\"temperature\":25, \"humidity\":88}}]\n```\n\n The scope parameter is not used in the API call implementation but should be specified whatever value because it is used as a path variable. Referencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "jsonBody": {
+            "type": "string",
+            "description": "A JSON with the telemetry values. See API call description for more details."
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr",
+          "jsonBody"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 356
+    },
+    {
+      "name": "getEntityGroupsByIds",
+      "description": "Fetch the list of Entity Group Info objects based on the provided entity group ids list. Available only in Professional edition (PE). Entity group allows you to group multiple entities of the same entity type (Device, Asset, Customer, User, Dashboard, etc). Entity Group always have an owner - particular Tenant or Customer. Each entity may belong to multiple groups simultaneously.Entity Group Info extends Entity Group object and adds 'ownerIds' - a list of owner ids.\n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority. Security check is performed to verify that the user has 'READ' permission for specified group.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of entity ids, separated by comma ','"
+          }
+        },
+        "required": [
+          "entityIds"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 187
+    },
+    {
+      "name": "getSystemInfo",
+      "description": "Get main information about system. \n\nAvailable for users with 'SYS_ADMIN' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tokens": 47
+    },
+    {
+      "name": "saveEntityTelemetryWithTTL",
+      "description": "Creates or updates the entity time series data based on the Entity Id and request payload.The request payload is a JSON document with three possible formats:\n\nSimple format without timestamp. In such a case, current server time will be used: \n\n```json\n{\"temperature\": 26}\n```\n\n Single JSON object with timestamp: \n\n```json\n{\"ts\":1634712287000,\"values\":{\"temperature\":26, \"humidity\":87}}\n```\n\n JSON array with timestamps: \n\n```json\n[{\"ts\":1634712287000,\"values\":{\"temperature\":26, \"humidity\":87}}, {\"ts\":1634712588000,\"values\":{\"temperature\":25, \"humidity\":88}}]\n```\n\n The scope parameter is not used in the API call implementation but should be specified whatever value because it is used as a path variable. \n\nThe ttl parameter takes affect only in case of Cassandra DB.Referencing a non-existing entity Id or invalid entity type will cause an error. \n\nAvailable for users with 'TENANT_ADMIN' or 'CUSTOMER_USER' authority.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "description": "A string value representing the entity type. For example, 'DEVICE'"
+          },
+          "entityIdStr": {
+            "type": "string",
+            "description": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'"
+          },
+          "ttl": {
+            "type": "integer",
+            "format": "int64",
+            "description": "A  long value representing TTL (Time to Live) parameter."
+          },
+          "jsonBody": {
+            "type": "string",
+            "description": "A JSON with the telemetry values. See API call description for more details."
+          }
+        },
+        "required": [
+          "entityType",
+          "entityIdStr",
+          "ttl",
+          "jsonBody"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 401
+    }
+  ],
+  "totalTokens": 16125,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

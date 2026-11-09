@@ -1,0 +1,283 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "supadata",
+    "version": "1.3.6",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:36:26.170Z",
+  "tools": [
+    {
+      "name": "supadata_transcript",
+      "title": "Get Video Transcript",
+      "description": "Get the transcript (what is said) of a video or post on YouTube, TikTok, Instagram, X (Twitter) or Facebook, or of an audio or video file URL. Not for ordinary web pages: use supadata_scrape for those. For large files, returns a jobId instead of the transcript directly - use supadata_check_transcript_status with that jobId to poll for results.",
+      "annotations": {
+        "title": "Get Video Transcript",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL of a single video or post on YouTube, TikTok, Instagram, X (Twitter) or Facebook, or a direct link to an audio or video file. Not for ordinary web pages (use supadata_scrape)."
+          },
+          "lang": {
+            "type": "string",
+            "description": "Preferred transcript language as an ISO 639-1 code, e.g. \"en\". Falls back to the first available language."
+          },
+          "text": {
+            "type": "boolean",
+            "description": "true returns the transcript as plain text; false (default) returns timestamped segments."
+          },
+          "chunkSize": {
+            "type": "number",
+            "minimum": 50,
+            "description": "Maximum characters per timestamped segment (at least 50). Ignored when text is true."
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "native",
+              "auto",
+              "generate"
+            ],
+            "description": "\"native\" only fetches an existing transcript, \"generate\" always transcribes with AI, \"auto\" (default) tries native first and falls back to generate."
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "tokens": 310
+    },
+    {
+      "name": "supadata_check_transcript_status",
+      "title": "Check Transcript Job Status",
+      "description": "Check transcript job status and retrieve results. Returns status: \"queued\", \"active\", \"completed\", or \"failed\". If status is not \"completed\" or \"failed\", call this tool again after a few seconds with the same id.",
+      "annotations": {
+        "title": "Check Transcript Job Status",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The job id returned by supadata_transcript."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 95
+    },
+    {
+      "name": "supadata_scrape",
+      "title": "Scrape Web Page",
+      "description": "Fetch a single web page and return its main content as Markdown, along with the page title, description and the links it contains. Use this to read or summarize a specific URL. To find which pages exist on a site, use supadata_map; to fetch many pages at once, use supadata_crawl. Costs 1 credit.",
+      "annotations": {
+        "title": "Scrape Web Page",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Full URL of the web page, including https://. Use a URL you know exists; to find pages on a site, use supadata_map."
+          },
+          "noLinks": {
+            "type": "boolean",
+            "description": "true leaves out the list of links found on the page."
+          },
+          "lang": {
+            "type": "string",
+            "description": "Preferred page language as an ISO 639-1 code, e.g. \"en\", for sites that serve several languages."
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "tokens": 188
+    },
+    {
+      "name": "supadata_map",
+      "title": "Map Website URLs",
+      "description": "List the URLs found on a website without fetching their content. Use this to discover a site's pages before choosing which ones to read with supadata_scrape, or to check a site's size before starting a supadata_crawl. Costs 1 credit.",
+      "annotations": {
+        "title": "Map Website URLs",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Full URL of the website to map, including https://."
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "tokens": 95
+    },
+    {
+      "name": "supadata_crawl",
+      "title": "Start Website Crawl",
+      "description": "Create a crawl job to extract content from all pages on a website. Not available on every Supadata plan; if it returns upgrade-required, tell the user rather than retrying. Returns a jobId - use supadata_check_crawl_status with that jobId to poll for results.",
+      "annotations": {
+        "title": "Start Website Crawl",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Full URL to start crawling from, including https://."
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5000,
+            "description": "Maximum number of pages to crawl (1-5000, default 100). Each page costs 1 credit."
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "tokens": 143
+    },
+    {
+      "name": "supadata_check_crawl_status",
+      "title": "Check Crawl Job Status",
+      "description": "Check crawl job status and retrieve results. Returns status: \"scraping\", \"completed\", \"failed\", or \"cancelled\". If status is \"scraping\", call this tool again after a few seconds with the same id.",
+      "annotations": {
+        "title": "Check Crawl Job Status",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The job id returned by supadata_crawl."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 93
+    },
+    {
+      "name": "supadata_metadata",
+      "title": "Get Media Metadata",
+      "description": "Fetch metadata from a media URL (YouTube, TikTok, Instagram, Twitter/X, Facebook). Returns platform info, title, description, author details, engagement stats, media details, tags, and creation date. Use this for details about a video or post; use supadata_transcript for what is said in it.",
+      "annotations": {
+        "title": "Get Media Metadata",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL of a single video or post on YouTube, TikTok, Instagram, X (Twitter) or Facebook."
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "tokens": 121
+    },
+    {
+      "name": "supadata_extract",
+      "title": "Extract Structured Data from Video",
+      "description": "Extract structured data from a video URL using AI. Provide a prompt for what to extract, a JSON Schema for the output format, or both. Returns a jobId for async processing - use supadata_check_extract_status with that jobId to poll for results.",
+      "annotations": {
+        "title": "Extract Structured Data from Video",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL of a single video or post on YouTube, TikTok, Instagram, X (Twitter) or Facebook."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "What to extract from the video, in plain language."
+          },
+          "schema": {
+            "type": "object",
+            "description": "JSON Schema describing the output format. Provide this, prompt, or both."
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "tokens": 152
+    },
+    {
+      "name": "supadata_check_extract_status",
+      "title": "Check Extract Job Status",
+      "description": "Check extract job status and retrieve results. Returns status: \"queued\", \"active\", \"completed\", or \"failed\". If status is not \"completed\" or \"failed\", call this tool again after a few seconds with the same id.",
+      "annotations": {
+        "title": "Check Extract Job Status",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The job id returned by supadata_extract."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 93
+    }
+  ],
+  "totalTokens": 1290
+}

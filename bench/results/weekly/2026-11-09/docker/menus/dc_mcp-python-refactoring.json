@@ -1,0 +1,234 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "python-refactoring-assistant",
+    "version": "1.13.1",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:03:25.463Z",
+  "tools": [
+    {
+      "name": "analyze_python_file",
+      "description": "Analyze Python file for refactoring opportunities with precise guidance",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to Python file to analyze"
+          },
+          "content": {
+            "type": "string",
+            "description": "Python file content to analyze"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "tokens": 67
+    },
+    {
+      "name": "get_extraction_guidance",
+      "description": "Get detailed step-by-step guidance for extracting functions",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to Python file"
+          },
+          "content": {
+            "type": "string",
+            "description": "Python file content"
+          },
+          "function_name": {
+            "type": "string",
+            "description": "Name of function to analyze for extraction"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "tokens": 81
+    },
+    {
+      "name": "find_long_functions",
+      "description": "Find functions that are candidates for extraction",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Python file content to analyze"
+          },
+          "line_threshold": {
+            "type": "integer",
+            "description": "Minimum lines to consider a function long (default: 20)"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "tokens": 70
+    },
+    {
+      "name": "analyze_test_coverage",
+      "description": "Analyze Python test coverage and suggest improvements",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "source_path": {
+            "type": "string",
+            "description": "Path to source code directory or file"
+          },
+          "test_path": {
+            "type": "string",
+            "description": "Path to test directory (optional)"
+          },
+          "target_coverage": {
+            "type": "integer",
+            "description": "Target coverage percentage (default: 80)",
+            "default": 80
+          }
+        },
+        "required": [
+          "source_path"
+        ]
+      },
+      "tokens": 95
+    },
+    {
+      "name": "tdd_refactoring_guidance",
+      "description": "Generate TDD-based refactoring guidance: test first, refactor, test again",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Python code content to refactor"
+          },
+          "function_name": {
+            "type": "string",
+            "description": "Specific function/class to refactor (optional)"
+          },
+          "test_path": {
+            "type": "string",
+            "description": "Path to test directory (optional)"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "tokens": 97
+    },
+    {
+      "name": "analyze_python_package",
+      "description": "Comprehensive package/folder analysis for refactoring opportunities",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "package_path": {
+            "type": "string",
+            "description": "Path to Python package/folder to analyze"
+          },
+          "package_name": {
+            "type": "string",
+            "description": "Name of the package (optional, will be inferred from path)"
+          }
+        },
+        "required": [
+          "package_path"
+        ]
+      },
+      "tokens": 79
+    },
+    {
+      "name": "get_package_metrics",
+      "description": "Get aggregated metrics for a Python package",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "package_path": {
+            "type": "string",
+            "description": "Path to Python package/folder"
+          },
+          "package_name": {
+            "type": "string",
+            "description": "Name of the package (optional)"
+          }
+        },
+        "required": [
+          "package_path"
+        ]
+      },
+      "tokens": 67
+    },
+    {
+      "name": "find_package_issues",
+      "description": "Identify package-level refactoring opportunities and structural issues",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "package_path": {
+            "type": "string",
+            "description": "Path to Python package/folder"
+          },
+          "issue_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Specific types of issues to look for (optional): scattered_functionality, god_package, circular_dependency, etc."
+          }
+        },
+        "required": [
+          "package_path"
+        ]
+      },
+      "tokens": 92
+    },
+    {
+      "name": "analyze_security_and_patterns",
+      "description": "Comprehensive security scanning and modern Python patterns analysis",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to Python file to analyze"
+          },
+          "content": {
+            "type": "string",
+            "description": "Python file content to analyze"
+          },
+          "include_dependency_scan": {
+            "type": "boolean",
+            "description": "Include dependency vulnerability scanning (default: true)",
+            "default": true
+          },
+          "include_security_scan": {
+            "type": "boolean",
+            "description": "Include code security vulnerability scanning (default: true)",
+            "default": true
+          },
+          "include_modernization": {
+            "type": "boolean",
+            "description": "Include modern Python pattern suggestions (default: true)",
+            "default": true
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "tokens": 143
+    }
+  ],
+  "totalTokens": 791
+}

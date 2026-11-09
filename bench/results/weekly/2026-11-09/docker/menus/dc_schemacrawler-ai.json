@@ -1,0 +1,323 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "schemacrawler-mcpserver",
+    "version": "1.0.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:22:56.807Z",
+  "tools": [
+    {
+      "name": "describe_routines",
+      "title": "Describe stored procedures and functions",
+      "description": "Generates detailed documentation for database routines (stored procedures and functions), including parameter metadata (input/ output parameters, data types, default values), return types, dependencies (on tables, views, or other routines), and full DDL definitions. Supports regex-based routine name filtering and configurable detail levels to optimize tool performance. Returns data as a JSON object.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "routine_name": {
+            "type": "string",
+            "description": "Name of database routine (stored procedure or function) to describe.\nMay be specified as a regular expression matching the fully qualified\nstored procedure or function names (including the schema).\nTry not to match all routines, but instead use a regular expression\nto match a subset, since otherwise results may be large.\n"
+          },
+          "description_scope": {
+            "type": "array",
+            "description": "Indicates what details of the database stored procedure or function\nto return - parameters (including return types), attributes,\nand routine definition.\nParameters, return types, and remarks or comments are always returned.\n",
+            "items": {
+              "type": "string",
+              "enum": [
+                "DEFAULT",
+                "REFERENCED_OBJECTS",
+                "ATTRIBUTES",
+                "DEFINIITION"
+              ]
+            }
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "title": "Describe stored procedures and functions",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "returnDirect": false
+      },
+      "tokens": 251
+    },
+    {
+      "name": "database_server_information",
+      "title": "Show database server information",
+      "description": "Provides database environment and server configuration metadata, including engine type and version, collation, encoding, parameters, capabilities, and platform details. Adapts output to the specific database (such as Oracle, SQL Server, PostgreSQL and so on) to support platform-aware SQL generation and schema analysis.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "title": "Show database server information",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "returnDirect": false
+      },
+      "tokens": 87
+    },
+    {
+      "name": "describe_tables",
+      "title": "Describe tables and views",
+      "description": "Generates detailed documentation for database tables and views, including column definitions (names, data types, constraints, nullability), primary and foreign key relationships, index and trigger information, table attributes, and complete DDL definitions. Supports regex-based table name filtering and configurable detail levels to optimize tool performance. Returns data as a JSON object.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "table_name": {
+            "type": "string",
+            "description": "Name of database table or view to describe.\nMay be specified as a regular expression, matching the fully qualified\ntable name (including the schema).\nTry not to match all tables, but instead use a regular expression\nto match a subset or match a single table, since otherwise results may\nbe large.\n"
+          },
+          "description_scope": {
+            "type": "array",
+            "description": "Indicates what details of the database table or view to return -\ncolumns, primary key, foreign keys, indexes, triggers, attributes,\nand table definition. Also returns which objects reference a given table\nas \"used by objects\".\nColumns, primary keys, foreign key references to other tables,\nand remarks or comments are always returned by default.\nThe other details can be requested.\nThe results could be large.\n",
+            "items": {
+              "type": "string",
+              "enum": [
+                "DEFAULT",
+                "REFERENCED_TABLES",
+                "INDEXES",
+                "TRIGGERS",
+                "USED_BY_OBJECTS",
+                "ATTRIBUTES",
+                "DEFINIITION"
+              ]
+            }
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "title": "Describe tables and views",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "returnDirect": false
+      },
+      "tokens": 305
+    },
+    {
+      "name": "describe_entities",
+      "title": "Describe entities in the ER model",
+      "description": "Generates detailed documentation for entities in the ER model, including entity type such as strong, weak and subtype entities, and attributes. Supports regex-based entity name filtering to optimize tool performance. Returns data as a JSON object.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "entity_name": {
+            "type": "string",
+            "description": "Name of entity to describe, from the ER model.\nMay be specified as a regular expression, matching the fully qualified\nentity name (including the schema).\nTry not to match all entities, but instead use a regular expression\nto match a subset or match a single entity, since otherwise results may\nbe large.\n"
+          },
+          "entity_kind": {
+            "type": "string",
+            "description": "Indicates the types of entities to return - for example, strong, weak\nor subtype entities. It can also return associations (or bridge or join tables).\n",
+            "enum": [
+              "ALL",
+              "STRONG_ENTITY",
+              "WEAK_ENTITY",
+              "SUBTYPE",
+              "ASSOCIATION"
+            ]
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "title": "Describe entities in the ER model",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "returnDirect": false
+      },
+      "tokens": 211
+    },
+    {
+      "name": "describe_relationships",
+      "title": "Describe relationships in the ER model",
+      "description": "Generates detailed documentation for relationships in the ER model, including 1..1, 1..M, M..N and optional relationships. Supports regex-based relationship name filtering  to optimize tool performance. Returns data as a JSON object.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "relationship_name": {
+            "type": "string",
+            "description": "Name of relationships to describe, from the ER model.\nMay be specified as a regular expression, matching the fully qualified\nrelationship name (including the schema).\nTry not to match all relationships, but instead use a regular expression\nto match a subset or match a single relationships, since otherwise results may\nbe large.\n"
+          },
+          "cardinality": {
+            "type": "string",
+            "description": "Indicates the types of relationships to return - for example, 1..1, 1..M, M..N\nand optional relationships.\n",
+            "enum": [
+              "ALL",
+              "ZERO_ONE",
+              "ZERO_MANY",
+              "ONE_ONE",
+              "ONE_MANY",
+              "MANY_MANY"
+            ]
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "title": "Describe relationships in the ER model",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "returnDirect": false
+      },
+      "tokens": 218
+    },
+    {
+      "name": "list_across_tables",
+      "title": "List dependent database objects across tables",
+      "description": "Makes an inventory of table-dependent objects across the database schema, including columns, indexes, foreign keys, triggers, and constraints. Enables impact analysis, dependency tracking, performance tuning, and refactoring without inspecting individual tables. The corresponding tables are identified, and their details can be obtained later by describing those tables. Supports regex-based table name filtering and configurable detail levels to optimize tool performance. Returns JSON data.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "dependant_object_type": {
+            "type": "string",
+            "description": "Type of database table dependant objects, like columns, indexes,\nforeign keys or triggers.\n",
+            "enum": [
+              "NONE",
+              "COLUMNS",
+              "INDEXES",
+              "FOREIGN_KEYS",
+              "TRIGGERS"
+            ]
+          },
+          "dependant_object_name": {
+            "type": "string",
+            "description": "Name of table dependant object.\nMay be a regular expression, matching the fully qualified\ndependant object name (including the schema and table). May match\nmore than one dependant object.\nUse an empty string if all dependant objects are requested.\nIf not specified, all table dependant objects will be returned,\nbut the results could be large.\n"
+          },
+          "table_name": {
+            "type": "string",
+            "description": "Name of database table for which dependant objects are described.\nMay be a regular expression, matching the fully qualified\ntable name (including the schema), in which case, multiple tables\nmay be returned.\nUse an empty string if all tables are requested.\nIf not specified, all tables will be returned, but the results\ncould be large.\n"
+          }
+        },
+        "required": [
+          "dependant_object_type"
+        ]
+      },
+      "annotations": {
+        "title": "List dependent database objects across tables",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "returnDirect": false
+      },
+      "tokens": 333
+    },
+    {
+      "name": "list",
+      "title": "List database objects",
+      "description": "Makes an inventory of database schema objects such as tables, views, stored procedures, functions, sequences, synonyms, and more. This is an essential starting point for database exploration, database asset management, and schema analysis. The tool supports object type filtering and pattern-based searching. Returns JSON data.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "database_object_type": {
+            "type": "string",
+            "description": "Type of database object to list, like tables (including views),\nroutines (that is, stored procedures and functions),\nschemas (that is, databases or catalogs), sequences, or synonyms.\nIf the parameter is not provided, all database objects are listed.\n",
+            "enum": [
+              "ALL",
+              "SCHEMAS",
+              "TABLES",
+              "ROUTINES",
+              "SEQUENCES",
+              "SYNONYMS"
+            ]
+          },
+          "database_object_name": {
+            "type": "string",
+            "description": "Name of database object to list.\nIs a regular expression, matching the fully qualified\ndatabase object name (including the schema). May match\nmore than one database object.\nUse an empty string if all database objects are requested.\n"
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "title": "List database objects",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "returnDirect": false
+      },
+      "tokens": 235
+    },
+    {
+      "name": "mcp-server-health",
+      "title": "Show SchemaCrawler AI MCP Server health",
+      "description": "Gets the SchemaCrawler AI MCP Server version and uptime status.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "clientId",
+          "eventId"
+        ]
+      },
+      "annotations": {
+        "title": "SchemaCrawler AI MCP Server Health",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 73
+    }
+  ],
+  "totalTokens": 1713,
+  "prompts": [
+    {
+      "name": "sql-query-assistant",
+      "title": "",
+      "description": "Provide help writing SQL queries",
+      "arguments": []
+    },
+    {
+      "name": "database-expert",
+      "title": "",
+      "description": "Behave like a database expert",
+      "arguments": []
+    }
+  ],
+  "resources": [],
+  "resourceTemplates": [
+    {
+      "uriTemplate": "catalog://routines/{routine-name}",
+      "name": "routine-details",
+      "description": "Provides detailed database metadata for the specified routine, as JSON.",
+      "mimeType": "application/json"
+    },
+    {
+      "uriTemplate": "catalog://tables/{table-name}",
+      "name": "table-details",
+      "description": "Provides detailed database metadata for the specified table, as JSON.",
+      "mimeType": "application/json"
+    }
+  ]
+}

@@ -1,0 +1,1408 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Vectra MCP Server",
+    "version": "1.12.1",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:29:57.279Z",
+  "tools": [
+    {
+      "name": "list_detection_ids",
+      "description": "\n        List detection IDs with filtering and sorting options. Use this to get a list of detection IDs based on various criteria.\n\n        Returns:\n            str: JSON string with list of detection IDs.\n        ",
+      "inputSchema": {
+        "properties": {
+          "ordering": {
+            "anyOf": [
+              {
+                "enum": [
+                  "created_datetime",
+                  "last_timestamp",
+                  "id"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "last_timestamp",
+            "description": "Order by last_timestamp, created_datetime, or id",
+            "title": "Ordering"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "active",
+                  "inactive",
+                  "fixed",
+                  "filteredbyai",
+                  "filteredbyrule"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "active",
+            "description": "Filter by detection state (active, inactive, fixed, filteredbyai, filteredbyrule). Default is 'active'.",
+            "title": "State"
+          },
+          "detection_category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "command",
+                  "botnet",
+                  "lateral",
+                  "reconnaissance",
+                  "exfiltration",
+                  "info"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by detection category. Detections are grouped into one of the following categories: Command & Control, Botnet, Exfiltration, Lateral Movement, Reconnaissance, Info. Can also perform partial word match",
+            "title": "Detection Category"
+          },
+          "detection_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by detection name. Can also perform partial word match",
+            "title": "Detection Name"
+          },
+          "src_ip": {
+            "anyOf": [
+              {
+                "format": "ipvanyaddress",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by source IP address of the host that generated the detection",
+            "title": "Src Ip"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by start date (YYYY-MM-DDTHH:MM:SS)",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by end date (YYYY-MM-DDTHH:MM:SS)",
+            "title": "End Date"
+          },
+          "is_targeting_key_asset": {
+            "default": false,
+            "description": "Filter for detections targeting a key asset. Defaults to 'False'. Set to 'True' to filter for detections that are targeting key assets. To get all detections regardless of key asset targeting, search for both True and False values.",
+            "title": "Is Targeting Key Asset",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 1000,
+            "description": "Maximum number of detections to return in the batch. Defaults to 1000.",
+            "maximum": 1000,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_detection_idsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_detection_idsOutput",
+        "type": "object"
+      },
+      "tokens": 578
+    },
+    {
+      "name": "list_detections_with_basic_info",
+      "description": "\n        List detections with basic information and filtering options. Use this to get a quick overview of detections without detailed information.\n        \n        Returns:\n            str: JSON string with list of detections ids.\n        ",
+      "inputSchema": {
+        "properties": {
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "active",
+                  "inactive",
+                  "fixed",
+                  "filteredbyai",
+                  "filteredbyrule"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "active",
+            "description": "Filter by detection state (active, inactive, fixed, filteredbyai, filteredbyrule). Default is 'active'.",
+            "title": "State"
+          },
+          "ordering": {
+            "anyOf": [
+              {
+                "enum": [
+                  "created_datetime",
+                  "last_timestamp",
+                  "id"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "last_timestamp",
+            "description": "Order by last_timestamp, created_datetime, or id. Defaults to 'last_timestamp'",
+            "title": "Ordering"
+          },
+          "detection_category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "command",
+                  "botnet",
+                  "lateral",
+                  "reconnaissance",
+                  "exfiltration",
+                  "info"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by detection category. Detections are grouped into one of the following categories: Command & Control, Botnet, Exfiltration, Lateral Movement, Reconnaissance, Info. Can also perform partial word match",
+            "title": "Detection Category"
+          },
+          "detection_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by detection name. Can also perform partial word match",
+            "title": "Detection Name"
+          },
+          "src_ip": {
+            "anyOf": [
+              {
+                "format": "ipvanyaddress",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by source IP address of the host that generated the detection",
+            "title": "Src Ip"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by start date (YYYY-MM-DDTHH:MM:SS)",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by end date (YYYY-MM-DDTHH:MM:SS)",
+            "title": "End Date"
+          },
+          "is_targeting_key_asset": {
+            "default": false,
+            "description": "Filter for detections targeting a key asset. Defaults to 'False'. Set to 'True' to filter for detections that are targeting key assets. To get all detections regardless of key asset targeting, search for both True and False values.",
+            "title": "Is Targeting Key Asset",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": null,
+            "description": "Maximum number of detections to return in the batch.",
+            "maximum": 1000,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_detections_with_basic_infoArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_detections_with_basic_infoOutput",
+        "type": "object"
+      },
+      "tokens": 590
+    },
+    {
+      "name": "list_detections_with_details",
+      "description": "\n        List detections with filtering and sorting options. Use this to get a detailed list of detections based on various criteria.\n\n        Returns:\n            str: JSON string with list of detections.\n        ",
+      "inputSchema": {
+        "properties": {
+          "ordering": {
+            "default": "last_timestamp",
+            "description": "Order by last_timestamp, created_datetime, or id. Defaults to ordering by last_timestamp",
+            "enum": [
+              "created_datetime",
+              "last_timestamp",
+              "id"
+            ],
+            "title": "Ordering",
+            "type": "string"
+          },
+          "detection_category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "command",
+                  "botnet",
+                  "lateral",
+                  "reconnaissance",
+                  "exfiltration",
+                  "info"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by detection category. Detections are grouped into one of the following categories: Command & Control, Botnet, Exfiltration, Lateral Movement, Reconnaissance, Info. Can also perform partial word match",
+            "title": "Detection Category"
+          },
+          "detection_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by detection name. Can also perform partial word match",
+            "title": "Detection Name"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "active",
+                  "inactive",
+                  "fixed",
+                  "filteredbyai",
+                  "filteredbyrule"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "active",
+            "description": "Filter by detection state (active, inactive, fixed, filteredbyai, filteredbyrule). Default is 'active'.",
+            "title": "State"
+          },
+          "src_ip": {
+            "anyOf": [
+              {
+                "format": "ipvanyaddress",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by source IP address of the host that generated the detection. Must be a valid IPv4 or IPv6 address.",
+            "title": "Src Ip"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by start date (YYYY-MM-DDTHH:MM:SS)",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by end date (YYYY-MM-DDTHH:MM:SS)",
+            "title": "End Date"
+          },
+          "is_targeting_key_asset": {
+            "default": false,
+            "description": "Filter for detections targeting a key asset. Defaults to 'False'. Set to 'True' to filter for detections that are targeting key assets. To get all detections regardless of key asset targeting, search for both True and False values.",
+            "title": "Is Targeting Key Asset",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 1000,
+            "description": "Maximum number of detections to return in the batch. Defaults to 1000",
+            "maximum": 1000,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_detections_with_detailsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_detections_with_detailsOutput",
+        "type": "object"
+      },
+      "tokens": 594
+    },
+    {
+      "name": "list_entity_detections",
+      "description": "\n        List all detections with full details for a specific entity. \n        \n        Returns:\n            str: JSON string with list of detections for the entity.\n        ",
+      "inputSchema": {
+        "properties": {
+          "entity_id": {
+            "description": "ID of the entity to list detections for",
+            "minimum": 1,
+            "title": "Entity Id",
+            "type": "integer"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "active",
+                  "inactive",
+                  "fixed",
+                  "filteredbyai",
+                  "filteredbyrule"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "active",
+            "description": "Filter by detection state (active, inactive, fixed, filteredbyai, filteredbyrule). Default is 'active'. If no value specified (None), returns detection with all states.",
+            "title": "State"
+          }
+        },
+        "required": [
+          "entity_id"
+        ],
+        "title": "list_entity_detectionsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_entity_detectionsOutput",
+        "type": "object"
+      },
+      "tokens": 185
+    },
+    {
+      "name": "get_detection_count",
+      "description": "\n        Get the total count of detections matching the specified criteria.\n\n        Returns:\n            str: Count of detections matching the criteria.\n        ",
+      "inputSchema": {
+        "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by start date (YYYY-MM-DDTHH:MM:SS)",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by end date (YYYY-MM-DDTHH:MM:SS)",
+            "title": "End Date"
+          },
+          "detection_category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "command",
+                  "botnet",
+                  "lateral",
+                  "reconnaissance",
+                  "exfiltration",
+                  "info"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by detection category",
+            "title": "Detection Category"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "active",
+                  "inactive",
+                  "fixed",
+                  "filteredbyai",
+                  "filteredbyrule"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "active",
+            "description": "Filter by detection state (active, inactive, fixed, filteredbyai, filteredbyrule). Default is 'active' which returns only currently active detections.",
+            "title": "State"
+          },
+          "detection_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by detection name. Can also perform partial word match",
+            "title": "Detection Name"
+          },
+          "src_ip": {
+            "anyOf": [
+              {
+                "format": "ipvanyaddress",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by source IP address of the host that generated the detection.",
+            "title": "Src Ip"
+          },
+          "is_targeting_key_asset": {
+            "default": false,
+            "description": "Filter for detections targeting a key asset. Defaults to 'False'. Set to 'True' to filter for detections that are targeting key assets. To get all detections regardless of key asset targeting, search for both True and False values.",
+            "title": "Is Targeting Key Asset",
+            "type": "boolean"
+          }
+        },
+        "title": "get_detection_countArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_detection_countOutput",
+        "type": "object"
+      },
+      "tokens": 441
+    },
+    {
+      "name": "get_detection_details",
+      "description": "\n        Get complete detailed information for a particular detection.\n        \n        Returns:\n            str: JSON string with detection details.\n\n        Raises:\n            Exception: If fetching detection details fails.\n        ",
+      "inputSchema": {
+        "properties": {
+          "detection_id": {
+            "description": "ID of the detection to retrieve details for",
+            "minimum": 1,
+            "title": "Detection Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "detection_id"
+        ],
+        "title": "get_detection_detailsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_detection_detailsOutput",
+        "type": "object"
+      },
+      "tokens": 108
+    },
+    {
+      "name": "get_detection_summary",
+      "description": "\n        Get a concise summary of a detection including its ID, name, category, last timestamp, triage status, state, entity type, and detection summary. The detection summary includes key details about the detection including event specific details and description.\n        \n        Returns:\n            str: Formatted string with detection summary.\n        ",
+      "inputSchema": {
+        "properties": {
+          "detection_id": {
+            "description": "ID of the detection to retrieve summary for",
+            "minimum": 1,
+            "title": "Detection Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "detection_id"
+        ],
+        "title": "get_detection_summaryArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_detection_summaryOutput",
+        "type": "object"
+      },
+      "tokens": 132
+    },
+    {
+      "name": "get_detection_pcap",
+      "description": "\n        Get pcap file for a specific detection.\n        \n        Returns:\n            str: Base64 encoded pcap data or error message.\n\n        Raises:\n            Exception: If retrieval fails.\n        ",
+      "inputSchema": {
+        "properties": {
+          "detection_id": {
+            "description": "ID of the detection to retrieve pcap for",
+            "minimum": 1,
+            "title": "Detection Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "detection_id"
+        ],
+        "title": "get_detection_pcapArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_detection_pcapOutput",
+        "type": "object"
+      },
+      "tokens": 113
+    },
+    {
+      "name": "list_entities",
+      "description": "\n        List entities (hosts & accounts) in Vectra platform based on various filters. This tool returns entities with all their detailed information.\n\n        Returns:\n            str: Formatted string with list of detections.\n        ",
+      "inputSchema": {
+        "properties": {
+          "entity_type": {
+            "description": "Select type of entity to retrieve. Options are 'account' or 'host'.",
+            "enum": [
+              "account",
+              "host"
+            ],
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "state": {
+            "default": "active",
+            "description": "Filter by entity state (active, inactive)",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "ordering": {
+            "default": "urgency_score",
+            "description": "Order by 'urgency_score', '-urgency_score', 'last_detection_timestamp', '-last_detection_timestamp', 'last_modified_timestamp', '-last_modified_timestamp', 'name', '-name'. The '-' prefix indicates descending order.",
+            "enum": [
+              "urgency_score",
+              "-urgency_score",
+              "last_detection_timestamp",
+              "-last_detection_timestamp",
+              "last_modified_timestamp",
+              "-last_modified_timestamp",
+              "name",
+              "-name"
+            ],
+            "title": "Ordering",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by entity name. Can also perform partial word match.",
+            "title": "Name"
+          },
+          "host_ip": {
+            "anyOf": [
+              {
+                "format": "ipvanyaddress",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by entity IP address. Only applicable for host entities.",
+            "title": "Host Ip"
+          },
+          "is_prioritized": {
+            "default": true,
+            "description": "Filter for prioritized entities or non-prioritized entities. Defaults to True to return only prioritized entities.",
+            "title": "Is Prioritized",
+            "type": "boolean"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter for entities with a particular tag",
+            "title": "Tags"
+          },
+          "limit": {
+            "default": 1000,
+            "description": "Maximum number of detections to return in the batch. None means no limit",
+            "maximum": 1000,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "entity_type"
+        ],
+        "title": "list_entitiesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_entitiesOutput",
+        "type": "object"
+      },
+      "tokens": 454
+    },
+    {
+      "name": "lookup_entity_info_by_name",
+      "description": "\n        Retrieve information about an entity (account or host) by its name. Search is case-insensitive and can match partial names.\n\n        Returns:\n            str: Formatted string with entity information including name, ID, type, last detection timestamp, prioritization status, urgency score, state, and IP address (when available).\n            If no entities are found, returns a message indicating that no matches were found.\n        ",
+      "inputSchema": {
+        "properties": {
+          "entity_name": {
+            "description": "Name or partial name of the entity to look up. No spaces allowed.",
+            "title": "Entity Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_name"
+        ],
+        "title": "lookup_entity_info_by_nameArguments",
+        "type": "object"
+      },
+      "tokens": 156
+    },
+    {
+      "name": "lookup_host_by_ip",
+      "description": "\n        Retrieve information about a host entity by its IP address.\n        \n        Returns:\n            str: Formatted string with host information including name, ID, type, last detection timestamp, prioritization status, urgency score, state, and IP address.\n            If no hosts are found with the specified IP address, returns a message indicating that no matches were found.\n            If an error occurs during the request, raises an exception with the error message.\n        ",
+      "inputSchema": {
+        "properties": {
+          "host_ip": {
+            "description": "IP address of the host to look up. Must be a valid IPv4 or IPv6 address.",
+            "format": "ipvanyaddress",
+            "title": "Host Ip",
+            "type": "string"
+          }
+        },
+        "required": [
+          "host_ip"
+        ],
+        "title": "lookup_host_by_ipArguments",
+        "type": "object"
+      },
+      "tokens": 173
+    },
+    {
+      "name": "get_host_details",
+      "description": "\n        Get complete detailed information about a specific host entity.\n        \n        Returns:\n            str: Formatted string with detailed information about the host entity. \n            If the host is not found, returns a message indicating that no host was found with the specified ID.\n            If an error occurs during the request, raises an exception with the error message.\n        ",
+      "inputSchema": {
+        "properties": {
+          "host_id": {
+            "description": "ID of the host entity to retrieve details for",
+            "minimum": 1,
+            "title": "Host Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "host_id"
+        ],
+        "title": "get_host_detailsArguments",
+        "type": "object"
+      },
+      "tokens": 140
+    },
+    {
+      "name": "get_account_details",
+      "description": "\n        Get complete detailed information about a specific account entity.\n        \n        Returns:\n            str: Formatted string with detailed information about the account entity. \n            If the account is not found, returns a message indicating that no account was found with the specified ID.\n            If an error occurs during the request, raises an exception with the error message.\n        ",
+      "inputSchema": {
+        "properties": {
+          "account_id": {
+            "description": "ID of the account in Vectra platform to retrieve details for",
+            "minimum": 1,
+            "title": "Account Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "account_id"
+        ],
+        "title": "get_account_detailsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_account_detailsOutput",
+        "type": "object"
+      },
+      "tokens": 144
+    },
+    {
+      "name": "create_assignment",
+      "description": "\n        Create investigation assignment for an account or host\n        \n        Returns:\n            str: Formatted string with assignment details.\n        Raises:\n            Exception: If assignment creation fails.\n        ",
+      "inputSchema": {
+        "properties": {
+          "assign_to_user_id": {
+            "description": "ID of the user to assign the entity to",
+            "minimum": 1,
+            "title": "Assign To User Id",
+            "type": "integer"
+          },
+          "assign_entity_id": {
+            "description": "ID of the entity (account or host) to assign.",
+            "title": "Assign Entity Id",
+            "type": "integer"
+          },
+          "assign_entity_type": {
+            "description": "Type of the entity (account or host) to assign. This is the type of the entity specified in assign_entity_id",
+            "enum": [
+              "account",
+              "host"
+            ],
+            "title": "Assign Entity Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assign_to_user_id",
+          "assign_entity_id",
+          "assign_entity_type"
+        ],
+        "title": "create_assignmentArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "create_assignmentOutput",
+        "type": "object"
+      },
+      "tokens": 195
+    },
+    {
+      "name": "list_assignments",
+      "description": "\n        List all investigation assignments with optional filtering by timestamp and resolved state.\n        \n        Returns:\n            str: JSON string with list of assignments.\n        ",
+      "inputSchema": {
+        "properties": {
+          "resolved": {
+            "default": false,
+            "description": "Filter assignments by resolved state. True for resolved, False for unresolved. Default is False.",
+            "title": "Resolved",
+            "type": "boolean"
+          },
+          "created_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Use this to list assignments created at or after this time stamp (YYYY-MM-DDTHH:MM:SS)",
+            "title": "Created After"
+          }
+        },
+        "title": "list_assignmentsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_assignmentsOutput",
+        "type": "object"
+      },
+      "tokens": 149
+    },
+    {
+      "name": "list_assignments_for_user",
+      "description": "\n        List all investigation assignments assigned to a user/analyst.\n        \n        Returns:\n            str: JSON string with list of assignments.\n        ",
+      "inputSchema": {
+        "properties": {
+          "user_id": {
+            "description": "Vectra platform user ID to retrieve assignments for.",
+            "title": "User Id",
+            "type": "integer"
+          },
+          "resolved": {
+            "default": false,
+            "description": "Filter assignments by resolved state. True for resolved, False for unresolved. Default is False to retrieve only unresolved/open assignments.",
+            "title": "Resolved",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "user_id"
+        ],
+        "title": "list_assignments_for_userArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_assignments_for_userOutput",
+        "type": "object"
+      },
+      "tokens": 137
+    },
+    {
+      "name": "delete_assignment",
+      "description": "\n        Unassign or delete an investigation assignment by its ID. Use list_assignments and list_assignments_for_user to fetch assignment IDs.\n\n        Returns:\n            str: Confirmation message of deletion.\n        Raises:\n            Exception: If deleting assignment fails.\n        ",
+      "inputSchema": {
+        "properties": {
+          "assignment_id": {
+            "description": "ID of the assignment to delete",
+            "minimum": 1,
+            "title": "Assignment Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assignment_id"
+        ],
+        "title": "delete_assignmentArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "delete_assignmentOutput",
+        "type": "object"
+      },
+      "tokens": 114
+    },
+    {
+      "name": "get_assignment_detail_by_id",
+      "description": "\n        Retrieve details of a specific investigation assignment.\n\n        Returns:\n            str: JSON string with details of the assignment.\n        Raises:\n            Exception: If fetching assignment details fails.\n        ",
+      "inputSchema": {
+        "properties": {
+          "assignment_id": {
+            "description": "ID of the assignment to retrieve",
+            "minimum": 1,
+            "title": "Assignment Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assignment_id"
+        ],
+        "title": "get_assignment_detail_by_idArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_assignment_detail_by_idOutput",
+        "type": "object"
+      },
+      "tokens": 106
+    },
+    {
+      "name": "get_assignment_for_entity",
+      "description": "\n        Retrieve investigation assignment for a specific account.\n\n        Returns:\n            str: JSON string with assignment details for the account.\n        Raises:\n            Exception: If fetching assignment fails.\n        ",
+      "inputSchema": {
+        "properties": {
+          "entity_ids": {
+            "description": "List of entity IDs to retrieve assignment for",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Entity Ids",
+            "type": "array"
+          },
+          "entity_type": {
+            "description": "Type of entity to retrieve assignment for (host or account)",
+            "enum": [
+              "host",
+              "account"
+            ],
+            "title": "Entity Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_ids",
+          "entity_type"
+        ],
+        "title": "get_assignment_for_entityArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_assignment_for_entityOutput",
+        "type": "object"
+      },
+      "tokens": 148
+    },
+    {
+      "name": "create_entity_note",
+      "description": "\n        Add an investigation note to an entity (host or account).\n        \n        Returns:\n            str: Confirmation message with note details.\n        ",
+      "inputSchema": {
+        "properties": {
+          "entity_id": {
+            "description": "ID of the entity to add note to",
+            "minimum": 1,
+            "title": "Entity Id",
+            "type": "integer"
+          },
+          "entity_type": {
+            "description": "Type of entity to add note to (host or account)",
+            "enum": [
+              "host",
+              "account"
+            ],
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "note": {
+            "description": "Note text to add to the entity.",
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_id",
+          "entity_type",
+          "note"
+        ],
+        "title": "create_entity_noteArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "create_entity_noteOutput",
+        "type": "object"
+      },
+      "tokens": 155
+    },
+    {
+      "name": "mark_detection_fixed",
+      "description": "\n        Marks or unmark detection as fixed.\n        For marking as fixed, the detection will be closed as remediated, indicating it has been addressed.\n        \n        Returns:\n            str: Confirmation message of operation.\n        Raises:\n            Exception: If marking detections fails.\n        ",
+      "inputSchema": {
+        "properties": {
+          "detection_ids": {
+            "description": "List of detection IDs to mark as fixed or not fixed",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Detection Ids",
+            "type": "array"
+          },
+          "mark_fixed": {
+            "description": "True to mark as fixed, False to unmark as fixed",
+            "title": "Mark Fixed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "detection_ids",
+          "mark_fixed"
+        ],
+        "title": "mark_detection_fixedArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "mark_detection_fixedOutput",
+        "type": "object"
+      },
+      "tokens": 166
+    },
+    {
+      "name": "list_platform_users",
+      "description": "\n        List users in the Vectra platform.\n        \n        Returns:\n            str: JSON string with list of users.\n        ",
+      "inputSchema": {
+        "properties": {
+          "role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "admins",
+                  "auditor",
+                  "global_analyst",
+                  "read_only",
+                  "restricted_admins",
+                  "security_analyst",
+                  "setting_admins",
+                  "super_admins"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by user role (choices: admins, auditor, global_analyst, read_only, restricted_admins, security_analyst, setting_admins, super_admins). Defaults to None, which returns all users.",
+            "title": "Role"
+          },
+          "last_login_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by last login date in ISO format (YYYY-MM-DDTHH:MM:SS)",
+            "title": "Last Login After"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Valid email address of the Vectra platform user to filter by.",
+            "title": "Email"
+          },
+          "limit": {
+            "default": 1000,
+            "description": "Maximum number of users to return. Defaults to 1000",
+            "maximum": 1000,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_platform_usersArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_platform_usersOutput",
+        "type": "object"
+      },
+      "tokens": 327
+    },
+    {
+      "name": "list_lockdown_entities",
+      "description": "\n        List entities that are currently in lockdown.\n        \n        Returns:\n            str: JSON string with list of entities in lockdown.\n        ",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_lockdown_entitiesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_lockdown_entitiesOutput",
+        "type": "object"
+      },
+      "tokens": 63
+    }
+  ],
+  "totalTokens": 5368,
+  "prompts": [
+    {
+      "name": "Summarize Detection",
+      "description": "Get a detailed summary of a specific detection in Vectra AI platform.",
+      "arguments": [
+        {
+          "name": "detection_id",
+          "description": "ID of the detection to summarize",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Visualize Entity Detections",
+      "description": "Visualize realtionship of detections related to a specific entity in Vectra AI platform with a interactive graph.",
+      "arguments": [
+        {
+          "name": "entity_id",
+          "description": "ID of the entity to visualize detections for",
+          "required": false
+        },
+        {
+          "name": "graph_theme",
+          "description": "Theme for the graph visualization",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "resources": [],
+  "resourceTemplates": []
+}

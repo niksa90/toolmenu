@@ -1,0 +1,80 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "github-chat-mcp",
+    "version": "1.6.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:58:26.857Z",
+  "tools": [
+    {
+      "name": "index_repository",
+      "description": "Index a GitHub repository to analyze its codebase. This must be done before asking questions about the repository.",
+      "inputSchema": {
+        "properties": {
+          "repo_url": {
+            "description": "The GitHub repository URL to index (format: https://github.com/username/repo).",
+            "title": "Repo Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repo_url"
+        ],
+        "title": "index_repositoryArguments",
+        "type": "object"
+      },
+      "tokens": 86
+    },
+    {
+      "name": "query_repository",
+      "description": "Ask questions about a GitHub repository and receive detailed AI responses. The repository must be indexed first.",
+      "inputSchema": {
+        "properties": {
+          "repo_url": {
+            "description": "The GitHub repository URL to query (format: https://github.com/username/repo).",
+            "title": "Repo Url",
+            "type": "string"
+          },
+          "question": {
+            "description": "The question to ask about the repository.",
+            "title": "Question",
+            "type": "string"
+          },
+          "conversation_history": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Previous conversation history for multi-turn conversations.",
+            "title": "Conversation History"
+          }
+        },
+        "required": [
+          "repo_url",
+          "question"
+        ],
+        "title": "query_repositoryArguments",
+        "type": "object"
+      },
+      "tokens": 158
+    }
+  ],
+  "totalTokens": 244,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

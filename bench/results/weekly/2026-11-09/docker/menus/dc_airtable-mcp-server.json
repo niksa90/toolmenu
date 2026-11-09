@@ -1,0 +1,1180 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "airtable-mcp-server",
+    "version": "1.14.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:11:49.164Z",
+  "tools": [
+    {
+      "name": "list_records",
+      "title": "List Records",
+      "description": "List records from a table",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "view": {
+            "description": "The name or ID of a view in the table",
+            "type": "string"
+          },
+          "maxRecords": {
+            "description": "The maximum total number of records that will be returned",
+            "type": "number"
+          },
+          "filterByFormula": {
+            "description": "A formula used to filter records",
+            "type": "string"
+          },
+          "sort": {
+            "description": "A list of sort objects that specifies how the records will be ordered",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ]
+                }
+              },
+              "required": [
+                "field"
+              ]
+            }
+          },
+          "fields": {
+            "description": "An array of field names or IDs to include in the response. Omit this to return all fields, which is usually what you want. Only set it if the table has many fields and you don't need most of them, AND you already know the exact field names or IDs (e.g. from describe_table) - guessing them will silently return the wrong data.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "fields": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "required": [
+                "id",
+                "fields"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "records"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 285
+    },
+    {
+      "name": "search_records",
+      "title": "Search Records",
+      "description": "Search for records containing specific text",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "searchTerm": {
+            "description": "The text to search for",
+            "type": "string"
+          },
+          "fieldIds": {
+            "description": "Optional array of field IDs to search in",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "maxRecords": {
+            "description": "The maximum total number of records that will be returned",
+            "type": "number"
+          },
+          "view": {
+            "description": "The name or ID of a view in the table",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId",
+          "searchTerm"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "fields": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "required": [
+                "id",
+                "fields"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "records"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 167
+    },
+    {
+      "name": "list_bases",
+      "title": "List Bases",
+      "description": "List all accessible Airtable bases",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "bases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "permissionLevel": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "permissionLevel"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "bases"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 43
+    },
+    {
+      "name": "list_tables",
+      "title": "List Tables",
+      "description": "List all tables in a specific base",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "detailLevel": {
+            "default": "full",
+            "description": "Detail level for table information:\n- tableIdentifiersOnly: table IDs and names\n- identifiersOnly: table, field, and view IDs and names\n- full: complete details including field types, descriptions, and configurations\n\nNote for LLMs: To optimize context window usage, request the minimum detail level needed:\n- Use 'tableIdentifiersOnly' when you only need to list or reference tables\n- Use 'identifiersOnly' when you need to work with field or view references\n- Only use 'full' when you need field types, descriptions, or other detailed configuration\n\nIf you only need detailed information on a few tables in a base with many complex tables, it might be more efficient for you to use list_tables with tableIdentifiersOnly, then describe_table with full on the specific tables you want.",
+            "type": "string",
+            "enum": [
+              "tableIdentifiersOnly",
+              "identifiersOnly",
+              "full"
+            ]
+          }
+        },
+        "required": [
+          "baseId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            }
+          }
+        },
+        "required": [
+          "tables"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 256
+    },
+    {
+      "name": "describe_table",
+      "title": "Describe Table",
+      "description": "Get detailed information about a specific table",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "detailLevel": {
+            "default": "full",
+            "description": "Detail level for table information:\n- tableIdentifiersOnly: table IDs and names\n- identifiersOnly: table, field, and view IDs and names\n- full: complete details including field types, descriptions, and configurations\n\nNote for LLMs: To optimize context window usage, request the minimum detail level needed:\n- Use 'tableIdentifiersOnly' when you only need to list or reference tables\n- Use 'identifiersOnly' when you need to work with field or view references\n- Only use 'full' when you need field types, descriptions, or other detailed configuration\n\nIf you only need detailed information on a few tables in a base with many complex tables, it might be more efficient for you to use list_tables with tableIdentifiersOnly, then describe_table with full on the specific tables you want.",
+            "type": "string",
+            "enum": [
+              "tableIdentifiersOnly",
+              "identifiersOnly",
+              "full"
+            ]
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "table": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "table"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 277
+    },
+    {
+      "name": "get_record",
+      "title": "Get Record",
+      "description": "Get a specific record by ID",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "recordId": {
+            "description": "The ID of the record",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId",
+          "recordId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "fields"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 101
+    },
+    {
+      "name": "create_record",
+      "title": "Create Record",
+      "description": "Create a new record in a table",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "fields": {
+            "description": "The fields for the new record",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId",
+          "fields"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "fields"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 114
+    },
+    {
+      "name": "update_records",
+      "title": "Update Records",
+      "description": "Update up to 10 records in a table",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "records": {
+            "description": "Array of records to update (max 10)",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "fields": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "required": [
+                "id",
+                "fields"
+              ]
+            }
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId",
+          "records"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "fields": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "required": [
+                "id",
+                "fields"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "records"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 149
+    },
+    {
+      "name": "delete_records",
+      "title": "Delete Records",
+      "description": "Delete records from a table",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "recordIds": {
+            "description": "Array of record IDs to delete",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId",
+          "recordIds"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "records"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 107
+    },
+    {
+      "name": "create_table",
+      "title": "Create Table",
+      "description": "Create a new table in a base",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the table",
+            "type": "string"
+          },
+          "fields": {
+            "description": "Array of field definitions",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            }
+          },
+          "description": {
+            "description": "Optional description for the table",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseId",
+          "name",
+          "fields"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "table": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "table"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 129
+    },
+    {
+      "name": "update_table",
+      "title": "Update Table",
+      "description": "Update a table's name or description",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "name": {
+            "description": "New name for the table",
+            "type": "string"
+          },
+          "description": {
+            "description": "New description for the table",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "table": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "table"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 113
+    },
+    {
+      "name": "create_field",
+      "title": "Create Field",
+      "description": "Create a new field in a table",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "nested": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "description": "Field definition",
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "field"
+            ]
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId",
+          "nested"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "field"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 124
+    },
+    {
+      "name": "update_field",
+      "title": "Update Field",
+      "description": "Update a field's name or description",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "fieldId": {
+            "description": "The ID of the field",
+            "type": "string"
+          },
+          "name": {
+            "description": "New name for the field",
+            "type": "string"
+          },
+          "description": {
+            "description": "New description for the field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId",
+          "fieldId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "field"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 132
+    },
+    {
+      "name": "create_comment",
+      "title": "Create Comment",
+      "description": "Create a comment on a record",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "recordId": {
+            "description": "The ID of the record",
+            "type": "string"
+          },
+          "text": {
+            "description": "The comment text",
+            "type": "string"
+          },
+          "parentCommentId": {
+            "description": "Optional parent comment ID for threaded replies",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId",
+          "recordId",
+          "text"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "createdTime": {
+                "type": "string"
+              },
+              "lastUpdatedTime": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "text": {
+                "type": "string"
+              },
+              "author": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "email"
+                ],
+                "additionalProperties": false
+              },
+              "parentCommentId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "createdTime",
+              "lastUpdatedTime",
+              "text",
+              "author"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "comment"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 135
+    },
+    {
+      "name": "list_comments",
+      "title": "List Comments",
+      "description": "List comments on a record",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "tableId": {
+            "description": "The ID or name of the table",
+            "type": "string"
+          },
+          "recordId": {
+            "description": "The ID of the record",
+            "type": "string"
+          },
+          "pageSize": {
+            "description": "Number of comments to return (max 100, default 100)",
+            "type": "number"
+          },
+          "offset": {
+            "description": "Offset for pagination",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseId",
+          "tableId",
+          "recordId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "comments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "createdTime": {
+                  "type": "string"
+                },
+                "lastUpdatedTime": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "text": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "email"
+                  ],
+                  "additionalProperties": false
+                },
+                "parentCommentId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "createdTime",
+                "lastUpdatedTime",
+                "text",
+                "author"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "comments",
+          "offset"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 138
+    },
+    {
+      "name": "upload_attachment",
+      "title": "Upload Attachment",
+      "description": "Upload a file directly to an attachment field on an existing record using Airtable's upload API. Supports files up to 5 MB. For larger files, use create_record or update_records with a public URL. The record must already exist.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "baseId": {
+            "description": "The ID of the base",
+            "type": "string"
+          },
+          "recordId": {
+            "description": "The ID of the existing record (e.g. recXXXXXXXXXXXXXX)",
+            "type": "string"
+          },
+          "attachmentFieldIdOrName": {
+            "description": "The ID or name of the attachment field (e.g. fldXXXXXXXXXXXXXX or \"Images\")",
+            "type": "string"
+          },
+          "file": {
+            "description": "Raw base64-encoded file content (no data URL prefix)",
+            "type": "string"
+          },
+          "filename": {
+            "description": "Filename for the attachment (e.g. \"image.jpg\")",
+            "type": "string"
+          },
+          "contentType": {
+            "description": "MIME type of the file (e.g. \"image/jpeg\", \"image/png\", \"application/pdf\")",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseId",
+          "recordId",
+          "attachmentFieldIdOrName",
+          "file",
+          "filename",
+          "contentType"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "fields"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 256
+    }
+  ],
+  "totalTokens": 2526
+}

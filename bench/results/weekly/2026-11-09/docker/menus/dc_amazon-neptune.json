@@ -1,0 +1,237 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "awslabs.neptune-mcp-server",
+    "version": "1.23.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:28:13.409Z",
+  "tools": [
+    {
+      "name": "get_graph_status",
+      "description": "Get the status of the currently configured Amazon Neptune graph.",
+      "inputSchema": {
+        "properties": {},
+        "title": "get_statusArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_statusOutput",
+        "type": "object"
+      },
+      "tokens": 37
+    },
+    {
+      "name": "get_graph_schema",
+      "description": "Get the schema for the graph including the vertex and edge labels as well as the\n(vertex)-[edge]->(vertex) combinations.\n",
+      "inputSchema": {
+        "properties": {},
+        "title": "get_schemaArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Node": {
+            "description": "Defines a node type in the graph schema.\n\nNodes represent entities in the graph database and can have labels\nand properties that describe their characteristics.\n\nAttributes:\n    labels (str): The label(s) that categorize this node type\n    properties (List[Property]): List of properties that can be assigned to this node type",
+            "properties": {
+              "labels": {
+                "title": "Labels",
+                "type": "string"
+              },
+              "properties": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Property"
+                },
+                "default": [],
+                "title": "Properties"
+              }
+            },
+            "required": [
+              "labels"
+            ],
+            "title": "Node",
+            "type": "object"
+          },
+          "Property": {
+            "description": "Represents a property definition for nodes and relationships in the graph.\n\nProperties are key-value pairs that can be attached to both nodes and\nrelationships, storing additional metadata about these graph elements.\n\nAttributes:\n    name (str): The name/key of the property\n    type (str): The data type of the property value",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "type": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Type",
+                "type": "array"
+              }
+            },
+            "required": [
+              "name",
+              "type"
+            ],
+            "title": "Property",
+            "type": "object"
+          },
+          "Relationship": {
+            "description": "Defines a relationship type in the graph schema.\n\nRelationships represent connections between nodes in the graph and can\nhave their own properties to describe the nature of the connection.\n\nAttributes:\n    type (str): The type/category of the relationship\n    properties (List[Property]): List of properties that can be assigned to this relationship type",
+            "properties": {
+              "type": {
+                "title": "Type",
+                "type": "string"
+              },
+              "properties": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Property"
+                },
+                "default": [],
+                "title": "Properties"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "title": "Relationship",
+            "type": "object"
+          },
+          "RelationshipPattern": {
+            "description": "Defines a valid relationship pattern between nodes in the graph.\n\nRelationship patterns describe the allowed connections between different\ntypes of nodes in the graph schema.\n\nAttributes:\n    left_node (str): The label of the source/starting node\n    right_node (str): The label of the target/ending node\n    relation (str): The type of relationship connecting the nodes",
+            "properties": {
+              "left_node": {
+                "title": "Left Node",
+                "type": "string"
+              },
+              "right_node": {
+                "title": "Right Node",
+                "type": "string"
+              },
+              "relation": {
+                "title": "Relation",
+                "type": "string"
+              }
+            },
+            "required": [
+              "left_node",
+              "right_node",
+              "relation"
+            ],
+            "title": "RelationshipPattern",
+            "type": "object"
+          }
+        },
+        "description": "Represents the complete schema definition for the graph database.\n\nThe graph schema defines all possible node types, relationship types,\nand valid patterns of connections between nodes.\n\nAttributes:\n    nodes (List[Node]): List of all node types defined in the schema\n    relationships (List[Relationship]): List of all relationship types defined in the schema\n    relationship_patterns (List[RelationshipPattern]): List of valid relationship patterns",
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/$defs/Node"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "relationships": {
+            "items": {
+              "$ref": "#/$defs/Relationship"
+            },
+            "title": "Relationships",
+            "type": "array"
+          },
+          "relationship_patterns": {
+            "items": {
+              "$ref": "#/$defs/RelationshipPattern"
+            },
+            "title": "Relationship Patterns",
+            "type": "array"
+          }
+        },
+        "required": [
+          "nodes",
+          "relationships",
+          "relationship_patterns"
+        ],
+        "title": "GraphSchema",
+        "type": "object"
+      },
+      "tokens": 55
+    },
+    {
+      "name": "run_opencypher_query",
+      "description": "Executes the provided openCypher against the graph.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Parameters"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "run_opencypher_queryArguments",
+        "type": "object"
+      },
+      "tokens": 85
+    },
+    {
+      "name": "run_gremlin_query",
+      "description": "Executes the provided Tinkerpop Gremlin against the graph.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "run_gremlin_queryArguments",
+        "type": "object"
+      },
+      "tokens": 58
+    }
+  ],
+  "totalTokens": 235,
+  "prompts": [],
+  "resources": [
+    {
+      "name": "GraphStatus",
+      "uri": "amazon-neptune://status",
+      "description": "Get the status of the currently configured Amazon Neptune graph.",
+      "mimeType": "application/text"
+    },
+    {
+      "name": "GraphSchema",
+      "uri": "amazon-neptune://schema",
+      "description": "Get the schema for the graph including the vertex and edge labels as well as the\n(vertex)-[edge]->(vertex) combinations.\n",
+      "mimeType": "application/text"
+    }
+  ],
+  "resourceTemplates": []
+}

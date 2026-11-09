@@ -1,0 +1,144 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "securenote.link",
+    "version": "3.1.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {
+      "io.modelcontextprotocol/ui": {}
+    }
+  },
+  "capturedAt": "2026-11-09T19:04:16.310Z",
+  "tools": [
+    {
+      "name": "create_note",
+      "description": "Encrypt a message and store it via the securenote.link API.\n\nReturns the note ID, decryption key, shareable one-click URL, expiry,\nand password-protection status.\n\nThe one-click URL embeds the decryption key in the fragment (#), which is\nnever sent to the server. For maximum security, share the URL and key\nthrough separate channels.\n\nArgs:\n    text:       The plain-text message to encrypt and store.\n    password:   Optional password for additional protection.\n    expires_in: Expiry time in hours — must be one of: 1, 24, 72, 168.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "expires_in": {
+            "default": 24,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 200
+    },
+    {
+      "name": "get_note",
+      "description": "Retrieve and decrypt a note from the securenote.link API.\n\nArgs:\n    secret_id:      The ID of the note to retrieve.\n    decryption_key: The base64-encoded decryption key (from the URL fragment or create_note).\n    password:       Required only if the note is password-protected.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "secret_id": {
+            "type": "string"
+          },
+          "decryption_key": {
+            "type": "string"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "secret_id",
+          "decryption_key"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 138
+    },
+    {
+      "name": "get_instructions",
+      "description": "Returns a guide on how to use this secure note sharing service,\nintended for both humans and AI agents.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 48
+    }
+  ],
+  "totalTokens": 386,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

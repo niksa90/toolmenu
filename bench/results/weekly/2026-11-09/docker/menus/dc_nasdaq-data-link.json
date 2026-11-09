@@ -1,0 +1,224 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "NASDAQ Data Link MCP",
+    "version": "1.20.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:20:12.500Z",
+  "tools": [
+    {
+      "name": "search_datasets",
+      "description": "\nSearch for datasets by keyword.\n\nParameters:\n  - query: Search term (e.g., 'GDP', 'stock prices', 'bitcoin')\n\nExample: search_datasets(query='oil prices')\n",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_datasetsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_datasetsOutput",
+        "type": "object"
+      },
+      "tokens": 90
+    },
+    {
+      "name": "get_dataset",
+      "description": "\nGet data from a specific dataset.\n\nParameters:\n  - dataset_code: Dataset code in format 'DATABASE/DATASET' (e.g., 'WIKI/AAPL')\n  - start_date: Optional start date in YYYY-MM-DD format\n  - end_date: Optional end date in YYYY-MM-DD format\n\nExample: get_dataset(dataset_code='WIKI/AAPL', start_date='2020-01-01')\n",
+      "inputSchema": {
+        "properties": {
+          "dataset_code": {
+            "title": "Dataset Code",
+            "type": "string"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "End Date"
+          }
+        },
+        "required": [
+          "dataset_code"
+        ],
+        "title": "get_datasetArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_datasetOutput",
+        "type": "object"
+      },
+      "tokens": 189
+    },
+    {
+      "name": "get_dataset_metadata",
+      "description": "\nGet metadata about a dataset without downloading data.\n\nParameters:\n  - dataset_code: Dataset code in format 'DATABASE/DATASET' (e.g., 'WIKI/AAPL')\n\nExample: get_dataset_metadata(dataset_code='WIKI/AAPL')\n",
+      "inputSchema": {
+        "properties": {
+          "dataset_code": {
+            "title": "Dataset Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_code"
+        ],
+        "title": "get_dataset_metadataArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_dataset_metadataDictOutput",
+        "type": "object"
+      },
+      "tokens": 104
+    },
+    {
+      "name": "list_databases",
+      "description": "\nList available databases.\n\nExample: list_databases()\n",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_databasesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_databasesOutput",
+        "type": "object"
+      },
+      "tokens": 43
+    },
+    {
+      "name": "export_dataset",
+      "description": "\nExport dataset in different formats.\n\nParameters:\n  - dataset_code: Dataset code in format 'DATABASE/DATASET'\n  - output_format: Export format: 'csv', 'json', or 'xml' (default: csv)\n  - start_date: Optional start date in YYYY-MM-DD format\n  - end_date: Optional end date in YYYY-MM-DD format\n\nExample: export_dataset(dataset_code='WIKI/AAPL', output_format='json')\n",
+      "inputSchema": {
+        "properties": {
+          "dataset_code": {
+            "title": "Dataset Code",
+            "type": "string"
+          },
+          "output_format": {
+            "default": "csv",
+            "title": "Output Format",
+            "type": "string"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "End Date"
+          }
+        },
+        "required": [
+          "dataset_code"
+        ],
+        "title": "export_datasetArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "export_datasetOutput",
+        "type": "object"
+      },
+      "tokens": 213
+    }
+  ],
+  "totalTokens": 639,
+  "prompts": [],
+  "resources": [
+    {
+      "name": "list_available_databases",
+      "uri": "nasdaq://databases",
+      "description": "List all available Nasdaq Data Link databases with descriptions.",
+      "mimeType": "text/plain"
+    }
+  ],
+  "resourceTemplates": []
+}

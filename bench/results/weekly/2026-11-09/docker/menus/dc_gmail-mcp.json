@@ -1,0 +1,86 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "gmail-mcp",
+    "version": "1.0.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:34:01.680Z",
+  "tools": [
+    {
+      "name": "listMessages",
+      "description": "List recent messages from Gmail inbox",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Number of messages to retrieve (default: 10, max: 100)",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+          }
+        }
+      },
+      "tokens": 62
+    },
+    {
+      "name": "findMessage",
+      "description": "Search for messages containing specific words or phrases",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query (supports Gmail search syntax)"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "tokens": 49
+    },
+    {
+      "name": "sendMessage",
+      "description": "Send an email message",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string",
+            "description": "Recipient email address",
+            "format": "email"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject"
+          },
+          "body": {
+            "type": "string",
+            "description": "Email message body"
+          },
+          "cc": {
+            "type": "string",
+            "description": "CC email address (optional)",
+            "format": "email"
+          },
+          "bcc": {
+            "type": "string",
+            "description": "BCC email address (optional)",
+            "format": "email"
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "body"
+        ]
+      },
+      "tokens": 113
+    }
+  ],
+  "totalTokens": 224
+}

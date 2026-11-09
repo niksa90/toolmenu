@@ -1,0 +1,160 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "PluggedinMCP",
+    "version": "1.10.5",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:05:14.515Z",
+  "tools": [
+    {
+      "name": "pluggedin_discover_tools",
+      "description": "Triggers discovery of tools (and resources/templates) for configured MCP servers in the Pluggedin App.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "server_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional UUID of a specific server to discover. If omitted, attempts to discover all."
+          },
+          "force_refresh": {
+            "type": "boolean",
+            "default": false,
+            "description": "Set to true to bypass cache and force a fresh discovery. Defaults to false."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Triggers tool discovery for configured MCP servers in the Pluggedin App.",
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 139
+    },
+    {
+      "name": "pluggedin_ask_knowledge_base",
+      "description": "Ask questions and get AI-generated answers from your knowledge base. Returns structured JSON with answer, document sources, and metadata.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Your question or query to get AI-generated answers from the knowledge base."
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false,
+        "description": "Ask questions and get AI-generated answers from your knowledge base. Returns JSON with answer, sources, and metadata.",
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 131
+    },
+    {
+      "name": "pluggedin_send_notification",
+      "description": "Send custom notifications through the Plugged.in system with optional email delivery. You can provide a custom title or let the system use a localized default.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Optional notification title. If not provided, a localized default will be used. Consider generating a descriptive title based on the message content."
+          },
+          "message": {
+            "type": "string",
+            "description": "The notification message content"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "INFO",
+              "SUCCESS",
+              "WARNING",
+              "ALERT"
+            ],
+            "description": "The severity level of the notification (defaults to INFO)",
+            "default": "INFO"
+          },
+          "sendEmail": {
+            "type": "boolean",
+            "description": "Whether to also send the notification via email",
+            "default": false
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "tokens": 163
+    },
+    {
+      "name": "pluggedin_list_notifications",
+      "description": "List notifications from the Plugged.in system with optional filters for unread only and result limit",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "onlyUnread": {
+            "type": "boolean",
+            "description": "Filter to show only unread notifications",
+            "default": false
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Limit the number of notifications returned (1-100)",
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      },
+      "tokens": 87
+    },
+    {
+      "name": "pluggedin_mark_notification_done",
+      "description": "Mark a notification as done in the Plugged.in system",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "notificationId": {
+            "type": "string",
+            "description": "The ID of the notification to mark as read"
+          }
+        },
+        "required": [
+          "notificationId"
+        ]
+      },
+      "tokens": 59
+    },
+    {
+      "name": "pluggedin_delete_notification",
+      "description": "Delete a notification from the Plugged.in system",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "notificationId": {
+            "type": "string",
+            "description": "The ID of the notification to delete"
+          }
+        },
+        "required": [
+          "notificationId"
+        ]
+      },
+      "tokens": 54
+    }
+  ],
+  "totalTokens": 633,
+  "prompts": [
+    {
+      "name": "pluggedin_proxy_capabilities",
+      "description": "Learn about the Plugged.in MCP Proxy capabilities and available tools",
+      "arguments": []
+    }
+  ],
+  "resources": [],
+  "resourceTemplates": []
+}

@@ -1,0 +1,445 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "pia-mcp-server",
+    "version": "0.1.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:24:12.349Z",
+  "tools": [
+    {
+      "name": "pia_search",
+      "description": "Search the Program Integrity Alliance (PIA) database of government oversight reports, recommendations, executive orders, legislation, and integrity data (GAO, OIG/Oversight.gov, CRS, DOJ, Congress.gov, Federal Register). One tool for all document search: scope by source/dataset/agency/date via filter, choose content vs titles via search_mode, sweep every source with wide, or discover filter values with facets_only. WHAT THE COUNTS MEAN: in 'content' mode (default) total_count and facet counts are TEXT CHUNKS / EXCERPTS — a single document is split into many chunks, so these counts are much larger than the number of documents and must NOT be reported as a document/report/article count. In 'titles' mode the counts are whole DOCUMENTS / ARTICLES. Use search_mode='titles' whenever the user asks how many documents, reports, or articles there are. Citations are very important to PIA users, so it is strongly expected that your answer: (1) gives every factual claim at least one clickable inline citation in the form [[1]](url), numbered sequentially from 1; (2) ends with a References section listing every source you cited, each reference on its own line (never multiple references on one line) — omit this section only for a pure count or summary with nothing specific to cite; and (3) includes a Find Out More section with the `govquery_url` so the user can open the full result set. Please do not present findings from these results without their inline citations and References section. Counts from free-text queries are approximate, because semantic search matches variations of the search terms.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query — natural language or keywords. Use \"\" or \"*\" to match all documents (for pure filter/facet lookups)."
+          },
+          "filter": {
+            "type": "string",
+            "description": "OData filter to scope results (boolean logic + grouping). Source: SourceDocumentDataSource eq 'GAO' (valid: GAO, Oversight.gov, CRS, Department of Justice, Congress.gov, Federal Register). Agency: referenced_agencies/any(a: a eq 'Department of Defense (DOD)'). Dataset: SourceDocumentDataSet eq 'executive orders'. To restrict to one source, pass its SourceDocumentDataSource filter."
+          },
+          "page": {
+            "type": "integer",
+            "default": 1,
+            "description": "Page number (1-based). Ignored when wide=true."
+          },
+          "page_size": {
+            "type": "integer",
+            "default": 10,
+            "description": "Results per page (max 50). Per-source before merge when wide=true."
+          },
+          "search_mode": {
+            "type": "string",
+            "enum": [
+              "content",
+              "titles"
+            ],
+            "default": "content",
+            "description": "'content' searches the full-text (chunked) index — total_count and facet counts are TEXT CHUNKS / EXCERPTS, NOT documents: one document is split into many chunks, so the counts EXCEED the number of documents. 'titles' searches the document-level index — total_count and facet counts are whole DOCUMENTS / ARTICLES, and it's faster for locating a specific document. Use 'titles' whenever the user asks how many documents / reports / articles there are."
+          },
+          "wide": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, sweep ALL sources/datasets in parallel and merge into one de-duplicated, score-ranked list. Use for the most comprehensive cross-source view."
+          },
+          "include_facets": {
+            "type": "boolean",
+            "default": false,
+            "description": "Include per-dimension facet counts (source, status, priority, agency, theme, …) alongside results."
+          },
+          "facets_only": {
+            "type": "boolean",
+            "default": false,
+            "description": "Return ONLY facet counts (available filter values), no document results — to discover filters before drilling in. Implies include_facets."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Optional hard cap on results (alias for page_size)."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "output": {
+            "type": "object",
+            "properties": {
+              "total_count": {
+                "type": "integer",
+                "description": "Match count, in the unit of the current search_mode. In 'content' mode this counts TEXT CHUNKS / EXCERPTS (a single document contributes many chunks), so it OVER-counts documents — do NOT report it as a number of documents/reports/articles. In 'titles' mode it counts whole DOCUMENTS / ARTICLES. For a true document count, re-run with search_mode='titles'."
+              },
+              "query": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              },
+              "results": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "snippet": {
+                      "type": "string"
+                    },
+                    "score": {
+                      "type": "number"
+                    },
+                    "data_source": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "publication_date": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "data_source",
+                    "url"
+                  ],
+                  "additionalProperties": true
+                }
+              },
+              "citations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "data_source": {
+                      "type": "string"
+                    },
+                    "publication_date": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "label",
+                    "url"
+                  ],
+                  "additionalProperties": true
+                }
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "govquery_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "GovQuery URL for equivalent results; source data can be found with these links."
+              },
+              "citation_guidance": {
+                "type": "string"
+              },
+              "facets": {
+                "type": "object",
+                "description": "Per-dimension value counts (source, status, agency, …). Each count is in the SAME unit as total_count for the current search_mode: TEXT CHUNKS / EXCERPTS in 'content' mode (over-counts documents), whole DOCUMENTS / ARTICLES in 'titles' mode. Don't present content-mode facet counts as document counts.",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "string"
+                      },
+                      "count": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "count"
+                    ],
+                    "additionalProperties": true
+                  }
+                }
+              },
+              "applied_filter": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The OData filter actually applied, echoed back so you can broaden or tighten it deliberately."
+              },
+              "returned": {
+                "type": "integer",
+                "description": "Number of results in this response (may be < total_count due to paging)."
+              },
+              "has_more": {
+                "type": "boolean",
+                "description": "True if more results exist beyond this page — narrow the filter or request the next page."
+              },
+              "hint": {
+                "type": "string",
+                "description": "Present only when there are zero results: names the likely over-constraining filter and suggests facets_only=true to discover valid values."
+              }
+            },
+            "required": [
+              "total_count",
+              "results"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "output"
+        ],
+        "additionalProperties": true
+      },
+      "tokens": 813
+    },
+    {
+      "name": "pia_oversight_recommendations",
+      "description": "Search oversight recommendations (Open Recommendations dataset) with facets enabled by default. Today's date is 2026-06-25. This dataset contains recommendations from GAO and Oversight.gov only — SourceDocumentDataSource filters for any other source will be ignored. Do NOT filter by SourceDocumentDataSet — this tool already targets the 'Open Recommendations' dataset automatically. IMPORTANT: When a text query is provided, do NOT add a referenced_agencies filter — the query handles relevance matching. Only use referenced_agencies when the query is empty (pure filter/facet lookups). `total_count` is the number of OPEN recommendations matching the query and all applied filters — report it as that count. The `results` are a representative sample to summarize, and `facets` break the set down by status, priority, agency, and theme. Counts from free-text queries are approximate (semantic matching); pure filter or agency lookups are exact. Recommendations have no per-document citations, so it is very important to always include the `govquery_url` for the full set in Rec Spotlight rather than citing individual rows.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query text"
+          },
+          "filter": {
+            "type": "string",
+            "description": "Optional OData filter expression supporting complex boolean logic.\n\nAVAILABLE FIELDS:\n• SourceDocumentDataSource: Data source/agency that published the document. Major sources (>1k documents): 'Department of Justice', 'Congress.gov', 'Oversight.gov', 'CRS', 'GAO', 'Federal Register'\n• SourceDocumentDataSet: Dataset or collection the document belongs to. Values include: 'reports', 'federal-reports', 'press-releases', 'executive orders', 'Open Recommendations'. Note: the value is 'Open Recommendations' (not 'recommendations'). Values: 'press-releases', 'bills-and-laws', 'reports', 'federal-reports', 'executive orders', 'state-and-local-reports', 'annual-financial-reports', 'congressional-justification-reports', 'performance-and-accountability-reports'\n• SourceDocumentTitle: Document title - use contains, eq for text matching\n• SourceDocumentPublishDate: Publication date - ISO 8601 format YYYY-MM-DD (e.g., '2023-01-01'). Use ge/le for ranges\n• RecStatus: Recommendation status\n• RecPriorityFlag: Priority flag for recommendations\n• SourceDocumentIsRecDoc: Whether the document contains recommendations. Values: 'No', 'Yes'\n• RecFraudRiskManagementThemePIA: Fraud risk management theme classification\n• RecMatterForCongressPIA: Whether the matter is for Congressional attention\n• RecRecommendation: Recommendation text - use contains, eq for text matching\n• RecAgencyComments: Agency comments on recommendations - use contains, eq for text matching\n• referenced_agencies: Agencies referenced by documents (collection field). IMPORTANT: Only use this filter when the query is empty (pure filter/facet lookups). Do NOT combine with a text query — the query already handles relevance matching. Example: (referenced_agencies/any(a: a eq 'Department of Defense (DOD)') or referenced_agencies/any(a: a eq 'Department of Justice (DOJ)')) - for single agency omit outer parentheses and 'or'. Get all values via pia_search with facets_only=true.\n\nOPERATORS:\n• Text: contains, eq, ne, startswith, endswith\n• Exact: eq (equals), ne (not equals), in (in list)\n• Date: ge (greater/equal), le (less/equal), eq (equals)\n• Logic: and, or, not, parentheses for grouping\n\nEXAMPLES:\n• \"SourceDocumentDataSource eq 'GAO'\"\n• \"SourceDocumentDataSource eq 'GAO' and RecStatus ne 'Closed'\"\n• \"(SourceDocumentDataSource eq 'GAO' or SourceDocumentDataSource eq 'OIG') and RecStatus eq 'Open'\"\n• \"SourceDocumentPublishDate ge '2020-01-01' and SourceDocumentPublishDate le '2024-12-31'\"\n\nTIP: Use pia_search with facets_only=true to get the most current available values.\n\nCOMMON AGENCY NAMES (use EXACT spelling for referenced_agencies):\nDepartment of Defense (DOD), Department of Health and Human Services (HHS),\nDepartment of Homeland Security (DHS), Department of Justice (DOJ),\nDepartment of Education (ED), Department of Veterans Affairs (VA),\nDepartment of the Treasury, Department of Agriculture (USDA),\nDepartment of the Interior (DOI), Department of Transportation (DOT),\nDepartment of Energy (DOE), Department of State, Department of Labor (DOL),\nDepartment of Commerce (DOC), Department of Housing and Urban Development (HUD),\nEnvironmental Protection Agency (EPA),\nNational Aeronautics and Space Administration (NASA),\nSocial Security Administration (SSA), Small Business Administration (SBA),\nOffice of Personnel Management (OPM), General Services Administration (GSA)"
+          },
+          "page": {
+            "type": "integer",
+            "description": "Page number (default: 1)",
+            "default": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "description": "Results per page (default: 100)",
+            "default": 100
+          },
+          "search_mode": {
+            "type": "string",
+            "description": "Search mode (default: content)",
+            "default": "content"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum results limit"
+          },
+          "include_facets": {
+            "type": "boolean",
+            "description": "Include facets in results (default: true)",
+            "default": true
+          },
+          "facets_only": {
+            "type": "boolean",
+            "default": false,
+            "description": "Return ONLY the facet breakdown + total_count + Rec Spotlight govquery_url, omitting the individual recommendation rows — to see the open-rec population broken down by status/priority/agency/theme without pulling rows."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "output": {
+            "type": "object",
+            "properties": {
+              "total_count": {
+                "type": "integer",
+                "description": "Number of OPEN recommendations matching the query AND every clause in `filter`. Scoped by agency/status/priority/etc. — e.g. a referenced_agencies filter returns that agency's open count, not the global total. Cite this as the headline number."
+              },
+              "query": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              },
+              "results": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "index": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "data_source": {
+                      "type": "string"
+                    },
+                    "publication_date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "content": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "agency": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "rec_recommendation": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "rec_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "rec_priority_flag": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "rec_fraud_risk_management_theme_pia": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "rec_agency_comments": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "rec_age_years": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "index",
+                    "data_source"
+                  ],
+                  "additionalProperties": true
+                }
+              },
+              "govquery_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Rec Spotlight deep link reproducing this query's full open-recommendation population (same filters + search_id). ALWAYS present this to the user."
+              },
+              "facets": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "string"
+                      },
+                      "count": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "count"
+                    ],
+                    "additionalProperties": true
+                  }
+                }
+              },
+              "applied_filter": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The OData filter actually applied, echoed back so you can broaden or tighten it deliberately."
+              },
+              "returned": {
+                "type": "integer",
+                "description": "Number of results in this response (may be < total_count due to paging)."
+              },
+              "has_more": {
+                "type": "boolean",
+                "description": "True if more results exist beyond this page — narrow the filter or request the next page."
+              },
+              "hint": {
+                "type": "string",
+                "description": "Present only when there are zero results: names the likely over-constraining filter and suggests facets_only=true to discover valid values."
+              }
+            },
+            "required": [
+              "total_count",
+              "results"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "output"
+        ],
+        "additionalProperties": true
+      },
+      "tokens": 1253
+    }
+  ],
+  "totalTokens": 2066,
+  "prompts": [
+    {
+      "name": "pia_assistant_guidance",
+      "description": "Comprehensive guidance for an LLM using PIA (GovQuery) tools: search strategy, citation format, and output structure",
+      "arguments": []
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mcp-core MCP server.  This is the starting point for all solutions created",
+    "version": "2.14.2",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:46:27.971Z",
+  "tools": [
+    {
+      "name": "prompt_understanding",
+      "description": "[DEPRECATED] MCP-CORE Prompt Understanding.\n\nALWAYS Use this tool first to understand the user's query and translate it into AWS expert advice.",
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 51
+    }
+  ],
+  "totalTokens": 51,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

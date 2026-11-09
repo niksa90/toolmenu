@@ -1,0 +1,958 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mcp-task-orchestrator-current",
+    "version": "3.16.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:36:39.315Z",
+  "tools": [
+    {
+      "name": "manage_items",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation: create, update, delete",
+            "enum": [
+              "create",
+              "update",
+              "delete"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "description": "Array of item objects for create/update"
+          },
+          "itemIds": {
+            "type": "array",
+            "description": "Array of item UUIDs or hex prefixes (4+ chars) for delete"
+          },
+          "recursive": {
+            "type": "boolean",
+            "description": "Default false (children block delete with a constraint error); true deletes descendants first."
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Shared default parent ID for create (UUID or hex prefix 4+ chars)"
+          },
+          "requiresVerification": {
+            "type": "boolean",
+            "description": "Ignored at the top level for create — set requiresVerification on each item in the items array instead."
+          },
+          "type": {
+            "type": "string",
+            "description": "Ignored at the top level — set type on each item in the items array instead."
+          },
+          "properties": {
+            "type": "string",
+            "description": "Ignored at the top level — set properties on each item in the items array instead."
+          },
+          "traits": {
+            "type": "string",
+            "description": "Comma-separated trait names adding note requirements from the traits: config; merged into properties automatically. Shared default for every item in the create or update batch; a per-item `traits` field overrides it for that item. On update, absent from both levels leaves existing traits untouched; an explicit empty string clears them."
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Client-generated UUID for idempotency (10 min cache, keyed by actor+requestId); requires actor; malformed values rejected."
+          },
+          "actor": {
+            "type": "object",
+            "description": "Actor: { id (required), kind (required: orchestrator|subagent|user|external), parent?, proof? }. Required when requestId is provided."
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "description": "Unified write operations for WorkItems (create, update, delete).\n\n**create** - Each item: `{ title (required), description?, summary?, role?, statusLabel?, priority?, complexity?, parentId?, metadata?, tags?, type?, properties?, requiresVerification? }`. Shared top-level `parentId` is the default for all items (per-item parentId overrides). Depth is auto-computed from parent (root=0, child=parent.depth+1, unbounded). Defaults: role=queue, priority=medium; complexity has no default.\n\n**update** - Each item: `{ itemId (required, UUID or hex prefix 4+ chars), title?, description?, summary?, statusLabel?, priority?, complexity?, parentId?, metadata?, tags?, type?, properties? }`. Role changes are not allowed — use `advance_item` instead. Only provided fields change; if parentId changes, depth is recomputed from the new parent.\n\n**delete** - Delete by `itemIds` array (UUIDs or hex prefixes 4+ chars); see `recursive` param.",
+      "tokens": 599
+    },
+    {
+      "name": "query_items",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation: get, search, overview, schema",
+            "enum": [
+              "get",
+              "search",
+              "overview",
+              "schema"
+            ]
+          },
+          "itemId": {
+            "type": "string",
+            "description": "UUID or hex prefix (4+ chars) for get; UUID for scoped overview"
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Filter by parent ID (UUID or hex prefix 4+ chars)"
+          },
+          "depth": {
+            "type": "integer",
+            "description": "Filter by depth level"
+          },
+          "ancestorId": {
+            "type": "string",
+            "description": "UUID or hex prefix (4+ chars) of an item whose subtree scopes the operation. In list mode (search without `query`): results are limited to this item's subtree (any depth, inclusive) — mirrors scope.ancestorId's semantics as a top-level list-mode param; omitted = unscoped, byte-identical to current behavior. Not used in the overview operation (see `anchorId`) or in FTS mode (use scope.ancestorId there instead)."
+          },
+          "anchorId": {
+            "type": "string",
+            "description": "Overview operation only. UUID or hex prefix (4+ chars) of an item whose direct children become the roots set (instead of true depth-0 items), each enriched with full-subtree role-count roll-ups — anchors a dashboard on a project/feature container; mutually exclusive with itemId there."
+          },
+          "role": {
+            "type": "string",
+            "description": "Filter by role: queue, work, review, blocked, terminal"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Filter by priority: high, medium, low"
+          },
+          "tags": {
+            "type": "string",
+            "description": "Comma-separated tags filter (OR logic) — used in list mode only"
+          },
+          "query": {
+            "type": "string",
+            "description": "Search terms (triggers FTS mode: ranked hits with snippets). Multiple words = implicit AND; special characters are auto-escaped — pass plain terms."
+          },
+          "scope": {
+            "type": "object",
+            "description": "Structural scope filter for FTS mode. All fields are optional and combined with AND.",
+            "properties": {
+              "ancestorId": {
+                "type": "string",
+                "description": "Limit to this item's subtree (any depth) — scope a search to a feature or container."
+              },
+              "itemId": {
+                "type": "string",
+                "description": "Limit to this single item's content (title + summary)."
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "OR-match: item must have at least one of these tags."
+              },
+              "role": {
+                "type": "string",
+                "description": "Limit to items in this role: queue, work, review, terminal, blocked."
+              }
+            }
+          },
+          "matchMode": {
+            "type": "string",
+            "description": "Search strategy: auto (default, broadest coverage), substring (case-insensitive exact match, token 3+ chars), text (stemmed natural-language match).",
+            "enum": [
+              "auto",
+              "substring",
+              "text"
+            ]
+          },
+          "snippet": {
+            "type": "boolean",
+            "description": "When true (default), each hit includes a ~32-token snippet with <mark> highlights; markdown is preserved."
+          },
+          "explain": {
+            "type": "boolean",
+            "description": "When true, each hit includes an explain object with trigramRank, textRank, and rrfK. Off by default — only for debugging."
+          },
+          "createdAfter": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter"
+          },
+          "createdBefore": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter"
+          },
+          "modifiedAfter": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter"
+          },
+          "modifiedBefore": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter"
+          },
+          "roleChangedAfter": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter (role's last-changed time)"
+          },
+          "roleChangedBefore": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter (role's last-changed time)"
+          },
+          "sortBy": {
+            "type": "string",
+            "description": "Sort field: title, priority, complexity, createdAt, modifiedAt"
+          },
+          "sortOrder": {
+            "type": "string",
+            "description": "Sort order: asc, desc (default: desc)"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Max results. Default 20 in FTS search (`query` set); 50 in list mode and in global/anchored overview. Search modes cap at 100; overview does not cap. Scoped overview (`itemId`) ignores it."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Pagination offset (default: 0)."
+          },
+          "includeAncestors": {
+            "type": "boolean",
+            "description": "get/search only: adds an ancestors array to each item."
+          },
+          "includeTimestamps": {
+            "type": "boolean",
+            "description": "get operation only. When true, the item includes createdAt, modifiedAt, and roleChangedAt. Default false (omitted) for token efficiency."
+          },
+          "includeChildren": {
+            "type": "boolean",
+            "description": "Global overview only: adds each root's direct children array."
+          },
+          "excludeTerminal": {
+            "type": "boolean",
+            "description": "Overview operation only, default false. Global overview (no itemId): excludes terminal-role roots from `items` — they are filtered at the SQL level before child counts/claim summaries are fetched, and `total`/`truncated` reflect the filtered (non-terminal) root count. Scoped (itemId) and anchored (anchorId) overviews: exclude terminal-role items from the `children`/`items` array, EXCEPT a terminal-role item that still has non-terminal descendants, which is retained (it represents active work parked under a done container). The scoped parent item is always returned regardless of its own role, and `childCounts` still reflects the full, unfiltered role breakdown."
+          },
+          "type": {
+            "type": "string",
+            "description": "Type filter (exact match); for the schema operation, the type to fetch"
+          },
+          "claimStatus": {
+            "type": "string",
+            "description": "Claim-state filter (search only): claimed, unclaimed, or expired (TTL elapsed). Adds isClaimed per result; claimedBy is never exposed here.",
+            "enum": [
+              "claimed",
+              "unclaimed",
+              "expired"
+            ]
+          },
+          "rootId": {
+            "type": "string",
+            "description": "schema operation with `type` only: project root WorkItem UUID or hex prefix (4+ chars). Resolves `type` over that root's per-root config and the global config in the order its schema_resolution mode sets (absent/legacy: per-root type -> per-root \"default\" -> global type -> global \"default\"; layered: per-root type -> global type -> per-root \"default\" -> global \"default\"; isolated: per-root only). Global-only when the root has no pushed config. Ignored when `itemId` is used instead (the item's own rootId is applied automatically)."
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "description": "Unified read operations for work items.\n\nOperations: get, search, overview, schema\n\n**get** requires `itemId`.\n\n**search** has two modes: FTS mode when `query` is provided (ranked full-text hits over titles and\nsummaries); list mode (structured filters) when `query` is omitted — see each parameter's schema\ndescription for the available filters. `claimedBy` identity is NEVER included in search results\n(list mode's `claimStatus` filter only adds a boolean `isClaimed`) — use `get_context(itemId)` for\nfull claim details.\n\n**overview** without `itemId`/`anchorId` returns a global summary of all root items; with `itemId`\nit returns that item's metadata, child counts by role, and direct children (scoped overview). With\n`anchorId` instead, that item's direct children become the roots set (each enriched with\nfull-subtree role-count roll-ups) — the anchored/project-dashboard entry point. `itemId` and\n`anchorId` are mutually exclusive for this operation; supplying both is a validation error.\n\n**schema** requires exactly one of `type` or `itemId`. Returns the full note schema (description +\nguidance + skill + maxLength per entry) — the reference target for keys-only `expectedNotes` /\n`guidanceKey` values returned elsewhere. `maxLength`, when present, is the max note body length\n(chars) enforced by `manage_notes` upsert.",
+      "tokens": 1674
+    },
+    {
+      "name": "manage_notes",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation: upsert, delete",
+            "enum": [
+              "upsert",
+              "delete"
+            ]
+          },
+          "notes": {
+            "type": "array",
+            "description": "Array of note objects for upsert. Each: { itemId (required), key (required), role (required: queue|work|review), body? (inline text), bodyFromFile? (server-side path; mutually exclusive with body — providing both fails that note; resolved strictly relative to the agent config root, or the server's cwd; rejects absolute paths, '..', and symlink escapes; file must exist, <=65536 bytes; CRLF normalized to LF), actor? ({ id (required), kind (required: orchestrator|subagent|user|external), parent?, proof? } — who wrote the note; last-writer-wins on re-upsert) }"
+          },
+          "ids": {
+            "type": "array",
+            "description": "Array of note UUIDs for delete"
+          },
+          "itemId": {
+            "type": "string",
+            "description": "WorkItem UUID or hex prefix (4+ chars) — delete all notes for this item"
+          },
+          "key": {
+            "type": "string",
+            "description": "Note key — with itemId, delete specific note"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Client-generated UUID for idempotency (10 min cache, keyed by actor+requestId); requires actor; malformed values rejected."
+          },
+          "actor": {
+            "type": "object",
+            "description": "Top-level actor: { id (required), kind (required: orchestrator|subagent|user|external), parent?, proof? }"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "description": "Unified write operations for Notes (upsert, delete).\n\n**upsert** — upsert notes from the `notes` array (see its schema description for the per-note shape).\n`(itemId, key)` is unique — an existing pair is updated in place; `itemId` must reference an existing\nWorkItem. If the matched note schema declares `maxLength` for a note's key, the resolved body is\nchecked after resolution: `note_limits.mode: warn` (default) accepts the note and adds a `warning`\nfield naming the limit and actual size; `mode: reject` fails that note with `code: NOTE_BODY_TOO_LONG`.\n\n**delete** — delete by `ids` array, or by `itemId` (optionally scoped by `key`).",
+      "tokens": 503
+    },
+    {
+      "name": "query_notes",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation: get, list, search",
+            "enum": [
+              "get",
+              "list",
+              "search"
+            ]
+          },
+          "noteId": {
+            "type": "string",
+            "description": "Note UUID (required for get)"
+          },
+          "itemId": {
+            "type": "string",
+            "description": "WorkItem UUID or hex prefix (4+ chars), required for list"
+          },
+          "role": {
+            "type": "string",
+            "description": "Filter by role: queue, work, review"
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter list results to notes with these keys (optional)"
+          },
+          "includeBody": {
+            "type": "boolean",
+            "description": "Include full note bodies (default: false). When false, each note includes bodyLength instead."
+          },
+          "query": {
+            "type": "string",
+            "description": "Search terms (required for search). Multiple words = implicit AND; special characters are auto-escaped — pass plain terms."
+          },
+          "scope": {
+            "type": "object",
+            "description": "Structural scope filter for search mode. All fields are optional and combined with AND.",
+            "properties": {
+              "itemId": {
+                "type": "string",
+                "description": "Limit to notes on this single work item."
+              },
+              "ancestorId": {
+                "type": "string",
+                "description": "Limit to notes whose owning item is in this item's subtree (any depth) — scope a search to a feature or container."
+              }
+            }
+          },
+          "matchMode": {
+            "type": "string",
+            "description": "Search strategy: auto (default, broadest coverage), substring (case-insensitive exact match, token 3+ chars), text (stemmed natural-language match).",
+            "enum": [
+              "auto",
+              "substring",
+              "text"
+            ]
+          },
+          "snippet": {
+            "type": "boolean",
+            "description": "When true (default), each hit includes a ~32-token snippet with <mark> highlights; markdown is preserved."
+          },
+          "explain": {
+            "type": "boolean",
+            "description": "When true, each hit includes an explain object with trigramRank, textRank, and rrfK. Off by default — only for debugging."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Max results (default: 20, max: 100)"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of notes to skip (for pagination). Default: 0."
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "description": "Read-only query operations for Notes.\n\nOperations: get, list, search\n\n**get** requires `noteId`.\n\n**list** requires `itemId`. Optional `role`/`keys` filters.\n\n**search** requires `query`; full-text search over note bodies, returning ranked snippets. To filter\nby note role (queue/work/review), use `list` instead — `search`'s `scope` has no role field.",
+      "tokens": 549
+    },
+    {
+      "name": "manage_dependencies",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation: create, delete",
+            "enum": [
+              "create",
+              "delete"
+            ]
+          },
+          "dependencies": {
+            "type": "array",
+            "description": "Array of dependency objects for create: {fromItemId, toItemId, type?, unblockAt?}"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Pattern shortcut: linear, fan-out, fan-in",
+            "enum": [
+              "linear",
+              "fan-out",
+              "fan-in"
+            ]
+          },
+          "itemIds": {
+            "type": "array",
+            "description": "Ordered item IDs (UUIDs or hex prefixes 4+ chars) for linear pattern"
+          },
+          "toItemIds": {
+            "type": "array",
+            "description": "Target item UUIDs or hex prefixes (4+ chars) for fan-out pattern"
+          },
+          "fromItemIds": {
+            "type": "array",
+            "description": "Source item UUIDs or hex prefixes (4+ chars) for fan-in pattern"
+          },
+          "type": {
+            "type": "string",
+            "description": "Shared default dependency type: BLOCKS, IS_BLOCKED_BY, RELATES_TO (default: BLOCKS)"
+          },
+          "unblockAt": {
+            "type": "string",
+            "description": "Shared default unblockAt: queue, work, review, or terminal (default: terminal)"
+          },
+          "dependencyId": {
+            "type": "string",
+            "description": "Dependency UUID for delete by ID"
+          },
+          "fromItemId": {
+            "type": "string",
+            "description": "Source item UUID or hex prefix (4+ chars) for delete by relationship, or the single source item for the fan-out pattern"
+          },
+          "toItemId": {
+            "type": "string",
+            "description": "Target item UUID or hex prefix (4+ chars) for delete by relationship, or the single target item for the fan-in pattern"
+          },
+          "deleteAll": {
+            "type": "boolean",
+            "description": "Delete ALL dependencies for the given fromItemId or toItemId"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Client-generated UUID for idempotency (10 min cache, keyed by actor+requestId); requires actor; malformed values rejected."
+          },
+          "actor": {
+            "type": "object",
+            "description": "Top-level actor: { id (required), kind (required: orchestrator|subagent|user|external), parent?, proof? }"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "description": "Unified write operations for WorkItem dependencies (create, delete).\n\n**Create via dependencies array:** each entry may override the shared `type`/`unblockAt` defaults.\nATOMIC — all succeed or all fail (cycle/duplicate detection across the whole batch).\n\n**Pattern shortcuts** (exclusive with dependencies array): `linear`+itemIds chains A→B→C→D;\n`fan-out`+fromItemId+toItemIds fans one item out to many; `fan-in`+fromItemIds+toItemId fans many into one.\n\n**Delete:** by `dependencyId`; by `fromItemId`+`toItemId` (+ optional `type`); or by `fromItemId`/`toItemId`\nwith `deleteAll=true` for every dependency on that item.",
+      "tokens": 617
+    },
+    {
+      "name": "query_dependencies",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation: \"get\" (default, query outgoing/incoming/all deps) or \"backlinks\" (find items pointing AT the given item)",
+            "enum": [
+              "get",
+              "backlinks"
+            ]
+          },
+          "itemId": {
+            "type": "string",
+            "description": "WorkItem UUID or hex prefix (4+ chars). For 'get': the item to query deps for. For 'backlinks': the item whose incoming edges to find."
+          },
+          "direction": {
+            "type": "string",
+            "description": "(get only) Direction filter: incoming, outgoing, all (default: all)",
+            "enum": [
+              "incoming",
+              "outgoing",
+              "all"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Filter by dependency type: BLOCKS, IS_BLOCKED_BY, RELATES_TO",
+            "enum": [
+              "BLOCKS",
+              "IS_BLOCKED_BY",
+              "RELATES_TO"
+            ]
+          },
+          "includeItemInfo": {
+            "type": "boolean",
+            "description": "(get only) Include WorkItem details (title, role, priority) for related items (default: false)"
+          },
+          "neighborsOnly": {
+            "type": "boolean",
+            "description": "(get only) When false, perform BFS graph traversal returning chain and depth (default: true)"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "(get only) Maximum number of dependency edges to return, applied after type filtering (default: unbounded — all matching edges returned). Must be >= 1."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "(get only) Number of matching edges to skip before applying limit (default: 0). Must be >= 0."
+          }
+        },
+        "required": [
+          "operation",
+          "itemId"
+        ],
+        "type": "object"
+      },
+      "description": "Read-only dependency queries with filtering support.\n\nOperations: get, backlinks\n\n**get** — query outgoing/incoming/all dependencies for a WorkItem. `direction=incoming` means deps\nwhere this item is the toItemId (things blocking it); `outgoing` means it's the fromItemId (things\nit blocks); `all` is both. Returns a counts breakdown and, optionally, BFS graph traversal (see\n`neighborsOnly`).\n\n**backlinks** — find items that reference (point at) the given item, i.e. reverse-direction edges:\na backlink row means another item has an edge with toItemId = your itemId. E.g. \"what blocks REQ-42?\".",
+      "tokens": 486
+    },
+    {
+      "name": "advance_item",
+      "inputSchema": {
+        "properties": {
+          "transitions": {
+            "type": "array",
+            "description": "Array of transition objects: { itemId (required, UUID or hex prefix), trigger (required), summary?, actor? ({ id (required), kind (required: orchestrator|subagent|user|external), parent?, proof? }), credentialRefs? (audit labels of credentials this transition consumed — opaque labels, never secret values; string or string array, max 8, each 1-128 chars matching ^[a-z0-9][a-z0-9\\-_./]*$; must name a declared/registered resource key when any exist; declared keys are auto-recorded on work entry) }"
+          },
+          "itemId": {
+            "type": "string",
+            "description": "Singular-form sugar (UUID or hex prefix): advance one item with `trigger` instead of a `transitions` array; optional `summary`/`actor` are accepted too. See the description."
+          },
+          "trigger": {
+            "type": "string",
+            "description": "Singular-form sugar: the trigger for the single `itemId`."
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Client-generated UUID for idempotency (10 min cache), keyed on the first transition's actor.id; malformed values rejected."
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "description": "Trigger-based role transitions for WorkItems with validation, cascade detection, and unblock reporting.\n\n**Call shapes:** `transitions=[{itemId, trigger, summary?, actor?}, ...]` (batch), OR top-level\nsingular sugar `itemId`+`trigger` (+ optional `summary`, `actor`) for one item — the server wraps it\ninto a one-element array. If `transitions` is present the singular fields are ignored.\n\n**Trigger effects:**\n- start: QUEUE->WORK, WORK->REVIEW (or TERMINAL if no review phase in schema), REVIEW->TERMINAL\n- complete: any non-TERMINAL/BLOCKED -> TERMINAL\n- block/hold: any non-TERMINAL/BLOCKED -> BLOCKED (saves previousRole)\n- resume: BLOCKED -> previousRole\n- cancel: any non-TERMINAL -> TERMINAL (statusLabel = \"cancelled\")\n- reopen: TERMINAL -> QUEUE (clears statusLabel; bypasses gate enforcement)\n\n**Gate enforcement (when tags match a note schema):**\n- start: required notes for the current phase must be filled before advancing\n- complete: all required notes across all phases must be filled\n- `start`'s gate is scoped to the item's CURRENT phase, so successive `start` calls gate different\n  note sets as the role advances (QUEUE notes, then WORK notes, then REVIEW notes) — this is\n  deterministic per-phase behavior, not a timing-dependent artifact. A transition can also cascade\n  a parent straight to TERMINAL when the parent's downstream gates are already satisfied by\n  previously prefilled notes.\n\n**Resource-lease gate:** transitions entering the work phase acquire an exclusive lease per resource\ndeclared by the item's traits; contention rejects with transient `resource_unavailable` +\n`retryAfterMs` + `contendedResources` (holder never disclosed). Leases release on every work exit.\n\n**Batch actor constraint:** all transitions in a call must either all omit `actor` or all use the same\n`actor.id`; cascade-triggered transitions always have a null actor.\n\nCall to move an item between phases once its work is done — never edit status via manage_items.",
+      "tokens": 746
+    },
+    {
+      "name": "claim_item",
+      "inputSchema": {
+        "properties": {
+          "claims": {
+            "type": "array",
+            "description": "Claim requests, max 1 entry per call (use one call per item). Each entry has exactly one of: itemId (UUID or hex prefix) for ID mode, or selector (object, see below) for find-and-claim mode. Both modes also accept ttlSeconds (default 900, max 86400), claimRef (max 64 chars, echoed in result); ID mode also accepts agentId (overridden by the verified actor)."
+          },
+          "releases": {
+            "type": "array",
+            "description": "Array of release requests: { itemId (required UUID or hex prefix) }"
+          },
+          "actor": {
+            "type": "object",
+            "description": "Required actor claim: { id (required), kind (required: orchestrator|subagent|user|external), parent?, proof? }"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Client-generated UUID for idempotency (10 min cache, keyed by actor+requestId). Required — claim_item is fleet-mode; idempotency is a hard contract."
+          }
+        },
+        "required": [
+          "actor",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "description": "Atomically claim or release work items. One claim per agent: claiming a new item auto-releases\nany prior claim held by the same agent. At least one of `claims` or `releases` must be non-empty.\n\nEach `claims` entry uses exactly one of `itemId` (ID mode) or `selector` (find-and-claim mode).\n\n**Selector object fields** (all optional; this shape is not expressible in JSON Schema below):\n- `role` (default \"queue\"): queue|work|review|blocked\n- `parentId` (UUID or hex prefix): filter to items under this parent\n- `tags` (comma-separated): filter by tags\n- `priority`: high|medium|low\n- `type`: item type\n- `complexityMax` (1-10): maximum complexity\n- `createdAfter`/`createdBefore`/`roleChangedAfter`/`roleChangedBefore` (ISO 8601): timestamp filters\n- `orderBy` (default \"priority\"): priority|oldest|newest\n\n**Claim outcomes:** `success`, `queue_empty` (selector matched nothing at all; kind=permanent),\n`none_eligible` (selector matched, but every match is excluded by claim or dependency state;\nkind=transient, retries after `retryAfterMs` with an aggregate `excluded` breakdown),\n`already_claimed` (returns `retryAfterMs`, never the competing agent's identity), `not_found`,\n`terminal_item`, `rejected_by_policy`.\n\n**Release outcomes:** `success`, `not_claimed_by_you`, `not_found`.\n\nCall only in claim-mode deployments, to take ownership before working an item.",
+      "tokens": 611
+    },
+    {
+      "name": "get_next_status",
+      "inputSchema": {
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "WorkItem UUID or hex prefix (4+ chars)"
+          }
+        },
+        "required": [
+          "itemId"
+        ],
+        "type": "object"
+      },
+      "description": "Read-only status progression recommendation for a WorkItem: \"Ready\" (can advance via the \"start\"\ntrigger), \"Blocked\" (unsatisfied dependencies, or explicit BLOCKED role — use \"resume\" to return to\nits previous role), or \"Terminal\" (workflow already complete).\n\nCall to check one item's advance-readiness when a full context snapshot is not needed.",
+      "tokens": 124
+    },
+    {
+      "name": "get_next_item",
+      "inputSchema": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "Role to query: queue, work, review, or blocked (default: queue)"
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Scope to items under this parent (UUID or hex prefix 4+ chars)"
+          },
+          "ancestorId": {
+            "type": "string",
+            "description": "UUID or hex prefix (4+ chars) of an item whose subtree (any depth, inclusive) recommendations are limited to. Composes with `parentId` (both applied). Omitted = unscoped, byte-identical to current behavior."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Number of recommendations (default: 1, max: 20)"
+          },
+          "includeDetails": {
+            "type": "boolean",
+            "description": "Include summary, tags, parentId in response (default: false)"
+          },
+          "includeAncestors": {
+            "type": "boolean",
+            "description": "Adds an ancestors array (root-first) to each recommended item (default: false)"
+          },
+          "includeClaimed": {
+            "type": "boolean",
+            "description": "Default false: excludes actively-claimed items and, via sub-tree isolation, children of items claimed by another agent. When true: claimed items are included, sub-tree isolation is off, and each item exposes only a boolean isClaimed (identity never disclosed). Fleet callers should leave this false."
+          },
+          "tags": {
+            "type": "string",
+            "description": "Comma-separated tag values; any-match semantics (item must have at least one)"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Filter by priority: high, medium, or low"
+          },
+          "type": {
+            "type": "string",
+            "description": "Filter by item type (exact match)"
+          },
+          "complexityMax": {
+            "type": "integer",
+            "description": "Maximum complexity (1..10 inclusive); items above this value are excluded"
+          },
+          "createdAfter": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter"
+          },
+          "createdBefore": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter"
+          },
+          "modifiedAfter": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter"
+          },
+          "modifiedBefore": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter"
+          },
+          "roleChangedAfter": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter (role's last-changed time)"
+          },
+          "roleChangedBefore": {
+            "type": "string",
+            "description": "ISO 8601 timestamp filter (role's last-changed time)"
+          },
+          "orderBy": {
+            "type": "string",
+            "description": "Ordering strategy: \"priority\" (default, HIGH first then complexity ASC), \"oldest\" (createdAt ASC), \"newest\" (createdAt DESC)"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "description": "Recommends next work item(s) based on role, dependencies, priority, and complexity.\n\nSelection pipeline: finds items in the requested role, filters out dependency-blocked items and\n(by default) actively-claimed items, then ranks by `orderBy` and returns the top `limit`. See each\nparameter's schema description for field-level semantics.\n\nCall when choosing what to work on next — at session start or after finishing an item.",
+      "tokens": 630
+    },
+    {
+      "name": "get_blocked_items",
+      "inputSchema": {
+        "properties": {
+          "parentId": {
+            "type": "string",
+            "description": "Scope to items under this parent (UUID or hex prefix 4+ chars)"
+          },
+          "ancestorId": {
+            "type": "string",
+            "description": "UUID or hex prefix (4+ chars) of an item whose subtree (any depth, inclusive) candidate items are limited to. Composes with `parentId` (both applied). Omitted = unscoped, byte-identical to current behavior."
+          },
+          "includeDetails": {
+            "type": "boolean",
+            "description": "Include summary and tags for each blocked item (default: false)"
+          },
+          "includeAncestors": {
+            "type": "boolean",
+            "description": "When true, each blocked item includes an ancestors array ordered root-first (default: false)"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "description": "Identifies WorkItems blocked by dependencies or explicitly in BLOCKED role.\n\n**What counts as blocked:**\n1. Items explicitly in BLOCKED role (blockType = \"explicit\")\n2. Items in QUEUE/WORK/REVIEW with unsatisfied blocking dependencies (blockType = \"dependency\")\n\nItems in TERMINAL role are never included.\n\nCall when work appears stalled or someone asks why an item cannot start.",
+      "tokens": 256
+    },
+    {
+      "name": "complete_tree",
+      "inputSchema": {
+        "properties": {
+          "rootId": {
+            "type": "string",
+            "description": "UUID or hex prefix (4+ chars) of root item whose descendants should be completed. Mutually exclusive with itemIds."
+          },
+          "itemIds": {
+            "type": "array",
+            "description": "Item UUIDs or hex prefixes (4+ chars) to complete. Mutually exclusive with rootId.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "trigger": {
+            "type": "string",
+            "description": "Transition trigger: 'complete' (default) or 'cancel'.",
+            "enum": [
+              "complete",
+              "cancel"
+            ]
+          },
+          "includeRoot": {
+            "type": "boolean",
+            "description": "When rootId is used, also include the root item itself in the completion scope (default true). Ignored when itemIds is used."
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Client-generated UUID for idempotency (10 min cache, keyed by actor+requestId); requires actor; malformed values rejected."
+          },
+          "actor": {
+            "type": "object",
+            "description": "Top-level actor: { id (required), kind (required: orchestrator|subagent|user|external), parent?, proof? }"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "description": "Complete or cancel all descendants of a root item (or an explicit list of items) in topological dependency order.\n\n**Validation:** Exactly one of `rootId` or `itemIds` must be provided.\n\n**Behavior:**\n- Items are processed in topological order (respecting dependency edges within the target set).\n- Each item runs the same pipeline as `advance_item` (ownership, dependency validation, note gate,\n  cascade/unblock detection, per-root status labels); `actor` is recorded\n  on every audit row.\n- Gate check: required notes must be filled before completing (trigger \"cancel\" bypasses the note\n  gate, not ownership). A gate, ownership (`errorCode` \"not_claim_holder\"), dependency or\n  resource failure is reported on that item and skips its in-set dependents.\n- Items already TERMINAL (including a parent terminalized by an earlier cascade in the same call)\n  are recorded as skipped and never gate-checked.\n- When rootId is used with includeRoot=true (the default), the root item is processed last, after all its descendants.\n\nCall when closing out a finished hierarchy — one atomic call instead of per-item advance sequences.",
+      "tokens": 489
+    },
+    {
+      "name": "create_work_tree",
+      "inputSchema": {
+        "properties": {
+          "root": {
+            "type": "object",
+            "description": "Root item spec: { id? (attach mode: UUID or hex prefix of an existing item — makes title optional/ignored), title (required unless id given), priority?, tags?, traits? (comma-separated, merged into properties), summary?, description?, requiresVerification?, type?, noteAnchors? ([{ noteKey, role, anchor }] — sources this item's note bodies from the docRef document; requires top-level docRef) }"
+          },
+          "docRef": {
+            "type": "object",
+            "description": "Materialize-from-document source: { rootId? (defaults to the created/attached root's own rootId; validated for consistency if given — UUID or hex prefix), slug (required, the stashed plan document's slug; a slug starting with rule/ is rejected) }. Required whenever any item spec's noteAnchors is used."
+          },
+          "parentId": {
+            "type": "string",
+            "description": "UUID or hex prefix (4+ chars) of existing parent item. Root depth = parent.depth + 1 if provided."
+          },
+          "children": {
+            "type": "array",
+            "description": "Child item specs: [{ ref (required local name, used to wire deps/notes/parentRef), title (required), parentRef? (parent's ref or \"root\", default \"root\"), priority?, tags?, traits? (comma-separated, merged into properties), summary?, description?, requiresVerification?, type?, noteAnchors? ([{ noteKey, role, anchor }] — sources this item's note bodies from the docRef document; requires top-level docRef) }]. Order-independent (topologically sorted); nesting is expressed via parentRef only — a nested 'children' key inside an item spec is rejected, not silently dropped."
+          },
+          "deps": {
+            "type": "array",
+            "description": "Dependencies: [{ from: ref, to: ref, type?: BLOCKS|IS_BLOCKED_BY|RELATES_TO, unblockAt?: queue|work|review|terminal }]. Use \"root\" to reference the root item."
+          },
+          "createNotes": {
+            "type": "boolean",
+            "description": "Auto-create blank notes from each item's resolved schema (looked up by type first, then by tags). Default: false."
+          },
+          "notes": {
+            "type": "array",
+            "description": "Notes to create with bodies: [{ itemRef (required, \"root\" or child ref), key (required), role (required: queue|work|review), body? (default empty) }]. Wins over createNotes=true blanks per (itemRef, key). When a key is declared in the item's resolved schema, role must match the schema role (mismatch rejected); off-schema keys and schema-free items are unconstrained."
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Client-generated UUID for idempotency (10 min cache, keyed by actor+requestId); requires actor; malformed values rejected."
+          },
+          "actor": {
+            "type": "object",
+            "description": "Top-level actor for (1) idempotency and (2) note attribution across the whole tree (explicit and createNotes=true blanks alike) — unlike manage_notes, no per-note actor. If malformed, idempotency is disabled and attribution drops to null; the call still succeeds. Shape: { id (required), kind (required: orchestrator|subagent|user|external), parent?, proof? }"
+          }
+        },
+        "required": [
+          "root"
+        ],
+        "type": "object"
+      },
+      "description": "Atomically create a hierarchical work tree: root item, child items, dependencies, and optional notes.\nEliminates the round-trips of calling manage_items + manage_dependencies + manage_notes separately.\n\n**Attach mode:** pass `root.id` to attach children/deps/notes to an existing item instead of creating\na new root; `root.title` is then optional. `root.id` and `parentId` cannot both be given (contradictory\n— attach vs. new root under a parent). The existing item is NOT re-inserted; children are created\nunder it at existing.depth + 1.\n\n**Depth:** root depth = parent.depth + 1 when `parentId` is given, otherwise 0 (or the existing root's\ndepth in attach mode). No depth cap.\n\n**Materialize-from-document:** pass `docRef` (`{ rootId?, slug }`) plus per-item `noteAnchors`\n(`root` and/or any `children` entry) to source note bodies from a stashed plan document\n(see `manage_plan_documents`) instead of inlining them. Each anchor is sliced from the document and\nwritten as that item's note in the SAME transaction as the item/dependency/note inserts, then the\ndocument is marked adopted by the created/attached root. Precedence on `(itemRef, key)` collision:\nexplicit `notes` win over `noteAnchors`; `noteAnchors` win over `createNotes=true` blanks. Any anchor\nmiss, an unresolved document, a `docRef.rootId` mismatch, or an already-adopted document fails the\nWHOLE call atomically — no items are created. Without `docRef`, behavior is unchanged.\n\nCall when materializing a planned hierarchy — one atomic call instead of per-item create sequences.",
+      "tokens": 1073
+    },
+    {
+      "name": "get_context",
+      "inputSchema": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "description": "Explicit mode: item, session-resume, or health-check. See tool description for the inference rule used when omitted.",
+            "enum": [
+              "item",
+              "session-resume",
+              "health-check"
+            ]
+          },
+          "itemId": {
+            "type": "string",
+            "description": "UUID or hex prefix (4+ chars) of a WorkItem for item context mode"
+          },
+          "since": {
+            "type": "string",
+            "description": "ISO 8601 timestamp for session resume mode (e.g. 2024-01-01T00:00:00Z)"
+          },
+          "ancestorId": {
+            "type": "string",
+            "description": "UUID or hex prefix (4+ chars) of an item whose subtree (any depth, inclusive) scopes health-check and session-resume results (active/blocked/stalled items and the claim summary). Ignored in item mode. Omitted = unscoped. In session-resume mode, `recentTransitions` is NOT scoped by this parameter even when set — it always reflects transitions across the whole tree."
+          },
+          "includeAncestors": {
+            "type": "boolean",
+            "description": "When true, each listed item includes an ancestors array ordered root-first (default: false)"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of role transitions to return in session-resume mode. Default 10, max 200."
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "description": "Read-only context snapshot. Three modes:\n\n**Item mode** — pass `mode: \"item\"` (or provide `itemId`): item role, note schema status, and the\ncanonical gate status (`canAdvance` + missing required notes). Includes full claim detail\n(`claimedBy`, `claimedAt`, `claimExpiresAt`, `isExpired`) when claimed — the only mode exposing\nclaimedBy identity; use it to diagnose stalled/expired claims.\n\n**Session resume** — pass `mode: \"session-resume\"` (or provide `since`): active items (role=work or\nreview), recent role transitions since the timestamp, and stalled items (active items with missing\nrequired notes). No claim summary in this mode — use item mode or health-check for claim visibility.\n\n**Health check** — pass `mode: \"health-check\"` (or omit all mode-selecting params): all active items,\nblocked items, stalled items, and a claim-count summary (no identity).\n\nWhen `mode` is omitted, it is inferred from which parameters are provided (`itemId` → item, `since` →\nsession-resume, neither → health-check); explicit `mode` takes precedence.\n\nCall with no arguments to resume a session; call with `itemId` before any advance or dispatch decision.",
+      "tokens": 564
+    },
+    {
+      "name": "manage_project_config",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation: push, get",
+            "enum": [
+              "push",
+              "get"
+            ]
+          },
+          "rootId": {
+            "type": "string",
+            "description": "Project root WorkItem UUID or hex prefix (4+ chars) — must be a depth-0 item for push"
+          },
+          "configYaml": {
+            "type": "string",
+            "description": "Raw config.yaml text to store for this root (push only); max 128 KiB, parse-validated before storing"
+          },
+          "force": {
+            "type": "boolean",
+            "description": "push only, default false: bypass push guards — skips the embedded project.rootId mismatch check and the known-old (fast-forward) fingerprint guard"
+          },
+          "fingerprint": {
+            "type": "string",
+            "description": "get only: SHA-256 hex digest to classify against the stored config's current fingerprint and history; adds a relation field to the response"
+          }
+        },
+        "required": [
+          "operation",
+          "rootId"
+        ],
+        "type": "object"
+      },
+      "description": "Push or read back per-root config YAML for the layered schema resolver — a client-pushed\n`.taskorchestrator/config.yaml` document keyed by a project root's WorkItem UUID, which the\nresolver layers over the global config on every schema-resolving read (no separate reload step).\n\n**push** — validates, in order: `configYaml` must not exceed 128 KiB (rejected before any parse\nattempt); the root item must exist; it must be depth 0 (configs anchor to project roots only, error\notherwise); if the root's `type` is not \"project\", the response includes a non-fatal `warning` field\n(a naming convention, not an enforced constraint) but the push still succeeds. `configYaml` is then\nparse-validated BEFORE storing, using a safe YAML constructor that only builds plain maps/lists/\nscalars (arbitrary `!!`-tagged Java type construction is rejected, not silently ignored) —\nunparseable or unsafe YAML is rejected with the parse error and never written, so a broken or\nmalicious config can never silently exist server-side. A `configYaml` whose fingerprint is\nknown-old (present in the root's fingerprint history but not current) is rejected as a\n`CONFLICT_ERROR` naming force as the override, unless `force: true` is passed — this guards against\nsilently reverting a later push made from elsewhere. Pushing byte-identical content is naturally\nidempotent: the returned `fingerprint` is unchanged, so callers can `get` first and skip the push\nwhen fingerprints match. A pushed document may set `note_limits`/`status_labels` to override the\nglobal config for this root's items alongside `work_item_schemas`/`note_schemas`/`traits`/`project`;\nany other top-level key (e.g. `actor_authentication`, which stays global-only) is reported back in\nan additive `ignoredSections` array, present only when non-empty. Soft schema parse problems (invalid\nnote `role`, missing `key`) do not fail the push; they are returned in an additive `schemaWarnings`\narray, present only when non-empty (distinct from the `warning` field above).\n\n**get** — returns the stored `configYaml` + `fingerprint` + `updatedAt` for a root, or a\nnot-found error when no config has been pushed for it. When `fingerprint` is supplied, the response\nalso includes a `relation` field (\"current\"/\"superseded\"/\"unknown\") classifying that value against\nthe root's stored fingerprint history.",
+      "tokens": 751
+    },
+    {
+      "name": "manage_plan_documents",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation: stash, get, list",
+            "enum": [
+              "stash",
+              "get",
+              "list"
+            ]
+          },
+          "rootId": {
+            "type": "string",
+            "description": "Project root WorkItem UUID or hex prefix (4+ chars) — must be a depth-0 item for stash"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Document identifier, unique within rootId (stash, get only)"
+          },
+          "body": {
+            "type": "string",
+            "description": "Inline document text to stash; mutually exclusive with bodyFromFile; max 64 KiB (16 KiB for a rule/<key> slug)"
+          },
+          "bodyFromFile": {
+            "type": "string",
+            "description": "Server-side path to stash instead of body; mutually exclusive with body; resolved strictly relative to the agent config root; rejects absolute paths, '..', and symlink escapes; file must exist, <=65536 bytes (<=16384 for a rule/<key> slug); CRLF normalized to LF"
+          },
+          "status": {
+            "type": "string",
+            "description": "list only: filter to a single status",
+            "enum": [
+              "pending",
+              "adopted"
+            ]
+          }
+        },
+        "required": [
+          "operation",
+          "rootId"
+        ],
+        "type": "object"
+      },
+      "description": "Stash, read back, or list per-root plan documents — free-floating planning docs an agent stashes\nahead of adoption into a real work item.\n\n**stash** — upserts the document at `rootId`+`slug`; the body comes from `body` (inline) or\n`bodyFromFile` (server-side path), mutually exclusive — providing both, or neither, fails.\nRe-stashing an existing `pending` slug overwrites it in place. A slug already `adopted` is rejected\nwith a CONFLICT_ERROR: adoption is a one-way transition and cannot be undone by stashing over it.\n\n**get** — returns the full stored document (including body) for `rootId`+`slug`, or a\nnot-found error when no document exists at that slug.\n\n**list** — returns metadata-only summaries (never the body) for every document under `rootId`,\noptionally filtered to a single `status` (pending or adopted).",
+      "tokens": 457
+    },
+    {
+      "name": "query_rules",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation: get, list",
+            "enum": [
+              "get",
+              "list"
+            ]
+          },
+          "rootId": {
+            "type": "string",
+            "description": "Project root WorkItem UUID or hex prefix (4+ chars) -- direct get, or list (required for list)"
+          },
+          "key": {
+            "type": "string",
+            "description": "Rule key (direct get only, with rootId): lowercase alphanumeric/./_/-, starting alphanumeric, max 100 chars"
+          },
+          "itemId": {
+            "type": "string",
+            "description": "WorkItem UUID or hex prefix (4+ chars) whose effective schema resolves the skill pointer (skill-pointer get only, with noteKey)"
+          },
+          "noteKey": {
+            "type": "string",
+            "description": "Note key to resolve via itemId's effective schema; its entry's skill field names the rule key (skill-pointer get only, with itemId)"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "description": "Read git-tracked rule text stashed as `rule/<key>` plan documents.\n\n**get** -- returns one rule's body + rulesVersion. Requires exactly one of: `rootId`+`key`\n(direct lookup), or `itemId`+`noteKey` (resolves the item's effective schema's note entry and\nfollows its skill pointer to a rule key under the item's own root). Providing both pairs, or\nneither, fails.\n\n**list** -- returns `{key, rulesVersion, updatedAt}` for every rule under `rootId`, sorted by\nkey, never the body. Takes only `rootId` -- `key`/`itemId`/`noteKey` are rejected.",
+      "tokens": 348
+    }
+  ],
+  "totalTokens": 10477
+}

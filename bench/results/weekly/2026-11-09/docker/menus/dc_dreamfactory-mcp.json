@@ -1,0 +1,167 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "dreamfactory",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:06:57.228Z",
+  "tools": [
+    {
+      "name": "get-tables",
+      "description": "Get tables available in the database",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 47
+    },
+    {
+      "name": "get-table-schema",
+      "description": "Retrieve the schema of a specific table",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tableName"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 60
+    },
+    {
+      "name": "get-table-data",
+      "description": "Retrieve the data of a specific table",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableName": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "filter": {
+            "type": "string",
+            "description": "SQL-like filter to limit the records to retrieve."
+          },
+          "offset": {
+            "type": "number",
+            "default": 0,
+            "description": "Offset for pagination."
+          },
+          "limit": {
+            "type": "number",
+            "default": 10,
+            "description": "Limit for pagination."
+          },
+          "order": {
+            "type": "string",
+            "description": "SQL-like order containing field and direction for filter results."
+          },
+          "group": {
+            "type": "string",
+            "description": "Comma-delimited list of the fields used for grouping of filter results."
+          },
+          "continue": {
+            "type": "boolean",
+            "default": false,
+            "description": "In batch scenarios where supported, continue processing even after one action fails. Default behavior is to halt and return results up to the first point of failure."
+          },
+          "related": {
+            "type": "string",
+            "description": "Comma-delimited list of related names to retrieve for each resource. (it will be found in the related field of the schema)"
+          }
+        },
+        "required": [
+          "tableName"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 248
+    },
+    {
+      "name": "list-tools",
+      "description": "List available tools",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 43
+    },
+    {
+      "name": "get-stored-procedures",
+      "description": "Get stored procedures available in the database",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 51
+    },
+    {
+      "name": "call-stored-procedure",
+      "description": "Call a stored procedure",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "procedureName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "procedureName"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 59
+    },
+    {
+      "name": "get-stored-functions",
+      "description": "Get stored functions available in the database",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 49
+    },
+    {
+      "name": "call-stored-function",
+      "description": "Call a stored function",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "functionName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "functionName"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 58
+    }
+  ],
+  "totalTokens": 615
+}

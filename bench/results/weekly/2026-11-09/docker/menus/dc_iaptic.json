@@ -1,0 +1,316 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "iaptic-mcp-server",
+    "version": "1.0.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:18:57.538Z",
+  "tools": [
+    {
+      "name": "customer_list",
+      "description": "List customers from your Iaptic account.\n- Returns a paginated list of customers with their purchase status\n- Each customer includes:\n  - Application username\n  - Last purchase information\n  - Subscription status (active/lapsed)\n  - Renewal intent\n  - Trial/introductory period status\n- Use limit and offset for pagination (default: 100 customers per page)\n- Results are ordered by creation date (newest first)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of customers to return (default: 100)"
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of customers to skip for pagination"
+          }
+        }
+      },
+      "tokens": 150
+    },
+    {
+      "name": "customer_get",
+      "description": "Get detailed information about a specific customer.\n- Returns complete customer profile including:\n  - Application username\n  - Purchase history\n  - Active and expired subscriptions\n  - Last purchase details\n  - Subscription renewal status\n  - Trial and introductory period information\n- Required: customerId parameter",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        },
+        "required": [
+          "customerId"
+        ]
+      },
+      "tokens": 100
+    },
+    {
+      "name": "customer_add_purchase",
+      "description": "Manually associate a customer with a purchase.\n- Links a purchase to a specific customer\n- Takes priority over receipt validation links\n- Useful for manual purchase management\n- Purchase format should be \"platform:purchaseId\", for example apple:123109519983\n- Required: customerId and purchaseId",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "Application username of the customer"
+          },
+          "purchaseId": {
+            "type": "string",
+            "description": "ID of the purchase to associate"
+          }
+        },
+        "required": [
+          "customerId",
+          "purchaseId"
+        ]
+      },
+      "tokens": 123
+    },
+    {
+      "name": "customer_subscription",
+      "description": "Get customer's subscription status.\n- Returns active subscription details if any\n- Includes:\n  - Subscription status and expiry\n  - Payment and renewal information\n  - Trial/introductory period status\n- Simpler alternative to customer_get for subscription-only apps",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "Application username of the customer"
+          }
+        },
+        "required": [
+          "customerId"
+        ]
+      },
+      "tokens": 93
+    },
+    {
+      "name": "customer_transactions",
+      "description": "Get customer's transaction history.\n- Returns list of all transactions\n- Includes:\n  - Payment details\n  - Transaction status\n  - Associated purchases\n  - Timestamps",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "Application username of the customer"
+          }
+        },
+        "required": [
+          "customerId"
+        ]
+      },
+      "tokens": 76
+    },
+    {
+      "name": "purchase_list",
+      "description": "List purchases from your Iaptic account.\n- Returns a paginated list of purchases\n- Use limit and offset for pagination (default: 100 per page)\n- Filter by date range using startdate and enddate (ISO format)\n- Filter by customerId to see purchases from a specific customer\n- Results include purchase status, product info, and transaction details\n- Results are ordered by purchase date (newest first)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of purchases to return (default: 100, max: 1000)"
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of purchases to skip for pagination"
+          },
+          "startdate": {
+            "type": "string",
+            "description": "Filter purchases after this date (ISO format, e.g. 2024-01-01)"
+          },
+          "enddate": {
+            "type": "string",
+            "description": "Filter purchases before this date (ISO format, e.g. 2024-12-31)"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Filter purchases by customer ID"
+          }
+        }
+      },
+      "tokens": 229
+    },
+    {
+      "name": "purchase_get",
+      "description": "Get detailed information about a specific purchase.\n- Returns complete purchase details including:\n  - Product information\n  - Purchase status\n  - Associated transactions\n  - Customer information\n  - Subscription details (if applicable)\n- Required: purchaseId parameter",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "purchaseId": {
+            "type": "string",
+            "description": "Unique identifier of the purchase"
+          }
+        },
+        "required": [
+          "purchaseId"
+        ]
+      },
+      "tokens": 92
+    },
+    {
+      "name": "transaction_list",
+      "description": "List financial transactions from your Iaptic account.\n- Returns a paginated list of transactions\n- Use limit and offset for pagination (default: 100 per page)\n- Filter by date range using startdate and enddate (ISO format)\n- Filter by purchaseId to see transactions for a specific purchase\n- Results include transaction status, amount, currency, and payment details\n- Results are ordered by transaction date (newest first)\n- Important: Use date filtering to avoid retrieving too many records",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of transactions to return (default: 100, max: 1000)"
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of transactions to skip for pagination"
+          },
+          "startdate": {
+            "type": "string",
+            "description": "Filter transactions after this date (ISO format, e.g. 2024-01-01)"
+          },
+          "enddate": {
+            "type": "string",
+            "description": "Filter transactions before this date (ISO format, e.g. 2024-12-31)"
+          },
+          "purchaseId": {
+            "type": "string",
+            "description": "Filter transactions by purchase ID"
+          }
+        }
+      },
+      "tokens": 244
+    },
+    {
+      "name": "transaction_get",
+      "description": "Get detailed information about a specific transaction.\n- Returns complete transaction details including:\n  - Transaction status\n  - Amount and currency\n  - Payment method details\n  - Associated purchase information\n  - Customer information\n  - Timestamps and audit data\n- Required: transactionId parameter",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string",
+            "description": "Unique identifier of the transaction"
+          }
+        },
+        "required": [
+          "transactionId"
+        ]
+      },
+      "tokens": 99
+    },
+    {
+      "name": "stats_get",
+      "description": "Get general transactions, revenue and usage statistics from your Iaptic account.\n- Returns aggregated metrics including:\n  - Total revenue\n  - Number of active subscriptions\n  - Customer growth metrics\n  - Transaction success rates\n  - Revenue by product type\n- Data is aggregated across all your applications",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 82
+    },
+    {
+      "name": "stats_app",
+      "description": "Get statistics specific to your application.\n- Returns app-specific metrics including:\n  - App revenue and growth\n  - Active subscriptions for this app\n  - Customer metrics for this app\n  - Product performance statistics\n  - Transaction metrics\n- Uses the app name provided during server initialization",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 80
+    },
+    {
+      "name": "stripe_prices",
+      "description": "Get available Stripe products and prices.\n- Returns list of products with their associated prices\n- Each product includes:\n  - Product ID and display name\n  - Description and metadata\n  - Available pricing offers\n  - Subscription terms if applicable\n- Results are cached for 5 minutes",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 80
+    },
+    {
+      "name": "event_list",
+      "description": "List recent events from your Iaptic account.\n- Returns a paginated list of system events\n- Events include:\n  - Receipt validations\n  - Platform notifications (Apple/Google/etc)\n  - Webhook deliveries\n  - Purchase status changes\n  - Subscription renewals\n- Use limit and offset for pagination\n- Results ordered by date (newest first)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of events to return (default: 100)"
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of events to skip for pagination"
+          },
+          "startdate": {
+            "type": "string",
+            "description": "Filter events after this date (ISO format, e.g. 2024-01-01)"
+          },
+          "enddate": {
+            "type": "string",
+            "description": "Filter events before this date (ISO format, e.g. 2024-12-31)"
+          },
+          "raw": {
+            "type": "boolean",
+            "description": "Return raw JSON instead of formatted output (default: false)"
+          }
+        }
+      },
+      "tokens": 218
+    },
+    {
+      "name": "event_details",
+      "description": "Get detailed information about a specific event.\n- Returns both analyzed data (context, content) and raw event data (request, response, external API calls)\n- Raw data includes the HTTP request/response and any external requests made (e.g. Apple/Google/Stripe API calls)\n- Sensitive fields are removed and large payloads are trimmed\n- Optionally includes receipt validation details\n- Use an eventId from event_list results\n- Requires validator version 3.12+",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "description": "The event ID to get details for"
+          },
+          "receipts": {
+            "type": "boolean",
+            "description": "Include receipt validation details (default: false)"
+          }
+        },
+        "required": [
+          "eventId"
+        ]
+      },
+      "tokens": 161
+    },
+    {
+      "name": "iaptic_switch_app",
+      "description": "Switch to a different Iaptic app.\n- Allows temporarily using a different app's credentials\n- All subsequent API calls will use the new app name and API key\n- Useful for managing multiple apps in the same session\n- Required: appName parameter (apiKey required only if not using master key)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "appName": {
+            "type": "string",
+            "description": "Name of the app to switch to"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for the app (not required if using master key)"
+          }
+        },
+        "required": [
+          "appName"
+        ]
+      },
+      "tokens": 130
+    },
+    {
+      "name": "iaptic_reset_app",
+      "description": "Reset to the default Iaptic app.\n- Reverts to the original app credentials provided during server initialization\n- All subsequent API calls will use the default app name and API key\n- Use this after using iaptic_switch_app to return to the default app",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 75
+    },
+    {
+      "name": "iaptic_current_app",
+      "description": "Get information about the currently active Iaptic app.\n- Returns the current app name\n- Indicates whether using default or custom credentials",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 49
+    }
+  ],
+  "totalTokens": 2081
+}

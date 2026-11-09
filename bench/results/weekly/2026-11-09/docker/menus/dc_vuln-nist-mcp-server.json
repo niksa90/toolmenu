@@ -1,0 +1,269 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "vuln-nist-mcp-server",
+    "version": "1.14.1",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:23:35.025Z",
+  "tools": [
+    {
+      "name": "get_temporal_context",
+      "description": "\n    Get current date and temporal context when it needed.\n\n    **USAGE**: Call this tool FIRST when user asks for time-relative question like \"this year\", \"last year\", \"6 months ago\", etc.\n\n    Returns current date context and examples for constructing specific date parameters.\n    ",
+      "inputSchema": {
+        "properties": {},
+        "title": "get_temporal_contextArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_temporal_contextOutput",
+        "type": "object"
+      },
+      "tokens": 95
+    },
+    {
+      "name": "search_cves",
+      "description": "\n    Search CVEs by keyword in description, with flexible time filtering.\n\n    **IMPORTANT**: For time-relative queries (this year, last year, etc.), call get_temporal_context() FIRST to get current date information.\n\n    **Date filtering logic (in priority order):**\n    - If start_date and end_date are provided → use them directly\n    - Else if last_days is provided → calculate start_date = now - last_days\n    - Else fallback to last 30 days\n\n    **Technical notes:**\n    - If the time period > 120 days, queries are split into 120-day chunks\n    - start_date, end_date: Use ISO 8601 format: \"YYYY-MM-DDTHH:MM:SS\"\n    - recent_days parameter is deprecated, use last_days instead.\n    ",
+      "inputSchema": {
+        "properties": {
+          "keyword": {
+            "default": "",
+            "title": "Keyword",
+            "type": "string"
+          },
+          "resultsPerPage": {
+            "default": 20,
+            "title": "Resultsperpage",
+            "type": "integer"
+          },
+          "startIndex": {
+            "default": 0,
+            "title": "Startindex",
+            "type": "integer"
+          },
+          "recent_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Recent Days"
+          },
+          "last_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Last Days"
+          },
+          "start_date": {
+            "default": "",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "end_date": {
+            "default": "",
+            "title": "End Date",
+            "type": "string"
+          }
+        },
+        "title": "search_cvesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_cvesOutput",
+        "type": "object"
+      },
+      "tokens": 334
+    },
+    {
+      "name": "get_cve_by_id",
+      "description": "Retrieve a CVE by its CVE-ID",
+      "inputSchema": {
+        "properties": {
+          "cve_id": {
+            "default": "",
+            "title": "Cve Id",
+            "type": "string"
+          }
+        },
+        "title": "get_cve_by_idArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_cve_by_idOutput",
+        "type": "object"
+      },
+      "tokens": 56
+    },
+    {
+      "name": "cves_by_cpe",
+      "description": "List CVEs associated with a specific CPE",
+      "inputSchema": {
+        "properties": {
+          "cpe_name": {
+            "default": "",
+            "title": "Cpe Name",
+            "type": "string"
+          },
+          "is_vulnerable": {
+            "default": "",
+            "title": "Is Vulnerable",
+            "type": "string"
+          }
+        },
+        "title": "cves_by_cpeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cves_by_cpeOutput",
+        "type": "object"
+      },
+      "tokens": 74
+    },
+    {
+      "name": "kevs_between",
+      "description": "\n    List CVEs added to CISA KEV catalog in a date window.\n    If the requested window exceeds 90 days, the query is automatically\n    split into multiple chunks (max 90 days each) and results are aggregated.\n    ",
+      "inputSchema": {
+        "properties": {
+          "kevStartDate": {
+            "default": "",
+            "title": "Kevstartdate",
+            "type": "string"
+          },
+          "kevEndDate": {
+            "default": "",
+            "title": "Kevenddate",
+            "type": "string"
+          },
+          "resultsPerPage": {
+            "default": "20",
+            "title": "Resultsperpage",
+            "type": "string"
+          },
+          "startIndex": {
+            "default": "0",
+            "title": "Startindex",
+            "type": "string"
+          }
+        },
+        "title": "kevs_betweenArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "kevs_betweenOutput",
+        "type": "object"
+      },
+      "tokens": 149
+    },
+    {
+      "name": "cve_change_history",
+      "description": "\n    Retrieve change history for a CVE or a time window.\n    If no cve_id is provided and the date range exceeds 120 days,\n    the query is split into multiple chunks (max 120 days each) and results aggregated.\n    ",
+      "inputSchema": {
+        "properties": {
+          "cve_id": {
+            "default": "",
+            "title": "Cve Id",
+            "type": "string"
+          },
+          "changeStartDate": {
+            "default": "",
+            "title": "Changestartdate",
+            "type": "string"
+          },
+          "changeEndDate": {
+            "default": "",
+            "title": "Changeenddate",
+            "type": "string"
+          },
+          "resultsPerPage": {
+            "default": "20",
+            "title": "Resultsperpage",
+            "type": "string"
+          },
+          "startIndex": {
+            "default": "0",
+            "title": "Startindex",
+            "type": "string"
+          }
+        },
+        "title": "cve_change_historyArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cve_change_historyOutput",
+        "type": "object"
+      },
+      "tokens": 171
+    }
+  ],
+  "totalTokens": 879,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

@@ -1,0 +1,2321 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "sonarqube-mcp-server",
+    "version": "1.22.0.3040",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:35:34.161Z",
+  "tools": [
+    {
+      "name": "change_sonar_issue_status",
+      "title": "Change SonarQube Issue Status",
+      "description": "Change the status of an issue. This tool can be used to change the status of an issue to \"accept\", \"falsepositive\" or to \"reopen\" an issue.\nAn example request could be: I would like to accept the issue having the key \"AX-HMISMFixnZED\"",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The key of the issue which status should be changed"
+          },
+          "status": {
+            "description": "The new status of the issue",
+            "type": "string",
+            "enum": [
+              "accept",
+              "falsepositive",
+              "reopen"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "status"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "issueKey": {
+            "type": "string",
+            "description": "The key of the issue that was updated"
+          },
+          "message": {
+            "type": "string",
+            "description": "Success or error message"
+          },
+          "newStatus": {
+            "type": "string",
+            "description": "The new status of the issue"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Whether the operation was successful"
+          }
+        },
+        "required": [
+          "issueKey",
+          "message",
+          "newStatus",
+          "success"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 143
+    },
+    {
+      "name": "search_my_sonarqube_projects",
+      "title": "Search My SonarQube Projects",
+      "description": "Find SonarQube projects in your organization. Supports searching by project name or key. Use this first when projectKey is unknown - most other tools require the project key from this response.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "An optional search query to filter projects by name (partial match) or key (exact match)."
+          },
+          "pageSize": {
+            "type": "number",
+            "description": "An optional page size. Must be greater than 0 and less than or equal to 500. Defaults to 500."
+          },
+          "page": {
+            "type": "number",
+            "description": "An optional page number. Defaults to 1."
+          }
+        },
+        "required": []
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "paging": {
+            "type": "object",
+            "properties": {
+              "hasNextPage": {
+                "type": "boolean",
+                "description": "Whether there are more pages available"
+              },
+              "pageIndex": {
+                "type": "integer",
+                "description": "Current page index (1-based)"
+              },
+              "pageSize": {
+                "type": "integer",
+                "description": "Number of items per page"
+              },
+              "total": {
+                "type": "integer",
+                "description": "Total number of items across all pages"
+              }
+            },
+            "required": [
+              "hasNextPage",
+              "pageIndex",
+              "pageSize",
+              "total"
+            ],
+            "description": "Pagination information for the results"
+          },
+          "projects": {
+            "description": "List of projects found",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "Unique project key"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Project display name"
+                }
+              },
+              "required": [
+                "key",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "paging",
+          "projects"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 152
+    },
+    {
+      "name": "search_sonar_issues_in_projects",
+      "title": "Search SonarQube Issues",
+      "description": "Search for issues (bugs, vulnerabilities, code smells) in my organization's projects. Filter by severities=['HIGH','BLOCKER'] for critical issues, impactSoftwareQualities=['SECURITY'] for security, issueStatuses=['OPEN'] to exclude resolved.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "p": {
+            "type": "number",
+            "description": "An optional page number. Defaults to 1."
+          },
+          "impactSoftwareQualities": {
+            "description": "An optional list of software qualities to filter by",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "MAINTAINABILITY",
+                "RELIABILITY",
+                "SECURITY"
+              ]
+            }
+          },
+          "issueStatuses": {
+            "description": "An optional list of issue statuses to filter by. Note: IN_SANDBOX is valid only for SonarQube Server",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "OPEN",
+                "CONFIRMED",
+                "FALSE_POSITIVE",
+                "ACCEPTED",
+                "FIXED",
+                "IN_SANDBOX"
+              ]
+            }
+          },
+          "projects": {
+            "items": {
+              "type": "string"
+            },
+            "description": "An optional list of Sonar projects to look in",
+            "type": "array"
+          },
+          "issueKey": {
+            "items": {
+              "type": "string"
+            },
+            "description": "An optional list of issue keys to fetch specific issues",
+            "type": "array"
+          },
+          "ps": {
+            "type": "number",
+            "description": "An optional page size. Must be greater than 0 and less than or equal to 500. Defaults to 100."
+          },
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "description": "An optional list of component keys (files, directories, modules) to filter issues",
+            "type": "array"
+          },
+          "branch": {
+            "type": "string",
+            "description": "Long-lived branch name in SonarQube (e.g. 'main', 'develop'). Use list_branches to discover valid names. Not for feature branches or pull request analysis — use pullRequest instead."
+          },
+          "pullRequest": {
+            "type": "string",
+            "description": "Pull request key/ID in SonarQube. Use list_pull_requests to discover valid keys. Not for long-lived branches — use branch instead. Must be the SonarQube PR key, not a git branch name."
+          },
+          "severities": {
+            "description": "An optional list of severities to filter by",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "INFO",
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "BLOCKER"
+              ]
+            }
+          }
+        },
+        "required": []
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "issues": {
+            "description": "List of issues found in the search",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "author": {
+                  "type": "string",
+                  "description": "Author who introduced the issue"
+                },
+                "cleanCodeAttribute": {
+                  "type": "string",
+                  "description": "Clean code attribute associated with the issue"
+                },
+                "cleanCodeAttributeCategory": {
+                  "type": "string",
+                  "description": "Clean code attribute category"
+                },
+                "component": {
+                  "type": "string",
+                  "description": "Component (file) where the issue is located"
+                },
+                "creationDate": {
+                  "type": "string",
+                  "description": "Date when the issue was created"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "Unique issue identifier"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Issue description message"
+                },
+                "project": {
+                  "type": "string",
+                  "description": "Project key where the issue was found"
+                },
+                "rule": {
+                  "type": "string",
+                  "description": "Rule that triggered the issue"
+                },
+                "severity": {
+                  "type": "string",
+                  "description": "Issue severity level"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "Current status of the issue"
+                },
+                "textRange": {
+                  "type": "object",
+                  "properties": {
+                    "endLine": {
+                      "type": "integer",
+                      "description": "Ending line number"
+                    },
+                    "startLine": {
+                      "type": "integer",
+                      "description": "Starting line number"
+                    }
+                  },
+                  "required": [
+                    "endLine",
+                    "startLine"
+                  ],
+                  "description": "Location of the issue in the source file"
+                }
+              },
+              "required": [
+                "author",
+                "cleanCodeAttribute",
+                "cleanCodeAttributeCategory",
+                "component",
+                "creationDate",
+                "key",
+                "message",
+                "project",
+                "rule",
+                "severity",
+                "status"
+              ]
+            }
+          },
+          "paging": {
+            "type": "object",
+            "properties": {
+              "pageIndex": {
+                "type": "integer",
+                "description": "Current page index (1-based)"
+              },
+              "pageSize": {
+                "type": "integer",
+                "description": "Number of items per page"
+              },
+              "total": {
+                "type": "integer",
+                "description": "Total number of items across all pages"
+              }
+            },
+            "required": [
+              "pageIndex",
+              "pageSize",
+              "total"
+            ],
+            "description": "Pagination information for the results"
+          }
+        },
+        "required": [
+          "issues",
+          "paging"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 480
+    },
+    {
+      "name": "search_security_hotspots",
+      "title": "Search SonarQube Security Hotspots",
+      "description": "Search for Security Hotspots in a project.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "p": {
+            "type": "number",
+            "description": "An optional page number. Defaults to 1."
+          },
+          "projectKey": {
+            "type": "string",
+            "description": "The key of the project or application to search in. Required unless hotspotKeys is provided."
+          },
+          "ps": {
+            "type": "number",
+            "description": "An optional page size. Must be greater than 0 and less than or equal to 500. Defaults to 100."
+          },
+          "onlyMine": {
+            "type": "boolean",
+            "description": "If true, only Security Hotspots assigned to the current user are returned"
+          },
+          "hotspotKeys": {
+            "items": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of specific Security Hotspot keys to retrieve. Required unless projectKey is provided.",
+            "type": "array"
+          },
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "description": "An optional list of file paths to filter Security Hotspots",
+            "type": "array"
+          },
+          "sinceLeakPeriod": {
+            "type": "boolean",
+            "description": "If true, only Security Hotspots created since the leak period (new code period) are returned"
+          },
+          "branch": {
+            "type": "string",
+            "description": "Long-lived branch name in SonarQube (e.g. 'main', 'develop'). Use list_branches to discover valid names. Not for feature branches or pull request analysis — use pullRequest instead."
+          },
+          "resolution": {
+            "description": "Filter by resolution (when status is REVIEWED)",
+            "type": "string",
+            "enum": [
+              "FIXED",
+              "SAFE",
+              "ACKNOWLEDGED"
+            ]
+          },
+          "pullRequest": {
+            "type": "string",
+            "description": "Pull request key/ID in SonarQube. Use list_pull_requests to discover valid keys. Not for long-lived branches — use branch instead. Must be the SonarQube PR key, not a git branch name."
+          },
+          "status": {
+            "description": "Filter by review status",
+            "type": "string",
+            "enum": [
+              "TO_REVIEW",
+              "REVIEWED"
+            ]
+          }
+        },
+        "required": []
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "hotspots": {
+            "description": "List of Security Hotspots found in the search",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "assignee": {
+                  "type": "string",
+                  "description": "User assigned to review the Security Hotspot"
+                },
+                "author": {
+                  "type": "string",
+                  "description": "Author who introduced the Security Hotspot"
+                },
+                "component": {
+                  "type": "string",
+                  "description": "Component (file) where the Security Hotspot is located"
+                },
+                "creationDate": {
+                  "type": "string",
+                  "description": "Date when the Security Hotspot was created"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "Unique Security Hotspot identifier"
+                },
+                "line": {
+                  "type": "integer",
+                  "description": "Line number where the Security Hotspot is located"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Security Hotspot description message"
+                },
+                "project": {
+                  "type": "string",
+                  "description": "Project key where the Security Hotspot was found"
+                },
+                "resolution": {
+                  "type": "string",
+                  "description": "Resolution when status is REVIEWED (FIXED, SAFE, ACKNOWLEDGED)"
+                },
+                "ruleKey": {
+                  "type": "string",
+                  "description": "Rule key that triggered this Security Hotspot"
+                },
+                "securityCategory": {
+                  "type": "string",
+                  "description": "Security category (e.g., sql-injection, xss, weak-cryptography)"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "Review status (TO_REVIEW, REVIEWED)"
+                },
+                "textRange": {
+                  "type": "object",
+                  "properties": {
+                    "endLine": {
+                      "type": "integer",
+                      "description": "Ending line number"
+                    },
+                    "endOffset": {
+                      "type": "integer",
+                      "description": "Ending offset in the line"
+                    },
+                    "startLine": {
+                      "type": "integer",
+                      "description": "Starting line number"
+                    },
+                    "startOffset": {
+                      "type": "integer",
+                      "description": "Starting offset in the line"
+                    }
+                  },
+                  "required": [
+                    "endLine",
+                    "endOffset",
+                    "startLine",
+                    "startOffset"
+                  ],
+                  "description": "Location of the Security Hotspot in the source file"
+                },
+                "updateDate": {
+                  "type": "string",
+                  "description": "Date when the Security Hotspot was last updated"
+                },
+                "vulnerabilityProbability": {
+                  "type": "string",
+                  "description": "Vulnerability probability (HIGH, MEDIUM, LOW)"
+                }
+              },
+              "required": [
+                "author",
+                "component",
+                "creationDate",
+                "key",
+                "message",
+                "project",
+                "securityCategory",
+                "status",
+                "updateDate",
+                "vulnerabilityProbability"
+              ]
+            }
+          },
+          "paging": {
+            "type": "object",
+            "properties": {
+              "pageIndex": {
+                "type": "integer",
+                "description": "Current page index (1-based)"
+              },
+              "pageSize": {
+                "type": "integer",
+                "description": "Number of items per page"
+              },
+              "total": {
+                "type": "integer",
+                "description": "Total number of items across all pages"
+              }
+            },
+            "required": [
+              "pageIndex",
+              "pageSize",
+              "total"
+            ],
+            "description": "Pagination information for the results"
+          }
+        },
+        "required": [
+          "hotspots",
+          "paging"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 402
+    },
+    {
+      "name": "show_security_hotspot",
+      "title": "Show SonarQube Security Hotspot Details",
+      "description": "Get detailed information about a specific Security Hotspot, including rule details, code context, flows, and comments.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "hotspotKey": {
+            "type": "string",
+            "description": "The key of the Security Hotspot to retrieve"
+          }
+        },
+        "required": [
+          "hotspotKey"
+        ]
+      },
+      "outputSchema": {
+        "$defs": {
+          "TextRange": {
+            "type": "object",
+            "properties": {
+              "endLine": {
+                "type": "integer",
+                "description": "Ending line number"
+              },
+              "endOffset": {
+                "type": "integer",
+                "description": "Ending offset in the line"
+              },
+              "startLine": {
+                "type": "integer",
+                "description": "Starting line number"
+              },
+              "startOffset": {
+                "type": "integer",
+                "description": "Starting offset in the line"
+              }
+            },
+            "required": [
+              "endLine",
+              "endOffset",
+              "startLine",
+              "startOffset"
+            ]
+          }
+        },
+        "type": "object",
+        "properties": {
+          "assignee": {
+            "type": "string",
+            "description": "User assigned to review the Security Hotspot"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author who introduced the Security Hotspot"
+          },
+          "canChangeStatus": {
+            "type": "boolean",
+            "description": "Whether the current user can change the Security Hotspot status"
+          },
+          "comments": {
+            "description": "Comments on the Security Hotspot",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "createdAt": {
+                  "type": "string",
+                  "description": "Date when the comment was created"
+                },
+                "htmlText": {
+                  "type": "string",
+                  "description": "HTML-formatted comment text"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "Comment identifier"
+                },
+                "login": {
+                  "type": "string",
+                  "description": "Login of the user who wrote the comment"
+                },
+                "markdown": {
+                  "type": "string",
+                  "description": "Markdown-formatted comment text"
+                },
+                "updatable": {
+                  "type": "boolean",
+                  "description": "Whether the comment can be updated by the current user"
+                }
+              },
+              "required": [
+                "createdAt",
+                "htmlText",
+                "key",
+                "login",
+                "markdown",
+                "updatable"
+              ]
+            }
+          },
+          "component": {
+            "type": "string",
+            "description": "Component (file) where the Security Hotspot is located"
+          },
+          "creationDate": {
+            "type": "string",
+            "description": "Date when the Security Hotspot was created"
+          },
+          "flows": {
+            "description": "Code flows showing the path of the security-sensitive code",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "locations": {
+                  "description": "Locations in the flow",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "component": {
+                        "type": "string",
+                        "description": "Component where the location is"
+                      },
+                      "msg": {
+                        "type": "string",
+                        "description": "Message describing the location"
+                      },
+                      "textRange": {
+                        "$ref": "#/$defs/TextRange",
+                        "description": "Text range of the location"
+                      }
+                    },
+                    "required": [
+                      "component",
+                      "msg",
+                      "textRange"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "locations"
+              ]
+            }
+          },
+          "key": {
+            "type": "string",
+            "description": "Unique Security Hotspot identifier"
+          },
+          "line": {
+            "type": "integer",
+            "description": "Line number where the Security Hotspot is located"
+          },
+          "message": {
+            "type": "string",
+            "description": "Security Hotspot description message"
+          },
+          "project": {
+            "type": "string",
+            "description": "Project key where the Security Hotspot was found"
+          },
+          "resolution": {
+            "type": "string",
+            "description": "Resolution when status is REVIEWED (FIXED, SAFE, ACKNOWLEDGED)"
+          },
+          "rule": {
+            "type": "object",
+            "properties": {
+              "fixRecommendations": {
+                "type": "string",
+                "description": "Recommendations for fixing the issue"
+              },
+              "key": {
+                "type": "string",
+                "description": "Rule key"
+              },
+              "name": {
+                "type": "string",
+                "description": "Rule name"
+              },
+              "riskDescription": {
+                "type": "string",
+                "description": "Description of the security risk"
+              },
+              "securityCategory": {
+                "type": "string",
+                "description": "Security category"
+              },
+              "vulnerabilityDescription": {
+                "type": "string",
+                "description": "Description of potential vulnerabilities"
+              },
+              "vulnerabilityProbability": {
+                "type": "string",
+                "description": "Vulnerability probability"
+              }
+            },
+            "required": [
+              "key",
+              "name",
+              "securityCategory",
+              "vulnerabilityProbability"
+            ],
+            "description": "Rule that triggered the Security Hotspot"
+          },
+          "securityCategory": {
+            "type": "string",
+            "description": "Security category (e.g., sql-injection, xss, weak-cryptography)"
+          },
+          "status": {
+            "type": "string",
+            "description": "Review status (TO_REVIEW, REVIEWED)"
+          },
+          "textRange": {
+            "$ref": "#/$defs/TextRange",
+            "description": "Location of the Security Hotspot in the source file"
+          },
+          "updateDate": {
+            "type": "string",
+            "description": "Date when the Security Hotspot was last updated"
+          },
+          "vulnerabilityProbability": {
+            "type": "string",
+            "description": "Vulnerability probability (HIGH, MEDIUM, LOW)"
+          }
+        },
+        "required": [
+          "canChangeStatus",
+          "comments",
+          "component",
+          "creationDate",
+          "flows",
+          "key",
+          "message",
+          "project",
+          "rule",
+          "securityCategory",
+          "status",
+          "updateDate",
+          "vulnerabilityProbability"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 74
+    },
+    {
+      "name": "change_security_hotspot_status",
+      "title": "Change SonarQube Security Hotspot Status",
+      "description": "Change the status of a Security Hotspot to review it. When marking as REVIEWED, you must specify a resolution.\n- TO_REVIEW: Mark the Security Hotspot as needing review\n- REVIEWED: Mark the Security Hotspot as reviewed with one of these resolutions:\n  * FIXED: A fix has been implemented\n  * SAFE: Reviewed and determined to be safe\n  * ACKNOWLEDGED: Acknowledged as a risk but accepted\nYou can optionally add a comment to explain your review decision.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "hotspotKey": {
+            "type": "string",
+            "description": "The key of the Security Hotspot to update"
+          },
+          "comment": {
+            "type": "string",
+            "description": "An optional comment explaining the review decision"
+          },
+          "resolution": {
+            "description": "The resolution when status is REVIEWED. Required if status is REVIEWED",
+            "type": "string",
+            "enum": [
+              "FIXED",
+              "SAFE",
+              "ACKNOWLEDGED"
+            ]
+          },
+          "status": {
+            "description": "The new status of the Security Hotspot",
+            "type": "string",
+            "enum": [
+              "TO_REVIEW",
+              "REVIEWED"
+            ]
+          }
+        },
+        "required": [
+          "hotspotKey",
+          "status"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "hotspotKey": {
+            "type": "string",
+            "description": "The key of the Security Hotspot that was updated"
+          },
+          "message": {
+            "type": "string",
+            "description": "Success or error message"
+          },
+          "newResolution": {
+            "type": "string",
+            "description": "The new resolution of the Security Hotspot (if status is REVIEWED)"
+          },
+          "newStatus": {
+            "type": "string",
+            "description": "The new status of the Security Hotspot"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Whether the operation was successful"
+          }
+        },
+        "required": [
+          "hotspotKey",
+          "message",
+          "newStatus",
+          "success"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 244
+    },
+    {
+      "name": "get_project_quality_gate_status",
+      "title": "Get SonarQube Project Quality Gate Status",
+      "description": "Get the Quality Gate Status for a project. Either 'analysisId', 'projectId' or 'projectKey' must be provided.\n",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "description": "The optional project key to get the status for, for example 'my_project'"
+          },
+          "analysisId": {
+            "type": "string",
+            "description": "The optional analysis ID to get the status for, for example 'AU-TpxcA-iU5OvuD2FL1'"
+          },
+          "branch": {
+            "type": "string",
+            "description": "Long-lived branch name in SonarQube (e.g. 'main', 'develop'). Use list_branches to discover valid names. Not for feature branches or pull request analysis — use pullRequest instead."
+          },
+          "projectId": {
+            "type": "string",
+            "description": "The optional project ID to get the status for, for example 'AU-Tpxb--iU5OvuD2FLy'. Doesn't work with branches or pull requests.\n"
+          },
+          "pullRequest": {
+            "type": "string",
+            "description": "Pull request key/ID in SonarQube. Use list_pull_requests to discover valid keys. Not for long-lived branches — use branch instead. Must be the SonarQube PR key, not a git branch name."
+          }
+        },
+        "required": []
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "conditions": {
+            "description": "List of quality gate conditions",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "actualValue": {
+                  "type": "string",
+                  "description": "Metric actual value"
+                },
+                "errorThreshold": {
+                  "type": "string",
+                  "description": "Error threshold value"
+                },
+                "metricKey": {
+                  "type": "string",
+                  "description": "Metric key"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "Condition status (OK, ERROR, etc.)"
+                }
+              },
+              "required": [
+                "metricKey",
+                "status"
+              ]
+            }
+          },
+          "ignoredConditions": {
+            "type": "boolean",
+            "description": "Whether the quality gate is ignored"
+          },
+          "status": {
+            "type": "string",
+            "description": "Overall quality gate status (OK, WARN, ERROR, etc.)"
+          }
+        },
+        "required": [
+          "conditions",
+          "status"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 279
+    },
+    {
+      "name": "show_rule",
+      "title": "Show SonarQube Rule Details",
+      "description": "Shows detailed information about a SonarQube rule.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The rule key (e.g. javascript:EmptyBlock)"
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "descriptionSections": {
+            "description": "Detailed description sections",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "content": {
+                  "type": "string",
+                  "description": "Section content in HTML format"
+                }
+              },
+              "required": [
+                "content"
+              ]
+            }
+          },
+          "htmlDesc": {
+            "type": "string",
+            "description": "HTML description of the rule"
+          },
+          "impacts": {
+            "description": "Software quality impacts of this rule",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "description": "Impact severity level"
+                },
+                "softwareQuality": {
+                  "type": "string",
+                  "description": "Software quality dimension (MAINTAINABILITY, RELIABILITY, SECURITY)"
+                }
+              },
+              "required": [
+                "severity",
+                "softwareQuality"
+              ]
+            }
+          },
+          "key": {
+            "type": "string",
+            "description": "Unique rule key"
+          },
+          "lang": {
+            "type": "string",
+            "description": "Language key the rule applies to"
+          },
+          "langName": {
+            "type": "string",
+            "description": "Human-readable language name"
+          },
+          "name": {
+            "type": "string",
+            "description": "Rule display name"
+          },
+          "severity": {
+            "type": "string",
+            "description": "Rule severity level"
+          },
+          "type": {
+            "type": "string",
+            "description": "Rule type (BUG, VULNERABILITY, CODE_SMELL, etc.)"
+          }
+        },
+        "required": [
+          "key",
+          "lang",
+          "langName",
+          "name",
+          "severity",
+          "type"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 60
+    },
+    {
+      "name": "list_quality_gates",
+      "title": "List SonarQube Quality Gates",
+      "description": "List all quality gates.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "qualityGates": {
+            "description": "List of quality gates",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "caycStatus": {
+                  "type": "string",
+                  "description": "Clean as You Code status"
+                },
+                "conditions": {
+                  "description": "List of conditions",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "integer",
+                        "description": "Error threshold"
+                      },
+                      "metric": {
+                        "type": "string",
+                        "description": "Metric key"
+                      },
+                      "op": {
+                        "type": "string",
+                        "description": "Comparison operator"
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "metric",
+                      "op"
+                    ]
+                  }
+                },
+                "hasMQRConditions": {
+                  "type": "boolean",
+                  "description": "Whether it has MQR conditions"
+                },
+                "hasStandardConditions": {
+                  "type": "boolean",
+                  "description": "Whether it has standard conditions"
+                },
+                "id": {
+                  "type": "integer",
+                  "description": "Quality gate ID"
+                },
+                "isAiCodeSupported": {
+                  "type": "boolean",
+                  "description": "Whether AI code is supported"
+                },
+                "isBuiltIn": {
+                  "type": "boolean",
+                  "description": "Whether this is a built-in quality gate"
+                },
+                "isDefault": {
+                  "type": "boolean",
+                  "description": "Whether this is the default quality gate"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Quality gate name"
+                }
+              },
+              "required": [
+                "isBuiltIn",
+                "isDefault",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "qualityGates"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 34
+    },
+    {
+      "name": "get_component_measures",
+      "title": "Get SonarQube Project Measures",
+      "description": "Get SonarQube measures for a project, such as ncloc, complexity, violations, coverage, etc.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "description": "The SonarQube project key (e.g. my_project). Use search_my_sonarqube_projects when the key is unknown."
+          },
+          "metricKeys": {
+            "items": {
+              "type": "string"
+            },
+            "description": "The metric keys to retrieve (e.g. ncloc, complexity, violations, coverage)",
+            "type": "array"
+          },
+          "branch": {
+            "type": "string",
+            "description": "Long-lived branch name in SonarQube (e.g. 'main', 'develop'). Use list_branches to discover valid names. Not for feature branches or pull request analysis — use pullRequest instead."
+          },
+          "pullRequest": {
+            "type": "string",
+            "description": "Pull request key/ID in SonarQube. Use list_pull_requests to discover valid keys. Not for long-lived branches — use branch instead. Must be the SonarQube PR key, not a git branch name."
+          }
+        },
+        "required": [
+          "projectKey"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "component": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string",
+                "description": "Component description"
+              },
+              "key": {
+                "type": "string",
+                "description": "Component key"
+              },
+              "language": {
+                "type": "string",
+                "description": "Programming language"
+              },
+              "name": {
+                "type": "string",
+                "description": "Component display name"
+              },
+              "path": {
+                "type": "string",
+                "description": "Component path"
+              },
+              "qualifier": {
+                "type": "string",
+                "description": "Component qualifier (TRK for project, FIL for file, etc.)"
+              }
+            },
+            "required": [
+              "key",
+              "name",
+              "qualifier"
+            ],
+            "description": "Component information"
+          },
+          "measures": {
+            "description": "List of measures for the component",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "metric": {
+                  "type": "string",
+                  "description": "Metric key"
+                },
+                "value": {
+                  "type": "string",
+                  "description": "Measure value"
+                }
+              },
+              "required": [
+                "metric"
+              ]
+            }
+          },
+          "metrics": {
+            "description": "Metadata about the metrics",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "custom": {
+                  "type": "boolean",
+                  "description": "Whether this is a custom metric"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Metric description"
+                },
+                "domain": {
+                  "type": "string",
+                  "description": "Metric domain/category"
+                },
+                "hidden": {
+                  "type": "boolean",
+                  "description": "Whether the metric is hidden"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "Metric key"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Metric display name"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Metric value type"
+                }
+              },
+              "required": [
+                "custom",
+                "description",
+                "domain",
+                "hidden",
+                "key",
+                "name",
+                "type"
+              ]
+            }
+          }
+        },
+        "required": [
+          "component",
+          "measures"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 237
+    },
+    {
+      "name": "search_files_by_coverage",
+      "title": "Search SonarQube Files by Coverage",
+      "description": "Search for files in a project sorted by coverage (ascending - worst coverage first). This tool helps identify files that need test coverage improvements.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "description": "The SonarQube project key (e.g. my_project). Use search_my_sonarqube_projects when the key is unknown."
+          },
+          "pageIndex": {
+            "type": "number",
+            "description": "Page index (1-based, default: 1)"
+          },
+          "maxCoverage": {
+            "type": "number",
+            "description": "Only return files with coverage below this threshold (0-100)"
+          },
+          "pageSize": {
+            "type": "number",
+            "description": "Page size (default: 100, max: 500)"
+          },
+          "branch": {
+            "type": "string",
+            "description": "Long-lived branch name in SonarQube (e.g. 'main', 'develop'). Use list_branches to discover valid names. Not for feature branches or pull request analysis — use pullRequest instead."
+          },
+          "pullRequest": {
+            "type": "string",
+            "description": "Pull request key/ID in SonarQube. Use list_pull_requests to discover valid keys. Not for long-lived branches — use branch instead. Must be the SonarQube PR key, not a git branch name."
+          }
+        },
+        "required": [
+          "projectKey"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "description": "List of files with coverage information, sorted by coverage (ascending)",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "branchCoverage": {
+                  "type": "number",
+                  "description": "Branch coverage percentage"
+                },
+                "conditionsToCover": {
+                  "type": "integer",
+                  "description": "Number of conditions (branches) to cover"
+                },
+                "coverage": {
+                  "type": "number",
+                  "description": "Overall coverage percentage for this file"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "File component key"
+                },
+                "lineCoverage": {
+                  "type": "number",
+                  "description": "Line coverage percentage"
+                },
+                "linesToCover": {
+                  "type": "integer",
+                  "description": "Number of lines to cover"
+                },
+                "path": {
+                  "type": "string",
+                  "description": "File path relative to project root"
+                },
+                "uncoveredConditions": {
+                  "type": "integer",
+                  "description": "Number of uncovered conditions"
+                },
+                "uncoveredLines": {
+                  "type": "integer",
+                  "description": "Number of uncovered lines"
+                }
+              },
+              "required": [
+                "key",
+                "path"
+              ]
+            }
+          },
+          "filesReturned": {
+            "type": "integer",
+            "description": "Number of files returned in this response"
+          },
+          "pageIndex": {
+            "type": "integer",
+            "description": "Current page index"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Page size"
+          },
+          "projectKey": {
+            "type": "string",
+            "description": "Project key"
+          },
+          "projectSummary": {
+            "type": "object",
+            "properties": {
+              "coverage": {
+                "type": "number",
+                "description": "Overall project coverage percentage"
+              },
+              "linesToCover": {
+                "type": "integer",
+                "description": "Total lines to cover in the project"
+              },
+              "uncoveredLines": {
+                "type": "integer",
+                "description": "Total uncovered lines in the project"
+              }
+            },
+            "description": "Project-level coverage summary"
+          },
+          "totalFiles": {
+            "type": "integer",
+            "description": "Total number of files in the project"
+          }
+        },
+        "required": [
+          "files",
+          "filesReturned",
+          "pageIndex",
+          "pageSize",
+          "projectKey",
+          "totalFiles"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 274
+    },
+    {
+      "name": "get_file_coverage_details",
+      "title": "Get SonarQube File Coverage Details",
+      "description": "Get complete line-by-line coverage information for a file, including which exact lines are uncovered and which have partially covered branches. This tool helps identify precisely where to add test coverage. Use after identifying files with low coverage via search_files_by_coverage.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "description": "Long-lived branch name in SonarQube (e.g. 'main', 'develop'). Use list_branches to discover valid names. Not for feature branches or pull request analysis — use pullRequest instead."
+          },
+          "key": {
+            "type": "string",
+            "description": "File key (e.g. my_project:src/foo/Bar.java)"
+          },
+          "pullRequest": {
+            "type": "string",
+            "description": "Pull request key/ID in SonarQube. Use list_pull_requests to discover valid keys. Not for long-lived branches — use branch instead. Must be the SonarQube PR key, not a git branch name."
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "fileKey": {
+            "type": "string",
+            "description": "File component key"
+          },
+          "filePath": {
+            "type": "string",
+            "description": "File path"
+          },
+          "partiallyConditionalLines": {
+            "description": "List of lines with partially covered branches/conditions",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "coveredConditions": {
+                  "type": "integer",
+                  "description": "Number of conditions covered by tests"
+                },
+                "lineNumber": {
+                  "type": "integer",
+                  "description": "Line number (1-based)"
+                },
+                "totalConditions": {
+                  "type": "integer",
+                  "description": "Total number of conditions (branches) on this line"
+                },
+                "uncoveredConditions": {
+                  "type": "integer",
+                  "description": "Number of conditions not covered by tests"
+                }
+              },
+              "required": [
+                "coveredConditions",
+                "lineNumber",
+                "totalConditions",
+                "uncoveredConditions"
+              ]
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "branchCoveragePercent": {
+                "type": "number",
+                "description": "Branch coverage percentage"
+              },
+              "coverableLines": {
+                "type": "integer",
+                "description": "Number of coverable lines (executable code)"
+              },
+              "coveredConditions": {
+                "type": "integer",
+                "description": "Number of conditions covered by tests"
+              },
+              "coveredLines": {
+                "type": "integer",
+                "description": "Number of lines covered by tests"
+              },
+              "lineCoveragePercent": {
+                "type": "number",
+                "description": "Line coverage percentage"
+              },
+              "totalConditions": {
+                "type": "integer",
+                "description": "Total number of conditions (branches) to cover"
+              },
+              "totalLines": {
+                "type": "integer",
+                "description": "Total number of lines in the file"
+              },
+              "uncoveredConditions": {
+                "type": "integer",
+                "description": "Number of conditions not covered by tests"
+              },
+              "uncoveredLines": {
+                "type": "integer",
+                "description": "Number of lines not covered by tests"
+              }
+            },
+            "required": [
+              "branchCoveragePercent",
+              "coverableLines",
+              "coveredConditions",
+              "coveredLines",
+              "lineCoveragePercent",
+              "totalConditions",
+              "totalLines",
+              "uncoveredConditions",
+              "uncoveredLines"
+            ],
+            "description": "Coverage summary for this file"
+          },
+          "uncoveredLines": {
+            "description": "List of uncovered lines (lines that have never been executed by tests)",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "lineNumber": {
+                  "type": "integer",
+                  "description": "Line number (1-based)"
+                }
+              },
+              "required": [
+                "lineNumber"
+              ]
+            }
+          }
+        },
+        "required": [
+          "fileKey",
+          "partiallyConditionalLines",
+          "summary",
+          "uncoveredLines"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 212
+    },
+    {
+      "name": "search_metrics",
+      "title": "Search SonarQube Metrics",
+      "description": "Search for available metrics",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "p": {
+            "type": "number",
+            "description": "1-based page number (default: 1)"
+          },
+          "ps": {
+            "type": "number",
+            "description": "Page size. Must be greater than 0 and less than or equal to 500 (default: 100)"
+          }
+        },
+        "required": []
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "metrics": {
+            "description": "List of metrics matching the search",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "custom": {
+                  "type": "boolean",
+                  "description": "Whether this is a custom metric"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Metric description"
+                },
+                "domain": {
+                  "type": "string",
+                  "description": "Metric domain/category"
+                },
+                "hidden": {
+                  "type": "boolean",
+                  "description": "Whether the metric is hidden"
+                },
+                "id": {
+                  "type": "string",
+                  "description": "Metric unique identifier"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "Metric key"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Metric display name"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Metric value type"
+                }
+              },
+              "required": [
+                "custom",
+                "hidden",
+                "id",
+                "key",
+                "name",
+                "type"
+              ]
+            }
+          },
+          "page": {
+            "type": "integer",
+            "description": "Current page number"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Number of items per page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of metrics"
+          }
+        },
+        "required": [
+          "metrics",
+          "page",
+          "pageSize",
+          "total"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 83
+    },
+    {
+      "name": "get_duplications",
+      "title": "Get SonarQube Code Duplications",
+      "description": "Get duplications for a file. Requires Browse permission on file's project",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "description": "Long-lived branch name in SonarQube (e.g. 'main', 'develop'). Use list_branches to discover valid names. Not for feature branches or pull request analysis — use pullRequest instead."
+          },
+          "key": {
+            "type": "string",
+            "description": "File key (e.g. my_project:src/foo/Bar.php)"
+          },
+          "pullRequest": {
+            "type": "string",
+            "description": "Pull request key/ID in SonarQube. Use list_pull_requests to discover valid keys. Not for long-lived branches — use branch instead. Must be the SonarQube PR key, not a git branch name."
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "duplications": {
+            "description": "List of duplication groups found",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "blocks": {
+                  "description": "List of code blocks involved in this duplication",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "fileKey": {
+                        "type": "string",
+                        "description": "File key"
+                      },
+                      "fileName": {
+                        "type": "string",
+                        "description": "File name"
+                      },
+                      "from": {
+                        "type": "integer",
+                        "description": "Starting line number"
+                      },
+                      "size": {
+                        "type": "integer",
+                        "description": "Number of lines"
+                      }
+                    },
+                    "required": [
+                      "fileKey",
+                      "fileName",
+                      "from",
+                      "size"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "blocks"
+              ]
+            }
+          },
+          "files": {
+            "description": "Map of file references to file information",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "File key"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "File name"
+                }
+              },
+              "required": [
+                "key",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "duplications",
+          "files"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 176
+    },
+    {
+      "name": "search_duplicated_files",
+      "title": "Search SonarQube Files With Duplications",
+      "description": "Search for files with code duplications in a project. By default, automatically fetches all duplicated files across all pages (up to 10,000 files max).",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "description": "The SonarQube project key (e.g. my_project). Use search_my_sonarqube_projects when the key is unknown."
+          },
+          "pageIndex": {
+            "type": "number",
+            "description": "Optional: Page number for manual pagination (starts at 1). If not specified, auto-fetches all duplicated files."
+          },
+          "pageSize": {
+            "type": "number",
+            "description": "Optional: Number of results per page for manual pagination (max: 500). If not specified, auto-fetches all duplicated files."
+          },
+          "branch": {
+            "type": "string",
+            "description": "Long-lived branch name in SonarQube (e.g. 'main', 'develop'). Use list_branches to discover valid names. Not for feature branches or pull request analysis — use pullRequest instead."
+          },
+          "pullRequest": {
+            "type": "string",
+            "description": "Pull request key/ID in SonarQube. Use list_pull_requests to discover valid keys. Not for long-lived branches — use branch instead. Must be the SonarQube PR key, not a git branch name."
+          }
+        },
+        "required": [
+          "projectKey"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "description": "List of files with duplications, sorted by most duplicated first",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "duplicatedBlocks": {
+                  "type": "integer",
+                  "description": "Number of duplicated blocks"
+                },
+                "duplicatedLines": {
+                  "type": "integer",
+                  "description": "Number of duplicated lines"
+                },
+                "duplicatedLinesDensity": {
+                  "type": "string",
+                  "description": "Duplication density percentage"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "File key"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "File name"
+                },
+                "path": {
+                  "type": "string",
+                  "description": "File path"
+                }
+              },
+              "required": [
+                "key",
+                "name"
+              ]
+            }
+          },
+          "paging": {
+            "type": "object",
+            "properties": {
+              "pageIndex": {
+                "type": "integer",
+                "description": "Current page number"
+              },
+              "pageSize": {
+                "type": "integer",
+                "description": "Number of results per page"
+              },
+              "total": {
+                "type": "integer",
+                "description": "Total number of duplicated files"
+              }
+            },
+            "required": [
+              "pageIndex",
+              "pageSize",
+              "total"
+            ],
+            "description": "Pagination information"
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "overallDuplicationDensity": {
+                "type": "string",
+                "description": "Overall duplication density percentage"
+              },
+              "totalDuplicatedBlocks": {
+                "type": "integer",
+                "description": "Total duplicated blocks in the project"
+              },
+              "totalDuplicatedLines": {
+                "type": "integer",
+                "description": "Total duplicated lines in the project"
+              }
+            },
+            "description": "Summary of duplication metrics"
+          }
+        },
+        "required": [
+          "files",
+          "paging"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 282
+    },
+    {
+      "name": "list_pull_requests",
+      "title": "List SonarQube Pull Requests",
+      "description": "List all pull requests for a project. Use this tool to discover available pull requests and their corresponding branch names before analyzing their coverage, issues, or quality. Returns the pull request key/ID and source branch for each PR, which can be used with other tools that accept a pullRequest parameter. For long-lived branches (main, develop), use list_branches instead.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "description": "The SonarQube project key (e.g. my_project). Use search_my_sonarqube_projects when the key is unknown."
+          }
+        },
+        "required": [
+          "projectKey"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "description": "Project key"
+          },
+          "pullRequests": {
+            "description": "List of pull requests for this project",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "branch": {
+                  "type": "string",
+                  "description": "Source branch name associated with this pull request"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "Pull request key/ID that can be used with other tools as the pullRequest parameter"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Pull request title"
+                }
+              },
+              "required": [
+                "branch",
+                "key",
+                "title"
+              ]
+            }
+          },
+          "totalPullRequests": {
+            "type": "integer",
+            "description": "Total number of pull requests"
+          }
+        },
+        "required": [
+          "projectKey",
+          "pullRequests",
+          "totalPullRequests"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 142
+    },
+    {
+      "name": "list_branches",
+      "title": "List SonarQube Branches",
+      "description": "List long-lived branches for a project (e.g. main, develop, master). Use returned branch names as the branch parameter on other tools (e.g. get_project_quality_gate_status, get_component_measures). For pull requests, use list_pull_requests instead.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "description": "The SonarQube project key (e.g. my_project). Use search_my_sonarqube_projects when the key is unknown."
+          }
+        },
+        "required": [
+          "projectKey"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "branches": {
+            "description": "List of branches for this project",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "analysisDate": {
+                  "type": "string",
+                  "description": "Date of the last analysis"
+                },
+                "branchId": {
+                  "type": "string",
+                  "description": "Internal branch identifier"
+                },
+                "isMain": {
+                  "type": "boolean",
+                  "description": "Whether this is the main branch"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Branch name that can be used with other tools as the branch parameter"
+                },
+                "qualityGateStatus": {
+                  "type": "string",
+                  "enum": [
+                    "OK",
+                    "ERROR",
+                    "WARN",
+                    "NONE"
+                  ],
+                  "description": "Quality gate status for this branch"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "LONG",
+                    "SHORT",
+                    "BRANCH"
+                  ],
+                  "description": "Branch type in SonarQube (LONG on SonarQube Cloud, BRANCH on SonarQube Server)"
+                }
+              },
+              "required": [
+                "branchId",
+                "isMain",
+                "name"
+              ]
+            }
+          },
+          "projectKey": {
+            "type": "string",
+            "description": "Project key"
+          },
+          "totalBranches": {
+            "type": "integer",
+            "description": "Total number of branches"
+          }
+        },
+        "required": [
+          "branches",
+          "projectKey",
+          "totalBranches"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 121
+    },
+    {
+      "name": "analyze_code_snippet",
+      "title": "SonarQube Code Analysis",
+      "description": "Analyze a file or code snippet to identify code quality and security issues. Optionally provide a code snippet to filter issues — only issues within the snippet will be reported (snippet location is auto-detected). Always specify the language and the file scope (MAIN or TEST) for more accurate results.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "codeSnippet": {
+            "type": "string",
+            "description": "Code snippet to filter issues - must match content within the analyzed file"
+          },
+          "projectKey": {
+            "type": "string",
+            "description": "Optional SonarQube project key (e.g. my_project). Uses organization default quality profiles when omitted. Use search_my_sonarqube_projects when the key is unknown."
+          },
+          "scope": {
+            "description": "Scope of the file: MAIN or TEST (default: MAIN)",
+            "type": "string",
+            "enum": [
+              "MAIN",
+              "TEST"
+            ]
+          },
+          "language": {
+            "description": "Language of the code (e.g., 'java', 'python', 'ts', 'tsx', 'js', 'jsx')",
+            "type": "string",
+            "enum": [
+              "ansible",
+              "ascx",
+              "aspx",
+              "azureresourcemanager",
+              "bicep",
+              "cloudformation",
+              "cshtml",
+              "css",
+              "docker",
+              "erb",
+              "go",
+              "html",
+              "inc",
+              "ipynb",
+              "ipython",
+              "jav",
+              "java",
+              "js",
+              "jsp",
+              "jspf",
+              "jspx",
+              "jsx",
+              "kotlin",
+              "kt",
+              "kts",
+              "kubernetes",
+              "less",
+              "php",
+              "php3",
+              "php4",
+              "php5",
+              "phtml",
+              "py",
+              "python",
+              "rb",
+              "rhtml",
+              "ruby",
+              "scss",
+              "secrets",
+              "shtm",
+              "shtml",
+              "terraform",
+              "tf",
+              "ts",
+              "tsx",
+              "vbhtml",
+              "vue",
+              "xhtml",
+              "xml",
+              "xsd",
+              "xsl"
+            ]
+          },
+          "fileContent": {
+            "type": "string",
+            "description": "Complete file content to analyze."
+          }
+        },
+        "required": [
+          "fileContent"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "issueCount": {
+            "type": "integer",
+            "description": "Total number of issues"
+          },
+          "issues": {
+            "description": "List of issues found in the code snippet",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cleanCodeAttribute": {
+                  "type": "string",
+                  "description": "Clean code attribute"
+                },
+                "hasQuickFixes": {
+                  "type": "boolean",
+                  "description": "Whether quick fixes are available"
+                },
+                "impacts": {
+                  "type": "string",
+                  "description": "Software quality impacts"
+                },
+                "primaryMessage": {
+                  "type": "string",
+                  "description": "Primary issue message"
+                },
+                "ruleKey": {
+                  "type": "string",
+                  "description": "Rule key that triggered the issue"
+                },
+                "severity": {
+                  "type": "string",
+                  "description": "Issue severity level"
+                },
+                "textRange": {
+                  "type": "object",
+                  "properties": {
+                    "endLine": {
+                      "type": "integer",
+                      "description": "Ending line number"
+                    },
+                    "startLine": {
+                      "type": "integer",
+                      "description": "Starting line number"
+                    }
+                  },
+                  "required": [
+                    "endLine",
+                    "startLine"
+                  ],
+                  "description": "Location in the code"
+                }
+              },
+              "required": [
+                "cleanCodeAttribute",
+                "hasQuickFixes",
+                "impacts",
+                "primaryMessage",
+                "ruleKey",
+                "severity"
+              ]
+            }
+          }
+        },
+        "required": [
+          "issueCount",
+          "issues"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 376
+    }
+  ],
+  "totalTokens": 3771
+}

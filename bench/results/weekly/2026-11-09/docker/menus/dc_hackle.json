@@ -1,0 +1,661 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "@hackle-io/hackle-mcp",
+    "version": "1.3.1",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:19:14.691Z",
+  "tools": [
+    {
+      "name": "experiment-list",
+      "description": "Fetches a paginated list of A/B test experiments with search functionality.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageNumber": {
+            "type": "number",
+            "default": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "default": 100
+          },
+          "searchKeyword": {
+            "type": "string",
+            "description": "name, description, or experimentKey of an experiment."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 96
+    },
+    {
+      "name": "experiment-detail",
+      "description": "Retrieves detailed information for a specific A/B test experiment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "experimentId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "experimentId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 63
+    },
+    {
+      "name": "in-app-message-list",
+      "description": "Fetches a paginated list of in-app messages with search functionality.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageNumber": {
+            "type": "number",
+            "default": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "default": 100
+          },
+          "searchKeyword": {
+            "type": "string",
+            "description": "name, description, or campaignKey of an in-app message."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 99
+    },
+    {
+      "name": "in-app-message-detail",
+      "description": "Retrieves detailed information for a specific in-app message.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "inAppMessageId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "inAppMessageId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 68
+    },
+    {
+      "name": "push-message-list",
+      "description": "Fetches a paginated list of push messages with search functionality.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageNumber": {
+            "type": "number",
+            "default": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "default": 100
+          },
+          "searchKeyword": {
+            "type": "string",
+            "description": "name, description, or campaignKey of a push message."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 96
+    },
+    {
+      "name": "push-message-detail",
+      "description": "Retrieves detailed information for a specific push message.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pushMessageId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "pushMessageId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 64
+    },
+    {
+      "name": "active-user-series",
+      "description": "Retrieves time-series data of active users. Available in daily, weekly, and monthly units.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "type": "string",
+            "enum": [
+              "DAY",
+              "WEEK",
+              "MONTH"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "description": "End date in YYYY-MM-DD format."
+          }
+        },
+        "required": [
+          "unit"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 96
+    },
+    {
+      "name": "retention-series",
+      "description": "Retrieves time-series data of user retention. Available in daily, weekly, and monthly units.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "type": "string",
+            "enum": [
+              "DAY",
+              "WEEK",
+              "MONTH"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "description": "End date in YYYY-MM-DD format."
+          }
+        },
+        "required": [
+          "unit"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 96
+    },
+    {
+      "name": "stickiness-series",
+      "description": "Retrieves time-series data of user stickiness (return visit frequency). Available in weekly and monthly units.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "type": "string",
+            "enum": [
+              "WEEK",
+              "MONTH"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "description": "End date in YYYY-MM-DD format."
+          }
+        },
+        "required": [
+          "unit"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 96
+    },
+    {
+      "name": "data-report-list",
+      "description": "fetch data report list.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 45
+    },
+    {
+      "name": "data-report-detail",
+      "description": "fetch data report detail.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataReportId": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "dataReportId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 64
+    },
+    {
+      "name": "analytics-chart-list",
+      "description": "fetch data analytics chart list.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageNumber": {
+            "type": "number",
+            "default": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "default": 100
+          },
+          "searchKeyword": {
+            "type": "string"
+          },
+          "chartType": {
+            "type": "string",
+            "enum": [
+              "FUNNEL",
+              "DATA_INSIGHT",
+              "RETENTION",
+              "USER_PATH"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 98
+    },
+    {
+      "name": "analytics-chart-detail",
+      "description": "fetch analytics chart detail. You can visualize the chart using this tool's result.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "chartId": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Chart id"
+          },
+          "chartType": {
+            "type": "string",
+            "enum": [
+              "FUNNEL",
+              "DATA_INSIGHT",
+              "RETENTION",
+              "USER_PATH"
+            ],
+            "description": "Type of the chart. Will throw an error if given chartId's chart type is different from chartType."
+          }
+        },
+        "required": [
+          "chartId",
+          "chartType"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 130
+    },
+    {
+      "name": "remote-config-list",
+      "description": "Fetch Remote Config list.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageNumber": {
+            "type": "number",
+            "default": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "default": 100
+          },
+          "searchKeyword": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "default": "ACTIVE"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 92
+    },
+    {
+      "name": "remote-config-detail",
+      "description": "Fetch remote config detail.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "remoteConfigId": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Remote config's id. You can get this information by using Remote Config List Tool."
+          }
+        },
+        "required": [
+          "remoteConfigId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 84
+    },
+    {
+      "name": "remote-config-create",
+      "description": "Creates an empty remote config. It is recommended to update an existing RC first if there is an associated RC with the one you want to create since the total number of RC is limited.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Remote config's name."
+              },
+              "description": {
+                "type": "string"
+              },
+              "dataType": {
+                "type": "string",
+                "enum": [
+                  "STRING",
+                  "JSON",
+                  "NUMBER",
+                  "BOOLEAN"
+                ],
+                "description": "Type of Remote Config's value."
+              },
+              "userIdentifierCriteria": {
+                "type": "string",
+                "default": "$deviceId",
+                "description": "User identifier criteria for targeting. You can use criteria provided by Hackle($deviceId, $userId) or your own criteria created at Hackle dashboard website."
+              }
+            },
+            "required": [
+              "key",
+              "dataType"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 207
+    },
+    {
+      "name": "remote-config-update",
+      "description": "Updates remote config's content.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "remoteConfigId": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Remote config's id."
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "dataType": {
+                "type": "string",
+                "enum": [
+                  "STRING",
+                  "JSON",
+                  "NUMBER",
+                  "BOOLEAN"
+                ],
+                "description": "Type of Remote Config's value. You must provide remote config's value type to match with this field."
+              },
+              "remoteConfigDefaultValue": {
+                "type": [
+                  "string",
+                  "number",
+                  "boolean"
+                ]
+              },
+              "conditionalValues": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "ruleName": {
+                      "type": "string"
+                    },
+                    "remoteConfigValue": {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                      ]
+                    },
+                    "target": {
+                      "type": "object",
+                      "properties": {
+                        "conditions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "HACKLE_PROPERTY",
+                                      "USER_PROPERTY",
+                                      "SEGMENT",
+                                      "AB_TEST",
+                                      "FEATURE_FLAG",
+                                      "COHORT"
+                                    ],
+                                    "description": "Condition's type."
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "description": "Property's name if type is HACKLE_PROPERTY or USER_PROPERTY. Experiment key if type is AB_TEST. Feature flag key if type is FEATURE_FLAG. You can put any non-empty string if type is COHORT or SEGMENT."
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "name"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "match": {
+                                "type": "object",
+                                "properties": {
+                                  "operator": {
+                                    "type": "string",
+                                    "enum": [
+                                      "IS_ONE_OF",
+                                      "IS_NOT_ONE_OF",
+                                      "IS_STARTS_WITH",
+                                      "IS_NOT_STARTS_WITH",
+                                      "IS_ENDS_WITH",
+                                      "IS_NOT_ENDS_WITH",
+                                      "IS_CONTAINS",
+                                      "IS_NOT_CONTAINS",
+                                      "EQ",
+                                      "NOT_EQ",
+                                      "GT",
+                                      "GTE",
+                                      "LT",
+                                      "LTE",
+                                      "IS_TRUE",
+                                      "IS_FALSE",
+                                      "VERSION_EQ",
+                                      "VERSION_NOT_EQ",
+                                      "VERSION_GT",
+                                      "VERSION_GTE",
+                                      "VERSION_LT",
+                                      "VERSION_LTE"
+                                    ]
+                                  },
+                                  "valueType": {
+                                    "type": "string",
+                                    "enum": [
+                                      "NUMBER",
+                                      "STRING",
+                                      "BOOLEAN",
+                                      "VERSION"
+                                    ]
+                                  },
+                                  "values": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": [
+                                        "string",
+                                        "number",
+                                        "boolean"
+                                      ]
+                                    },
+                                    "description": "Values of targeting condition's key. Followings are some special cases: The values will be treated as names if you are using SEGMENT. Only strings 'A' and 'B' are allowed if type is AB_TEST. Only boolean values are accepted if type is FEATURE_FLAG. You should put cohort's id if type is COHORT."
+                                  }
+                                },
+                                "required": [
+                                  "operator",
+                                  "valueType",
+                                  "values"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "match"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "description": "Users who The user he satisfies all conditions in this array will see this rule's remote config value."
+                        }
+                      },
+                      "required": [
+                        "conditions"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Targeting rule."
+                    }
+                  },
+                  "required": [
+                    "ruleName",
+                    "remoteConfigValue",
+                    "target"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "The earlier a condition is placed in the array, the earlier it is applied."
+              }
+            },
+            "required": [
+              "dataType",
+              "remoteConfigDefaultValue",
+              "conditionalValues"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "remoteConfigId",
+          "body"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 643
+    },
+    {
+      "name": "remote-config-update-user-identifier-criteria",
+      "description": "Updates remote config's user identifier criteria. The change will be applied to both production and development environment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "remoteConfigId": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Remote config's id."
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "userIdentifierCriteria": {
+                "type": "string",
+                "description": "User identifier criteria for targeting. You can use criteria provided by Hackle($deviceId, $userId) or your own criteria created at Hackle dashboard website."
+              }
+            },
+            "required": [
+              "userIdentifierCriteria"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "remoteConfigId",
+          "body"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 159
+    },
+    {
+      "name": "remote-config-update-description",
+      "description": "Updates remote config's description. The change will be applied to both production and development environment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "remoteConfigId": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Remote config's id."
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "description"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "remoteConfigId",
+          "body"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 113
+    }
+  ],
+  "totalTokens": 2409
+}

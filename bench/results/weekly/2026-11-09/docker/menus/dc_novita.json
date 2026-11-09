@@ -1,0 +1,677 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "novitalabs/novita-mcp-server",
+    "version": "1.0.0",
+    "protocolVersion": "2025-03-26",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:31:04.366Z",
+  "tools": [
+    {
+      "name": "list-clusters",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 38
+    },
+    {
+      "name": "list-products",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "clusterId": {
+            "type": "string",
+            "description": "ID of the cluster to list products from. You can use the `list-clusters` tool to get the cluster ID."
+          },
+          "productName": {
+            "type": "string",
+            "description": "Name of the product to filter by."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 89
+    },
+    {
+      "name": "list-gpu-instances",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "number",
+            "minimum": 0,
+            "default": 10,
+            "description": "Number of instances to return, "
+          },
+          "pageNumber": {
+            "type": "number",
+            "minimum": 0,
+            "default": 1,
+            "description": "Page number to return, start from "
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 1024,
+            "description": "Filter by the instance name"
+          },
+          "productName": {
+            "type": "string",
+            "description": "Filter by the product name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "running",
+              "pulling",
+              "exited",
+              "resetting",
+              "removed",
+              "migrating",
+              "freezing"
+            ],
+            "description": "Filter by the instance status"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 164
+    },
+    {
+      "name": "get-gpu-instance",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "description": "ID of the instance to retrieve"
+          }
+        },
+        "required": [
+          "instanceId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 60
+    },
+    {
+      "name": "create-gpu-instance",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name for the instance. Must contain only numbers, letters, and hyphens"
+          },
+          "productId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "ID of the product used to deploy the instance. The availableGpuNumber of the product must be greater than 0. You can use the `list-products` tool to get or check the product ID if needed. Before calling the MCP tool, MUST show me the details of the product to help me identify it, including name, price, etc."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "gpu"
+            ],
+            "default": "gpu",
+            "description": "Type of the instance"
+          },
+          "gpuNum": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Number of GPUs allocated to the instance. The availableGpuNumber of the product must be greater than or equal to the gpuNum."
+          },
+          "rootfsSize": {
+            "type": "number",
+            "minimum": 10,
+            "description": "Root filesystem size (container disk size) in GB. Free tier includes 60GB."
+          },
+          "imageUrl": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Docker image URL to initialize the instance"
+          },
+          "imageAuthId": {
+            "type": "string",
+            "description": "ID of the container registry auth. Required only when the imageUrl is private. You can use the `list-container-registry-auths` tool to check the ID if you're not sure."
+          },
+          "command": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "Container start command to run when the instance starts"
+          },
+          "ports": {
+            "type": "string",
+            "description": "Ports to expose (e.g., '8888/http', '22/tcp'), separated by commas if multiple. Maximum of 10 ports."
+          },
+          "env": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2048,
+                  "description": "Environment variable key"
+                },
+                "value": {
+                  "type": "string",
+                  "maxLength": 2048,
+                  "description": "Environment variable value"
+                }
+              },
+              "required": [
+                "key",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Environment variables"
+          },
+          "networkStorages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "Id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "ID of the network storage to mount. You can use the `list-network-storage` tool to get or check the ID if needed. The network storage's cluster must match the product's cluster."
+                },
+                "mountPoint": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Path to mount the network storage"
+                }
+              },
+              "required": [
+                "Id",
+                "mountPoint"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Network storages to mount"
+          }
+        },
+        "required": [
+          "name",
+          "productId",
+          "gpuNum",
+          "rootfsSize",
+          "imageUrl"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 595
+    },
+    {
+      "name": "start-gpu-instance",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "description": "ID of the instance to start"
+          }
+        },
+        "required": [
+          "instanceId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 60
+    },
+    {
+      "name": "stop-gpu-instance",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "description": "ID of the instance to stop. Before calling the MCP tool to stop the instance, MUST show me the details of the instance to help me identify it, including id, name, etc."
+          }
+        },
+        "required": [
+          "instanceId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 92
+    },
+    {
+      "name": "delete-gpu-instance",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "description": "ID of the instance to delete. Before calling the MCP tool to delete the instance, MUST show me the details of the instance to help me identify it, including id, name, etc."
+          }
+        },
+        "required": [
+          "instanceId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 92
+    },
+    {
+      "name": "restart-gpu-instance",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "description": "ID of the instance to restart. Before calling the MCP tool to restart the instance, MUST show me the details of the instance to help me identify it, including id, name, etc."
+          }
+        },
+        "required": [
+          "instanceId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 92
+    },
+    {
+      "name": "create-network-storage",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "clusterId": {
+            "type": "string",
+            "description": "The ID of the cluster to create network storage. Must be from the `list-clusters` tool result, and the cluster must have supportNetworkStorage set to true"
+          },
+          "storageName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Name for the network storage. Use only letters, numbers, and hyphens"
+          },
+          "storageSize": {
+            "type": "number",
+            "minimum": 10,
+            "description": "Size of the network storage in GB"
+          }
+        },
+        "required": [
+          "clusterId",
+          "storageName",
+          "storageSize"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 146
+    },
+    {
+      "name": "list-network-storage",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageNo": {
+            "type": "number",
+            "minimum": 0,
+            "default": 1,
+            "description": "Page number"
+          },
+          "pageSize": {
+            "type": "number",
+            "minimum": 0,
+            "default": 10,
+            "description": "Page size"
+          },
+          "storageName": {
+            "type": "string",
+            "description": "Name for the network storage"
+          },
+          "storageId": {
+            "type": "string",
+            "description": "ID for the network storage"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 110
+    },
+    {
+      "name": "update-network-storage",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "storageId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The unique ID of the network storage to update. Please ensure it exists before updating."
+          },
+          "storageName": {
+            "type": "string",
+            "description": "New name for the network storage. This is optional, if not provided, the name will not be changed. Use only letters, numbers, and hyphens"
+          },
+          "storageSize": {
+            "type": "number",
+            "minimum": 10,
+            "description": "New size in GB (must be larger than current size). You can use the `list-network-storage` tool to get the current size if you don't know it."
+          }
+        },
+        "required": [
+          "storageId",
+          "storageSize"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 168
+    },
+    {
+      "name": "delete-network-storage",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "storageId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The unique ID of the network storage to delete. Please ensure it exists before updating."
+          }
+        },
+        "required": [
+          "storageId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 75
+    },
+    {
+      "name": "list-container-registry-auths",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 41
+    },
+    {
+      "name": "create-container-registry-auth",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Name for the container registry auth."
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 511,
+            "description": "Registry username."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "description": "Registry password."
+          }
+        },
+        "required": [
+          "name",
+          "username",
+          "password"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 119
+    },
+    {
+      "name": "delete-container-registry-auth",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "ID of the container registry auth to delete. Please ensure it exists before deleting. Before calling the MCP tool, please show me the name to help identify it. You can use the `list-container-registry-auths` tool to check the ID if needed."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 110
+    },
+    {
+      "name": "list-templates",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "number",
+            "minimum": 0,
+            "default": 20,
+            "description": "Number of templates to return in each page"
+          },
+          "pageNum": {
+            "type": "number",
+            "minimum": 0,
+            "default": 1,
+            "description": "Page number to return, start from 1"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "instance",
+              "serverless"
+            ],
+            "description": "Type of template to return"
+          },
+          "channel": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "private",
+                "community",
+                "official"
+              ]
+            },
+            "description": "Channels of template to return"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 144
+    },
+    {
+      "name": "get-template",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "templateId": {
+            "type": "string",
+            "description": "ID of the template to retrieve"
+          }
+        },
+        "required": [
+          "templateId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 58
+    },
+    {
+      "name": "create-template",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 2,
+                "description": "Name for the template, must be unique."
+              },
+              "readme": {
+                "type": "string",
+                "maxLength": 20480,
+                "description": "Template README content (in Markdown format)"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "instance",
+                  "serverless"
+                ],
+                "default": "instance",
+                "description": "Type of template"
+              },
+              "channel": {
+                "type": "string",
+                "enum": [
+                  "private",
+                  "community"
+                ],
+                "default": "private",
+                "description": "Channel for the template"
+              },
+              "image": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500,
+                "description": "Docker image address for instance startup"
+              },
+              "imageAuth": {
+                "type": "string",
+                "description": "ID of the container registry auth. Required only when the channel is private, or else keep it empty. You can use the `list-container-registry-auths` tool to check the ID if you're not sure."
+              },
+              "startCommand": {
+                "type": "string",
+                "maxLength": 2047,
+                "description": "Command to run when the instance starts"
+              },
+              "rootfsSize": {
+                "type": "number",
+                "minimum": 10,
+                "description": "Root filesystem size (/Container disk size) in GB"
+              },
+              "ports": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "http",
+                        "udp",
+                        "tcp"
+                      ],
+                      "description": "Type of exposed port"
+                    },
+                    "ports": {
+                      "type": "array",
+                      "items": {
+                        "type": "number",
+                        "minimum": 1,
+                        "maximum": 65535,
+                        "description": "Exposed port numbers, maximum of 10"
+                      },
+                      "maxItems": 10,
+                      "description": "Exposed port numbers, maximum of 10"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "ports"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "Ports to expose"
+              },
+              "env": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2048,
+                      "description": "Environment variable key"
+                    },
+                    "value": {
+                      "type": "string",
+                      "maxLength": 2048,
+                      "description": "Environment variable value"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "Environment variables"
+              }
+            },
+            "required": [
+              "name",
+              "image",
+              "rootfsSize",
+              "ports"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "template"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 477
+    },
+    {
+      "name": "delete-template",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "templateId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "ID of the template to delete. Please ensure it exists before deleting. Before calling the MCP tool, please show me the name to help identify it. You can use the `get-template` tool to check the ID if needed."
+          }
+        },
+        "required": [
+          "templateId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 103
+    }
+  ],
+  "totalTokens": 2833
+}

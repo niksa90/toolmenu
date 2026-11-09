@@ -1,0 +1,159 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "RISKEN MCP Server",
+    "version": "0.0.1",
+    "protocolVersion": "2025-03-26",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:19:40.178Z",
+  "tools": [
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Archive RISKEN finding. Use this when a request include \"archive\", \"アーカイブ\", \"ペンディング\"...",
+      "inputSchema": {
+        "properties": {
+          "finding_id": {
+            "description": "Finding ID.",
+            "type": "number"
+          },
+          "note": {
+            "default": "Archived by MCP",
+            "description": "Note. ex) This is no risk finding.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "finding_id"
+        ],
+        "type": "object"
+      },
+      "name": "archive_finding",
+      "tokens": 89
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get details of the authenticated RISKEN project. Use this when a request include \"project\", \"my project\", \"プロジェクト\"...",
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "get_project",
+      "tokens": 48
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Search RISKEN alert. Use this when a request include \"alert\", \"アラート\" ...",
+      "inputSchema": {
+        "properties": {
+          "status": {
+            "default": 1,
+            "description": "Status of alert. 1: active(有効なアラート), 2: pending(保留中), 3: deactive(解決済みアラート)",
+            "enum": [
+              "1",
+              "2",
+              "3"
+            ],
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "name": "search_alert",
+      "tokens": 100
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Search RISKEN findings. Use this when a request include \"finding\", \"issue\", \"ファインディング\", \"問題\"...",
+      "inputSchema": {
+        "properties": {
+          "alert_id": {
+            "description": "Alert ID.",
+            "type": "number"
+          },
+          "data_source": {
+            "description": "RISKEN DataSource. e.g. aws, google, code (like github, gitlab, etc.), osint, diagnosis, azure, ...",
+            "enum": [
+              "aws",
+              "google",
+              "code",
+              "osint",
+              "diagnosis",
+              "azure"
+            ],
+            "type": "array"
+          },
+          "finding_id": {
+            "description": "Finding ID.",
+            "type": "number"
+          },
+          "from_score": {
+            "default": 0.5,
+            "description": "Minimum score of the findings.",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "limit": {
+            "default": 10,
+            "description": "Limit of the findings.",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "number"
+          },
+          "offset": {
+            "default": 0,
+            "description": "Offset of the findings.",
+            "type": "number"
+          },
+          "resource_name": {
+            "description": "RISKEN ResourceName. e.g. \"arn:aws:iam::123456789012:user/test-user\" ...",
+            "type": "array"
+          },
+          "status": {
+            "default": 1,
+            "description": "Status of the findings. (0: all, 1: active, 2: pending)",
+            "enum": [
+              "0",
+              "1",
+              "2"
+            ],
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "name": "search_finding",
+      "tokens": 282
+    }
+  ],
+  "totalTokens": 519,
+  "resources": [],
+  "resourceTemplates": [
+    {
+      "uriTemplate": "finding://{project_id}/{finding_id}",
+      "name": "RISKEN Finding"
+    }
+  ]
+}

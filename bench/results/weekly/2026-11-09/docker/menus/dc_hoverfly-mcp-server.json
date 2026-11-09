@@ -1,0 +1,185 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "hoverfly-mcp-server",
+    "version": "0.0.1",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:34:40.553Z",
+  "tools": [
+    {
+      "name": "suggest_hoverfly_matchers",
+      "description": "Analyzes a single Hoverfly RequestResponsePair JSON and returns matcher suggestions for each request field. The input must be a valid RequestResponsePair object. Each field in the request block will be analyzed and matcher suggestions will be provided. These suggestions can be used to make your matchers more robust and reliable. See the documentation for the expected input format and matcher details.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pairJson": {
+            "type": "string",
+            "description": "Request-response pair JSON string. Must be a valid Hoverfly RequestResponsePair. Use the suggestions to improve your matcher configuration for better simulation accuracy.\nExample:\n{\n  \"request\": {\n    \"method\": [{ \"matcher\": \"exact\", \"value\": \"GET\" }],\n    \"destination\": [{ \"matcher\": \"exact\", \"value\": \"api.example.com\" }],\n    \"path\": [{ \"matcher\": \"glob\", \"value\": \"/api/*\" }]\n  },\n  \"response\": {\n    \"status\": 200,\n    \"body\": \"{\\\"result\\\":\\\"ok\\\"}\",\n    \"encodedBody\": false,\n    \"headers\": { \"Content-Type\": [\"application/json\"] },\n    \"templated\": false\n  }\n}"
+          }
+        },
+        "required": [
+          "pairJson"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 296
+    },
+    {
+      "name": "download_hoverfly_simulation",
+      "description": "Downloads the current Hoverfly simulation file to the persistent simulation directory. The simulation is always saved to /opt/hoverfly-mcp/simulation-data inside the container. Mount this directory to your host for persistence. The file will be saved with a timestamp for easy identification. Use this to persist your mock configurations for later use or sharing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tokens": 97
+    },
+    {
+      "name": "get_hoverfly_status",
+      "description": "Returns the current status of the Hoverfly server.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tokens": 39
+    },
+    {
+      "name": "stop_hoverfly_server",
+      "description": "Stops the Hoverfly mock server and clears its state.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tokens": 40
+    },
+    {
+      "name": "show_hoverfly_endpoints_info",
+      "description": "Returns a canonical list of all key Hoverfly endpoints, including:\n\n- Mock server base URL (for intercepted API calls)\n- Admin API and UI (for managing simulations and viewing logs)\n- Simulation file endpoint (for viewing or downloading the current simulation)\n- Example curl commands for quick testing\n\nThis helps developers, tools, or LLMs understand how to interact with Hoverfly after startup.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tokens": 117
+    },
+    {
+      "name": "clear_hoverfly_mocks",
+      "description": "Deletes all mock APIs from Hoverfly's simulation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tokens": 40
+    },
+    {
+      "name": "get_hoverfly_debug_logs",
+      "description": "# Hoverfly Debug Logs Tool\n\nUse this tool to fetch recent logs from the running Hoverfly instance for advanced debugging and troubleshooting. This is especially useful when:\n\n- You encounter errors while creating a mock API.\n- You receive unexpected or incorrect mock responses.\n- You suspect issues with templating, matcher configuration, or simulation logic.\n- You want to understand why a request was not matched as expected.\n\n## How to Use\n- **When:** Use this tool immediately after a failed mock creation, or when you get an unexpected response from a mock API.\n- **Why:** The logs provide detailed insight into Hoverfly's internal processing, including matcher evaluation, templating errors, and simulation execution.\n- **What:** The tool returns the latest log entries from the Hoverfly admin API, which can be used to diagnose and resolve issues.\n\n## Parameters\n- `limit` (optional, default: 500): The maximum number of log entries to fetch. Increase this if you need a longer history.\n\n## Example\n```json\n{\n  \"limit\": 500\n}\n```\n\n## Output\n- Returns a JSON object containing a list of log entries, each with timestamp, level, and message fields.\n\n---\n\n**Tip:** Use this tool as your first step in debugging any Hoverfly simulation or templating issue!\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "- `limit` (optional, default: 500): The maximum number of log entries to fetch from Hoverfly logs. Increase this value if you need a longer log history for debugging, or decrease it for a more concise output.\n"
+          }
+        },
+        "required": [
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 382
+    },
+    {
+      "name": "get_hoverfly_documentation",
+      "description": "Returns Hoverfly documentation for a specific topic.\nAllowed values: `matchers`, `templating`.\n\nHelpful for developers or LLMs building or validating simulation JSON.\nYou can also call this tool to get guidance when facing issues with matchers or templating in your simulation definitions.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "description": "Documentation topic to look up. Allowed values: matchers, templating"
+          }
+        },
+        "required": [
+          "topic"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 117
+    },
+    {
+      "name": "list_hoverfly_mocks",
+      "description": "Lists all request-response pairs (mock APIs) currently active in Hoverfly.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tokens": 45
+    },
+    {
+      "name": "fetch_hoverfly_version",
+      "description": "Returns the current version of the Hoverfly instance.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tokens": 39
+    },
+    {
+      "name": "start_hoverfly_web_server",
+      "description": "Starts the Hoverfly mock server in simulate mode and exposes it on port 8500 for mock server and port 8888 for admin endpoint.\nCan optionally load simulation from the persistent simulation directory on startup using the loadSimulationOnStartup parameter. If not passed, this parameter defaults to true. The simulation will be loaded from /opt/hoverfly-mcp/simulation-data if available.\n\n**Access URLs:**\n- **Admin UI:** http://localhost:8888\n- **Mock Server Endpoint:** http://localhost:8500\n- **View or download the current simulation at:** http://localhost:8888/api/v2/simulation\n\nYou can:\n- Point your API clients to `http://localhost:8500`\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "loadSimulationOnStartup": {
+            "type": "boolean",
+            "description": "Whether to load simulation from the persistent simulation directory on startup. If true or not specified, will look for the most recent simulation file in /opt/hoverfly-mcp/simulation-data."
+          }
+        },
+        "required": [
+          "loadSimulationOnStartup"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 238
+    },
+    {
+      "name": "add_hoverfly_mock",
+      "description": "Creates a new mock API by adding a request-response pair to Hoverfly's simulation.\n\nMake sure to call startHoverfly() first as WebServer. If Hoverfly is not running, this operation will fail.\n\nThe input must be a valid RequestResponsePair object with request matchers\n(like path, method, destination, etc.) and a response containing status, body, and headers.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "requestResponseJson": {
+            "type": "string",
+            "description": "Contains the expected request and the mock response.\n\nExample Input:\n{\n  \"request\": {\n    \"path\": [\n      { \"matcher\": \"exact\", \"value\": \"/pages/keyconcepts/templates.html\" }\n    ],\n    \"method\": [\n      { \"matcher\": \"exact\", \"value\": \"GET\" }\n    ],\n    \"destination\": [\n      { \"matcher\": \"exact\", \"value\": \"docs.hoverfly.io\" }\n    ],\n    \"scheme\": [\n      { \"matcher\": \"exact\", \"value\": \"http\" }\n    ],\n    \"body\": [\n      { \"matcher\": \"exact\", \"value\": \"\" }\n    ],\n    \"query\": {\n      \"query\": [\n        { \"matcher\": \"exact\", \"value\": \"true\" }\n      ]\n    }\n  },\n  \"response\": {\n    \"status\": 200,\n    \"body\": \"Response from docs.hoverfly.io/pages/keyconcepts/templates.html\",\n    \"encodedBody\": false,\n    \"headers\": {\n      \"Hoverfly\": [ \"Was-Here\" ]\n    },\n    \"templated\": false\n  }\n}\n\nInput RequestResponsePair Schema:\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"request\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"path\": {\n          \"type\": \"array\",\n          \"items\": { \"$ref\": \"#/definitions/matcher\" }\n        },\n        \"method\": {\n          \"type\": \"array\",\n          \"items\": { \"$ref\": \"#/definitions/matcher\" }\n        },\n        \"destination\": {\n          \"type\": \"array\",\n          \"items\": { \"$ref\": \"#/definitions/matcher\" }\n        },\n        \"scheme\": {\n          \"type\": \"array\",\n          \"items\": { \"$ref\": \"#/definitions/matcher\" }\n        },\n        \"body\": {\n          \"type\": \"array\",\n          \"items\": { \"$ref\": \"#/definitions/matcher\" }\n        },\n        \"query\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"query\": {\n              \"type\": \"array\",\n              \"items\": { \"$ref\": \"#/definitions/matcher\" }\n            }\n          }\n        }\n      },\n      \"required\": [\"path\", \"method\", \"destination\", \"scheme\", \"body\"]\n    },\n    \"response\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"status\": { \"type\": \"integer\" },\n        \"body\": { \"type\": \"string\" },\n        \"encodedBody\": { \"type\": \"boolean\" },\n        \"headers\": {\n          \"type\": \"object\",\n          \"additionalProperties\": {\n            \"type\": \"array\",\n            \"items\": { \"type\": \"string\" }\n          }\n        },\n        \"templated\": { \"type\": \"boolean\" }\n      },\n      \"required\": [\"status\", \"body\", \"encodedBody\", \"headers\", \"templated\"]\n    }\n  },\n  \"required\": [\"request\", \"response\"],\n  \"definitions\": {\n    \"matcher\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"matcher\": { \"type\": \"string\" },\n        \"value\": { \"type\": \"string\" }\n      },\n      \"required\": [\"matcher\", \"value\"]\n    }\n  }\n}\n"
+          }
+        },
+        "required": [
+          "requestResponseJson"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 966
+    }
+  ],
+  "totalTokens": 2416,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

@@ -1,0 +1,195 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "FastMCP",
+    "version": "1.28.1",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:18:46.739Z",
+  "tools": [
+    {
+      "name": "Search Hyperspell",
+      "description": "Search Hyperspell for documents and data.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "queryArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Document": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "title": {
+                "title": "Title",
+                "type": "string"
+              },
+              "type": {
+                "title": "Type",
+                "type": "string"
+              },
+              "summary": {
+                "title": "Summary",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "type",
+              "summary"
+            ],
+            "title": "Document",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/Document"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "queryOutput",
+        "type": "object"
+      },
+      "tokens": 49
+    },
+    {
+      "name": "Add File",
+      "description": "Add a file or website from a URL to Hyperspell.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "add_fileArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "collection": {
+            "title": "Collection",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "collection"
+        ],
+        "title": "DocumentStatus",
+        "type": "object"
+      },
+      "tokens": 52
+    },
+    {
+      "name": "Add Memory",
+      "description": "Add a plain text document or memory to Hyperspell.",
+      "inputSchema": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Title"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "add_memoryArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "collection": {
+            "title": "Collection",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "collection"
+        ],
+        "title": "DocumentStatus",
+        "type": "object"
+      },
+      "tokens": 75
+    }
+  ],
+  "totalTokens": 176,
+  "prompts": [],
+  "resources": [
+    {
+      "name": "List Collections",
+      "uri": "collection://",
+      "description": "Get a list of all collections on Hyperspell",
+      "mimeType": "application/json"
+    }
+  ],
+  "resourceTemplates": [
+    {
+      "name": "Get Collection",
+      "uriTemplate": "collection://{collection_name}",
+      "description": "Get a list of all documents in a collection",
+      "mimeType": "application/json"
+    },
+    {
+      "name": "Get Document",
+      "uriTemplate": "document://{document_id}",
+      "description": "Get a document from a collection",
+      "mimeType": "application/json"
+    }
+  ]
+}

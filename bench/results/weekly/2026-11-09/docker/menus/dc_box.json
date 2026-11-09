@@ -1,0 +1,335 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Box MCP Server",
+    "version": "1.6.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:17:21.601Z",
+  "tools": [
+    {
+      "name": "box_who_am_i",
+      "description": "\nGet the current user's information.\nThis is also useful to check the connection status.\n\nreturn:\n    str: The current user's information.\n",
+      "inputSchema": {
+        "properties": {},
+        "title": "box_who_am_iArguments",
+        "type": "object"
+      },
+      "tokens": 65
+    },
+    {
+      "name": "box_authorize_app_tool",
+      "description": "\nAuthorize the Box application.\nStart the Box app authorization process\n\nreturn:\n    str: Message\n",
+      "inputSchema": {
+        "properties": {},
+        "title": "box_authorize_app_toolArguments",
+        "type": "object"
+      },
+      "tokens": 56
+    },
+    {
+      "name": "box_search_tool",
+      "description": "\nSearch for files in Box with the given query.\n\nArgs:\n    query (str): The query to search for.\n    file_extensions (List[str]): The file extensions to search for, for example *.pdf\n    content_types (List[SearchForContentContentTypes]): where to look for the information, possible values are:\n        NAME\n        DESCRIPTION,\n        FILE_CONTENT,\n        COMMENTS,\n        TAG,\n    ancestor_folder_ids (List[str]): The ancestor folder IDs to search in.\nreturn:\n    str: The search results.\n",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "file_extensions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "File Extensions"
+          },
+          "where_to_look_for_query": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Where To Look For Query"
+          },
+          "ancestor_folder_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ancestor Folder Ids"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "box_search_toolArguments",
+        "type": "object"
+      },
+      "tokens": 271
+    },
+    {
+      "name": "box_read_tool",
+      "description": "\nRead the text content of a file in Box.\n\nArgs:\n    file_id (str): The ID of the file to read.\nreturn:\n    str: The text content of the file.\n",
+      "inputSchema": {
+        "properties": {
+          "file_id": {
+            "title": "File Id"
+          }
+        },
+        "required": [
+          "file_id"
+        ],
+        "title": "box_read_toolArguments",
+        "type": "object"
+      },
+      "tokens": 87
+    },
+    {
+      "name": "box_ask_ai_tool",
+      "description": "\nAsk box ai about a file in Box.\n\nArgs:\n    file_id (str): The ID of the file to read.\n    prompt (str): The prompt to ask the AI.\nreturn:\n    str: The text content of the file.\n",
+      "inputSchema": {
+        "properties": {
+          "file_id": {
+            "title": "File Id"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_id",
+          "prompt"
+        ],
+        "title": "box_ask_ai_toolArguments",
+        "type": "object"
+      },
+      "tokens": 116
+    },
+    {
+      "name": "box_ask_ai_tool_multi_file",
+      "description": "\nUse Box AI to analyze and respond to a prompt based on the content of multiple files.\n\nThis tool allows users to query Box AI with a specific prompt, leveraging the content\nof multiple files stored in Box. The AI processes the files and generates a response\nbased on the provided prompt.\n\nArgs:\n    ctx (Context): The context object containing the request and lifespan context.\n    file_ids (List[str]): A list of file IDs to be analyzed by the AI.\n    prompt (str): The prompt or question to ask the AI.\n\nReturns:\n    str: The AI-generated response based on the content of the specified files.\n\nRaises:\n    Exception: If there is an issue with the Box client, AI agent, or file processing.\n",
+      "inputSchema": {
+        "properties": {
+          "file_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "File Ids",
+            "type": "array"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_ids",
+          "prompt"
+        ],
+        "title": "box_ask_ai_tool_multi_fileArguments",
+        "type": "object"
+      },
+      "tokens": 238
+    },
+    {
+      "name": "box_search_folder_by_name",
+      "description": "\nLocate a folder in Box by its name.\n\nArgs:\n    folder_name (str): The name of the folder to locate.\nreturn:\n    str: The folder ID.\n",
+      "inputSchema": {
+        "properties": {
+          "folder_name": {
+            "title": "Folder Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "folder_name"
+        ],
+        "title": "box_search_folder_by_nameArguments",
+        "type": "object"
+      },
+      "tokens": 91
+    },
+    {
+      "name": "box_ai_extract_data",
+      "description": "\"\nExtract data from a single file in Box using AI.\n\nArgs:\n    file_id (str): The ID of the file to read.\n    fields (str): The fields to extract from the file.\nreturn:\n    str: The extracted data in a json string format.\n",
+      "inputSchema": {
+        "properties": {
+          "file_id": {
+            "title": "File Id"
+          },
+          "fields": {
+            "title": "Fields",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_id",
+          "fields"
+        ],
+        "title": "box_ai_extract_dataArguments",
+        "type": "object"
+      },
+      "tokens": 119
+    },
+    {
+      "name": "box_list_folder_content_by_folder_id",
+      "description": "\nList the content of a folder in Box by its ID.\n\nArgs:\n    folder_id (str): The ID of the folder to list the content of.\n    is_recursive (bool): Whether to list the content recursively.\n\nreturn:\n    str: The content of the folder in a json string format, including the \"id\", \"name\", \"type\", and \"description\".\n",
+      "inputSchema": {
+        "properties": {
+          "folder_id": {
+            "title": "Folder Id"
+          },
+          "is_recursive": {
+            "title": "is_recursive",
+            "type": "string"
+          }
+        },
+        "required": [
+          "folder_id",
+          "is_recursive"
+        ],
+        "title": "box_list_folder_content_by_folder_idArguments",
+        "type": "object"
+      },
+      "tokens": 151
+    },
+    {
+      "name": "box_manage_folder_tool",
+      "description": "\nManage Box folders - create, delete, or update.\n\nArgs:\n    action (str): The action to perform: \"create\", \"delete\", or \"update\"\n    folder_id (Any): The ID of the folder (required for delete and update)\n    name (str): The name for the folder (required for create, optional for update)\n    parent_id (Any): The ID of the parent folder (required for create, optional for update)\n                   Root folder is \"0\" or 0.\n    description (str): Description for the folder (optional for update)\n    recursive (bool): Whether to delete recursively (optional for delete)\n\nreturn:\n    str: Result of the operation\n",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "folder_id": {
+            "default": null,
+            "title": "Folder Id"
+          },
+          "name": {
+            "default": null,
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "default": null,
+            "title": "Parent Id"
+          },
+          "description": {
+            "default": null,
+            "title": "Description",
+            "type": "string"
+          },
+          "recursive": {
+            "default": false,
+            "title": "Recursive",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "box_manage_folder_toolArguments",
+        "type": "object"
+      },
+      "tokens": 269
+    },
+    {
+      "name": "box_upload_file_tool",
+      "description": "\nUpload content as a file to Box.\n\nArgs:\n    content (str): The content to upload as a file.\n    file_name (str): The name to give the file in Box.\n    folder_id (Any, optional): The ID of the folder to upload to. If not provided, uploads to root.\n\nreturn:\n    str: The uploaded file's information including ID and name.\n",
+      "inputSchema": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "file_name": {
+            "title": "File Name",
+            "type": "string"
+          },
+          "folder_id": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Folder Id"
+          }
+        },
+        "required": [
+          "content",
+          "file_name"
+        ],
+        "title": "box_upload_file_toolArguments",
+        "type": "object"
+      },
+      "tokens": 172
+    },
+    {
+      "name": "box_download_file_tool",
+      "description": "\nDownload a file from Box and return its content as a string.\nSupports text files (returns content directly) and images (returns base64-encoded).\nOther file types will return an error message.\nOptionally saves the file locally.\n\nArgs:\n    file_id (Any): The ID of the file to download.\n    save_file (bool, optional): Whether to save the file locally. Defaults to False.\n    save_path (str, optional): Path where to save the file. If not provided but save_file is True,\n                              uses a temporary directory. Defaults to None.\n\nreturn:\n    str: For text files: content as string.\n         For images: base64-encoded string with metadata.\n         For unsupported files: error message.\n         If save_file is True, includes the path where the file was saved.\n",
+      "inputSchema": {
+        "properties": {
+          "file_id": {
+            "title": "File Id"
+          },
+          "save_file": {
+            "default": false,
+            "title": "Save File",
+            "type": "boolean"
+          },
+          "save_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Save Path"
+          }
+        },
+        "required": [
+          "file_id"
+        ],
+        "title": "box_download_file_toolArguments",
+        "type": "object"
+      },
+      "tokens": 268
+    }
+  ],
+  "totalTokens": 1903,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

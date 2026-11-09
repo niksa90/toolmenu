@@ -1,0 +1,238 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Tigris MCP Server",
+    "version": "1.13.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:07:14.260Z",
+  "tools": [
+    {
+      "name": "tigris_list_buckets",
+      "description": "List all Tigris buckets in your account",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 34
+    },
+    {
+      "name": "tigris_create_bucket",
+      "description": "Create a Tigris bucket in your account",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bucketName": {
+            "type": "string",
+            "description": "Name of the bucket to create"
+          },
+          "isPublic": {
+            "type": "boolean",
+            "description": "Set your bucket as public or private"
+          }
+        },
+        "required": [
+          "bucketName"
+        ]
+      },
+      "tokens": 71
+    },
+    {
+      "name": "tigris_delete_bucket",
+      "description": "Delete a Tigris bucket in your account",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bucketName": {
+            "type": "string",
+            "description": "Name of the bucket to delete"
+          }
+        },
+        "required": [
+          "bucketName"
+        ]
+      },
+      "tokens": 53
+    },
+    {
+      "name": "tigris_list_objects",
+      "description": "List all objects in a buckets",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bucketName": {
+            "type": "string",
+            "description": "Name of the bucket"
+          }
+        },
+        "required": [
+          "bucketName"
+        ]
+      },
+      "tokens": 48
+    },
+    {
+      "name": "tigris_put_object",
+      "description": "Creates an object in bucket",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bucketName": {
+            "type": "string",
+            "description": "Name of the bucket"
+          },
+          "key": {
+            "type": "string",
+            "description": "Key of the object to put"
+          },
+          "content": {
+            "type": "string",
+            "description": "Content to store in the object"
+          },
+          "contentType": {
+            "type": "string",
+            "description": "Optional MIME type of the content"
+          }
+        },
+        "required": [
+          "bucketName",
+          "key",
+          "content"
+        ]
+      },
+      "tokens": 100
+    },
+    {
+      "name": "tigris_put_object_from_path",
+      "description": "Creates an object in bucket from a path on the filesystem",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bucketName": {
+            "type": "string",
+            "description": "Name of the bucket"
+          },
+          "key": {
+            "type": "string",
+            "description": "Key of the object to put"
+          },
+          "path": {
+            "type": "string",
+            "description": "Absolute path to the file to upload"
+          }
+        },
+        "required": [
+          "bucketName",
+          "key",
+          "path"
+        ]
+      },
+      "tokens": 92
+    },
+    {
+      "name": "tigris_get_object",
+      "description": "Get an object in a bucket",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bucketName": {
+            "type": "string",
+            "description": "Name of the bucket"
+          },
+          "key": {
+            "type": "string",
+            "description": "Key of the object to delete"
+          }
+        },
+        "required": [
+          "bucketName",
+          "key"
+        ]
+      },
+      "tokens": 66
+    },
+    {
+      "name": "tigris_delete_object",
+      "description": "Delete an object in a bucket",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bucketName": {
+            "type": "string",
+            "description": "Name of the bucket"
+          },
+          "key": {
+            "type": "string",
+            "description": "Key of the object to put"
+          }
+        },
+        "required": [
+          "bucketName",
+          "key"
+        ]
+      },
+      "tokens": 66
+    },
+    {
+      "name": "tigris_get_signed_url_object",
+      "description": "Get an signed url of an object from a bucket",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bucketName": {
+            "type": "string",
+            "description": "Name of the bucket"
+          },
+          "key": {
+            "type": "string",
+            "description": "Key of the object to get signed url"
+          },
+          "expiresIn": {
+            "type": "number",
+            "description": "Expiration time in seconds"
+          }
+        },
+        "required": [
+          "bucketName",
+          "key"
+        ]
+      },
+      "tokens": 89
+    },
+    {
+      "name": "tigris_upload_file_and_get_url",
+      "description": "Upload a file and get a public url for it",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bucketName": {
+            "type": "string",
+            "description": "Name of the bucket"
+          },
+          "key": {
+            "type": "string",
+            "description": "Key of the object to upload"
+          },
+          "path": {
+            "type": "string",
+            "description": "Absolute path to the file to upload"
+          },
+          "expiresIn": {
+            "type": "number",
+            "description": "Expiration time in seconds"
+          }
+        },
+        "required": [
+          "bucketName",
+          "key",
+          "path",
+          "expiresIn"
+        ]
+      },
+      "tokens": 110
+    }
+  ],
+  "totalTokens": 729
+}

@@ -1,0 +1,110 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "awslabs.amazon-kendra-index-mcp-server",
+    "version": "1.23.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:26:07.704Z",
+  "tools": [
+    {
+      "name": "KendraListIndexesTool",
+      "description": "List all Amazon Kendra indexes in the specified region.\n\nThis tool lists all the Kendra indexes available in the region specified in the mcp configuration.\n\nParameters:\n    region (str, optional): The AWS region to list Kendra indexes from.\n\nReturns:\n    Dict containing the list of Kendra indexes.\n",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Region"
+          }
+        },
+        "title": "kendra_list_indexes_toolArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "kendra_list_indexes_toolOutput",
+        "type": "object"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "KendraQueryTool",
+      "description": "Query Amazon Kendra and retrieve content from the response.\n\nThis tool queries the specified Amazon Kendra index with the provided query\nand returns the search results. The specified Kendra Index is either provided by the user in the chat, or the default index configured in the environemnt variables\n\nParameters:\n    query (str): The search query to send to Amazon Kendra.\n    region (str): The region of the Kendra Index to send the search query to.\n    indexId (str): The indexId of the Kendra index to send the search query to.\n\nReturns:\n    Dict containing the query results from Amazon Kendra.\n",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Region"
+          },
+          "indexId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Indexid"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "kendra_query_toolArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "kendra_query_toolOutput",
+        "type": "object"
+      },
+      "tokens": 232
+    }
+  ],
+  "totalTokens": 356,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

@@ -1,0 +1,417 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "opine-mcp-server",
+    "version": "2.1.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:35:50.784Z",
+  "tools": [
+    {
+      "name": "list_deals",
+      "description": "List deals from Opine CRM",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Number of results to return (1-1000, default: 100)",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of results to skip (default: 0)",
+            "minimum": 0
+          },
+          "includeSummary": {
+            "type": "boolean",
+            "description": "Include AI-generated deal summary"
+          },
+          "includeDeleted": {
+            "type": "boolean",
+            "description": "Include deleted deals"
+          }
+        }
+      },
+      "tokens": 113
+    },
+    {
+      "name": "get_deal",
+      "description": "Get a specific deal by ID",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Deal ID (Opine ID or external service ID)",
+            "pattern": "^.+$"
+          },
+          "includeSummary": {
+            "type": "boolean",
+            "description": "Include AI-generated deal summary"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 73
+    },
+    {
+      "name": "get_salesforce_deal",
+      "description": "Get a specific deal by Salesforce ID (automatically converts 15-char to 18-char and prepends \"eid:\" prefix)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Salesforce deal ID (15 or 18 characters, will be converted to 18-char format and prefixed with \"eid:\")",
+            "pattern": "^.+$"
+          },
+          "includeSummary": {
+            "type": "boolean",
+            "description": "Include AI-generated deal summary"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 111
+    },
+    {
+      "name": "list_evaluations",
+      "description": "List evaluations from Opine",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Number of results to return (1-1000, default: 100)",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of results to skip (default: 0)",
+            "minimum": 0
+          }
+        }
+      },
+      "tokens": 84
+    },
+    {
+      "name": "list_tickets",
+      "description": "List tickets/requests from Opine",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Number of results to return (1-1000, default: 100)",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of results to skip (default: 0)",
+            "minimum": 0
+          }
+        }
+      },
+      "tokens": 85
+    },
+    {
+      "name": "list_sales_processes",
+      "description": "List sales processes configured in Opine",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Number of results to return (1-1000, default: 100)",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of results to skip (default: 0)",
+            "minimum": 0
+          }
+        }
+      },
+      "tokens": 86
+    },
+    {
+      "name": "list_sales_process_stages",
+      "description": "List sales process stages from Opine",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Number of results to return (1-1000, default: 100)",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "offset": {
+            "type": "number",
+            "description": "Number of results to skip (default: 0)",
+            "minimum": 0
+          },
+          "includeDeleted": {
+            "type": "boolean",
+            "description": "Include deleted sales process stages"
+          }
+        }
+      },
+      "tokens": 102
+    },
+    {
+      "name": "describe_deal_sales_process",
+      "description": "Get a deal along with resolved sales process and stage metadata",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Deal ID. If this is a Salesforce ID (15 or 18 characters), set isSalesforceId to true.",
+            "pattern": "^.+$"
+          },
+          "isSalesforceId": {
+            "type": "boolean",
+            "description": "Treat the id as a Salesforce ID (15 or 18 chars); it will be normalized and prefixed with \"eid:\"."
+          },
+          "includeSummary": {
+            "type": "boolean",
+            "description": "Include AI-generated deal summary when fetching the deal"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 134
+    },
+    {
+      "name": "update_ticket",
+      "description": "Update an existing ticket in Opine. Requires tickets:write scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Ticket ID to update",
+            "pattern": "^.+$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Ticket title (1-256 characters)",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "Ticket type",
+            "enum": [
+              "BUG",
+              "FEATURE",
+              "CUSTOM_1",
+              "CUSTOM_2",
+              "CUSTOM_3",
+              "CUSTOM_4",
+              "CUSTOM_5"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "description": "Ticket state",
+            "enum": [
+              "OPEN",
+              "PRIORITIZING",
+              "ROADMAP",
+              "DEFERRED",
+              "IN_PROGRESS",
+              "CLOSED"
+            ]
+          },
+          "description": {
+            "description": "Ticket description (Slate node array, markdown string, or null to clear)"
+          },
+          "targetDueDate": {
+            "type": "string",
+            "description": "Target due date in ISO 8601 format (nullable)",
+            "format": "date-time"
+          },
+          "deals": {
+            "type": "array",
+            "description": "Array of deal associations",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number",
+                  "description": "Deal ID"
+                },
+                "priority": {
+                  "type": "string",
+                  "description": "Deal priority",
+                  "enum": [
+                    "BLOCKER",
+                    "IMPORTANT",
+                    "NICE_TO_HAVE"
+                  ]
+                },
+                "delete": {
+                  "type": "boolean",
+                  "description": "Set to true to remove this deal association"
+                }
+              },
+              "required": [
+                "id",
+                "priority"
+              ]
+            }
+          },
+          "labels": {
+            "type": "array",
+            "description": "Array of case-sensitive label strings (replaces all existing labels, or clears if null/empty)",
+            "items": {
+              "type": "string"
+            }
+          },
+          "vendorEntityUrl": {
+            "type": "string",
+            "description": "Vendor entity URL in URI format (nullable)",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 351
+    },
+    {
+      "name": "create_deal_note",
+      "description": "Add a note to a specific deal. Requires deals:write scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dealId": {
+            "type": "string",
+            "description": "Deal ID (Opine ID or external service ID)",
+            "pattern": "^.+$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Note title",
+            "maxLength": 512
+          },
+          "body": {
+            "description": "Note body (Slate nodes array or markdown string, optional)"
+          }
+        },
+        "required": [
+          "dealId",
+          "title"
+        ]
+      },
+      "tokens": 103
+    },
+    {
+      "name": "create_ticket",
+      "description": "Create a new ticket in Opine. Requires tickets:write scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Ticket title (1-256 characters)",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "Ticket type",
+            "enum": [
+              "BUG",
+              "FEATURE",
+              "CUSTOM_1",
+              "CUSTOM_2",
+              "CUSTOM_3",
+              "CUSTOM_4",
+              "CUSTOM_5"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "description": "Ticket state",
+            "enum": [
+              "OPEN",
+              "PRIORITIZING",
+              "ROADMAP",
+              "DEFERRED",
+              "IN_PROGRESS",
+              "CLOSED"
+            ]
+          },
+          "description": {
+            "description": "Ticket description (Slate node array or markdown string, optional)"
+          },
+          "targetDueDate": {
+            "type": "string",
+            "description": "Target due date in ISO 8601 format",
+            "format": "date-time"
+          },
+          "deals": {
+            "type": "array",
+            "description": "Array of deal associations",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "description": "Deal ID (numeric or vendor entity ID string)"
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "BLOCKER",
+                    "IMPORTANT",
+                    "NICE_TO_HAVE"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "priority"
+              ]
+            }
+          },
+          "labels": {
+            "type": "array",
+            "description": "Array of label strings",
+            "items": {
+              "type": "string"
+            }
+          },
+          "vendorEntityUrl": {
+            "type": "string",
+            "description": "Vendor entity URL",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "title",
+          "type",
+          "state"
+        ]
+      },
+      "tokens": 289
+    }
+  ],
+  "totalTokens": 1531
+}

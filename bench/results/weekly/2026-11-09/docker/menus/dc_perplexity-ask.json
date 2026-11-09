@@ -1,0 +1,116 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "example-servers/perplexity-ask",
+    "version": "0.1.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:48:11.761Z",
+  "tools": [
+    {
+      "name": "perplexity_ask",
+      "description": "Engages in a conversation using the Sonar API. Accepts an array of messages (each with a role and content) and returns a ask completion response from the Perplexity model.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "description": "Role of the message (e.g., system, user, assistant)"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "The content of the message"
+                }
+              },
+              "required": [
+                "role",
+                "content"
+              ]
+            },
+            "description": "Array of conversation messages"
+          }
+        },
+        "required": [
+          "messages"
+        ]
+      },
+      "tokens": 131
+    },
+    {
+      "name": "perplexity_research",
+      "description": "Performs deep research using the Perplexity API. Accepts an array of messages (each with a role and content) and returns a comprehensive research response with citations.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "description": "Role of the message (e.g., system, user, assistant)"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "The content of the message"
+                }
+              },
+              "required": [
+                "role",
+                "content"
+              ]
+            },
+            "description": "Array of conversation messages"
+          }
+        },
+        "required": [
+          "messages"
+        ]
+      },
+      "tokens": 127
+    },
+    {
+      "name": "perplexity_reason",
+      "description": "Performs reasoning tasks using the Perplexity API. Accepts an array of messages (each with a role and content) and returns a well-reasoned response using the sonar-reasoning-pro model.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "description": "Role of the message (e.g., system, user, assistant)"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "The content of the message"
+                }
+              },
+              "required": [
+                "role",
+                "content"
+              ]
+            },
+            "description": "Array of conversation messages"
+          }
+        },
+        "required": [
+          "messages"
+        ]
+      },
+      "tokens": 134
+    }
+  ],
+  "totalTokens": 392
+}

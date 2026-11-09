@@ -1,0 +1,153 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "reddit-mcp",
+    "version": "1.20.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:13:23.760Z",
+  "tools": [
+    {
+      "name": "fetchPosts",
+      "description": "Fetch hot posts from a subreddit",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string",
+            "description": "Name of the subreddit"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Number of posts to fetch (1-100)",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+          }
+        },
+        "required": [
+          "subreddit"
+        ]
+      },
+      "tokens": 77
+    },
+    {
+      "name": "getComments",
+      "description": "Get comments for a specific Reddit post",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "description": "Reddit post ID (without 't3_' prefix)"
+          }
+        },
+        "required": [
+          "post_id"
+        ]
+      },
+      "tokens": 54
+    },
+    {
+      "name": "searchPosts",
+      "description": "Search for posts within a subreddit",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string",
+            "description": "Name of the subreddit"
+          },
+          "query": {
+            "type": "string",
+            "description": "Search query"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Number of results to return (1-100)",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+          }
+        },
+        "required": [
+          "subreddit",
+          "query"
+        ]
+      },
+      "tokens": 91
+    },
+    {
+      "name": "postComment",
+      "description": "Post a comment on a Reddit post",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "description": "Reddit post ID (without 't3_' prefix)"
+          },
+          "comment_text": {
+            "type": "string",
+            "description": "Comment text to post"
+          }
+        },
+        "required": [
+          "post_id",
+          "comment_text"
+        ]
+      },
+      "tokens": 72
+    },
+    {
+      "name": "getSubredditInfo",
+      "description": "Get information about a subreddit",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string",
+            "description": "Name of the subreddit"
+          }
+        },
+        "required": [
+          "subreddit"
+        ]
+      },
+      "tokens": 46
+    },
+    {
+      "name": "postToSubreddit",
+      "description": "Create a new post in a subreddit",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string",
+            "description": "Name of the subreddit"
+          },
+          "title": {
+            "type": "string",
+            "description": "Post title"
+          },
+          "content": {
+            "type": "string",
+            "description": "Post content (for text posts)"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL (for link posts)"
+          }
+        },
+        "required": [
+          "subreddit",
+          "title"
+        ]
+      },
+      "tokens": 95
+    }
+  ],
+  "totalTokens": 435
+}

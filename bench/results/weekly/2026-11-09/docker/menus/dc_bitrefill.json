@@ -1,0 +1,389 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "bitrefill-mcp-server",
+    "version": "0.3.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:01:35.106Z",
+  "tools": [
+    {
+      "name": "search",
+      "description": "Search for gift cards, esims, mobile topups and more. It's suggested to use the `categories` tool before searching for products, to have a better understanding of what's available.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query (e.g., 'Amazon', 'Netflix', 'AT&T' or '*' for all the available products)"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country code (e.g., 'US', 'IT', 'GB')"
+          },
+          "language": {
+            "type": "string",
+            "description": "Language code for results (e.g., 'en')"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of results to return"
+          },
+          "skip": {
+            "type": "number",
+            "description": "Number of results to skip (for pagination)"
+          },
+          "category": {
+            "type": "string",
+            "description": "Filter by category (e.g., 'gaming', 'entertainment')"
+          },
+          "beta_flags": {
+            "type": "string",
+            "description": "Beta feature flags"
+          },
+          "cart": {
+            "type": "string",
+            "description": "Cart identifier"
+          },
+          "do_recommend": {
+            "type": "number",
+            "description": "Enable recommendations"
+          },
+          "rec": {
+            "type": "number",
+            "description": "Recommendation parameter"
+          },
+          "sec": {
+            "type": "number",
+            "description": "Security parameter"
+          },
+          "col": {
+            "type": "number",
+            "description": "Column layout parameter"
+          },
+          "prefcc": {
+            "type": "number",
+            "description": "Preferred country code parameter"
+          },
+          "src": {
+            "type": "string",
+            "description": "Source of the request"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 324
+    },
+    {
+      "name": "detail",
+      "description": "Get detailed information about a product",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier of the product"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 63
+    },
+    {
+      "name": "categories",
+      "description": "Get the full product type/categories map. It's suggested to use this tool to get the categories and then use the `search` tool to search for products in a specific category.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 73
+    },
+    {
+      "name": "create_invoice",
+      "description": "Create a new invoice for purchasing products with various payment methods",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "product_id": {
+                  "type": "string",
+                  "description": "Required: Product slug/ID"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "description": "Optional: Default is 1"
+                },
+                "value": {
+                  "type": "number",
+                  "description": "Required for variable-value products. Use the exact value present in packages.amount for the package to buy"
+                },
+                "package_id": {
+                  "type": "string",
+                  "description": "Alternative to value for package selection"
+                },
+                "phone_number": {
+                  "type": "string",
+                  "description": "Required for phone top-ups"
+                },
+                "send_email": {
+                  "type": "boolean",
+                  "description": "Optional: Whether to send email for this product"
+                },
+                "send_sms": {
+                  "type": "boolean",
+                  "description": "Optional: Whether to send SMS for this product"
+                }
+              },
+              "required": [
+                "product_id"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "description": "Array of products to include in the invoice"
+          },
+          "payment_method": {
+            "type": "string",
+            "enum": [
+              "balance",
+              "bitcoin",
+              "lightning",
+              "ethereum"
+            ],
+            "description": "Required payment method. Available methods: balance, lightning, bitcoin, eth_base, usdc_base"
+          },
+          "webhook_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Optional: URL for webhook notifications"
+          },
+          "auto_pay": {
+            "type": "boolean",
+            "description": "Optional: Automatically pay with balance"
+          }
+        },
+        "required": [
+          "products",
+          "payment_method"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 320
+    },
+    {
+      "name": "get_invoices",
+      "description": "Retrieve a list of invoices with optional filtering",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Start index. Default: 0"
+          },
+          "limit": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 50,
+            "description": "Maximum number of records. Maximum/Default: 50"
+          },
+          "after": {
+            "type": "string",
+            "description": "Start date for limiting results (Inclusive). Format: YYYY-MM-DD HH:MM:SS"
+          },
+          "before": {
+            "type": "string",
+            "description": "End date for limiting results (Non-Inclusive). Format: YYYY-MM-DD HH:MM:SS"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 156
+    },
+    {
+      "name": "get_invoice",
+      "description": "Retrieve details for a specific invoice by ID",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique invoice identifier"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 64
+    },
+    {
+      "name": "pay_invoice",
+      "description": "Pay an unpaid invoice (only works with 'balance' payment method)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique invoice identifier"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 70
+    },
+    {
+      "name": "get_orders",
+      "description": "Retrieve a list of orders with optional filtering",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Start index. Default: 0"
+          },
+          "limit": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 50,
+            "description": "Maximum number of records. Maximum/Default: 50"
+          },
+          "after": {
+            "type": "string",
+            "description": "Start date for limiting results (Inclusive). Format: YYYY-MM-DD HH:MM:SS"
+          },
+          "before": {
+            "type": "string",
+            "description": "End date for limiting results (Non-Inclusive). Format: YYYY-MM-DD HH:MM:SS"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 155
+    },
+    {
+      "name": "get_order",
+      "description": "Retrieve details for a specific order by ID",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique order identifier"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 64
+    },
+    {
+      "name": "unseal_order",
+      "description": "Reveal codes and PINs for a specific order by ID",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique order identifier"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 68
+    },
+    {
+      "name": "get_account_balance",
+      "description": "Retrieve your account balance",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 45
+    },
+    {
+      "name": "ping",
+      "description": "Check if the Bitrefill API is available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 48
+    }
+  ],
+  "totalTokens": 1450,
+  "resources": [
+    {
+      "uri": "bitrefill://payment-methods",
+      "name": "payment-methods"
+    },
+    {
+      "uri": "bitrefill://product-types",
+      "name": "product-types"
+    },
+    {
+      "uri": "bitrefill://product-types/giftcards",
+      "name": "giftcards"
+    },
+    {
+      "uri": "bitrefill://product-types/refills",
+      "name": "refills"
+    },
+    {
+      "uri": "bitrefill://product-types/bills",
+      "name": "bills"
+    },
+    {
+      "uri": "bitrefill://product-types/esims",
+      "name": "esims"
+    },
+    {
+      "uri": "bitrefill://product-types/crypto-utils",
+      "name": "crypto-utils"
+    }
+  ],
+  "resourceTemplates": [
+    {
+      "name": "product-categories",
+      "uriTemplate": "bitrefill://product-types/{productType}"
+    }
+  ]
+}

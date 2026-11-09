@@ -1,0 +1,196 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "glif",
+    "version": "0.9.9",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:14:01.429Z",
+  "tools": [
+    {
+      "name": "glif_info",
+      "description": "Get detailed information about a glif including input fields",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the glif to show details for"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 54
+    },
+    {
+      "name": "run_glif",
+      "description": "Run a glif with the specified ID and inputs",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the glif to run"
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of input values for the glif"
+          }
+        },
+        "required": [
+          "id",
+          "inputs"
+        ]
+      },
+      "tokens": 79
+    },
+    {
+      "name": "list_featured_glifs",
+      "description": "Get a curated list of featured glifs",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tokens": 34
+    },
+    {
+      "name": "search_glifs",
+      "description": "Search for glifs by query string",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query string"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "tokens": 44
+    },
+    {
+      "name": "my_glifs",
+      "description": "Get a list of your glifs",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tokens": 31
+    },
+    {
+      "name": "my_glif_user_info",
+      "description": "Get detailed information about your user account, recent glifs, and recent runs",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tokens": 41
+    },
+    {
+      "name": "save_glif_as_tool",
+      "description": "Save a glif as a custom tool",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the glif to save"
+          },
+          "toolName": {
+            "type": "string",
+            "description": "The name to use for the tool (must be unique)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional custom name for the tool (defaults to glif name)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional custom description (defaults to glif description)"
+          }
+        },
+        "required": [
+          "id",
+          "toolName"
+        ]
+      },
+      "tokens": 121
+    },
+    {
+      "name": "remove_glif_tool",
+      "description": "Remove a saved glif tool",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "toolName": {
+            "type": "string",
+            "description": "The tool name of the saved glif to remove"
+          }
+        },
+        "required": [
+          "toolName"
+        ]
+      },
+      "tokens": 53
+    },
+    {
+      "name": "remove_all_glif_tools",
+      "description": "Remove all saved glif tools and return to a pristine state",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tokens": 38
+    },
+    {
+      "name": "list_saved_glif_tools",
+      "description": "List all saved glif tools",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tokens": 32
+    }
+  ],
+  "totalTokens": 527,
+  "prompts": [
+    {
+      "name": "showcase_featured_glif",
+      "description": "Show and run the most recent featured glif with fun inputs"
+    }
+  ],
+  "resources": [
+    {
+      "uri": "glif://template",
+      "name": "Glif Details",
+      "description": "Get metadata about a specific glif",
+      "uriTemplate": "glif://{id}"
+    },
+    {
+      "uri": "glifRun://template",
+      "name": "Glif Run Details",
+      "description": "Get details about a specific glif run",
+      "uriTemplate": "glifRun://{id}"
+    },
+    {
+      "uri": "glifUser://template",
+      "name": "Glif User Details",
+      "description": "Get details about a glif user",
+      "uriTemplate": "glifUser://{id}"
+    }
+  ]
+}

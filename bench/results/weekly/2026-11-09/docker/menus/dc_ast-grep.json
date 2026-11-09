@@ -1,0 +1,46 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mcp-ast-grep",
+    "version": "1.0.2",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:47:37.173Z",
+  "tools": [
+    {
+      "annotations": {
+        "title": "Search codebases using ast-grep patterns",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Search codebases using ast-grep patterns for straightforward structural matches. (returns json)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dir": {
+            "description": "The directory to search in. If not specified, will use the current working directory.",
+            "type": "string"
+          },
+          "lang": {
+            "description": "The language of the code. If not specified, will be auto-detected based on file extensions.",
+            "type": "string"
+          },
+          "pattern": {
+            "description": "The ast-grep pattern to search for. Note, the pattern must have valid AST structure.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pattern"
+        ]
+      },
+      "name": "ast-grep",
+      "tokens": 124
+    }
+  ],
+  "totalTokens": 124
+}

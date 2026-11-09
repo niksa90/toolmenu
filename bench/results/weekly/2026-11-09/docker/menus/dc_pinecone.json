@@ -1,0 +1,40 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "pinecone-assistant",
+    "version": "0.1.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:25:34.681Z",
+  "tools": [
+    {
+      "description": "Retrieves relevant document snippets from your Pinecone Assistant knowledge base. Returns an array of text snippets from the most relevant documents. You can use the 'top_k' parameter to control result count (default: 15). Recommended top_k: a few (5-8) for simple/narrow queries, 10-20 for complex/broad topics.",
+      "inputSchema": {
+        "properties": {
+          "assistant_name": {
+            "description": "Name of an existing Pinecone assistant",
+            "type": "string"
+          },
+          "query": {
+            "description": "The query to retrieve context for.",
+            "type": "string"
+          },
+          "top_k": {
+            "description": "The number of context snippets to retrieve. Defaults to 15.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assistant_name",
+          "query"
+        ],
+        "type": "object"
+      },
+      "name": "assistant_context",
+      "tokens": 153
+    }
+  ],
+  "totalTokens": 153
+}

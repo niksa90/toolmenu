@@ -1,0 +1,344 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Prometheus MCP",
+    "version": "3.2.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {
+      "io.modelcontextprotocol/ui": {}
+    }
+  },
+  "capturedAt": "2026-11-09T19:35:55.310Z",
+  "tools": [
+    {
+      "name": "health_check",
+      "title": "Health Check",
+      "description": "Health check endpoint for container monitoring and status verification",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Health Check",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "icon": "❤️"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 34
+    },
+    {
+      "name": "execute_query",
+      "title": "Execute PromQL Query",
+      "description": "Execute a PromQL instant query against Prometheus",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Execute PromQL Query",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "icon": "📊"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 64
+    },
+    {
+      "name": "execute_range_query",
+      "title": "Execute PromQL Range Query",
+      "description": "Execute a PromQL range query with start time, end time, and step interval",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          },
+          "step": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query",
+          "start",
+          "end",
+          "step"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Execute PromQL Range Query",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "icon": "📈"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 79
+    },
+    {
+      "name": "list_metrics",
+      "title": "List Available Metrics",
+      "description": "List all available metrics in Prometheus with optional pagination support",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "offset": {
+            "default": 0,
+            "type": "integer"
+          },
+          "filter_pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "refresh_cache": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "title": "List Available Metrics",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "icon": "📋"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 96
+    },
+    {
+      "name": "get_metric_metadata",
+      "title": "Get Metric Metadata",
+      "description": "Get metadata (type, help, unit) for metrics. Returns all metric metadata when no metric name is provided. Use filter_pattern to search metric names and descriptions.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "filter_pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "offset": {
+            "default": 0,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              }
+            ]
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "annotations": {
+        "title": "Get Metric Metadata",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "icon": "ℹ️"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 125
+    },
+    {
+      "name": "get_targets",
+      "title": "Get Scrape Targets",
+      "description": "Get scrape targets, with state/pool filtering and optional pagination",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "state": {
+            "default": "active",
+            "type": "string"
+          },
+          "scrape_pool": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "offset": {
+            "default": 0,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Get Scrape Targets",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "icon": "🎯"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 97
+    }
+  ],
+  "totalTokens": 495,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

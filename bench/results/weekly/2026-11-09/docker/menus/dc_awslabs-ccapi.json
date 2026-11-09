@@ -1,0 +1,605 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "awslabs.ccapi-mcp-server",
+    "version": "1.23.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:20:26.510Z",
+  "tools": [
+    {
+      "name": "get_resource_schema_information",
+      "description": "Get schema information for an AWS resource.\n\nParameters:\n    resource_type: The AWS resource type (e.g., \"AWS::S3::Bucket\")\n\nReturns:\n    The resource schema information\n",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "description": "The AWS resource type (e.g., \"AWS::S3::Bucket\", \"AWS::RDS::DBInstance\")",
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The AWS region that the operation should be performed in",
+            "title": "Region"
+          }
+        },
+        "required": [
+          "resource_type"
+        ],
+        "title": "get_resource_schema_informationArguments",
+        "type": "object"
+      },
+      "tokens": 157
+    },
+    {
+      "name": "list_resources",
+      "description": "List AWS resources of a specified type.\n\nParameters:\n    resource_type: The AWS resource type (e.g., \"AWS::S3::Bucket\", \"AWS::RDS::DBInstance\")\n    region: AWS region to use (e.g., \"us-east-1\", \"us-west-2\")\n\n\nReturns:\n    A dictionary containing:\n    {\n        \"resources\": List of resource identifiers\n    }\n",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "description": "The AWS resource type (e.g., \"AWS::S3::Bucket\", \"AWS::RDS::DBInstance\")",
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The AWS region that the operation should be performed in",
+            "title": "Region"
+          },
+          "analyze_security": {
+            "default": false,
+            "description": "Whether to perform security analysis on the resources (limited to first 5 resources)",
+            "title": "Analyze Security",
+            "type": "boolean"
+          },
+          "max_resources_to_analyze": {
+            "default": 5,
+            "description": "Maximum number of resources to analyze when analyze_security=True",
+            "title": "Max Resources To Analyze",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "resource_type"
+        ],
+        "title": "list_resourcesArguments",
+        "type": "object"
+      },
+      "tokens": 275
+    },
+    {
+      "name": "generate_infrastructure_code",
+      "description": "Generate infrastructure code before resource creation or update.",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "description": "The AWS resource type (e.g., \"AWS::S3::Bucket\", \"AWS::RDS::DBInstance\")",
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "A dictionary of properties for the resource",
+            "title": "Properties"
+          },
+          "identifier": {
+            "default": "",
+            "description": "The primary identifier of the resource for update operations",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "patch_document": {
+            "description": "A list of RFC 6902 JSON Patch operations for update operations",
+            "items": {},
+            "title": "Patch Document",
+            "type": "array"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The AWS region that the operation should be performed in",
+            "title": "Region"
+          },
+          "credentials_token": {
+            "description": "Credentials token from get_aws_session_info() to ensure AWS credentials are valid",
+            "title": "Credentials Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_type",
+          "credentials_token"
+        ],
+        "title": "generate_infrastructure_codeArguments",
+        "type": "object"
+      },
+      "tokens": 238
+    },
+    {
+      "name": "explain",
+      "description": "MANDATORY: Explain any data in clear, human-readable format.\n\nFor infrastructure operations (create/update/delete):\n- CONSUMES generated_code_token and returns explained_token\n- You MUST immediately display the returned explanation to user\n- You MUST use the returned explained_token for create/update/delete operations\n\nFor general data explanation:\n- Pass any data in 'content' parameter\n- Provides comprehensive explanation of the data structure\n\nCRITICAL: You MUST immediately display the full explanation content to the user after calling this tool.\nThe response contains an 'explanation' field that you MUST show to the user - this is MANDATORY.\nNever proceed with create/update/delete operations without first showing the user what will happen.\n\nReturns:\n    explanation: Comprehensive explanation you MUST display to user\n    explained_token: New token for infrastructure operations (if applicable)\n",
+      "inputSchema": {
+        "properties": {
+          "content": {
+            "default": null,
+            "description": "Any data to explain - infrastructure properties, JSON, dict, list, etc.",
+            "title": "Content"
+          },
+          "generated_code_token": {
+            "default": "",
+            "description": "Generated code token from generate_infrastructure_code (for infrastructure operations)",
+            "title": "Generated Code Token",
+            "type": "string"
+          },
+          "context": {
+            "default": "",
+            "description": "Context about what this data represents (e.g., 'KMS key creation', 'S3 bucket update')",
+            "title": "Context",
+            "type": "string"
+          },
+          "operation": {
+            "default": "analyze",
+            "description": "Operation type: create, update, delete, analyze",
+            "title": "Operation",
+            "type": "string"
+          },
+          "format": {
+            "default": "detailed",
+            "description": "Explanation format: detailed, summary, technical",
+            "title": "Format",
+            "type": "string"
+          },
+          "user_intent": {
+            "default": "",
+            "description": "Optional: User's stated purpose",
+            "title": "User Intent",
+            "type": "string"
+          }
+        },
+        "title": "explainArguments",
+        "type": "object"
+      },
+      "tokens": 384
+    },
+    {
+      "name": "get_resource",
+      "description": "Get details of a specific AWS resource.",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "description": "The AWS resource type (e.g., \"AWS::S3::Bucket\", \"AWS::RDS::DBInstance\")",
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "identifier": {
+            "description": "The primary identifier of the resource to get (e.g., bucket name for S3 buckets)",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The AWS region that the operation should be performed in",
+            "title": "Region"
+          },
+          "analyze_security": {
+            "default": false,
+            "description": "Whether to perform security analysis on the resource using Checkov",
+            "title": "Analyze Security",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "resource_type",
+          "identifier"
+        ],
+        "title": "get_resourceArguments",
+        "type": "object"
+      },
+      "tokens": 182
+    },
+    {
+      "name": "update_resource",
+      "description": "Update an AWS resource.\n\nIMPORTANT: Always check the response for 'security_warning' field and display any warnings to the user.\n",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "description": "The AWS resource type (e.g., \"AWS::S3::Bucket\", \"AWS::RDS::DBInstance\")",
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "identifier": {
+            "description": "The primary identifier of the resource to get (e.g., bucket name for S3 buckets)",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "patch_document": {
+            "default": [],
+            "description": "A list of RFC 6902 JSON Patch operations to apply",
+            "items": {},
+            "title": "Patch Document",
+            "type": "array"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The AWS region that the operation should be performed in",
+            "title": "Region"
+          },
+          "credentials_token": {
+            "description": "Credentials token from get_aws_session_info() to ensure AWS credentials are valid",
+            "title": "Credentials Token",
+            "type": "string"
+          },
+          "explained_token": {
+            "description": "Explained token from explain() to ensure exact properties with default tags are used",
+            "title": "Explained Token",
+            "type": "string"
+          },
+          "security_scan_token": {
+            "default": "",
+            "description": "Security scan token from run_checkov() to ensure security checks were performed (only required when SECURITY_SCANNING=enabled)",
+            "title": "Security Scan Token",
+            "type": "string"
+          },
+          "skip_security_check": {
+            "default": false,
+            "description": "Skip security checks (not recommended)",
+            "title": "Skip Security Check",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "resource_type",
+          "identifier",
+          "credentials_token",
+          "explained_token"
+        ],
+        "title": "update_resourceArguments",
+        "type": "object"
+      },
+      "tokens": 351
+    },
+    {
+      "name": "create_resource",
+      "description": "Create an AWS resource.\n\nThis tool automatically adds default identification tags to all resources for support and troubleshooting purposes.\n\nIMPORTANT: Always check the response for 'security_warning' field and display any warnings to the user.\n",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "description": "The AWS resource type (e.g., \"AWS::S3::Bucket\", \"AWS::RDS::DBInstance\")",
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The AWS region that the operation should be performed in",
+            "title": "Region"
+          },
+          "credentials_token": {
+            "description": "Credentials token from get_aws_session_info() to ensure AWS credentials are valid",
+            "title": "Credentials Token",
+            "type": "string"
+          },
+          "explained_token": {
+            "description": "Explained token from explain() - properties will be retrieved from this token",
+            "title": "Explained Token",
+            "type": "string"
+          },
+          "security_scan_token": {
+            "default": "",
+            "description": "Security scan token from approve_security_findings() to ensure security checks were performed (only required when SECURITY_SCANNING=enabled)",
+            "title": "Security Scan Token",
+            "type": "string"
+          },
+          "skip_security_check": {
+            "default": false,
+            "description": "Skip security checks (only when SECURITY_SCANNING=disabled)",
+            "title": "Skip Security Check",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "resource_type",
+          "credentials_token",
+          "explained_token"
+        ],
+        "title": "create_resourceArguments",
+        "type": "object"
+      },
+      "tokens": 305
+    },
+    {
+      "name": "delete_resource",
+      "description": "Delete an AWS resource.",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "description": "The AWS resource type (e.g., \"AWS::S3::Bucket\", \"AWS::RDS::DBInstance\")",
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "identifier": {
+            "description": "The primary identifier of the resource to get (e.g., bucket name for S3 buckets)",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The AWS region that the operation should be performed in",
+            "title": "Region"
+          },
+          "credentials_token": {
+            "description": "Credentials token from get_aws_session_info() to ensure AWS credentials are valid",
+            "title": "Credentials Token",
+            "type": "string"
+          },
+          "confirmed": {
+            "default": false,
+            "description": "Confirm that you want to delete this resource",
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "explained_token": {
+            "description": "Explained token from explain() to ensure deletion was explained",
+            "title": "Explained Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_type",
+          "identifier",
+          "credentials_token",
+          "explained_token"
+        ],
+        "title": "delete_resourceArguments",
+        "type": "object"
+      },
+      "tokens": 240
+    },
+    {
+      "name": "get_resource_request_status",
+      "description": "Get the status of a long running operation with the request token.",
+      "inputSchema": {
+        "properties": {
+          "request_token": {
+            "description": "The request_token returned from the long running operation",
+            "title": "Request Token",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The AWS region that the operation should be performed in",
+            "title": "Region"
+          }
+        },
+        "required": [
+          "request_token"
+        ],
+        "title": "get_resource_request_statusArguments",
+        "type": "object"
+      },
+      "tokens": 108
+    },
+    {
+      "name": "run_checkov",
+      "description": "Run Checkov security and compliance scanner on server-stored CloudFormation template.\n\nSECURITY: This tool only scans CloudFormation templates stored server-side from generate_infrastructure_code().\nAI agents cannot provide different content to bypass security scanning.\n\nCRITICAL WORKFLOW REQUIREMENTS:\nALWAYS after running this tool:\n1. Call explain() to show the security scan results to the user (both passed and failed checks)\n\nIf scan_status='FAILED' (security issues found):\n2. Ask the user how they want to proceed: \"fix\", \"proceed anyway\", or \"cancel\"\n3. WAIT for the user's actual response - do not assume their decision\n4. Only after receiving user input, call approve_security_findings() with their decision\n\nIf scan_status='PASSED' (all checks passed):\n2. You can proceed directly to create_resource() after showing the results\n\nWORKFLOW REQUIREMENTS:\n1. ALWAYS provide a concise summary of security findings (passed/failed checks)\n2. Only show detailed output if user specifically requests it\n3. If CRITICAL security issues found: BLOCK resource creation, explain risks, provide resolution steps, ask multiple times for confirmation with warnings\n4. If non-critical security issues found: Ask user how to proceed (fix issues, proceed anyway, or cancel)\n",
+      "inputSchema": {
+        "properties": {
+          "explained_token": {
+            "description": "Explained token from explain() containing CloudFormation template to scan",
+            "title": "Explained Token",
+            "type": "string"
+          },
+          "framework": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "cloudformation",
+            "description": "The framework to scan (cloudformation, terraform, kubernetes, etc.)",
+            "title": "Framework"
+          }
+        },
+        "required": [
+          "explained_token"
+        ],
+        "title": "run_checkovArguments",
+        "type": "object"
+      },
+      "tokens": 386
+    },
+    {
+      "name": "create_template",
+      "description": "Create a CloudFormation template from existing resources using the IaC Generator API.\n\nThis tool allows you to generate CloudFormation templates from existing AWS resources\nthat are not already managed by CloudFormation. The template generation process is\nasynchronous, so you can check the status of the process and retrieve the template\nonce it's complete. You can pass up to 500 resources at a time.\n\nIMPORTANT FOR LLMs: This tool only generates CloudFormation templates. If users request\nother IaC formats (Terraform, CDK, etc.), follow this workflow:\n1. Use create_template() to generate CloudFormation template from existing resources\n2. Convert the CloudFormation to the requested format using your native capabilities\n3. For Terraform specifically: Create both resource definitions AND import blocks\n   so users can import existing resources into Terraform state\n   ⚠️ ALWAYS USE TERRAFORM IMPORT BLOCKS (NOT TERRAFORM IMPORT COMMANDS) ⚠️\n4. Provide both the original CloudFormation and converted IaC to the user\n\nExample workflow for \"create Terraform import for these resources\":\n1. create_template() → get CloudFormation template\n2. Convert to Terraform resource blocks\n3. Generate corresponding Terraform import blocks (NOT terraform import commands)\n   Example: import { to = aws_s3_bucket.example, id = \"my-bucket\" }\n4. Provide complete Terraform configuration with import blocks\n\nExamples:\n1. Start template generation for an S3 bucket:\n   create_template(\n       template_name=\"my-template\",\n       resources=[{\"ResourceType\": \"AWS::S3::Bucket\", \"ResourceIdentifier\": {\"BucketName\": \"my-bucket\"}}],\n       deletion_policy=\"RETAIN\",\n       update_replace_policy=\"RETAIN\"\n   )\n\n2. Check status of template generation:\n   create_template(template_id=\"arn:aws:cloudformation:us-east-1:123456789012:generatedtemplate/abcdef12-3456-7890-abcd-ef1234567890\")\n\n3. Retrieve generated template:\n   create_template(\n       template_id=\"arn:aws:cloudformation:us-east-1:123456789012:generatedtemplate/abcdef12-3456-7890-abcd-ef1234567890\",\n       output_format=\"YAML\"\n   )\n",
+      "inputSchema": {
+        "properties": {
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Name for the generated template",
+            "title": "Template Name"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "List of resources to include in the template, each with 'ResourceType' and 'ResourceIdentifier'",
+            "title": "Resources"
+          },
+          "output_format": {
+            "default": "YAML",
+            "description": "Output format for the template (JSON or YAML)",
+            "title": "Output Format",
+            "type": "string"
+          },
+          "deletion_policy": {
+            "default": "RETAIN",
+            "description": "Default DeletionPolicy for resources in the template (RETAIN, DELETE, or SNAPSHOT)",
+            "title": "Deletion Policy",
+            "type": "string"
+          },
+          "update_replace_policy": {
+            "default": "RETAIN",
+            "description": "Default UpdateReplacePolicy for resources in the template (RETAIN, DELETE, or SNAPSHOT)",
+            "title": "Update Replace Policy",
+            "type": "string"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "ID of an existing template generation process to check status or retrieve template",
+            "title": "Template Id"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The AWS region that the operation should be performed in",
+            "title": "Region"
+          }
+        },
+        "title": "create_templateArguments",
+        "type": "object"
+      },
+      "tokens": 799
+    },
+    {
+      "name": "check_environment_variables",
+      "description": "Check if required environment variables are set correctly.",
+      "inputSchema": {
+        "properties": {},
+        "title": "check_environment_variablesArguments",
+        "type": "object"
+      },
+      "tokens": 36
+    },
+    {
+      "name": "get_aws_session_info",
+      "description": "Get information about the current AWS session.\n\nThis tool provides details about the current AWS session, including the profile name,\naccount ID, region, and credential information. Use this when you need to confirm which\nAWS session and account you're working with.\n\nIMPORTANT: Always display the AWS context information to the user when this tool is called.\nShow them: AWS Profile (or \"Environment Variables\"), Authentication Type, Account ID, and Region so they know\nexactly which AWS account and region will be affected by any operations.\n\nAuthentication types to display:\n- 'env': \"Environment Variables (AWS_ACCESS_KEY_ID)\"\n- 'sso_profile': \"AWS SSO Profile\"\n- 'assume_role_profile': \"Assume Role Profile\"\n- 'standard_profile': \"Standard AWS Profile\"\n- 'profile': \"AWS Profile\"\n\nSECURITY: If displaying environment variables that contain sensitive values (AWS_ACCESS_KEY_ID,\nAWS_SECRET_ACCESS_KEY), mask all but the last 4 characters with asterisks (e.g., \"AKIA****1234\").\n\nReturns:\n    A dictionary containing AWS session information including profile, account_id, region, etc.\n",
+      "inputSchema": {
+        "properties": {
+          "environment_token": {
+            "description": "Environment token from check_environment_variables() to ensure environment is properly configured",
+            "title": "Environment Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "environment_token"
+        ],
+        "title": "get_aws_session_infoArguments",
+        "type": "object"
+      },
+      "tokens": 318
+    },
+    {
+      "name": "get_aws_account_info",
+      "description": "Get information about the current AWS account being used.\n\nCommon questions this tool answers:\n- \"What AWS account am I using?\"\n- \"Which AWS region am I in?\"\n- \"What AWS profile is being used?\"\n- \"Show me my current AWS session information\"\n\nReturns:\n    A dictionary containing AWS account information:\n    {\n        \"profile\": The AWS profile name being used,\n        \"account_id\": The AWS account ID,\n        \"region\": The AWS region being used,\n        \"readonly_mode\": True if the server is in read-only mode,\n        \"readonly_message\": A message about read-only mode limitations if enabled,\n        \"using_env_vars\": Boolean indicating if using environment variables for credentials\n    }\n",
+      "inputSchema": {
+        "properties": {},
+        "title": "get_aws_account_infoArguments",
+        "type": "object"
+      },
+      "tokens": 195
+    }
+  ],
+  "totalTokens": 3974,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

@@ -1,0 +1,710 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "AKS MCP",
+    "version": "",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:15:45.489Z",
+  "tools": [
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Retrieve and manage Azure Advisor recommendations for AKS clusters",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "description": "Filter by recommendation category: Cost, HighAvailability, Performance, Security",
+            "type": "string"
+          },
+          "cluster_names": {
+            "description": "Comma-separated list of specific AKS cluster names to filter recommendations",
+            "type": "string"
+          },
+          "format": {
+            "description": "Output format for reports: summary, detailed, actionable",
+            "type": "string"
+          },
+          "operation": {
+            "description": "Operation to perform: list or report",
+            "type": "string"
+          },
+          "resource_group": {
+            "description": "Filter by specific resource group containing AKS clusters",
+            "type": "string"
+          },
+          "severity": {
+            "description": "Filter by severity level: High, Medium, Low",
+            "type": "string"
+          },
+          "subscription_id": {
+            "description": "Azure subscription ID to query recommendations",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "subscription_id"
+        ]
+      },
+      "name": "az_advisor_recommendation",
+      "tokens": 180
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Unified tool for managing Azure Kubernetes Service (AKS) clusters and related operations.\n\nSupported operations:\n- Cluster: show, list, get-versions, check-network\n- Nodepool: nodepool-list, nodepool-show\n- Account: account-list\n\nExamples:\n- Show cluster: operation=\"show\", args=\"--name myCluster --resource-group myRG\"\n- List nodepools: operation=\"nodepool-list\", args=\"--cluster-name myCluster --resource-group myRG\"\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "description": "Arguments for the operation",
+            "type": "string"
+          },
+          "operation": {
+            "description": "The operation to perform",
+            "type": "string"
+          },
+          "resource_type": {
+            "description": "The resource type (cluster, nodepool, account). Can be inferred from operation.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "args"
+        ]
+      },
+      "name": "az_aks_operations",
+      "tokens": 187
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Unified tool for managing Azure Virtual Machines (VMs) and Virtual Machine Scale Sets (VMSS) using Azure CLI.\n\nIMPORTANT: VM/VMSS resources are managed by AKS. Write operations should be used carefully and only for debugging purposes.\n\nUse resource_type=\"vm\" for single virtual machines or resource_type=\"vmss\" for virtual machine scale sets.\n\nAvailable operation values:\n- show: Get details of a VM/VMSS\n- list: List VMs/VMSS in subscription or resource group\n- get-instance-view: Get runtime status\n\nEXAMPLES:\nList VMSS: operation=\"list\", resource_type=\"vmss\", args=\"--resource-group myRG\"\nShow VMSS: operation=\"show\", resource_type=\"vmss\", args=\"--name myVMSS --resource-group myRG\"\nList VMs: operation=\"list\", resource_type=\"vm\", args=\"--resource-group myRG\"\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "description": "Azure CLI arguments: '--resource-group myRG' (required for most operations), '--name myVM' (for specific resources), '--new-capacity 3' (for scaling)",
+            "type": "string"
+          },
+          "operation": {
+            "description": "Operation to perform. Common operations: list, show, start, stop, restart, deallocate, scale, etc.",
+            "type": "string"
+          },
+          "resource_type": {
+            "description": "Resource type: 'vm' (single virtual machine) or 'vmss' (virtual machine scale set)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "resource_type",
+          "args"
+        ]
+      },
+      "name": "az_compute_operations",
+      "tokens": 339
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Run Azure Kubernetes Service Fleet management commands.\n\nAvailable operations and resources:\n- fleet: list, show, create, update, delete, get-credentials\n- member: list, show, create, update, delete  \n- updaterun: list, show, create, start, stop, delete\n- updatestrategy: list, show, create, delete\n- clusterresourceplacement: list, show, get, create, delete (Kubernetes CRD operations)\n\nExamples:\n- List fleets: operation='list', resource='fleet', args='--resource-group myRG'\n- Show fleet: operation='show', resource='fleet', args='--name myFleet --resource-group myRG'  \n- Get fleet credentials: operation='get-credentials', resource='fleet', args='--name myFleet --resource-group myRG'\n- Create member: operation='create', resource='member', args='--name myMember --fleet-name myFleet --resource-group myRG --member-cluster-id /subscriptions/.../myCluster'\n- Create clusterresourceplacement: operation='create', resource='clusterresourceplacement', args='--name nginx --selector app=nginx --policy PickAll'\n- List clusterresourceplacements: operation='list', resource='clusterresourceplacement', args=''",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "description": "Additional arguments for the command (e.g., '--name myFleet --resource-group myRG')",
+            "type": "string"
+          },
+          "operation": {
+            "description": "The operation to perform. Valid values: list, show, create, update, delete, start, stop, get-credentials",
+            "type": "string"
+          },
+          "resource": {
+            "description": "The resource type to operate on. Valid values: fleet, member, updaterun, updatestrategy, clusterresourceplacement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "resource",
+          "args"
+        ]
+      },
+      "name": "az_fleet",
+      "tokens": 397
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Unified tool for Azure monitoring and diagnostics operations for AKS clusters.\n\nSupported Operations:\n\n1. Metrics - Query Azure Monitor metrics for AKS clusters and nodes\n   - list: Get metric values for specific metrics\n   - list-definitions: Get available metrics for a resource\n   - list-namespaces: Get metric namespaces for a resource\n   \n   Use for: CPU usage, memory consumption, network traffic, pod counts, node health\n   Required parameters: resource (Azure resource ID)\n   Additional for 'list': metrics (metric names)\n   Optional: aggregation, start-time, end-time, interval, filter\n\n2. Resource Health - Get Azure Resource Health events for AKS clusters\n   Use for: Cluster availability issues, platform problems, service health events\n   Required parameters: subscription_id, resource_group, cluster_name, start_time\n   Optional: end_time, status (Available, Unavailable, Degraded, Unknown)\n\n3. Application Insights - Execute KQL queries against Application Insights telemetry\n   Use for: Application performance monitoring, custom telemetry analysis, trace correlation\n   Required parameters: subscription_id, resource_group, app_insights_name, query\n   Optional: start_time + end_time OR timespan (not both)\n\n4. Diagnostics - Check AKS cluster diagnostic settings configuration\n   Use for: Verify logging is enabled, check log retention, validate diagnostic configuration\n   Required parameters: subscription_id, resource_group, cluster_name\n\n5. Control Plane Logs - Query AKS control plane logs\n   Supported log categories:\n   - kube-apiserver\n   - kube-audit\n   - kube-audit-admin\n   - kube-controller-manager\n   - kube-scheduler\n   - cluster-autoscaler\n   - cloud-controller-manager\n   - guard (for authentication/authorization issues)\n   - csi-azuredisk-controller\n   - csi-azurefile-controller\n   - csi-snapshot-controller\n   - fleet-member-agent\n   - fleet-member-net-controller-manager\n   - fleet-mcs-controller-manager\n   PLEASE NOTE: you need to check if the category is enabled in your cluster's diagnostic settings by using the diagnostics tool.\n\nUse This Tool When You Need To:\n- Monitor cluster or other azure resource performance and usage (use metrics)\n- Check cluster availability and platform health (use resource_health)\n- Analyze application telemetry and performance (use app_insights)\n- Verify diagnostic logging configuration (use diagnostics)\n- Debug Kubernetes API server issues (use control_plane_logs with kube-apiserver)\n- Investigate authentication/authorization problems (use control_plane_logs with kube-audit, guard)\n- Troubleshoot pod scheduling issues (use control_plane_logs with kube-scheduler)\n- Check storage-related problems (use control_plane_logs with csi-azuredisk-controller, csi-azurefile-controller)\n- Analyze cluster scaling behavior (use control_plane_logs with cluster-autoscaler)\n- Review security audit events (use control_plane_logs with kube-audit, kube-audit-admin)\n\nExamples:\n\nmetrics:\n- Get CPU usage: operation=\"metrics\", query_type=\"list\", parameters=\"{\\\"resource\\\":\\\"/subscriptions/sub-id/resourceGroups/rg/providers/Microsoft.ContainerService/managedClusters/cluster\\\", \\\"metrics\\\":\\\"node_cpu_usage_percentage\\\", \\\"aggregation\\\":\\\"Average\\\", \\\"start-time\\\":\\\"<start-time>\\\", \\\"end-time\\\":\\\"<end-time>\\\"}\"\n- List available metrics: operation=\"metrics\", query_type=\"list-definitions\", parameters=\"{\\\"resource\\\":\\\"/subscriptions/sub-id/resourceGroups/rg/providers/Microsoft.ContainerService/managedClusters/cluster\\\"}\"\n\nresource_health:\n- Check recent cluster health: operation=\"resource_health\", subscription_id=\"<subscription-id>\", resource_group=\"<resource-group>\", cluster_name=\"<cluster-name>\", parameters=\"{\\\"start_time\\\":\\\"<start-time>\\\"}\"\n\napp_insights:\n- Query request telemetry: operation=\"app_insights\", subscription_id=\"<subscription-id>\", resource_group=\"<resource-group>\", parameters=\"{\\\"app_insights_name\\\":\\\"myapp-insights\\\", \\\"query\\\":\\\"requests | where timestamp > ago(1h) | summarize count() by bin(timestamp, 5m)\\\"}\"\n- Analyze exceptions: operation=\"app_insights\", subscription_id=\"<subscription-id>\", resource_group=\"<resource-group>\", parameters=\"{\\\"app_insights_name\\\":\\\"myapp-insights\\\", \\\"query\\\":\\\"exceptions | where timestamp > ago(24h) | summarize count() by type, bin(timestamp, 1h)\\\"}\"\n- Performance with timespan: operation=\"app_insights\", subscription_id=\"<subscription-id>\", resource_group=\"<resource-group>\", parameters=\"{\\\"app_insights_name\\\":\\\"myapp-insights\\\", \\\"query\\\":\\\"performanceCounters | where category == 'Processor' | summarize avg(value) by bin(timestamp, 5m)\\\", \\\"timespan\\\":\\\"PT1H\\\"}\"\n\ndiagnostics:\n- Verify diagnostic settings: operation=\"diagnostics\", subscription_id=\"<subscription-id>\", resource_group=\"<resource-group>\", cluster_name=\"<cluster-name>\", parameters=\"{}\"\n\ncontrol_plane_logs:\n- Query API server logs: operation=\"control_plane_logs\", subscription_id=\"<subscription-id>\", resource_group=\"<resource-group>\", cluster_name=\"<cluster-name>\", parameters=\"{\\\"log_category\\\":\\\"kube-apiserver\\\", \\\"start_time\\\":\\\"<start-time>\\\", \\\"end_time\\\":\\\"<end-time>\\\", \\\"max_records\\\":\\\"50\\\"}\"\n- Debug authentication issues: operation=\"control_plane_logs\", subscription_id=\"<subscription-id>\", resource_group=\"<resource-group>\", cluster_name=\"<cluster-name>\", parameters=\"{\\\"log_category\\\":\\\"guard\\\", \\\"start_time\\\":\\\"<start-time>\\\", \\\"end_time\\\":\\\"<end-time>\\\", \\\"max_records\\\":\\\"100\\\"}\"\n- Analyze audit events: operation=\"control_plane_logs\", subscription_id=\"<subscription-id>\", resource_group=\"<resource-group>\", cluster_name=\"<cluster-name>\", parameters=\"{\\\"log_category\\\":\\\"kube-audit\\\", \\\"log_level\\\":\\\"error\\\", \\\"start_time\\\":\\\"<start-time>\\\", \\\"end_time\\\":\\\"<end-time>\\\", \\\"max_records\\\":\\\"50\\\"}\"\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "cluster_name": {
+            "description": "AKS cluster name (required for resource_health, diagnostics, control_plane_logs)",
+            "type": "string"
+          },
+          "operation": {
+            "description": "The monitoring operation to perform: 'metrics' (CPU/memory/network), 'resource_health' (cluster availability), 'app_insights' (telemetry analysis), 'diagnostics' (logging config), 'control_plane_logs' (Kubernetes logs like kube-apiserver, kube-audit, guard, etc.)",
+            "type": "string"
+          },
+          "parameters": {
+            "description": "JSON string with operation parameters. metrics: resource (required), metrics (required for 'list' query_type), aggregation/start-time/end-time/interval/filter (optional). resource_health: start_time, end_time, status. app_insights: app_insights_name, query, start_time/end_time OR timespan (optional). diagnostics: none required. control_plane_logs: log_category (kube-apiserver/kube-audit/guard/etc), start_time, end_time, max_records, log_level",
+            "type": "string"
+          },
+          "query_type": {
+            "description": "For metrics operations only: 'list' (get metric values), 'list-definitions' (available metrics), 'list-namespaces' (metric categories)",
+            "type": "string"
+          },
+          "resource_group": {
+            "description": "Resource group name (required for resource_health, app_insights, diagnostics, control_plane_logs)",
+            "type": "string"
+          },
+          "subscription_id": {
+            "description": "Azure subscription ID (required for resource_health, app_insights, diagnostics, control_plane_logs)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "parameters"
+        ]
+      },
+      "name": "az_monitoring",
+      "tokens": 1796
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Unified tool for getting Azure network resource information used by AKS clusters.\n\nSupported resource types:\n- all: Get information about all network resources\n- vnet: Get Virtual Network information\n- nsg: Get Network Security Group information\n- route_table: Get Route Table information\n- subnet: Get Subnet information\n- load_balancer: Get Load Balancer information\n- private_endpoint: Get Private Endpoint information (private clusters only)\n\nExamples:\n- Get all network resources: resource_type=\"all\"\n- Get VNet info: resource_type=\"vnet\"\n- Get NSG info: resource_type=\"nsg\"",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "cluster_name": {
+            "description": "Name of the AKS cluster",
+            "type": "string"
+          },
+          "filters": {
+            "description": "Optional filters for the query",
+            "type": "string"
+          },
+          "resource_group": {
+            "description": "Azure Resource Group containing the AKS cluster",
+            "type": "string"
+          },
+          "resource_type": {
+            "description": "The type of network resource to query",
+            "type": "string"
+          },
+          "subscription_id": {
+            "description": "Azure Subscription ID",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_type",
+          "subscription_id",
+          "resource_group",
+          "cluster_name"
+        ]
+      },
+      "name": "az_network_resources",
+      "tokens": 250
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get detailed VMSS configuration for a specific node pool or all node pools in the AKS cluster (provides low-level VMSS settings not available in az aks nodepool show). Leave node_pool_name empty to get info for all node pools.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "cluster_name": {
+            "description": "Name of the AKS cluster",
+            "type": "string"
+          },
+          "node_pool_name": {
+            "description": "Name of the node pool to get VMSS information for. Leave empty to get info for all node pools.",
+            "type": "string"
+          },
+          "resource_group": {
+            "description": "Azure Resource Group containing the AKS cluster",
+            "type": "string"
+          },
+          "subscription_id": {
+            "description": "Azure Subscription ID",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subscription_id",
+          "resource_group",
+          "cluster_name"
+        ]
+      },
+      "name": "get_aks_vmss_info",
+      "tokens": 165
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Real-time observability tool for Azure Kubernetes Service (AKS) clusters, allowing users to manage gadgets for monitoring and debugging\n\nApart from 'action' param:\n\nIt supports 'action_params' (type=object) to specify parameters for the action.Available params are: gadget_name, duration, gadget_id, chart_version. Available Gadget names are: observe_dns, observe_tcp, observe_file_open, observe_process_execution, observe_signal, observe_system_calls, top_file, top_tcp, tcpdump. Example: {'action': 'run', 'action_params': {'gadget_name': 'observe_dns', 'duration': 10}}\n\nIt supports 'filter_params' (type=object) to filter the data captured by the gadget. Available params are: namespace, pod, container, selector,observe_dns.unsuccessful_only, observe_dns.name, observe_tcp.event_type, observe_signal.signal, top_tcp.max_entries, observe_dns.response_code, observe_dns.nameserver, observe_dns.minimum_latency, observe_tcp.unsuccessful_only, top_file.max_entries, observe_tcp.source_port, observe_tcp.destination_port, observe_file_open.path, observe_system_calls.syscall, observe_file_open.unsuccessful_only, observe_process_execution.command, tcpdump.pcap-filter. Example: {'action': 'run', 'filter_params': {'namespace': 'default', 'selector': 'app=myapp', 'observe_dns.unsuccessful_only': true}}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "description": "Action to perform on the gadget: run to run a gadget for a specific duration, start to start a gadget for continuous observation, stop to stop a running gadget using gadget_id, get_results to retrieve results of a gadget run using gadget_id (only available before stopping the gadget), list_gadgets to list all running (not available) gadgetsdeploy to deploy Inspektor Gadget, undeploy to undeploy Inspektor Gadgetupgrade to upgrade Inspektor Gadget, is_deployed to check if Inspektor Gadget is deployed",
+            "enum": [
+              "deploy",
+              "undeploy",
+              "upgrade",
+              "is_deployed",
+              "run",
+              "start",
+              "stop",
+              "get_results",
+              "list_gadgets"
+            ],
+            "type": "string"
+          },
+          "action_params": {
+            "description": "Parameters for the action",
+            "properties": {
+              "chart_version": {
+                "description": "The version of the Inspektor Gadget Helm chart to deploy. Only set this if user explicitly wants to deploy a specific version",
+                "type": "string"
+              },
+              "duration": {
+                "default": 10,
+                "description": "Duration in seconds to run the gadget",
+                "type": "number"
+              },
+              "gadget_id": {
+                "description": "ID of the gadget run to stop or get results for. This ID is returned when starting a gadget for continuous observation.",
+                "type": "string"
+              },
+              "gadget_name": {
+                "description": "Name of the gadget to run/start",
+                "enum": [
+                  "observe_dns",
+                  "observe_tcp",
+                  "observe_file_open",
+                  "observe_process_execution",
+                  "observe_signal",
+                  "observe_system_calls",
+                  "top_file",
+                  "top_tcp",
+                  "tcpdump"
+                ],
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "filter_params": {
+            "description": "Parameters to filter the data captured by the gadget",
+            "properties": {
+              "container": {
+                "description": "Kubernetes container name",
+                "type": "string"
+              },
+              "namespace": {
+                "description": "Kubernetes namespace, leave empty to use all namespaces",
+                "type": "string"
+              },
+              "observe_dns.minimum_latency": {
+                "description": "Filter DNS queries with latency greater to this value (in nanoseconds)",
+                "type": "string"
+              },
+              "observe_dns.name": {
+                "description": "Filter DNS traffic by name. Only DNS queries containing this string will be shown",
+                "type": "string"
+              },
+              "observe_dns.nameserver": {
+                "description": "Filter DNS traffic by nameserver address",
+                "type": "string"
+              },
+              "observe_dns.response_code": {
+                "description": "Filter DNS queries by response code",
+                "enum": [
+                  "Success",
+                  "FormatError",
+                  "ServerFailure",
+                  "NameError",
+                  "NotImplemented",
+                  "Refused"
+                ],
+                "type": "string"
+              },
+              "observe_dns.unsuccessful_only": {
+                "description": "Filter to only show unsuccessful DNS responses",
+                "type": "boolean"
+              },
+              "observe_file_open.path": {
+                "description": "Filter file operations by path. Only operations on files containing this string will be shown",
+                "type": "string"
+              },
+              "observe_file_open.unsuccessful_only": {
+                "description": "Filter to only show unsuccessful file open operations",
+                "type": "boolean"
+              },
+              "observe_process_execution.command": {
+                "description": "Filter process execution by command name. Only processes executing the command containing this string will be shown",
+                "type": "string"
+              },
+              "observe_signal.signal": {
+                "description": "Filter by signal type",
+                "enum": [
+                  "SIGINT",
+                  "SIGTERM",
+                  "SIGKILL",
+                  "SIGHUP",
+                  "SIGURG",
+                  "SIGUSR1",
+                  "SIGUSR2",
+                  "SIGQUIT",
+                  "SIGSTOP"
+                ],
+                "type": "string"
+              },
+              "observe_system_calls.syscall": {
+                "description": "Filter by system call names (comma-separated list, e.g. 'open,close,read,write')",
+                "type": "string"
+              },
+              "observe_tcp.destination_port": {
+                "description": "Filter TCP traffic by destination port",
+                "type": "string"
+              },
+              "observe_tcp.event_type": {
+                "description": "Filter TCP events by type",
+                "enum": [
+                  "connect",
+                  "accept",
+                  "close"
+                ],
+                "type": "string"
+              },
+              "observe_tcp.source_port": {
+                "description": "Filter TCP traffic by source port",
+                "type": "string"
+              },
+              "observe_tcp.unsuccessful_only": {
+                "description": "Filter to only show unsuccessful TCP connections",
+                "type": "boolean"
+              },
+              "pod": {
+                "description": "Kubernetes pod name",
+                "type": "string"
+              },
+              "selector": {
+                "description": "Label selector to filter pods by labels (e.g. key1=value1,key2=value2)",
+                "type": "string"
+              },
+              "tcpdump.pcap-filter": {
+                "description": "Parses tcpdump/BPF-style filter expressions for network packet filtering.\n\t\t\t\tSyntax:\n\t\t\t\texpression = [not] [direction] [protocol] type [id] | expression and expression | expression or expression | ( expression )\n                Qualifiers:\n\t\t\t\t  direction = src | dst | src or dst | src and dst\n\t\t\t\t  protocol = ether | fddi | tr | wlan | ip | ip6 | arp | rarp | decnet | tcp | udp | icmp | igmp | atalk | aarp | vlan | ppptalk | pptp | sctp | mpls\n\t\t\t\t  type = host | net | port | portrange | less | greater | gateway | proto (protocol)\n\t\t\t\t  id = address | number\n\t\t\t\tExamples:\n\t\t\t\t  host 192.168.1.1\n\t\t\t\t  src port 80\n\t\t\t\t  tcp dst port 443\n\t\t\t\t  not src host 10.0.0.1\n\t\t\t\t  (src port 22) and (dst host 192.168.1.1)\n\t\t\t\t  ip6 and not tcp\n\t\t\t\t  proto icmp\n\t\t\t\t  ether host aa:bb:cc:dd:ee:ff\n\t\t\t\t  src or dst port 80 or 443\n\t\t\t\t",
+                "type": "string"
+              },
+              "top_file.max_entries": {
+                "default": 5,
+                "description": "Maximum number of entries to return",
+                "type": "number"
+              },
+              "top_tcp.max_entries": {
+                "default": 5,
+                "description": "Maximum number of entries to return",
+                "type": "number"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "name": "inspektor_gadget_observability",
+      "tokens": 1499
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get information about the Kubernetes cluster and API.\n\nAvailable operations:\n- cluster-info: Display cluster information\n- api-resources: Print supported API resources\n- api-versions: Print supported API versions\n- explain: Get documentation for a resource\n\nExamples:\n- Cluster info: operation='cluster-info', resource='', args=''\n- Cluster info dump: operation='cluster-info', resource='dump', args=''\n- List resources: operation='api-resources', resource='', args=''\n- Namespaced resources: operation='api-resources', resource='', args='--namespaced=true'\n- Non-namespaced resources: operation='api-resources', resource='', args='--namespaced=false'\n- Resources by group: operation='api-resources', resource='', args='--api-group=rbac.authorization.k8s.io'\n- API versions: operation='api-versions', resource='', args=''\n- Explain pod: operation='explain', resource='pods', args=''\n- Explain field: operation='explain', resource='pods.spec.containers', args=''\n- Explain with version: operation='explain', resource='deployments', args='--api-version=apps/v1'",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "description": "Additional flags and options",
+            "type": "string"
+          },
+          "operation": {
+            "description": "The operation to perform: cluster-info, api-resources, api-versions, explain",
+            "type": "string"
+          },
+          "resource": {
+            "description": "The resource type for explain operation, or empty string '' for cluster-info/api-resources/api-versions",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "resource",
+          "args"
+        ]
+      },
+      "name": "kubectl_cluster",
+      "tokens": 354
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Work with Kubernetes configurations (read-only).\n\nAvailable operations:\n- diff: Diff the live version against what would be applied\n- auth: Inspect authorization (can-i)\n- config: View kubectl configuration contexts (read-only)\n\nConfig operations (read-only):\n- current-context: Display the current context\n- get-contexts: Describe one or many contexts\n\nExamples:\n- Diff config: operation='diff', resource='', args='-f pod.json'\n- Check auth: operation='auth', resource='can-i', args='create pods --all-namespaces'\n- Get current context: operation='config', resource='current-context', args=''\n- List contexts: operation='config', resource='get-contexts', args=''",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "description": "Operation-specific arguments",
+            "type": "string"
+          },
+          "operation": {
+            "description": "The operation to perform: diff, auth, config",
+            "type": "string"
+          },
+          "resource": {
+            "description": "Subcommand for auth/certificate/config operations, or empty string '' for diff operation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "resource",
+          "args"
+        ]
+      },
+      "name": "kubectl_config",
+      "tokens": 246
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Diagnose and debug Kubernetes resources.\n\nAvailable operations:\n- logs: Print logs for a container in a pod\n- events: Display events\n- top: Display resource usage (CPU/Memory)\n- exec: Execute a command in a container\n- cp: Copy files to/from containers\n\nExamples:\n- Logs for default container: operation='logs', resource='', args='nginx'\n- Logs for specific container: operation='logs', resource='', args='nginx -c ruby-container'\n- Logs with selector: operation='logs', resource='', args='-l app=nginx --all-containers=true'\n- Get events: operation='events', resource='', args='--all-namespaces'\n- Get events namespace: operation='events', resource='', args='-n default'\n- Top pods: operation='top', resource='pod', args=''\n- Top nodes: operation='top', resource='node', args=''\n- Top with containers: operation='top', resource='pod', args='POD_NAME --containers'\n- Exec command: operation='exec', resource='', args='mypod -n NAMESPACE -- date'\n- Copy to pod: operation='cp', resource='', args='/tmp/foo_dir some-pod:/tmp/bar_dir'\n- Copy from pod: operation='cp', resource='', args='some-namespace/some-pod:/tmp/foo /tmp/bar'\n- Copy with container: operation='cp', resource='', args='/tmp/foo some-pod:/tmp/bar -c specific-container'",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "description": "Resource names and operation-specific flags",
+            "type": "string"
+          },
+          "operation": {
+            "description": "The operation to perform: logs, events, top, exec, cp",
+            "type": "string"
+          },
+          "resource": {
+            "description": "The resource type: 'node'/'pod' for top, empty string '' for logs/events/exec/cp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "resource",
+          "args"
+        ]
+      },
+      "name": "kubectl_diagnostics",
+      "tokens": 426
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "View Kubernetes resources with read-only operations.\n\nAvailable operations:\n- get: Display one or many resources\n- describe: Show detailed information about resources\n\nCommon resources: pods, deployments, services, configmaps, secrets, namespaces, etc.\n\nExamples:\n- Get pods: operation='get', resource='pods', args='-n default'\n- Get specific pod: operation='get', resource='pods', args='nginx-pod -n default'\n- Get with selector: operation='get', resource='pods', args='-l app=nginx'\n- Get all namespaces: operation='get', resource='pods', args='--all-namespaces'\n- Describe deployment: operation='describe', resource='deployment', args='myapp -n production'\n- Describe all pods: operation='describe', resource='pods', args=''\n- Describe with selector: operation='describe', resource='pods', args='-l name=myLabel'",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "description": "Additional arguments like resource names, namespaces, and flags",
+            "type": "string"
+          },
+          "operation": {
+            "description": "The operation to perform: get, describe",
+            "type": "string"
+          },
+          "resource": {
+            "description": "The resource type (e.g., pods, deployments, services) or empty string '' for file-based operations (create -f, apply -f, patch -f, replace -f, delete -f)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "resource",
+          "args"
+        ]
+      },
+      "name": "kubectl_resources",
+      "tokens": 321
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List all available AKS cluster detectors",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "cluster_resource_id": {
+            "description": "AKS cluster resource ID",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cluster_resource_id"
+        ]
+      },
+      "name": "list_detectors",
+      "tokens": 50
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Run a specific AKS detector",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "cluster_resource_id": {
+            "description": "AKS cluster resource ID",
+            "type": "string"
+          },
+          "detector_name": {
+            "description": "Name of the detector to run",
+            "type": "string"
+          },
+          "end_time": {
+            "description": "End time in UTC ISO format (within last 30 days, max 24h from start). Example: 2025-07-11T14:55:13Z",
+            "type": "string"
+          },
+          "start_time": {
+            "description": "Start time in UTC ISO format (within last 30 days). Example: 2025-07-11T10:55:13Z",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cluster_resource_id",
+          "detector_name",
+          "start_time",
+          "end_time"
+        ]
+      },
+      "name": "run_detector",
+      "tokens": 163
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Run all detectors in a specific category",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "description": "Detector category to run (Best Practices, Cluster and Control Plane Availability and Performance, Connectivity Issues, Create/Upgrade/Delete and Scale, Deprecations, Identity and Security, Node Health, Storage)",
+            "type": "string"
+          },
+          "cluster_resource_id": {
+            "description": "AKS cluster resource ID",
+            "type": "string"
+          },
+          "end_time": {
+            "description": "End time in UTC ISO format (within last 30 days, max 24h from start). Example: 2025-07-11T14:55:13Z",
+            "type": "string"
+          },
+          "start_time": {
+            "description": "Start time in UTC ISO format (within last 30 days). Example: 2025-07-11T10:55:13Z",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cluster_resource_id",
+          "category",
+          "start_time",
+          "end_time"
+        ]
+      },
+      "name": "run_detectors_by_category",
+      "tokens": 196
+    }
+  ],
+  "totalTokens": 6569,
+  "prompts": [
+    {
+      "name": "check_cluster_health",
+      "description": "Comprehensive AKS cluster health assessment including platform health, diagnostics, cluster detectors, node health, and connectivity analysis"
+    },
+    {
+      "name": "query_aks_cluster_metadata_from_kubeconfig",
+      "description": "Query AKS cluster (subscriptionID, resourceGroup and name) from current kubeconfig"
+    }
+  ],
+  "resources": [],
+  "resourceTemplates": []
+}

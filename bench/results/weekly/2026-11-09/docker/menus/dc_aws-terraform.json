@@ -1,0 +1,1431 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "terraform_mcp_server",
+    "version": "1.25.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:51:38.078Z",
+  "tools": [
+    {
+      "name": "ExecuteTerraformCommand",
+      "description": "[DEPRECATED] Execute Terraform workflow commands against an AWS account.\n\nDEPRECATED: This server is deprecated. Use HashiCorp's official Terraform\nMCP Server instead: https://github.com/hashicorp/terraform-mcp-server\n\nThis tool runs Terraform commands (init, plan, validate, apply, destroy) in the\nspecified working directory, with optional variables and region settings.\n\nParameters:\n    command: Terraform command to execute\n    working_directory: Directory containing Terraform files\n    variables: Terraform variables to pass\n    aws_region: AWS region to use\n    strip_ansi: Whether to strip ANSI color codes from output\n\nReturns:\n    A TerraformExecutionResult object containing command output and status\n",
+      "inputSchema": {
+        "properties": {
+          "command": {
+            "description": "Terraform command to execute",
+            "enum": [
+              "init",
+              "plan",
+              "validate",
+              "apply",
+              "destroy"
+            ],
+            "title": "Command",
+            "type": "string"
+          },
+          "working_directory": {
+            "description": "Directory containing Terraform files",
+            "title": "Working Directory",
+            "type": "string"
+          },
+          "variables": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Terraform variables to pass",
+            "title": "Variables"
+          },
+          "aws_region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "AWS region to use",
+            "title": "Aws Region"
+          },
+          "strip_ansi": {
+            "default": true,
+            "description": "Whether to strip ANSI color codes from output",
+            "title": "Strip Ansi",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "command",
+          "working_directory"
+        ],
+        "title": "execute_terraform_commandArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "description": "Result model for Terraform command execution.\n\nAttributes:\n    command: The Terraform command that was executed.\n    status: Execution status (success/error).\n    return_code: The command's return code (0 for success).\n    stdout: Standard output from the Terraform command.\n    stderr: Standard error output from the Terraform command.\n    working_directory: Directory where the command was executed.\n    error_message: Optional error message if execution failed.\n    outputs: Dictionary of output values from Terraform (for apply command).",
+        "properties": {
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "success",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "return_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Return Code"
+          },
+          "stdout": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Stdout"
+          },
+          "stderr": {
+            "default": "",
+            "title": "Stderr",
+            "type": "string"
+          },
+          "working_directory": {
+            "title": "Working Directory",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Message"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Terraform outputs (for apply command)",
+            "title": "Outputs"
+          }
+        },
+        "required": [
+          "command",
+          "status",
+          "working_directory"
+        ],
+        "title": "TerraformExecutionResult",
+        "type": "object"
+      },
+      "tokens": 336
+    },
+    {
+      "name": "ExecuteTerragruntCommand",
+      "description": "[DEPRECATED] Execute Terragrunt workflow commands against an AWS account.\n\nDEPRECATED: This server is deprecated. Use HashiCorp's official Terraform\nMCP Server instead: https://github.com/hashicorp/terraform-mcp-server\n\nThis tool runs Terragrunt commands (init, plan, validate, apply, destroy, run-all) in the\nspecified working directory, with optional variables and region settings. Terragrunt extends\nTerraform's functionality by providing features like remote state management, dependencies\nbetween modules, and the ability to execute Terraform commands on multiple modules at once.\n\nParameters:\n    command: Terragrunt command to execute\n    working_directory: Directory containing Terragrunt files\n    variables: Terraform variables to pass\n    aws_region: AWS region to use\n    strip_ansi: Whether to strip ANSI color codes from output\n    include_dirs: Directories to include in a multi-module run\n    exclude_dirs: Directories to exclude from a multi-module run\n    run_all: Run command on all modules in subdirectories\n    terragrunt_config: Path to a custom terragrunt config file (not valid with run-all)\n\nReturns:\n    A TerragruntExecutionResult object containing command output and status\n",
+      "inputSchema": {
+        "properties": {
+          "command": {
+            "description": "Terragrunt command to execute",
+            "enum": [
+              "init",
+              "plan",
+              "validate",
+              "apply",
+              "destroy",
+              "output",
+              "run-all"
+            ],
+            "title": "Command",
+            "type": "string"
+          },
+          "working_directory": {
+            "description": "Directory containing Terragrunt files",
+            "title": "Working Directory",
+            "type": "string"
+          },
+          "variables": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Terraform variables to pass",
+            "title": "Variables"
+          },
+          "aws_region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "AWS region to use",
+            "title": "Aws Region"
+          },
+          "strip_ansi": {
+            "default": true,
+            "description": "Whether to strip ANSI color codes from output",
+            "title": "Strip Ansi",
+            "type": "boolean"
+          },
+          "include_dirs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Directories to include in a multi-module run",
+            "title": "Include Dirs"
+          },
+          "exclude_dirs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Directories to exclude from a multi-module run",
+            "title": "Exclude Dirs"
+          },
+          "run_all": {
+            "default": false,
+            "description": "Run command on all modules in subdirectories",
+            "title": "Run All",
+            "type": "boolean"
+          },
+          "terragrunt_config": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path to a custom terragrunt config file (not valid with run-all)",
+            "title": "Terragrunt Config"
+          }
+        },
+        "required": [
+          "command",
+          "working_directory"
+        ],
+        "title": "execute_terragrunt_commandArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "description": "Result model for Terragrunt command execution.\n\nAttributes:\n    command: The Terragrunt command that was executed.\n    status: Execution status (success/error).\n    return_code: The command's return code (0 for success).\n    stdout: Standard output from the Terragrunt command.\n    stderr: Standard error output from the Terragrunt command.\n    working_directory: Directory where the command was executed.\n    error_message: Optional error message if execution failed.\n    outputs: Dictionary of output values from Terragrunt (for apply command).\n    affected_dirs: List of directories affected by a run-all command.",
+        "properties": {
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "success",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "return_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Return Code"
+          },
+          "stdout": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Stdout"
+          },
+          "stderr": {
+            "default": "",
+            "title": "Stderr",
+            "type": "string"
+          },
+          "working_directory": {
+            "title": "Working Directory",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Message"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Terragrunt outputs (for apply or output command)",
+            "title": "Outputs"
+          },
+          "affected_dirs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Directories affected by a run-all command",
+            "title": "Affected Dirs"
+          }
+        },
+        "required": [
+          "command",
+          "status",
+          "working_directory"
+        ],
+        "title": "TerragruntExecutionResult",
+        "type": "object"
+      },
+      "tokens": 627
+    },
+    {
+      "name": "SearchAwsProviderDocs",
+      "description": "[DEPRECATED] Search AWS provider documentation for resources and attributes.\n\nDEPRECATED: This server is deprecated. Use HashiCorp's official Terraform\nMCP Server instead: https://github.com/hashicorp/terraform-mcp-server\n\nThis tool searches the Terraform AWS provider documentation for information about\na specific asset in the AWS Provider Documentation, assets can be either resources or data sources. It retrieves comprehensive details including descriptions, example code snippets, argument references, and attribute references.\n\nUse the 'asset_type' parameter to specify if you are looking for information about provider resources, data sources, or both. Valid values are 'resource', 'data_source' or 'both'.\n\nThe tool will automatically handle prefixes - you can search for either 'aws_s3_bucket' or 's3_bucket'.\n\nExamples:\n    - To get documentation for an S3 bucket resource:\n      search_aws_provider_docs(asset_name='aws_s3_bucket')\n\n    - To search only for data sources:\n      search_aws_provider_docs(asset_name='aws_ami', asset_type='data_source')\n\n    - To search for both resource and data source documentation of a given name:\n      search_aws_provider_docs(asset_name='aws_instance', asset_type='both')\n\nParameters:\n    asset_name: Name of the service (asset) to look for (e.g., 'aws_s3_bucket', 'aws_lambda_function')\n    asset_type: Type of documentation to search - 'resource' (default), 'data_source', or 'both'\n\nReturns:\n    A list of matching documentation entries with details including:\n    - Resource name and description\n    - URL to the official documentation\n    - Example code snippets\n    - Arguments with descriptions\n    - Attributes with descriptions\n",
+      "inputSchema": {
+        "properties": {
+          "asset_name": {
+            "description": "Name of the AWS service (asset) to look for (e.g., \"aws_s3_bucket\", \"aws_lambda_function\")",
+            "title": "Asset Name",
+            "type": "string"
+          },
+          "asset_type": {
+            "default": "resource",
+            "description": "Type of documentation to search - 'resource' (default), 'data_source', or 'both'",
+            "title": "Asset Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_name"
+        ],
+        "title": "search_aws_provider_docsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "TerraformAWSProviderDocsResult": {
+            "description": "Model representing documentation results for AWS Terraform Provider.\n\nAttributes:\n    arguments: List of arguments with descriptions specific to AWS provider resources.\n    attributes: List of attributes with descriptions specific to AWS provider resources.",
+            "properties": {
+              "asset_name": {
+                "description": "Name of the AWS resource type",
+                "title": "Asset Name",
+                "type": "string"
+              },
+              "asset_type": {
+                "default": "both",
+                "description": "Type of the item - 'resource' or 'data_source' or 'both'",
+                "enum": [
+                  "both",
+                  "resource",
+                  "data_source"
+                ],
+                "title": "Asset Type",
+                "type": "string"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Brief description of the resource",
+                "title": "Description"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "URL to the documentation for this resource",
+                "title": "Url"
+              },
+              "example_usage": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "List of example snippets with titles",
+                "title": "Example Usage"
+              },
+              "arguments": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "List of arguments with descriptions",
+                "title": "Arguments"
+              },
+              "attributes": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "List of attributes with descriptions",
+                "title": "Attributes"
+              }
+            },
+            "required": [
+              "asset_name",
+              "description"
+            ],
+            "title": "TerraformAWSProviderDocsResult",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/TerraformAWSProviderDocsResult"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_aws_provider_docsOutput",
+        "type": "object"
+      },
+      "tokens": 495
+    },
+    {
+      "name": "SearchAwsccProviderDocs",
+      "description": "[DEPRECATED] Search AWSCC provider documentation for resources and attributes.\n\nDEPRECATED: This server is deprecated. Use HashiCorp's official Terraform\nMCP Server instead: https://github.com/hashicorp/terraform-mcp-server\n\nThe AWSCC provider is based on the AWS Cloud Control API\nand provides a more consistent interface to AWS resources compared to the standard AWS provider.\n\nThis tool searches the Terraform AWSCC provider documentation for information about\na specific asset in the AWSCC Provider Documentation, assets can be either resources or data sources. It retrieves comprehensive details including descriptions, example code snippets, and schema references.\n\nUse the 'asset_type' parameter to specify if you are looking for information about provider resources, data sources, or both. Valid values are 'resource', 'data_source' or 'both'.\n\nThe tool will automatically handle prefixes - you can search for either 'awscc_s3_bucket' or 's3_bucket'.\n\nExamples:\n    - To get documentation for an S3 bucket resource:\n      search_awscc_provider_docs(asset_name='awscc_s3_bucket')\n      search_awscc_provider_docs(asset_name='awscc_s3_bucket', asset_type='resource')\n\n    - To search only for data sources:\n      search_aws_provider_docs(asset_name='awscc_appsync_api', kind='data_source')\n\n    - To search for both resource and data source documentation of a given name:\n      search_aws_provider_docs(asset_name='awscc_appsync_api', kind='both')\n\n    - Search of a resource without the prefix:\n      search_awscc_provider_docs(resource_type='ec2_instance')\n\nParameters:\n    asset_name: Name of the AWSCC Provider resource or data source to look for (e.g., 'awscc_s3_bucket', 'awscc_lambda_function')\n    asset_type: Type of documentation to search - 'resource' (default), 'data_source', or 'both'. Some resources and data sources share the same name\n\nReturns:\n    A list of matching documentation entries with details including:\n    - Resource name and description\n    - URL to the official documentation\n    - Example code snippets\n    - Schema information (required, optional, read-only, and nested structures attributes)\n",
+      "inputSchema": {
+        "properties": {
+          "asset_name": {
+            "description": "Name of the AWSCC service (asset) to look for (e.g., awscc_s3_bucket, awscc_lambda_function)",
+            "title": "Asset Name",
+            "type": "string"
+          },
+          "asset_type": {
+            "default": "resource",
+            "description": "Type of documentation to search - 'resource' (default), 'data_source', or 'both'",
+            "title": "Asset Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_name"
+        ],
+        "title": "search_awscc_provider_docsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "TerraformAWSCCProviderDocsResult": {
+            "description": "Model representing documentation results for AWSCC Terraform Provider.\n\nAttributes:\n    schema_arguments: List of schema arguments with descriptions where applicable.\n            Contains the full resource schema definition from the AWSCC provider split by section.",
+            "properties": {
+              "asset_name": {
+                "description": "Name of the AWS resource type",
+                "title": "Asset Name",
+                "type": "string"
+              },
+              "asset_type": {
+                "default": "both",
+                "description": "Type of the item - 'resource' or 'data_source' or 'both'",
+                "enum": [
+                  "both",
+                  "resource",
+                  "data_source"
+                ],
+                "title": "Asset Type",
+                "type": "string"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Brief description of the resource",
+                "title": "Description"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "URL to the documentation for this resource",
+                "title": "Url"
+              },
+              "example_usage": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "List of example snippets with titles",
+                "title": "Example Usage"
+              },
+              "schema_arguments": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "List of schema arguments with descriptions where applicable",
+                "title": "Schema Arguments"
+              }
+            },
+            "required": [
+              "asset_name",
+              "description"
+            ],
+            "title": "TerraformAWSCCProviderDocsResult",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/TerraformAWSCCProviderDocsResult"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_awscc_provider_docsOutput",
+        "type": "object"
+      },
+      "tokens": 606
+    },
+    {
+      "name": "SearchSpecificAwsIaModules",
+      "description": "[DEPRECATED] Search for specific AWS-IA Terraform modules.\n\nDEPRECATED: This server is deprecated. Use HashiCorp's official Terraform\nMCP Server instead: https://github.com/hashicorp/terraform-mcp-server\n\nThis tool checks for information about four specific AWS-IA modules:\n- aws-ia/bedrock/aws - Amazon Bedrock module for generative AI applications\n- aws-ia/opensearch-serverless/aws - OpenSearch Serverless collection for vector search\n- aws-ia/sagemaker-endpoint/aws - SageMaker endpoint deployment module\n- aws-ia/serverless-streamlit-app/aws - Serverless Streamlit application deployment\n\nIt returns detailed information about these modules, including their README content,\nvariables.tf content, and submodules when available.\n\nThe search is performed across module names, descriptions, README content, and variable\ndefinitions. This allows you to find modules based on their functionality or specific\nconfiguration options.\n\nExamples:\n    - To get information about all four modules:\n      search_specific_aws_ia_modules()\n\n    - To find modules related to Bedrock:\n      search_specific_aws_ia_modules(query='bedrock')\n\n    - To find modules related to vector search:\n      search_specific_aws_ia_modules(query='vector search')\n\n    - To find modules with specific configuration options:\n      search_specific_aws_ia_modules(query='endpoint_name')\n\nParameters:\n    query: Optional search term to filter modules (empty returns all four modules)\n\nReturns:\n    A list of matching modules with their details, including:\n    - Basic module information (name, namespace, version)\n    - Module documentation (README content)\n    - Input and output parameter counts\n    - Variables from variables.tf with descriptions and default values\n    - Submodules information\n    - Version details and release information\n",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "description": "Optional search term to filter modules (empty returns all four modules)",
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_specific_aws_ia_modulesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "ModuleSearchResult": {
+            "description": "Model representing search results from Terraform module registry.\n\nAttributes:\n    name: The name of the Terraform module.\n    namespace: The module's namespace/organization.\n    provider: The provider (aws).\n    version: Latest version of the module.\n    url: URL to the module in the Terraform registry.\n    description: Brief description of the module's purpose.\n    readme_content: The README content of the module, when available.\n    input_count: Number of input variables defined by the module.\n    output_count: Number of outputs provided by the module.\n    version_details: Detailed information about the version from GitHub releases.\n    submodules: List of submodules contained in this module.\n    has_submodules: Whether this module contains submodules.\n    variables: List of variables defined in the module's variables.tf file.\n    variables_content: Raw content of the variables.tf file.\n    outputs: List of outputs defined in the module's README file.",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "namespace": {
+                "title": "Namespace",
+                "type": "string"
+              },
+              "provider": {
+                "default": "aws",
+                "title": "Provider",
+                "type": "string"
+              },
+              "version": {
+                "title": "Version",
+                "type": "string"
+              },
+              "url": {
+                "title": "Url",
+                "type": "string"
+              },
+              "description": {
+                "title": "Description",
+                "type": "string"
+              },
+              "readme_content": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Readme Content"
+              },
+              "input_count": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Input Count"
+              },
+              "output_count": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Count"
+              },
+              "version_details": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Version Details"
+              },
+              "submodules": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "$ref": "#/$defs/SubmoduleInfo"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Submodules"
+              },
+              "variables": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "$ref": "#/$defs/TerraformVariable"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Variables"
+              },
+              "variables_content": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Variables Content"
+              },
+              "outputs": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "$ref": "#/$defs/TerraformOutput"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Outputs"
+              }
+            },
+            "required": [
+              "name",
+              "namespace",
+              "version",
+              "url",
+              "description"
+            ],
+            "title": "ModuleSearchResult",
+            "type": "object"
+          },
+          "SubmoduleInfo": {
+            "description": "Model representing a Terraform submodule.\n\nAttributes:\n    name: The name of the submodule.\n    path: Path to the submodule within the parent module.\n    description: Brief description of the submodule purpose.\n    readme_content: The README content of the submodule, when available.",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": "No description available",
+                "title": "Description"
+              },
+              "readme_content": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Readme Content"
+              }
+            },
+            "required": [
+              "name",
+              "path"
+            ],
+            "title": "SubmoduleInfo",
+            "type": "object"
+          },
+          "TerraformOutput": {
+            "description": "Model representing a Terraform output definition.\n\nAttributes:\n    name: The name of the output.\n    description: Description of the output's purpose.",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "TerraformOutput",
+            "type": "object"
+          },
+          "TerraformVariable": {
+            "description": "Model representing a Terraform variable definition.\n\nAttributes:\n    name: The name of the variable.\n    type: The data type of the variable (string, number, bool, etc.).\n    description: Description of the variable's purpose.\n    default: Default value of the variable, if any.\n    required: Whether the variable is required (no default value).",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Type"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "default": {
+                "anyOf": [
+                  {},
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Default"
+              },
+              "required": {
+                "default": true,
+                "title": "Required",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "TerraformVariable",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/ModuleSearchResult"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_specific_aws_ia_modulesOutput",
+        "type": "object"
+      },
+      "tokens": 464
+    },
+    {
+      "name": "RunCheckovScan",
+      "description": "[DEPRECATED] Run Checkov security scan on Terraform code.\n\nDEPRECATED: This server is deprecated. Use HashiCorp's official Terraform\nMCP Server instead: https://github.com/hashicorp/terraform-mcp-server\n\nThis tool runs Checkov to scan Terraform code for security and compliance issues,\nidentifying potential vulnerabilities and misconfigurations according to best practices.\n\nCheckov (https://www.checkov.io/) is an open-source static code analysis tool that\ncan detect hundreds of security and compliance issues in infrastructure-as-code.\n\nParameters:\n    working_directory: Directory containing Terraform files to scan\n    framework: Framework to scan (default: terraform)\n    check_ids: Optional list of specific check IDs to run\n    skip_check_ids: Optional list of check IDs to skip\n    output_format: Format for scan results (default: json)\n\nReturns:\n    A CheckovScanResult object containing scan results and identified vulnerabilities\n",
+      "inputSchema": {
+        "properties": {
+          "working_directory": {
+            "description": "Directory containing Terraform files",
+            "title": "Working Directory",
+            "type": "string"
+          },
+          "framework": {
+            "default": "terraform",
+            "description": "Framework to scan (terraform, cloudformation, etc.)",
+            "title": "Framework",
+            "type": "string"
+          },
+          "check_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specific check IDs to run",
+            "title": "Check Ids"
+          },
+          "skip_check_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Check IDs to skip",
+            "title": "Skip Check Ids"
+          },
+          "output_format": {
+            "default": "json",
+            "description": "Output format (json, cli, etc.)",
+            "title": "Output Format",
+            "type": "string"
+          }
+        },
+        "required": [
+          "working_directory"
+        ],
+        "title": "run_checkov_scanArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "CheckovVulnerability": {
+            "description": "Model representing a security vulnerability found by Checkov.\n\nAttributes:\n    id: The Checkov check ID (e.g., CKV_AWS_1).\n    type: The type of check (e.g., terraform_aws).\n    resource: The resource identifier where the vulnerability was found.\n    file_path: Path to the file containing the vulnerability.\n    line: Line number where the vulnerability was found.\n    description: Description of the vulnerability.\n    guideline: Recommended fix or security guideline.\n    severity: Severity level of the vulnerability.\n    fixed: Whether the vulnerability has been fixed.\n    fix_details: Details about how the vulnerability was fixed (if applicable).",
+            "properties": {
+              "id": {
+                "description": "Checkov check ID",
+                "title": "Id",
+                "type": "string"
+              },
+              "type": {
+                "description": "Type of security check",
+                "title": "Type",
+                "type": "string"
+              },
+              "resource": {
+                "description": "Resource identifier",
+                "title": "Resource",
+                "type": "string"
+              },
+              "file_path": {
+                "description": "Path to the file with the vulnerability",
+                "title": "File Path",
+                "type": "string"
+              },
+              "line": {
+                "description": "Line number of the vulnerability",
+                "title": "Line",
+                "type": "integer"
+              },
+              "description": {
+                "description": "Description of the vulnerability",
+                "title": "Description",
+                "type": "string"
+              },
+              "guideline": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Recommended fix or guideline",
+                "title": "Guideline"
+              },
+              "severity": {
+                "default": "MEDIUM",
+                "description": "Severity level (HIGH, MEDIUM, LOW)",
+                "title": "Severity",
+                "type": "string"
+              },
+              "fixed": {
+                "default": false,
+                "description": "Whether the vulnerability has been fixed",
+                "title": "Fixed",
+                "type": "boolean"
+              },
+              "fix_details": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Details about the fix applied",
+                "title": "Fix Details"
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "resource",
+              "file_path",
+              "line",
+              "description"
+            ],
+            "title": "CheckovVulnerability",
+            "type": "object"
+          }
+        },
+        "description": "Result model for Checkov scan execution.\n\nAttributes:\n    status: Execution status (success/error).\n    return_code: The command's return code (0 for success).\n    working_directory: Directory where the scan was executed.\n    error_message: Optional error message if execution failed.\n    vulnerabilities: List of vulnerabilities found by the scan.\n    summary: Summary of the scan results.\n    raw_output: Raw output from the Checkov command.",
+        "properties": {
+          "status": {
+            "enum": [
+              "success",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "return_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Return Code"
+          },
+          "working_directory": {
+            "title": "Working Directory",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Message"
+          },
+          "vulnerabilities": {
+            "default": [],
+            "description": "List of found vulnerabilities",
+            "items": {
+              "$ref": "#/$defs/CheckovVulnerability"
+            },
+            "title": "Vulnerabilities",
+            "type": "array"
+          },
+          "summary": {
+            "additionalProperties": true,
+            "default": {},
+            "description": "Summary of scan results",
+            "title": "Summary",
+            "type": "object"
+          },
+          "raw_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Raw output from Checkov",
+            "title": "Raw Output"
+          }
+        },
+        "required": [
+          "status",
+          "working_directory"
+        ],
+        "title": "CheckovScanResult",
+        "type": "object"
+      },
+      "tokens": 396
+    },
+    {
+      "name": "SearchUserProvidedModule",
+      "description": "[DEPRECATED] Search for a user-provided Terraform registry module.\n\nDEPRECATED: This server is deprecated. Use HashiCorp's official Terraform\nMCP Server instead: https://github.com/hashicorp/terraform-mcp-server\n\nThis tool takes a Terraform registry module URL and analyzes its input variables,\noutput variables, README, and other details to provide comprehensive information\nabout the module.\n\nThe module URL should be in the format \"namespace/name/provider\" (e.g., \"hashicorp/consul/aws\")\nor \"registry.terraform.io/namespace/name/provider\".\n\nExamples:\n    - To search for the HashiCorp Consul module:\n      search_user_provided_module(module_url='hashicorp/consul/aws')\n\n    - To search for a specific version of a module:\n      search_user_provided_module(module_url='terraform-aws-modules/vpc/aws', version='3.14.0')\n\n    - To search for a module with specific variables:\n      search_user_provided_module(\n          module_url='terraform-aws-modules/eks/aws',\n          variables={'cluster_name': 'my-cluster', 'vpc_id': 'vpc-12345'}\n      )\n\nParameters:\n    module_url: URL or identifier of the Terraform module (e.g., \"hashicorp/consul/aws\")\n    version: Optional specific version of the module to analyze\n    variables: Optional dictionary of variables to use when analyzing the module\n\nReturns:\n    A SearchUserProvidedModuleResult object containing module information\n",
+      "inputSchema": {
+        "properties": {
+          "module_url": {
+            "description": "URL or identifier of the Terraform module (e.g., \"hashicorp/consul/aws\")",
+            "title": "Module Url",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specific version of the module to analyze",
+            "title": "Version"
+          },
+          "variables": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Variables to use when analyzing the module",
+            "title": "Variables"
+          }
+        },
+        "required": [
+          "module_url"
+        ],
+        "title": "search_user_provided_moduleArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "TerraformOutput": {
+            "description": "Model representing a Terraform output definition.\n\nAttributes:\n    name: The name of the output.\n    description: Description of the output's purpose.",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "TerraformOutput",
+            "type": "object"
+          },
+          "TerraformVariable": {
+            "description": "Model representing a Terraform variable definition.\n\nAttributes:\n    name: The name of the variable.\n    type: The data type of the variable (string, number, bool, etc.).\n    description: Description of the variable's purpose.\n    default: Default value of the variable, if any.\n    required: Whether the variable is required (no default value).",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Type"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "default": {
+                "anyOf": [
+                  {},
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Default"
+              },
+              "required": {
+                "default": true,
+                "title": "Required",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "TerraformVariable",
+            "type": "object"
+          }
+        },
+        "description": "Result model for searching user-provided Terraform modules.\n\nAttributes:\n    status: Execution status (success/error).\n    module_name: Name of the analyzed module.\n    module_url: URL of the module in the registry.\n    module_version: Version of the module that was analyzed.\n    module_description: Description of the module.\n    variables: List of variables defined by the module.\n    outputs: List of outputs provided by the module.\n    readme_content: The README content of the module.\n    error_message: Optional error message if execution failed.",
+        "properties": {
+          "status": {
+            "enum": [
+              "success",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "module_name": {
+            "title": "Module Name",
+            "type": "string"
+          },
+          "module_url": {
+            "title": "Module Url",
+            "type": "string"
+          },
+          "module_version": {
+            "title": "Module Version",
+            "type": "string"
+          },
+          "module_description": {
+            "title": "Module Description",
+            "type": "string"
+          },
+          "variables": {
+            "default": [],
+            "description": "Variables defined by the module",
+            "items": {
+              "$ref": "#/$defs/TerraformVariable"
+            },
+            "title": "Variables",
+            "type": "array"
+          },
+          "outputs": {
+            "default": [],
+            "description": "Outputs provided by the module",
+            "items": {
+              "$ref": "#/$defs/TerraformOutput"
+            },
+            "title": "Outputs",
+            "type": "array"
+          },
+          "readme_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "README content of the module",
+            "title": "Readme Content"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Error message if execution failed",
+            "title": "Error Message"
+          }
+        },
+        "required": [
+          "status",
+          "module_name",
+          "module_url",
+          "module_version",
+          "module_description"
+        ],
+        "title": "SearchUserProvidedModuleResult",
+        "type": "object"
+      },
+      "tokens": 480
+    }
+  ],
+  "totalTokens": 3404,
+  "prompts": [],
+  "resources": [
+    {
+      "name": "terraform_development_workflow",
+      "uri": "terraform://development_workflow",
+      "description": "Terraform Development Workflow Guide with integrated validation and security scanning",
+      "mimeType": "text/markdown"
+    },
+    {
+      "name": "terraform_aws_provider_resources_listing",
+      "uri": "terraform://aws_provider_resources_listing",
+      "description": "Comprehensive listing of AWS provider resources and data sources by service category",
+      "mimeType": "text/markdown"
+    },
+    {
+      "name": "terraform_awscc_provider_resources_listing",
+      "uri": "terraform://awscc_provider_resources_listing",
+      "description": "Comprehensive listing of AWSCC provider resources and data sources by service category",
+      "mimeType": "text/markdown"
+    },
+    {
+      "name": "terraform_aws_best_practices",
+      "uri": "terraform://aws_best_practices",
+      "description": "AWS Terraform Provider Best Practices from AWS Prescriptive Guidance",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "resourceTemplates": []
+}

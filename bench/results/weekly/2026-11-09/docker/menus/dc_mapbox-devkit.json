@@ -1,0 +1,5499 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Mapbox Developer MCP server",
+    "version": "0.0.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:22:00.049Z",
+  "tools": [
+    {
+      "name": "list_styles_tool",
+      "title": "List Mapbox Styles Tool",
+      "description": "List styles for a Mapbox account. Use limit parameter to avoid large responses (recommended: limit=5-10). Use start parameter for pagination.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "limit": {
+            "description": "Maximum number of styles to return (recommended: 5-10 to avoid token limits, default: no limit)",
+            "type": "number"
+          },
+          "start": {
+            "description": "Start token for pagination (use the \"start\" value from previous response)",
+            "type": "string"
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "title": "List Mapbox Styles Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "styles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Unique style ID"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Style name"
+                },
+                "owner": {
+                  "type": "string",
+                  "description": "Username of the style owner"
+                },
+                "created": {
+                  "type": "string",
+                  "description": "ISO 8601 timestamp of creation"
+                },
+                "modified": {
+                  "type": "string",
+                  "description": "ISO 8601 timestamp of last modification"
+                },
+                "visibility": {
+                  "type": "string",
+                  "enum": [
+                    "public",
+                    "private"
+                  ],
+                  "description": "Style visibility setting"
+                },
+                "version": {
+                  "description": "Style specification version",
+                  "type": "number",
+                  "const": 8
+                },
+                "center": {
+                  "description": "Default center [longitude, latitude]",
+                  "type": "array",
+                  "items": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                },
+                "zoom": {
+                  "description": "Default zoom level",
+                  "type": "number"
+                },
+                "bearing": {
+                  "description": "Default bearing in degrees",
+                  "type": "number"
+                },
+                "pitch": {
+                  "description": "Default pitch in degrees",
+                  "type": "number"
+                },
+                "sources": {
+                  "description": "Style data sources",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                },
+                "layers": {
+                  "description": "Style layers",
+                  "type": "array",
+                  "items": {}
+                },
+                "protected": {
+                  "description": "Whether style is protected",
+                  "type": "boolean"
+                },
+                "draft": {
+                  "description": "Whether style is a draft",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "owner",
+                "created",
+                "modified",
+                "visibility"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "styles"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 121
+    },
+    {
+      "name": "create_style_tool",
+      "title": "Create Mapbox Style Tool",
+      "description": "Create a new Mapbox style",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for the style"
+          },
+          "style": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {},
+            "description": "Complete Mapbox Style Specification object. Must include: version (8), sources, layers. Optional: sprite, glyphs, center, zoom, bearing, pitch, metadata, etc. See https://docs.mapbox.com/mapbox-gl-js/style-spec/"
+          }
+        },
+        "required": [
+          "name",
+          "style"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "title": "Create Mapbox Style Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 8,
+            "description": "Style specification version number. Must be 8"
+          },
+          "sources": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "vector"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "tiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "bounds": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "enum": [
+                        "xyz",
+                        "tms"
+                      ]
+                    },
+                    "minzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "promoteId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "volatile": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "raster"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "tiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "bounds": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "minzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "tileSize": {
+                      "type": "number"
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "enum": [
+                        "xyz",
+                        "tms"
+                      ]
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "volatile": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "raster-dem"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "tiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "bounds": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "minzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "tileSize": {
+                      "type": "number"
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "encoding": {
+                      "type": "string",
+                      "enum": [
+                        "terrarium",
+                        "mapbox"
+                      ]
+                    },
+                    "volatile": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "geojson"
+                    },
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {}
+                      ]
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 24
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "buffer": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 512
+                    },
+                    "tolerance": {
+                      "type": "number"
+                    },
+                    "cluster": {
+                      "type": "boolean"
+                    },
+                    "clusterRadius": {
+                      "type": "number"
+                    },
+                    "clusterMaxZoom": {
+                      "type": "number"
+                    },
+                    "clusterProperties": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    "lineMetrics": {
+                      "type": "boolean"
+                    },
+                    "generateId": {
+                      "type": "boolean"
+                    },
+                    "promoteId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "image"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "coordinates": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "url",
+                    "coordinates"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "video"
+                    },
+                    "urls": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "coordinates": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "urls",
+                    "coordinates"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "description": "Data source specifications"
+          },
+          "layers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Unique layer name"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "fill",
+                    "line",
+                    "symbol",
+                    "circle",
+                    "heatmap",
+                    "fill-extrusion",
+                    "raster",
+                    "hillshade",
+                    "background",
+                    "sky",
+                    "slot",
+                    "clip",
+                    "model",
+                    "raster-particle",
+                    "building"
+                  ]
+                },
+                "source": {
+                  "description": "Source name (not required for background/sky/slot)",
+                  "type": "string"
+                },
+                "source-layer": {
+                  "description": "Layer from vector tile source",
+                  "type": "string"
+                },
+                "minzoom": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 24
+                },
+                "maxzoom": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 24
+                },
+                "filter": {
+                  "description": "Expression for filtering features"
+                },
+                "layout": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                },
+                "paint": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                },
+                "metadata": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                },
+                "slot": {
+                  "description": "Slot this layer is assigned to",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Layers in draw order"
+          },
+          "metadata": {
+            "description": "Arbitrary properties for tracking",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "center": {
+            "description": "Default map center [longitude, latitude]",
+            "type": "array",
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "zoom": {
+            "description": "Default zoom level",
+            "type": "number"
+          },
+          "bearing": {
+            "description": "Default bearing in degrees",
+            "type": "number"
+          },
+          "pitch": {
+            "description": "Default pitch in degrees",
+            "type": "number"
+          },
+          "sprite": {
+            "description": "Base URL for sprite image and metadata",
+            "type": "string"
+          },
+          "glyphs": {
+            "description": "URL template for glyph sets",
+            "type": "string"
+          },
+          "light": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "anchor": {
+                    "type": "string",
+                    "enum": [
+                      "map",
+                      "viewport"
+                    ]
+                  },
+                  "position": {
+                    "type": "array",
+                    "items": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "type": "string",
+                    "description": "Color as hex, rgb, rgba, hsl, or hsla"
+                  },
+                  "intensity": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Global light source (deprecated, use lights)"
+          },
+          "lights": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "ambient",
+                        "directional"
+                      ]
+                    },
+                    "properties": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Array of 3D light sources"
+          },
+          "terrain": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  },
+                  "exaggeration": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Global terrain elevation"
+          },
+          "fog": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fog properties"
+          },
+          "projection": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Map projection"
+          },
+          "transition": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "duration": {
+                    "type": "number"
+                  },
+                  "delay": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default transition timing"
+          },
+          "imports": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "config": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Imported styles"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for the style"
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique style identifier"
+          },
+          "owner": {
+            "type": "string",
+            "description": "Username of the style owner"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "description": "ISO 8601 timestamp when style was created"
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "description": "ISO 8601 timestamp when style was last modified"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "description": "Style visibility setting"
+          },
+          "protected": {
+            "description": "Whether style is protected from modifications",
+            "type": "boolean"
+          },
+          "draft": {
+            "description": "Whether this is a draft version",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "version",
+          "sources",
+          "layers",
+          "name",
+          "id",
+          "owner",
+          "created",
+          "modified",
+          "visibility"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 137
+    },
+    {
+      "name": "retrieve_style_tool",
+      "title": "Retrieve Mapbox Style Tool",
+      "description": "Retrieve a specific Mapbox style by ID",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "styleId": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+            "description": "Style ID to retrieve"
+          }
+        },
+        "required": [
+          "styleId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "title": "Retrieve Mapbox Style Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 8,
+            "description": "Style specification version number. Must be 8"
+          },
+          "sources": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "vector"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "tiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "bounds": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "enum": [
+                        "xyz",
+                        "tms"
+                      ]
+                    },
+                    "minzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "promoteId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "volatile": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "raster"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "tiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "bounds": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "minzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "tileSize": {
+                      "type": "number"
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "enum": [
+                        "xyz",
+                        "tms"
+                      ]
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "volatile": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "raster-dem"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "tiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "bounds": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "minzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "tileSize": {
+                      "type": "number"
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "encoding": {
+                      "type": "string",
+                      "enum": [
+                        "terrarium",
+                        "mapbox"
+                      ]
+                    },
+                    "volatile": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "geojson"
+                    },
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {}
+                      ]
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 24
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "buffer": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 512
+                    },
+                    "tolerance": {
+                      "type": "number"
+                    },
+                    "cluster": {
+                      "type": "boolean"
+                    },
+                    "clusterRadius": {
+                      "type": "number"
+                    },
+                    "clusterMaxZoom": {
+                      "type": "number"
+                    },
+                    "clusterProperties": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    "lineMetrics": {
+                      "type": "boolean"
+                    },
+                    "generateId": {
+                      "type": "boolean"
+                    },
+                    "promoteId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "image"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "coordinates": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "url",
+                    "coordinates"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "video"
+                    },
+                    "urls": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "coordinates": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "urls",
+                    "coordinates"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "description": "Data source specifications"
+          },
+          "layers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Unique layer name"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "fill",
+                    "line",
+                    "symbol",
+                    "circle",
+                    "heatmap",
+                    "fill-extrusion",
+                    "raster",
+                    "hillshade",
+                    "background",
+                    "sky",
+                    "slot",
+                    "clip",
+                    "model",
+                    "raster-particle",
+                    "building"
+                  ]
+                },
+                "source": {
+                  "description": "Source name (not required for background/sky/slot)",
+                  "type": "string"
+                },
+                "source-layer": {
+                  "description": "Layer from vector tile source",
+                  "type": "string"
+                },
+                "minzoom": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 24
+                },
+                "maxzoom": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 24
+                },
+                "filter": {
+                  "description": "Expression for filtering features"
+                },
+                "layout": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                },
+                "paint": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                },
+                "metadata": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                },
+                "slot": {
+                  "description": "Slot this layer is assigned to",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Layers in draw order"
+          },
+          "metadata": {
+            "description": "Arbitrary properties for tracking",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "center": {
+            "description": "Default map center [longitude, latitude]",
+            "type": "array",
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "zoom": {
+            "description": "Default zoom level",
+            "type": "number"
+          },
+          "bearing": {
+            "description": "Default bearing in degrees",
+            "type": "number"
+          },
+          "pitch": {
+            "description": "Default pitch in degrees",
+            "type": "number"
+          },
+          "sprite": {
+            "description": "Base URL for sprite image and metadata",
+            "type": "string"
+          },
+          "glyphs": {
+            "description": "URL template for glyph sets",
+            "type": "string"
+          },
+          "light": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "anchor": {
+                    "type": "string",
+                    "enum": [
+                      "map",
+                      "viewport"
+                    ]
+                  },
+                  "position": {
+                    "type": "array",
+                    "items": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "type": "string",
+                    "description": "Color as hex, rgb, rgba, hsl, or hsla"
+                  },
+                  "intensity": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Global light source (deprecated, use lights)"
+          },
+          "lights": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "ambient",
+                        "directional"
+                      ]
+                    },
+                    "properties": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Array of 3D light sources"
+          },
+          "terrain": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  },
+                  "exaggeration": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Global terrain elevation"
+          },
+          "fog": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fog properties"
+          },
+          "projection": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Map projection"
+          },
+          "transition": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "duration": {
+                    "type": "number"
+                  },
+                  "delay": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default transition timing"
+          },
+          "imports": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "config": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Imported styles"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for the style"
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique style identifier"
+          },
+          "owner": {
+            "type": "string",
+            "description": "Username of the style owner"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "description": "ISO 8601 timestamp when style was created"
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "description": "ISO 8601 timestamp when style was last modified"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "description": "Style visibility setting"
+          },
+          "protected": {
+            "description": "Whether style is protected from modifications",
+            "type": "boolean"
+          },
+          "draft": {
+            "description": "Whether this is a draft version",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "version",
+          "sources",
+          "layers",
+          "name",
+          "id",
+          "owner",
+          "created",
+          "modified",
+          "visibility"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 88
+    },
+    {
+      "name": "update_style_tool",
+      "title": "Update Mapbox Style Tool",
+      "description": "Update an existing Mapbox style",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "styleId": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+            "description": "Style ID to update"
+          },
+          "name": {
+            "description": "New name for the style",
+            "type": "string"
+          },
+          "style": {
+            "description": "Complete Mapbox Style Specification object to update. Must include: version (8), sources, layers. Optional: sprite, glyphs, center, zoom, bearing, pitch, metadata, etc. See https://docs.mapbox.com/mapbox-gl-js/style-spec/",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "styleId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "title": "Update Mapbox Style Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 8,
+            "description": "Style specification version number. Must be 8"
+          },
+          "sources": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "vector"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "tiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "bounds": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "enum": [
+                        "xyz",
+                        "tms"
+                      ]
+                    },
+                    "minzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "promoteId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "volatile": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "raster"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "tiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "bounds": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "minzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "tileSize": {
+                      "type": "number"
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "enum": [
+                        "xyz",
+                        "tms"
+                      ]
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "volatile": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "raster-dem"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "tiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "bounds": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "minzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 22
+                    },
+                    "tileSize": {
+                      "type": "number"
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "encoding": {
+                      "type": "string",
+                      "enum": [
+                        "terrarium",
+                        "mapbox"
+                      ]
+                    },
+                    "volatile": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "geojson"
+                    },
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {}
+                      ]
+                    },
+                    "maxzoom": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 24
+                    },
+                    "attribution": {
+                      "type": "string"
+                    },
+                    "buffer": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 512
+                    },
+                    "tolerance": {
+                      "type": "number"
+                    },
+                    "cluster": {
+                      "type": "boolean"
+                    },
+                    "clusterRadius": {
+                      "type": "number"
+                    },
+                    "clusterMaxZoom": {
+                      "type": "number"
+                    },
+                    "clusterProperties": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    "lineMetrics": {
+                      "type": "boolean"
+                    },
+                    "generateId": {
+                      "type": "boolean"
+                    },
+                    "promoteId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "image"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "coordinates": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "url",
+                    "coordinates"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "video"
+                    },
+                    "urls": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "coordinates": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "urls",
+                    "coordinates"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "description": "Data source specifications"
+          },
+          "layers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Unique layer name"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "fill",
+                    "line",
+                    "symbol",
+                    "circle",
+                    "heatmap",
+                    "fill-extrusion",
+                    "raster",
+                    "hillshade",
+                    "background",
+                    "sky",
+                    "slot",
+                    "clip",
+                    "model",
+                    "raster-particle",
+                    "building"
+                  ]
+                },
+                "source": {
+                  "description": "Source name (not required for background/sky/slot)",
+                  "type": "string"
+                },
+                "source-layer": {
+                  "description": "Layer from vector tile source",
+                  "type": "string"
+                },
+                "minzoom": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 24
+                },
+                "maxzoom": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 24
+                },
+                "filter": {
+                  "description": "Expression for filtering features"
+                },
+                "layout": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                },
+                "paint": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                },
+                "metadata": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                },
+                "slot": {
+                  "description": "Slot this layer is assigned to",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Layers in draw order"
+          },
+          "metadata": {
+            "description": "Arbitrary properties for tracking",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "center": {
+            "description": "Default map center [longitude, latitude]",
+            "type": "array",
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "zoom": {
+            "description": "Default zoom level",
+            "type": "number"
+          },
+          "bearing": {
+            "description": "Default bearing in degrees",
+            "type": "number"
+          },
+          "pitch": {
+            "description": "Default pitch in degrees",
+            "type": "number"
+          },
+          "sprite": {
+            "description": "Base URL for sprite image and metadata",
+            "type": "string"
+          },
+          "glyphs": {
+            "description": "URL template for glyph sets",
+            "type": "string"
+          },
+          "light": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "anchor": {
+                    "type": "string",
+                    "enum": [
+                      "map",
+                      "viewport"
+                    ]
+                  },
+                  "position": {
+                    "type": "array",
+                    "items": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "type": "string",
+                    "description": "Color as hex, rgb, rgba, hsl, or hsla"
+                  },
+                  "intensity": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Global light source (deprecated, use lights)"
+          },
+          "lights": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "ambient",
+                        "directional"
+                      ]
+                    },
+                    "properties": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Array of 3D light sources"
+          },
+          "terrain": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  },
+                  "exaggeration": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Global terrain elevation"
+          },
+          "fog": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fog properties"
+          },
+          "projection": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Map projection"
+          },
+          "transition": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "duration": {
+                    "type": "number"
+                  },
+                  "delay": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default transition timing"
+          },
+          "imports": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "config": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Imported styles"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for the style"
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique style identifier"
+          },
+          "owner": {
+            "type": "string",
+            "description": "Username of the style owner"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "description": "ISO 8601 timestamp when style was created"
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "description": "ISO 8601 timestamp when style was last modified"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "description": "Style visibility setting"
+          },
+          "protected": {
+            "description": "Whether style is protected from modifications",
+            "type": "boolean"
+          },
+          "draft": {
+            "description": "Whether this is a draft version",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "version",
+          "sources",
+          "layers",
+          "name",
+          "id",
+          "owner",
+          "created",
+          "modified",
+          "visibility"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 177
+    },
+    {
+      "name": "delete_style_tool",
+      "title": "Delete Mapbox Style Tool",
+      "description": "Delete a Mapbox style by ID",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "styleId": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+            "description": "Style ID to delete"
+          }
+        },
+        "required": [
+          "styleId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "title": "Delete Mapbox Style Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 87
+    },
+    {
+      "name": "preview_style_tool",
+      "title": "Preview Mapbox Style Tool",
+      "description": "Generate preview URL for a Mapbox style using an existing public token",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "styleId": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+            "description": "Style ID to preview"
+          },
+          "accessToken": {
+            "type": "string",
+            "pattern": "^pk\\..*",
+            "description": "Mapbox public access token (required, must start with pk.* and have styles:read permission). Secret tokens (sk.*) cannot be used as they cannot be exposed in browser URLs. Please use an existing public token or get one from list_tokens_tool or create one with create_token_tool with styles:read permission."
+          },
+          "title": {
+            "default": false,
+            "description": "Show title in the preview",
+            "type": "boolean"
+          },
+          "zoomwheel": {
+            "default": true,
+            "description": "Enable zoom wheel control",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "styleId",
+          "accessToken"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "title": "Preview Mapbox Style Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "ui": {
+          "resourceUri": "ui://mapbox/preview-style/index.html",
+          "csp": {
+            "connectDomains": [
+              "https://*.mapbox.com"
+            ],
+            "resourceDomains": [
+              "https://*.mapbox.com"
+            ],
+            "frameDomains": [
+              "https://*.mapbox.com"
+            ]
+          }
+        }
+      },
+      "tokens": 216
+    },
+    {
+      "name": "style_builder_tool",
+      "title": "Build Mapbox Style JSON Tool",
+      "description": "Generate Mapbox style JSON for creating new styles or updating existing ones.\n\nThe tool intelligently resolves layer types and filter properties using Streets v8 data.\nYou don't need exact layer names - the tool automatically finds the correct layer based on your filters.\n\nBASE STYLES:\n• standard: ALWAYS THE DEFAULT - Modern Mapbox Standard with best performance\n• Classic styles: streets-v12/light-v11/dark-v11/satellite-v9/outdoors-v12/satellite-streets-v12/navigation-day-v1/navigation-night-v1\n  Only use Classic when user explicitly says \"create a classic style\" or working with existing Classic style\n\nSTANDARD STYLE CONFIG:\nUse standard_config to customize the basemap:\n• Theme: default/faded/monochrome\n• Light: day/night/dawn/dusk\n• Show/hide: labels, roads, 3D buildings\n• Colors: water, roads, parks, etc.\n\nLAYER ORDERING:\n• Layers are rendered in order - last layer in the array appears visually on top\n• The 'slot' parameter is OPTIONAL - by default, layer order in the array determines visibility\n• For Standard style, you can optionally use 'slot' to control placement:\n  - No slot (default): Above all existing layers in the style\n  - 'top': Behind Place and Transit labels\n  - 'middle': Between basemap and labels\n  - 'bottom': Below most basemap features\n\nLAYER RENDERING:\n• render_type controls HOW to visualize the layer (line, fill, symbol, etc.)\n• Most important: Use render_type:\"line\" for outlines/borders even on polygon features\n• Default \"auto\" picks based on geometry, but override for specific effects:\n  - Building outlines → render_type:\"line\" (not fill!)\n  - Solid buildings → render_type:\"fill\" or \"fill-extrusion\" (3D)\n  - Road lines → render_type:\"line\" (auto works too)\n  - POI dots → render_type:\"circle\"\n  - Labels → render_type:\"symbol\"\n\nLAYER ACTIONS:\n• color: Apply a specific color\n• highlight: Make prominent\n• hide: Remove from view\n• show: Display with defaults\n\nAUTO-DETECTION:\nThe tool automatically finds the correct layer from your filter_properties.\nExamples:\n• { class: 'park' } → finds 'landuse' layer\n• { type: 'wetland' } → finds 'landuse_overlay' layer\n• { maki: 'restaurant' } → finds 'poi_label' layer\n• { toll: true } → finds 'road' layer\n• { admin_level: 0 } → finds 'admin' layer (for country boundaries)\n• { admin_level: 1 } → finds 'admin' layer (for state/province boundaries)\n\nIMPORTANT LAYER NAMES:\n• Use \"admin\" for all boundaries (countries, states, etc.)\n• Use \"building\" (singular, not \"buildings\")\n• Use \"road\" for all streets, highways, paths\n\nIf a layer type is not recognized, the tool will provide helpful suggestions showing:\n• All available source layers from Streets v8\n• Which fields are available in each layer\n• Examples of how to properly specify layers and filters",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "style_name": {
+            "default": "Custom Style",
+            "description": "Name for the style",
+            "type": "string"
+          },
+          "base_style": {
+            "default": "standard",
+            "description": "Base style template. ALWAYS use \"standard\" as the default for all new styles. Standard style provides the best performance and modern features. Only use Classic styles (streets/light/dark/satellite/outdoors/navigation) when explicitly requested with \"create a classic style\" or when working with an existing Classic style.",
+            "type": "string",
+            "enum": [
+              "standard",
+              "streets-v12",
+              "light-v11",
+              "dark-v11",
+              "satellite-v9",
+              "satellite-streets-v12",
+              "outdoors-v12",
+              "navigation-day-v1",
+              "navigation-night-v1"
+            ]
+          },
+          "layers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "layer_type": {
+                  "type": "string",
+                  "description": "Layer type from the resource (e.g., \"water\", \"railways\", \"parks\")"
+                },
+                "render_type": {
+                  "default": "auto",
+                  "description": "How to render this layer visually. Default \"auto\" chooses based on geometry type.\nOverride to achieve specific visual effects:\n• \"line\" - For outlines, borders, strokes (e.g., building outlines, road borders)\n• \"fill\" - For solid filled areas (e.g., solid color buildings, water bodies)\n• \"fill-extrusion\" - For 3D extrusions (e.g., 3D buildings)\n• \"symbol\" - For text labels or icons\n• \"circle\" - For dot visualization (e.g., POI dots, data points)\n• \"heatmap\" - For density maps (points only)\nIMPORTANT: Use \"line\" for outlines even on polygon features like buildings.",
+                  "type": "string",
+                  "enum": [
+                    "fill",
+                    "line",
+                    "symbol",
+                    "circle",
+                    "fill-extrusion",
+                    "heatmap",
+                    "auto"
+                  ]
+                },
+                "action": {
+                  "type": "string",
+                  "enum": [
+                    "show",
+                    "hide",
+                    "color",
+                    "highlight"
+                  ],
+                  "description": "What to do with this layer"
+                },
+                "color": {
+                  "description": "Color value if action is \"color\" or \"highlight\"",
+                  "type": "string"
+                },
+                "opacity": {
+                  "description": "Opacity value",
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "width": {
+                  "description": "Width for line layers or outline thickness",
+                  "type": "number"
+                },
+                "filter": {
+                  "description": "Custom filter expression",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  ]
+                },
+                "filter_properties": {
+                  "description": "Filter by specific properties. Examples: { class: \"motorway\" } for only motorways, { class: [\"motorway\", \"trunk\"] } for multiple road types, { structure: \"bridge\" } for only bridges, { admin_level: 0, disputed: \"false\" } for undisputed country boundaries",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "zoom_based": {
+                  "description": "Make styling zoom-dependent",
+                  "type": "boolean"
+                },
+                "min_zoom": {
+                  "description": "Minimum zoom level for zoom-based styling",
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 24
+                },
+                "max_zoom": {
+                  "description": "Maximum zoom level for zoom-based styling",
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 24
+                },
+                "property_based": {
+                  "description": "Feature property to base styling on (e.g., \"class\", \"type\")",
+                  "type": "string"
+                },
+                "property_values": {
+                  "description": "Map of property values to styles",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                },
+                "expression": {
+                  "description": "Custom Mapbox expression for advanced styling",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  ]
+                },
+                "slot": {
+                  "description": "Layer slot for Mapbox Standard styles. Controls layer stacking order. Bottom: below most map features, Middle: between base and labels, Top: above all base map features (default)",
+                  "type": "string",
+                  "enum": [
+                    "bottom",
+                    "middle",
+                    "top"
+                  ]
+                }
+              },
+              "required": [
+                "layer_type",
+                "action"
+              ]
+            },
+            "description": "Layer configurations based on the mapbox-style-layers resource"
+          },
+          "global_settings": {
+            "description": "Global style settings",
+            "type": "object",
+            "properties": {
+              "background_color": {
+                "description": "Background/land color",
+                "type": "string"
+              },
+              "label_color": {
+                "description": "Default label color",
+                "type": "string"
+              },
+              "mode": {
+                "description": "Light or dark mode",
+                "type": "string",
+                "enum": [
+                  "light",
+                  "dark"
+                ]
+              }
+            }
+          },
+          "standard_config": {
+            "description": "Configuration for the base Mapbox Standard style. These properties customize the underlying Standard style features - you can still add your own custom layers on top using the layers parameter. The Standard style provides a rich basemap that you can configure and enhance with additional layers.",
+            "type": "object",
+            "properties": {
+              "showPedestrianRoads": {
+                "description": "Show/hide the base pedestrian roads and paths from the Standard style",
+                "type": "boolean"
+              },
+              "showPlaceLabels": {
+                "description": "Show/hide the base place label layers from the Standard style",
+                "type": "boolean"
+              },
+              "showPointOfInterestLabels": {
+                "description": "Show/hide the base POI icons and text from the Standard style",
+                "type": "boolean"
+              },
+              "showRoadLabels": {
+                "description": "Show/hide the base road labels and shields from the Standard style",
+                "type": "boolean"
+              },
+              "showTransitLabels": {
+                "description": "Show/hide the base transit icons and text from the Standard style",
+                "type": "boolean"
+              },
+              "show3dObjects": {
+                "description": "Show/hide the base 3D objects like buildings and landmarks from the Standard style",
+                "type": "boolean"
+              },
+              "showLandmarkIcons": {
+                "description": "Show/hide the base landmark icons from the Standard style",
+                "type": "boolean"
+              },
+              "showLandmarkIconLabels": {
+                "description": "Show/hide the base landmark icon labels from the Standard style",
+                "type": "boolean"
+              },
+              "showAdminBoundaries": {
+                "description": "Show/hide the base administrative boundaries from the Standard style",
+                "type": "boolean"
+              },
+              "showRoadsAndTransit": {
+                "description": "Show/hide the base roads and transit networks from the Standard style (Standard-Satellite)",
+                "type": "boolean"
+              },
+              "theme": {
+                "description": "Theme for the base Standard style layers",
+                "type": "string",
+                "enum": [
+                  "default",
+                  "faded",
+                  "monochrome",
+                  "custom"
+                ]
+              },
+              "theme-data": {
+                "description": "Custom color theme for the base style via Base64 LUT image",
+                "type": "string"
+              },
+              "lightPreset": {
+                "description": "Time-of-day lighting for the base Standard style",
+                "type": "string",
+                "enum": [
+                  "dusk",
+                  "dawn",
+                  "day",
+                  "night"
+                ]
+              },
+              "font": {
+                "description": "Font family for the base Standard style text",
+                "type": "string"
+              },
+              "colorModePointOfInterestLabels": {
+                "description": "Color mode for the base POI labels",
+                "type": "string"
+              },
+              "backgroundPointOfInterestLabels": {
+                "description": "Background style for the base POI labels",
+                "type": "string"
+              },
+              "densityPointOfInterestLabels": {
+                "description": "Density of base POI labels (1-5, default 3)",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "colorPlaceLabels": {
+                "description": "Override color for the base place labels in Standard style",
+                "type": "string"
+              },
+              "colorRoadLabels": {
+                "description": "Override color for the base road labels in Standard style",
+                "type": "string"
+              },
+              "colorGreenspace": {
+                "description": "Override color for the base greenspace areas in Standard style",
+                "type": "string"
+              },
+              "colorWater": {
+                "description": "Override color for the base water features in Standard style",
+                "type": "string"
+              },
+              "colorAdminBoundaries": {
+                "description": "Override color for the base administrative boundaries in Standard style",
+                "type": "string"
+              },
+              "colorPointOfInterestLabels": {
+                "description": "Override color for the base POI labels in Standard style",
+                "type": "string"
+              },
+              "colorMotorways": {
+                "description": "Override color for the base motorways/highways in Standard style",
+                "type": "string"
+              },
+              "colorTrunks": {
+                "description": "Override color for the base trunk roads in Standard style",
+                "type": "string"
+              },
+              "colorRoads": {
+                "description": "Override color for the base regular roads in Standard style",
+                "type": "string"
+              },
+              "colorBuildingHighlight": {
+                "description": "Override color for the base highlighted buildings in Standard style",
+                "type": "string"
+              },
+              "colorBuildingSelect": {
+                "description": "Override color for the base selected buildings in Standard style",
+                "type": "string"
+              },
+              "colorPlaceLabelHighlight": {
+                "description": "Override color for the base highlighted place labels in Standard style",
+                "type": "string"
+              },
+              "colorPlaceLabelSelect": {
+                "description": "Override color for the base selected place labels in Standard style",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "layers"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "title": "Build Mapbox Style JSON Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 2529
+    },
+    {
+      "name": "geojson_preview_tool",
+      "title": "Preview GeoJSON Data Tool",
+      "description": "Generate a geojson.io URL to visualize GeoJSON data. Returns only the URL link.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "geojson": {
+            "type": "string",
+            "description": "GeoJSON data as a JSON string (e.g., {\"type\": \"Point\", \"coordinates\": [-122.4194, 37.7749]})"
+          }
+        },
+        "required": [
+          "geojson"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "title": "Preview GeoJSON Data Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "ui": {
+          "resourceUri": "ui://mapbox/geojson-preview/index.html",
+          "csp": {
+            "frameDomains": [
+              "https://geojson.io"
+            ]
+          }
+        }
+      },
+      "tokens": 103
+    },
+    {
+      "name": "check_color_contrast_tool",
+      "title": "Check Color Contrast Tool",
+      "description": "Checks color contrast ratios between foreground and background colors for WCAG 2.1 accessibility compliance",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "foregroundColor": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Foreground color (text color) in any CSS format (hex, rgb, rgba, named colors)"
+          },
+          "backgroundColor": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Background color in any CSS format (hex, rgb, rgba, named colors)"
+          },
+          "level": {
+            "description": "WCAG conformance level to check against (default: AA)",
+            "type": "string",
+            "enum": [
+              "AA",
+              "AAA"
+            ]
+          },
+          "fontSize": {
+            "description": "Font size category: normal (<18pt or <14pt bold) or large (≥18pt or ≥14pt bold)",
+            "type": "string",
+            "enum": [
+              "normal",
+              "large"
+            ]
+          }
+        },
+        "required": [
+          "foregroundColor",
+          "backgroundColor"
+        ]
+      },
+      "annotations": {
+        "title": "Check Color Contrast Tool",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "contrastRatio": {
+            "type": "number",
+            "description": "Calculated contrast ratio between foreground and background"
+          },
+          "passes": {
+            "type": "boolean",
+            "description": "Whether the contrast ratio meets the specified WCAG level"
+          },
+          "level": {
+            "type": "string",
+            "description": "WCAG level checked (AA or AAA)"
+          },
+          "fontSize": {
+            "type": "string",
+            "description": "Font size category (normal or large)"
+          },
+          "minimumRequired": {
+            "type": "number",
+            "description": "Minimum contrast ratio required for the specified level and font size"
+          },
+          "wcagRequirements": {
+            "type": "object",
+            "properties": {
+              "AA": {
+                "type": "object",
+                "properties": {
+                  "normal": {
+                    "type": "number",
+                    "description": "Minimum contrast ratio for normal text (AA)"
+                  },
+                  "large": {
+                    "type": "number",
+                    "description": "Minimum contrast ratio for large text (AA)"
+                  }
+                },
+                "required": [
+                  "normal",
+                  "large"
+                ],
+                "additionalProperties": false
+              },
+              "AAA": {
+                "type": "object",
+                "properties": {
+                  "normal": {
+                    "type": "number",
+                    "description": "Minimum contrast ratio for normal text (AAA)"
+                  },
+                  "large": {
+                    "type": "number",
+                    "description": "Minimum contrast ratio for large text (AAA)"
+                  }
+                },
+                "required": [
+                  "normal",
+                  "large"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "AA",
+              "AAA"
+            ],
+            "additionalProperties": false,
+            "description": "Complete WCAG contrast requirements for all levels"
+          },
+          "recommendations": {
+            "description": "Optional recommendations for improvement",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "contrastRatio",
+          "passes",
+          "level",
+          "fontSize",
+          "minimumRequired",
+          "wcagRequirements"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 204
+    },
+    {
+      "name": "compare_styles_tool",
+      "title": "Compare Styles Tool",
+      "description": "Compares two Mapbox styles and reports differences in structure, layers, sources, and properties",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "styleA": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            ],
+            "description": "First Mapbox style (JSON string or style object)"
+          },
+          "styleB": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            ],
+            "description": "Second Mapbox style (JSON string or style object)"
+          },
+          "ignoreMetadata": {
+            "description": "Ignore metadata fields like id, owner, created, modified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "styleA",
+          "styleB"
+        ]
+      },
+      "annotations": {
+        "title": "Compare Styles Tool",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "identical": {
+            "type": "boolean",
+            "description": "Whether the styles are identical"
+          },
+          "differences": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "JSON path to the difference"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "added",
+                    "removed",
+                    "modified"
+                  ],
+                  "description": "Type of difference"
+                },
+                "valueA": {
+                  "description": "Value in style A (if exists)"
+                },
+                "valueB": {
+                  "description": "Value in style B (if exists)"
+                },
+                "description": {
+                  "description": "Human-readable description",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "description": "List of differences found"
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "totalDifferences": {
+                "type": "number",
+                "description": "Total number of differences"
+              },
+              "added": {
+                "type": "number",
+                "description": "Number of additions in style B"
+              },
+              "removed": {
+                "type": "number",
+                "description": "Number of removals from style A"
+              },
+              "modified": {
+                "type": "number",
+                "description": "Number of modifications"
+              }
+            },
+            "required": [
+              "totalDifferences",
+              "added",
+              "removed",
+              "modified"
+            ],
+            "additionalProperties": false,
+            "description": "Summary of differences"
+          }
+        },
+        "required": [
+          "identical",
+          "differences",
+          "summary"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 171
+    },
+    {
+      "name": "optimize_style_tool",
+      "title": "Optimize Style Tool",
+      "description": "Optimizes Mapbox styles by removing unused sources, duplicate layers, and simplifying expressions",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            ],
+            "description": "Mapbox style to optimize (JSON string or style object)"
+          },
+          "optimizations": {
+            "description": "Specific optimizations to apply (if not specified, all optimizations are applied)",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "remove-unused-sources",
+                "remove-duplicate-layers",
+                "simplify-expressions",
+                "remove-empty-layers",
+                "consolidate-filters"
+              ]
+            }
+          }
+        },
+        "required": [
+          "style"
+        ]
+      },
+      "annotations": {
+        "title": "Optimize Style Tool",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "optimizedStyle": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {},
+            "description": "The optimized Mapbox style"
+          },
+          "optimizations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Type of optimization applied"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Description of what was optimized"
+                },
+                "count": {
+                  "type": "number",
+                  "description": "Number of items affected by this optimization"
+                }
+              },
+              "required": [
+                "type",
+                "description",
+                "count"
+              ],
+              "additionalProperties": false
+            },
+            "description": "List of optimizations that were applied"
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "totalOptimizations": {
+                "type": "number",
+                "description": "Total number of optimization operations performed"
+              },
+              "originalSize": {
+                "type": "number",
+                "description": "Original style size in bytes"
+              },
+              "optimizedSize": {
+                "type": "number",
+                "description": "Optimized style size in bytes"
+              },
+              "sizeSaved": {
+                "type": "number",
+                "description": "Bytes saved through optimization"
+              },
+              "percentReduction": {
+                "type": "number",
+                "description": "Percentage reduction in size"
+              }
+            },
+            "required": [
+              "totalOptimizations",
+              "originalSize",
+              "optimizedSize",
+              "sizeSaved",
+              "percentReduction"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "optimizedStyle",
+          "optimizations",
+          "summary"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 163
+    },
+    {
+      "name": "style_comparison_tool",
+      "title": "Compare Mapbox Styles Tool",
+      "description": "Generate a comparison URL for comparing two Mapbox styles side-by-side",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "before": {
+            "type": "string",
+            "pattern": "^(?:mapbox:\\/\\/styles\\/)?[a-zA-Z0-9_-]+(\\/[a-zA-Z0-9_-]+)?$",
+            "description": "Mapbox style for the \"before\" side. Accepts: full style URL (mapbox://styles/username/styleId), username/styleId format, or just styleId if using your own styles"
+          },
+          "after": {
+            "type": "string",
+            "pattern": "^(?:mapbox:\\/\\/styles\\/)?[a-zA-Z0-9_-]+(\\/[a-zA-Z0-9_-]+)?$",
+            "description": "Mapbox style for the \"after\" side. Accepts: full style URL (mapbox://styles/username/styleId), username/styleId format, or just styleId if using your own styles"
+          },
+          "accessToken": {
+            "type": "string",
+            "pattern": "^pk\\..*",
+            "description": "Mapbox public access token (required, must start with pk.* and have styles:read permission). Secret tokens (sk.*) cannot be used as they cannot be exposed in browser URLs. Please use a public token or create one with styles:read permission."
+          },
+          "zoom": {
+            "description": "Initial zoom level for the map view (0-22). If provided along with latitude and longitude, sets the initial map position.",
+            "type": "number"
+          },
+          "latitude": {
+            "description": "Latitude coordinate for the initial map center (-90 to 90). Must be provided together with longitude and zoom.",
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "description": "Longitude coordinate for the initial map center (-180 to 180). Must be provided together with latitude and zoom.",
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          }
+        },
+        "required": [
+          "before",
+          "after",
+          "accessToken"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "title": "Compare Mapbox Styles Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "ui": {
+          "resourceUri": "ui://mapbox/style-comparison/index.html",
+          "csp": {
+            "connectDomains": [
+              "https://*.mapbox.com"
+            ],
+            "resourceDomains": [
+              "https://*.mapbox.com"
+            ],
+            "frameDomains": [
+              "https://*.mapbox.com"
+            ]
+          }
+        }
+      },
+      "tokens": 416
+    },
+    {
+      "name": "create_token_tool",
+      "title": "Create Mapbox Token Tool",
+      "description": "Create a new Mapbox public access token with specified scopes and optional URL restrictions.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "Description of the token"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "styles:tiles",
+                "styles:read",
+                "fonts:read",
+                "datasets:read",
+                "vision:read"
+              ]
+            },
+            "description": "Array of scopes/permissions for the public token. Valid scopes: styles:tiles, styles:read, fonts:read, datasets:read, vision:read."
+          },
+          "allowedUrls": {
+            "description": "Optional array of URLs where the token can be used (max 100)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expires": {
+            "description": "Optional expiration time in ISO 8601 format (maximum 1 hour in the future)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "note",
+          "scopes"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "title": "Create Mapbox Token Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The token's unique identifier"
+          },
+          "usage": {
+            "type": "string",
+            "enum": [
+              "pk",
+              "sk",
+              "tk"
+            ],
+            "description": "Token usage type: pk (public), sk (secret), or tk (temporary)"
+          },
+          "client": {
+            "type": "string",
+            "description": "The client for the token"
+          },
+          "default": {
+            "type": "boolean",
+            "description": "Whether this is the default token"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of scopes granted to the token"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Human-readable description of the token"
+          },
+          "created": {
+            "type": "string",
+            "description": "ISO 8601 creation timestamp"
+          },
+          "modified": {
+            "type": "string",
+            "description": "ISO 8601 last modified timestamp"
+          },
+          "allowedUrls": {
+            "description": "URLs that the token is restricted to",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "token": {
+            "type": "string",
+            "description": "The actual access token string"
+          },
+          "expires": {
+            "description": "Expiration time in ISO 8601 format (temporary tokens only)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "usage",
+          "client",
+          "default",
+          "scopes",
+          "note",
+          "created",
+          "modified",
+          "token"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 203
+    },
+    {
+      "name": "list_tokens_tool",
+      "title": "List Mapbox Tokens Tool",
+      "description": "List Mapbox access tokens for the authenticated user with optional filtering and pagination. Returns metadata for all tokens (public and secret), but the actual token value is only included for public tokens (secret token values are omitted for security). When using pagination, the \"start\" parameter must be obtained from the \"next_start\" field of the previous response (it is not a token ID)",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "default": {
+            "description": "Filter to show only the default public token",
+            "type": "boolean"
+          },
+          "limit": {
+            "description": "Maximum number of tokens to return (1-100)",
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "sortby": {
+            "description": "Sort tokens by created or modified timestamp",
+            "type": "string",
+            "enum": [
+              "created",
+              "modified"
+            ]
+          },
+          "start": {
+            "description": "Token ID to start pagination from",
+            "type": "string"
+          },
+          "usage": {
+            "description": "Filter by token type: pk (public)",
+            "type": "string",
+            "enum": [
+              "pk"
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "title": "List Mapbox Tokens Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "tokens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The token's unique identifier"
+                },
+                "usage": {
+                  "type": "string",
+                  "enum": [
+                    "pk",
+                    "sk",
+                    "tk"
+                  ],
+                  "description": "Token usage type: pk (public), sk (secret), or tk (temporary)"
+                },
+                "client": {
+                  "type": "string",
+                  "description": "The client for the token"
+                },
+                "default": {
+                  "type": "boolean",
+                  "description": "Whether this is the default token"
+                },
+                "scopes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Array of scopes granted to the token"
+                },
+                "note": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Human-readable description of the token"
+                },
+                "created": {
+                  "type": "string",
+                  "description": "ISO 8601 creation timestamp"
+                },
+                "modified": {
+                  "type": "string",
+                  "description": "ISO 8601 last modified timestamp"
+                },
+                "allowedUrls": {
+                  "description": "URLs that the token is restricted to",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "token": {
+                  "description": "The actual access token string (omitted for secret tokens in list responses)",
+                  "type": "string"
+                },
+                "expires": {
+                  "description": "Expiration time in ISO 8601 format (temporary tokens only)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "usage",
+                "client",
+                "default",
+                "scopes",
+                "note",
+                "created",
+                "modified"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "count": {
+            "type": "number",
+            "description": "Total number of tokens returned"
+          },
+          "next_start": {
+            "description": "Pagination token for next page",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tokens",
+          "count"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 220
+    },
+    {
+      "name": "bounding_box_tool",
+      "title": "Calculate GeoJSON Bounding Box Tool",
+      "description": "Calculates bounding box of given GeoJSON content, returns as [minX, minY, maxX, maxY]",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "geojson": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "GeoJSON content as a string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "coordinates": {},
+                  "geometry": {},
+                  "properties": {},
+                  "features": {},
+                  "geometries": {}
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": {},
+                "description": "GeoJSON content as an object"
+              }
+            ],
+            "description": "GeoJSON content to calculate bounding box for"
+          }
+        },
+        "required": [
+          "geojson"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "title": "Calculate GeoJSON Bounding Box Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "bbox": {
+            "type": "array",
+            "items": [
+              {
+                "type": "number",
+                "description": "minX (west longitude)"
+              },
+              {
+                "type": "number",
+                "description": "minY (south latitude)"
+              },
+              {
+                "type": "number",
+                "description": "maxX (east longitude)"
+              },
+              {
+                "type": "number",
+                "description": "maxY (north latitude)"
+              }
+            ],
+            "description": "Bounding box as [minX, minY, maxX, maxY]"
+          },
+          "message": {
+            "description": "Status or error message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bbox"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 153
+    },
+    {
+      "name": "country_bounding_box_tool",
+      "title": "Get Country Bounding Box Tool",
+      "description": "Gets bounding box for a country by its ISO 3166-1 country code, returns as [minX, minY, maxX, maxY].",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "iso_3166_1": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 10,
+            "description": "ISO 3166-1 country code (2-10 characters, e.g., \"CN\", \"US\", \"AE\" )"
+          }
+        },
+        "required": [
+          "iso_3166_1"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "title": "Get Country Bounding Box Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "bbox": {
+            "type": "array",
+            "items": [
+              {
+                "type": "number",
+                "description": "minX (west longitude)"
+              },
+              {
+                "type": "number",
+                "description": "minY (south latitude)"
+              },
+              {
+                "type": "number",
+                "description": "maxX (east longitude)"
+              },
+              {
+                "type": "number",
+                "description": "maxY (north latitude)"
+              }
+            ],
+            "description": "Bounding box as [minX, minY, maxX, maxY]"
+          },
+          "message": {
+            "description": "Status or error message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bbox"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 130
+    },
+    {
+      "name": "coordinate_conversion_tool",
+      "title": "Convert Coordinates Tool",
+      "description": "Converts coordinates between WGS84 (longitude/latitude) and EPSG:3857 (Web Mercator) coordinate systems",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "coordinates": {
+            "minItems": 2,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Array of two numbers representing coordinates"
+          },
+          "from": {
+            "type": "string",
+            "enum": [
+              "wgs84",
+              "epsg3857"
+            ],
+            "description": "Source coordinate system: wgs84 (longitude/latitude) or epsg3857 (Web Mercator)"
+          },
+          "to": {
+            "type": "string",
+            "enum": [
+              "wgs84",
+              "epsg3857"
+            ],
+            "description": "Target coordinate system: wgs84 (longitude/latitude) or epsg3857 (Web Mercator)"
+          }
+        },
+        "required": [
+          "coordinates",
+          "from",
+          "to"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "title": "Convert Coordinates Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "input": {
+            "minItems": 2,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Input coordinates"
+          },
+          "output": {
+            "minItems": 2,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Converted coordinates"
+          },
+          "from": {
+            "type": "string",
+            "enum": [
+              "wgs84",
+              "epsg3857"
+            ],
+            "description": "Source coordinate system"
+          },
+          "to": {
+            "type": "string",
+            "enum": [
+              "wgs84",
+              "epsg3857"
+            ],
+            "description": "Target coordinate system"
+          },
+          "message": {
+            "description": "Conversion status message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "input",
+          "output",
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 189
+    },
+    {
+      "name": "get_feedback_tool",
+      "title": "Get Feedback Tool",
+      "description": "Get a single user feedback item from the Mapbox Feedback API by its unique ID. Use this tool to retrieve detailed information about a specific user-reported issue, suggestion, or feedback about map data, routing, or POI details. Requires user-feedback:read scope on the access token.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "feedback_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "The unique identifier of the feedback item"
+          },
+          "format": {
+            "default": "formatted_text",
+            "description": "Output format: \"json_string\" returns raw JSON data as a JSON string that can be parsed; \"formatted_text\" returns human-readable text. Both return as text content but json_string contains parseable JSON data while formatted_text is for display.",
+            "type": "string",
+            "enum": [
+              "json_string",
+              "formatted_text"
+            ]
+          }
+        },
+        "required": [
+          "feedback_id"
+        ]
+      },
+      "annotations": {
+        "title": "Get Feedback Tool",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 287
+    },
+    {
+      "name": "list_feedback_tool",
+      "title": "List Feedback Tool",
+      "description": "List user feedback items from the Mapbox Feedback API with filtering, sorting, and pagination. Use this tool to access user-reported issues, suggestions, and feedback about map data, routing, and POI details. Supports comprehensive filtering by status, category, date ranges, trace IDs, and search text. Requires user-feedback:read scope on the access token.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "feedback_ids": {
+            "description": "Filter by one or more feedback item IDs. At least one must match.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "after": {
+            "description": "A cursor from a previous response. Use this to fetch the next page of results.",
+            "type": "string"
+          },
+          "limit": {
+            "description": "The maximum number of feedback items to return (1-1000)",
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "sort_by": {
+            "default": "received_at",
+            "description": "The field to sort results by. Options: received_at (default), created_at, or updated_at",
+            "type": "string",
+            "enum": [
+              "received_at",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          "order": {
+            "default": "asc",
+            "description": "The sort direction: asc (ascending, default) or desc (descending)",
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          },
+          "status": {
+            "description": "Filter by one or more feedback statuses. Options: received, fixed, reviewed, out_of_scope",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "received",
+                "fixed",
+                "reviewed",
+                "out_of_scope"
+              ]
+            }
+          },
+          "category": {
+            "description": "Filter by one or more feedback categories",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "search": {
+            "description": "A search phrase. Returns items where the feedback text contains the phrase.",
+            "type": "string"
+          },
+          "trace_id": {
+            "description": "Filter by one or more trace_id values. At least one must match.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created_before": {
+            "description": "Return items created before the specified time. Use ISO 8601 format: YYYY-MM-DDTHH:mm:ss.SSSZ",
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "created_after": {
+            "description": "Return items created after the specified time. Use ISO 8601 format: YYYY-MM-DDTHH:mm:ss.SSSZ",
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "received_before": {
+            "description": "Return items received by Mapbox before the specified time. Use ISO 8601 format: YYYY-MM-DDTHH:mm:ss.SSSZ",
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "received_after": {
+            "description": "Return items received by Mapbox after the specified time. Use ISO 8601 format: YYYY-MM-DDTHH:mm:ss.SSSZ",
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "updated_before": {
+            "description": "Return items last updated before the specified time. Use ISO 8601 format: YYYY-MM-DDTHH:mm:ss.SSSZ",
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "updated_after": {
+            "description": "Return items last updated after the specified time. Use ISO 8601 format: YYYY-MM-DDTHH:mm:ss.SSSZ",
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "format": {
+            "default": "formatted_text",
+            "description": "Output format: \"json_string\" returns raw JSON data as a JSON string that can be parsed; \"formatted_text\" returns human-readable text. Both return as text content but json_string contains parseable JSON data while formatted_text is for display.",
+            "type": "string",
+            "enum": [
+              "json_string",
+              "formatted_text"
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "title": "List Feedback Tool",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 1062
+    },
+    {
+      "name": "tilequery_tool",
+      "title": "Mapbox Tilequery Tool",
+      "description": "Query vector and raster data from Mapbox tilesets at geographic coordinates",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "tilesetId": {
+            "default": "mapbox.mapbox-streets-v8",
+            "description": "Tileset ID to query (default: mapbox.mapbox-streets-v8)",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$"
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "description": "Longitude coordinate to query"
+          },
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "description": "Latitude coordinate to query"
+          },
+          "radius": {
+            "default": 0,
+            "description": "Radius in meters to search for features (default: 0)",
+            "type": "number",
+            "minimum": 0
+          },
+          "limit": {
+            "default": 5,
+            "description": "Number of features to return (1-50, default: 5)",
+            "type": "number",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "dedupe": {
+            "default": true,
+            "description": "Whether to deduplicate identical features (default: true)",
+            "type": "boolean"
+          },
+          "geometry": {
+            "description": "Filter results by geometry type",
+            "type": "string",
+            "enum": [
+              "polygon",
+              "linestring",
+              "point"
+            ]
+          },
+          "layers": {
+            "description": "Specific layer names to query from the tileset",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bands": {
+            "description": "Specific band names to query (for rasterarray tilesets)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "longitude",
+          "latitude"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "title": "Mapbox Tilequery Tool"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "FeatureCollection"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "Feature"
+                    },
+                    "id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "description": "Feature identifier (string or number per GeoJSON spec)"
+                    },
+                    "geometry": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "Point"
+                        },
+                        "coordinates": {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "coordinates"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "properties": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tilequery": {
+                              "type": "object",
+                              "properties": {
+                                "distance": {
+                                  "type": "number",
+                                  "description": "Approximate surface distance from feature to queried point, in meters"
+                                },
+                                "geometry": {
+                                  "type": "string",
+                                  "enum": [
+                                    "point",
+                                    "linestring",
+                                    "polygon"
+                                  ],
+                                  "description": "Original geometry type of the feature"
+                                },
+                                "layer": {
+                                  "type": "string",
+                                  "description": "The vector tile layer of the feature result"
+                                }
+                              },
+                              "required": [
+                                "distance",
+                                "geometry",
+                                "layer"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "tilequery"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "id",
+                    "geometry",
+                    "properties"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "Feature"
+                    },
+                    "id": {
+                      "type": "null"
+                    },
+                    "geometry": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "Point"
+                        },
+                        "coordinates": {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "coordinates"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "properties": {
+                      "type": "object",
+                      "properties": {
+                        "tilequery": {
+                          "type": "object",
+                          "properties": {
+                            "layer": {
+                              "type": "string",
+                              "description": "The layer that the feature belongs to"
+                            },
+                            "band": {
+                              "type": "string",
+                              "description": "The band that the feature belongs to"
+                            },
+                            "zoom": {
+                              "type": "number",
+                              "description": "The maxzoom level at which the point value was extracted"
+                            },
+                            "units": {
+                              "type": "string",
+                              "description": "The unit of measurement for the point value"
+                            }
+                          },
+                          "required": [
+                            "layer",
+                            "band",
+                            "zoom",
+                            "units"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "val": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              }
+                            }
+                          ],
+                          "description": "Point value at the requested location (number for single-band, array for multi-dimensional data)"
+                        }
+                      },
+                      "required": [
+                        "tilequery",
+                        "val"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "id",
+                    "geometry",
+                    "properties"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "type",
+          "features"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 334
+    },
+    {
+      "name": "validate_expression_tool",
+      "title": "Validate Expression Tool",
+      "description": "Validates Mapbox style expressions for syntax, operators, and argument correctness",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "expression": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {}
+            ],
+            "description": "Mapbox expression to validate (JSON string or expression array)"
+          },
+          "context": {
+            "description": "Context where the expression will be used",
+            "type": "string",
+            "enum": [
+              "style",
+              "filter",
+              "layout",
+              "paint"
+            ]
+          }
+        },
+        "required": [
+          "expression"
+        ]
+      },
+      "annotations": {
+        "title": "Validate Expression Tool",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "description": "Whether the expression is valid"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "error",
+                    "warning",
+                    "info"
+                  ],
+                  "description": "Issue severity"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Description of the issue"
+                },
+                "path": {
+                  "description": "Path to the problem in the expression",
+                  "type": "string"
+                },
+                "suggestion": {
+                  "description": "How to fix the issue",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "severity",
+                "message"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Critical errors"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "error",
+                    "warning",
+                    "info"
+                  ],
+                  "description": "Issue severity"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Description of the issue"
+                },
+                "path": {
+                  "description": "Path to the problem in the expression",
+                  "type": "string"
+                },
+                "suggestion": {
+                  "description": "How to fix the issue",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "severity",
+                "message"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Non-critical warnings"
+          },
+          "info": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "error",
+                    "warning",
+                    "info"
+                  ],
+                  "description": "Issue severity"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Description of the issue"
+                },
+                "path": {
+                  "description": "Path to the problem in the expression",
+                  "type": "string"
+                },
+                "suggestion": {
+                  "description": "How to fix the issue",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "severity",
+                "message"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Informational messages"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "expressionType": {
+                "description": "Detected expression type (e.g., \"literal\", \"get\", \"match\")",
+                "type": "string"
+              },
+              "returnType": {
+                "description": "Expected return type of the expression",
+                "type": "string"
+              },
+              "depth": {
+                "description": "Maximum nesting depth",
+                "type": "number"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Expression metadata"
+          }
+        },
+        "required": [
+          "valid",
+          "errors",
+          "warnings",
+          "info",
+          "metadata"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 109
+    },
+    {
+      "name": "validate_geojson_tool",
+      "title": "Validate GeoJSON Tool",
+      "description": "Validates GeoJSON objects for correctness, checking structure, coordinates, and geometry types",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "geojson": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            ],
+            "description": "GeoJSON object or JSON string to validate"
+          }
+        },
+        "required": [
+          "geojson"
+        ]
+      },
+      "annotations": {
+        "title": "Validate GeoJSON Tool",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "description": "Whether the GeoJSON is valid"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "error",
+                    "warning",
+                    "info"
+                  ],
+                  "description": "Issue severity"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Description of the issue"
+                },
+                "path": {
+                  "description": "JSON path to the problem",
+                  "type": "string"
+                },
+                "suggestion": {
+                  "description": "How to fix the issue",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "severity",
+                "message"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Critical errors"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "error",
+                    "warning",
+                    "info"
+                  ],
+                  "description": "Issue severity"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Description of the issue"
+                },
+                "path": {
+                  "description": "JSON path to the problem",
+                  "type": "string"
+                },
+                "suggestion": {
+                  "description": "How to fix the issue",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "severity",
+                "message"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Non-critical warnings"
+          },
+          "info": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "error",
+                    "warning",
+                    "info"
+                  ],
+                  "description": "Issue severity"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Description of the issue"
+                },
+                "path": {
+                  "description": "JSON path to the problem",
+                  "type": "string"
+                },
+                "suggestion": {
+                  "description": "How to fix the issue",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "severity",
+                "message"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Informational messages"
+          },
+          "statistics": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "GeoJSON type"
+              },
+              "featureCount": {
+                "description": "Number of features",
+                "type": "number"
+              },
+              "geometryTypes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Geometry types found"
+              },
+              "bbox": {
+                "description": "Bounding box [minLon, minLat, maxLon, maxLat]",
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "type",
+              "geometryTypes"
+            ],
+            "additionalProperties": false,
+            "description": "GeoJSON statistics"
+          }
+        },
+        "required": [
+          "valid",
+          "errors",
+          "warnings",
+          "info",
+          "statistics"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 98
+    },
+    {
+      "name": "validate_style_tool",
+      "title": "Validate Style Tool",
+      "description": "Validates Mapbox style JSON against the Mapbox Style Specification, checking for errors, warnings, and providing suggestions for improvement",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            ],
+            "description": "Mapbox style JSON object or JSON string to validate against the Mapbox Style Specification"
+          }
+        },
+        "required": [
+          "style"
+        ]
+      },
+      "annotations": {
+        "title": "Validate Style Tool",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "description": "Whether the style is valid"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "error",
+                    "warning",
+                    "info"
+                  ],
+                  "description": "Severity level of the issue"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Description of the validation issue"
+                },
+                "path": {
+                  "description": "JSON path to the problematic property",
+                  "type": "string"
+                },
+                "suggestion": {
+                  "description": "Suggested fix for the issue",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "severity",
+                "message"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Critical errors that prevent the style from working"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "error",
+                    "warning",
+                    "info"
+                  ],
+                  "description": "Severity level of the issue"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Description of the validation issue"
+                },
+                "path": {
+                  "description": "JSON path to the problematic property",
+                  "type": "string"
+                },
+                "suggestion": {
+                  "description": "Suggested fix for the issue",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "severity",
+                "message"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Non-critical issues that may cause unexpected behavior"
+          },
+          "info": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "error",
+                    "warning",
+                    "info"
+                  ],
+                  "description": "Severity level of the issue"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Description of the validation issue"
+                },
+                "path": {
+                  "description": "JSON path to the problematic property",
+                  "type": "string"
+                },
+                "suggestion": {
+                  "description": "Suggested fix for the issue",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "severity",
+                "message"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Informational messages and suggestions for improvement"
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "description": "Style specification version",
+                "type": "number"
+              },
+              "layerCount": {
+                "type": "number",
+                "description": "Number of layers"
+              },
+              "sourceCount": {
+                "type": "number",
+                "description": "Number of sources"
+              },
+              "hasSprite": {
+                "type": "boolean",
+                "description": "Whether style has sprite defined"
+              },
+              "hasGlyphs": {
+                "type": "boolean",
+                "description": "Whether style has glyphs defined"
+              }
+            },
+            "required": [
+              "layerCount",
+              "sourceCount",
+              "hasSprite",
+              "hasGlyphs"
+            ],
+            "additionalProperties": false,
+            "description": "Summary of style structure"
+          }
+        },
+        "required": [
+          "valid",
+          "errors",
+          "warnings",
+          "info",
+          "summary"
+        ],
+        "additionalProperties": false
+      },
+      "tokens": 111
+    }
+  ],
+  "totalTokens": 7308,
+  "prompts": [
+    {
+      "name": "create-and-preview-style",
+      "description": "Create a new Mapbox map style and generate a shareable preview link. Automatically handles token management by checking for or creating a public token with the required scopes.",
+      "arguments": [
+        {
+          "name": "style_name",
+          "description": "Name for the new map style",
+          "required": true
+        },
+        {
+          "name": "style_description",
+          "required": false
+        },
+        {
+          "name": "base_style",
+          "required": false
+        },
+        {
+          "name": "preview_location",
+          "required": false
+        },
+        {
+          "name": "preview_zoom",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "build-custom-map",
+      "description": "Use conversational AI to build a custom styled map based on a theme description. Supports themes like \"dark cyberpunk\", \"nature-focused\", \"minimal monochrome\" and can emphasize specific features.",
+      "arguments": [
+        {
+          "name": "theme",
+          "description": "Theme description for the map (e.g., \"dark cyberpunk\", \"nature-focused\", \"minimal monochrome\", \"retro 80s neon\")",
+          "required": true
+        },
+        {
+          "name": "emphasis",
+          "required": false
+        },
+        {
+          "name": "preview_location",
+          "required": false
+        },
+        {
+          "name": "preview_zoom",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "analyze-geojson",
+      "description": "Analyze and visualize GeoJSON data. Validates format, calculates bounding box, and generates an interactive map visualization.",
+      "arguments": [
+        {
+          "name": "geojson_data",
+          "description": "GeoJSON object or string to analyze (Point, LineString, Polygon, Feature, FeatureCollection, etc.)",
+          "required": true
+        },
+        {
+          "name": "show_bounds",
+          "required": false
+        },
+        {
+          "name": "convert_coordinates",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "setup-mapbox-project",
+      "description": "Complete setup workflow for a new Mapbox project. Creates tokens with proper security settings, initializes a map style, and provides integration guidance.",
+      "arguments": [
+        {
+          "name": "project_name",
+          "description": "Name of the project or application",
+          "required": true
+        },
+        {
+          "name": "project_type",
+          "required": false
+        },
+        {
+          "name": "production_domain",
+          "required": false
+        },
+        {
+          "name": "style_theme",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "debug-mapbox-integration",
+      "description": "Systematic troubleshooting workflow for Mapbox integration issues. Diagnoses token problems, style errors, API issues, and provides actionable solutions.",
+      "arguments": [
+        {
+          "name": "issue_description",
+          "description": "Description of the problem (e.g., \"map not loading\", \"401 error\")",
+          "required": true
+        },
+        {
+          "name": "error_message",
+          "required": false
+        },
+        {
+          "name": "style_id",
+          "required": false
+        },
+        {
+          "name": "environment",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "design-data-driven-style",
+      "description": "Create a map style with data-driven properties that respond dynamically to feature data. Guides you through expressions, color scales, and property-based styling.",
+      "arguments": [
+        {
+          "name": "style_name",
+          "description": "Name for the data-driven style",
+          "required": true
+        },
+        {
+          "name": "data_description",
+          "description": "Description of the data (e.g., \"population by city\", \"earthquake magnitudes\", \"property prices\")",
+          "required": true
+        },
+        {
+          "name": "property_name",
+          "description": "Name of the data property to visualize (e.g., \"population\", \"magnitude\", \"price\")",
+          "required": true
+        },
+        {
+          "name": "visualization_type",
+          "required": false
+        },
+        {
+          "name": "color_scheme",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "prepare-style-for-production",
+      "description": "Comprehensive quality validation workflow for Mapbox styles before production deployment. Validates expressions, checks accessibility compliance, optimizes performance, and generates a deployment-ready quality report.",
+      "arguments": [
+        {
+          "name": "style_id_or_json",
+          "description": "Either a Mapbox style ID (e.g., \"username/style-id\") or a complete style JSON string",
+          "required": true
+        },
+        {
+          "name": "skip_optimization",
+          "required": false
+        },
+        {
+          "name": "wcag_level",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "uri": "ui://mapbox/preview-style/index.html",
+      "name": "Mapbox Style Preview UI",
+      "mimeType": "text/html;profile=mcp-app",
+      "description": "Interactive UI for previewing Mapbox styles rendered inline with Mapbox GL JS (MCP Apps)"
+    },
+    {
+      "uri": "ui://mapbox/style-comparison/index.html",
+      "name": "Mapbox Style Comparison UI",
+      "mimeType": "text/html;profile=mcp-app",
+      "description": "Interactive UI for comparing two Mapbox styles with a draggable slider (MCP Apps)"
+    },
+    {
+      "uri": "ui://mapbox/geojson-preview/index.html",
+      "name": "GeoJSON Preview UI",
+      "mimeType": "text/html;profile=mcp-app",
+      "description": "Interactive UI for previewing GeoJSON data rendered inline with Mapbox GL JS (MCP Apps)"
+    },
+    {
+      "uri": "resource://mapbox-style-layers",
+      "name": "Mapbox Style Specification Guide",
+      "description": "Mapbox GL JS style specification reference for layer types, paint/layout properties, and Streets v8 source layers",
+      "mimeType": "text/markdown"
+    },
+    {
+      "uri": "resource://mapbox-streets-v8-fields",
+      "name": "Mapbox Streets v8 Fields Reference",
+      "description": "Complete field definitions for all Mapbox Streets v8 source layers including available values for each field. Use this to understand what fields and values are available when filtering or styling map features.",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "resource://mapbox-token-scopes",
+      "name": "Mapbox Token Scopes Reference",
+      "description": "Reference guide for Mapbox access token scopes and their permissions. Use this to understand what each scope allows and which scopes are needed for different operations.",
+      "mimeType": "text/markdown"
+    },
+    {
+      "uri": "resource://mapbox-layer-type-mapping",
+      "name": "Mapbox Layer Type Mapping",
+      "description": "Mapping of Mapbox Streets v8 source layers to compatible Mapbox GL JS layer types. Use this to understand which layer types (fill, line, symbol, etc.) work with which source layers.",
+      "mimeType": "application/json"
+    }
+  ],
+  "resourceTemplates": []
+}

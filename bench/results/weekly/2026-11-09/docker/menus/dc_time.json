@@ -1,0 +1,58 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mcp-time",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:36:39.518Z",
+  "tools": [
+    {
+      "name": "get_current_time",
+      "description": "Get current time in a specific timezones",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "description": "IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'UTC' as local timezone if no timezone provided by the user."
+          }
+        },
+        "required": [
+          "timezone"
+        ]
+      },
+      "tokens": 76
+    },
+    {
+      "name": "convert_time",
+      "description": "Convert time between timezones",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "source_timezone": {
+            "type": "string",
+            "description": "Source IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'UTC' as local timezone if no source timezone provided by the user."
+          },
+          "time": {
+            "type": "string",
+            "description": "Time to convert in 24-hour format (HH:MM)"
+          },
+          "target_timezone": {
+            "type": "string",
+            "description": "Target IANA timezone name (e.g., 'Asia/Tokyo', 'America/San_Francisco'). Use 'UTC' as local timezone if no target timezone provided by the user."
+          }
+        },
+        "required": [
+          "source_timezone",
+          "time",
+          "target_timezone"
+        ]
+      },
+      "tokens": 153
+    }
+  ],
+  "totalTokens": 229
+}

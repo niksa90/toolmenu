@@ -1,0 +1,284 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "OpenAPI Schema",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:08:17.639Z",
+  "tools": [
+    {
+      "name": "list-endpoints",
+      "description": "Lists all API paths and their HTTP methods with summaries, organized by path",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "openapiSchemaPath": {
+            "type": "string",
+            "description": "Path to the OpenAPI schema file"
+          }
+        },
+        "required": [
+          "openapiSchemaPath"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 81
+    },
+    {
+      "name": "get-endpoint",
+      "description": "Gets detailed information about a specific API endpoint",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "openapiSchemaPath": {
+            "type": "string",
+            "description": "Path to the OpenAPI schema file"
+          },
+          "path": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "openapiSchemaPath",
+          "path",
+          "method"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 93
+    },
+    {
+      "name": "get-request-body",
+      "description": "Gets the request body schema for a specific endpoint",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "openapiSchemaPath": {
+            "type": "string",
+            "description": "Path to the OpenAPI schema file"
+          },
+          "path": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "openapiSchemaPath",
+          "path",
+          "method"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 94
+    },
+    {
+      "name": "get-response-schema",
+      "description": "Gets the response schema for a specific endpoint, method, and status code",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "openapiSchemaPath": {
+            "type": "string",
+            "description": "Path to the OpenAPI schema file"
+          },
+          "path": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "statusCode": {
+            "type": "string",
+            "default": "200"
+          }
+        },
+        "required": [
+          "openapiSchemaPath",
+          "path",
+          "method"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 111
+    },
+    {
+      "name": "get-path-parameters",
+      "description": "Gets the parameters for a specific path",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "openapiSchemaPath": {
+            "type": "string",
+            "description": "Path to the OpenAPI schema file"
+          },
+          "path": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "openapiSchemaPath",
+          "path"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 91
+    },
+    {
+      "name": "list-components",
+      "description": "Lists all schema components (schemas, parameters, responses, etc.)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "openapiSchemaPath": {
+            "type": "string",
+            "description": "Path to the OpenAPI schema file"
+          }
+        },
+        "required": [
+          "openapiSchemaPath"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 79
+    },
+    {
+      "name": "get-component",
+      "description": "Gets detailed definition for a specific component",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "openapiSchemaPath": {
+            "type": "string",
+            "description": "Path to the OpenAPI schema file"
+          },
+          "type": {
+            "type": "string",
+            "description": "Component type (e.g., schemas, parameters, responses)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Component name"
+          }
+        },
+        "required": [
+          "openapiSchemaPath",
+          "type",
+          "name"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 111
+    },
+    {
+      "name": "list-security-schemes",
+      "description": "Lists all available security schemes",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "openapiSchemaPath": {
+            "type": "string",
+            "description": "Path to the OpenAPI schema file"
+          }
+        },
+        "required": [
+          "openapiSchemaPath"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 74
+    },
+    {
+      "name": "get-examples",
+      "description": "Gets examples for a specific component or endpoint",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "openapiSchemaPath": {
+            "type": "string",
+            "description": "Path to the OpenAPI schema file"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "request",
+              "response",
+              "component"
+            ],
+            "description": "Type of example to retrieve"
+          },
+          "path": {
+            "type": "string",
+            "description": "API path (required for request/response examples)"
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method (required for request/response examples)"
+          },
+          "statusCode": {
+            "type": "string",
+            "description": "Status code (for response examples)"
+          },
+          "componentType": {
+            "type": "string",
+            "description": "Component type (required for component examples)"
+          },
+          "componentName": {
+            "type": "string",
+            "description": "Component name (required for component examples)"
+          }
+        },
+        "required": [
+          "openapiSchemaPath",
+          "type"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 197
+    },
+    {
+      "name": "search-schema",
+      "description": "Searches across paths, operations, and schemas",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "openapiSchemaPath": {
+            "type": "string",
+            "description": "Path to the OpenAPI schema file"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Search pattern (case-insensitive)"
+          }
+        },
+        "required": [
+          "openapiSchemaPath",
+          "pattern"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 94
+    }
+  ],
+  "totalTokens": 1025
+}

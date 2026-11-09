@@ -1,0 +1,440 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "awslabs.aws-msk-mcp-server",
+    "version": "1.23.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:27:21.731Z",
+  "tools": [
+    {
+      "name": "describe_cluster_operation",
+      "description": "Gets information about a cluster operation.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "cluster_operation_arn": {
+            "description": "The Amazon Resource Name (ARN) of the cluster operation",
+            "title": "Cluster Operation Arn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "region",
+          "cluster_operation_arn"
+        ],
+        "title": "describe_cluster_operation_toolArguments",
+        "type": "object"
+      },
+      "tokens": 89
+    },
+    {
+      "name": "get_cluster_info",
+      "description": "Gets comprehensive information about MSK clusters.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "cluster_arn": {
+            "description": "The ARN of the cluster to get information for",
+            "title": "Cluster Arn",
+            "type": "string"
+          },
+          "info_type": {
+            "default": "all",
+            "description": "Type of information to retrieve (metadata, brokers, nodes, compatible_versions, policy, operations, client_vpc_connections, scram_secrets, all)",
+            "title": "Info Type",
+            "type": "string"
+          },
+          "kwargs": {
+            "additionalProperties": true,
+            "default": {},
+            "description": "Additional arguments specific to each info type",
+            "title": "Kwargs",
+            "type": "object"
+          }
+        },
+        "required": [
+          "region",
+          "cluster_arn"
+        ],
+        "title": "get_cluster_infoArguments",
+        "type": "object"
+      },
+      "tokens": 166
+    },
+    {
+      "name": "get_global_info",
+      "description": "Gets global information about MSK resources.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "info_type": {
+            "default": "all",
+            "description": "Type of information to retrieve (clusters, configurations, vpc_connections, kafka_versions, all)",
+            "title": "Info Type",
+            "type": "string"
+          },
+          "kwargs": {
+            "additionalProperties": true,
+            "default": {},
+            "description": "Additional arguments specific to each info type",
+            "title": "Kwargs",
+            "type": "object"
+          }
+        },
+        "required": [
+          "region"
+        ],
+        "title": "get_global_infoArguments",
+        "type": "object"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "describe_vpc_connection",
+      "description": "Gets detailed information about a VPC connection.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "vpc_connection_arn": {
+            "description": "The Amazon Resource Name (ARN) of the VPC connection",
+            "title": "Vpc Connection Arn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "region",
+          "vpc_connection_arn"
+        ],
+        "title": "describe_vpc_connection_toolArguments",
+        "type": "object"
+      },
+      "tokens": 96
+    },
+    {
+      "name": "get_configuration_info",
+      "description": "Gets information about MSK configurations.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "action": {
+            "description": "The operation to perform: 'describe', 'revisions', or 'revision_details'",
+            "title": "Action",
+            "type": "string"
+          },
+          "arn": {
+            "description": "The Amazon Resource Name (ARN) of the configuration",
+            "title": "Arn",
+            "type": "string"
+          },
+          "kwargs": {
+            "additionalProperties": true,
+            "default": {},
+            "description": "Additional arguments based on the action",
+            "title": "Kwargs",
+            "type": "object"
+          }
+        },
+        "required": [
+          "region",
+          "action",
+          "arn"
+        ],
+        "title": "get_configuration_infoArguments",
+        "type": "object"
+      },
+      "tokens": 142
+    },
+    {
+      "name": "list_tags_for_resource",
+      "description": "Lists all tags for an MSK resource.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "arn": {
+            "description": "The Amazon Resource Name (ARN) of the resource",
+            "title": "Arn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "region",
+          "arn"
+        ],
+        "title": "list_tags_for_resource_toolArguments",
+        "type": "object"
+      },
+      "tokens": 84
+    },
+    {
+      "name": "list_topics",
+      "description": "Returns all topics in an MSK cluster.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "cluster_arn": {
+            "description": "The Amazon Resource Name (ARN) that uniquely identifies the cluster",
+            "title": "Cluster Arn",
+            "type": "string"
+          },
+          "topic_name_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Returns topics starting with given name",
+            "title": "Topic Name Filter"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The maximum number of results to return in the response (default maximum 100 results per API call)",
+            "title": "Max Results"
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The paginated results marker. When the result of the operation is truncated, the call returns NextToken in the response",
+            "title": "Next Token"
+          }
+        },
+        "required": [
+          "region",
+          "cluster_arn"
+        ],
+        "title": "list_topics_toolArguments",
+        "type": "object"
+      },
+      "tokens": 225
+    },
+    {
+      "name": "describe_topic",
+      "description": "Returns details for a specific topic on an MSK cluster.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "cluster_arn": {
+            "description": "The Amazon Resource Name (ARN) that uniquely identifies the cluster",
+            "title": "Cluster Arn",
+            "type": "string"
+          },
+          "topic_name": {
+            "description": "The name of the topic to describe",
+            "title": "Topic Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "region",
+          "cluster_arn",
+          "topic_name"
+        ],
+        "title": "describe_topic_toolArguments",
+        "type": "object"
+      },
+      "tokens": 116
+    },
+    {
+      "name": "describe_topic_partitions",
+      "description": "Returns partition information for a specific topic on an MSK cluster.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "cluster_arn": {
+            "description": "The Amazon Resource Name (ARN) that uniquely identifies the cluster",
+            "title": "Cluster Arn",
+            "type": "string"
+          },
+          "topic_name": {
+            "description": "The name of the topic to describe partitions for",
+            "title": "Topic Name",
+            "type": "string"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum number of partitions to return",
+            "title": "Max Results"
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Token for pagination",
+            "title": "Next Token"
+          }
+        },
+        "required": [
+          "region",
+          "cluster_arn",
+          "topic_name"
+        ],
+        "title": "describe_topic_partitions_toolArguments",
+        "type": "object"
+      },
+      "tokens": 190
+    },
+    {
+      "name": "get_cluster_telemetry",
+      "description": "Gets telemetry data for MSK clusters.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "action": {
+            "description": "The operation to perform (metrics, available_metrics)",
+            "title": "Action",
+            "type": "string"
+          },
+          "cluster_arn": {
+            "description": "The ARN of the cluster (required for cluster operations)",
+            "title": "Cluster Arn",
+            "type": "string"
+          },
+          "kwargs": {
+            "additionalProperties": true,
+            "default": {},
+            "description": "Additional arguments based on the action type",
+            "title": "Kwargs",
+            "type": "object"
+          }
+        },
+        "required": [
+          "region",
+          "action",
+          "cluster_arn"
+        ],
+        "title": "get_cluster_telemetryArguments",
+        "type": "object"
+      },
+      "tokens": 147
+    },
+    {
+      "name": "list_customer_iam_access",
+      "description": "Lists IAM access information for an MSK cluster.",
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "description": "AWS region",
+            "title": "Region",
+            "type": "string"
+          },
+          "cluster_arn": {
+            "description": "The ARN of the MSK cluster",
+            "title": "Cluster Arn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "region",
+          "cluster_arn"
+        ],
+        "title": "list_customer_iam_access_toolArguments",
+        "type": "object"
+      },
+      "tokens": 89
+    },
+    {
+      "name": "get_cluster_best_practices",
+      "description": "Gets best practices and quotas for AWS MSK clusters.",
+      "inputSchema": {
+        "properties": {
+          "instance_type": {
+            "description": "The AWS MSK broker instance type (e.g., kafka.m5.large, kafka.m5.xlarge, express.m7g.large)",
+            "title": "Instance Type",
+            "type": "string"
+          },
+          "number_of_brokers": {
+            "description": "The total number of brokers in the MSK cluster",
+            "title": "Number Of Brokers",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "instance_type",
+          "number_of_brokers"
+        ],
+        "title": "get_cluster_best_practices_toolArguments",
+        "type": "object"
+      },
+      "tokens": 129
+    }
+  ],
+  "totalTokens": 1597,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

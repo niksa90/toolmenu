@@ -1,0 +1,91 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "ig-mcp-server",
+    "version": "0.0.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:24:35.216Z",
+  "tools": [
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Tool for image \"toolmenu\", complete description will be available once Inspektor Gadget is deployed",
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "gadget_toolmenu",
+      "tokens": 44
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Manage the deployment of Inspektor Gadget on target system",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "description": "Lifecycle action to perform: deploy(deploy Inspektor Gadget), undeploy(undeploy Inspektor Gadget), upgrade(upgrade Inspektor Gadget), is_deployed(check if Inspektor Gadget is deployed)",
+            "enum": [
+              "deploy",
+              "undeploy",
+              "upgrade",
+              "is_deployed"
+            ],
+            "type": "string"
+          },
+          "chart_version": {
+            "description": "Version of the Inspektor Gadget Helm chart to deploy, only set if user explicitly specifies a version",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "ig_deploy",
+      "tokens": 131
+    },
+    {
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Manage running gadgets",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "description": "Lifecycle action to perform: list_running_gadgets(list running gadgets), stop_gadget(stop a running gadget using its ID), get_results(get results of a running gadget using its ID, only available before stopping it)",
+            "enum": [
+              "get_results",
+              "stop_gadget",
+              "list_running_gadgets"
+            ],
+            "type": "string"
+          },
+          "gadget_id": {
+            "description": "ID of the gadget to stop or get results from, required for stop_gadget and get_results",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "ig_gadgets",
+      "tokens": 126
+    }
+  ],
+  "totalTokens": 301
+}

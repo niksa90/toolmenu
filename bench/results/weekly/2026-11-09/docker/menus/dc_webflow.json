@@ -1,0 +1,1016 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "webflow-mcp-server",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:17:32.190Z",
+  "tools": [
+    {
+      "name": "sites_list",
+      "inputSchema": {
+        "type": "object"
+      },
+      "tokens": 13
+    },
+    {
+      "name": "sites_get",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "site_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "site_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 49
+    },
+    {
+      "name": "sites_publish",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "site_id": {
+            "type": "string"
+          },
+          "customDomains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "publishToWebflowSubdomain": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "site_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 79
+    },
+    {
+      "name": "pages_list",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "site_id": {
+            "type": "string"
+          },
+          "localeId": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "site_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 71
+    },
+    {
+      "name": "pages_get_metadata",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string"
+          },
+          "localeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 58
+    },
+    {
+      "name": "pages_update_page_settings",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string"
+          },
+          "localeId": {
+            "type": "string"
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "siteId": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "parentId": {
+                "type": "string"
+              },
+              "collectionId": {
+                "type": "string"
+              },
+              "createdOn": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "lastUpdated": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "archived": {
+                "type": "boolean"
+              },
+              "draft": {
+                "type": "boolean"
+              },
+              "canBranch": {
+                "type": "boolean"
+              },
+              "isBranch": {
+                "type": "boolean"
+              },
+              "isMembersOnly": {
+                "type": "boolean"
+              },
+              "seo": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "openGraph": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "titleCopied": {
+                    "type": "boolean"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "descriptionCopied": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "localeId": {
+                "type": "string"
+              },
+              "publishedPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "page_id",
+          "body"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 278
+    },
+    {
+      "name": "pages_get_content",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string"
+          },
+          "localeId": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "page_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 72
+    },
+    {
+      "name": "pages_update_static_content",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string"
+          },
+          "localeId": {
+            "type": "string"
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "nodeId": {
+                      "type": "string"
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "nodeId",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "nodeId": {
+                      "type": "string"
+                    },
+                    "propertyOverrides": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "propertyId": {
+                            "type": "string"
+                          },
+                          "text": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "propertyId",
+                          "text"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "nodeId",
+                    "propertyOverrides"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "page_id",
+          "localeId",
+          "nodes"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 184
+    },
+    {
+      "name": "collections_list",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "site_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "site_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 49
+    },
+    {
+      "name": "collections_get",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "collection_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 49
+    },
+    {
+      "name": "collections_create",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "site_id": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "displayName": {
+                "type": "string"
+              },
+              "singularName": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "displayName",
+              "singularName"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "site_id",
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 99
+    },
+    {
+      "name": "collection_fields_create_static",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "isEditable": {
+                "type": "boolean"
+              },
+              "isRequired": {
+                "type": "boolean"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "Color",
+                  "DateTime",
+                  "Email",
+                  "File",
+                  "Image",
+                  "Link",
+                  "MultiImage",
+                  "Number",
+                  "Phone",
+                  "PlainText",
+                  "RichText",
+                  "Switch",
+                  "Video"
+                ]
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "helpText": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "displayName"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "collection_id",
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 153
+    },
+    {
+      "name": "collection_fields_create_option",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "isEditable": {
+                "type": "boolean"
+              },
+              "isRequired": {
+                "type": "boolean"
+              },
+              "type": {
+                "type": "string",
+                "const": "Option"
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "helpText": {
+                "type": "string"
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "options"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "type",
+              "displayName",
+              "metadata"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "collection_id",
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 185
+    },
+    {
+      "name": "collection_fields_create_reference",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "isEditable": {
+                "type": "boolean"
+              },
+              "isRequired": {
+                "type": "boolean"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "MultiReference",
+                  "Reference"
+                ]
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "helpText": {
+                "type": "string"
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "collectionId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "collectionId"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "type",
+              "displayName",
+              "metadata"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "collection_id",
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 158
+    },
+    {
+      "name": "collection_fields_update",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "field_id": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "isRequired": {
+                "type": "boolean"
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "helpText": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "collection_id",
+          "field_id",
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 101
+    },
+    {
+      "name": "collections_items_create_item_live",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "cmsLocaleId": {
+                      "type": "string"
+                    },
+                    "lastPublished": {
+                      "type": "string"
+                    },
+                    "lastUpdated": {
+                      "type": "string"
+                    },
+                    "createdOn": {
+                      "type": "string"
+                    },
+                    "isArchived": {
+                      "type": "boolean"
+                    },
+                    "isDraft": {
+                      "type": "boolean"
+                    },
+                    "fieldData": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "slug": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "slug"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "fieldData"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "collection_id",
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 195
+    },
+    {
+      "name": "collections_items_update_items_live",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "cmsLocaleId": {
+                      "type": "string"
+                    },
+                    "lastPublished": {
+                      "type": "string"
+                    },
+                    "lastUpdated": {
+                      "type": "string"
+                    },
+                    "createdOn": {
+                      "type": "string"
+                    },
+                    "isArchived": {
+                      "type": "boolean"
+                    },
+                    "isDraft": {
+                      "type": "boolean"
+                    },
+                    "fieldData": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "slug": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "collection_id",
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 187
+    },
+    {
+      "name": "collections_items_list_items",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "cmsLocaleId": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "sortBy": {
+            "type": "string",
+            "enum": [
+              "lastPublished",
+              "name",
+              "slug"
+            ]
+          },
+          "sortOrder": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "required": [
+          "collection_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 120
+    },
+    {
+      "name": "collections_items_create_item",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "cmsLocaleId": {
+                      "type": "string"
+                    },
+                    "lastPublished": {
+                      "type": "string"
+                    },
+                    "lastUpdated": {
+                      "type": "string"
+                    },
+                    "createdOn": {
+                      "type": "string"
+                    },
+                    "isArchived": {
+                      "type": "boolean"
+                    },
+                    "isDraft": {
+                      "type": "boolean"
+                    },
+                    "fieldData": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "slug": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "slug"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "fieldData"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "collection_id",
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 194
+    },
+    {
+      "name": "collections_items_update_items",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "cmsLocaleId": {
+                      "type": "string"
+                    },
+                    "lastPublished": {
+                      "type": "string"
+                    },
+                    "lastUpdated": {
+                      "type": "string"
+                    },
+                    "createdOn": {
+                      "type": "string"
+                    },
+                    "isArchived": {
+                      "type": "boolean"
+                    },
+                    "isDraft": {
+                      "type": "boolean"
+                    },
+                    "fieldData": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "slug": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "slug"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "fieldData"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "collection_id",
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 196
+    },
+    {
+      "name": "collections_items_publish_items",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string"
+          },
+          "itemIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "collection_id",
+          "itemIds"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 68
+    }
+  ],
+  "totalTokens": 2558
+}

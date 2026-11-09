@@ -1,0 +1,35 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "markitdown",
+    "version": "1.8.1",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:42:55.775Z",
+  "tools": [
+    {
+      "name": "convert_to_markdown",
+      "description": "Convert a resource described by an http:, https:, file: or data: URI to markdown",
+      "inputSchema": {
+        "properties": {
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "uri"
+        ],
+        "title": "convert_to_markdownArguments",
+        "type": "object"
+      },
+      "tokens": 62
+    }
+  ],
+  "totalTokens": 62,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

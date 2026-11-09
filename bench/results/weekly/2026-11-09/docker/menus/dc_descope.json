@@ -1,0 +1,426 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "descope",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:17:00.926Z",
+  "tools": [
+    {
+      "name": "search-audits",
+      "description": "Search Descope project audit logs",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "loginIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by specific login IDs"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by specific action types"
+          },
+          "excludedActions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Actions to exclude from results"
+          },
+          "tenants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by specific tenant IDs"
+          },
+          "noTenants": {
+            "type": "boolean",
+            "description": "If true, only show events without tenants"
+          },
+          "methods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by authentication methods"
+          },
+          "geos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by geographic locations"
+          },
+          "hoursBack": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 720,
+            "default": 24,
+            "description": "Hours to look back (max 720 hours / 30 days)"
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 5,
+            "description": "Number of audit logs to fetch (max 10)"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 270
+    },
+    {
+      "name": "search-users",
+      "description": "Search for users in Descope project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Text to search for in user fields"
+          },
+          "emails": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by specific email addresses"
+          },
+          "phones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by specific phone numbers"
+          },
+          "statuses": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "enabled",
+                "disabled",
+                "invited"
+              ]
+            },
+            "description": "Filter by user statuses ('enabled', 'disabled', or 'invited')"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter users by role names"
+          },
+          "tenantIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter users by specific tenant IDs"
+          },
+          "ssoAppIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter users by SSO application IDs"
+          },
+          "loginIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by specific login IDs"
+          },
+          "withTestUser": {
+            "type": "boolean",
+            "description": "Include test users in results"
+          },
+          "testUsersOnly": {
+            "type": "boolean",
+            "description": "Return only test users"
+          },
+          "page": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Page number for pagination"
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10,
+            "description": "Number of users per page (max 100)"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 326
+    },
+    {
+      "name": "create-user",
+      "description": "Create a new user in Descope project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "loginId": {
+            "type": "string",
+            "description": "Primary login identifier for the user"
+          },
+          "additionalLoginIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Additional login identifiers"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
+          },
+          "verifiedEmail": {
+            "type": "boolean",
+            "description": "Whether the email is pre-verified"
+          },
+          "phone": {
+            "type": "string",
+            "description": "User's phone number in E.164 format"
+          },
+          "verifiedPhone": {
+            "type": "boolean",
+            "description": "Whether the phone is pre-verified"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "User's display name"
+          },
+          "givenName": {
+            "type": "string",
+            "description": "User's given/first name"
+          },
+          "middleName": {
+            "type": "string",
+            "description": "User's middle name"
+          },
+          "familyName": {
+            "type": "string",
+            "description": "User's family/last name"
+          },
+          "picture": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to user's profile picture"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Global role names to assign to the user"
+          },
+          "userTenants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tenantId": {
+                  "type": "string"
+                },
+                "roleNames": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "tenantId",
+                "roleNames"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Tenant associations with specific roles"
+          },
+          "ssoAppIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "SSO application IDs to associate"
+          },
+          "customAttributes": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Custom attributes for the user"
+          }
+        },
+        "required": [
+          "loginId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 380
+    },
+    {
+      "name": "invite-user",
+      "description": "Create and invite a new user to the Descope project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "loginId": {
+            "type": "string",
+            "description": "Primary login identifier for the user"
+          },
+          "additionalLoginIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Additional login identifiers"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
+          },
+          "verifiedEmail": {
+            "type": "boolean",
+            "description": "Whether the email is pre-verified"
+          },
+          "phone": {
+            "type": "string",
+            "description": "User's phone number in E.164 format"
+          },
+          "verifiedPhone": {
+            "type": "boolean",
+            "description": "Whether the phone is pre-verified"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "User's display name"
+          },
+          "givenName": {
+            "type": "string",
+            "description": "User's given/first name"
+          },
+          "middleName": {
+            "type": "string",
+            "description": "User's middle name"
+          },
+          "familyName": {
+            "type": "string",
+            "description": "User's family/last name"
+          },
+          "picture": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to user's profile picture"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Global role names to assign to the user"
+          },
+          "userTenants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tenantId": {
+                  "type": "string"
+                },
+                "roleNames": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "tenantId",
+                "roleNames"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Tenant associations with specific roles"
+          },
+          "ssoAppIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "SSO application IDs to associate"
+          },
+          "customAttributes": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Custom attributes for the user"
+          },
+          "inviteUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Custom URL for the invitation link"
+          },
+          "sendMail": {
+            "type": "boolean",
+            "description": "Send invite via email (default follows project settings)"
+          },
+          "sendSMS": {
+            "type": "boolean",
+            "description": "Send invite via SMS (default follows project settings)"
+          },
+          "templateId": {
+            "type": "string",
+            "description": "Custom template ID for the invitation"
+          },
+          "templateOptions": {
+            "type": "object",
+            "properties": {
+              "appUrl": {
+                "type": "string",
+                "format": "uri",
+                "description": "Application URL to use in the template"
+              },
+              "redirectUrl": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL to redirect after authentication"
+              },
+              "customClaims": {
+                "type": "string",
+                "description": "Custom claims to include in the template (as JSON string)"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Options for customizing the invitation template"
+          }
+        },
+        "required": [
+          "loginId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 552
+    }
+  ],
+  "totalTokens": 1528
+}
