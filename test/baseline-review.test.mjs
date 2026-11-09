@@ -113,3 +113,12 @@ test('CLI: usage errors', async () => {
   writeFileSync(join(dir, 'bad.json'), '{');
   assert.equal((await run(['review', join(dir, 'bad.json'), join(dir, 'bad.json')])).code, 2);
 });
+
+test('a note that something was not compared is not a change: still unchanged (bench, 2026-11-09)', () => {
+  // A snapshot read with --lists against a session's union menu (no lists): diff says
+  // diff/lists-unread, and the menus are otherwise the same.
+  const withLists = { ...BASE, prompts: [{ name: 'p' }] };
+  const r = reviewMenus(withLists, BASE);
+  assert.ok(r.diff.findings.some((f) => f.rule === 'diff/lists-unread'));
+  assert.equal(r.verdict, 'unchanged');
+});

@@ -51,6 +51,8 @@ export interface ReviewOptions extends DiffOptions, RuleSettings {
 // Rules that read the wire (the raw tools/list pages, the handshake), which a menu
 // file doesn't hold: run on a file they'd say the same about both menus, or nothing true.
 const WIRE_ONLY = new Set(['spec/schema', 'spec/discover']);
+// diff findings that say what it couldn't compare, not what changed.
+const NOT_COMPARED = new Set(['diff/lists-unread', 'diff/catalog-queries']);
 
 /** The menu rules on a menu file, as far as a file can tell: no second list, no probes. */
 export function fileFindings(menu: Menu, settings: RuleSettings = {}): Finding[] {
@@ -118,7 +120,8 @@ export function reviewMenus(before: Menu, after: Menu, options: ReviewOptions = 
   let verdict: Verdict;
   if (breaking.length) verdict = released ? 'breaking-released' : 'breaking';
   else if (worse.length || checks.length) verdict = 'review';
-  else if (!diff.findings.length && !introduced.length && !resolved.length && !changed.length && diff.tokens.delta === 0) verdict = 'unchanged';
+  // Notes that something wasn't compared (lists read on one side only) aren't changes.
+  else if (!diff.findings.some((f) => !NOT_COMPARED.has(f.rule)) && !introduced.length && !resolved.length && !changed.length && diff.tokens.delta === 0) verdict = 'unchanged';
   else verdict = 'safe';
   // A released breaking change still needs the rest to be clean.
   const accept = verdict === 'unchanged' || verdict === 'safe' || (verdict === 'breaking-released' && !worse.length && !checks.length);
