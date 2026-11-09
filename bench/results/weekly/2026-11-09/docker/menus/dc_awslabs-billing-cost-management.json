@@ -1,0 +1,2642 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "billing-cost-management-mcp",
+    "version": "3.4.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {
+      "io.modelcontextprotocol/ui": {}
+    }
+  },
+  "capturedAt": "2026-11-09T18:55:45.766Z",
+  "tools": [
+    {
+      "name": "cost-explorer",
+      "description": "Retrieves AWS cost and usage data using the Cost Explorer API.\n\nIMPORTANT USAGE GUIDELINES:\n- Use UnblendedCost metric by default (not BlendedCost) unless user specifies otherwise\n- Exclude record_types 'Credit' and 'Refund' by default unless user requests inclusion\n- Choose DAILY granularity for periods <3 months, MONTHLY for longer periods\n- Start with high-level dimensions (SERVICE, LINKED_ACCOUNT) before detailed ones\n- Always remember that the end_date is exclusive\n\nUSE THIS TOOL FOR:\n- **Historical cost trends** and spending analysis (any time period)\n- **Usage pattern analysis** over time\n- **Cost breakdown** by service, account, region, or any dimension\n- **Forecasting** future costs and usage\n- **Resource-level cost analysis** (last 14 days)\n- **Multi-dimensional cost analysis** with complex grouping\n\n## OPERATIONS\n\n1) getCostAndUsage — account-level historical cost/usage\n   Required: operation=\"getCostAndUsage\", start_date, end_date, granularity, metrics\n   Optional: group_by, filter, next_token, max_pages, billing_view_arn\n   Example: {\"operation\": \"getCostAndUsage\", \"start_date\": \"2024-01-01\", \"end_date\": \"2024-02-01\", \"granularity\": \"DAILY\", \"metrics\": [\"UnblendedCost\"], \"group_by\": \"[{\"Type\": \"DIMENSION\", \"Key\": \"SERVICE\"}]\"}\n\n2. getCostAndUsageWithResources - Resource-level cost data (limited to last 14 days)\n   Required: operation=\"getCostAndUsageWithResources\", filter, granularity, start_date, end_date\n   Optional: metrics, group_by, next_token, max_pages, billing_view_arn\n   Notes: RESOURCE_ID must be included in either filter OR group_by parameters. This operation is limited to past 14 days of data from current date. Hourly granularity is only available for EC2-Instances resource-level data. All other resource-level data is available at daily granularity.\n   Example: {\"operation\": \"getCostAndUsageWithResources\", \"start_date\": \"2025-08-07\", \"end_date\": \"2025-08-21\", \"granularity\": \"DAILY\", \"filter\": \"{\"Dimensions\": {\"Key\": \"SERVICE\", \"Values\": [\"Amazon Elastic Compute Cloud - Compute\"]}}\", \"group_by\": \"[{\"Type\": \"DIMENSION\", \"Key\": \"RESOURCE_ID\"}]\"}\n   Returns: Cost data with resource-level granularity\n\n3. getDimensionValues - List of available values for specified dimension\n   Required: operation=\"getDimensionValues\", dimension, start_date, end_date\n   Optional: context, search_string, filter, max_results, billing_view_arn\n   Example: {\"operation\": \"getDimensionValues\", \"dimension\": \"SERVICE\", \"start_date\": \"2024-01-01\", \"end_date\": \"2024-02-01\"}\n   Returns: List of values for specified dimension with automatic pagination\n\n4. getCostForecast - Future cost projections\n   Required: operation=\"getCostForecast\", metric, granularity, start_date, end_date\n   Optional: filter, prediction_interval_level, billing_view_arn\n   Example: {\"operation\": \"getCostForecast\", \"metric\": \"UNBLENDED_COST\", \"granularity\": \"MONTHLY\", \"start_date\": \"2025-08-22\", \"end_date\": \"2025-11-22\"}\n   Notes: metric value for this operation should be in all caps\n   Returns: Cost forecast for specified time period and granularity\n\n5. getUsageForecast - Future usage projections\n   Required: operation=\"getUsageForecast\", metric, granularity, start_date, end_date, filter\n   Optional: prediction_interval_level, billing_view_arn\n   Example 1: {\"operation\": \"getUsageForecast\", \"metric\": \"USAGE_QUANTITY\", \"granularity\": \"MONTHLY\", \"start_date\": \"2025-08-22\", \"end_date\": \"2025-11-22\", \"filter\": \"{\"Dimensions\": {\"Key\": \"USAGE_TYPE_GROUP\", \"Values\": [\"EC2-Instance\"]}}\"}\n   Example 2: {\"operation\": \"getUsageForecast\", \"metric\": \"USAGE_QUANTITY\", \"granularity\": \"MONTHLY\", \"start_date\": \"2025-08-22\", \"end_date\": \"2025-11-22\", \"filter\": \"{\"And\": [{\"Dimensions\": {\"Key\": \"SERVICE\", \"Values\": [\"Amazon Elastic Compute Cloud - Compute\"]}}, {\"Dimensions\": {\"Key\": \"USAGE_TYPE\", \"Values\": [\"BoxUsage:p4de.24xlarge\"]}}]}\"}\n   Example 3: {\"operation\": \"getUsageForecast\", \"metric\": \"USAGE_QUANTITY\", \"granularity\": \"MONTHLY\", \"start_date\": \"2025-08-22\", \"end_date\": \"2025-11-22\", \"filter\": \"{\"Dimensions\": {\"Key\": \"USAGE_TYPE\", \"Values\": [\"BoxUsage:p4de.24xlarge\", \"Reservation:p4de.24xlarge\", \"UnusedBox:p4de.24xlarge\"]}}\", \"group_by\": \"[{\"Type\": \"DIMENSION\", \"Key\": \"REGION\"}]\"}\n   Notes: Valid values for metric is: USAGE_QUANTITY, NORMALIZED_USAGE_AMOUNT. Valid values for granularity is: DAILY, MONTHLY. Filter is REQUIRED and must specify USAGE_TYPE or USAGE_TYPE_GROUP to define what usage units to forecast.\n   Returns: Usage forecast for specified time period and granularity\n\n6. getTagsOrValues - Available cost allocation tags or values\n   Required: operation=\"getTagsOrValues\"\n   Optional: start_date, end_date, search_string, next_token, max_pages, billing_view_arn\n   Example 1: {\"operation\": \"getTagsOrValues\"}\n   Example 2: {\"operation\": \"getTagsOrValues\", \"tag_key\": \"Environment\"}\n   Returns: List of available cost allocation tags with automatic pagination. If tag values for a particular key are needed, pass the tag key as a parameter.\n\n7. getCostCategories - Available cost categories or values inside a category\n   Required: operation=\"getCostCategories\", start_date, end_date\n   Optional: cost_category_name, search_string, next_token, max_pages, billing_view_arn\n   Example 1 (list category names): {\"operation\": \"getCostCategories\", \"start_date\": \"2024-01-01\", \"end_date\": \"2024-08-01\"}\n   Example 2 (list values inside a category): {\"operation\": \"getCostCategories\", \"cost_category_name\": \"CostCenters\", \"start_date\": \"2024-01-01\", \"end_date\": \"2024-08-01\"}\n   Notes: Without cost_category_name the response contains CostCategoryNames. With cost_category_name set the response contains CostCategoryValues for that category. Pagination is automatic.\n\n8. getSavingsPlansUtilization - Savings Plans utilization data\n   Required: operation=\"getSavingsPlansUtilization\", start_date, end_date\n   Optional: granularity, filter\n   Example: {\"operation\": \"getSavingsPlansUtilization\", \"granularity\": \"MONTHLY\"}\n   Notes: This operation supports only DAILY and MONTHLY granularity\n   Returns: Savings Plans utilization for the specified time period\n\nDIMENSION REFERENCE:\n- AZ: The Availability Zone (e.g., us-east-1a)\n- DATABASE_ENGINE: The Amazon RDS database (e.g., Aurora, MySQL)\n- DEPLOYMENT_OPTION: RDS deployment scope (SingleAZ, MultiAZ)\n- INSTANCE_TYPE: The EC2 instance type (e.g., m4.xlarge)\n- INSTANCE_TYPE_FAMILY: Family of instances (e.g., Compute Optimized, Memory Optimized)\n- LINKED_ACCOUNT: AWS member accounts\n- OPERATING_SYSTEM: OS type (e.g., Windows, Linux)\n- PLATFORM: EC2 operating system\n- PURCHASE_TYPE: Reservation type (e.g., On-Demand, Reserved)\n- REGION: AWS Region\n- SERVICE: AWS service (e.g., Amazon DynamoDB)\n- TAG: Cost allocation tag\n- TENANCY: EC2 tenancy (shared, dedicated)\n- USAGE_TYPE: Usage type (e.g., DataTransfer-In-Bytes)\n- RECORD_TYPE: Charge types (e.g., RI fees, usage costs)\n\nBILLING VIEW SUPPORT:\nMost Cost Explorer operations support an optional billing_view_arn parameter that allows you to scope\nyour query to a specific billing view. If not provided, the query defaults to the account's primary\nbilling view. You can use the list-billing-views and get-billing-view tools upon request to discover\navailable billing views and their ARNs.\n\nBilling view types:\n- PRIMARY: Default view with all cost data for the account/org. Use for standard cost analysis.\n- BILLING_GROUP: AWS managed view for Billing Conductor billing groups with pro forma cost data.\n- CUSTOM: Customer-created views with filtered cost data that can be shared across accounts and\n  organizations. Use for business-unit, team, or cross-org cost visibility without management\n  account access.\n- BILLING_TRANSFER: Available to Bill Transfer (bill receiver) account, who is responsible for\n  paying the consolidated bill on behalf of the other organization.\n  AWS managed view containing chargeable data, which is what the Bill Transfer (bill receiver)\n  account owes to AWS for their Bill Source accounts' cloud consumption.\n- BILLING_TRANSFER_SHOWBACK: Available to Bill Transfer (bill receiver) account.\n  AWS managed view showing pro forma showback/chargeback data (what Bill Source account owe their partner).\n  Use for showback/chargeback reporting in billing transfer scenarios.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "The operation to perform"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Start date for cost data in YYYY-MM-DD format"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "End date for cost data in YYYY-MM-DD format (exclusive)"
+          },
+          "granularity": {
+            "default": "DAILY",
+            "type": "string",
+            "description": "Granularity of the returned data (DAILY, MONTHLY, etc.)"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Metrics to include in the response"
+          },
+          "group_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "How to group the results"
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter to apply to the results"
+          },
+          "dimension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Dimension to get values for (getDimensionValues)"
+          },
+          "search_string": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Search string to filter dimension values"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum number of results to return"
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Pagination token"
+          },
+          "max_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum number of pages to retrieve"
+          },
+          "metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Metric for cost forecasts"
+          },
+          "prediction_interval_level": {
+            "default": 80,
+            "type": "integer",
+            "description": "Confidence level for forecasts"
+          },
+          "tag_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tag key to get values for"
+          },
+          "cost_category_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Cost category to get values for"
+          },
+          "billing_view_arn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional ARN of a billing view to scope the query"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 2686
+    },
+    {
+      "name": "compute-optimizer",
+      "description": "Retrieves recommendations from AWS Compute Optimizer.\n\nIMPORTANT USAGE GUIDELINES:\n- Focus on recommendations with the highest estimated savings first\n- Include all relevant details when presenting specific recommendations\n\nUSE THIS TOOL FOR:\n- **Performance optimization** (CPU, memory, network utilization analysis)\n- **Performance-based rightsizing** (not cost-based)\n\nDO NOT USE FOR: Cost optimization or idle detection (use cost-optimization-hub)\n\n**Note:** Compute Optimizer is a regional service. Specify a `region` to get recommendations for resources in that region. If omitted, defaults to AWS_REGION env var or us-east-1.\n\nThis tool supports the following operations:\n1. get_ec2_instance_recommendations: Get recommendations for EC2 instances\n2. get_auto_scaling_group_recommendations: Get recommendations for Auto Scaling groups\n3. get_ebs_volume_recommendations: Get recommendations for EBS volumes\n4. get_lambda_function_recommendations: Get recommendations for Lambda functions\n5. get_rds_recommendations: Get recommendations for RDS instances\n6. get_ecs_service_recommendations: Get recommendations for ECS services\n\nEach operation can be filtered by AWS account IDs, regions, finding types, and more.\n\nCommon finding types include:\n- UNDERPROVISIONED: The resource doesn't have enough capacity\n- OVERPROVISIONED: The resource has excess capacity and could be downsized\n- OPTIMIZED: The resource is already optimized\n- NOT_OPTIMIZED: The resource can be optimized but specific finding type isn't available",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "The operation to perform (e.g., 'get_ec2_instance_recommendations')"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "AWS region to query (e.g., 'us-west-2'). Defaults to AWS_REGION env var or us-east-1."
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum number of results to return (1-100)"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter expression as JSON string"
+          },
+          "account_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional list of AWS account IDs as JSON array string"
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 564
+    },
+    {
+      "name": "cost-optimization",
+      "description": "Retrieves cost optimization recommendations from AWS Cost Optimization Hub.\n\nIMPORTANT USAGE GUIDELINES:\n- Focus on recommendations with the highest estimated savings first\n- Include all relevant details when presenting specific recommendations\n\nUSE THIS TOOL FOR:\n- **Idle/unused resource detection** (EC2, RDS, EBS, Lambda, etc.)\n- **Cost savings recommendations** (rightsizing, stopping, deleting resources)\n- **Reserved Instance and Savings Plans purchase recommendations**\n- **Cross-service cost optimization analysis**\n- **Monthly cost reduction opportunities**\n\nDO NOT USE FOR: Performance optimization (use compute-optimizer)\n\nSupported Operations:\n1. list_recommendation_summaries: High-level overview of savings opportunities grouped by a dimension\n2. list_recommendations: Detailed list of specific recommendations\n3. get_recommendation: Get detailed information about a specific recommendation\n\nIMPORTANT: 'list_recommendation_summaries' operation REQUIRES a 'group_by' parameter.\nValid 'group_by' values: AccountId, Region, ActionType, ResourceType, RestartNeeded, RollbackPossible, ImplementationEffort\n\nCRITICAL PARAMETER REQUIREMENTS:\n- 'filters' parameter must be passed as JSON string format\n- 'max_results' must be integer (not string)\n- 'get_recommendation' requires both 'resource_id' AND 'resource_type' parameters\n- Service only available in us-east-1 region\n\nAvailable Filter Parameters (pass as JSON string):\n- resourceTypes: ['Ec2Instance', 'LambdaFunction', 'EbsVolume', 'EcsService', 'Ec2AutoScalingGroup', 'Ec2InstanceSavingsPlans', 'ComputeSavingsPlans', 'SageMakerSavingsPlans', 'Ec2ReservedInstances', 'RdsReservedInstances', 'OpenSearchReservedInstances', 'RedshiftReservedInstances', 'ElastiCacheReservedInstances', 'RdsDbInstanceStorage', 'RdsDbInstance', 'DynamoDbReservedCapacity', 'MemoryDbReservedInstances']\n- actionTypes: ['Rightsize', 'Stop', 'Upgrade', 'PurchaseSavingsPlans', 'PurchaseReservedInstances', 'MigrateToGraviton', 'Delete', 'ScaleIn']\n- implementationEfforts: ['VeryLow', 'Low', 'Medium', 'High', 'VeryHigh']\n- regions: AWS region codes (e.g., [\"us-east-1\", \"us-west-2\"])\n- accountIds: List of AWS account IDs\n- restartNeeded: boolean\n- rollbackPossible: boolean\n\nCost Optimization Hub provides recommendations across multiple AWS services, including:\n- EC2 instances (right-sizing, Graviton migration)\n- EBS volumes (unused volumes, IOPS optimization)\n- RDS instances (right-sizing, engine optimization)\n- Lambda functions (memory size optimization)\n- SP/RI\n- And more\n\nEach recommendation includes:\n- The resource ARN and ID\n- The estimated monthly savings\n- The current state of the resource\n- The recommended state of the resource\n",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "The operation to perform ('list_recommendations', 'get_recommendation', or 'list_recommendation_summaries')"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Resource ID for get_recommendation operation"
+          },
+          "resource_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Resource type for get_recommendation operation"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum total results to return across all pages; None means all available results"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter expression as JSON string"
+          },
+          "group_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional grouping parameter for list_recommendation_summaries"
+          },
+          "include_all_recommendations": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Whether to include all recommendations"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 909
+    },
+    {
+      "name": "storage-lens",
+      "description": "Query S3 Storage Lens metrics data using Athena SQL.\n\nIMPORTANT USAGE GUIDELINES:\n- Before using this tool, provide a 1-3 sentence explanation starting with \"EXPLANATION:\"\n- Use standard SQL syntax for Athena queries\n- Use {table} as a placeholder for the Storage Lens metrics table name\n- Perform aggregations (GROUP BY) when analyzing data across multiple dimensions\n\nThis tool allows you to analyze S3 Storage Lens metrics data using SQL queries.\nStorage Lens provides metrics about your S3 storage, including:\n\n- Storage metrics: Total bytes, object counts by storage class\n- Cost optimization metrics: Transition opportunities, incomplete multipart uploads\n- Data protection metrics: Replication, versioning, encryption status\n- Activity metrics: Upload, download, and request metrics\n\nSTORAGE LENS EXPORT SCHEMA:\nThe Storage Lens export data has the following standard columns:\n- version_number: The version of the S3 Storage Lens metrics being used\n- configuration_id: The configuration_id of your S3 Storage Lens configuration\n- report_date: The date that the metrics were tracked\n- aws_account_number: Your AWS account number\n- aws_region: The AWS Region for which the metrics are being tracked\n- storage_class: The storage class (STANDARD, STANDARD_IA, GLACIER, etc.)\n- record_type: The type of artifact being reported (ACCOUNT, BUCKET, PREFIX, STORAGE_LENS_GROUP_BUCKET, STORAGE_LENS_GROUP_ACCOUNT)\n- record_value: The value of the record_type artifact (account ID, bucket name, prefix, or Storage Lens group ARN)\n- bucket_name: The name of the bucket (when record_type is BUCKET or PREFIX)\n- metric_name: The name of the metric (e.g., 'StorageBytes', 'ObjectCount', 'EncryptedStorageBytes')\n- metric_value: The numeric value of the metric\n\nIMPORTANT: Metrics are stored in rows, not columns. Each row represents one metric value for a specific combination of dimensions.\n\nEnvironment variables:\n- STORAGE_LENS_MANIFEST_LOCATION: S3 URI to manifest file or folder (required)\n- STORAGE_LENS_OUTPUT_LOCATION: S3 location for Athena query results (optional)\n\nExample queries:\n1. Top 10 buckets by storage size:\n   SELECT\n       bucket_name,\n       SUM(CAST(metric_value AS BIGINT)) as total_size\n   FROM {table}\n   WHERE metric_name = 'StorageBytes'\n   GROUP BY bucket_name\n   ORDER BY total_size DESC\n   LIMIT 10\n\n2. Storage distribution by storage class:\n   SELECT\n       storage_class,\n       SUM(CAST(metric_value AS BIGINT)) as total_size\n   FROM {table}\n   WHERE metric_name = 'StorageBytes'\n   GROUP BY storage_class\n   ORDER BY total_size DESC\n\n3. Buckets with incomplete multipart uploads:\n   SELECT\n       bucket_name,\n       SUM(CAST(metric_value AS BIGINT)) as incomplete_bytes\n   FROM {table}\n   WHERE metric_name = 'IncompleteMultipartUploadStorageBytes'\n     AND CAST(metric_value AS BIGINT) > 0\n   GROUP BY bucket_name\n   ORDER BY incomplete_bytes DESC\n\n4. Storage Distribution by Region and Storage Class:\n   SELECT\n       aws_region,\n       storage_class,\n       SUM(CAST(metric_value AS BIGINT)) as total_bytes\n   FROM {table}\n   WHERE metric_name = 'StorageBytes'\n   GROUP BY aws_region, storage_class\n   ORDER BY total_bytes DESC\n\n5. Object Lifecycle Management Opportunities:\n   SELECT\n       aws_region,\n       storage_class,\n       SUM(CASE WHEN metric_name = 'NonCurrentVersionStorageBytes' THEN CAST(metric_value AS BIGINT) ELSE 0 END) as noncurrent_bytes,\n       SUM(CASE WHEN metric_name = 'StorageBytes' THEN CAST(metric_value AS BIGINT) ELSE 0 END) as total_bytes\n   FROM {table}\n   WHERE metric_name IN ('NonCurrentVersionStorageBytes', 'StorageBytes')\n   GROUP BY aws_region, storage_class\n   HAVING SUM(CASE WHEN metric_name = 'NonCurrentVersionStorageBytes' THEN CAST(metric_value AS BIGINT) ELSE 0 END) > 0\n   ORDER BY noncurrent_bytes DESC\n\n6. Lifecycle Rule Analysis:\n   SELECT\n       bucket_name,\n       SUM(CASE WHEN metric_name = 'TotalLifecycleRuleCount' THEN CAST(metric_value AS INTEGER) ELSE 0 END) as lifecycle_rule_count,\n       SUM(CASE WHEN metric_name = 'StorageBytes' THEN CAST(metric_value AS BIGINT) ELSE 0 END) as total_bytes\n   FROM {table}\n   WHERE metric_name IN ('TotalLifecycleRuleCount', 'StorageBytes')\n   GROUP BY bucket_name\n   ORDER BY lifecycle_rule_count ASC, total_bytes DESC",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "SQL query to execute against the data (use {table} as a placeholder for the table name)"
+          },
+          "manifest_location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "S3 URI to manifest file or folder (overrides environment variable)"
+          },
+          "output_location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "S3 location for Athena query results (overrides environment variable)"
+          },
+          "database_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Athena database name (defaults to 'storage_lens_db')"
+          },
+          "table_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Athena table name (defaults to 'storage_lens_metrics')"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 1232
+    },
+    {
+      "name": "aws-pricing",
+      "description": "Comprehensive AWS pricing analysis tool that provides access to AWS service pricing information and cost analysis capabilities.\n\nThis tool supports four main operations:\n1. get_service_codes: Get a comprehensive list of AWS service codes from the AWS Price List API\n2. get_service_attributes: Get filterable attributes for a specific AWS service's pricing\n3. get_attribute_values: Get all valid values for a specific attribute of an AWS service\n4. get_pricing_from_api: Get detailed pricing information from AWS Price List API with optional filters\n\nUSE THE OPERATIONS IN THIS ORDER:\n1. get_service_codes: Entry point - discover available AWS services and their unique service codes. Note that service codes may not match your expectations, so it's best to get service codes first.\n2. get_service_attributes: Second step - understand which dimensions affect pricing for a chosen service\n3. get_attribute_values: Third step - get possible values you can use in pricing filters\n4. get_pricing_from_api: Final step - retrieve actual pricing data based on service and filters\n**If you deviate from this order of operations, you will struggle to form the correct filters, and you will not get results from the API**\n\nIMPORTANT GUIDELINES:\n- When retrieving foundation model pricing, always use the latest models for comparison\n- For database compatibility with services, only include confirmed supported databases\n- Providing less information is better than giving incorrect information\n- Price list APIs can return large data volumes. Use narrower filters to retrieve less data when possible\n- Service codes often differ from AWS console names (e.g., 'AmazonES' for OpenSearch)\n\nARGS:\n      ctx: The MCP context object\n      operation: The pricing operation to perform ('get_service_codes', 'get_service_attributes', 'get_attribute_values', 'get_pricing_from_api')\n      service_code: AWS service code (e.g., 'AmazonEC2', 'AmazonS3', 'AmazonES'). Required for get_service_attributes, get_attribute_values, and get_pricing_from_api operations.\n      attribute_name: Attribute name (e.g., 'instanceType', 'location', 'storageClass'). Required for get_attribute_values operation.\n      filters: Optional filters for pricing queries. Format: {'instanceType': 't3.medium', 'location': 'US East (N. Virginia)'}\n\nRETURNS:\n        Dict containing the pricing information",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "The pricing operation to perform ('get_service_codes', 'get_service_attributes', 'get_attribute_values', 'get_pricing_from_api')"
+          },
+          "service_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "AWS service code (e.g., 'AmazonEC2', 'AmazonS3', 'AmazonES'). Required for get_service_attributes, get_attribute_values, and get_pricing_from_api operations."
+          },
+          "attribute_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Attribute name (e.g., 'instanceType', 'location', 'storageClass'). Required for get_attribute_values operation."
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filters for pricing queries as a JSON string. Format: '{\"instanceType\": \"t3.medium\", \"location\": \"US East (N. Virginia)\"}'"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum number of results to return (optional)"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 764
+    },
+    {
+      "name": "bcm-pricing-calc",
+      "description": "Allows working with workload estimates using the AWS Billing and Cost Management Pricing Calculator API.\n\nIMPORTANT USAGE GUIDELINES:\n- Always first check the rate preference setting for the authorized principal by calling the get_preferences operation.\n- DO NOT state assumptions about Free Tier API\n\nUSE THIS TOOL FOR:\n- Listing available **workload estimates** for the logged in account.\n- **Filter list of available workload estimates** using name, status, created date, or expiration date.\n- Get **details of a workload estimate**.\n- Get the list of **services, usage type, operation, and usage amount** modeled within a workload estimate.\n- Get **rate preferences** set for Pricing Calculator. These rate preferences denote what rate preferences can be used by each account type in your organization.\n\n## OPERATIONS\n\n1) list_workload_estimates - list of available workload estimates\n   Required: operation=\"list_workload_estimates\"\n   Optional: created_after, created_before, expires_after, expires_before, status_filter, name_filter, name_match_option, next_token, max_results\n   Returns: List of all workload estimates for the account.\n\n2) get_workload_estimate - get details of a workload estimate\n   Required: operation=\"get_workload_estimate\", identifier\n   Returns: Details of a specific workload estimate.\n\n3) list_workload_estimate_usage - list of modeled usage lines within a workload estimate\n   Required: operation=\"get_workload_estimate\", identifier\n   Optional: usage_account_id_filter, service_code_filter, usage_type_filter, operation_filter, location_filter, usage_group_filter, next_token, max_results\n   Returns: List of usage associated with a workload estimate.\n\n4) get_preferences - get the rate preferences available to an account\n   Required: operation=\"get_preferences\"\n   Returns: Retrieves the current preferences for AWS Billing and Cost Management Pricing Calculator.\n",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "operation": {
+            "type": "string"
+          },
+          "identifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "created_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "created_before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "expires_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "expires_before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "name_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "name_match_option": {
+            "default": "CONTAINS",
+            "type": "string"
+          },
+          "usage_account_id_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "service_code_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "usage_type_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "operation_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "location_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "usage_group_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "max_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 779
+    },
+    {
+      "name": "budgets",
+      "description": "Retrieves AWS budget information using the AWS Budgets API.\n\nThis tool uses the DescribeBudgets API to retrieve all budgets for an account.\n\nThe API returns information about:\n- Budget names, types, and time periods\n- Budget limits (amount and unit)\n- Current actual spend\n- Forecasted spend\n- Cost filters applied to budgets\n\nWith this information, you can determine which budgets have been exceeded or are projected to exceed their limits.\n\nThe tool automatically retrieves the AWS account ID of the calling identity or uses the provided account_id.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "budget_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional budget name filter. If provided, only returns information for the specified budget."
+          },
+          "max_results": {
+            "default": 100,
+            "type": "integer",
+            "description": "Maximum number of results to return. Defaults to 100."
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional AWS account ID. If not provided, it will be retrieved automatically."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 243
+    },
+    {
+      "name": "cost-anomaly",
+      "description": "Retrieves AWS cost anomalies using the Cost Explorer GetAnomalies API.\n\nThis tool allows you to retrieve cost anomalies detected on your AWS account during a specified time period.\nAnomalies are available for up to 90 days.\n\nYou can filter anomalies by:\n- Date range (required)\n- Monitor ARN (optional)\n- Feedback status (optional)\n- Total impact (optional)\n\nNote: Both start_date and end_date are INCLUSIVE. To get anomalies including today, use today's date as end_date.\n\nFeedback status options:\n- YES: Anomalies marked as accurate\n- NO: Anomalies marked as inaccurate\n- PLANNED_ACTIVITY: Anomalies marked as planned activities",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "description": "Start date in YYYY-MM-DD format (inclusive). Required."
+          },
+          "end_date": {
+            "type": "string",
+            "description": "End date in YYYY-MM-DD format (inclusive — use today's date to include today's anomalies). Required."
+          },
+          "monitor_arn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional ARN of a specific cost anomaly monitor to filter results."
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter for anomalies by feedback status (YES, NO, PLANNED_ACTIVITY)."
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional maximum number of results to return."
+          },
+          "total_impact_operator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional numeric operator for filtering by total impact (EQUAL, GREATER_THAN, LESS_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN_OR_EQUAL, BETWEEN)."
+          },
+          "total_impact_start": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional start value for total impact filter."
+          },
+          "total_impact_end": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional end value for total impact filter (required when using BETWEEN operator)."
+          }
+        },
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 475
+    },
+    {
+      "name": "cost-comparison",
+      "description": "Retrieves AWS cost comparisons between two one-month periods.\n\nDo not use this tool except for comparing the costs of one month to the costs of another month. This tool should not be used for week-over-week or quarter-over-quarter (e.g., comparing Q2 vs. Q1) analysis.\n\nUSE THIS TOOL ONLY FOR:\n- **Month-to-month cost variance analysis** (e.g., January vs February)\n- **Root cause analysis** of cost changes between specific months\n- **Detailed cost driver identification** (what exactly caused the cost change)\n- **Service-level impact analysis** for month-over-month changes\n- **Executive reporting** on monthly cost variances\n\nSTRICT LIMITATIONS:\n- ONLY compares exactly one month to another month\n- Both periods must start on 1st day of month, end on 1st day of next month\n- Cannot compare weeks, quarters, or custom periods\n- DO NOT USE for general cost analysis or flexible time periods\n\nThis tool supports two main operations:\n1. getCostAndUsageComparisons: Compare costs between two time periods with flexible grouping and filtering\n2. getCostComparisonDrivers: Identify key factors driving cost changes between two time periods\n\nBoth operations require:\n- BaselineTimePeriod: Earlier time period for comparison (must be exactly one month)\n- ComparisonTimePeriod: Later time period for comparison (must be exactly one month)\n- MetricForComparison: The cost metric to compare (e.g., BlendedCost, UnblendedCost)\n\nSupported metrics for comparison include:\n- AmortizedCost: Costs with upfront and recurring reservation fees spread across the period\n- BlendedCost: Average cost of all usage throughout the billing period\n- NetAmortizedCost: Amortized cost after discounts\n- NetUnblendedCost: Unblended cost after discounts\n- NormalizedUsageAmount: Normalized usage amount\n- UnblendedCost: Actual costs incurred during the specified period\n- UsageQuantity: Usage amounts in their respective units\n\nYou can group results by dimensions such as:\n- SERVICE: AWS service (e.g., Amazon EC2, Amazon S3)\n- LINKED_ACCOUNT: Member accounts in an organization\n- REGION: AWS Region\n- USAGE_TYPE: Type of usage (e.g., BoxUsage:t2.micro)\n- INSTANCE_TYPE: EC2 instance type (e.g., t2.micro, m5.large)\n- PLATFORM: Operating system (e.g., Windows, Linux)\n- TENANCY: Instance tenancy (e.g., shared, dedicated)\n- RECORD_TYPE: Record type (e.g., Usage, Credit, Tax)\n- LEGAL_ENTITY_NAME: AWS seller of record\n\nNote:\n- Time periods must start and end on the first day of a month, with a duration of exactly one month\n- The getCostComparisonDrivers operation automatically includes SERVICE and USAGE_TYPE dimensions\n- Data is available for the last 13 months, or up to 38 months if multi-year data is enabled",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "The operation to perform: 'getCostAndUsageComparisons' or 'getCostComparisonDrivers'"
+          },
+          "baseline_start_date": {
+            "type": "string",
+            "description": "Baseline period start date in YYYY-MM-DD format (must be first day of month)"
+          },
+          "baseline_end_date": {
+            "type": "string",
+            "description": "Baseline period end date in YYYY-MM-DD format (must be first day of next month)"
+          },
+          "comparison_start_date": {
+            "type": "string",
+            "description": "Comparison period start date in YYYY-MM-DD format (must be first day of month)"
+          },
+          "comparison_end_date": {
+            "type": "string",
+            "description": "Comparison period end date in YYYY-MM-DD format (must be first day of next month)"
+          },
+          "metric_for_comparison": {
+            "type": "string",
+            "description": "The cost metric to compare (e.g., BlendedCost, UnblendedCost, AmortizedCost)"
+          },
+          "group_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional grouping of results as a JSON string (e.g., '[{\"Type\": \"DIMENSION\", \"Key\": \"SERVICE\"}]')"
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter to apply to the results as a JSON string"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum number of results to return (default: 10, max: 2000 for comparisons, max: 10 for drivers)"
+          },
+          "billing_view_arn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional ARN of a specific billing view"
+          }
+        },
+        "required": [
+          "operation",
+          "baseline_start_date",
+          "baseline_end_date",
+          "comparison_start_date",
+          "comparison_end_date",
+          "metric_for_comparison"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 1038
+    },
+    {
+      "name": "free-tier-usage",
+      "description": "Retrieves AWS Free Tier usage information using the Free Tier Usage API.\n\nThis tool provides insights into your AWS Free Tier usage across services:\n\n1. get_free_tier_usage: Shows your current Free Tier usage across AWS services\n   - Helps identify where you are approaching Free Tier limits\n   - Shows actual usage against Free Tier allocations\n   - Supports filtering by service, region, or usage type\n   - Possible Dimensions values are: 'SERVICE'|'OPERATION'|'USAGE_TYPE'|'REGION'|'FREE_TIER_TYPE'|'DESCRIPTION'|'USAGE_PERCENTAGE'\n   - Possible MatchOptions are: 'EQUALS'|'STARTS_WITH'|'ENDS_WITH'|'CONTAINS'|'GREATER_THAN_OR_EQUAL'\n   ",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "operation": {
+            "default": "get_free_tier_usage",
+            "type": "string",
+            "description": "The operation to perform: 'get_free_tier_usage'"
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter to apply to the results as a JSON string."
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum number of results to return per page (1-1000). Defaults to 100."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 290
+    },
+    {
+      "name": "rec-details",
+      "description": "Get detailed cost optimization recommendation with integrated data from multiple AWS services.\n\nThis tool combines data from:\n- Cost Optimization Hub (base recommendation)\n- AWS Compute Optimizer (detailed metrics for compute resources)\n- Cost Explorer (Savings Plans/RI purchase recommendations)\n\nIt provides comprehensive analysis with utilization metrics, savings calculations, and implementation guidance.\n\nRESPONSE FORMATTING INSTRUCTIONS:\nThe tool may return both raw recommendation data and a formatting template.\nWhen presenting the recommendation:\n1. If a template is provided, use it to organize your response\n2. If no template is provided, structure your response in a clear, logical manner\n3. Always include key information like resource details, savings amounts, and implementation steps\n4. Ensure all numeric values (costs, savings, metrics) are included\n5. Add natural language explanations to make the information more accessible",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "recommendation_id": {
+            "type": "string",
+            "description": "ID of the recommendation to retrieve details for"
+          }
+        },
+        "required": [
+          "recommendation_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 233
+    },
+    {
+      "name": "ri-performance",
+      "description": "Retrieves AWS Reserved Instance (RI) coverage and utilization data using the Cost Explorer API.\n\nThis tool provides insights into your Reserved Instance (RI) and Savings Plans usage patterns through two main operations:\n\n1. get_reservation_coverage: Shows how much of your eligible usage is covered by RIs\n   - Helps identify opportunities to purchase additional RIs\n   - Supports grouping by dimensions like REGION, INSTANCE_TYPE, etc.\n   - Can filter by specific services, regions, or instance types\n\n2. get_reservation_utilization: Shows how effectively you're using your purchased RIs\n   - Reveals underutilized or idle reserved capacity\n   - Can be grouped by SUBSCRIPTION_ID to see utilization per RI\n   - Helps identify RIs that could be modified or sold in the marketplace\n\nSupported dimensions for grouping reservation coverage:\n- AZ: Availability Zone\n- INSTANCE_TYPE: Instance type (e.g., m4.xlarge)\n- LINKED_ACCOUNT: Member accounts in organization\n- PLATFORM: Operating system\n- REGION: AWS Region\n- SERVICE: AWS service (EC2, RDS, etc.)\n- TENANCY: Instance tenancy (default, dedicated)\n\nReservation utilization can only be grouped by SUBSCRIPTION_ID.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "The operation to perform: 'get_reservation_coverage' or 'get_reservation_utilization'"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Start date in YYYY-MM-DD format (inclusive). Defaults to 30 days ago if not provided."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "End date in YYYY-MM-DD format (exclusive). Defaults to today if not provided."
+          },
+          "granularity": {
+            "default": "DAILY",
+            "type": "string",
+            "description": "Time granularity of the data (DAILY or MONTHLY). Defaults to DAILY."
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "List of metrics to retrieve for coverage as a JSON string (e.g., '[\"HoursCoverage\", \"CostCoverage\"]'). Defaults to all metrics."
+          },
+          "group_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional grouping of results as a JSON string. For coverage, supports multiple dimensions. For utilization, only supports SUBSCRIPTION_ID."
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter to apply to the results as a JSON string, such as filtering by service, region, or instance type."
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional sorting configuration as a JSON string with key and direction (ASCENDING or DESCENDING)."
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum number of results to return per page."
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 656
+    },
+    {
+      "name": "sp-performance",
+      "description": "Tool that retrieves AWS Savings Plans coverage and utilization data using the Cost Explorer API.\n\nThis tool provides insights into your Savings Plans usage patterns through three main operations:\n\n1. get_savings_plans_coverage: Shows how much of your eligible usage is covered by Savings Plans\n2. get_savings_plans_utilization: Shows overall utilization metrics for your Savings Plans\n3. get_savings_plans_utilization_details: Shows detailed per-Savings Plan utilization",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "The operation to perform: 'get_savings_plans_coverage', 'get_savings_plans_utilization', or 'get_savings_plans_utilization_details'"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Start date in YYYY-MM-DD format (inclusive). Defaults to 30 days ago if not provided."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "End date in YYYY-MM-DD format (exclusive). Defaults to today if not provided."
+          },
+          "granularity": {
+            "default": "DAILY",
+            "type": "string",
+            "description": "Time granularity of the data (DAILY or MONTHLY). Defaults to DAILY."
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "List of metrics to retrieve as a JSON string. For coverage, only 'SpendCoveredBySavingsPlans' is valid."
+          },
+          "group_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional grouping of results as a JSON string. For coverage, supports SERVICE, REGION, or INSTANCE_FAMILY."
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter to apply to the results as a JSON string."
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum number of results to return per page."
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 440
+    },
+    {
+      "name": "session-sql",
+      "description": "Execute SQL queries on the persistent session database.\n\nThis tool queries tables created by other tools (like cost_explorer_sql) within the current session.\nAll tools share the same database, allowing cross-tool data analysis and joins.\n\nUse this tool to:\n- Query tables created by cost_explorer_sql and other tools\n- Join data from multiple AWS APIs\n- Perform complex analysis across different data sources\n\nCommon queries:\n- SELECT name FROM sqlite_master WHERE type='table' -- List all tables\n- SELECT * FROM [table_name] LIMIT 10 -- Preview table data",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "SQL query to execute"
+          },
+          "schema": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional column definitions for user data (e.g. [\"service TEXT\", \"cost REAL\"])"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional array of data rows to add to database before querying"
+          },
+          "table_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional name for user data table (auto-generated if not provided)"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 296
+    },
+    {
+      "name": "list-billing-groups",
+      "description": "Retrieves a list of billing groups from AWS Billing Conductor.\n\nThis tool retrieve billing groups for a given billing period.\nIf no billing period is provided, the current billing period is used.\n\nThe tool returns information about:\n- Billing group ARN, name, and description\n- Billing group type (STANDARD or TRANSFER_BILLING)\n- Billing group status (ACTIVE, PRIMARY_ACCOUNT_MISSING, or PENDING)\n- Primary account ID\n- Computation preference (pricing plan ARN)\n- Account grouping settings (auto-associate, responsibility transfer ARN)\n- Group size (number of member accounts)\n- Creation and last modified timestamps\n\nYou can filter billing groups by:\n- ARNs: Filter by specific billing group ARNs\n- Names: Filter by billing group name (supports STARTS_WITH search)\n- Statuses: Filter by status (ACTIVE, PRIMARY_ACCOUNT_MISSING, PENDING)\n- Billing group types: Filter by type (STANDARD, TRANSFER_BILLING)\n- Primary account IDs: Filter by primary account ID\n- Pricing plan: Filter by pricing plan ARN\n- Auto-associate: Filter by auto-associate setting\n- Responsibility transfer ARNs: Filter by responsibility transfer ARNs\n\nThe tool paginates through results up to max_pages pages (default 10).\nIf more results are available after reaching the page limit, a next_token is returned.\nPass the next_token back to this tool to continue fetching from where you left off.\n\nExample 1: {\"billing_period\": \"2025-01\"}\nExample 2 (with filter): {\"filters\": \"{\"Statuses\": [\"ACTIVE\"], \"BillingGroupTypes\": [\"STANDARD\"]}\", \"billing_period\": \"2025-01\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "billing_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional billing period in YYYY-MM format (e.g., \"2025-01\").\nIf not provided, the current billing period is used."
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string containing filter criteria. Supported filters:\n- Arns: List of billing group ARNs to retrieve\n- Names: List of name search objects with SearchOption and SearchValue\n- Statuses: List of statuses (\"ACTIVE\", \"PRIMARY_ACCOUNT_MISSING\", \"PENDING\")\n- BillingGroupTypes: List of types (\"STANDARD\", \"TRANSFER_BILLING\")\n- PrimaryAccountIds: List of primary account IDs\n- PricingPlan: Pricing plan ARN\n- AutoAssociate: Boolean for auto-associate filter\n- ResponsibilityTransferArns: List of responsibility transfer ARNs"
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 658
+    },
+    {
+      "name": "list-account-associations",
+      "description": "Lists linked accounts associated with the payer account from AWS Billing Conductor.\n\nThis tool retrieve linked accounts for a given billing period.\nIf no billing period is provided, the current billing period is used.\n\nThe tool returns information about each linked account:\n- Account ID\n- Account name\n- Account email\n- Billing group ARN (if associated to a billing group)\n\nYou can filter account associations by:\n- AccountId: Filter by a specific AWS account ID\n- AccountIds: Filter by a list of AWS account IDs (up to 30)\n- Association: Filter by association status:\n  - MONITORED: linked accounts associated to billing groups\n  - UNMONITORED: linked accounts not associated to billing groups\n  - Billing Group ARN: linked accounts associated to a specific billing group\n\nThe tool paginates through results up to max_pages pages (default 10).\nIf more results are available after reaching the page limit, a next_token is returned.\nPass the next_token back to this tool to continue fetching from where you left off.\n\nExample 1: {\"billing_period\": \"2025-01\"}\nExample 2 (monitored only): {\"filters\": \"{\"Association\": \"MONITORED\"}\", \"billing_period\": \"2025-01\"}\nExample 3 (by account IDs): {\"filters\": \"{\"AccountIds\": [\"123456789012\", \"234567890123\"]}\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "billing_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional billing period in YYYY-MM format (e.g., \"2025-01\").\nIf not provided, the current billing period is used."
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string containing filter criteria. Supported filters:\n- AccountId: A single AWS account ID (12 digits)\n- AccountIds: List of AWS account IDs (up to 30, each 12 digits)\n- Association: One of \"MONITORED\", \"UNMONITORED\", or a billing group ARN"
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 539
+    },
+    {
+      "name": "list-billing-group-cost-reports",
+      "description": "Retrieves a summary report of actual AWS charges and calculated AWS charges\nbased on the associated pricing plan of a billing group.\n\nThis tool retrieve cost reports for billing groups.\nIf no billing period is provided, the current billing period is used.\n\nThe tool returns cost report information for each billing group:\n- Billing group ARN\n- AWS cost (actual AWS charges)\n- Proforma cost (hypothetical charges based on the associated pricing plan)\n- Margin (billing group margin)\n- Margin percentage (percentage of billing group margin)\n- Currency (displayed currency)\n\nYou can filter cost reports by:\n- BillingGroupArns: Filter by specific billing group ARNs (1 to 100 ARNs)\n\nExample 1: {\"billing_period\": \"2025-01\"}\nExample 2 (with filter): {\"filters\": \"{\"BillingGroupArns\": [\"arn:aws:billingconductor::123456789012:billinggroup/abc\"]}\", \"billing_period\": \"2025-01\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "billing_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional billing period in YYYY-MM format (e.g., \"2025-01\").\nIf not provided, the current billing period is used."
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string containing filter criteria. Supported filters:\n- BillingGroupArns: List of billing group ARNs (minimum 1, maximum 100)"
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 419
+    },
+    {
+      "name": "get-billing-group-cost-report",
+      "description": "Retrieves the margin summary report for a specific billing group, which includes\nthe AWS cost and charged amount (pro forma cost) broken down by attributes such as AWS service\nname or billing period.\n\nThis tool retrieve detailed cost reports for a\nsingle billing group, optionally broken down by product name and/or billing period.\n\nThe tool returns margin summary report results for the billing group:\n- Billing group ARN\n- Attributes (key-value pairs for grouping, e.g., PRODUCT_NAME: \"S3\", BILLING_PERIOD: \"Nov 2023\")\n- AWS cost (actual AWS charges)\n- Proforma cost (hypothetical charges based on the associated pricing plan)\n- Margin (billing group margin)\n- Margin percentage (percentage of billing group margin)\n- Currency (displayed currency)\n\nYou can customize the report by:\n- BillingPeriodRange: JSON string specifying a time range (up to 12 months)\n- GroupBy: JSON array string with values \"PRODUCT_NAME\" and/or \"BILLING_PERIOD\"\n\nExample 1: {\"arn\": \"arn:aws:billingconductor::123456789012:billinggroup/abc\", \"group_by\": \"[\"PRODUCT_NAME\"]\"}\nExample 2: {\"arn\": \"arn:aws:billingconductor::123456789012:billinggroup/abc\", \"group_by\": \"[\"PRODUCT_NAME\", \"BILLING_PERIOD\"]\", \"billing_period_range\": \"{\"InclusiveStartBillingPeriod\": \"2025-01\", \"ExclusiveEndBillingPeriod\": \"2025-07\"}\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "arn": {
+            "type": "string",
+            "description": "The ARN that uniquely identifies the billing group."
+          },
+          "billing_period_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string specifying a time range (up to 12 months)."
+          },
+          "group_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string with attributes to group by (\"PRODUCT_NAME\", \"BILLING_PERIOD\")."
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "required": [
+          "arn"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 530
+    },
+    {
+      "name": "list-custom-line-items",
+      "description": "Retrieves a list of custom line items (FFLIs) from AWS Billing Conductor.\n\nCustom line items let you allocate costs and discounts to designated AWS accounts within a\nbilling group. Common use cases include allocating support fees, shared service costs, managed\nservice fees, taxes, credits, and distributing RI/Savings Plans savings.\n\nThis tool retrieve custom line items for a given billing period.\nIf no billing period is provided, the current billing period is used.\n\nThe tool returns information about:\n- Custom line item ARN, name, and description\n- Account ID, billing group ARN\n- Charge details (type: CREDIT or FEE, flat or percentage)\n- Computation rule (CONSOLIDATED or ITEMIZED)\n- Currency code, association size, product code\n- Presentation details, creation and last modified timestamps\n\nYou can filter custom line items by:\n- AccountIds: Filter by AWS account IDs (up to 30)\n- Arns: Filter by specific custom line item ARNs (up to 100)\n- BillingGroups: Filter by billing group ARNs (up to 100)\n- Names: Filter by custom line item names (up to 100)\n\nExample 1: {\"billing_period\": \"2025-01\"}\nExample 2 (with filter): {\"filters\": \"{\"Names\": [\"MyCustomLineItem\"]}\", \"billing_period\": \"2025-01\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "billing_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional billing period in YYYY-MM format (e.g., \"2025-01\")."
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string with filter criteria (AccountIds, Arns, BillingGroups, Names)."
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 474
+    },
+    {
+      "name": "list-custom-line-item-versions",
+      "description": "Retrieves a list of versions for a specific custom line item from AWS Billing Conductor.\n\nThis tool retrieve all versions of a custom line item.\nIf no billing period is provided, the current billing period is used.\n\nThe tool returns information about each version including charge details, computation rule,\nbilling periods, and timestamps.\n\nYou can filter versions by:\n- BillingPeriodRange: Filter by start and/or end billing period\n\nExample 1: {\"arn\": \"arn:aws:billingconductor::123456789012:customlineitem/abcdef1234\"}\nExample 2: {\"arn\": \"...\", \"filters\": \"{\"BillingPeriodRange\": {\"StartBillingPeriod\": \"2025-01\", \"EndBillingPeriod\": \"2025-06\"}}\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "arn": {
+            "type": "string",
+            "description": "The ARN for the custom line item. Required."
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string with filter criteria (BillingPeriodRange)."
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "required": [
+          "arn"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 315
+    },
+    {
+      "name": "list-resources-associated-to-custom-line-item",
+      "description": "Lists the resources associated to a custom line item from AWS Billing Conductor.\n\nThis tool retrieve resources associated with a specific custom line item.\nIf no billing period is provided, the current billing period is used.\n\nThe tool returns information about each associated resource:\n- Resource ARN (can be a billing group or custom line item)\n- End billing period of the association\n- Relationship type (PARENT or CHILD)\n\nYou can filter associated resources by:\n- Relationship: Filter by relationship type (\"PARENT\" or \"CHILD\")\n\nExample 1: {\"arn\": \"arn:aws:billingconductor::123456789012:customlineitem/abcdef1234\"}\nExample 2: {\"arn\": \"...\", \"filters\": \"{\"Relationship\": \"CHILD\"}\", \"billing_period\": \"2025-01\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "arn": {
+            "type": "string",
+            "description": "The ARN of the custom line item. Required."
+          },
+          "billing_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional billing period in YYYY-MM format."
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string with filter criteria (Relationship)."
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "required": [
+          "arn"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 360
+    },
+    {
+      "name": "list-pricing-rules",
+      "description": "Retrieves a list of pricing rules from AWS Billing Conductor.\n\nThis tool retrieve pricing rules for a given billing period.\n\nThe tool returns information about:\n- Pricing rule ARN, name, and description\n- Type (MARKUP, DISCOUNT, or TIERING)\n- Scope (GLOBAL, SERVICE, BILLING_ENTITY, or SKU)\n- Modifier percentage, associated pricing plan count\n- Service, operation, usage type, billing entity\n- Tiering configuration, creation and last modified timestamps\n\nYou can filter pricing rules by:\n- Arns: Filter by specific pricing rule ARNs\n\nExample 1: {\"billing_period\": \"2025-01\"}\nExample 2: {\"filters\": \"{\"Arns\": [\"arn:aws:billingconductor::123456789012:pricingrule/abc\"]}\", \"billing_period\": \"2025-01\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "billing_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional billing period in YYYY-MM format."
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string with filter criteria (Arns)."
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 340
+    },
+    {
+      "name": "list-pricing-plans",
+      "description": "Retrieves a list of pricing plans from AWS Billing Conductor.\n\nThis tool retrieve pricing plans for a given billing period.\nIf no billing period is provided, the current billing period is used.\n\nThe tool returns information about:\n- Pricing plan ARN, name, and description\n- Number of associated pricing rules (size)\n- Creation and last modified timestamps\n\nYou can filter pricing plans by:\n- Arns: Filter by specific pricing plan ARNs\n\nExample 1: {\"billing_period\": \"2025-01\"}\nExample 2: {\"filters\": \"{\"Arns\": [\"arn:aws:billingconductor::123456789012:pricingplan/abc\"]}\", \"billing_period\": \"2025-01\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "billing_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional billing period in YYYY-MM format."
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string with filter criteria (Arns)."
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 311
+    },
+    {
+      "name": "list-pricing-rules-for-plan",
+      "description": "Lists the pricing rules associated with a specific pricing plan.\n\nThis tool retrieve pricing rules associated with a specific pricing plan\nIf no billing period is provided, the current billing period is used.\n\nThe tool returns information about:\n- The billing period for which the pricing rule associations are listed.\n- The optional pagination token to be used on subsequent calls.\n- The ARN of the pricing plan for which associations are listed.\n- A list containing pricing rules that are associated with the requested pricing plan\n\nExample: {\"pricing_plan_arn\": \"arn:aws:billingconductor::123456789012:pricingplan/abc\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "pricing_plan_arn": {
+            "type": "string",
+            "description": "The ARN of the pricing plan. Required."
+          },
+          "billing_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional billing period in YYYY-MM format."
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional maximum number of results per page (1-100)."
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "required": [
+          "pricing_plan_arn"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 317
+    },
+    {
+      "name": "list-pricing-plans-for-rule",
+      "description": "Lists the pricing plans associated with a specific pricing rule.\n\nThis tool retrieve pricing plans associated with a specific pricing rule\nIf no billing period is provided, the current billing period is used.\n\nThe tool returns information about:\n- The billing period for which the pricing rule associations are listed.\n- The optional pagination token to be used on subsequent calls.\n- The ARN of the pricing rule for which associations are listed.\n- The list containing pricing plans that are associated with the requested pricing rule.\n\nExample: {\"pricing_rule_arn\": \"arn:aws:billingconductor::123456789012:pricingrule/abc\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "pricing_rule_arn": {
+            "type": "string",
+            "description": "The ARN of the pricing rule. Required."
+          },
+          "billing_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional billing period in YYYY-MM format."
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional maximum number of results per page (1-100)."
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "required": [
+          "pricing_rule_arn"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 318
+    },
+    {
+      "name": "get-billing-view",
+      "description": "Returns the metadata associated to the specified billing view ARN.\n\nA billing view is an AWS resource that defines a segment of AWS cost management data.\nThere are four types of billing views:\n- PRIMARY: The default billing view containing all cost management data for an account.\n  For management accounts in an organization, this includes all data across the organization.\n- BILLING_GROUP: Billing views corresponding to billing groups created in AWS Billing Conductor.\n- CUSTOM: Customer-created billing views that provide filtered cost visibility across organizations.\n  These can be shared with other accounts.\n- BILLING_TRANSFER: Views available when using billing transfer, including \"My view\" and\n  \"Showback/chargeback view\".\n- BILLING_TRANSFER_SHOWBACK: Shows billing data configured for showback or chargeback purposes.\n\nThe tool returns information about:\n- Billing view ARN, name, and description\n- Billing view type (PRIMARY, BILLING_GROUP, CUSTOM, BILLING_TRANSFER, BILLING_TRANSFER_SHOWBACK)\n- Owner account ID and source account ID\n- Data filter expression (dimensions, tags, cost categories, time range)\n- Health status (status code and reasons)\n- Derived view count and source view count\n- Creation, update, and view definition last updated timestamps\n\nExample: {\"arn\": \"arn:aws:billing::123456789012:billingview/custom-view-abc123\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "arn": {
+            "type": "string",
+            "description": "The Amazon Resource Name (ARN) that can be used to uniquely identify\nthe billing view. Required."
+          }
+        },
+        "required": [
+          "arn"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 357
+    },
+    {
+      "name": "list-billing-views",
+      "description": "Lists the billing views available for a given time period.\n\nEvery AWS account has a unique PRIMARY billing view that represents the billing data\navailable by default. Accounts that use AWS Billing Conductor also have BILLING_GROUP\nbilling views representing pro forma costs associated with each created billing group.\n\nIf activeTimeRange is provided, only billing views that were active during that time window are returned.\nElse, all billing views that ever existed are returned, including views for deleted billing groups and ended billing transfers.\n\nThe tool returns a list of billing views with information about:\n- Billing view ARN, name, and description\n- Billing view type (PRIMARY, BILLING_GROUP, CUSTOM, BILLING_TRANSFER, BILLING_TRANSFER_SHOWBACK)\n- Owner account ID and source account ID\n- Health status (status code and reasons)\n\nYou can filter billing views by:\n- active_after_inclusive / active_before_inclusive: UTC time range for listing billing views\n  (must be within one calendar month, both must be provided together).\n  Format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS (all times are in UTC).\n  PRIMARY billing views are always listed. BILLING_GROUP billing views are listed for time\n  ranges when the associated billing group resource in AWS Billing Conductor is active.\n- arns: Filter by specific billing view ARNs (maximum 10 items)\n- billing_view_types: Filter by type (PRIMARY, BILLING_GROUP, CUSTOM, BILLING_TRANSFER,\n  BILLING_TRANSFER_SHOWBACK)\n- names: Filter by name using search criteria (supports STARTS_WITH search option)\n- owner_account_id: Filter by owner account ID (12-digit AWS account ID)\n- source_account_id: Filter by source account ID (12-digit AWS account ID)\n- max_results: Maximum number of billing views per page (1-100, default 100)\n\nThe tool paginates through results up to max_pages pages (default 10).\nIf more results are available after reaching the page limit, a next_token is returned.\nPass the next_token back to this tool to continue fetching from where you left off.\n\nExample 1: {}\nExample 2 (filter by type): {\"billing_view_types\": \"[\"PRIMARY\", \"CUSTOM\"]\"}\nExample 3 (filter by owner): {\"owner_account_id\": \"123456789012\"}\nExample 4 (filter by name): {\"names\": \"[{\"searchOption\": \"STARTS_WITH\", \"searchValue\": \"MyView\"}]\"}\nExample 5 (with time range, date only): {\"active_after_inclusive\": \"2024-01-01\", \"active_before_inclusive\": \"2024-01-31\"}\nExample 6 (with time range, second precision): {\"active_after_inclusive\": \"2024-01-01T00:00:00\", \"active_before_inclusive\": \"2024-01-31T23:59:59\"}\nExample 7 (filter by ARNs): {\"arns\": \"[\"arn:aws:billing::123456789012:billingview/custom-view-abc123\"]\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "active_after_inclusive": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional inclusive start of the active time range in UTC.\nFormat: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS (UTC).\nMust be provided together with active_before_inclusive.\nThe time range must be within one calendar month."
+          },
+          "active_before_inclusive": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional inclusive end of the active time range in UTC.\nFormat: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS (UTC).\nMust be provided together with active_after_inclusive.\nThe time range must be within one calendar month."
+          },
+          "arns": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string containing a list of billing view ARNs to filter by.\nMaximum 10 items."
+          },
+          "billing_view_types": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string containing a list of billing view types.\nValid values: PRIMARY, BILLING_GROUP, CUSTOM, BILLING_TRANSFER,\nBILLING_TRANSFER_SHOWBACK."
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional maximum number of billing views to retrieve per page.\nValid range: 1-100. Default is 100."
+          },
+          "names": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON string containing a list of StringSearch objects.\nEach object has searchOption (valid value: STARTS_WITH) and searchValue\n(1-128 characters). Fixed number of 1 item."
+          },
+          "owner_account_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional owner account ID to filter by (12-digit AWS account ID)."
+          },
+          "source_account_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional source account ID to filter by (12-digit AWS account ID)."
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 1205
+    },
+    {
+      "name": "list-source-views-for-billing-view",
+      "description": "Lists the source views (managed AWS billing views) that a custom billing view\nis built from.\n\nA custom billing view is created as a \"multi-source view\" by combining cost management data\nfrom up to 20 source views. Source views are managed billing views (typically PRIMARY or other\nCUSTOM billing views) from the same or different AWS organizations. This enables consolidation\nof cost management data across multiple organizations into a single custom billing view.\n\nUse this tool to:\n- Understand the data lineage of a custom billing view (which source views feed its data)\n- Debug health issues: if a custom view is UNHEALTHY with SOURCE_VIEW_UNHEALTHY or\n  SOURCE_VIEW_ACCESS_DENIED, inspect its source views to identify the problem\n- Audit cross-organization data consolidation (which orgs/accounts contribute to this view)\n- Determine if the custom billing view aggregates data from a single org or multiple orgs\n\nThe tool paginates through results up to max_pages pages (default 10).\nIf more results are available after reaching the page limit, a next_token is returned.\nPass the next_token back to this tool to continue fetching from where you left off.\n\nExample 1: {\"arn\": \"arn:aws:billing::123456789012:billingview/custom-view-abc123\"}\nExample 2 (with max_results): {\"arn\": \"arn:aws:billing::123456789012:billingview/custom-view-abc123\", \"max_results\": 5}\nExample 3 (with next_token): {\"arn\": \"arn:aws:billing::123456789012:billingview/custom-view-abc123\", \"next_token\": \"token123\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "arn": {
+            "type": "string",
+            "description": "The Amazon Resource Name (ARN) that can be used to uniquely identify\nthe billing view. Required."
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional maximum number of entries a paginated response contains.\nValid range: 1-100."
+          },
+          "max_pages": {
+            "default": 10,
+            "type": "integer",
+            "description": "Maximum number of API pages to fetch. Defaults to 10."
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional pagination token from a previous response."
+          }
+        },
+        "required": [
+          "arn"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 527
+    },
+    {
+      "name": "get-resource-policy",
+      "description": "Returns the resource-based policy document attached to the resource in JSON format.\n\nResource-based policies are used to control access to billing view resources. When a custom\nbilling view is shared with other accounts (within or outside the organization) using AWS\nResource Access Manager (AWS RAM), a resource-based policy is attached to the billing view\nresource defining the access permissions.\n\nUse this tool to:\n- Inspect the sharing permissions of a billing view to understand which accounts have access\n- Audit resource-based policy configurations for compliance or security review\n- Debug access issues by examining the policy document attached to a billing view\n- Verify that sharing was configured correctly after sharing a custom billing view\n\nThe tool returns:\n- The resource-based policy document in JSON format\n- The ARN of the billing view resource the policy is attached to\n\nExample: {\"resource_arn\": \"arn:aws:billing::123456789012:billingview/custom-view-abc123\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "resource_arn": {
+            "type": "string",
+            "description": "The Amazon Resource Name (ARN) of the billing view resource\nto which the policy is attached to. Required."
+          }
+        },
+        "required": [
+          "resource_arn"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 266
+    },
+    {
+      "name": "list-cost-allocation-tags",
+      "description": "Lists cost allocation tags in the account using the ListCostAllocationTags API.\n\nCost allocation tags must be activated before they appear in Cost Explorer, CUR, and budgets.\nThere are two types: AWSGenerated (auto-created by AWS services like aws:createdBy) and\nUserDefined (created by customers via resource tagging APIs).\n\nThe tool returns CostAllocationTag objects containing:\n- TagKey, Type (AWSGenerated/UserDefined), Status (Active/Inactive)\n- LastUpdatedDate (when activation status last changed)\n- LastUsedDate (last month the tag appeared on a billed resource, for identifying stale tags)\n\nYou can filter tags by:\n- status: Active or Inactive\n- tag_keys: JSON array of tag key strings to look up (max 100, case-sensitive).\n  Example: '[\"Environment\", \"Team\", \"CostCenter\"]'\n- tag_type: AWSGenerated or UserDefined\n- max_results: Results per page (1-1000, default 100)\n- max_pages: Max pages to auto-paginate through\n\nLimits: 500 active cost allocation tag keys per payer account (adjustable via Service Quotas\nup to 1,000). Max 20 tags per UpdateCostAllocationTagsStatus request.\n\nExample 1 - List active user-defined tags: {\"status\": \"Active\", \"tag_type\": \"UserDefined\"}\nExample 2 - Check specific tag keys: {\"tag_keys\": \"[\"Environment\", \"Team\"]\"}\nExample 3 - List all tags with no filters: {}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by tag status (Active, Inactive)"
+          },
+          "tag_keys": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "JSON array of tag key strings to filter by (max 100)"
+          },
+          "tag_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by tag type (AWSGenerated, UserDefined)"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Max results per page (1-1000, default 100)"
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Pagination token from previous response"
+          },
+          "max_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Max pages to auto-paginate through"
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 563
+    },
+    {
+      "name": "list-cost-allocation-tag-backfill-history",
+      "description": "Retrieves the history of cost allocation tag backfill requests using the\nListCostAllocationTagBackfillHistory API.\n\nBackfill retroactively applies the current tag activation status to historical billing data.\nWithout backfill, tag activation only affects future billing periods.\n\nBackfill requests progress through these states:\n- SCHEDULED: Initial state when the backfill is requested\n- PROCESSING: System is rewriting historical tag data and reprocessing bills\n- SUCCEEDED: Backfill completed, historical data updated\n- FAILED: Processing error occurred (can be retried)\n\nConstraints: Only one backfill can run at a time. There is a 24-hour cooldown between\nrequests. Maximum lookback is 12 months. BackfillFrom must be the first day of a month\nat 00:00:00 UTC.\n\nThe tool returns CostAllocationTagBackfillRequest objects containing:\n- BackfillFrom (start date, first of month UTC)\n- BackfillStatus (SUCCEEDED, PROCESSING, or FAILED)\n- RequestedAt, CompletedAt (null if still processing), LastUpdatedAt\n\nYou can control pagination with:\n- max_results: Results per page (1-1000)\n- max_pages: Max pages to auto-paginate through\n\nExample 1 - Get latest backfill request: {\"max_results\": 1}\nExample 2 - Get full backfill history: {\"max_pages\": 10}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Max results per page (1-1000)"
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Pagination token from previous response"
+          },
+          "max_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Max pages to auto-paginate through"
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 428
+    },
+    {
+      "name": "describe-cost-category-definition",
+      "description": "Returns the full definition of a cost category using the DescribeCostCategoryDefinition API.\n\nCost categories group AWS costs using rule-based expressions that match line items by\ndimensions (SERVICE, LINKED_ACCOUNT, USAGE_TYPE), resource tags, or other cost category\nvalues. Each matched line item is assigned a category value such as \"Production\" or\n\"Development\". Rules can be REGULAR (explicit match) or INHERITED_VALUE (dynamic value\nfrom a tag key or account name). A DefaultValue catches costs that do not match any rule.\n\nThe tool returns a CostCategory object containing:\n- Name (1-50 chars, unique per account, case-sensitive), CostCategoryArn\n- RuleVersion (always \"CostCategoryExpression.v1\")\n- Rules array with Value, Rule expression (Dimensions/Tags/CostCategories with And/Or/Not), and Type\n- DefaultValue, SplitChargeRules (PROPORTIONAL, FIXED, or EVEN allocation methods)\n- EffectiveStart/EffectiveEnd (null if still active)\n- ProcessingStatus: APPLIED (rules reflected in data) or PROCESSING (backfill in progress)\n\nLinked accounts can describe cost categories from their management account.\n\nRequired parameters:\n- cost_category_arn: ARN of the cost category (arn:aws:ce::<account_id>:costcategory/<uuid>).\n  Use list-cost-category-definitions to discover ARNs.\n\nOptional parameters:\n- effective_on: ISO 8601 datetime (e.g., 2024-01-01T00:00:00Z) to retrieve the version\n  active at that time. Defaults to the current version.\n\nExample 1 - Get current definition:\n  {\"cost_category_arn\": \"arn:aws:ce::123456789012:costcategory/abcd-1234\"}\nExample 2 - Get historical version:\n  {\"cost_category_arn\": \"arn:aws:ce::123456789012:costcategory/abcd-1234\", \"effective_on\": \"2024-06-01T00:00:00Z\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "cost_category_arn": {
+            "type": "string",
+            "description": "ARN of the cost category to describe"
+          },
+          "effective_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional ISO 8601 datetime to retrieve a historical version"
+          }
+        },
+        "required": [
+          "cost_category_arn"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 536
+    },
+    {
+      "name": "list-cost-category-definitions",
+      "description": "Lists all cost category definitions in the account using the ListCostCategoryDefinitions API.\n\nReturns lightweight references for each cost category, not full rule definitions. Use\ndescribe-cost-category-definition with the returned ARN to get the complete rule set.\n\nThe tool returns CostCategoryReference objects containing:\n- CostCategoryArn, Name (unique, case-sensitive), NumberOfRules\n- EffectiveStart, EffectiveEnd (null if current)\n- DefaultValue, Values (all category values defined in the rules)\n- ProcessingStatus: APPLIED or PROCESSING\n- SupportedResourceTypes\n\nYou can filter and paginate with:\n- effective_on: ISO 8601 datetime to return only categories active at that time.\n  Defaults to current date.\n- supported_resource_types: JSON array to filter by resource type support.\n  Valid values: \"billing:rispgroupsharing\", \"billing:billingview\"\n  Example: '[\"billing:billingview\"]'\n  Returns only categories supporting all specified types.\n- max_results: Results per page (1-100, default 20)\n- max_pages: Max pages to auto-paginate through\n\nLimits: 50 cost categories per management account, 500 rules per category (API),\n100 rules per category (console), 10 split charge rules per category.\n\nExample 1 - List all current categories: {}\nExample 2 - List categories active on a date: {\"effective_on\": \"2024-06-01T00:00:00Z\"}\nExample 3 - Filter by billing view support: {\"supported_resource_types\": \"[\"billing:billingview\"]\"}",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "effective_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional ISO 8601 datetime to filter by active date"
+          },
+          "supported_resource_types": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON array of resource type strings"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Max results per page (1-100, default 20)"
+          },
+          "next_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Pagination token from previous response"
+          },
+          "max_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Max pages to auto-paginate through"
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 541
+    }
+  ],
+  "totalTokens": 19609,
+  "prompts": [
+    {
+      "name": "analyze_graviton_opportunities",
+      "description": "Analyzes EC2 instances and identifies opportunities to migrate to AWS Graviton processors",
+      "arguments": [
+        {
+          "name": "account_ids",
+          "description": "AWS account ID(s) to analyze (comma-separated if multiple)",
+          "required": true
+        },
+        {
+          "name": "lookback_days",
+          "description": "Number of days to look back for usage data (default: 14)\n\nProvide as a JSON string matching the following schema: {\"type\":\"integer\"}",
+          "required": false
+        },
+        {
+          "name": "region",
+          "description": "Optional AWS region to focus on (default: all regions)",
+          "required": false
+        }
+      ],
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "analyze_savings_plans_opportunities",
+      "description": "Analyzes AWS usage and identifies opportunities for Savings Plans purchases",
+      "arguments": [
+        {
+          "name": "account_ids",
+          "description": "AWS account ID(s) to analyze (comma-separated if multiple)",
+          "required": true
+        },
+        {
+          "name": "lookback_days",
+          "description": "Number of days to look back for usage data (default: 30)\n\nProvide as a JSON string matching the following schema: {\"type\":\"integer\"}",
+          "required": false
+        },
+        {
+          "name": "term_in_years",
+          "description": "Savings Plans term length in years (1 or 3, default: 1)\n\nProvide as a JSON string matching the following schema: {\"type\":\"integer\"}",
+          "required": false
+        }
+      ],
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    }
+  ],
+  "resources": [],
+  "resourceTemplates": []
+}

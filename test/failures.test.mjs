@@ -65,3 +65,34 @@ test('errorWords puts the reason of a JSON error body up front', () => {
   assert.equal(errorWords('failed: {not json}'), 'failed: {not json}');
   assert.equal(errorWords('{"code":12}'), '{"code":12}');
 });
+
+test('"API key not configured" is a missing credential, not the server failing (mcp-adr-analysis-server, bench 2026-11-09)', () => {
+  assert.equal(classifyFailure('ADR Aggregator API key not configured. Set ADR_AGGREGATOR_API_KEY environment variable.', { hadArguments: false }), 'auth');
+  assert.equal(classifyFailure('Access token is not set', { hadArguments: false }), 'auth');
+  assert.equal(classifyFailure('API key not provided', { hadArguments: false }), 'auth');
+  // A key that isn't a credential stays the server's.
+  assert.equal(classifyFailure('The key is not configured for this region', { hadArguments: false }), 'other');
+});
+
+test('"needs credentials" and "no browser found" are setup failures (botverse-mcp, mcp-session-bridge, bench 2026-11-09)', () => {
+  assert.equal(classifyFailure('Botverse needs credentials to run a job. Set BOTVERSE_API_KEY or BOTVERSE_CONNECTOR_URL.', { hadArguments: false }), 'auth');
+  assert.equal(classifyFailure('No browser found for standalone mode. Install Chrome/Chromium/Brave/Edge', { hadArguments: false }), 'environment');
+  assert.equal(classifyFailure('This tool needs a project id', { hadArguments: false }), 'other');
+});
+
+test('"not a git repository" and "the extension is not connected" are this machine, not the server (bench 2026-11-09)', () => {
+  assert.equal(classifyFailure('could not resolve repository HEAD: fatal: not a git repository (or any parent up to mount point /)', { hadArguments: false }), 'environment');
+  assert.equal(classifyFailure('The T3rnel Browser extension is not connected — install it here: https://browser.t3ratech.co.zw/', { hadArguments: false }), 'environment');
+  assert.equal(classifyFailure('Request timed out', { hadArguments: false }), 'other');
+});
+
+test('"needs an <X> API key" and "<X>_API_KEY is not set" are missing credentials (@entyrix/mcp, bench 2026-11-09)', () => {
+  assert.equal(classifyFailure('This tool needs an Entyrix API key and ENTYRIX_API_KEY is not set. Ways to get access: sign in.', { hadArguments: false }), 'auth');
+  assert.equal(classifyFailure('GITHUB_TOKEN is not set', { hadArguments: false }), 'auth');
+  // A word between "needs" and "key" that isn't one: not a credential.
+  assert.equal(classifyFailure('The index needs a primary key column', { hadArguments: false }), 'other');
+});
+
+test('"missing required authentication credential" is a missing credential (Google\'s hosted MCP servers, bench 2026-11-09)', () => {
+  assert.equal(classifyFailure('Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential.', { hadArguments: true }), 'auth');
+});

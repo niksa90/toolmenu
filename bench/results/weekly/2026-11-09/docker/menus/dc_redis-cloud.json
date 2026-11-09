@@ -1,0 +1,877 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mcp-redis-cloud",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:13:06.993Z",
+  "tools": [
+    {
+      "name": "get-current-account",
+      "description": "Get the current Cloud Redis account",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 28
+    },
+    {
+      "name": "get-current-payment-methods",
+      "description": "Get the current payment methods for the current Cloud Redis account",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 35
+    },
+    {
+      "name": "get-database-modules",
+      "description": "Lookup list of database modules supported in current account (support may differ based on subscription and database settings). These modules are also called capabilities.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 50
+    },
+    {
+      "name": "get-pro-plans-regions",
+      "description": "Lookup list of regions for cloud provider. These regions include the providers too.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 39
+    },
+    {
+      "name": "create-pro-subscription",
+      "description": "Create a new pro subscription. Returns a TASK ID that can be used to track the status of the subscription creation. Prerequisites: 1) Verify payment method by checking get-current-payment-methods. 2) For database modules, validate against get-database-modules list. 3) Validate regions using get-pro-plans-regions. The payload must match the input schema.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Optional. Subscription name",
+            "example": "My new subscription"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "description": "Optional. When 'false': Creates a deployment plan and deploys it (creating any resources required by the plan). When 'true': creates a read-only deployment plan without any resource creation. Default: 'false'",
+            "default": false
+          },
+          "deploymentType": {
+            "type": "string",
+            "description": "Optional. When 'single-region' or null: Creates a single region subscription. When 'active-active': creates an active-active (multi-region) subscription",
+            "enum": [
+              "single-region",
+              "active-active"
+            ]
+          },
+          "paymentMethod": {
+            "type": "string",
+            "description": "Required. The payment method for the requested subscription. If 'credit-card' is specified, 'paymentMethodId' must be defined. Default: 'credit-card. Validate this before submitting the subscription.",
+            "enum": [
+              "credit-card",
+              "marketplace"
+            ],
+            "default": "credit-card"
+          },
+          "paymentMethodId": {
+            "type": "integer",
+            "description": "Required if paymentMethod is credit-card. A valid payment method that was pre-defined in the current account. This value is Optional if 'paymentMethod' is 'marketplace', but Required for all other account types. Validate this before submitting the subscription.",
+            "format": "int32"
+          },
+          "memoryStorage": {
+            "type": "string",
+            "description": "Optional. Memory storage preference: either 'ram' or a combination of 'ram-and-flash'. Default: 'ram'",
+            "enum": [
+              "ram",
+              "ram-and-flash"
+            ],
+            "default": "ram"
+          },
+          "cloudProviders": {
+            "type": "array",
+            "description": "Required. Cloud hosting & networking details.  Make sure to validate this before submitting the subscription.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "description": "Optional. Cloud provider. Default: 'AWS'",
+                  "enum": [
+                    "AWS",
+                    "GCP"
+                  ],
+                  "default": "AWS"
+                },
+                "cloudAccountId": {
+                  "type": "integer",
+                  "description": "Optional. Cloud account identifier. Default: Redis internal cloud account (using Cloud Account Id = 1 implies using Redis internal cloud account). Note that a GCP subscription can be created only with Redis internal cloud account.",
+                  "format": "int32",
+                  "example": 1
+                },
+                "regions": {
+                  "type": "array",
+                  "description": "Required. Cloud networking details, per region (single region or multiple regions for Active-Active cluster only)",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "region": {
+                        "type": "string",
+                        "description": "Required. Deployment region as defined by cloud provider",
+                        "example": "us-east-1"
+                      },
+                      "multipleAvailabilityZones": {
+                        "type": "boolean",
+                        "description": "Optional. Support deployment on multiple availability zones within the selected region. Default: 'false'",
+                        "default": false
+                      },
+                      "preferredAvailabilityZones": {
+                        "type": "array",
+                        "description": "Optional. Availability zones deployment preferences. If 'multipleAvailabilityZones' is set to 'true', you must specify three availability zones.",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "networking": {
+                        "type": "object",
+                        "description": "Optional. Cloud networking details. Default: if using Redis internal cloud account, 192.168.0.0/24",
+                        "properties": {
+                          "deploymentCIDR": {
+                            "type": "string",
+                            "description": "Optional. Deployment CIDR mask. Default: If using Redis internal cloud account, 192.168.0.0/24",
+                            "example": "10.0.0.0/24"
+                          },
+                          "vpcId": {
+                            "type": "string",
+                            "description": "Optional. Either an existing VPC Id or create a new VPC (if no VPC is specified)",
+                            "example": "<vpc-identifier>"
+                          }
+                        },
+                        "required": [
+                          "deploymentCIDR"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "region"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "regions"
+              ]
+            }
+          },
+          "databases": {
+            "type": "array",
+            "description": "Required. Databases specifications for each planned database. Make sure to validate this before submitting the subscription.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Required. Database name (must be up to 40 characters long, include only letters, digits, or hyphen ('-'), start with a letter, and end with a letter or digit)",
+                  "example": "Redis-database-example"
+                },
+                "protocol": {
+                  "type": "string",
+                  "description": "Optional. Database protocol: either 'redis' or 'memcached'. Default: 'redis'",
+                  "enum": [
+                    "redis",
+                    "memcached"
+                  ],
+                  "default": "redis"
+                },
+                "datasetSizeInGb": {
+                  "type": "number",
+                  "description": "Optional. The maximum amount of data in the dataset for this specific database is in GB. You can not set both datasetSizeInGb and totalMemoryInGb.",
+                  "format": "double",
+                  "minimum": 0.1,
+                  "example": 1
+                },
+                "supportOSSClusterApi": {
+                  "type": "boolean",
+                  "description": "Optional. Support Redis open-source (OSS) Cluster API. Default: 'false'",
+                  "default": false
+                },
+                "dataPersistence": {
+                  "type": "string",
+                  "description": "Optional. Rate of database data persistence (in persistent storage). Default: 'none'",
+                  "enum": [
+                    "none",
+                    "aof-every-1-second",
+                    "aof-every-write",
+                    "snapshot-every-1-hour",
+                    "snapshot-every-6-hours",
+                    "snapshot-every-12-hours"
+                  ]
+                },
+                "replication": {
+                  "type": "boolean",
+                  "description": "Optional. Databases replication. Default: 'true'",
+                  "default": true
+                },
+                "throughputMeasurement": {
+                  "type": "object",
+                  "description": "Optional. Throughput measurement method. Default: 25000 ops/sec",
+                  "properties": {
+                    "by": {
+                      "type": "string",
+                      "description": "Required. Throughput measurement method. Either 'number-of-shards' or 'operations-per-second'",
+                      "enum": [
+                        "operations-per-second",
+                        "number-of-shards"
+                      ]
+                    },
+                    "value": {
+                      "type": "integer",
+                      "description": "Required. Throughput value (as applies to selected measurement method)",
+                      "format": "int64",
+                      "example": 10000
+                    }
+                  },
+                  "required": [
+                    "by",
+                    "value"
+                  ]
+                },
+                "localThroughputMeasurement": {
+                  "type": "array",
+                  "description": "Optional. Throughput measurement for an active-active subscription",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "region": {
+                        "type": "string"
+                      },
+                      "writeOperationsPerSecond": {
+                        "type": "integer",
+                        "description": "Default: 1000 ops/sec",
+                        "format": "int64",
+                        "example": 1000
+                      },
+                      "readOperationsPerSecond": {
+                        "type": "integer",
+                        "description": "Default: 1000 ops/sec",
+                        "format": "int64",
+                        "example": 1000
+                      }
+                    }
+                  }
+                },
+                "modules": {
+                  "type": "array",
+                  "description": "Optional. Redis modules to be provisioned in the database.  Use get-database-modules to retrieve available modules and configure the desired ones",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Required. Redis module Id. Get the list of available module identifiers by calling get-database-modules"
+                      },
+                      "parameters": {
+                        "type": "object",
+                        "description": "Optional. Redis database module parameters",
+                        "additionalProperties": true
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  }
+                },
+                "quantity": {
+                  "type": "integer",
+                  "description": "Optional. Number of databases (of this type) that will be created. Default: 1",
+                  "format": "int32",
+                  "example": 1
+                },
+                "averageItemSizeInBytes": {
+                  "type": "integer",
+                  "description": "Optional. Relevant only to ram-and-flash clusters. Estimated average size (measured in bytes) of the items stored in the database. Default: 1000",
+                  "format": "int64"
+                },
+                "respVersion": {
+                  "type": "string",
+                  "description": "Optional. RESP version must be compatible with Redis version.",
+                  "enum": [
+                    "resp2",
+                    "resp3"
+                  ],
+                  "example": "resp3"
+                },
+                "shardingType": {
+                  "type": "string",
+                  "description": "Optional. Database Hashing policy.",
+                  "enum": [
+                    "default-regex-rules",
+                    "custom-regex-rules",
+                    "redis-oss-hashing"
+                  ]
+                },
+                "queryPerformanceFactor": {
+                  "type": "string",
+                  "description": "Optional. The query performance factor adds extra compute power specifically for search and query.",
+                  "example": "2x"
+                }
+              },
+              "required": [
+                "name",
+                "protocol"
+              ]
+            }
+          },
+          "redisVersion": {
+            "type": "string",
+            "description": "Optional. If specified, the redisVersion defines the Redis version of the databases in the subscription. If omitted, the Redis version will be the default",
+            "example": "7.2"
+          }
+        },
+        "required": [
+          "cloudProviders",
+          "databases"
+        ]
+      },
+      "tokens": 1704
+    },
+    {
+      "name": "get-pro-subscriptions",
+      "description": "Get the pro subscriptions for the current Cloud Redis account",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 33
+    },
+    {
+      "name": "get-pro-subscription",
+      "description": "Get pro subscription by ID. The payload must match the input schema.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "type": "number",
+            "description": "Subscription ID",
+            "min": 1
+          }
+        },
+        "required": [
+          "subscriptionId"
+        ]
+      },
+      "tokens": 56
+    },
+    {
+      "name": "get-essential-subscriptions",
+      "description": "Get the essential subscriptions for the current Cloud Redis account. A paginated response is returned, and to get all the essential subscriptions, the page and size parameters must be used until all the essential subscriptions are retrieved.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "description": "Page number",
+            "default": 0
+          },
+          "size": {
+            "type": "number",
+            "description": "Page size",
+            "default": 10
+          }
+        },
+        "required": []
+      },
+      "tokens": 95
+    },
+    {
+      "name": "get-essential-subscription-by-id",
+      "description": "Get an essential subscription by ID for the current Cloud Redis account",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "type": "number",
+            "description": "Subscription ID",
+            "min": 1
+          }
+        },
+        "required": [
+          "subscriptionId"
+        ]
+      },
+      "tokens": 57
+    },
+    {
+      "name": "create-essential-subscription",
+      "description": "Create a new essential subscription. Returns a TASK ID that can be used to track the status of the subscription creation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Subscription name"
+          },
+          "planId": {
+            "type": "number",
+            "description": "Plan ID. The plan ID can be taken from /fixed/plans"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "description": "Payment method",
+            "enum": [
+              "credit-card",
+              "marketplace"
+            ],
+            "default": "credit-card"
+          },
+          "paymentMethodId": {
+            "type": "number",
+            "description": "Payment method ID"
+          }
+        },
+        "required": [
+          "name",
+          "planId"
+        ]
+      },
+      "tokens": 129
+    },
+    {
+      "name": "delete-essential-subscription",
+      "description": "Delete an essential subscription by ID",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "type": "number",
+            "description": "Subscription ID",
+            "min": 1
+          }
+        },
+        "required": [
+          "subscriptionId"
+        ]
+      },
+      "tokens": 49
+    },
+    {
+      "name": "get-essentials-plans",
+      "description": "Get the available plans for essential subscriptions. Always ask for which provider the plans are want to be retrieved. A paginated response is returned, and to get all the plans, the page and size parameters must be used until all the plans are retrieved.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "description": "Provider name.",
+            "enum": [
+              "AWS",
+              "GCP",
+              "AZURE"
+            ]
+          },
+          "redisFlex": {
+            "type": "boolean",
+            "description": "Redis Flex",
+            "default": false
+          },
+          "page": {
+            "type": "number",
+            "description": "Page number",
+            "default": 0
+          },
+          "size": {
+            "type": "number",
+            "description": "Page size",
+            "default": 10
+          }
+        },
+        "required": [
+          "provider"
+        ]
+      },
+      "tokens": 145
+    },
+    {
+      "name": "get-tasks",
+      "description": "Get the current tasks for the current Cloud Redis account",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 32
+    },
+    {
+      "name": "get-task-by-id",
+      "description": "Get a task by ID for the current Cloud Redis account",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "description": "Task ID",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "taskId"
+        ]
+      },
+      "tokens": 55
+    },
+    {
+      "name": "get-pro-databases",
+      "description": "Get the pro databases for the provided subscription Id",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "type": "number",
+            "description": "Subscription ID",
+            "min": 0
+          },
+          "offset": {
+            "type": "number",
+            "description": "Optional. Number of items to skip"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Optional. Maximum number of items to return"
+          }
+        },
+        "required": [
+          "subscriptionId"
+        ]
+      },
+      "tokens": 87
+    },
+    {
+      "name": "create-pro-database",
+      "description": "Create a new database inside the specified subscription ID. Returns a TASK ID that can be used to track the status of the database creationPrerequisites: 1) For database modules, validate against get-database-modules list. 2) Validate regions using get-pro-plans-regions. The payload must match the input schema.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "type": "number",
+            "description": "Subscription ID",
+            "min": 0
+          },
+          "dryRun": {
+            "type": "boolean",
+            "description": "Optional. When 'false': Creates a deployment plan and deploys it (creating any resources required by the plan). When 'true': creates a read-only deployment plan without any resource creation. Default: 'true'"
+          },
+          "name": {
+            "type": "string",
+            "description": "Required. Name of the database. Database name is limited to 40 characters or less and must include only letters, digits, and hyphens ('-'). It must start with a letter and end with a letter or digit."
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Optional. Database protocol. Default: 'redis'",
+            "enum": [
+              "redis",
+              "memcached"
+            ]
+          },
+          "port": {
+            "type": "integer",
+            "description": "Optional. TCP port on which the database is available (10000-19999). Generated automatically if omitted"
+          },
+          "datasetSizeInGb": {
+            "type": "number",
+            "description": "Optional. The maximum amount of data in the dataset for this specific database is in GB. You can not set both datasetSizeInGb and totalMemoryInGb. if 'replication' is true, the database's total memory will be twice as large as the datasetSizeInGb.if 'replication' is false, the database's total memory of the database will be the datasetSizeInGb value.",
+            "minimum": 0.1
+          },
+          "respVersion": {
+            "type": "string",
+            "description": "Optional. RESP version must be compatible with Redis version.",
+            "enum": [
+              "resp2",
+              "resp3"
+            ]
+          },
+          "supportOSSClusterApi": {
+            "type": "boolean",
+            "description": "Optional. Support Redis open-source (OSS) Cluster API. Default: 'false'"
+          },
+          "dataPersistence": {
+            "type": "string",
+            "description": "Optional. Rate of database data persistence (in persistent storage). Default: 'none'",
+            "enum": [
+              "none",
+              "aof-every-1-second",
+              "aof-every-write",
+              "snapshot-every-1-hour",
+              "snapshot-every-6-hours",
+              "snapshot-every-12-hours"
+            ]
+          },
+          "dataEvictionPolicy": {
+            "type": "string",
+            "description": "Optional. Data items eviction method. Default: 'volatile-lru'",
+            "enum": [
+              "allkeys-lru",
+              "allkeys-lfu",
+              "allkeys-random",
+              "volatile-lru",
+              "volatile-lfu",
+              "volatile-random",
+              "volatile-ttl",
+              "noeviction"
+            ]
+          },
+          "replication": {
+            "type": "boolean",
+            "description": "Optional. Databases replication. Default: 'true'"
+          },
+          "throughputMeasurement": {
+            "type": "object",
+            "description": "Optional. Throughput measurement method.",
+            "properties": {
+              "by": {
+                "type": "string",
+                "description": "Required. Throughput measurement method. Either 'number-of-shards' or 'operations-per-second'",
+                "enum": [
+                  "operations-per-second",
+                  "number-of-shards"
+                ]
+              },
+              "value": {
+                "type": "integer",
+                "description": "Required. Throughput value (as applies to selected measurement method)"
+              }
+            },
+            "required": [
+              "by",
+              "value"
+            ]
+          },
+          "averageItemSizeInBytes": {
+            "type": "integer",
+            "description": "Optional. Relevant only to ram-and-flash subscriptions. Estimated average size (measured in bytes) of the items stored in the database, Default: 1000"
+          },
+          "sourceIp": {
+            "type": "array",
+            "description": "Optional. List of source IP addresses or subnet masks. If specified, Redis clients will be able to connect to this database only from within the specified source IP addresses ranges.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "enableTls": {
+            "type": "boolean",
+            "description": "Optional. When 'true', requires TLS authentication for all connections (mTLS with valid clientSslCertificate, regular TLS when the clientSslCertificate is not provided. Default: 'false'"
+          },
+          "password": {
+            "type": "string",
+            "description": "Optional. Password to access the database. If omitted, a random 32 character long alphanumeric password will be automatically generated. Can only be set if Database Protocol is REDIS"
+          },
+          "saslUsername": {
+            "type": "string",
+            "description": "Optional. Memcached (SASL) Username to access the database. If omitted, the username will be set to a 'mc-' prefix followed by a random 5 character long alphanumeric. Can only be set if Database Protocol is MEMCACHED"
+          },
+          "saslPassword": {
+            "type": "string",
+            "description": "Optional. Memcached (SASL) Password to access the database. If omitted, a random 32 character long alphanumeric password will be automatically generated. Can only be set if Database Protocol is MEMCACHED"
+          },
+          "modules": {
+            "type": "array",
+            "description": "Optional. Redis modules to be provisioned in the database.  Use get-database-modules to retrieve available modules and configure the desired ones",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Required. Redis module Id. Get the list of available module identifiers by calling get-database-modules"
+                },
+                "parameters": {
+                  "type": "object",
+                  "description": "Optional. Redis database module parameters"
+                }
+              },
+              "required": [
+                "name"
+              ]
+            }
+          },
+          "shardingType": {
+            "type": "string",
+            "description": "Optional. Database Hashing policy.",
+            "enum": [
+              "default-regex-rules",
+              "custom-regex-rules",
+              "redis-oss-hashing"
+            ]
+          },
+          "queryPerformanceFactor": {
+            "type": "string",
+            "description": "Optional. The query performance factor adds extra compute power specifically for search and query."
+          }
+        },
+        "required": [
+          "subscriptionId",
+          "name"
+        ]
+      },
+      "tokens": 1148
+    },
+    {
+      "name": "get-essential-databases",
+      "description": "Get the essential databases for the provided subscription Id",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "type": "number",
+            "description": "Subscription ID",
+            "min": 0
+          },
+          "offset": {
+            "type": "number",
+            "description": "Optional. Number of items to skip"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Optional. Maximum number of items to return"
+          }
+        },
+        "required": [
+          "subscriptionId"
+        ]
+      },
+      "tokens": 87
+    },
+    {
+      "name": "create-essential-database",
+      "description": "Create a new essential database inside the specified subscription ID. Returns a TASK ID that can be used to track the status of the database creation. IMPORTANT GUIDELINES: 1) DO NOT set optional parameters unless explicitly requested. 2) Modules can only be selected if protocol is 'redis'. 3) When creating a free database, first call the get-essential-subscriptions tool to check if a free database already exists (each account is limited to one free database). 4) For database modules, validate against get-database-modules list. 5) The payload must match the input schema.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "type": "number",
+            "description": "Subscription ID",
+            "min": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Required. Name of the database. Database name is limited to 40 characters or less and must include only letters, digits, and hyphens ('-'). It must start with a letter and end with a letter or digit."
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Optional. Database protocol. Default: 'redis' for Pay-As-You-Go subscriptions, 'stack' for Redis Flex subscriptions",
+            "enum": [
+              "redis",
+              "memcached",
+              "stack"
+            ]
+          },
+          "datasetSizeInGb": {
+            "type": "number",
+            "description": "Optional. The maximum amount of data in the dataset for this specific database is in GB. If 'replication' is true, the database's total memory will be twice as large as the datasetSizeInGb. If 'replication' is false, the database's total memory will be the datasetSizeInGb value.",
+            "minimum": 0.1
+          },
+          "respVersion": {
+            "type": "string",
+            "description": "Optional. RESP version must be compatible with Redis version.",
+            "enum": [
+              "resp2",
+              "resp3"
+            ]
+          },
+          "supportOSSClusterApi": {
+            "type": "boolean",
+            "description": "Optional. Support Redis open-source (OSS) Cluster API. Supported only for 'Pay-As-You-Go' subscriptions. Default: 'false'"
+          },
+          "useExternalEndpointForOSSClusterApi": {
+            "type": "boolean",
+            "description": "Optional. Should use external endpoint for open-source (OSS) Cluster API. Can only be enabled if OSS Cluster API support is enabled. Supported only for 'Pay-As-You-Go' subscriptions."
+          },
+          "enableDatabaseClustering": {
+            "type": "boolean",
+            "description": "Optional. Distributes database data to different cloud instances. Supported only for 'Pay-As-You-Go' subscriptions."
+          },
+          "numberOfShards": {
+            "type": "integer",
+            "description": "Optional. Specifies the number of master shards. Supported only for 'Pay-As-You-Go' subscriptions."
+          },
+          "dataPersistence": {
+            "type": "string",
+            "description": "Optional. Rate of database data persistence (in persistent storage). The default is according to the subscription plan.",
+            "enum": [
+              "none",
+              "aof-every-1-second",
+              "aof-every-write",
+              "snapshot-every-1-hour",
+              "snapshot-every-6-hours",
+              "snapshot-every-12-hours"
+            ]
+          },
+          "dataEvictionPolicy": {
+            "type": "string",
+            "description": "Optional. Data items eviction method. Default: 'volatile-lru'",
+            "enum": [
+              "allkeys-lru",
+              "allkeys-lfu",
+              "allkeys-random",
+              "volatile-lru",
+              "volatile-lfu",
+              "volatile-random",
+              "volatile-ttl",
+              "noeviction"
+            ]
+          },
+          "replication": {
+            "type": "boolean",
+            "description": "Optional. Databases replication. The default is according to the subscription plan."
+          },
+          "periodicBackupPath": {
+            "type": "string",
+            "description": "Optional. If specified, automatic backups will be every 24 hours or database will be able to perform immediate backups to this path. If empty string is received, backup path will be removed."
+          },
+          "sourceIps": {
+            "type": "array",
+            "description": "Optional. List of source IP addresses or subnet masks. If specified, Redis clients will be able to connect to this database only from within the specified source IP addresses ranges.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "enableTls": {
+            "type": "boolean",
+            "description": "Optional. When 'true', requires TLS authentication for all connections (mTLS with valid clientTlsCertificates, regular TLS when the clientTlsCertificates is not provided. Default: 'false'"
+          },
+          "password": {
+            "type": "string",
+            "description": "Optional. Password to access the database. If omitted, a random 32 character long alphanumeric password will be automatically generated. Can only be set if Database Protocol is REDIS"
+          },
+          "modules": {
+            "type": "array",
+            "description": "Optional. Redis modules to be provisioned in the database. Use get-database-modules to retrieve available modules and configure the desired ones. IMPORTANT: Modules can only be used when protocol is 'redis'. Cannot use modules with 'memcached' or 'stack' protocols.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Required. Redis module Id. Get the list of available module identifiers by calling get-database-modules"
+                },
+                "parameters": {
+                  "type": "object",
+                  "description": "Optional. Redis database module parameters"
+                }
+              },
+              "required": [
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "subscriptionId",
+          "name"
+        ]
+      },
+      "tokens": 1013
+    }
+  ],
+  "totalTokens": 4842
+}

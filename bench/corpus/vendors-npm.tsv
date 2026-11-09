@@ -1,0 +1,62 @@
+_stripe_mcp	@stripe/mcp@0.3.4			--tools=all --api-key=sk_test_toolmenu
+_paypal_mcp	@paypal/mcp@1.8.1		PAYPAL_ACCESS_TOKEN=toolmenu PAYPAL_ENVIRONMENT=SANDBOX	--tools=all
+_azure_mcp	@azure/mcp@4.0.0-beta.6			server start
+_notionhq_notion-mcp-server	@notionhq/notion-mcp-server@2.6.1		NOTION_TOKEN=ntn_toolmenu	
+_sentry_mcp-server	@sentry/mcp-server@0.49.0			--access-token=toolmenu
+_supabase_mcp-server-supabase	@supabase/mcp-server-supabase@0.16.1			--access-token=toolmenu
+mongodb-mcp-server	mongodb-mcp-server@3.3.0			
+_playwright_mcp	@playwright/mcp@0.0.84			
+chrome-devtools-mcp	chrome-devtools-mcp@1.12.0			
+_upstash_context7-mcp	@upstash/context7-mcp@4.6.0			
+_hubspot_mcp-server	@hubspot/mcp-server@0.4.0		PRIVATE_APP_ACCESS_TOKEN=toolmenu	
+_shopify_dev-mcp	@shopify/dev-mcp@1.18.0			
+_cloudflare_mcp-server-cloudflare	@cloudflare/mcp-server-cloudflare@0.2.0			run 00000000000000000000000000000000
+_twilio-alpha_mcp	@twilio-alpha/mcp@0.7.0			AC00000000000000000000000000000000/SK00000000000000000000000000000000:toolmenu
+_elastic_mcp-server-elasticsearch	@elastic/mcp-server-elasticsearch@0.3.1		ES_URL=http://localhost:9200 ES_API_KEY=toolmenu	
+_heroku_mcp-server	@heroku/mcp-server@1.2.13		HEROKU_API_KEY=toolmenu	
+_netlify_mcp	@netlify/mcp@1.21.0			
+_neondatabase_mcp-server-neon	@neondatabase/mcp-server-neon@0.6.5			start toolmenu
+firebase-tools	firebase-tools@15.35.0			mcp
+_modelcontextprotocol_server-github	@modelcontextprotocol/server-github@2025.4.8		GITHUB_PERSONAL_ACCESS_TOKEN=ghp_toolmenu	
+_browserbasehq_mcp-server-browserbase	@browserbasehq/mcp-server-browserbase@2.4.3		BROWSERBASE_API_KEY=toolmenu BROWSERBASE_PROJECT_ID=toolmenu	
+firecrawl-mcp	firecrawl-mcp@3.38.0		FIRECRAWL_API_KEY=fc-toolmenu	
+exa-mcp-server	exa-mcp-server@3.4.3		EXA_API_KEY=toolmenu	
+tavily-mcp	tavily-mcp@0.2.22		TAVILY_API_KEY=tvly-toolmenu	
+_brave_brave-search-mcp-server	@brave/brave-search-mcp-server@2.1.4		BRAVE_API_KEY=toolmenu	
+_apify_actors-mcp-server	@apify/actors-mcp-server@0.21.4		APIFY_TOKEN=toolmenu	
+figma-developer-mcp	figma-developer-mcp@0.13.2			--figma-api-key=toolmenu --stdio
+_mapbox_mcp-server	@mapbox/mcp-server@0.17.0		MAPBOX_ACCESS_TOKEN=pk.toolmenu	
+_circleci_mcp-server-circleci	@circleci/mcp-server-circleci@0.20.0		CIRCLECI_TOKEN=toolmenu	
+_launchdarkly_mcp-server	@launchdarkly/mcp-server@0.7.2			start --api-key toolmenu
+_auth0_auth0-mcp-server	@auth0/auth0-mcp-server@0.1.0-beta.19			run
+_postman_postman-mcp-server	@postman/postman-mcp-server@2.15.0		POSTMAN_API_KEY=PMAK-toolmenu	
+_upstash_mcp-server	@upstash/mcp-server@0.4.0		UPSTASH_EMAIL=a@example.com UPSTASH_API_KEY=toolmenu	
+_mastra_mcp-docs-server	@mastra/mcp-docs-server@1.3.12			
+_railway_mcp-server	@railway/mcp-server@0.1.12			
+_contentful_mcp-server	@contentful/mcp-server@1.24.5		CONTENTFUL_MANAGEMENT_ACCESS_TOKEN=toolmenu SPACE_ID=toolmenu ENVIRONMENT_ID=master	
+_salesforce_mcp	@salesforce/mcp@0.30.15			--orgs DEFAULT_TARGET_ORG --toolsets all
+_adyen_mcp	@adyen/mcp@0.6.0			--adyenApiKey toolmenu --env TEST
+_microsoft_clarity-mcp-server	@microsoft/clarity-mcp-server@2.0.1			--clarity_api_token toolmenu
+_azure-devops_mcp	@azure-devops/mcp@2.11.0			toolmenu
+_googlemaps_code-assist-mcp	@googlemaps/code-assist-mcp@0.2.1			
+_wix_mcp	@wix/mcp@1.0.98			
+_pulumi_mcp-server	@pulumi/mcp-server@0.2.0			stdio
+_dynatrace-oss_dynatrace-mcp-server	@dynatrace-oss/dynatrace-mcp-server@2.1.2		DT_ENVIRONMENT=https://toolmenu.apps.dynatrace.com	
+_perplexity-ai_mcp-server	@perplexity-ai/mcp-server@1.3.0		PERPLEXITY_API_KEY=pplx-toolmenu	
+_sveltejs_mcp	@sveltejs/mcp@0.1.30			
+_21st-dev_magic	@21st-dev/magic@0.2.3		API_KEY=toolmenu	
+nx-mcp	nx-mcp@0.25.3			
+airtable-mcp-server	airtable-mcp-server@1.14.0		AIRTABLE_API_KEY=pattoolmenu	
+mcp-server-kubernetes	mcp-server-kubernetes@4.2.1			
+resend-mcp	resend-mcp@2.28.0		RESEND_API_KEY=re_toolmenu	
+_mailgun_mcp-server	@mailgun/mcp-server@2.2.0		MAILGUN_API_KEY=toolmenu	
+_browserstack_mcp-server	@browserstack/mcp-server@2.6.5		BROWSERSTACK_USERNAME=toolmenu BROWSERSTACK_ACCESS_KEY=toolmenu	
+_jetbrains_mcp-proxy	@jetbrains/mcp-proxy@1.8.0			
+_translated_lara-mcp	@translated/lara-mcp@2.2.0		LARA_ACCESS_KEY_ID=toolmenu LARA_ACCESS_KEY_SECRET=toolmenu	
+_agentdeskai_browser-tools-mcp	@agentdeskai/browser-tools-mcp@2.0.4			
+_gleanwork_local-mcp-server	@gleanwork/local-mcp-server@0.10.1		GLEAN_INSTANCE=toolmenu GLEAN_API_TOKEN=toolmenu	
+_chargebee_mcp	@chargebee/mcp@0.0.8			
+_paddle_paddle-mcp	@paddle/paddle-mcp@0.1.6			--api-key=toolmenu --environment=sandbox
+dodopayments-mcp	dodopayments-mcp@2.61.1		DODO_PAYMENTS_API_KEY=toolmenu	
+_knocklabs_agent-toolkit	@knocklabs/agent-toolkit@0.5.8		KNOCK_SERVICE_TOKEN=toolmenu	
+_ahrefs_mcp	@ahrefs/mcp@0.0.11		API_KEY=toolmenu	

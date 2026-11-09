@@ -1,0 +1,279 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "zerodha-kite-mcp",
+    "version": "0.1.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:29:39.174Z",
+  "tools": [
+    {
+      "name": "place_order",
+      "description": "Place a new order in the market",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "exchange": {
+            "type": "string",
+            "description": "Trading exchange (NSE, BSE, NFO, CDS, MCX)"
+          },
+          "tradingsymbol": {
+            "type": "string",
+            "description": "Trading symbol"
+          },
+          "transaction_type": {
+            "type": "string",
+            "enum": [
+              "BUY",
+              "SELL"
+            ]
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Number of shares/lots"
+          },
+          "order_type": {
+            "type": "string",
+            "enum": [
+              "MARKET",
+              "LIMIT",
+              "SL",
+              "SL-M"
+            ]
+          },
+          "product": {
+            "type": "string",
+            "enum": [
+              "CNC",
+              "MIS",
+              "NRML"
+            ]
+          },
+          "price": {
+            "type": "number",
+            "description": "Price for LIMIT orders"
+          },
+          "trigger_price": {
+            "type": "number",
+            "description": "Trigger price for SL orders"
+          }
+        },
+        "required": [
+          "exchange",
+          "tradingsymbol",
+          "transaction_type",
+          "quantity",
+          "order_type",
+          "product"
+        ]
+      },
+      "tokens": 181
+    },
+    {
+      "name": "modify_order",
+      "description": "Modify an existing pending order",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "price": {
+            "type": "number"
+          },
+          "order_type": {
+            "type": "string"
+          },
+          "trigger_price": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "order_id"
+        ]
+      },
+      "tokens": 67
+    },
+    {
+      "name": "cancel_order",
+      "description": "Cancel a pending order",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id"
+        ]
+      },
+      "tokens": 36
+    },
+    {
+      "name": "get_positions",
+      "description": "Get all open positions",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 25
+    },
+    {
+      "name": "get_holdings",
+      "description": "Get long-term holdings",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 26
+    },
+    {
+      "name": "get_margins",
+      "description": "Get account margins and funds",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 28
+    },
+    {
+      "name": "get_quote",
+      "description": "Get real-time market quotes",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "exchange": {
+            "type": "string"
+          },
+          "tradingsymbol": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "exchange",
+          "tradingsymbol"
+        ]
+      },
+      "tokens": 48
+    },
+    {
+      "name": "get_historical_data",
+      "description": "Get historical candlestick data",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "instrument_token": {
+            "type": "string"
+          },
+          "from_date": {
+            "type": "string"
+          },
+          "to_date": {
+            "type": "string"
+          },
+          "interval": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrument_token",
+          "from_date",
+          "to_date",
+          "interval"
+        ]
+      },
+      "tokens": 70
+    },
+    {
+      "name": "get_instruments",
+      "description": "Get list of tradeable instruments",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "exchange": {
+            "type": "string"
+          }
+        }
+      },
+      "tokens": 32
+    },
+    {
+      "name": "get_orders",
+      "description": "Get all orders for the day",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 27
+    },
+    {
+      "name": "get_trades",
+      "description": "Get all executed trades",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 26
+    },
+    {
+      "name": "get_order_history",
+      "description": "Get order history",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id"
+        ]
+      },
+      "tokens": 36
+    },
+    {
+      "name": "get_profile",
+      "description": "Get user profile",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 24
+    },
+    {
+      "name": "get_ltp",
+      "description": "Get last traded price",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "instruments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "instruments"
+        ]
+      },
+      "tokens": 43
+    },
+    {
+      "name": "get_market_status",
+      "description": "Check market status",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 25
+    }
+  ],
+  "totalTokens": 694
+}

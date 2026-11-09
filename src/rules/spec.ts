@@ -57,8 +57,10 @@ export const schema: Rule = {
     }
     const findings: RuleFinding[] = [];
     if (ctx.clientError && ctx.pages.every((page) => validate(page))) {
+      const said = sdkIssues(ctx.clientError);
       findings.push({
-        message: `The official MCP SDK client rejected the tools/list result, so clients built on it list no tools. The result does match the ${ctx.protocolVersion} schema; the SDK said: ${ctx.clientError.split('\n')[0]}`,
+        message: `The official MCP SDK client rejected the tools/list result, so clients built on it list no tools. The result does match the ${ctx.protocolVersion} schema; the SDK said: ${said.summary}`,
+        ...(said.detail.length ? { detail: said.detail } : {}),
         fix: 'Fix what the SDK names above, then list the tools with the official client to confirm.',
       });
     }
@@ -362,3 +364,27 @@ export const taskRequired: Rule = {
     ];
   },
 };
+
+/**
+ * The SDK's rejection, readable: "Invalid result for tools/list: [ {...zod issues...} ]"
+ * spans many lines, and its first line alone said only "…tools/list: [" (the
+ * @pipeworx servers, bench 2026-11-09). Each issue becomes a detail line, "path: message".
+ */
+export function sdkIssues(error: string): { summary: string; detail: string[] } {
+  const at = error.indexOf('[');
+  if (at !== -1) {
+    try {
+      const issues = JSON.parse(error.slice(at)) as { path?: unknown[]; message?: string }[];
+      if (Array.isArray(issues) && issues.length) {
+        const detail = issues.slice(0, 10).map((i) => `${(i.path ?? []).join('.') || '(the result)'}: ${i.message ?? 'invalid'}`);
+        if (issues.length > 10) detail.push(`…and ${issues.length - 10} more`);
+        return { summary: `${error.slice(0, at).trim().replace(/:$/, '')}, ${issues.length === 1 ? 'one problem' : `${issues.length} problems`}.`, detail };
+      }
+    } catch {
+      // Not JSON after all: said as text below.
+    }
+  }
+  const flat = error.replace(/\s+/g, ' ').trim();
+  return { summary: flat.length > 300 ? `${flat.slice(0, 297)}…` : flat, detail: [] };
+}
+

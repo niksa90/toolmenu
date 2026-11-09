@@ -1,0 +1,3128 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Langfuse MCP Server",
+    "version": "",
+    "protocolVersion": "2026-07-28",
+    "era": "modern",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:41:56.974Z",
+  "tools": [
+    {
+      "description": "List annotation queues with pagination.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "minimum": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Items per page (max 100)",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_annotation_queuesArguments"
+      },
+      "name": "list_annotation_queues",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_annotation_queuesDictOutput",
+        "type": "object"
+      },
+      "tokens": 99
+    },
+    {
+      "description": "Create an annotation queue.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Unique queue name",
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional queue description",
+            "title": "Description"
+          },
+          "score_config_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional score config IDs attached to this queue",
+            "title": "Score Config Ids"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "create_annotation_queueArguments"
+      },
+      "name": "create_annotation_queue",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_annotation_queueDictOutput",
+        "type": "object"
+      },
+      "tokens": 129
+    },
+    {
+      "description": "Get a single annotation queue by ID.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "queue_id": {
+            "description": "Annotation queue ID",
+            "title": "Queue Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queue_id"
+        ],
+        "title": "get_annotation_queueArguments"
+      },
+      "name": "get_annotation_queue",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_annotation_queueDictOutput",
+        "type": "object"
+      },
+      "tokens": 58
+    },
+    {
+      "description": "List items in an annotation queue.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "queue_id": {
+            "description": "Annotation queue ID",
+            "title": "Queue Id",
+            "type": "string"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "minimum": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Items per page (max 100)",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queue_id"
+        ],
+        "title": "list_annotation_queue_itemsArguments"
+      },
+      "name": "list_annotation_queue_items",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_annotation_queue_itemsDictOutput",
+        "type": "object"
+      },
+      "tokens": 125
+    },
+    {
+      "description": "Get a specific annotation queue item by queue and item ID.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "queue_id": {
+            "description": "Annotation queue ID",
+            "title": "Queue Id",
+            "type": "string"
+          },
+          "item_id": {
+            "description": "Annotation queue item ID",
+            "title": "Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queue_id",
+          "item_id"
+        ],
+        "title": "get_annotation_queue_itemArguments"
+      },
+      "name": "get_annotation_queue_item",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_annotation_queue_itemDictOutput",
+        "type": "object"
+      },
+      "tokens": 87
+    },
+    {
+      "description": "Create an annotation queue item.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "queue_id": {
+            "description": "Annotation queue ID",
+            "title": "Queue Id",
+            "type": "string"
+          },
+          "object_id": {
+            "description": "Object ID to enqueue",
+            "title": "Object Id",
+            "type": "string"
+          },
+          "object_type": {
+            "description": "Object type, for example TRACE or OBSERVATION",
+            "title": "Object Type",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional status",
+            "title": "Status"
+          }
+        },
+        "required": [
+          "queue_id",
+          "object_id",
+          "object_type"
+        ],
+        "title": "create_annotation_queue_itemArguments"
+      },
+      "name": "create_annotation_queue_item",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_annotation_queue_itemDictOutput",
+        "type": "object"
+      },
+      "tokens": 139
+    },
+    {
+      "description": "Update the status of an annotation queue item.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "queue_id": {
+            "description": "Annotation queue ID",
+            "title": "Queue Id",
+            "type": "string"
+          },
+          "item_id": {
+            "description": "Annotation queue item ID",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "status": {
+            "description": "New status value",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queue_id",
+          "item_id",
+          "status"
+        ],
+        "title": "update_annotation_queue_itemArguments"
+      },
+      "name": "update_annotation_queue_item",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "update_annotation_queue_itemDictOutput",
+        "type": "object"
+      },
+      "tokens": 103
+    },
+    {
+      "description": "Delete an annotation queue item.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "queue_id": {
+            "description": "Annotation queue ID",
+            "title": "Queue Id",
+            "type": "string"
+          },
+          "item_id": {
+            "description": "Annotation queue item ID",
+            "title": "Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queue_id",
+          "item_id"
+        ],
+        "title": "delete_annotation_queue_itemArguments"
+      },
+      "name": "delete_annotation_queue_item",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "delete_annotation_queue_itemDictOutput",
+        "type": "object"
+      },
+      "tokens": 81
+    },
+    {
+      "description": "Assign a user to an annotation queue.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "queue_id": {
+            "description": "Annotation queue ID",
+            "title": "Queue Id",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "User ID to assign",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queue_id",
+          "user_id"
+        ],
+        "title": "create_annotation_queue_assignmentArguments"
+      },
+      "name": "create_annotation_queue_assignment",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_annotation_queue_assignmentDictOutput",
+        "type": "object"
+      },
+      "tokens": 83
+    },
+    {
+      "description": "Unassign a user from an annotation queue.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "queue_id": {
+            "description": "Annotation queue ID",
+            "title": "Queue Id",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "User ID to unassign",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queue_id",
+          "user_id"
+        ],
+        "title": "delete_annotation_queue_assignmentArguments"
+      },
+      "name": "delete_annotation_queue_assignment",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "delete_annotation_queue_assignmentDictOutput",
+        "type": "object"
+      },
+      "tokens": 85
+    },
+    {
+      "description": "List all datasets in the project with pagination.\n\n    Returns metadata about datasets including name, description, item count, and timestamps.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        page: Page number for pagination (starts at 1)\n        limit: Maximum items per page (max 100)\n\n    Returns:\n        A dictionary containing:\n        - data: List of dataset metadata objects\n        - metadata: Pagination info (page, limit, total)\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "minimum": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Items per page (max 100)",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_datasetsArguments"
+      },
+      "name": "list_datasets",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_datasetsDictOutput",
+        "type": "object"
+      },
+      "tokens": 202
+    },
+    {
+      "description": "Get a specific dataset by name.\n\n    Retrieves dataset details including metadata and item count.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        name: The name of the dataset to fetch\n\n    Returns:\n        A dictionary containing dataset details:\n        - id: Unique dataset identifier\n        - name: Dataset name\n        - description: Dataset description\n        - metadata: Custom metadata\n        - items: List of dataset items (if included by the API)\n        - runs: List of dataset runs (if included by the API)\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the dataset to fetch",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "get_datasetArguments"
+      },
+      "name": "get_dataset",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_datasetDictOutput",
+        "type": "object"
+      },
+      "tokens": 175
+    },
+    {
+      "description": "List items in a dataset with pagination and optional filtering.\n\n    Returns dataset items with their input, expected output, and metadata.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        dataset_name: The name of the dataset to list items from\n        source_trace_id: Optional filter by source trace ID\n        source_observation_id: Optional filter by source observation ID\n        page: Page number for pagination (starts at 1)\n        limit: Maximum items per page (max 100)\n        output_mode: How to format the response data\n\n    Returns:\n        A dictionary containing:\n        - data: List of dataset item objects\n        - metadata: Pagination info (page, limit, total, dataset_name)\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_name": {
+            "description": "The name of the dataset to list items from",
+            "title": "Dataset Name",
+            "type": "string"
+          },
+          "source_trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by source trace ID",
+            "title": "Source Trace Id"
+          },
+          "source_observation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by source observation ID",
+            "title": "Source Observation Id"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "minimum": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Items per page (max 100)",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Output format: 'compact' truncates, 'full_json_string' returns full data, 'full_json_file' writes to file",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_name"
+        ],
+        "title": "list_dataset_itemsArguments"
+      },
+      "name": "list_dataset_items",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_dataset_itemsOutput",
+        "type": "object"
+      },
+      "tokens": 418
+    },
+    {
+      "description": "Get a specific dataset item by ID.\n\n    Retrieves the full dataset item including input, expected output, metadata, and linked traces.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        item_id: The ID of the dataset item to fetch\n        output_mode: How to format the response data\n\n    Returns:\n        A dictionary containing the dataset item details:\n        - id: Unique item identifier\n        - datasetId: Parent dataset ID\n        - input: Input data for the item\n        - expectedOutput: Expected output data\n        - metadata: Custom metadata\n        - sourceTraceId: Linked trace ID (if any)\n        - sourceObservationId: Linked observation ID (if any)\n        - status: Item status (ACTIVE or ARCHIVED)\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "description": "The ID of the dataset item to fetch",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Output format: 'compact' truncates, 'full_json_string' returns full data, 'full_json_file' writes to file",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "title": "get_dataset_itemArguments"
+      },
+      "name": "get_dataset_item",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_dataset_itemOutput",
+        "type": "object"
+      },
+      "tokens": 287
+    },
+    {
+      "description": "Create a new dataset in the project.\n\n    Datasets are used to store evaluation test cases with input/expected output pairs.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        name: Name for the new dataset (must be unique)\n        description: Optional description\n        metadata: Optional custom metadata\n\n    Returns:\n        A dictionary containing the created dataset details:\n        - id: Unique dataset identifier\n        - name: Dataset name\n        - description: Dataset description\n        - metadata: Custom metadata\n        - createdAt: Creation timestamp\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Name for the new dataset (must be unique in project)",
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional description of the dataset",
+            "title": "Description"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional custom metadata as key-value pairs",
+            "title": "Metadata"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "create_datasetArguments"
+      },
+      "name": "create_dataset",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_datasetDictOutput",
+        "type": "object"
+      },
+      "tokens": 253
+    },
+    {
+      "description": "Create a new item in a dataset, or update if item_id already exists.\n\n    Dataset items store input/expected output pairs for evaluation. If item_id is provided\n    and already exists, the item will be updated (upsert behavior).\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        dataset_name: Name of the target dataset\n        input: Input data for the item\n        expected_output: Expected output for evaluation\n        metadata: Optional custom metadata\n        source_trace_id: Optional linked trace ID\n        source_observation_id: Optional linked observation ID\n        item_id: Optional custom ID (enables upsert)\n        status: Item status (ACTIVE or ARCHIVED)\n\n    Returns:\n        A dictionary containing the created/updated item details\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_name": {
+            "description": "Name of the dataset to add the item to",
+            "title": "Dataset Name",
+            "type": "string"
+          },
+          "input": {
+            "default": null,
+            "description": "Input data for the dataset item (any JSON-serializable value)",
+            "title": "Input"
+          },
+          "expected_output": {
+            "default": null,
+            "description": "Expected output data for evaluation (any JSON-serializable value)",
+            "title": "Expected Output"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional custom metadata as key-value pairs",
+            "title": "Metadata"
+          },
+          "source_trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional trace ID to link this item to",
+            "title": "Source Trace Id"
+          },
+          "source_observation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional observation ID to link this item to",
+            "title": "Source Observation Id"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional custom ID for the item (for upsert behavior)",
+            "title": "Item Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ACTIVE",
+                  "ARCHIVED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Item status (default: ACTIVE)",
+            "title": "Status"
+          }
+        },
+        "required": [
+          "dataset_name"
+        ],
+        "title": "create_dataset_itemArguments"
+      },
+      "name": "create_dataset_item",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_dataset_itemDictOutput",
+        "type": "object"
+      },
+      "tokens": 485
+    },
+    {
+      "description": "Delete a dataset item by ID.\n\n    This is a permanent deletion and cannot be undone.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        item_id: The ID of the dataset item to delete\n\n    Returns:\n        A dictionary confirming the deletion\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "description": "The ID of the dataset item to delete",
+            "title": "Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "title": "delete_dataset_itemArguments"
+      },
+      "name": "delete_dataset_item",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "delete_dataset_itemDictOutput",
+        "type": "object"
+      },
+      "tokens": 122
+    },
+    {
+      "description": "List runs for a dataset by dataset name.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_name": {
+            "description": "The name of the dataset to list runs from",
+            "title": "Dataset Name",
+            "type": "string"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "minimum": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Items per page (max 100)",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dataset_name"
+        ],
+        "title": "list_dataset_runsArguments"
+      },
+      "name": "list_dataset_runs",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_dataset_runsDictOutput",
+        "type": "object"
+      },
+      "tokens": 131
+    },
+    {
+      "description": "Get a dataset run, including any run items returned by the SDK.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_name": {
+            "description": "The name of the dataset that owns the run",
+            "title": "Dataset Name",
+            "type": "string"
+          },
+          "run_name": {
+            "description": "The dataset run name to fetch",
+            "title": "Run Name",
+            "type": "string"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Output format: 'compact' truncates, 'full_json_string' returns full data, 'full_json_file' writes to file",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_name",
+          "run_name"
+        ],
+        "title": "get_dataset_runArguments"
+      },
+      "name": "get_dataset_run",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_dataset_runOutput",
+        "type": "object"
+      },
+      "tokens": 154
+    },
+    {
+      "description": "List dataset run items by dataset ID and run name.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_id": {
+            "description": "Dataset ID that owns the run items",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "run_name": {
+            "description": "Dataset run name to list items from",
+            "title": "Run Name",
+            "type": "string"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "minimum": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Items per page (max 100)",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Output format: 'compact' truncates, 'full_json_string' returns full data, 'full_json_file' writes to file",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "run_name"
+        ],
+        "title": "list_dataset_run_itemsArguments"
+      },
+      "name": "list_dataset_run_items",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_dataset_run_itemsOutput",
+        "type": "object"
+      },
+      "tokens": 218
+    },
+    {
+      "description": "Create a dataset run item and flush the ingestion write.\n\n    If this legacy API is gone, use the SDK experiment runner or OTel ingestion; neither can link an existing trace through this API.\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "run_name": {
+            "description": "Dataset run name to append this item to",
+            "title": "Run Name",
+            "type": "string"
+          },
+          "dataset_item_id": {
+            "description": "Dataset item ID to include in the run",
+            "title": "Dataset Item Id",
+            "type": "string"
+          },
+          "run_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional run description",
+            "title": "Run Description"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional run-item metadata",
+            "title": "Metadata"
+          },
+          "observation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional observation ID linked to this run item",
+            "title": "Observation Id"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional trace ID linked to this run item",
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "run_name",
+          "dataset_item_id"
+        ],
+        "title": "create_dataset_run_itemArguments"
+      },
+      "name": "create_dataset_run_item",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_dataset_run_itemDictOutput",
+        "type": "object"
+      },
+      "tokens": 274
+    },
+    {
+      "description": "Delete a run through the legacy route, or explicitly delete its traces after removal.\n\n    Trace deletion also removes observations and related scores. Set delete_traces=True to allow this broader replacement.\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_name": {
+            "description": "The name of the dataset that owns the run",
+            "title": "Dataset Name",
+            "type": "string"
+          },
+          "run_name": {
+            "description": "The dataset run name to delete",
+            "title": "Run Name",
+            "type": "string"
+          },
+          "delete_traces": {
+            "default": false,
+            "description": "Allow trace deletion when the legacy run-delete route is unavailable",
+            "title": "Delete Traces",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dataset_name",
+          "run_name"
+        ],
+        "title": "delete_dataset_runArguments"
+      },
+      "name": "delete_dataset_run",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "delete_dataset_runDictOutput",
+        "type": "object"
+      },
+      "tokens": 156
+    },
+    {
+      "description": "Get error-level observations grouped by file path, function, type, name, or observation type.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        age: Number of minutes to look back; capped by the configured maximum\n        group_by: How to group errors - \"file\" groups by recorded code.filepath, \"function\" by code.function,\n                  \"type\" by recorded exception.type, \"name\" by observation name, or \"observation_type\" by\n                  observation type\n\n    Returns:\n        List of error-observation counts grouped by the specified category. A group entry carries a\n        representative observation_id and trace_id. Counts describe error-level observations, NOT\n        individual exception events (which the standard observation listing does not expose).\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "description": "Number of minutes to look back (positive integer, max 7 days/10080 minutes)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          },
+          "group_by": {
+            "default": "file",
+            "description": "How to group errors - 'file' groups by recorded code.filepath metadata, 'function' by code.function, 'type' by recorded exception.type, 'name' by observation name, or 'observation_type' by observation type. Missing recorded metadata groups as 'unknown'.",
+            "enum": [
+              "file",
+              "function",
+              "type",
+              "name",
+              "observation_type"
+            ],
+            "title": "Group By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "age"
+        ],
+        "title": "find_exceptionsArguments"
+      },
+      "name": "find_exceptions",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "find_exceptionsDictOutput",
+        "type": "object"
+      },
+      "tokens": 331
+    },
+    {
+      "description": "Get detailed error info for a specific file (recorded code.filepath match).\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        filepath: Path to the file as recorded in Langfuse metadata (code.filepath)\n        age: Number of minutes to look back; capped by the configured maximum\n        output_mode: Controls the output format and detail level\n\n    Returns:\n        Based on output_mode:\n        - compact: List of summarized error records (top 10 newest after the full scan)\n        - full_json_string: String containing the full JSON response\n        - full_json_file: List of summarized error records with file save info\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "filepath": {
+            "description": "Path to the file to search for exceptions (full path including extension)",
+            "title": "Filepath",
+            "type": "string"
+          },
+          "age": {
+            "description": "Number of minutes to look back (positive integer, max 7 days/10080 minutes)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "filepath",
+          "age"
+        ],
+        "title": "find_exceptions_in_fileArguments"
+      },
+      "name": "find_exceptions_in_file",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "find_exceptions_in_fileOutput",
+        "type": "object"
+      },
+      "tokens": 347
+    },
+    {
+      "description": "Get detailed error info for a trace/observation.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        trace_id: The ID of the trace to analyze for errors (unique identifier string)\n        span_id: Optional observation ID to filter by (applies across all observation types)\n        output_mode: Controls the output format and detail level\n\n    Returns:\n        Based on output_mode:\n        - compact: List of summarized error records\n        - full_json_string: String containing the full JSON response\n        - full_json_file: List of summarized error records with file save info\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "trace_id": {
+            "description": "The ID of the trace to analyze for exceptions (unique identifier string)",
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "span_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional span ID to filter by specific span (unique identifier string)",
+            "title": "Span Id"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trace_id"
+        ],
+        "title": "get_exception_detailsArguments"
+      },
+      "name": "get_exception_details",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_exception_detailsOutput",
+        "type": "object"
+      },
+      "tokens": 329
+    },
+    {
+      "description": "Get number of traces with error-level observations in last N minutes.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        age: Number of minutes to look back; capped by the configured maximum\n\n    Returns:\n        Dictionary with error statistics: trace_count (distinct traces), observation_count\n        (error-level observations), and exception_count (the same error-observation total\n        as find_exceptions, not a count of individual exception events; see metadata.note).\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "description": "Number of minutes to look back (positive integer, max 7 days/10080 minutes)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "age"
+        ],
+        "title": "get_error_countArguments"
+      },
+      "name": "get_error_count",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_error_countDictOutput",
+        "type": "object"
+      },
+      "tokens": 180
+    },
+    {
+      "description": "Query aggregated metrics (cost, latency, token usage, counts, score values) from Langfuse.\n\n    Wraps the Langfuse v2 metrics endpoint. Use this for analytics questions — \"what did\n    inference cost in the last 24h grouped by model\", \"p95 latency per prompt\", \"score\n    distribution by name\" — instead of pulling raw observations and aggregating client-side.\n    Per-parameter contracts live in the Field descriptions above.\n\n    Notes:\n        - The v2 metrics endpoint is Langfuse Cloud-only; self-hosted instances may return 404.\n        - Recently-ingested data can lag (OTEL ingestion delay up to ~10 minutes).\n        - High-cardinality fields (id, traceId, userId, sessionId) must be filters, not dimensions.\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "view": {
+            "description": "Data view to aggregate over: 'observations' (spans/generations/events — latency, cost, tokens, counts), 'scores-numeric' (numeric/boolean scores), or 'scores-categorical' (categorical scores). Call get_metrics_schema for the full dimension/measure catalog per view.",
+            "enum": [
+              "observations",
+              "scores-numeric",
+              "scores-categorical"
+            ],
+            "title": "View",
+            "type": "string"
+          },
+          "metrics": {
+            "description": "One or more metrics to compute. Each item is {'measure': <name>, 'aggregation': <fn>}, e.g. [{'measure': 'totalCost', 'aggregation': 'sum'}, {'measure': 'latency', 'aggregation': 'p95'}]. Aggregations: sum, avg, count, max, min, p50, p75, p90, p95, p99, histogram.",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "dimensions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional fields to group results by, e.g. ['providedModelName']. Do NOT use high-cardinality fields (id, traceId, userId, sessionId) as dimensions — pass them as filters instead.",
+            "title": "Dimensions"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter objects: {'column','operator','value','type', plus 'key' for metadata/object types}. Example: [{'column':'userId','operator':'=','value':'u1','type':'string'}]. See get_metrics_schema for operators and types.",
+            "title": "Filters"
+          },
+          "age": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "maximum": 10080,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Minutes to look back from now (e.g. 1440 for 24h). Used when from_timestamp is omitted; defaults to 1440 (24h) when no time range is given.",
+            "title": "Age"
+          },
+          "from_timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "ISO-8601 start of the time range. Overrides 'age' when provided.",
+            "title": "From Timestamp"
+          },
+          "to_timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "ISO-8601 end of the time range. Defaults to now (UTC).",
+            "title": "To Timestamp"
+          },
+          "time_granularity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "auto",
+                  "minute",
+                  "hour",
+                  "day",
+                  "week",
+                  "month"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "When set, results are bucketed by this granularity across the time range (time series).",
+            "title": "Time Granularity"
+          },
+          "order_by": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional ordering: list of {'field': <dimension-or-metric>, 'direction': 'asc'|'desc'}.",
+            "title": "Order By"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "view",
+          "metrics"
+        ],
+        "title": "query_metricsArguments"
+      },
+      "name": "query_metrics",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "query_metricsOutput",
+        "type": "object"
+      },
+      "tokens": 961
+    },
+    {
+      "description": "Get the query schema for the metrics API (views, dimensions, measures, aggregations).\n\n    Companion to query_metrics: describes which views exist, the dimensions and measures\n    available on each, the supported aggregations/operators, and the query-object shape.\n    ``dummy`` is unused and exists only for MCP API compatibility.\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dummy": {
+            "default": "",
+            "title": "Dummy",
+            "type": "string"
+          }
+        },
+        "title": "get_metrics_schemaArguments"
+      },
+      "name": "get_metrics_schema",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_metrics_schemaOutput",
+        "type": "object"
+      },
+      "tokens": 109
+    },
+    {
+      "description": "Get observations filtered by type and other criteria.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        type: The observation type to filter by (SPAN, GENERATION, EVENT, AGENT, TOOL, CHAIN, RETRIEVER, EVALUATOR, EMBEDDING or GUARDRAIL)\n        age: Minutes ago to start looking (e.g., 1440 for 24 hours)\n        name: Optional name filter (string pattern to match)\n        user_id: Optional user ID filter (exact match)\n        trace_id: Optional trace ID filter (exact match)\n        parent_observation_id: Optional parent observation ID filter (exact match)\n        page: Page number for pagination (starts at 1)\n        limit: Maximum number of observations to return per page\n        output_mode: Controls the output format and detail level\n\n    Returns:\n        Based on output_mode:\n        - compact: List of summarized observation objects\n        - full_json_string: String containing the full JSON response\n        - full_json_file: List of summarized observation objects with file save info\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "SPAN",
+                  "GENERATION",
+                  "EVENT",
+                  "AGENT",
+                  "TOOL",
+                  "CHAIN",
+                  "RETRIEVER",
+                  "EVALUATOR",
+                  "EMBEDDING",
+                  "GUARDRAIL"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The observation type to filter by (SPAN, GENERATION, EVENT, AGENT, TOOL, CHAIN, RETRIEVER, EVALUATOR, EMBEDDING or GUARDRAIL)",
+            "title": "Type"
+          },
+          "age": {
+            "description": "Minutes ago to start looking (e.g., 1440 for 24 hours)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional name filter (string pattern to match)",
+            "title": "Name"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional user ID filter (exact match)",
+            "title": "User Id"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional trace ID filter (exact match)",
+            "title": "Trace Id"
+          },
+          "parent_observation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional parent observation ID filter (exact match)",
+            "title": "Parent Observation Id"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Maximum number of observations to return per page",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "age"
+        ],
+        "title": "fetch_observationsArguments"
+      },
+      "name": "fetch_observations",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "fetch_observationsOutput",
+        "type": "object"
+      },
+      "tokens": 714
+    },
+    {
+      "description": "Get a single observation by ID.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        observation_id: The ID of the observation to fetch (unique identifier string)\n        output_mode: Controls the output format and detail level\n\n    Returns:\n        Based on output_mode:\n        - compact: Summarized observation object\n        - full_json_string: String containing the full JSON response\n        - full_json_file: Summarized observation object with file save info\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "observation_id": {
+            "description": "The ID of the observation to fetch (unique identifier string)",
+            "title": "Observation Id",
+            "type": "string"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "observation_id"
+        ],
+        "title": "fetch_observationArguments"
+      },
+      "name": "fetch_observation",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "fetch_observationOutput",
+        "type": "object"
+      },
+      "tokens": 262
+    },
+    {
+      "description": "Fetch a specific prompt by name with resolved dependencies.\n\n    Retrieves a prompt from Langfuse with all dependency tags resolved. Uses the SDK's\n    built-in caching for optimal performance.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        name: The name of the prompt to fetch\n        label: Optional label to fetch (e.g., 'production'). Cannot be used with version.\n        version: Optional specific version number. Cannot be used with label.\n\n    Returns:\n        A dictionary containing the prompt details:\n        - id: Unique prompt identifier\n        - name: Prompt name\n        - version: Version number\n        - type: 'text' or 'chat'\n        - prompt: The prompt content (string for text, list for chat)\n        - labels: List of labels assigned to this version\n        - tags: List of tags\n        - config: Model configuration (temperature, model, etc.)\n\n    Raises:\n        ValueError: If both label and version are specified\n        LookupError: If prompt not found\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the prompt to fetch",
+            "title": "Name",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Label to fetch (e.g., 'production', 'staging'). Mutually exclusive with version.",
+            "title": "Label"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specific version number to fetch. Mutually exclusive with label.",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "get_promptArguments"
+      },
+      "name": "get_prompt",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_promptDictOutput",
+        "type": "object"
+      },
+      "tokens": 367
+    },
+    {
+      "description": "Fetch a specific prompt by name WITHOUT resolving dependencies.\n\n    Returns raw prompt content with dependency tags intact (e.g., @@@langfusePrompt:name=xxx@@@) when\n    the SDK supports resolve=false. Otherwise returns the resolved prompt and marks metadata.resolved=True.\n    Useful for analyzing prompt composition and debugging dependency chains.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        name: The name of the prompt to fetch\n        label: Optional label to fetch. Cannot be used with version.\n        version: Optional specific version number. Cannot be used with label.\n\n    Returns:\n        A dictionary containing the raw prompt details with dependency tags preserved.\n\n    Raises:\n        ValueError: If both label and version are specified\n        LookupError: If prompt not found\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the prompt to fetch",
+            "title": "Name",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Label to fetch (e.g., 'production', 'staging'). Mutually exclusive with version.",
+            "title": "Label"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specific version number to fetch. Mutually exclusive with label.",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "get_prompt_unresolvedArguments"
+      },
+      "name": "get_prompt_unresolved",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_prompt_unresolvedDictOutput",
+        "type": "object"
+      },
+      "tokens": 315
+    },
+    {
+      "description": "List and filter prompts in the project.\n\n    Returns metadata about prompts including versions, labels, tags, and last updated time.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        name: Optional filter by exact prompt name\n        label: Optional filter by label on any version\n        tag: Optional filter by tag\n        page: Page number for pagination (starts at 1)\n        limit: Maximum items per page (max 100)\n\n    Returns:\n        A dictionary containing:\n        - data: List of prompt metadata objects\n        - metadata: Pagination info (page, limit, total)\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by exact prompt name",
+            "title": "Name"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by label (e.g., 'production', 'staging')",
+            "title": "Label"
+          },
+          "tag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by tag",
+            "title": "Tag"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "minimum": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Items per page (max 100)",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_promptsArguments"
+      },
+      "name": "list_prompts",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_promptsDictOutput",
+        "type": "object"
+      },
+      "tokens": 334
+    },
+    {
+      "description": "Create a new text prompt version in Langfuse.\n\n    Prompts are immutable; creating a new version is the only way to update prompt content.\n    Labels are unique across versions - assigning a label here will move it from other versions.\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the prompt to create",
+            "title": "Name",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Prompt text content (supports {{variables}})",
+            "title": "Prompt",
+            "type": "string"
+          },
+          "labels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Labels to assign (e.g., ['production', 'staging'])",
+            "title": "Labels"
+          },
+          "config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON config (e.g., {model: 'gpt-4', temperature: 0.7})",
+            "title": "Config"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional tags for organization (e.g., ['experimental', 'v2'])",
+            "title": "Tags"
+          },
+          "commit_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional commit message describing the changes",
+            "title": "Commit Message"
+          }
+        },
+        "required": [
+          "name",
+          "prompt"
+        ],
+        "title": "create_text_promptArguments"
+      },
+      "name": "create_text_prompt",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_text_promptDictOutput",
+        "type": "object"
+      },
+      "tokens": 317
+    },
+    {
+      "description": "Create a new chat prompt version in Langfuse.\n\n    Chat prompts are arrays of role/content messages. Prompts are immutable; create a new\n    version to update content. Labels are unique across versions.\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the prompt to create",
+            "title": "Name",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Chat messages in the format [{role: 'system'|'user'|'assistant', content: '...'}]",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Prompt",
+            "type": "array"
+          },
+          "labels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Labels to assign (e.g., ['production', 'staging'])",
+            "title": "Labels"
+          },
+          "config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional JSON config (e.g., {model: 'gpt-4', temperature: 0.7})",
+            "title": "Config"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional tags for organization (e.g., ['experimental', 'v2'])",
+            "title": "Tags"
+          },
+          "commit_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional commit message describing the changes",
+            "title": "Commit Message"
+          }
+        },
+        "required": [
+          "name",
+          "prompt"
+        ],
+        "title": "create_chat_promptArguments"
+      },
+      "name": "create_chat_prompt",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_chat_promptDictOutput",
+        "type": "object"
+      },
+      "tokens": 336
+    },
+    {
+      "description": "Update labels for a specific prompt version.\n\n    This is the only supported mutation for existing prompts. Provided labels are added\n    to the version (existing labels are preserved). Labels are unique across versions,\n    and the 'latest' label is managed by Langfuse.\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the prompt to update",
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "description": "The prompt version to update",
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "labels": {
+            "description": "Labels to add to this version (can be empty to add none). Existing labels are preserved; labels are unique across versions.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "labels"
+        ],
+        "title": "update_prompt_labelsArguments"
+      },
+      "name": "update_prompt_labels",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "update_prompt_labelsDictOutput",
+        "type": "object"
+      },
+      "tokens": 183
+    },
+    {
+      "description": "Find generic agent route decisions emitted as Langfuse SPAN observations.\n\n    This tool is router-neutral. It only treats observations with\n    metadata.schema_version == \"mcp.route_decision.v1\" as route decisions, and\n    it filters on fields inside observation metadata rather than display output.\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "default": 10080,
+            "description": "Number of minutes to look back (positive integer, max 7 days/10080 minutes)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional Langfuse trace ID filter",
+            "title": "Trace Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata session_id filter",
+            "title": "Session Id"
+          },
+          "decision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata decision_id filter",
+            "title": "Decision Id"
+          },
+          "router_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata router_name filter",
+            "title": "Router Name"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata provider filter",
+            "title": "Provider"
+          },
+          "capability_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata capability_id filter",
+            "title": "Capability Id"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Maximum number of route decisions to return per page",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "title": "find_route_decisionsArguments"
+      },
+      "name": "find_route_decisions",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "find_route_decisionsOutput",
+        "type": "object"
+      },
+      "tokens": 506
+    },
+    {
+      "description": "Fetch one route decision by metadata decision_id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "decision_id": {
+            "description": "Route-decision metadata decision_id to fetch",
+            "title": "Decision Id",
+            "type": "string"
+          },
+          "age": {
+            "default": 10080,
+            "description": "Number of minutes to look back (positive integer, max 7 days/10080 minutes)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision_id"
+        ],
+        "title": "get_route_decisionArguments"
+      },
+      "name": "get_route_decision",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_route_decisionOutput",
+        "type": "object"
+      },
+      "tokens": 206
+    },
+    {
+      "description": "Summarize generic route decisions for a trace, session, router, provider, or capability.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "default": 10080,
+            "description": "Number of minutes to look back (positive integer, max 7 days/10080 minutes)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional Langfuse trace ID filter",
+            "title": "Trace Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata session_id filter",
+            "title": "Session Id"
+          },
+          "router_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata router_name filter",
+            "title": "Router Name"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata provider filter",
+            "title": "Provider"
+          },
+          "capability_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata capability_id filter",
+            "title": "Capability Id"
+          },
+          "max_confidence": {
+            "default": 0.5,
+            "description": "Confidence threshold used for low-confidence counts",
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Max Confidence",
+            "type": "number"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 200,
+            "description": "Maximum number of route decisions to summarize from the current page",
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "summarize_route_decisionsArguments"
+      },
+      "name": "summarize_route_decisions",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "summarize_route_decisionsDictOutput",
+        "type": "object"
+      },
+      "tokens": 375
+    },
+    {
+      "description": "Find route decisions that are low-confidence or explicitly uncallable.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "default": 10080,
+            "description": "Number of minutes to look back (positive integer, max 7 days/10080 minutes)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional Langfuse trace ID filter",
+            "title": "Trace Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata session_id filter",
+            "title": "Session Id"
+          },
+          "router_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata router_name filter",
+            "title": "Router Name"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata provider filter",
+            "title": "Provider"
+          },
+          "capability_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional route-decision metadata capability_id filter",
+            "title": "Capability Id"
+          },
+          "max_confidence": {
+            "default": 0.5,
+            "description": "Return route decisions with confidence at or below this value",
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Max Confidence",
+            "type": "number"
+          },
+          "include_uncallable": {
+            "default": true,
+            "description": "Also return decisions with metadata callable=false",
+            "title": "Include Uncallable",
+            "type": "boolean"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Maximum number of matching route decisions to return",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "title": "find_low_confidence_route_decisionsArguments"
+      },
+      "name": "find_low_confidence_route_decisions",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "find_low_confidence_route_decisionsOutput",
+        "type": "object"
+      },
+      "tokens": 494
+    },
+    {
+      "description": "Get schema of trace, span and event objects.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        dummy: Unused parameter for API compatibility (can be left empty)\n\n    Returns:\n        String containing the detailed schema definitions for traces, spans, events,\n        and other core Langfuse data structures\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dummy": {
+            "default": "",
+            "title": "Dummy",
+            "type": "string"
+          }
+        },
+        "title": "get_data_schemaArguments"
+      },
+      "name": "get_data_schema",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_data_schemaOutput",
+        "type": "object"
+      },
+      "tokens": 116
+    },
+    {
+      "description": "List scores via Scores API v3 with optional filters (GET /v2/scores where v3 is not served).\n\n    With operator ``=`` and a value, v3 defaults an omitted data_type to NUMERIC; pass BOOLEAN for boolean scores.\n    Strict ``>``/``<`` can return fewer than limit rows on a page after boundary rows are dropped; next_page shows whether more rows exist.\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "minimum": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Items per page (max 100)",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional user ID filter (Scores API v3 has none: uses GET /v2/scores, which Langfuse Cloud removes on 2026-11-16)",
+            "title": "User Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional score name filter",
+            "title": "Name"
+          },
+          "from_timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional ISO8601 timestamp lower bound",
+            "title": "From Timestamp"
+          },
+          "to_timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional ISO8601 timestamp upper bound",
+            "title": "To Timestamp"
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional environment filter",
+            "title": "Environment"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional score source filter",
+            "title": "Source"
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional comparison for value: =, >, >=, < or <= (default =)",
+            "title": "Operator"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional numeric score value filter",
+            "title": "Value"
+          },
+          "score_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional comma-separated score IDs",
+            "title": "Score Ids"
+          },
+          "config_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional score config ID",
+            "title": "Config Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional session ID (not together with trace_id)",
+            "title": "Session Id"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional trace ID",
+            "title": "Trace Id"
+          },
+          "queue_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional annotation queue ID",
+            "title": "Queue Id"
+          },
+          "data_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional score data type",
+            "title": "Data Type"
+          },
+          "trace_tags": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional comma-separated trace tags (Scores API v3 has none: uses GET /v2/scores, which Langfuse Cloud removes on 2026-11-16)",
+            "title": "Trace Tags"
+          }
+        },
+        "title": "list_scores_v2Arguments"
+      },
+      "name": "list_scores_v2",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_scores_v2DictOutput",
+        "type": "object"
+      },
+      "tokens": 756
+    },
+    {
+      "description": "Get a score by ID from Scores API v3 (the v2 route where v3 is not served).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "score_id": {
+            "description": "Score ID",
+            "title": "Score Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "score_id"
+        ],
+        "title": "get_score_v2Arguments"
+      },
+      "name": "get_score_v2",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_score_v2DictOutput",
+        "type": "object"
+      },
+      "tokens": 74
+    },
+    {
+      "description": "Get a list of sessions in the current project.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        age: Minutes ago to start looking (e.g., 1440 for 24 hours)\n        page: Page number for pagination (starts at 1)\n        limit: Maximum number of sessions to return per page\n        output_mode: Controls the output format and detail level\n\n    Returns:\n        Based on output_mode:\n        - compact: List of summarized session objects\n        - full_json_string: String containing the full JSON response\n        - full_json_file: List of summarized session objects with file save info\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "description": "Minutes ago to start looking (e.g., 1440 for 24 hours)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Maximum number of sessions to return per page",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "age"
+        ],
+        "title": "fetch_sessionsArguments"
+      },
+      "name": "fetch_sessions",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "fetch_sessionsOutput",
+        "type": "object"
+      },
+      "tokens": 357
+    },
+    {
+      "description": "Get detailed information about a specific session.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        session_id: The ID of the session to retrieve (unique identifier string)\n        include_observations: If True, fetch and include the full observation objects instead of just IDs.\n            Use this when you need access to system prompts, model parameters, or other details stored\n            within observations. Significantly increases response time but provides complete data.\n        output_mode: Controls the output format and detail level\n\n    Returns:\n        Based on output_mode:\n        - compact: Summarized session details object\n        - full_json_string: String containing the full JSON response\n        - full_json_file: Summarized session details object with file save info\n\n    Usage Tips:\n        - For quick browsing: use include_observations=False with output_mode=\"compact\"\n        - For full data but viewable in responses: use include_observations=True with output_mode=\"compact\"\n        - For complete data dumps: use include_observations=True with output_mode=\"full_json_file\"\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "description": "The ID of the session to retrieve (unique identifier string)",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "include_observations": {
+            "default": false,
+            "description": "If True, fetch and include the full observation objects instead of just IDs. Use this when you need access to system prompts, model parameters, or other details stored within observations. Significantly increases response time but provides complete data. Pairs well with output_mode='full_json_file' for complete dumps.",
+            "title": "Include Observations",
+            "type": "boolean"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "get_session_detailsArguments"
+      },
+      "name": "get_session_details",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_session_detailsOutput",
+        "type": "object"
+      },
+      "tokens": 474
+    },
+    {
+      "description": "Get sessions for a user within a time range.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        user_id: The ID of the user to retrieve sessions for (unique identifier string)\n        age: Minutes ago to start looking (e.g., 1440 for 24 hours)\n        include_observations: If True, fetch and include the full observation objects instead of just IDs.\n            Use this when you need access to system prompts, model parameters, or other details stored\n            within observations. Significantly increases response time but provides complete data.\n        output_mode: Controls the output format and detail level\n\n    Returns:\n        Based on output_mode:\n        - compact: List of summarized session objects\n        - full_json_string: String containing the full JSON response\n        - full_json_file: List of summarized session objects with file save info\n\n    Usage Tips:\n        - For quick browsing: use include_observations=False with output_mode=\"compact\"\n        - For full data but viewable in responses: use include_observations=True with output_mode=\"compact\"\n        - For complete data dumps: use include_observations=True with output_mode=\"full_json_file\"\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "description": "The ID of the user to retrieve sessions for",
+            "title": "User Id",
+            "type": "string"
+          },
+          "age": {
+            "description": "Minutes ago to start looking (e.g., 1440 for 24 hours)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          },
+          "include_observations": {
+            "default": false,
+            "description": "If True, fetch and include the full observation objects instead of just IDs. Use this when you need access to system prompts, model parameters, or other details stored within observations. Significantly increases response time but provides complete data. Pairs well with output_mode='full_json_file' for complete dumps.",
+            "title": "Include Observations",
+            "type": "boolean"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "age"
+        ],
+        "title": "get_user_sessionsArguments"
+      },
+      "name": "get_user_sessions",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_user_sessionsOutput",
+        "type": "object"
+      },
+      "tokens": 537
+    },
+    {
+      "description": "Find traces based on filters. All filter parameters are optional.\n\n    On Observations API v2, each trace is built from its root observation; traces without a root observation do not appear.\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "description": "Minutes ago to start looking (e.g., 1440 for 24 hours)",
+            "exclusiveMinimum": 0,
+            "maximum": 10080,
+            "title": "Age",
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Name of the trace to filter by",
+            "title": "Name"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "User ID to filter traces by",
+            "title": "User Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Session ID to filter traces by",
+            "title": "Session Id"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Metadata fields to filter by",
+            "title": "Metadata"
+          },
+          "page": {
+            "default": 1,
+            "description": "Page number for pagination (starts at 1)",
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Maximum number of traces to return per page",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tag or comma-separated list of tags to filter traces by",
+            "title": "Tags"
+          },
+          "include_observations": {
+            "default": false,
+            "description": "If True, fetch and include the full observation objects instead of just IDs. Use this when you need access to system prompts, model parameters, or other details stored within observations. Significantly increases response time but provides complete data.",
+            "title": "Include Observations",
+            "type": "boolean"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format: 'compact' (default) returns summarized JSON, 'full_json_string' returns complete raw JSON as string, 'full_json_file' saves complete data to file and returns summary with path.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "age"
+        ],
+        "title": "fetch_tracesArguments"
+      },
+      "name": "fetch_traces",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "fetch_tracesOutput",
+        "type": "object"
+      },
+      "tokens": 490
+    },
+    {
+      "description": "Get a single trace by ID with full details.\n\n    On Observations API v2, a trace is built from its root observation; a trace with no observations is not found.\n\n    Args:\n        ctx: Context object containing lifespan context with Langfuse client\n        trace_id: The ID of the trace to fetch (unique identifier string)\n        include_observations: If True, fetch and include the full observation objects. If False, the\n            observations field group is dropped entirely to avoid expensive per-observation IO.\n            Use True when you need access to system prompts, model parameters, or other details stored\n            within observations. Significantly increases response time but provides complete data.\n        output_mode: Controls the output format and detail level\n\n    Returns:\n        One of the following based on output_mode:\n        - For 'compact' and 'full_json_file': A response dictionary with the structure:\n          {\n              \"data\": Single trace object,\n              \"metadata\": {\n                  \"file_path\": Path to saved file (only for full_json_file mode),\n                  \"file_info\": File save details (only for full_json_file mode)\n              }\n          }\n        - For 'full_json_string': A string containing the full JSON response\n\n    Usage Tips:\n        - For quick browsing: use include_observations=False with output_mode=\"compact\"\n        - For full data but viewable in responses: use include_observations=True with output_mode=\"compact\"\n        - For complete data dumps: use include_observations=True with output_mode=\"full_json_file\"\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "trace_id": {
+            "description": "The ID of the trace to fetch (unique identifier string)",
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "include_observations": {
+            "default": false,
+            "description": "If True, fetch and include the full observation objects. If False, the observations field group is dropped entirely to avoid the expensive per-observation IO that dominates large-trace payloads. Use True when you need access to system prompts, model parameters, or other details stored within observations. Significantly increases response time but provides complete data. Pairs well with output_mode='full_json_file' for complete dumps.",
+            "title": "Include Observations",
+            "type": "boolean"
+          },
+          "output_mode": {
+            "default": "compact",
+            "description": "Controls the output format and action. 'compact' (default): Returns a summarized JSON object optimized for direct agent consumption. 'full_json_string': Returns the complete, raw JSON data serialized as a string. 'full_json_file': Returns a summarized JSON object AND saves the complete data to a file.",
+            "enum": [
+              "compact",
+              "full_json_string",
+              "full_json_file"
+            ],
+            "title": "Output Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trace_id"
+        ],
+        "title": "fetch_traceArguments"
+      },
+      "name": "fetch_trace",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "fetch_traceOutput",
+        "type": "object"
+      },
+      "tokens": 599
+    }
+  ],
+  "totalTokens": 13933,
+  "listMeta": {
+    "ttlMs": 0,
+    "cacheScope": "private"
+  },
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

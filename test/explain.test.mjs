@@ -18,7 +18,7 @@ function idsInSource() {
       if (e.isDirectory()) walk(p);
       else if (p.endsWith('.ts')) {
         const src = readFileSync(p, 'utf8');
-        for (const m of src.matchAll(/(?:\brule: |\bid: |fail\()'([a-z]+\/[a-z0-9-]+)'/g)) ids.add(m[1]);
+        for (const m of src.matchAll(/(?:\brule: |\bid: |fail\(|say\()'([a-z]+\/[a-z0-9-]+)'/g)) ids.add(m[1]);
         for (const m of src.matchAll(/'((?:menu|session)\/[a-z0-9-]+)'/g)) ids.add(m[1]);
       }
     }

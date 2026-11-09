@@ -1,0 +1,14 @@
+img_github-mcp-server	ghcr.io/github/github-mcp-server		GITHUB_PERSONAL_ACCESS_TOKEN=ghp_toolmenu	stdio --toolsets all
+img_mcp-grafana	grafana/mcp-grafana		GRAFANA_URL=http://localhost:3000 GRAFANA_SERVICE_ACCOUNT_TOKEN=toolmenu	-t stdio
+img_terraform-mcp-server	hashicorp/terraform-mcp-server				
+img_vault-mcp-server	docker.io/hashicorp/vault-mcp-server		VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=toolmenu	
+img_gitlab	docker.io/mcp/gitlab		GITLAB_PERSONAL_ACCESS_TOKEN=glpat-toolmenu GITLAB_API_URL=https://gitlab.com/api/v4	
+img_dynatrace	docker.io/mcp/dynatrace-mcp-server		DT_ENVIRONMENT=https://toolmenu.apps.dynatrace.com	
+img_kubernetes-mcp-server	ghcr.io/containers/kubernetes-mcp-server				
+img_elasticsearch	docker.io/mcp/elasticsearch		ES_URL=http://localhost:9200 ES_API_KEY=toolmenu	stdio
+img_slack	docker.io/mcp/slack		SLACK_BOT_TOKEN=xoxb-toolmenu SLACK_TEAM_ID=T00000000	
+img_atlassian	docker.io/mcp/atlassian		JIRA_URL=https://example.atlassian.net JIRA_USERNAME=a@example.com JIRA_API_TOKEN=toolmenu CONFLUENCE_URL=https://example.atlassian.net/wiki CONFLUENCE_USERNAME=a@example.com CONFLUENCE_API_TOKEN=toolmenu	
+img_aws-documentation	docker.io/mcp/aws-documentation				
+img_redis	docker.io/mcp/redis		REDIS_HOST=localhost	
+img_neo4j-cypher	docker.io/mcp/neo4j-cypher		NEO4J_URI=bolt://localhost:7687 NEO4J_USERNAME=neo4j NEO4J_PASSWORD=toolmenu	
+img_stripe	docker.io/mcp/stripe			--tools=all --api-key=sk_test_toolmenu

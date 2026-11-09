@@ -1,0 +1,3840 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "@onlyoffice/docspace-mcp",
+    "version": "3.2.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:55:19.508Z",
+  "tools": [
+    {
+      "name": "delete_file",
+      "description": "Delete a file.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "number",
+            "description": "The ID of the file to delete."
+          }
+        },
+        "required": [
+          "fileId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 68
+    },
+    {
+      "name": "get_file_info",
+      "description": "Get file information.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "number",
+            "description": "The ID of the file to get info for."
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nid - The file entry ID.\nrootFolderId - The root folder ID of the file entry.\ncanShare - Specifies if the file entry can be shared or not.\nsecurity - The actions that can be performed with the file entry.\ntitle - The file entry title.\naccess - The access rights to the file entry.\nshared - Specifies if the file entry is shared or not.\ncreated - The creation date and time of the file entry.\ncreatedBy.id - The user ID.\ncreatedBy.displayName - The user display name.\ncreatedBy.isAnonim - Specifies if the user is anonymous or not.\nfileEntryType - The file entry type.\nfolderId - The folder ID where the file is located.\nfileType - The file type.\nfileExst - The file extension.\ncomment - The comment to the file.\nencrypted - Specifies if the file is encrypted or not.\nlocked - Specifies if the file is locked or not."
+                }
+              }
+            },
+            "required": [
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the file info. Use them to reduce the size of the response."
+          }
+        },
+        "required": [
+          "fileId",
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "The file entry ID.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "rootFolderId": {
+                "description": "The root folder ID of the file entry.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "canShare": {
+                "description": "Specifies if the file entry can be shared or not.",
+                "type": "boolean"
+              },
+              "security": {
+                "description": "The actions that can be performed with the file entry."
+              },
+              "title": {
+                "description": "The file entry title.",
+                "type": "string"
+              },
+              "access": {
+                "description": "The access rights to the file entry."
+              },
+              "shared": {
+                "description": "Specifies if the file entry is shared or not.",
+                "type": "boolean"
+              },
+              "created": {
+                "description": "The date and time when the file entry was created.",
+                "type": "string"
+              },
+              "createdBy": {
+                "description": "The user who created the file entry.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The user ID.",
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "description": "The user display name.",
+                    "type": "string"
+                  },
+                  "isAnonim": {
+                    "description": "Specifies if the user is anonymous or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "fileEntityType": {
+                "type": "number",
+                "description": "The file entry type.\n\n1 - Folder\n2 - File"
+              },
+              "folderId": {
+                "description": "The folder ID where the file is located.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "fileType": {
+                "type": "number",
+                "description": "The file type.\n\n0 - Unknown\n1 - Archive\n2 - Video\n3 - Audio\n4 - Image\n5 - Spreadsheet\n6 - Presentation\n7 - Document\n10 - Pdf"
+              },
+              "fileExst": {
+                "description": "The file extension.",
+                "type": "string"
+              },
+              "comment": {
+                "description": "The comment to the file.",
+                "type": "string"
+              },
+              "encrypted": {
+                "description": "Specifies if the file is encrypted or not.",
+                "type": "boolean"
+              },
+              "locked": {
+                "description": "Specifies if the file is locked or not.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The file information."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 343
+    },
+    {
+      "name": "update_file",
+      "description": "Update a file.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "number",
+            "description": "The ID of the file to update."
+          },
+          "title": {
+            "type": "string",
+            "description": "The new title of the file to set."
+          }
+        },
+        "required": [
+          "fileId",
+          "title"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "The file entry ID.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "rootFolderId": {
+                "description": "The root folder ID of the file entry.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "canShare": {
+                "description": "Specifies if the file entry can be shared or not.",
+                "type": "boolean"
+              },
+              "security": {
+                "description": "The actions that can be performed with the file entry."
+              },
+              "title": {
+                "description": "The file entry title.",
+                "type": "string"
+              },
+              "access": {
+                "description": "The access rights to the file entry."
+              },
+              "shared": {
+                "description": "Specifies if the file entry is shared or not.",
+                "type": "boolean"
+              },
+              "created": {
+                "description": "The date and time when the file entry was created.",
+                "type": "string"
+              },
+              "createdBy": {
+                "description": "The user who created the file entry.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The user ID.",
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "description": "The user display name.",
+                    "type": "string"
+                  },
+                  "isAnonim": {
+                    "description": "Specifies if the user is anonymous or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "fileEntityType": {
+                "type": "number",
+                "description": "The file entry type.\n\n1 - Folder\n2 - File"
+              },
+              "folderId": {
+                "description": "The folder ID where the file is located.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "fileType": {
+                "type": "number",
+                "description": "The file type.\n\n0 - Unknown\n1 - Archive\n2 - Video\n3 - Audio\n4 - Image\n5 - Spreadsheet\n6 - Presentation\n7 - Document\n10 - Pdf"
+              },
+              "fileExst": {
+                "description": "The file extension.",
+                "type": "string"
+              },
+              "comment": {
+                "description": "The comment to the file.",
+                "type": "string"
+              },
+              "encrypted": {
+                "description": "Specifies if the file is encrypted or not.",
+                "type": "boolean"
+              },
+              "locked": {
+                "description": "Specifies if the file is locked or not.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The updated file information."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 88
+    },
+    {
+      "name": "copy_batch_items",
+      "description": "Copy to a folder.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "folderIds": {
+            "description": "The IDs of the folders to copy.",
+            "type": "array",
+            "items": {}
+          },
+          "fileIds": {
+            "description": "The IDs of the files to copy.",
+            "type": "array",
+            "items": {}
+          },
+          "destFolderId": {
+            "description": "The ID of the destination folder to copy the items to."
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 109
+    },
+    {
+      "name": "move_batch_items",
+      "description": "Move to a folder.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "folderIds": {
+            "description": "The IDs of the folders to move items to.",
+            "type": "array",
+            "items": {}
+          },
+          "fileIds": {
+            "description": "The IDs of the files to move.",
+            "type": "array",
+            "items": {}
+          },
+          "destFolderId": {
+            "description": "The ID of the destination folder to move the items to."
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 111
+    },
+    {
+      "name": "download_file_as_text",
+      "description": "Download a file as text.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "number",
+            "description": "The ID of the file to download as text."
+          }
+        },
+        "required": [
+          "fileId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 74
+    },
+    {
+      "name": "upload_file",
+      "description": "Upload a file.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "parentId": {
+            "type": "number",
+            "description": "The ID of the room or folder to upload the file to."
+          },
+          "filename": {
+            "type": "string",
+            "description": "The file name with an extension to upload."
+          },
+          "content": {
+            "type": "string",
+            "description": "The content of the file to upload."
+          }
+        },
+        "required": [
+          "parentId",
+          "filename",
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 112
+    },
+    {
+      "name": "create_folder",
+      "description": "Create a folder.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "parentId": {
+            "type": "number",
+            "description": "The ID of the room or folder to create the folder in."
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the folder to create."
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nid - The file entry ID.\nrootFolderId - The root folder ID of the file entry.\ncanShare - Specifies if the file entry can be shared or not.\nsecurity - The actions that can be performed with the file entry.\ntitle - The file entry title.\naccess - The access rights to the file entry.\nshared - Specifies if the file entry is shared or not.\ncreated - The creation date and time of the file entry.\ncreatedBy.id - The user ID.\ncreatedBy.displayName - The user display name.\ncreatedBy.isAnonim - Specifies if the user is anonymous or not.\nfileEntryType - The file entry type.\nparentId - The parent folder ID of the folder.\nfilesCount - The number of files that the folder contains.\nfoldersCount - The number of folders that the folder contains.\nisShareable - Specifies if the folder can be shared or not.\nisFavorite - Specifies if the folder is favorite or not.\ntags - The list of tags of the folder.\nroomType - The room type of the folder.\nprivate - Specifies if the folder is private or not.\ntype - The folder type.\ninRoom - Specifies if the folder is placed in the room or not."
+                }
+              }
+            },
+            "required": [
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the folder creation. Use them to reduce the size of the response."
+          }
+        },
+        "required": [
+          "parentId",
+          "title",
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "The file entry ID.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "rootFolderId": {
+                "description": "The root folder ID of the file entry.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "canShare": {
+                "description": "Specifies if the file entry can be shared or not.",
+                "type": "boolean"
+              },
+              "security": {
+                "description": "The actions that can be performed with the file entry."
+              },
+              "title": {
+                "description": "The file entry title.",
+                "type": "string"
+              },
+              "access": {
+                "description": "The access rights to the file entry."
+              },
+              "shared": {
+                "description": "Specifies if the file entry is shared or not.",
+                "type": "boolean"
+              },
+              "created": {
+                "description": "The date and time when the file entry was created.",
+                "type": "string"
+              },
+              "createdBy": {
+                "description": "The user who created the file entry.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The user ID.",
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "description": "The user display name.",
+                    "type": "string"
+                  },
+                  "isAnonim": {
+                    "description": "Specifies if the user is anonymous or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "fileEntityType": {
+                "type": "number",
+                "description": "The file entry type.\n\n1 - Folder\n2 - File"
+              },
+              "parentId": {
+                "description": "The parent folder ID of the folder.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "filesCount": {
+                "description": "The number of files that the folder contains.",
+                "type": "number"
+              },
+              "foldersCount": {
+                "description": "The number of folders that the folder contains.",
+                "type": "number"
+              },
+              "isShareable": {
+                "description": "Specifies if the folder can be shared or not.",
+                "type": "boolean"
+              },
+              "isFavorite": {
+                "description": "Specifies if the folder is favorite or not.",
+                "type": "boolean"
+              },
+              "tags": {
+                "description": "The list of tags of the folder.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "roomType": {
+                "type": "number",
+                "description": "The room type of the folder.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+              },
+              "private": {
+                "description": "Specifies if the folder is private or not.",
+                "type": "boolean"
+              },
+              "type": {
+                "type": "number",
+                "description": "The folder type.\n\n0 - Default\n1 - Coomon\n2 - Bunch\n3 - Trash\n5 - User\n6 - Share\n8 - Projects\n10 - Favourites\n11 - Recent\n12 - Templates\n13 - Privacy\n14 - Virtual rooms\n15 - Filling forms room\n16 - Editing room\n19 - Custom room\n20 - Archive\n21 - Thirdparty backup\n22 - Public room\n25 - Ready form folder\n26 - In process form folder\n27 - Form filling folder done\n28 - Form filling folder in progress\n29 - Virtual Data Room\n30 - Room templates folder"
+              },
+              "inRoom": {
+                "description": "Specifies if the folder is placed in the room or not.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The created folder information."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 421
+    },
+    {
+      "name": "delete_folder",
+      "description": "Delete a folder.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "folderId": {
+            "type": "number",
+            "description": "The ID of the folder to delete."
+          }
+        },
+        "required": [
+          "folderId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 68
+    },
+    {
+      "name": "get_folder_content",
+      "description": "Get content of a folder.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "folderId": {
+            "type": "number",
+            "description": "The ID of the folder to get."
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "userIdOrGroupId": {
+                "description": "The user or group ID.",
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "filterType": {
+                "type": "number",
+                "description": "The filter type.\n\n0 - None\n1 - Files only\n2 - Folders only\n3 - Documents only\n4 - Presentations only\n5 - Spreadsheets only\n7 - Images only\n8 - By user\n9 - By department\n10 - Archive only\n11 - By extension\n12 - Media only\n13 - Filling forms rooms\n14 - Editing rooms\n17 - Custom rooms\n20 - Public rooms\n22 - Pdf\n23 - Pdf form\n24 - Virtual data rooms"
+              },
+              "roomId": {
+                "description": "The room ID.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "excludeSubject": {
+                "description": "Specifies whether to exclude search by user or group ID.",
+                "type": "boolean"
+              },
+              "applyFilterOption": {
+                "type": "string",
+                "description": "Specifies whether to return only files, only folders or all elements from the specified folder."
+              },
+              "extension": {
+                "description": "Specifies whether to search for the specific file extension.",
+                "type": "string"
+              },
+              "searchArea": {
+                "type": "string",
+                "description": "The search area."
+              },
+              "count": {
+                "default": 30,
+                "description": "The maximum number of items to retrieve in the request.",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 50
+              },
+              "startIndex": {
+                "description": "The zero-based index of the first item to retrieve in a paginated request.",
+                "type": "number"
+              },
+              "sortBy": {
+                "description": "Specifies the property used for sorting the folder request results.",
+                "type": "string"
+              },
+              "sortOrder": {
+                "type": "number",
+                "description": "The order in which the results are sorted.\n\n0 - Ascending order\n1 - Descending order"
+              },
+              "filterValue": {
+                "description": "The text value used as a filter parameter for folder queries.",
+                "type": "string"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nfiles.id - The file entry ID.\nfiles.rootFolderId - The root folder ID of the file entry.\nfiles.canShare - Specifies if the file entry can be shared or not.\nfiles.security - The actions that can be performed with the file entry.\nfiles.title - The file entry title.\nfiles.access - The access rights to the file entry.\nfiles.shared - Specifies if the file entry is shared or not.\nfiles.created - The creation date and time of the file entry.\nfiles.createdBy.id - The user ID.\nfiles.createdBy.displayName - The user display name.\nfiles.createdBy.isAnonim - Specifies if the user is anonymous or not.\nfiles.fileEntryType - The file entry type.\nfiles.folderId - The folder ID where the file is located.\nfiles.fileType - The file type.\nfiles.fileExst - The file extension.\nfiles.comment - The comment to the file.\nfiles.encrypted - Specifies if the file is encrypted or not.\nfiles.locked - Specifies if the file is locked or not.\nfolders.id - The file entry ID.\nfolders.rootFolderId - The root folder ID of the file entry.\nfolders.canShare - Specifies if the file entry can be shared or not.\nfolders.security - The actions that can be performed with the file entry.\nfolders.title - The file entry title.\nfolders.access - The access rights to the file entry.\nfolders.shared - Specifies if the file entry is shared or not.\nfolders.created - The creation date and time of the file entry.\nfolders.createdBy.id - The user ID.\nfolders.createdBy.displayName - The user display name.\nfolders.createdBy.isAnonim - Specifies if the user is anonymous or not.\nfolders.fileEntryType - The file entry type.\nfolders.parentId - The parent folder ID of the folder.\nfolders.filesCount - The number of files that the folder contains.\nfolders.foldersCount - The number of folders that the folder contains.\nfolders.isShareable - Specifies if the folder can be shared or not.\nfolders.isFavorite - Specifies if the folder is favorite or not.\nfolders.tags - The list of tags of the folder.\nfolders.roomType - The room type of the folder.\nfolders.private - Specifies if the folder is private or not.\nfolders.type - The folder type.\nfolders.inRoom - Specifies if the folder is placed in the room or not.\ncurrent.id - The file entry ID.\ncurrent.rootFolderId - The root folder ID of the file entry.\ncurrent.canShare - Specifies if the file entry can be shared or not.\ncurrent.security - The actions that can be performed with the file entry.\ncurrent.title - The file entry title.\ncurrent.access - The access rights to the file entry.\ncurrent.shared - Specifies if the file entry is shared or not.\ncurrent.created - The creation date and time of the file entry.\ncurrent.createdBy.id - The user ID.\ncurrent.createdBy.displayName - The user display name.\ncurrent.createdBy.isAnonim - Specifies if the user is anonymous or not.\ncurrent.fileEntryType - The file entry type.\ncurrent.parentId - The parent folder ID of the folder.\ncurrent.filesCount - The number of files that the folder contains.\ncurrent.foldersCount - The number of folders that the folder contains.\ncurrent.isShareable - Specifies if the folder can be shared or not.\ncurrent.isFavorite - Specifies if the folder is favorite or not.\ncurrent.tags - The list of tags of the folder.\ncurrent.roomType - The room type of the folder.\ncurrent.private - Specifies if the folder is private or not.\ncurrent.type - The folder type.\ncurrent.inRoom - Specifies if the folder is placed in the room or not.\nstartIndex - The folder start index.\ncount - The number of folder elements.\ntotal - The total number of elements in the folder."
+                }
+              }
+            },
+            "required": [
+              "count",
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the contents of the folder. Use them to reduce the size of the response."
+          }
+        },
+        "required": [
+          "folderId",
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "files": {
+                "description": "The list of files in the folder.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "The file entry ID.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "rootFolderId": {
+                      "description": "The root folder ID of the file entry.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "canShare": {
+                      "description": "Specifies if the file entry can be shared or not.",
+                      "type": "boolean"
+                    },
+                    "security": {
+                      "description": "The actions that can be performed with the file entry."
+                    },
+                    "title": {
+                      "description": "The file entry title.",
+                      "type": "string"
+                    },
+                    "access": {
+                      "description": "The access rights to the file entry."
+                    },
+                    "shared": {
+                      "description": "Specifies if the file entry is shared or not.",
+                      "type": "boolean"
+                    },
+                    "created": {
+                      "description": "The date and time when the file entry was created.",
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "description": "The user who created the file entry.",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "description": "The user ID.",
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "description": "The user display name.",
+                          "type": "string"
+                        },
+                        "isAnonim": {
+                          "description": "Specifies if the user is anonymous or not.",
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": {}
+                    },
+                    "fileEntityType": {
+                      "type": "number",
+                      "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "folders": {
+                "description": "The list of folders in the folder.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "The file entry ID.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "rootFolderId": {
+                      "description": "The root folder ID of the file entry.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "canShare": {
+                      "description": "Specifies if the file entry can be shared or not.",
+                      "type": "boolean"
+                    },
+                    "security": {
+                      "description": "The actions that can be performed with the file entry."
+                    },
+                    "title": {
+                      "description": "The file entry title.",
+                      "type": "string"
+                    },
+                    "access": {
+                      "description": "The access rights to the file entry."
+                    },
+                    "shared": {
+                      "description": "Specifies if the file entry is shared or not.",
+                      "type": "boolean"
+                    },
+                    "created": {
+                      "description": "The date and time when the file entry was created.",
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "description": "The user who created the file entry.",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "description": "The user ID.",
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "description": "The user display name.",
+                          "type": "string"
+                        },
+                        "isAnonim": {
+                          "description": "Specifies if the user is anonymous or not.",
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": {}
+                    },
+                    "fileEntityType": {
+                      "type": "number",
+                      "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "current": {
+                "description": "The current folder information.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The file entry ID.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "rootFolderId": {
+                    "description": "The root folder ID of the file entry.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "canShare": {
+                    "description": "Specifies if the file entry can be shared or not.",
+                    "type": "boolean"
+                  },
+                  "security": {
+                    "description": "The actions that can be performed with the file entry."
+                  },
+                  "title": {
+                    "description": "The file entry title.",
+                    "type": "string"
+                  },
+                  "access": {
+                    "description": "The access rights to the file entry."
+                  },
+                  "shared": {
+                    "description": "Specifies if the file entry is shared or not.",
+                    "type": "boolean"
+                  },
+                  "created": {
+                    "description": "The date and time when the file entry was created.",
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "description": "The user who created the file entry.",
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "description": "The user ID.",
+                        "type": "string"
+                      },
+                      "displayName": {
+                        "description": "The user display name.",
+                        "type": "string"
+                      },
+                      "isAnonim": {
+                        "description": "Specifies if the user is anonymous or not.",
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": {}
+                  },
+                  "fileEntityType": {
+                    "type": "number",
+                    "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                  },
+                  "parentId": {
+                    "description": "The parent folder ID of the folder.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "filesCount": {
+                    "description": "The number of files that the folder contains.",
+                    "type": "number"
+                  },
+                  "foldersCount": {
+                    "description": "The number of folders that the folder contains.",
+                    "type": "number"
+                  },
+                  "isShareable": {
+                    "description": "Specifies if the folder can be shared or not.",
+                    "type": "boolean"
+                  },
+                  "isFavorite": {
+                    "description": "Specifies if the folder is favorite or not.",
+                    "type": "boolean"
+                  },
+                  "tags": {
+                    "description": "The list of tags of the folder.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "roomType": {
+                    "type": "number",
+                    "description": "The room type of the folder.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+                  },
+                  "private": {
+                    "description": "Specifies if the folder is private or not.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "type": "number",
+                    "description": "The folder type.\n\n0 - Default\n1 - Coomon\n2 - Bunch\n3 - Trash\n5 - User\n6 - Share\n8 - Projects\n10 - Favourites\n11 - Recent\n12 - Templates\n13 - Privacy\n14 - Virtual rooms\n15 - Filling forms room\n16 - Editing room\n19 - Custom room\n20 - Archive\n21 - Thirdparty backup\n22 - Public room\n25 - Ready form folder\n26 - In process form folder\n27 - Form filling folder done\n28 - Form filling folder in progress\n29 - Virtual Data Room\n30 - Room templates folder"
+                  },
+                  "inRoom": {
+                    "description": "Specifies if the folder is placed in the room or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "startIndex": {
+                "description": "The folder start index.",
+                "type": "number"
+              },
+              "count": {
+                "description": "The number of folder elements.",
+                "type": "number"
+              },
+              "total": {
+                "description": "The total number of elements in the folder.",
+                "type": "number"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The contents of the folder."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 1449
+    },
+    {
+      "name": "get_folder_info",
+      "description": "Get folder information.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "folderId": {
+            "type": "number",
+            "description": "The ID of the folder to get info for."
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nid - The file entry ID.\nrootFolderId - The root folder ID of the file entry.\ncanShare - Specifies if the file entry can be shared or not.\nsecurity - The actions that can be performed with the file entry.\ntitle - The file entry title.\naccess - The access rights to the file entry.\nshared - Specifies if the file entry is shared or not.\ncreated - The creation date and time of the file entry.\ncreatedBy.id - The user ID.\ncreatedBy.displayName - The user display name.\ncreatedBy.isAnonim - Specifies if the user is anonymous or not.\nfileEntryType - The file entry type.\nparentId - The parent folder ID of the folder.\nfilesCount - The number of files that the folder contains.\nfoldersCount - The number of folders that the folder contains.\nisShareable - Specifies if the folder can be shared or not.\nisFavorite - Specifies if the folder is favorite or not.\ntags - The list of tags of the folder.\nroomType - The room type of the folder.\nprivate - Specifies if the folder is private or not.\ntype - The folder type.\ninRoom - Specifies if the folder is placed in the room or not."
+                }
+              }
+            },
+            "required": [
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the folder info. Use them to reduce the size of the response."
+          }
+        },
+        "required": [
+          "folderId",
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "The file entry ID.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "rootFolderId": {
+                "description": "The root folder ID of the file entry.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "canShare": {
+                "description": "Specifies if the file entry can be shared or not.",
+                "type": "boolean"
+              },
+              "security": {
+                "description": "The actions that can be performed with the file entry."
+              },
+              "title": {
+                "description": "The file entry title.",
+                "type": "string"
+              },
+              "access": {
+                "description": "The access rights to the file entry."
+              },
+              "shared": {
+                "description": "Specifies if the file entry is shared or not.",
+                "type": "boolean"
+              },
+              "created": {
+                "description": "The date and time when the file entry was created.",
+                "type": "string"
+              },
+              "createdBy": {
+                "description": "The user who created the file entry.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The user ID.",
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "description": "The user display name.",
+                    "type": "string"
+                  },
+                  "isAnonim": {
+                    "description": "Specifies if the user is anonymous or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "fileEntityType": {
+                "type": "number",
+                "description": "The file entry type.\n\n1 - Folder\n2 - File"
+              },
+              "parentId": {
+                "description": "The parent folder ID of the folder.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "filesCount": {
+                "description": "The number of files that the folder contains.",
+                "type": "number"
+              },
+              "foldersCount": {
+                "description": "The number of folders that the folder contains.",
+                "type": "number"
+              },
+              "isShareable": {
+                "description": "Specifies if the folder can be shared or not.",
+                "type": "boolean"
+              },
+              "isFavorite": {
+                "description": "Specifies if the folder is favorite or not.",
+                "type": "boolean"
+              },
+              "tags": {
+                "description": "The list of tags of the folder.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "roomType": {
+                "type": "number",
+                "description": "The room type of the folder.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+              },
+              "private": {
+                "description": "Specifies if the folder is private or not.",
+                "type": "boolean"
+              },
+              "type": {
+                "type": "number",
+                "description": "The folder type.\n\n0 - Default\n1 - Coomon\n2 - Bunch\n3 - Trash\n5 - User\n6 - Share\n8 - Projects\n10 - Favourites\n11 - Recent\n12 - Templates\n13 - Privacy\n14 - Virtual rooms\n15 - Filling forms room\n16 - Editing room\n19 - Custom room\n20 - Archive\n21 - Thirdparty backup\n22 - Public room\n25 - Ready form folder\n26 - In process form folder\n27 - Form filling folder done\n28 - Form filling folder in progress\n29 - Virtual Data Room\n30 - Room templates folder"
+              },
+              "inRoom": {
+                "description": "Specifies if the folder is placed in the room or not.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The folder information."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 400
+    },
+    {
+      "name": "rename_folder",
+      "description": "Rename a folder.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "folderId": {
+            "type": "number",
+            "description": "The ID of the folder to rename."
+          },
+          "title": {
+            "type": "string",
+            "description": "The new title of the folder to set."
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nid - The file entry ID.\nrootFolderId - The root folder ID of the file entry.\ncanShare - Specifies if the file entry can be shared or not.\nsecurity - The actions that can be performed with the file entry.\ntitle - The file entry title.\naccess - The access rights to the file entry.\nshared - Specifies if the file entry is shared or not.\ncreated - The creation date and time of the file entry.\ncreatedBy.id - The user ID.\ncreatedBy.displayName - The user display name.\ncreatedBy.isAnonim - Specifies if the user is anonymous or not.\nfileEntryType - The file entry type.\nparentId - The parent folder ID of the folder.\nfilesCount - The number of files that the folder contains.\nfoldersCount - The number of folders that the folder contains.\nisShareable - Specifies if the folder can be shared or not.\nisFavorite - Specifies if the folder is favorite or not.\ntags - The list of tags of the folder.\nroomType - The room type of the folder.\nprivate - Specifies if the folder is private or not.\ntype - The folder type.\ninRoom - Specifies if the folder is placed in the room or not."
+                }
+              }
+            },
+            "required": [
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the folder renaming. Use them to reduce the size of the response."
+          }
+        },
+        "required": [
+          "folderId",
+          "title",
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "The file entry ID.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "rootFolderId": {
+                "description": "The root folder ID of the file entry.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "canShare": {
+                "description": "Specifies if the file entry can be shared or not.",
+                "type": "boolean"
+              },
+              "security": {
+                "description": "The actions that can be performed with the file entry."
+              },
+              "title": {
+                "description": "The file entry title.",
+                "type": "string"
+              },
+              "access": {
+                "description": "The access rights to the file entry."
+              },
+              "shared": {
+                "description": "Specifies if the file entry is shared or not.",
+                "type": "boolean"
+              },
+              "created": {
+                "description": "The date and time when the file entry was created.",
+                "type": "string"
+              },
+              "createdBy": {
+                "description": "The user who created the file entry.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The user ID.",
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "description": "The user display name.",
+                    "type": "string"
+                  },
+                  "isAnonim": {
+                    "description": "Specifies if the user is anonymous or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "fileEntityType": {
+                "type": "number",
+                "description": "The file entry type.\n\n1 - Folder\n2 - File"
+              },
+              "parentId": {
+                "description": "The parent folder ID of the folder.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "filesCount": {
+                "description": "The number of files that the folder contains.",
+                "type": "number"
+              },
+              "foldersCount": {
+                "description": "The number of folders that the folder contains.",
+                "type": "number"
+              },
+              "isShareable": {
+                "description": "Specifies if the folder can be shared or not.",
+                "type": "boolean"
+              },
+              "isFavorite": {
+                "description": "Specifies if the folder is favorite or not.",
+                "type": "boolean"
+              },
+              "tags": {
+                "description": "The list of tags of the folder.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "roomType": {
+                "type": "number",
+                "description": "The room type of the folder.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+              },
+              "private": {
+                "description": "Specifies if the folder is private or not.",
+                "type": "boolean"
+              },
+              "type": {
+                "type": "number",
+                "description": "The folder type.\n\n0 - Default\n1 - Coomon\n2 - Bunch\n3 - Trash\n5 - User\n6 - Share\n8 - Projects\n10 - Favourites\n11 - Recent\n12 - Templates\n13 - Privacy\n14 - Virtual rooms\n15 - Filling forms room\n16 - Editing room\n19 - Custom room\n20 - Archive\n21 - Thirdparty backup\n22 - Public room\n25 - Ready form folder\n26 - In process form folder\n27 - Form filling folder done\n28 - Form filling folder in progress\n29 - Virtual Data Room\n30 - Room templates folder"
+              },
+              "inRoom": {
+                "description": "Specifies if the folder is placed in the room or not.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The renamed folder information."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 418
+    },
+    {
+      "name": "get_my_folder",
+      "description": "Get the 'My Documents' folder.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "filters": {
+            "type": "object",
+            "properties": {
+              "userIdOrGroupId": {
+                "description": "The user or group ID.",
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "filterType": {
+                "type": "number",
+                "description": "The filter type.\n\n0 - None\n1 - Files only\n2 - Folders only\n3 - Documents only\n4 - Presentations only\n5 - Spreadsheets only\n7 - Images only\n8 - By user\n9 - By department\n10 - Archive only\n11 - By extension\n12 - Media only\n13 - Filling forms rooms\n14 - Editing rooms\n17 - Custom rooms\n20 - Public rooms\n22 - Pdf\n23 - Pdf form\n24 - Virtual data rooms"
+              },
+              "applyFilterOption": {
+                "type": "string",
+                "description": "Specifies whether to return only files, only folders or all elements."
+              },
+              "count": {
+                "default": 30,
+                "description": "The maximum number of items to retrieve in the response.",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 50
+              },
+              "startIndex": {
+                "description": "The starting position of the items to be retrieved.",
+                "type": "number"
+              },
+              "sortBy": {
+                "description": "The property used to specify the sorting criteria for folder contents.",
+                "type": "string"
+              },
+              "sortOrder": {
+                "type": "number",
+                "description": "The order in which the results are sorted.\n\n0 - Ascending order\n1 - Descending order"
+              },
+              "filterValue": {
+                "description": "The text used for filtering or searching folder contents.",
+                "type": "string"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nfiles.id - The file entry ID.\nfiles.rootFolderId - The root folder ID of the file entry.\nfiles.canShare - Specifies if the file entry can be shared or not.\nfiles.security - The actions that can be performed with the file entry.\nfiles.title - The file entry title.\nfiles.access - The access rights to the file entry.\nfiles.shared - Specifies if the file entry is shared or not.\nfiles.created - The creation date and time of the file entry.\nfiles.createdBy.id - The user ID.\nfiles.createdBy.displayName - The user display name.\nfiles.createdBy.isAnonim - Specifies if the user is anonymous or not.\nfiles.fileEntryType - The file entry type.\nfiles.folderId - The folder ID where the file is located.\nfiles.fileType - The file type.\nfiles.fileExst - The file extension.\nfiles.comment - The comment to the file.\nfiles.encrypted - Specifies if the file is encrypted or not.\nfiles.locked - Specifies if the file is locked or not.\nfolders.id - The file entry ID.\nfolders.rootFolderId - The root folder ID of the file entry.\nfolders.canShare - Specifies if the file entry can be shared or not.\nfolders.security - The actions that can be performed with the file entry.\nfolders.title - The file entry title.\nfolders.access - The access rights to the file entry.\nfolders.shared - Specifies if the file entry is shared or not.\nfolders.created - The creation date and time of the file entry.\nfolders.createdBy.id - The user ID.\nfolders.createdBy.displayName - The user display name.\nfolders.createdBy.isAnonim - Specifies if the user is anonymous or not.\nfolders.fileEntryType - The file entry type.\nfolders.parentId - The parent folder ID of the folder.\nfolders.filesCount - The number of files that the folder contains.\nfolders.foldersCount - The number of folders that the folder contains.\nfolders.isShareable - Specifies if the folder can be shared or not.\nfolders.isFavorite - Specifies if the folder is favorite or not.\nfolders.tags - The list of tags of the folder.\nfolders.roomType - The room type of the folder.\nfolders.private - Specifies if the folder is private or not.\nfolders.type - The folder type.\nfolders.inRoom - Specifies if the folder is placed in the room or not.\ncurrent.id - The file entry ID.\ncurrent.rootFolderId - The root folder ID of the file entry.\ncurrent.canShare - Specifies if the file entry can be shared or not.\ncurrent.security - The actions that can be performed with the file entry.\ncurrent.title - The file entry title.\ncurrent.access - The access rights to the file entry.\ncurrent.shared - Specifies if the file entry is shared or not.\ncurrent.created - The creation date and time of the file entry.\ncurrent.createdBy.id - The user ID.\ncurrent.createdBy.displayName - The user display name.\ncurrent.createdBy.isAnonim - Specifies if the user is anonymous or not.\ncurrent.fileEntryType - The file entry type.\ncurrent.parentId - The parent folder ID of the folder.\ncurrent.filesCount - The number of files that the folder contains.\ncurrent.foldersCount - The number of folders that the folder contains.\ncurrent.isShareable - Specifies if the folder can be shared or not.\ncurrent.isFavorite - Specifies if the folder is favorite or not.\ncurrent.tags - The list of tags of the folder.\ncurrent.roomType - The room type of the folder.\ncurrent.private - Specifies if the folder is private or not.\ncurrent.type - The folder type.\ncurrent.inRoom - Specifies if the folder is placed in the room or not.\nstartIndex - The folder start index.\ncount - The number of folder elements.\ntotal - The total number of elements in the folder."
+                }
+              }
+            },
+            "required": [
+              "count",
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the My Documents folder. Use them to reduce the size of the response."
+          }
+        },
+        "required": [
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "files": {
+                "description": "The list of files in the folder.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "The file entry ID.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "rootFolderId": {
+                      "description": "The root folder ID of the file entry.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "canShare": {
+                      "description": "Specifies if the file entry can be shared or not.",
+                      "type": "boolean"
+                    },
+                    "security": {
+                      "description": "The actions that can be performed with the file entry."
+                    },
+                    "title": {
+                      "description": "The file entry title.",
+                      "type": "string"
+                    },
+                    "access": {
+                      "description": "The access rights to the file entry."
+                    },
+                    "shared": {
+                      "description": "Specifies if the file entry is shared or not.",
+                      "type": "boolean"
+                    },
+                    "created": {
+                      "description": "The date and time when the file entry was created.",
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "description": "The user who created the file entry.",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "description": "The user ID.",
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "description": "The user display name.",
+                          "type": "string"
+                        },
+                        "isAnonim": {
+                          "description": "Specifies if the user is anonymous or not.",
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": {}
+                    },
+                    "fileEntityType": {
+                      "type": "number",
+                      "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "folders": {
+                "description": "The list of folders in the folder.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "The file entry ID.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "rootFolderId": {
+                      "description": "The root folder ID of the file entry.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "canShare": {
+                      "description": "Specifies if the file entry can be shared or not.",
+                      "type": "boolean"
+                    },
+                    "security": {
+                      "description": "The actions that can be performed with the file entry."
+                    },
+                    "title": {
+                      "description": "The file entry title.",
+                      "type": "string"
+                    },
+                    "access": {
+                      "description": "The access rights to the file entry."
+                    },
+                    "shared": {
+                      "description": "Specifies if the file entry is shared or not.",
+                      "type": "boolean"
+                    },
+                    "created": {
+                      "description": "The date and time when the file entry was created.",
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "description": "The user who created the file entry.",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "description": "The user ID.",
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "description": "The user display name.",
+                          "type": "string"
+                        },
+                        "isAnonim": {
+                          "description": "Specifies if the user is anonymous or not.",
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": {}
+                    },
+                    "fileEntityType": {
+                      "type": "number",
+                      "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "current": {
+                "description": "The current folder information.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The file entry ID.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "rootFolderId": {
+                    "description": "The root folder ID of the file entry.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "canShare": {
+                    "description": "Specifies if the file entry can be shared or not.",
+                    "type": "boolean"
+                  },
+                  "security": {
+                    "description": "The actions that can be performed with the file entry."
+                  },
+                  "title": {
+                    "description": "The file entry title.",
+                    "type": "string"
+                  },
+                  "access": {
+                    "description": "The access rights to the file entry."
+                  },
+                  "shared": {
+                    "description": "Specifies if the file entry is shared or not.",
+                    "type": "boolean"
+                  },
+                  "created": {
+                    "description": "The date and time when the file entry was created.",
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "description": "The user who created the file entry.",
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "description": "The user ID.",
+                        "type": "string"
+                      },
+                      "displayName": {
+                        "description": "The user display name.",
+                        "type": "string"
+                      },
+                      "isAnonim": {
+                        "description": "Specifies if the user is anonymous or not.",
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": {}
+                  },
+                  "fileEntityType": {
+                    "type": "number",
+                    "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                  },
+                  "parentId": {
+                    "description": "The parent folder ID of the folder.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "filesCount": {
+                    "description": "The number of files that the folder contains.",
+                    "type": "number"
+                  },
+                  "foldersCount": {
+                    "description": "The number of folders that the folder contains.",
+                    "type": "number"
+                  },
+                  "isShareable": {
+                    "description": "Specifies if the folder can be shared or not.",
+                    "type": "boolean"
+                  },
+                  "isFavorite": {
+                    "description": "Specifies if the folder is favorite or not.",
+                    "type": "boolean"
+                  },
+                  "tags": {
+                    "description": "The list of tags of the folder.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "roomType": {
+                    "type": "number",
+                    "description": "The room type of the folder.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+                  },
+                  "private": {
+                    "description": "Specifies if the folder is private or not.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "type": "number",
+                    "description": "The folder type.\n\n0 - Default\n1 - Coomon\n2 - Bunch\n3 - Trash\n5 - User\n6 - Share\n8 - Projects\n10 - Favourites\n11 - Recent\n12 - Templates\n13 - Privacy\n14 - Virtual rooms\n15 - Filling forms room\n16 - Editing room\n19 - Custom room\n20 - Archive\n21 - Thirdparty backup\n22 - Public room\n25 - Ready form folder\n26 - In process form folder\n27 - Form filling folder done\n28 - Form filling folder in progress\n29 - Virtual Data Room\n30 - Room templates folder"
+                  },
+                  "inRoom": {
+                    "description": "Specifies if the folder is placed in the room or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "startIndex": {
+                "description": "The folder start index.",
+                "type": "number"
+              },
+              "count": {
+                "description": "The number of folder elements.",
+                "type": "number"
+              },
+              "total": {
+                "description": "The total number of elements in the folder.",
+                "type": "number"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The contents of the My Documents folder."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 1338
+    },
+    {
+      "name": "create_room",
+      "description": "Create a room.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the room to create."
+          },
+          "roomType": {
+            "default": 6,
+            "type": "number",
+            "description": "The type of the room to create.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nid - The file entry ID.\nrootFolderId - The root folder ID of the file entry.\ncanShare - Specifies if the file entry can be shared or not.\nsecurity - The actions that can be performed with the file entry.\ntitle - The file entry title.\naccess - The access rights to the file entry.\nshared - Specifies if the file entry is shared or not.\ncreated - The creation date and time of the file entry.\ncreatedBy.id - The user ID.\ncreatedBy.displayName - The user display name.\ncreatedBy.isAnonim - Specifies if the user is anonymous or not.\nfileEntryType - The file entry type.\nparentId - The parent folder ID of the folder.\nfilesCount - The number of files that the folder contains.\nfoldersCount - The number of folders that the folder contains.\nisShareable - Specifies if the folder can be shared or not.\nisFavorite - Specifies if the folder is favorite or not.\ntags - The list of tags of the folder.\nroomType - The room type of the folder.\nprivate - Specifies if the folder is private or not.\ntype - The folder type.\ninRoom - Specifies if the folder is placed in the room or not."
+                }
+              }
+            },
+            "required": [
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the room creation."
+          }
+        },
+        "required": [
+          "title",
+          "roomType",
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "files": {
+                "description": "The list of files in the folder.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "The file entry ID.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "rootFolderId": {
+                      "description": "The root folder ID of the file entry.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "canShare": {
+                      "description": "Specifies if the file entry can be shared or not.",
+                      "type": "boolean"
+                    },
+                    "security": {
+                      "description": "The actions that can be performed with the file entry."
+                    },
+                    "title": {
+                      "description": "The file entry title.",
+                      "type": "string"
+                    },
+                    "access": {
+                      "description": "The access rights to the file entry."
+                    },
+                    "shared": {
+                      "description": "Specifies if the file entry is shared or not.",
+                      "type": "boolean"
+                    },
+                    "created": {
+                      "description": "The date and time when the file entry was created.",
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "description": "The user who created the file entry.",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "description": "The user ID.",
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "description": "The user display name.",
+                          "type": "string"
+                        },
+                        "isAnonim": {
+                          "description": "Specifies if the user is anonymous or not.",
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": {}
+                    },
+                    "fileEntityType": {
+                      "type": "number",
+                      "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "folders": {
+                "description": "The list of folders in the folder.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "The file entry ID.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "rootFolderId": {
+                      "description": "The root folder ID of the file entry.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "canShare": {
+                      "description": "Specifies if the file entry can be shared or not.",
+                      "type": "boolean"
+                    },
+                    "security": {
+                      "description": "The actions that can be performed with the file entry."
+                    },
+                    "title": {
+                      "description": "The file entry title.",
+                      "type": "string"
+                    },
+                    "access": {
+                      "description": "The access rights to the file entry."
+                    },
+                    "shared": {
+                      "description": "Specifies if the file entry is shared or not.",
+                      "type": "boolean"
+                    },
+                    "created": {
+                      "description": "The date and time when the file entry was created.",
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "description": "The user who created the file entry.",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "description": "The user ID.",
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "description": "The user display name.",
+                          "type": "string"
+                        },
+                        "isAnonim": {
+                          "description": "Specifies if the user is anonymous or not.",
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": {}
+                    },
+                    "fileEntityType": {
+                      "type": "number",
+                      "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "current": {
+                "description": "The current folder information.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The file entry ID.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "rootFolderId": {
+                    "description": "The root folder ID of the file entry.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "canShare": {
+                    "description": "Specifies if the file entry can be shared or not.",
+                    "type": "boolean"
+                  },
+                  "security": {
+                    "description": "The actions that can be performed with the file entry."
+                  },
+                  "title": {
+                    "description": "The file entry title.",
+                    "type": "string"
+                  },
+                  "access": {
+                    "description": "The access rights to the file entry."
+                  },
+                  "shared": {
+                    "description": "Specifies if the file entry is shared or not.",
+                    "type": "boolean"
+                  },
+                  "created": {
+                    "description": "The date and time when the file entry was created.",
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "description": "The user who created the file entry.",
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "description": "The user ID.",
+                        "type": "string"
+                      },
+                      "displayName": {
+                        "description": "The user display name.",
+                        "type": "string"
+                      },
+                      "isAnonim": {
+                        "description": "Specifies if the user is anonymous or not.",
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": {}
+                  },
+                  "fileEntityType": {
+                    "type": "number",
+                    "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                  },
+                  "parentId": {
+                    "description": "The parent folder ID of the folder.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "filesCount": {
+                    "description": "The number of files that the folder contains.",
+                    "type": "number"
+                  },
+                  "foldersCount": {
+                    "description": "The number of folders that the folder contains.",
+                    "type": "number"
+                  },
+                  "isShareable": {
+                    "description": "Specifies if the folder can be shared or not.",
+                    "type": "boolean"
+                  },
+                  "isFavorite": {
+                    "description": "Specifies if the folder is favorite or not.",
+                    "type": "boolean"
+                  },
+                  "tags": {
+                    "description": "The list of tags of the folder.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "roomType": {
+                    "type": "number",
+                    "description": "The room type of the folder.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+                  },
+                  "private": {
+                    "description": "Specifies if the folder is private or not.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "type": "number",
+                    "description": "The folder type.\n\n0 - Default\n1 - Coomon\n2 - Bunch\n3 - Trash\n5 - User\n6 - Share\n8 - Projects\n10 - Favourites\n11 - Recent\n12 - Templates\n13 - Privacy\n14 - Virtual rooms\n15 - Filling forms room\n16 - Editing room\n19 - Custom room\n20 - Archive\n21 - Thirdparty backup\n22 - Public room\n25 - Ready form folder\n26 - In process form folder\n27 - Form filling folder done\n28 - Form filling folder in progress\n29 - Virtual Data Room\n30 - Room templates folder"
+                  },
+                  "inRoom": {
+                    "description": "Specifies if the folder is placed in the room or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "startIndex": {
+                "description": "The folder start index.",
+                "type": "number"
+              },
+              "count": {
+                "description": "The number of folder elements.",
+                "type": "number"
+              },
+              "total": {
+                "description": "The total number of elements in the folder.",
+                "type": "number"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The contents of the created room."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 548
+    },
+    {
+      "name": "get_room_info",
+      "description": "Get room information.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "number",
+            "description": "The ID of the room to get info for."
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nid - The file entry ID.\nrootFolderId - The root folder ID of the file entry.\ncanShare - Specifies if the file entry can be shared or not.\nsecurity - The actions that can be performed with the file entry.\ntitle - The file entry title.\naccess - The access rights to the file entry.\nshared - Specifies if the file entry is shared or not.\ncreated - The creation date and time of the file entry.\ncreatedBy.id - The user ID.\ncreatedBy.displayName - The user display name.\ncreatedBy.isAnonim - Specifies if the user is anonymous or not.\nfileEntryType - The file entry type.\nparentId - The parent folder ID of the folder.\nfilesCount - The number of files that the folder contains.\nfoldersCount - The number of folders that the folder contains.\nisShareable - Specifies if the folder can be shared or not.\nisFavorite - Specifies if the folder is favorite or not.\ntags - The list of tags of the folder.\nroomType - The room type of the folder.\nprivate - Specifies if the folder is private or not.\ntype - The folder type.\ninRoom - Specifies if the folder is placed in the room or not."
+                }
+              }
+            },
+            "required": [
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the room info."
+          }
+        },
+        "required": [
+          "roomId",
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "The file entry ID.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "rootFolderId": {
+                "description": "The root folder ID of the file entry.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "canShare": {
+                "description": "Specifies if the file entry can be shared or not.",
+                "type": "boolean"
+              },
+              "security": {
+                "description": "The actions that can be performed with the file entry."
+              },
+              "title": {
+                "description": "The file entry title.",
+                "type": "string"
+              },
+              "access": {
+                "description": "The access rights to the file entry."
+              },
+              "shared": {
+                "description": "Specifies if the file entry is shared or not.",
+                "type": "boolean"
+              },
+              "created": {
+                "description": "The date and time when the file entry was created.",
+                "type": "string"
+              },
+              "createdBy": {
+                "description": "The user who created the file entry.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The user ID.",
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "description": "The user display name.",
+                    "type": "string"
+                  },
+                  "isAnonim": {
+                    "description": "Specifies if the user is anonymous or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "fileEntityType": {
+                "type": "number",
+                "description": "The file entry type.\n\n1 - Folder\n2 - File"
+              },
+              "parentId": {
+                "description": "The parent folder ID of the folder.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "filesCount": {
+                "description": "The number of files that the folder contains.",
+                "type": "number"
+              },
+              "foldersCount": {
+                "description": "The number of folders that the folder contains.",
+                "type": "number"
+              },
+              "isShareable": {
+                "description": "Specifies if the folder can be shared or not.",
+                "type": "boolean"
+              },
+              "isFavorite": {
+                "description": "Specifies if the folder is favorite or not.",
+                "type": "boolean"
+              },
+              "tags": {
+                "description": "The list of tags of the folder.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "roomType": {
+                "type": "number",
+                "description": "The room type of the folder.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+              },
+              "private": {
+                "description": "Specifies if the folder is private or not.",
+                "type": "boolean"
+              },
+              "type": {
+                "type": "number",
+                "description": "The folder type.\n\n0 - Default\n1 - Coomon\n2 - Bunch\n3 - Trash\n5 - User\n6 - Share\n8 - Projects\n10 - Favourites\n11 - Recent\n12 - Templates\n13 - Privacy\n14 - Virtual rooms\n15 - Filling forms room\n16 - Editing room\n19 - Custom room\n20 - Archive\n21 - Thirdparty backup\n22 - Public room\n25 - Ready form folder\n26 - In process form folder\n27 - Form filling folder done\n28 - Form filling folder in progress\n29 - Virtual Data Room\n30 - Room templates folder"
+              },
+              "inRoom": {
+                "description": "Specifies if the folder is placed in the room or not.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The room information."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 390
+    },
+    {
+      "name": "update_room",
+      "description": "Update a room.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "number",
+            "description": "The ID of the room to update."
+          },
+          "title": {
+            "description": "The new title of the room to set.",
+            "type": "string"
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nid - The file entry ID.\nrootFolderId - The root folder ID of the file entry.\ncanShare - Specifies if the file entry can be shared or not.\nsecurity - The actions that can be performed with the file entry.\ntitle - The file entry title.\naccess - The access rights to the file entry.\nshared - Specifies if the file entry is shared or not.\ncreated - The creation date and time of the file entry.\ncreatedBy.id - The user ID.\ncreatedBy.displayName - The user display name.\ncreatedBy.isAnonim - Specifies if the user is anonymous or not.\nfileEntryType - The file entry type.\nparentId - The parent folder ID of the folder.\nfilesCount - The number of files that the folder contains.\nfoldersCount - The number of folders that the folder contains.\nisShareable - Specifies if the folder can be shared or not.\nisFavorite - Specifies if the folder is favorite or not.\ntags - The list of tags of the folder.\nroomType - The room type of the folder.\nprivate - Specifies if the folder is private or not.\ntype - The folder type.\ninRoom - Specifies if the folder is placed in the room or not."
+                }
+              }
+            },
+            "required": [
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the room update."
+          }
+        },
+        "required": [
+          "roomId",
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "The file entry ID.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "rootFolderId": {
+                "description": "The root folder ID of the file entry.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "canShare": {
+                "description": "Specifies if the file entry can be shared or not.",
+                "type": "boolean"
+              },
+              "security": {
+                "description": "The actions that can be performed with the file entry."
+              },
+              "title": {
+                "description": "The file entry title.",
+                "type": "string"
+              },
+              "access": {
+                "description": "The access rights to the file entry."
+              },
+              "shared": {
+                "description": "Specifies if the file entry is shared or not.",
+                "type": "boolean"
+              },
+              "created": {
+                "description": "The date and time when the file entry was created.",
+                "type": "string"
+              },
+              "createdBy": {
+                "description": "The user who created the file entry.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The user ID.",
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "description": "The user display name.",
+                    "type": "string"
+                  },
+                  "isAnonim": {
+                    "description": "Specifies if the user is anonymous or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "fileEntityType": {
+                "type": "number",
+                "description": "The file entry type.\n\n1 - Folder\n2 - File"
+              },
+              "parentId": {
+                "description": "The parent folder ID of the folder.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "filesCount": {
+                "description": "The number of files that the folder contains.",
+                "type": "number"
+              },
+              "foldersCount": {
+                "description": "The number of folders that the folder contains.",
+                "type": "number"
+              },
+              "isShareable": {
+                "description": "Specifies if the folder can be shared or not.",
+                "type": "boolean"
+              },
+              "isFavorite": {
+                "description": "Specifies if the folder is favorite or not.",
+                "type": "boolean"
+              },
+              "tags": {
+                "description": "The list of tags of the folder.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "roomType": {
+                "type": "number",
+                "description": "The room type of the folder.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+              },
+              "private": {
+                "description": "Specifies if the folder is private or not.",
+                "type": "boolean"
+              },
+              "type": {
+                "type": "number",
+                "description": "The folder type.\n\n0 - Default\n1 - Coomon\n2 - Bunch\n3 - Trash\n5 - User\n6 - Share\n8 - Projects\n10 - Favourites\n11 - Recent\n12 - Templates\n13 - Privacy\n14 - Virtual rooms\n15 - Filling forms room\n16 - Editing room\n19 - Custom room\n20 - Archive\n21 - Thirdparty backup\n22 - Public room\n25 - Ready form folder\n26 - In process form folder\n27 - Form filling folder done\n28 - Form filling folder in progress\n29 - Virtual Data Room\n30 - Room templates folder"
+              },
+              "inRoom": {
+                "description": "Specifies if the folder is placed in the room or not.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The updated room information."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 405
+    },
+    {
+      "name": "archive_room",
+      "description": "Archive a room.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "number",
+            "description": "The ID of the room to archive."
+          }
+        },
+        "required": [
+          "roomId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 68
+    },
+    {
+      "name": "set_room_security",
+      "description": "Invite or remove users from a room.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "number",
+            "description": "The ID of the room to invite or remove users from."
+          },
+          "invitations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "description": "The ID of the user to invite or remove. Mutually exclusive with User Email.",
+                  "type": "string"
+                },
+                "email": {
+                  "description": "The email of the user to invite or remove. Mutually exclusive with User ID.",
+                  "type": "string"
+                },
+                "access": {
+                  "type": "number",
+                  "description": "The access level to grant to the user. May vary depending on the type of room.\n\n0 - None. No access to the room.\n2 - Viewer. File viewing.\n5 - Reviewer. Operations with existing files: viewing, reviewing, commenting.\n6 - Commenter. Operations with existing files: viewing, commenting.\n7 - Form filler. Form fillers can fill out forms and view only their completed/started forms within the Complete and In Process folders.\n9 - Room manager (Paid). Room managers can manage the assigned rooms, invite new users and assign roles below their level.\n10 - Editor. Operations with existing files: viewing, editing, form filling, reviewing, commenting.\n11 - Content creator. Content creators can create and edit files in the room, but can't manage users, or access settings."
+                }
+              },
+              "additionalProperties": false,
+              "description": "The invitation or removal of a user. Must contain either User ID or User Email."
+            },
+            "description": "The invitations or removals to perform."
+          },
+          "notify": {
+            "description": "Whether to notify the user.",
+            "type": "boolean"
+          },
+          "message": {
+            "description": "The message to use for the invitation.",
+            "type": "string"
+          },
+          "culture": {
+            "description": "The languages to use for the invitation.",
+            "type": "string"
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nmembers.access - The access rights type.\nmembers.sharedTo - The user who has the access to the specified file.\nmembers.isLocked - Specifies if the access right is locked or not.\nmembers.isOwner - Specifies if the user is an owner of the specified file or not.\nmembers.canEditAccess - Specifies if the user can edit the access to the specified file or not.\nmembers.subjectType - The subject type.\nwarning - The warning message.\nerror - The error type."
+                }
+              }
+            },
+            "required": [
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the room security info."
+          }
+        },
+        "required": [
+          "roomId",
+          "invitations",
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "members": {
+                "description": "The list of room members.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "access": {
+                      "type": "number",
+                      "description": "The access rights type.\n\n0 - None\n1 - Read and write\n2 - Read\n3 - Restrict\n4 - Varies\n5 - Review\n6 - Comment\n7 - Fill forms\n8 - Custom filter\n9 - Room manager\n10 - Editing\n11 - Content creator"
+                    },
+                    "sharedTo": {
+                      "description": "The user who has the access to the specified file."
+                    },
+                    "isLocked": {
+                      "description": "Specifies if the access right is locked or not.",
+                      "type": "boolean"
+                    },
+                    "isOwner": {
+                      "description": "Specifies if the user is an owner of the specified file or not.",
+                      "type": "boolean"
+                    },
+                    "canEditAccess": {
+                      "description": "Specifies if the user can edit the access to the specified file or not.",
+                      "type": "boolean"
+                    },
+                    "subjectType": {
+                      "type": "number",
+                      "description": "The subject type.\n\n0 - User\n1 - External link\n2 - Group\n3 - Invitation link\n4 - Primary external link"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "warning": {
+                "description": "The warning message.",
+                "type": "string"
+              },
+              "error": {
+                "description": "The error type."
+              }
+            },
+            "additionalProperties": {},
+            "description": "The room security information after the operation."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true
+      },
+      "tokens": 575
+    },
+    {
+      "name": "get_room_security_info",
+      "description": "Get a list of users with their access levels to a room.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "number",
+            "description": "The ID of the room to get a list of users with their access level for."
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "filterType": {
+                "type": "number",
+                "description": "The filter type of the access rights.\n\n0 - User or group\n1 - Invitation link\n2 - External link\n4 - Additional external link\n8 - Primary external link\n16 - User\n32 - Group"
+              },
+              "count": {
+                "default": 30,
+                "description": "The number of items to be retrieved or processed.",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 50
+              },
+              "startIndex": {
+                "description": "The starting index of the items to retrieve in a paginated request.",
+                "type": "number"
+              },
+              "filterValue": {
+                "description": "The text filter value used for filtering room security information.",
+                "type": "string"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\naccess - The access rights type.\nsharedTo - The user who has the access to the specified file.\nisLocked - Specifies if the access right is locked or not.\nisOwner - Specifies if the user is an owner of the specified file or not.\ncanEditAccess - Specifies if the user can edit the access to the specified file or not.\nsubjectType - The subject type."
+                }
+              }
+            },
+            "required": [
+              "count",
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the room security info."
+          }
+        },
+        "required": [
+          "roomId",
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "access": {
+                  "type": "number",
+                  "description": "The access rights type.\n\n0 - None\n1 - Read and write\n2 - Read\n3 - Restrict\n4 - Varies\n5 - Review\n6 - Comment\n7 - Fill forms\n8 - Custom filter\n9 - Room manager\n10 - Editing\n11 - Content creator"
+                },
+                "sharedTo": {
+                  "description": "The user who has the access to the specified file."
+                },
+                "isLocked": {
+                  "description": "Specifies if the access right is locked or not.",
+                  "type": "boolean"
+                },
+                "isOwner": {
+                  "description": "Specifies if the user is an owner of the specified file or not.",
+                  "type": "boolean"
+                },
+                "canEditAccess": {
+                  "description": "Specifies if the user can edit the access to the specified file or not.",
+                  "type": "boolean"
+                },
+                "subjectType": {
+                  "type": "number",
+                  "description": "The subject type.\n\n0 - User\n1 - External link\n2 - Group\n3 - Invitation link\n4 - Primary external link"
+                }
+              },
+              "additionalProperties": {}
+            },
+            "description": "The room security information."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 360
+    },
+    {
+      "name": "get_rooms_folder",
+      "description": "Get the 'Rooms' folder.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "filters": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "description": "The filter by room type.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+                }
+              },
+              "subjectId": {
+                "description": "The filter by user ID.",
+                "type": "string"
+              },
+              "searchArea": {
+                "type": "string",
+                "description": "The room search area (Active, Archive, Any, Recent by links)."
+              },
+              "withoutTags": {
+                "description": "Specifies whether to search by tags or not.",
+                "type": "boolean"
+              },
+              "tags": {
+                "description": "The tags in the serialized format.",
+                "type": "string"
+              },
+              "excludeSubject": {
+                "description": "Specifies whether to exclude search by user or group ID.",
+                "type": "boolean"
+              },
+              "count": {
+                "default": 30,
+                "description": "Specifies the maximum number of items to retrieve.",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 50
+              },
+              "startIndex": {
+                "description": "The index from which to start retrieving the room content.",
+                "type": "number"
+              },
+              "sortBy": {
+                "type": "string",
+                "description": "Specifies the field by which the room content should be sorted.\n\nDateAndTime - Date and time\nAZ - AZ\nAuthor - Author\nRoomType - Room type\nTags - Tags"
+              },
+              "sortOrder": {
+                "type": "number",
+                "description": "The order in which the results are sorted.\n\n0 - Ascending order\n1 - Descending order"
+              },
+              "filterValue": {
+                "description": "The text used for filtering or searching folder contents.",
+                "type": "string"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nfiles.id - The file entry ID.\nfiles.rootFolderId - The root folder ID of the file entry.\nfiles.canShare - Specifies if the file entry can be shared or not.\nfiles.security - The actions that can be performed with the file entry.\nfiles.title - The file entry title.\nfiles.access - The access rights to the file entry.\nfiles.shared - Specifies if the file entry is shared or not.\nfiles.created - The creation date and time of the file entry.\nfiles.createdBy.id - The user ID.\nfiles.createdBy.displayName - The user display name.\nfiles.createdBy.isAnonim - Specifies if the user is anonymous or not.\nfiles.fileEntryType - The file entry type.\nfiles.folderId - The folder ID where the file is located.\nfiles.fileType - The file type.\nfiles.fileExst - The file extension.\nfiles.comment - The comment to the file.\nfiles.encrypted - Specifies if the file is encrypted or not.\nfiles.locked - Specifies if the file is locked or not.\nfolders.id - The file entry ID.\nfolders.rootFolderId - The root folder ID of the file entry.\nfolders.canShare - Specifies if the file entry can be shared or not.\nfolders.security - The actions that can be performed with the file entry.\nfolders.title - The file entry title.\nfolders.access - The access rights to the file entry.\nfolders.shared - Specifies if the file entry is shared or not.\nfolders.created - The creation date and time of the file entry.\nfolders.createdBy.id - The user ID.\nfolders.createdBy.displayName - The user display name.\nfolders.createdBy.isAnonim - Specifies if the user is anonymous or not.\nfolders.fileEntryType - The file entry type.\nfolders.parentId - The parent folder ID of the folder.\nfolders.filesCount - The number of files that the folder contains.\nfolders.foldersCount - The number of folders that the folder contains.\nfolders.isShareable - Specifies if the folder can be shared or not.\nfolders.isFavorite - Specifies if the folder is favorite or not.\nfolders.tags - The list of tags of the folder.\nfolders.roomType - The room type of the folder.\nfolders.private - Specifies if the folder is private or not.\nfolders.type - The folder type.\nfolders.inRoom - Specifies if the folder is placed in the room or not.\ncurrent.id - The file entry ID.\ncurrent.rootFolderId - The root folder ID of the file entry.\ncurrent.canShare - Specifies if the file entry can be shared or not.\ncurrent.security - The actions that can be performed with the file entry.\ncurrent.title - The file entry title.\ncurrent.access - The access rights to the file entry.\ncurrent.shared - Specifies if the file entry is shared or not.\ncurrent.created - The creation date and time of the file entry.\ncurrent.createdBy.id - The user ID.\ncurrent.createdBy.displayName - The user display name.\ncurrent.createdBy.isAnonim - Specifies if the user is anonymous or not.\ncurrent.fileEntryType - The file entry type.\ncurrent.parentId - The parent folder ID of the folder.\ncurrent.filesCount - The number of files that the folder contains.\ncurrent.foldersCount - The number of folders that the folder contains.\ncurrent.isShareable - Specifies if the folder can be shared or not.\ncurrent.isFavorite - Specifies if the folder is favorite or not.\ncurrent.tags - The list of tags of the folder.\ncurrent.roomType - The room type of the folder.\ncurrent.private - Specifies if the folder is private or not.\ncurrent.type - The folder type.\ncurrent.inRoom - Specifies if the folder is placed in the room or not.\nstartIndex - The folder start index.\ncount - The number of folder elements.\ntotal - The total number of elements in the folder."
+                }
+              }
+            },
+            "required": [
+              "count",
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the rooms folder."
+          }
+        },
+        "required": [
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "files": {
+                "description": "The list of files in the folder.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "The file entry ID.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "rootFolderId": {
+                      "description": "The root folder ID of the file entry.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "canShare": {
+                      "description": "Specifies if the file entry can be shared or not.",
+                      "type": "boolean"
+                    },
+                    "security": {
+                      "description": "The actions that can be performed with the file entry."
+                    },
+                    "title": {
+                      "description": "The file entry title.",
+                      "type": "string"
+                    },
+                    "access": {
+                      "description": "The access rights to the file entry."
+                    },
+                    "shared": {
+                      "description": "Specifies if the file entry is shared or not.",
+                      "type": "boolean"
+                    },
+                    "created": {
+                      "description": "The date and time when the file entry was created.",
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "description": "The user who created the file entry.",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "description": "The user ID.",
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "description": "The user display name.",
+                          "type": "string"
+                        },
+                        "isAnonim": {
+                          "description": "Specifies if the user is anonymous or not.",
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": {}
+                    },
+                    "fileEntityType": {
+                      "type": "number",
+                      "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "folders": {
+                "description": "The list of folders in the folder.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "The file entry ID.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "rootFolderId": {
+                      "description": "The root folder ID of the file entry.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "canShare": {
+                      "description": "Specifies if the file entry can be shared or not.",
+                      "type": "boolean"
+                    },
+                    "security": {
+                      "description": "The actions that can be performed with the file entry."
+                    },
+                    "title": {
+                      "description": "The file entry title.",
+                      "type": "string"
+                    },
+                    "access": {
+                      "description": "The access rights to the file entry."
+                    },
+                    "shared": {
+                      "description": "Specifies if the file entry is shared or not.",
+                      "type": "boolean"
+                    },
+                    "created": {
+                      "description": "The date and time when the file entry was created.",
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "description": "The user who created the file entry.",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "description": "The user ID.",
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "description": "The user display name.",
+                          "type": "string"
+                        },
+                        "isAnonim": {
+                          "description": "Specifies if the user is anonymous or not.",
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": {}
+                    },
+                    "fileEntityType": {
+                      "type": "number",
+                      "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "current": {
+                "description": "The current folder information.",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "The file entry ID.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "rootFolderId": {
+                    "description": "The root folder ID of the file entry.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "canShare": {
+                    "description": "Specifies if the file entry can be shared or not.",
+                    "type": "boolean"
+                  },
+                  "security": {
+                    "description": "The actions that can be performed with the file entry."
+                  },
+                  "title": {
+                    "description": "The file entry title.",
+                    "type": "string"
+                  },
+                  "access": {
+                    "description": "The access rights to the file entry."
+                  },
+                  "shared": {
+                    "description": "Specifies if the file entry is shared or not.",
+                    "type": "boolean"
+                  },
+                  "created": {
+                    "description": "The date and time when the file entry was created.",
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "description": "The user who created the file entry.",
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "description": "The user ID.",
+                        "type": "string"
+                      },
+                      "displayName": {
+                        "description": "The user display name.",
+                        "type": "string"
+                      },
+                      "isAnonim": {
+                        "description": "Specifies if the user is anonymous or not.",
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": {}
+                  },
+                  "fileEntityType": {
+                    "type": "number",
+                    "description": "The file entry type.\n\n1 - Folder\n2 - File"
+                  },
+                  "parentId": {
+                    "description": "The parent folder ID of the folder.",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "filesCount": {
+                    "description": "The number of files that the folder contains.",
+                    "type": "number"
+                  },
+                  "foldersCount": {
+                    "description": "The number of folders that the folder contains.",
+                    "type": "number"
+                  },
+                  "isShareable": {
+                    "description": "Specifies if the folder can be shared or not.",
+                    "type": "boolean"
+                  },
+                  "isFavorite": {
+                    "description": "Specifies if the folder is favorite or not.",
+                    "type": "boolean"
+                  },
+                  "tags": {
+                    "description": "The list of tags of the folder.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "roomType": {
+                    "type": "number",
+                    "description": "The room type of the folder.\n\n1 - Form Filling Room. Upload PDF forms into the room. Invite members and guests to fill out a PDF form. Review completed forms and analyze data automatically collected in a spreadsheet.\n2 - Collaboration room. Collaborate on one or multiple documents with your team.\n5 - Custom room. Apply your own settings to use this room for any custom purpose.\n6 - Public room. Share documents for viewing, editing, commenting, or reviewing without registration. You can also embed this room into any web interface.\n8 - Virtual Data Room. Use VDR for advanced file security and transparency. Set watermarks, automatically index and track all content, restrict downloading and copying."
+                  },
+                  "private": {
+                    "description": "Specifies if the folder is private or not.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "type": "number",
+                    "description": "The folder type.\n\n0 - Default\n1 - Coomon\n2 - Bunch\n3 - Trash\n5 - User\n6 - Share\n8 - Projects\n10 - Favourites\n11 - Recent\n12 - Templates\n13 - Privacy\n14 - Virtual rooms\n15 - Filling forms room\n16 - Editing room\n19 - Custom room\n20 - Archive\n21 - Thirdparty backup\n22 - Public room\n25 - Ready form folder\n26 - In process form folder\n27 - Form filling folder done\n28 - Form filling folder in progress\n29 - Virtual Data Room\n30 - Room templates folder"
+                  },
+                  "inRoom": {
+                    "description": "Specifies if the folder is placed in the room or not.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "startIndex": {
+                "description": "The folder start index.",
+                "type": "number"
+              },
+              "count": {
+                "description": "The number of folder elements.",
+                "type": "number"
+              },
+              "total": {
+                "description": "The total number of elements in the folder.",
+                "type": "number"
+              }
+            },
+            "additionalProperties": {},
+            "description": "The contents of the rooms folder."
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 1356
+    },
+    {
+      "name": "get_room_types",
+      "description": "Get a list of available room types.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 50
+    },
+    {
+      "name": "get_room_access_levels",
+      "description": "Get a list of available room invitation access levels.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "number",
+            "description": "The ID of the room to get the invitation access for."
+          }
+        },
+        "required": [
+          "roomId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 80
+    },
+    {
+      "name": "get_all_people",
+      "description": "Get all people.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "filters": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "default": 30,
+                "description": "The maximum number of items to be retrieved in the response.",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 50
+              },
+              "startIndex": {
+                "description": "The zero-based index of the first item to be retrieved in a filtered result set.",
+                "type": "number"
+              },
+              "sortBy": {
+                "description": "Specifies the property or field name by which the results should be sorted.",
+                "type": "string"
+              },
+              "sortOrder": {
+                "type": "number",
+                "description": "The order in which the results are sorted.\n\n0 - Ascending order\n1 - Descending order"
+              },
+              "filterSeparator": {
+                "description": "Represents the separator used to split filter criteria in query parameters.",
+                "type": "string"
+              },
+              "filterValue": {
+                "description": "The search text used to filter results based on user input.",
+                "type": "string"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The fields to include in the response.\n\nid - The user ID.\ndisplayName - The user display name.\nisAnonim - Specifies if the user is anonymous or not.\nemail - The user email.\nbirthday - The user birthday.\nstatus - The user status.\ndepartment - The user department.\nisAdmin - Specifies if the user is an administrator or not.\nisRoomAdmin - Specifies if the user is a room administrator or not.\nisOwner - Specifies if the user is a portal owner or not.\nisVisitor - Specifies if the user is a portal visitor or not.\nisCollaborator - Specifies if the user is a portal collaborator or not."
+                }
+              }
+            },
+            "required": [
+              "count",
+              "fields"
+            ],
+            "additionalProperties": false,
+            "description": "The filters to apply to the list of people. Use them to reduce the size of the response."
+          }
+        },
+        "required": [
+          "filters"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "The status of the API response."
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code of the API response."
+          },
+          "response": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "description": "The user ID.",
+                  "type": "string"
+                },
+                "displayName": {
+                  "description": "The user display name.",
+                  "type": "string"
+                },
+                "isAnonim": {
+                  "description": "Specifies if the user is anonymous or not.",
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": {}
+            }
+          },
+          "count": {
+            "description": "The number of items in the response.",
+            "type": "number"
+          },
+          "total": {
+            "description": "The total number of items available.",
+            "type": "number"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "href",
+                "action"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The links related to the response."
+          }
+        },
+        "required": [
+          "status",
+          "statusCode",
+          "response",
+          "links"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      },
+      "tokens": 410
+    }
+  ],
+  "totalTokens": 9241
+}

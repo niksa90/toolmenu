@@ -1,0 +1,44 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "sentry",
+    "version": "0.4.1",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:50:11.244Z",
+  "tools": [
+    {
+      "name": "get_sentry_issue",
+      "description": "Retrieve and analyze a Sentry issue by ID or URL. Use this tool when you need to:\n                - Investigate production errors and crashes\n                - Access detailed stacktraces from Sentry\n                - Analyze error patterns and frequencies\n                - Get information about when issues first/last occurred\n                - Review error counts and status",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "issue_id_or_url": {
+            "type": "string",
+            "description": "Sentry issue ID or URL to analyze"
+          }
+        },
+        "required": [
+          "issue_id_or_url"
+        ]
+      },
+      "tokens": 117
+    }
+  ],
+  "totalTokens": 117,
+  "prompts": [
+    {
+      "name": "sentry-issue",
+      "description": "Retrieve a Sentry issue by ID or URL",
+      "arguments": [
+        {
+          "name": "issue_id_or_url",
+          "description": "Sentry issue ID or URL",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,242 @@
+ok dc_grafana snapshot=0 tools=65 session=0 review=0
+ok dc_playwright snapshot=0 tools=23 session=0 review=0
+ok dc_fetch snapshot=0 tools=1 session=0 review=0
+ok dc_memory snapshot=0 tools=9 session=0 review=0
+ok dc_duckduckgo snapshot=0 tools=2 session=0 review=0
+ok dc_sequentialthinking snapshot=0 tools=1 session=0 review=0
+ok dc_kubernetes snapshot=0 tools=23 session=1 review=0
+ok dc_sonarqube snapshot=1 tools=18 session=1 review=0
+ok dc_clickhouse snapshot=0 tools=3 session=0 review=0
+ok dc_filesystem snapshot=0 tools=11 session=0 review=0
+no-menu dc_dynatrace-mcp-server snapshot=2
+ok dc_slack snapshot=0 tools=8 session=0 review=0
+ok dc_puppeteer snapshot=0 tools=7 session=0 review=0
+ok dc_youtube_transcript snapshot=0 tools=4 session=0 review=0
+ok dc_brave snapshot=0 tools=8 session=0 review=0
+ok dc_notion snapshot=0 tools=24 session=1 review=0
+ok dc_time snapshot=0 tools=2 session=0 review=0
+ok dc_desktop-commander snapshot=1 tools=26 session=1 review=0
+ok dc_wikipedia-mcp snapshot=0 tools=22 session=0 review=0
+no-menu dc_neo4j snapshot=2
+ok dc_dockerhub snapshot=0 tools=13 session=0 review=0
+ok dc_atlassian snapshot=1 tools=80 session=1 review=0
+ok dc_redis snapshot=0 tools=53 session=0 review=0
+ok dc_n8n snapshot=0 tools=42 session=0 review=0
+ok dc_git snapshot=0 tools=12 session=0 review=0
+no-menu dc_mongodb snapshot=2
+ok dc_node-code-sandbox snapshot=0 tools=7 session=0 review=0
+ok dc_github snapshot=0 tools=26 session=0 review=0
+ok dc_firecrawl snapshot=0 tools=28 session=0 review=0
+ok dc_aws-documentation snapshot=0 tools=4 session=0 review=0
+ok dc_aws-core-mcp-server snapshot=0 tools=1 session=0 review=0
+ok dc_arxiv-mcp-server snapshot=0 tools=4 session=0 review=0
+ok dc_ast-grep snapshot=0 tools=1 session=0 review=0
+ok dc_markitdown snapshot=0 tools=1 session=0 review=0
+ok dc_gitlab snapshot=0 tools=9 session=0 review=0
+ok dc_awslabs-cloudwatch snapshot=0 tools=19 session=0 review=0
+ok dc_google-maps snapshot=0 tools=7 session=0 review=0
+ok dc_perplexity-ask snapshot=0 tools=3 session=0 review=0
+no-menu dc_neo4j-cypher snapshot=2
+ok dc_markdownify snapshot=0 tools=11 session=0 review=0
+ok dc_mcp-hackernews snapshot=0 tools=4 session=0 review=0
+ok dc_openweather snapshot=0 tools=1 session=0 review=0
+ok dc_edubase snapshot=0 tools=165 session=0 review=0
+ok dc_obsidian snapshot=0 tools=12 session=0 review=0
+ok dc_aws-diagram snapshot=0 tools=3 session=0 review=0
+ok dc_npm-sentinel snapshot=0 tools=19 session=0 review=0
+ok dc_aws-terraform snapshot=0 tools=7 session=0 review=0
+ok dc_mcp-api-gateway snapshot=0 tools=2 session=0 review=0
+ok dc_jetbrains snapshot=0 tools=30 session=0 review=0
+ok dc_mcp-code-interpreter snapshot=0 tools=1 session=0 review=0
+ok dc_SQLite snapshot=0 tools=6 session=0 review=0
+ok dc_sentry snapshot=0 tools=1 session=0 review=0
+ok dc_next-devtools-mcp snapshot=0 tools=5 session=0 review=0
+ok dc_camunda snapshot=0 tools=12 session=0 review=0
+ok dc_tavily snapshot=0 tools=5 session=0 review=0
+ok dc_onlyoffice-docspace snapshot=0 tools=23 session=0 review=0
+ok dc_metabase snapshot=0 tools=28 session=0 review=0
+ok dc_elevenlabs snapshot=0 tools=27 session=0 review=0
+ok dc_aws-cdk-mcp-server snapshot=0 tools=7 session=0 review=0
+ok dc_awslabs-billing-cost-management snapshot=0 tools=33 session=0 review=0
+ok dc_elasticsearch snapshot=1 tools=5 session=1 review=0
+no-menu dc_wolfram-alpha snapshot=2
+ok dc_stripe snapshot=0 tools=22 session=0 review=0
+ok dc_cyreslab-ai-shodan snapshot=0 tools=5 session=0 review=0
+ok dc_postman snapshot=0 tools=42 session=0 review=0
+ok dc_chroma snapshot=0 tools=13 session=0 review=0
+ok dc_paper-search snapshot=0 tools=57 session=0 review=0
+ok dc_cloud-run-mcp snapshot=0 tools=8 session=0 review=0
+no-menu dc_neo4j-memory snapshot=2
+ok dc_openapi snapshot=0 tools=5 session=0 review=0
+ok dc_hyperbrowser snapshot=0 tools=10 session=0 review=0
+no-menu dc_rust-mcp-filesystem snapshot=2
+ok dc_mcp-discord snapshot=0 tools=20 session=0 review=0
+no-menu dc_gemini-api-docs snapshot=2
+ok dc_temporal snapshot=0 tools=31 session=0 review=0
+ok dc_audiense-insights snapshot=0 tools=8 session=0 review=0
+ok dc_scrapezy snapshot=0 tools=1 session=0 review=0
+ok dc_proxmox snapshot=0 tools=286 session=0 review=0
+ok dc_unreal-engine-mcp-server snapshot=0 tools=23 session=0 review=0
+ok dc_bitrefill snapshot=0 tools=12 session=0 review=0
+ok dc_oxylabs snapshot=0 tools=4 session=0 review=0
+ok dc_google-maps-comprehensive snapshot=0 tools=8 session=0 review=0
+ok dc_browserbase snapshot=0 tools=6 session=0 review=0
+ok dc_github-chat snapshot=0 tools=2 session=0 review=0
+ok dc_mcp-python-refactoring snapshot=0 tools=9 session=0 review=0
+no-menu dc_vizro snapshot=2
+ok dc_exa snapshot=0 tools=2 session=0 review=0
+ok dc_osp_marketing_tools snapshot=0 tools=6 session=0 review=0
+no-menu dc_apify-mcp-server snapshot=2
+ok dc_securenote-link-mcp-server snapshot=0 tools=3 session=0 review=0
+no-menu dc_aws-api snapshot=2
+ok dc_schogini-mcp-image-border snapshot=0 tools=3 session=0 review=0
+ok dc_pluggedin-mcp-proxy snapshot=0 tools=6 session=0 review=0
+ok dc_quantconnect snapshot=0 tools=64 session=0 review=0
+ok dc_minecraft-wiki snapshot=0 tools=9 session=0 review=0
+ok dc_ramparts snapshot=1 tools=2 session=1 review=0
+ok dc_mapbox snapshot=0 tools=28 session=0 review=0
+ok dc_beagle-security snapshot=0 tools=17 session=0 review=0
+ok dc_zen snapshot=0 tools=18 session=0 review=0
+ok dc_dreamfactory-mcp snapshot=0 tools=8 session=0 review=0
+ok dc_tigris snapshot=0 tools=10 session=0 review=0
+ok dc_testkube snapshot=0 tools=28 session=0 review=0
+ok dc_omi snapshot=0 tools=6 session=0 review=0
+ok dc_pref-editor snapshot=0 tools=7 session=0 review=0
+ok dc_suzieq snapshot=0 tools=2 session=0 review=0
+ok dc_couchbase snapshot=0 tools=20 session=1 review=0
+no-menu dc_okta-mcp-fctr snapshot=2
+ok dc_openapi-schema snapshot=0 tools=10 session=0 review=0
+no-menu dc_aws-dataprocessing snapshot=2
+ok dc_openbnb-airbnb snapshot=0 tools=2 session=0 review=0
+ok dc_stackhawk snapshot=0 tools=7 session=0 review=0
+ok dc_firewalla-mcp-server snapshot=0 tools=28 session=0 review=0
+ok dc_google-flights snapshot=0 tools=3 session=0 review=0
+ok dc_line snapshot=0 tools=12 session=0 review=0
+ok dc_kubectl-mcp-server snapshot=0 tools=281 session=0 review=0
+no-menu dc_maestro-mcp-server snapshot=2
+ok dc_neon snapshot=0 tools=19 session=0 review=0
+no-menu dc_neo4j-data-modeling snapshot=2
+ok dc_atlas-docs snapshot=0 tools=5 session=0 review=0
+ok dc_hostinger-mcp-server snapshot=0 tools=118 session=0 review=0
+ok dc_e2b snapshot=0 tools=1 session=0 review=0
+ok dc_playwright-mcp-server snapshot=0 tools=32 session=0 review=0
+ok dc_aws-kb-retrieval-server snapshot=0 tools=1 session=0 review=0
+ok dc_resend snapshot=0 tools=1 session=0 review=0
+ok dc_databutton snapshot=0 tools=1 session=0 review=0
+ok dc_airtable-mcp-server snapshot=0 tools=16 session=0 review=0
+ok dc_awslabs-dynamodb snapshot=0 tools=8 session=0 review=0
+no-menu dc_amazon-bedrock-agentcore snapshot=2
+ok dc_heroku snapshot=0 tools=34 session=0 review=0
+ok dc_scrapegraph snapshot=0 tools=8 session=0 review=0
+ok dc_kagisearch snapshot=0 tools=2 session=0 review=0
+ok dc_redis-cloud snapshot=0 tools=18 session=0 review=0
+ok dc_mcp-reddit snapshot=0 tools=6 session=0 review=0
+ok dc_glif snapshot=0 tools=10 session=0 review=0
+ok dc_kong snapshot=0 tools=10 session=0 review=0
+ok dc_astra-db snapshot=0 tools=19 session=0 review=0
+ok dc_ref snapshot=0 tools=2 session=0 review=0
+ok dc_lara snapshot=0 tools=22 session=1 review=0
+ok dc_handwriting-ocr snapshot=0 tools=3 session=0 review=0
+ok dc_everart snapshot=0 tools=1 session=0 review=0
+ok dc_aks snapshot=1 tools=15 session=1 review=0
+ok dc_oracle snapshot=0 tools=13 session=0 review=0
+ok dc_veyrax snapshot=0 tools=3 session=0 review=0
+ok dc_devhub-cms snapshot=0 tools=10 session=0 review=0
+ok dc_awslabs-timestream-for-influxdb snapshot=0 tools=26 session=0 review=0
+ok dc_descope snapshot=0 tools=4 session=0 review=0
+no-menu dc_awslabs-cfn snapshot=2
+ok dc_aws-pricing snapshot=0 tools=9 session=0 review=0
+no-menu dc_dappier snapshot=2
+ok dc_webflow snapshot=0 tools=21 session=0 review=0
+ok dc_razorpay snapshot=1 tools=45 session=0 review=0
+ok dc_dart snapshot=0 tools=16 session=0 review=0
+ok dc_multiversx-mx snapshot=0 tools=14 session=0 review=0
+ok dc_gyazo snapshot=0 tools=4 session=0 review=0
+ok dc_husqvarna-automower snapshot=0 tools=1 session=0 review=0
+ok dc_opik snapshot=0 tools=13 session=0 review=0
+no-menu dc_neo4j-cloud-aura-api snapshot=2
+ok dc_hyperspell snapshot=0 tools=3 session=0 review=0
+ok dc_render snapshot=0 tools=24 session=0 review=0
+ok dc_iaptic snapshot=0 tools=17 session=0 review=0
+ok dc_hackle snapshot=0 tools=19 session=0 review=0
+ok dc_fibery snapshot=0 tools=7 session=0 review=0
+ok dc_risken snapshot=0 tools=4 session=0 review=0
+ok dc_awslabs-cloudtrail snapshot=0 tools=5 session=0 review=0
+no-menu dc_aws-bedrock-custom-model-import snapshot=2
+ok dc_awslabs-cost-explorer snapshot=0 tools=7 session=0 review=0
+ok dc_nasdaq-data-link snapshot=0 tools=5 session=0 review=0
+ok dc_awslabs-ccapi snapshot=0 tools=14 session=0 review=0
+ok dc_awslabs-s3-tables snapshot=0 tools=16 session=0 review=0
+no-menu dc_ros2 snapshot=2
+ok dc_smartbear snapshot=0 tools=162 session=0 review=0
+ok dc_aws-bedrock-data-automation snapshot=0 tools=3 session=0 review=0
+ok dc_mapbox-devkit snapshot=0 tools=23 session=0 review=0
+ok dc_awslabs-iam snapshot=0 tools=29 session=0 review=0
+ok dc_box snapshot=0 tools=12 session=0 review=0
+ok dc_awslabs-memcached snapshot=0 tools=22 session=0 review=0
+no-menu dc_awslabs-cloudwatch-appsignals snapshot=2
+no-menu dc_text-to-graphql snapshot=2
+no-menu dc_keboola-mcp snapshot=2
+ok dc_vuln-nist-mcp-server snapshot=0 tools=6 session=0 review=0
+ok dc_awslabs-redshift snapshot=0 tools=6 session=0 review=0
+ok dc_awslabs-valkey snapshot=0 tools=105 session=0 review=0
+ok dc_aws-location snapshot=0 tools=8 session=0 review=0
+ok dc_schemacrawler-ai snapshot=1 tools=8 session=0 review=0
+ok dc_pia snapshot=0 tools=2 session=0 review=0
+ok dc_inspektor-gadget snapshot=0 tools=3 session=0 review=0
+ok dc_buildkite snapshot=0 tools=46 session=0 review=0
+ok dc_aws-appsync snapshot=0 tools=10 session=0 review=0
+ok dc_aws-iot-sitewise snapshot=0 tools=41 session=0 review=0
+ok dc_awslabs-elasticache snapshot=0 tools=39 session=0 review=0
+ok dc_amazon-qbusiness-anonymous snapshot=0 tools=1 session=0 review=0
+no-menu dc_explorium snapshot=2
+ok dc_amazon-kendra-index snapshot=0 tools=2 session=0 review=0
+ok dc_aws-healthomics snapshot=0 tools=73 session=0 review=0
+no-menu dc_hdx snapshot=2
+ok dc_aws-msk snapshot=0 tools=12 session=0 review=0
+ok dc_amazon-neptune snapshot=0 tools=4 session=0 review=0
+ok dc_atlan snapshot=0 tools=14 session=0 review=0
+ok dc_pinecone snapshot=0 tools=1 session=0 review=0
+ok dc_charmhealth-mcp-server snapshot=0 tools=17 session=0 review=0
+ok dc_teamwork snapshot=0 tools=194 session=1 review=0
+no-menu dc_cockroachdb snapshot=2
+ok dc_zerodha-kite snapshot=0 tools=15 session=0 review=0
+ok dc_vectra-ai-rux-mcp-server snapshot=0 tools=23 session=0 review=0
+no-menu dc_awslabs-nova-canvas snapshot=2
+no-menu dc_cylera-mcp-server snapshot=2
+ok dc_effect-mcp snapshot=0 tools=2 session=0 review=0
+no-menu dc_singlestore snapshot=2
+no-menu dc_sequa snapshot=2
+ok dc_novita snapshot=0 tools=20 session=0 review=0
+ok dc_pomodash snapshot=0 tools=14 session=0 review=0
+ok dc_thingsboard snapshot=0 tools=62 session=0 review=0
+no-menu dc_okta-mcp-server snapshot=2
+pull-failed dc_alfresco
+ok dc_github-official snapshot=0 tools=47 session=0 review=0
+ok dc_azure snapshot=0 tools=73 session=0 review=0
+ok dc_zscaler-mcp-server snapshot=1 tools=239 session=1 review=0
+no-menu dc_database-server snapshot=2
+pull-failed dc_dotnet-types-explorer
+ok dc_gmail-mcp snapshot=0 tools=3 session=0 review=0
+ok dc_needle-mcp snapshot=0 tools=7 session=0 review=0
+pull-failed dc_hummingbot-mcp
+pull-failed dc_kafka-schema-reg-mcp
+ok dc_arm-mcp snapshot=0 tools=7 session=0 review=0
+ok dc_hoverfly-mcp-server snapshot=1 tools=12 session=0 review=0
+no-menu dc_linkedin-mcp-server snapshot=2
+no-menu dc_maven-tools-mcp snapshot=2
+ok dc_opine-mcp-server snapshot=0 tools=11 session=0 review=0
+pull-failed dc_simplechecklist
+no-menu dc_stackgen snapshot=2
+ok dc_prometheus snapshot=0 tools=6 session=0 review=0
+ok dc_supadata snapshot=0 tools=9 session=0 review=0
+no-menu dc_victorialogs snapshot=2
+ok dc_terraform snapshot=1 tools=9 session=0 review=0
+no-menu dc_victoriametrics snapshot=2
+no-menu dc_victoriatraces snapshot=2
+ok dc_task-orchestrator snapshot=0 tools=17 session=0 review=0
+no-menu dc_neo4j-cypher snapshot=2
+no-menu dc_neo4j-memory snapshot=2
+ok dc_neo4j-cloud-aura-api snapshot=0 tools=12 session=0 review=0
+ok dc_aws-api snapshot=0 tools=2 session=0 review=0
+ok dc_rust-mcp-filesystem snapshot=1 tools=24 session=1 review=0

@@ -1,0 +1,159 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "stackhawk-mcp",
+    "version": "1.0.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:08:28.726Z",
+  "tools": [
+    {
+      "name": "get_organization_info",
+      "description": "Get information about a StackHawk organization",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "org_id": {
+            "type": "string",
+            "description": "Organization ID"
+          }
+        },
+        "required": [
+          "org_id"
+        ]
+      },
+      "tokens": 47
+    },
+    {
+      "name": "list_applications",
+      "description": "List applications in a StackHawk organization",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "org_id": {
+            "type": "string",
+            "description": "Organization ID"
+          },
+          "page_size": {
+            "type": "integer",
+            "description": "Page size (optional)"
+          }
+        },
+        "required": [
+          "org_id"
+        ]
+      },
+      "tokens": 62
+    },
+    {
+      "name": "validate_stackhawk_config",
+      "description": "Validate a StackHawk YAML configuration file",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "yaml_content": {
+            "type": "string",
+            "description": "YAML content to validate"
+          }
+        },
+        "required": [
+          "yaml_content"
+        ]
+      },
+      "tokens": 50
+    },
+    {
+      "name": "validate_field_exists",
+      "description": "Validate that a field path exists in the StackHawk schema",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "field_path": {
+            "type": "string",
+            "description": "Field path to validate"
+          }
+        },
+        "required": [
+          "field_path"
+        ]
+      },
+      "tokens": 52
+    },
+    {
+      "name": "setup_stackhawk_for_project",
+      "description": "Set up StackHawk for a new project. Finds or creates the application and generates a complete stackhawk.yml configuration file ready for scanning.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "Target URL to scan (e.g., https://localhost:3000, https://ginandjuice.shop)"
+          },
+          "environment": {
+            "type": "string",
+            "description": "Environment name (default: dev)"
+          },
+          "org_id": {
+            "type": "string",
+            "description": "Organization ID (optional, auto-detected if omitted)"
+          },
+          "app_name": {
+            "type": "string",
+            "description": "Application name (optional, defaults to current directory name)"
+          }
+        },
+        "required": [
+          "host"
+        ]
+      },
+      "tokens": 146
+    },
+    {
+      "name": "run_stackhawk_scan",
+      "description": "Run a StackHawk scan using the CLI and stream results back to the chat. Optionally specify a config path (default: stackhawk.yml).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "config_path": {
+            "type": "string",
+            "description": "Path to StackHawk config file (default: stackhawk.yml)"
+          }
+        }
+      },
+      "tokens": 75
+    },
+    {
+      "name": "get_app_findings_for_triage",
+      "description": "Get triage-worthy findings for a project or application at or above the configured failureThreshold (or High/Medium if not set). Accepts app_id, config_path, or config_content.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "app_id": {
+            "type": "string",
+            "description": "StackHawk application ID (optional)"
+          },
+          "config_path": {
+            "type": "string",
+            "description": "Path to StackHawk config file (optional, default: stackhawk.yml)"
+          },
+          "config_content": {
+            "type": "string",
+            "description": "YAML content of the StackHawk config file (optional, takes precedence over config_path)"
+          }
+        }
+      },
+      "tokens": 136
+    }
+  ],
+  "totalTokens": 568,
+  "resources": [
+    {
+      "name": "Current User",
+      "uri": "stackhawk://auth/user",
+      "description": "Information about the authenticated user and their organizations",
+      "mimeType": "application/json"
+    }
+  ]
+}

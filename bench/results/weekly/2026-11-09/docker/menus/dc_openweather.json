@@ -1,0 +1,45 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "weather",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:49:04.084Z",
+  "tools": [
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "openWorldHint": true
+      },
+      "description": "Retrieves current and forecast weather information for a given location.",
+      "inputSchema": {
+        "properties": {
+          "city": {
+            "description": "The name of the city to get weather for.\nMust be in English.\nExample: For Saint Petersburg, use \"Saint Petersburg\", not \"Санкт-Петербург\".",
+            "type": "string"
+          },
+          "lang": {
+            "default": "en",
+            "description": "The language for the weather description text. Use standard two-letter language codes (e.g., \"en\", \"es\", \"zh_CN\"). Default: \"en\".",
+            "type": "string"
+          },
+          "units": {
+            "default": "c",
+            "description": "The unit for temperature. Use \"c\" for Celsius, \"f\" for Fahrenheit, or \"k\" for Kelvin. Default: \"c\".",
+            "type": "string"
+          }
+        },
+        "required": [
+          "city"
+        ],
+        "type": "object"
+      },
+      "name": "weather",
+      "tokens": 170
+    }
+  ],
+  "totalTokens": 170
+}

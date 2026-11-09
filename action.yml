@@ -1,5 +1,5 @@
 name: toolmenu
-description: Lint your MCP server's tool menu for changes that confuse agents or break caches.
+description: Test your MCP server the way agents and clients meet it, and catch breaking menu changes on every PR.
 author: niksa90
 branding:
   icon: list
@@ -56,6 +56,15 @@ inputs:
     description: Fail the job on findings at or above this level (error, warn or info).
     required: false
     default: error
+  gate:
+    description: >-
+      What decides the job for the comparison with the baseline. "findings" (default):
+      diff's findings at or above fail-on. "review": the review verdict, so breaking
+      changes the release bump allows pass, and findings at or above fail-on the baseline
+      didn't have fail. Snapshot and session findings count either way. The verdict is
+      at the top of the report whichever you pick.
+    required: false
+    default: findings
   comment:
     description: Post (and update) one PR comment with the report.
     required: false
@@ -91,6 +100,14 @@ outputs:
   exit-code:
     description: 0 clean, 1 findings at or above fail-on, 2 couldn't run.
     value: ${{ steps.run.outputs.exit-code }}
+  verdict:
+    description: >-
+      Should this menu replace the baseline (toolmenu review): unchanged, safe,
+      breaking-released, breaking or review. Empty when there was no baseline to compare with.
+    value: ${{ steps.run.outputs.verdict }}
+  accept:
+    description: "'true' when the verdict says the new menu can replace the baseline as it is."
+    value: ${{ steps.run.outputs.accept }}
   skipped:
     description: >-
       'true' when the check was skipped because the PR runs without the repository's
@@ -114,6 +131,7 @@ runs:
         TOOLMENU_BASELINE_FROM: ${{ inputs.baseline-from }}
         TOOLMENU_CATALOG: ${{ inputs.catalog }}
         TOOLMENU_FAIL_ON: ${{ inputs.fail-on }}
+        TOOLMENU_GATE: ${{ inputs.gate }}
         TOOLMENU_COMMENT: ${{ inputs.comment }}
         TOOLMENU_VERSION: ${{ inputs.version }}
         TOOLMENU_RELEASE: ${{ inputs.release }}

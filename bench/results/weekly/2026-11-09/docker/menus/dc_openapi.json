@@ -1,0 +1,124 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "OpenAPI Toolkit MCP Server",
+    "version": "1.0.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:58:39.526Z",
+  "tools": [
+    {
+      "name": "get_known_responses",
+      "description": "Analyze an OpenAPI or Swagger document provided as a URL OR a raw JSON string or file contents, and list possible HTTP responses (status codes and descriptions) for the specified operation ID.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "addressOrFileContents": {
+            "description": "URL address of the OpenAPI or Swagger JSON document OR raw JSON contents of the OpenAPI or Swagger specification. Can be provided as text or from a file.",
+            "type": "string"
+          },
+          "operationId": {
+            "description": "Operation ID for which to retrieve known responses.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "addressOrFileContents",
+          "operationId"
+        ]
+      },
+      "tokens": 130
+    },
+    {
+      "name": "generate_curl_command",
+      "description": "Generate a cURL command for a given operation ID from a URL OR a raw JSON string or file contents pointing to an OpenAPI or Swagger JSON document.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "addressOrFileContents": {
+            "description": "URL address of the OpenAPI or Swagger JSON document OR raw JSON contents of the OpenAPI or Swagger specification. Can be provided as text or from a file.",
+            "type": "string"
+          },
+          "operationId": {
+            "description": "Operation ID for which to generate the cURL command.",
+            "type": "string"
+          },
+          "baseAddress": {
+            "description": "Optional base URL to be used in the generated cURL command.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "addressOrFileContents",
+          "operationId",
+          "baseAddress"
+        ]
+      },
+      "tokens": 152
+    },
+    {
+      "name": "validate_document",
+      "description": "Analyze and validate an OpenAPI or Swagger document provided as a URL OR a raw JSON string or file contents, and list possible errors, issues and problems with specification for the specified operation ID.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "addressOrFileContents": {
+            "description": "URL address of the OpenAPI or Swagger JSON document OR raw JSON contents of the OpenAPI or Swagger specification. Can be provided as text or from a file.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "addressOrFileContents"
+        ]
+      },
+      "tokens": 107
+    },
+    {
+      "name": "create_csharp_snippet",
+      "description": "Generate a C# code snippet for a given operation ID from a URL OR a raw JSON string or file contents pointing to an OpenAPI or Swagger JSON document.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "addressOrFileContents": {
+            "description": "URL address of the OpenAPI or Swagger JSON document OR raw JSON contents of the OpenAPI or Swagger specification. Can be provided as text or from a file.",
+            "type": "string"
+          },
+          "operationId": {
+            "description": "Operation ID for which to create a snippet.",
+            "type": "string"
+          },
+          "baseAddress": {
+            "description": "Optional base URL to be used in the generated cURL command.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "addressOrFileContents",
+          "operationId",
+          "baseAddress"
+        ]
+      },
+      "tokens": 152
+    },
+    {
+      "name": "get_list_of_operations",
+      "description": "Retrieve a list of operations (endpoints) from a URL OR a raw JSON string or file contents pointing to an OpenAPI or Swagger JSON document.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "addressOrFileContents": {
+            "description": "URL address of the OpenAPI or Swagger JSON document OR raw JSON contents of the OpenAPI or Swagger specification. Can be provided as text or from a file.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "addressOrFileContents"
+        ]
+      },
+      "tokens": 101
+    }
+  ],
+  "totalTokens": 642
+}

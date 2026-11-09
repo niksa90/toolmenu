@@ -1,0 +1,1606 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "n8n-documentation-mcp",
+    "version": "2.22.17",
+    "protocolVersion": "2025-03-26",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:44:11.333Z",
+  "tools": [
+    {
+      "name": "tools_documentation",
+      "description": "Get documentation for n8n MCP tools. Call without parameters for quick start guide. Use topic parameter to get documentation for specific tools. Use depth='full' for comprehensive documentation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "description": "Tool name (e.g., \"search_nodes\") or \"overview\" for general guide. Leave empty for quick reference."
+          },
+          "depth": {
+            "type": "string",
+            "enum": [
+              "essentials",
+              "full"
+            ],
+            "description": "Level of detail. \"essentials\" (default) for quick reference, \"full\" for comprehensive docs.",
+            "default": "essentials"
+          }
+        }
+      },
+      "tokens": 131
+    },
+    {
+      "name": "list_nodes",
+      "description": "List n8n nodes. Common: list_nodes({limit:200}) for all, list_nodes({category:'trigger'}) for triggers. Package: \"n8n-nodes-base\" or \"@n8n/n8n-nodes-langchain\". Categories: trigger/transform/output/input.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "package": {
+            "type": "string",
+            "description": "\"n8n-nodes-base\" (core) or \"@n8n/n8n-nodes-langchain\" (AI)"
+          },
+          "category": {
+            "type": "string",
+            "description": "trigger|transform|output|input|AI"
+          },
+          "developmentStyle": {
+            "type": "string",
+            "enum": [
+              "declarative",
+              "programmatic"
+            ],
+            "description": "Usually \"programmatic\""
+          },
+          "isAITool": {
+            "type": "boolean",
+            "description": "Filter AI-capable nodes"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results (default 50, use 200+ for all)",
+            "default": 50
+          }
+        }
+      },
+      "tokens": 206
+    },
+    {
+      "name": "get_node_info",
+      "description": "Get full node documentation. Pass nodeType as string with prefix. Example: nodeType=\"nodes-base.webhook\"",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string",
+            "description": "Full type: \"nodes-base.{name}\" or \"nodes-langchain.{name}\". Examples: nodes-base.httpRequest, nodes-base.webhook, nodes-base.slack"
+          }
+        },
+        "required": [
+          "nodeType"
+        ]
+      },
+      "tokens": 93
+    },
+    {
+      "name": "search_nodes",
+      "description": "Search n8n nodes by keyword with optional real-world examples. Pass query as string. Example: query=\"webhook\" or query=\"database\". Returns max 20 results. Use includeExamples=true to get top 2 template configs per node.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search terms. Use quotes for exact phrase."
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results (default 20)",
+            "default": 20
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "OR",
+              "AND",
+              "FUZZY"
+            ],
+            "description": "OR=any word, AND=all words, FUZZY=typo-tolerant",
+            "default": "OR"
+          },
+          "includeExamples": {
+            "type": "boolean",
+            "description": "Include top 2 real-world configuration examples from popular templates (default: false)",
+            "default": false
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "tokens": 186
+    },
+    {
+      "name": "list_ai_tools",
+      "description": "List 263 AI-optimized nodes. Note: ANY node can be AI tool! Connect any node to AI Agent's tool port. Community nodes need N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 63
+    },
+    {
+      "name": "get_node_documentation",
+      "description": "Get readable docs with examples/auth/patterns. Better than raw schema! 87% coverage. Format: \"nodes-base.slack\"",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string",
+            "description": "Full type with prefix: \"nodes-base.slack\""
+          }
+        },
+        "required": [
+          "nodeType"
+        ]
+      },
+      "tokens": 76
+    },
+    {
+      "name": "get_database_statistics",
+      "description": "Node stats: 525 total, 263 AI tools, 104 triggers, 87% docs coverage. Verifies MCP working.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 48
+    },
+    {
+      "name": "get_node_essentials",
+      "description": "Get node essential info with optional real-world examples from templates. Pass nodeType as string with prefix. Example: nodeType=\"nodes-base.slack\". Use includeExamples=true to get top 3 template configs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string",
+            "description": "Full type: \"nodes-base.httpRequest\""
+          },
+          "includeExamples": {
+            "type": "boolean",
+            "description": "Include top 3 real-world configuration examples from popular templates (default: false)",
+            "default": false
+          }
+        },
+        "required": [
+          "nodeType"
+        ]
+      },
+      "tokens": 120
+    },
+    {
+      "name": "search_node_properties",
+      "description": "Find specific properties in a node (auth, headers, body, etc). Returns paths and descriptions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string",
+            "description": "Full type with prefix"
+          },
+          "query": {
+            "type": "string",
+            "description": "Property to find: \"auth\", \"header\", \"body\", \"json\""
+          },
+          "maxResults": {
+            "type": "number",
+            "description": "Max results (default 20)",
+            "default": 20
+          }
+        },
+        "required": [
+          "nodeType",
+          "query"
+        ]
+      },
+      "tokens": 109
+    },
+    {
+      "name": "list_tasks",
+      "description": "List task templates by category: HTTP/API, Webhooks, Database, AI, Data Processing, Communication.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "Filter by category (optional)"
+          }
+        }
+      },
+      "tokens": 54
+    },
+    {
+      "name": "validate_node_operation",
+      "description": "Validate n8n node configuration. Pass nodeType as string and config as object. Example: nodeType=\"nodes-base.slack\", config={resource:\"channel\",operation:\"create\"}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string",
+            "description": "Node type as string. Example: \"nodes-base.slack\""
+          },
+          "config": {
+            "type": "object",
+            "description": "Configuration as object. For simple nodes use {}. For complex nodes include fields like {resource:\"channel\",operation:\"create\"}"
+          },
+          "profile": {
+            "type": "string",
+            "enum": [
+              "strict",
+              "runtime",
+              "ai-friendly",
+              "minimal"
+            ],
+            "description": "Profile string: \"minimal\", \"runtime\", \"ai-friendly\", or \"strict\". Default is \"ai-friendly\"",
+            "default": "ai-friendly"
+          }
+        },
+        "required": [
+          "nodeType",
+          "config"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string"
+          },
+          "workflowNodeType": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "property": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "fix": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "property": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "suggestion": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "hasErrors": {
+                "type": "boolean"
+              },
+              "errorCount": {
+                "type": "number"
+              },
+              "warningCount": {
+                "type": "number"
+              },
+              "suggestionCount": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "required": [
+          "nodeType",
+          "displayName",
+          "valid",
+          "errors",
+          "warnings",
+          "suggestions",
+          "summary"
+        ]
+      },
+      "tokens": 181
+    },
+    {
+      "name": "validate_node_minimal",
+      "description": "Check n8n node required fields. Pass nodeType as string and config as empty object {}. Example: nodeType=\"nodes-base.webhook\", config={}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string",
+            "description": "Node type as string. Example: \"nodes-base.slack\""
+          },
+          "config": {
+            "type": "object",
+            "description": "Configuration object. Always pass {} for empty config"
+          }
+        },
+        "required": [
+          "nodeType",
+          "config"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "missingRequiredFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "nodeType",
+          "displayName",
+          "valid",
+          "missingRequiredFields"
+        ]
+      },
+      "tokens": 108
+    },
+    {
+      "name": "get_property_dependencies",
+      "description": "Shows property dependencies and visibility rules. Example: sendBody=true reveals body fields. Test visibility with optional config.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string",
+            "description": "The node type to analyze (e.g., \"nodes-base.httpRequest\")"
+          },
+          "config": {
+            "type": "object",
+            "description": "Optional partial configuration to check visibility impact"
+          }
+        },
+        "required": [
+          "nodeType"
+        ]
+      },
+      "tokens": 89
+    },
+    {
+      "name": "get_node_as_tool_info",
+      "description": "How to use ANY node as AI tool. Shows requirements, use cases, examples. Works for all nodes, not just AI-marked ones.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string",
+            "description": "Full node type WITH prefix: \"nodes-base.slack\", \"nodes-base.googleSheets\", etc."
+          }
+        },
+        "required": [
+          "nodeType"
+        ]
+      },
+      "tokens": 86
+    },
+    {
+      "name": "list_templates",
+      "description": "List all templates with minimal data (id, name, description, views, node count). Optionally include AI-generated metadata for smart filtering.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Number of results (1-100). Default 10.",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "number",
+            "description": "Pagination offset. Default 0.",
+            "default": 0,
+            "minimum": 0
+          },
+          "sortBy": {
+            "type": "string",
+            "enum": [
+              "views",
+              "created_at",
+              "name"
+            ],
+            "description": "Sort field. Default: views (popularity).",
+            "default": "views"
+          },
+          "includeMetadata": {
+            "type": "boolean",
+            "description": "Include AI-generated metadata (categories, complexity, setup time, etc.). Default false.",
+            "default": false
+          }
+        }
+      },
+      "tokens": 166
+    },
+    {
+      "name": "list_node_templates",
+      "description": "Find templates using specific nodes. Returns paginated results. Use FULL types: \"n8n-nodes-base.httpRequest\".",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of node types to search for (e.g., [\"n8n-nodes-base.httpRequest\", \"n8n-nodes-base.openAi\"])"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of templates to return. Default 10.",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "number",
+            "description": "Pagination offset. Default 0.",
+            "default": 0,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "nodeTypes"
+        ]
+      },
+      "tokens": 156
+    },
+    {
+      "name": "get_template",
+      "description": "Get template by ID. Use mode to control response size: nodes_only (minimal), structure (nodes+connections), full (complete workflow).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "templateId": {
+            "type": "number",
+            "description": "The template ID to retrieve"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "nodes_only",
+              "structure",
+              "full"
+            ],
+            "description": "Response detail level. nodes_only: just node list, structure: nodes+connections, full: complete workflow JSON.",
+            "default": "full"
+          }
+        },
+        "required": [
+          "templateId"
+        ]
+      },
+      "tokens": 114
+    },
+    {
+      "name": "search_templates",
+      "description": "Search templates by name/description keywords. Returns paginated results. NOT for node types! For nodes use list_node_templates.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search keyword as string. Example: \"chatbot\""
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "id",
+                "name",
+                "description",
+                "author",
+                "nodes",
+                "views",
+                "created",
+                "url",
+                "metadata"
+              ]
+            },
+            "description": "Fields to include in response. Default: all fields. Example: [\"id\", \"name\"] for minimal response."
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of results. Default 20.",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "number",
+            "description": "Pagination offset. Default 0.",
+            "default": 0,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "tokens": 181
+    },
+    {
+      "name": "get_templates_for_task",
+      "description": "Curated templates by task. Returns paginated results sorted by popularity.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "type": "string",
+            "enum": [
+              "ai_automation",
+              "data_sync",
+              "webhook_processing",
+              "email_automation",
+              "slack_integration",
+              "data_transformation",
+              "file_processing",
+              "scheduling",
+              "api_integration",
+              "database_operations"
+            ],
+            "description": "The type of task to get templates for"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of results. Default 10.",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "number",
+            "description": "Pagination offset. Default 0.",
+            "default": 0,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "task"
+        ]
+      },
+      "tokens": 149
+    },
+    {
+      "name": "search_templates_by_metadata",
+      "description": "Search templates by AI-generated metadata. Filter by category, complexity, setup time, services, or audience. Returns rich metadata for smart template discovery.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "Filter by category (e.g., \"automation\", \"integration\", \"data processing\")"
+          },
+          "complexity": {
+            "type": "string",
+            "enum": [
+              "simple",
+              "medium",
+              "complex"
+            ],
+            "description": "Filter by complexity level"
+          },
+          "maxSetupMinutes": {
+            "type": "number",
+            "description": "Maximum setup time in minutes",
+            "minimum": 5,
+            "maximum": 480
+          },
+          "minSetupMinutes": {
+            "type": "number",
+            "description": "Minimum setup time in minutes",
+            "minimum": 5,
+            "maximum": 480
+          },
+          "requiredService": {
+            "type": "string",
+            "description": "Filter by required service (e.g., \"openai\", \"slack\", \"google\")"
+          },
+          "targetAudience": {
+            "type": "string",
+            "description": "Filter by target audience (e.g., \"developers\", \"marketers\", \"analysts\")"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of results. Default 20.",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "number",
+            "description": "Pagination offset. Default 0.",
+            "default": 0,
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "tokens": 265
+    },
+    {
+      "name": "validate_workflow",
+      "description": "Full workflow validation: structure, connections, expressions, AI tools. Returns errors/warnings/fixes. Essential before deploy.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflow": {
+            "type": "object",
+            "description": "The complete workflow JSON to validate. Must include nodes array and connections object."
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "validateNodes": {
+                "type": "boolean",
+                "description": "Validate individual node configurations. Default true.",
+                "default": true
+              },
+              "validateConnections": {
+                "type": "boolean",
+                "description": "Validate node connections and flow. Default true.",
+                "default": true
+              },
+              "validateExpressions": {
+                "type": "boolean",
+                "description": "Validate n8n expressions syntax and references. Default true.",
+                "default": true
+              },
+              "profile": {
+                "type": "string",
+                "enum": [
+                  "minimal",
+                  "runtime",
+                  "ai-friendly",
+                  "strict"
+                ],
+                "description": "Validation profile for node validation. Default \"runtime\".",
+                "default": "runtime"
+              }
+            },
+            "description": "Optional validation settings"
+          }
+        },
+        "required": [
+          "workflow"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "totalNodes": {
+                "type": "number"
+              },
+              "enabledNodes": {
+                "type": "number"
+              },
+              "triggerNodes": {
+                "type": "number"
+              },
+              "validConnections": {
+                "type": "number"
+              },
+              "invalidConnections": {
+                "type": "number"
+              },
+              "expressionsValidated": {
+                "type": "number"
+              },
+              "errorCount": {
+                "type": "number"
+              },
+              "warningCount": {
+                "type": "number"
+              }
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "node": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "details": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "node": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "details": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "valid",
+          "summary"
+        ]
+      },
+      "tokens": 195
+    },
+    {
+      "name": "validate_workflow_connections",
+      "description": "Check workflow connections only: valid nodes, no cycles, proper triggers, AI tool links. Fast structure validation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflow": {
+            "type": "object",
+            "description": "The workflow JSON with nodes array and connections object."
+          }
+        },
+        "required": [
+          "workflow"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "statistics": {
+            "type": "object",
+            "properties": {
+              "totalNodes": {
+                "type": "number"
+              },
+              "triggerNodes": {
+                "type": "number"
+              },
+              "validConnections": {
+                "type": "number"
+              },
+              "invalidConnections": {
+                "type": "number"
+              }
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "node": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "node": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "valid",
+          "statistics"
+        ]
+      },
+      "tokens": 71
+    },
+    {
+      "name": "validate_workflow_expressions",
+      "description": "Validate n8n expressions: syntax {{}}, variables ($json/$node), references. Returns errors with locations.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflow": {
+            "type": "object",
+            "description": "The workflow JSON to check for expression errors."
+          }
+        },
+        "required": [
+          "workflow"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "statistics": {
+            "type": "object",
+            "properties": {
+              "totalNodes": {
+                "type": "number"
+              },
+              "expressionsValidated": {
+                "type": "number"
+              }
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "node": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "node": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "tips": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "valid",
+          "statistics"
+        ]
+      },
+      "tokens": 72
+    },
+    {
+      "name": "n8n_create_workflow",
+      "description": "Create workflow. Requires: name, nodes[], connections{}. Created inactive. Returns workflow with ID.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Workflow name (required)"
+          },
+          "nodes": {
+            "type": "array",
+            "description": "Array of workflow nodes. Each node must have: id, name, type, typeVersion, position, and parameters",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "name",
+                "type",
+                "typeVersion",
+                "position",
+                "parameters"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "typeVersion": {
+                  "type": "number"
+                },
+                "position": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "parameters": {
+                  "type": "object"
+                },
+                "credentials": {
+                  "type": "object"
+                },
+                "disabled": {
+                  "type": "boolean"
+                },
+                "notes": {
+                  "type": "string"
+                },
+                "continueOnFail": {
+                  "type": "boolean"
+                },
+                "retryOnFail": {
+                  "type": "boolean"
+                },
+                "maxTries": {
+                  "type": "number"
+                },
+                "waitBetweenTries": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "connections": {
+            "type": "object",
+            "description": "Workflow connections object. Keys are source node IDs, values define output connections"
+          },
+          "settings": {
+            "type": "object",
+            "description": "Optional workflow settings (execution order, timezone, error handling)",
+            "properties": {
+              "executionOrder": {
+                "type": "string",
+                "enum": [
+                  "v0",
+                  "v1"
+                ]
+              },
+              "timezone": {
+                "type": "string"
+              },
+              "saveDataErrorExecution": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "none"
+                ]
+              },
+              "saveDataSuccessExecution": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "none"
+                ]
+              },
+              "saveManualExecutions": {
+                "type": "boolean"
+              },
+              "saveExecutionProgress": {
+                "type": "boolean"
+              },
+              "executionTimeout": {
+                "type": "number"
+              },
+              "errorWorkflow": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "name",
+          "nodes",
+          "connections"
+        ]
+      },
+      "tokens": 376
+    },
+    {
+      "name": "n8n_get_workflow",
+      "description": "Get a workflow by ID. Returns the complete workflow including nodes, connections, and settings.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Workflow ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 56
+    },
+    {
+      "name": "n8n_get_workflow_details",
+      "description": "Get workflow details with metadata, version, execution stats. More info than get_workflow.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Workflow ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 57
+    },
+    {
+      "name": "n8n_get_workflow_structure",
+      "description": "Get workflow structure: nodes and connections only. No parameter details.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Workflow ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 52
+    },
+    {
+      "name": "n8n_get_workflow_minimal",
+      "description": "Get minimal info: ID, name, active status, tags. Fast for listings.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Workflow ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 57
+    },
+    {
+      "name": "n8n_update_full_workflow",
+      "description": "Full workflow update. Requires complete nodes[] and connections{}. For incremental use n8n_update_partial_workflow.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Workflow ID to update"
+          },
+          "name": {
+            "type": "string",
+            "description": "New workflow name"
+          },
+          "nodes": {
+            "type": "array",
+            "description": "Complete array of workflow nodes (required if modifying workflow structure)",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "connections": {
+            "type": "object",
+            "description": "Complete connections object (required if modifying workflow structure)"
+          },
+          "settings": {
+            "type": "object",
+            "description": "Workflow settings to update"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 143
+    },
+    {
+      "name": "n8n_update_partial_workflow",
+      "description": "Update workflow incrementally with diff operations. Types: addNode, removeNode, updateNode, moveNode, enable/disableNode, addConnection, removeConnection, updateSettings, updateName, add/removeTag. See tools_documentation(\"n8n_update_partial_workflow\", \"full\") for details.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Workflow ID to update"
+          },
+          "operations": {
+            "type": "array",
+            "description": "Array of diff operations to apply. Each operation must have a \"type\" field and relevant properties for that operation type.",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "validateOnly": {
+            "type": "boolean",
+            "description": "If true, only validate operations without applying them"
+          },
+          "continueOnError": {
+            "type": "boolean",
+            "description": "If true, apply valid operations even if some fail (best-effort mode). Returns applied and failed operation indices. Default: false (atomic)"
+          }
+        },
+        "required": [
+          "id",
+          "operations"
+        ]
+      },
+      "tokens": 215
+    },
+    {
+      "name": "n8n_delete_workflow",
+      "description": "Permanently delete a workflow. This action cannot be undone.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Workflow ID to delete"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 53
+    },
+    {
+      "name": "n8n_list_workflows",
+      "description": "List workflows (minimal metadata only). Returns id/name/active/dates/tags. Check hasMore/nextCursor for pagination.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Number of workflows to return (1-100, default: 100)"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Pagination cursor from previous response"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Filter by active status"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by tags (exact match)"
+          },
+          "projectId": {
+            "type": "string",
+            "description": "Filter by project ID (enterprise feature)"
+          },
+          "excludePinnedData": {
+            "type": "boolean",
+            "description": "Exclude pinned data from response (default: true)"
+          }
+        }
+      },
+      "tokens": 166
+    },
+    {
+      "name": "n8n_validate_workflow",
+      "description": "Validate workflow by ID. Checks nodes, connections, expressions. Returns errors/warnings/suggestions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Workflow ID to validate"
+          },
+          "options": {
+            "type": "object",
+            "description": "Validation options",
+            "properties": {
+              "validateNodes": {
+                "type": "boolean",
+                "description": "Validate node configurations (default: true)"
+              },
+              "validateConnections": {
+                "type": "boolean",
+                "description": "Validate workflow connections (default: true)"
+              },
+              "validateExpressions": {
+                "type": "boolean",
+                "description": "Validate n8n expressions (default: true)"
+              },
+              "profile": {
+                "type": "string",
+                "enum": [
+                  "minimal",
+                  "runtime",
+                  "ai-friendly",
+                  "strict"
+                ],
+                "description": "Validation profile to use (default: runtime)"
+              }
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 163
+    },
+    {
+      "name": "n8n_autofix_workflow",
+      "description": "Automatically fix common workflow validation errors. Preview fixes or apply them. Fixes expression format, typeVersion, error output config, webhook paths.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Workflow ID to fix"
+          },
+          "applyFixes": {
+            "type": "boolean",
+            "description": "Apply fixes to workflow (default: false - preview mode)"
+          },
+          "fixTypes": {
+            "type": "array",
+            "description": "Types of fixes to apply (default: all)",
+            "items": {
+              "type": "string",
+              "enum": [
+                "expression-format",
+                "typeversion-correction",
+                "error-output-config",
+                "node-type-correction",
+                "webhook-missing-path",
+                "typeversion-upgrade",
+                "version-migration"
+              ]
+            }
+          },
+          "confidenceThreshold": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "Minimum confidence level for fixes (default: medium)"
+          },
+          "maxFixes": {
+            "type": "number",
+            "description": "Maximum number of fixes to apply (default: 50)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 210
+    },
+    {
+      "name": "n8n_trigger_webhook_workflow",
+      "description": "Trigger workflow via webhook. Must be ACTIVE with Webhook node. Method must match config.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "webhookUrl": {
+            "type": "string",
+            "description": "Full webhook URL from n8n workflow (e.g., https://n8n.example.com/webhook/abc-def-ghi)"
+          },
+          "httpMethod": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE"
+            ],
+            "description": "HTTP method (must match webhook configuration, often GET)"
+          },
+          "data": {
+            "type": "object",
+            "description": "Data to send with the webhook request"
+          },
+          "headers": {
+            "type": "object",
+            "description": "Additional HTTP headers"
+          },
+          "waitForResponse": {
+            "type": "boolean",
+            "description": "Wait for workflow completion (default: true)"
+          }
+        },
+        "required": [
+          "webhookUrl"
+        ]
+      },
+      "tokens": 171
+    },
+    {
+      "name": "n8n_get_execution",
+      "description": "Get execution details with smart filtering. RECOMMENDED: Use mode='preview' first to assess data size.\nExamples:\n- {id, mode:'preview'} - Structure & counts (fast, no data)\n- {id, mode:'summary'} - 2 samples per node (default)\n- {id, mode:'filtered', itemsLimit:5} - 5 items per node\n- {id, nodeNames:['HTTP Request']} - Specific node only\n- {id, mode:'full'} - Complete data (use with caution)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Execution ID"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "summary",
+              "filtered",
+              "full"
+            ],
+            "description": "Data retrieval mode: preview=structure only, summary=2 items, filtered=custom, full=all data"
+          },
+          "nodeNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter to specific nodes by name (for filtered mode)"
+          },
+          "itemsLimit": {
+            "type": "number",
+            "description": "Items per node: 0=structure only, 2=default, -1=unlimited (for filtered mode)"
+          },
+          "includeInputData": {
+            "type": "boolean",
+            "description": "Include input data in addition to output (default: false)"
+          },
+          "includeData": {
+            "type": "boolean",
+            "description": "Legacy: Include execution data. Maps to mode=summary if true (deprecated, use mode instead)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 315
+    },
+    {
+      "name": "n8n_list_executions",
+      "description": "List workflow executions (returns up to limit). Check hasMore/nextCursor for pagination.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Number of executions to return (1-100, default: 100)"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Pagination cursor from previous response"
+          },
+          "workflowId": {
+            "type": "string",
+            "description": "Filter by workflow ID"
+          },
+          "projectId": {
+            "type": "string",
+            "description": "Filter by project ID (enterprise feature)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "error",
+              "waiting"
+            ],
+            "description": "Filter by execution status"
+          },
+          "includeData": {
+            "type": "boolean",
+            "description": "Include execution data (default: false)"
+          }
+        }
+      },
+      "tokens": 156
+    },
+    {
+      "name": "n8n_delete_execution",
+      "description": "Delete an execution record. This only removes the execution history, not any data processed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Execution ID to delete"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "tokens": 56
+    },
+    {
+      "name": "n8n_health_check",
+      "description": "Check n8n instance health and API connectivity. Returns status and available features.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 39
+    },
+    {
+      "name": "n8n_list_available_tools",
+      "description": "List available n8n tools and capabilities.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 33
+    },
+    {
+      "name": "n8n_diagnostic",
+      "description": "Diagnose n8n API config. Shows tool status, API connectivity, env vars. Helps troubleshoot missing tools.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "verbose": {
+            "type": "boolean",
+            "description": "Include detailed debug information (default: false)"
+          }
+        }
+      },
+      "tokens": 62
+    },
+    {
+      "name": "n8n_workflow_versions",
+      "description": "Manage workflow version history, rollback, and cleanup. Six modes:\n- list: Show version history for a workflow\n- get: Get details of specific version\n- rollback: Restore workflow to previous version (creates backup first)\n- delete: Delete specific version or all versions for a workflow\n- prune: Manually trigger pruning to keep N most recent versions\n- truncate: Delete ALL versions for ALL workflows (requires confirmation)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "list",
+              "get",
+              "rollback",
+              "delete",
+              "prune",
+              "truncate"
+            ],
+            "description": "Operation mode"
+          },
+          "workflowId": {
+            "type": "string",
+            "description": "Workflow ID (required for list, rollback, delete, prune)"
+          },
+          "versionId": {
+            "type": "number",
+            "description": "Version ID (required for get mode and single version delete, optional for rollback)"
+          },
+          "limit": {
+            "type": "number",
+            "default": 10,
+            "description": "Max versions to return in list mode"
+          },
+          "validateBefore": {
+            "type": "boolean",
+            "default": true,
+            "description": "Validate workflow structure before rollback"
+          },
+          "deleteAll": {
+            "type": "boolean",
+            "default": false,
+            "description": "Delete all versions for workflow (delete mode only)"
+          },
+          "maxVersions": {
+            "type": "number",
+            "default": 10,
+            "description": "Keep N most recent versions (prune mode only)"
+          },
+          "confirmTruncate": {
+            "type": "boolean",
+            "default": false,
+            "description": "REQUIRED: Must be true to truncate all versions (truncate mode only)"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "tokens": 316
+    }
+  ],
+  "totalTokens": 5615
+}

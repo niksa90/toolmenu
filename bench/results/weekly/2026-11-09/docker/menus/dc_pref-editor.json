@@ -1,0 +1,212 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Pref-Editor",
+    "version": "0.7.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:07:45.739Z",
+  "tools": [
+    {
+      "name": "change_preference",
+      "description": "Changes the value of an existing preference",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name/key of the user preference"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value of user preference"
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "The device's serial number."
+          },
+          "appId": {
+            "type": "string",
+            "description": "The application's package name."
+          },
+          "filename": {
+            "type": "string",
+            "description": "The filename with or without the extension."
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "deviceId",
+          "appId",
+          "filename"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 142
+    },
+    {
+      "name": "delete_preference",
+      "description": "Delete an existing preference",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name/key of the user preference"
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "The device's serial number."
+          },
+          "appId": {
+            "type": "string",
+            "description": "The application's package name."
+          },
+          "filename": {
+            "type": "string",
+            "description": "The filename with or without the extension."
+          }
+        },
+        "required": [
+          "name",
+          "deviceId",
+          "appId",
+          "filename"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 122
+    },
+    {
+      "name": "add_preference",
+      "description": "Adds a new preference given the name, value and type.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name/key of the user preference"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value of user preference"
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of the preference value: integer, boolean, float, double, long or string"
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "The device's serial number."
+          },
+          "appId": {
+            "type": "string",
+            "description": "The application's package name."
+          },
+          "filename": {
+            "type": "string",
+            "description": "The filename with or without the extension."
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "type",
+          "deviceId",
+          "appId",
+          "filename"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 176
+    },
+    {
+      "name": "devices",
+      "description": "Lists connected Android devices",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 24
+    },
+    {
+      "name": "list_apps",
+      "description": "Lists apps installed on device",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "description": "The device's serial number."
+          }
+        },
+        "required": [
+          "deviceId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 66
+    },
+    {
+      "name": "list_files",
+      "description": "Lists preference files for an app",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "description": "The device's serial number."
+          },
+          "appId": {
+            "type": "string",
+            "description": "The application's package name."
+          }
+        },
+        "required": [
+          "deviceId",
+          "appId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 85
+    },
+    {
+      "name": "read_preferences",
+      "description": "Reads all user preferences in a file",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "description": "The device's serial number."
+          },
+          "appId": {
+            "type": "string",
+            "description": "The application's package name."
+          },
+          "filename": {
+            "type": "string",
+            "description": "The filename with or without the extension."
+          }
+        },
+        "required": [
+          "deviceId",
+          "appId",
+          "filename"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 105
+    }
+  ],
+  "totalTokens": 720
+}

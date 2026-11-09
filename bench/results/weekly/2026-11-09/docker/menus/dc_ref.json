@@ -1,0 +1,78 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Ref",
+    "version": "3.0.3",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:14:45.437Z",
+  "tools": [
+    {
+      "name": "ref_search_documentation",
+      "description": "Search for documentation on the web or github as well from private resources like repos and pdfs. Use Ref 'ref_read_url' to read the content of a url.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Query for documentation. Should include programming language and framework or library names. Searches public only docs by default, include ref_src=private to search a user's private docs."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "tokens": 101
+    },
+    {
+      "name": "ref_read_url",
+      "description": "Read the content of a url as markdown. The EXACT url from a 'ref_search_documentation' result should be passed to this tool.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The URL of the webpage to read."
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "tokens": 69
+    }
+  ],
+  "totalTokens": 170,
+  "prompts": [
+    {
+      "name": "search_docs",
+      "description": "A quick way to check technical documentation. This prompt helps you search documentation for any technical platform, framework, API, service, database, or library.",
+      "arguments": [
+        {
+          "name": "query",
+          "description": "The rest of your prompt or question you want informed by docs",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "my_docs",
+      "description": "Search through your private documentation, repos, and PDFs that you've uploaded to Ref.",
+      "arguments": [
+        {
+          "name": "query",
+          "description": "The rest of your prompt or question you want informed by your private docs",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

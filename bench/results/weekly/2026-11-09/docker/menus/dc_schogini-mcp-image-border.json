@@ -1,0 +1,80 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mcp-image-border",
+    "version": "1.11.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:05:08.669Z",
+  "tools": [
+    {
+      "name": "image-border",
+      "description": "Add a colored border to an image from a URL",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "image_url": {
+            "type": "string",
+            "description": "Public image URL"
+          },
+          "border_thickness": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "border_color": {
+            "type": "string",
+            "description": "e.g., black, red, #FF0000"
+          }
+        },
+        "required": [
+          "image_url",
+          "border_thickness",
+          "border_color"
+        ]
+      },
+      "tokens": 89
+    },
+    {
+      "name": "add-two-numbers",
+      "description": "A simple tool to add two numbers.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "num1": {
+            "type": "string",
+            "description": "First number to add"
+          },
+          "num2": {
+            "type": "string",
+            "description": "Second number to add"
+          }
+        },
+        "required": [
+          "num1",
+          "num2"
+        ]
+      },
+      "tokens": 66
+    },
+    {
+      "name": "image-meta",
+      "description": "Get image metadata from a public image URL. Returns width, height, file size in bytes, image mode (e.g., RGB), and image format (e.g., PNG, JPEG).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "image_url": {
+            "type": "string",
+            "description": "The public URL of the image."
+          }
+        },
+        "required": [
+          "image_url"
+        ]
+      },
+      "tokens": 80
+    }
+  ],
+  "totalTokens": 235
+}

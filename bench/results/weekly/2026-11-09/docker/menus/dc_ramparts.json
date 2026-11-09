@@ -1,0 +1,119 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "rmcp",
+    "version": "0.3.2",
+    "protocolVersion": "2025-03-26",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:06:19.357Z",
+  "tools": [
+    {
+      "name": "scan-config",
+      "description": "Scan MCP servers from IDE configuration files and return results as JSON",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "ScanConfigParams",
+        "type": "object",
+        "properties": {
+          "detailed": {
+            "type": "boolean",
+            "default": null,
+            "nullable": true
+          },
+          "auth_headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": null,
+            "nullable": true
+          },
+          "format": {
+            "type": "string",
+            "default": null,
+            "nullable": true
+          },
+          "timeout": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "default": null,
+            "nullable": true
+          },
+          "httpTimeout": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "default": null,
+            "nullable": true
+          },
+          "returnPrompts": {
+            "description": "If true, do not call the LLM; return prompts instead",
+            "type": "boolean",
+            "default": null,
+            "nullable": true
+          }
+        }
+      },
+      "tokens": 183
+    },
+    {
+      "name": "scan",
+      "description": "Scan an MCP server URL and return security findings as JSON",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "ScanParams",
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "detailed": {
+            "type": "boolean",
+            "default": false
+          },
+          "auth_headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": null,
+            "nullable": true
+          },
+          "format": {
+            "type": "string",
+            "default": null,
+            "nullable": true
+          },
+          "timeout": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "default": null,
+            "nullable": true
+          },
+          "httpTimeout": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "default": null,
+            "nullable": true
+          },
+          "returnPrompts": {
+            "description": "If true, do not call the LLM; return prompts instead",
+            "type": "boolean",
+            "default": null,
+            "nullable": true
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "tokens": 188
+    }
+  ],
+  "totalTokens": 371
+}

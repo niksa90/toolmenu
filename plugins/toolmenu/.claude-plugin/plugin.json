@@ -9,5 +9,5 @@
   "homepage": "https://github.com/niksa90/toolmenu",
   "repository": "https://github.com/niksa90/toolmenu",
   "license": "MIT",
-  "keywords": ["mcp", "model-context-protocol", "linter", "prompt-caching"]
+  "keywords": ["mcp", "model-context-protocol", "testing", "interoperability", "prompt-caching"]
 }

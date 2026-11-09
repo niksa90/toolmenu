@@ -5,7 +5,7 @@ import { listTools, type Connection, type Elicitation, type Target } from './con
 import { AfterInputError, callWithInput, MAX_CONTINUATIONS, MAX_ROUNDS, type InputKind, type InputTrace } from './mrtr.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeSameEra, probeVariance, seeded } from './probe.js';
-import { varianceFinding } from './rules/determinism.js';
+import { outsideModel, varianceFinding } from './rules/determinism.js';
 import { classifyFailure, errorWords, structuredError, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
@@ -14,6 +14,7 @@ import { allDifferences, describeToolDifference } from './difference.js';
 import { autoNextStep, neededValues, writeSign, type AutoSummary } from './auto.js';
 import { LOOKUP_VERBS, singular, VERBS, verbOf, words, WRITE_VERBS } from './words.js';
 import { handleFromResult } from './rules/handles.js';
+import { OUTPUT_SCHEMA_SINCE, outputCheck } from './rules/output.js';
 
 export type Step =
   | { kind: 'list' }
@@ -226,6 +227,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   const roundtrips: { step: number; tool: string; kind: string; creator?: string; problem: string }[] = [];
   // HTTP errors passed on as plain answers, not isError (session/error-not-flagged).
   const unflagged: { step: number; tool: string; said: string }[] = [];
+  // Successful results that break the tool's own outputSchema (session/output-schema).
+  const outputs: { step: number; tool: string; problem: string; formatOnly: boolean }[] = [];
   // --auto's calls with a made-up handle that got a protocol error back (session/handle-error).
   const handleErrors: { step: number; tool: string; probe: import('./rules/handles.js').HandleProbe; value: unknown; message: string; code: number }[] = [];
   // The main process runs with a pinned hash seed, and so does every scope probe:
@@ -254,7 +257,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       }
     }
 
-    const menuOf = async (c: Connection) => buildMenu((await listTools(c, { timeoutMs })).tools, serverOf(c));
+    const menuOf = async (c: Connection) => {
+      const listed = await listTools(c, { timeoutMs });
+      return buildMenu(listed.tools, serverOf(c), listed.listMeta);
+    };
     const listPatiently = (waited = { ms: 0 }) => patiently(() => menuOf(conn), { waits, error: tooMany, waited });
     // A refusal that outlasts the waits, or a write's that isn't sent again, ends
     // the run with one finding, not one per step. `tool`: the write not sent again.
@@ -363,6 +369,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     const tried = new Set<string>();
     const quiet = new Set<string>();
     const stopped = new Map<string, number>();
+    // Where a wait_for starts counting list_changed: from the start of the last call,
+    // or from the end of the last wait_for. The notification a call causes usually
+    // arrives while the call step runs, before the wait_for after it begins.
+    let waitFrom = conn.wire.notifications.length;
     for (const [i, step] of scenario.steps.entries()) {
       const index = i + 1;
       if (step.kind === 'call' && step.tentative) {
@@ -385,6 +395,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       };
 
       if (step.kind === 'call') {
+        waitFrom = mark;
         const tool = current.tools.find((t) => t.name === step.tool);
         const write = tool ? writeSign(tool) : undefined;
         word = !!tool && tool.annotations?.readOnlyHint !== true && assumed.has(step.tool) && !write && !scenario.allowWrites;
@@ -458,6 +469,11 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           } else {
             const result = call.result;
             record.outcome = result.isError ? 'tool-error' : 'answered';
+            // A tool that declares an outputSchema promises its successful results (2025-06-18 on).
+            if (!result.isError && tool?.outputSchema && (conn.protocolVersion ?? '') >= OUTPUT_SCHEMA_SINCE && !outputs.some((o) => o.tool === step.tool)) {
+              const checked = outputCheck(tool.outputSchema, result);
+              if (checked) outputs.push({ step: index, tool: step.tool, ...checked });
+            }
             if (call.input.rounds && !result.isError) record.note = inputNote(call.input, answer);
             if (step.creates) {
               // The handle this result carries, for the probes after it.
@@ -553,15 +569,20 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             if (!handleErrors.some((e) => e.tool === step.tool)) handleErrors.push({ step: index, tool: step.tool, probe: step.probe, value: step.args[step.probe.param], message: record.note, code });
             record.note = `called with a made-up ${step.probe.kind}; it answered with a protocol error (${code}): ${clip(record.note, 120)}`;
           } else {
-            record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
+            // A 401 or 403 on the call itself is the credentials, whatever the words: Google's
+            // hosted servers list tools to anyone and answer each call with 401 and a
+            // WWW-Authenticate for that tool.
+            const status = httpStatus(error);
+            record.failure = status === 401 || status === 403 ? 'auth' : classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
             // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
             const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
             if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);
           }
         }
       } else if (step.kind === 'wait_for') {
-        const arrived = await waitFor(() => conn.wire.notificationsSince(mark, LIST_CHANGED) > 0, step.timeoutMs);
-        if (!arrived) {
+        const arrived = await waitFor(() => conn.wire.notificationsSince(waitFrom, LIST_CHANGED) > 0, step.timeoutMs);
+        if (arrived) waitFrom = conn.wire.notifications.length;
+        else {
           record.status = 'timed-out';
           record.note = `no list_changed within ${step.timeoutMs} ms`;
         }
@@ -695,6 +716,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     raw.push(...inputFindings(inputs, answer));
     raw.push(...handleErrorFindings(handleErrors));
     raw.push(...roundtripFindings(roundtrips));
+    raw.push(...outputFindings(outputs));
     // `ignore` is applied by tool name; this finding sums several tools up, so it's applied here.
     const ignored = (options.ignore ?? []).map((g) => new RegExp('^' + g.split('*').map((x) => x.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
     raw.push(...unflaggedFindings(unflagged.filter((u) => !ignored.some((re) => re.test(u.tool)))));
@@ -726,10 +748,12 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       final: { tools: current.tools.length, tokens: current.totalTokens },
       connectionCheck,
       steps,
-      findings: settle(mergeRepeats(raw), options),
+      findings: settle(mergeRepeats(options.auto?.everything ? raw.map(madeUpInput) : raw), options),
       ...(options.auto ? { auto: { ...options.auto, ...(leftOut.length ? { stopped: leftOut } : {}) } } : {}),
       // Marked: its order is the order tools were first seen (unlock order), so diff doesn't compare it.
-      union: { ...buildMenu([...seen.values()].map(toolDefinition), baseline.server), from: 'session' },
+      // With the starting list's cache hints (ttlMs, cacheScope), as snapshot's menu file has
+      // them: without, review saw spec/cache-hints as gone from a baseline made this way.
+      union: { ...buildMenu([...seen.values()].map(toolDefinition), baseline.server, baseline.listMeta), from: 'session' },
     };
   } finally {
     await conn.close().catch(() => {});
@@ -968,9 +992,12 @@ function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Ra
       const call = `${c.tool} ${JSON.stringify(c.args)}`;
       return `call: ${call.length > 200 ? call.slice(0, 199) + '…' : call}`;
     });
+    // --call-everything: made-up values go in, so a readable tool error is the right
+    // answer to most of them (the spec asks for exactly that). Said as info.
+    const madeUp = auto?.everything === true && f.rule === 'session/tool-error';
     return {
       rule: f.rule,
-      severity: f.severity,
+      severity: madeUp ? 'info' : f.severity,
       step: f.steps[0],
       ...(many ? { steps: f.steps } : {}),
       tool: f.tool,
@@ -979,7 +1006,9 @@ function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Ra
       ...(!f.timedOutMs && (unavailable || (noParams && argsCan)) ? { confidence: 'unsure' as const } : {}),
       message:
         f.rule === 'session/tool-error'
-          ? tools.length > 1
+          ? madeUp
+            ? `${lead}${tools.length > 1 ? `${who} answered` : `${f.tool} answered`} the made-up values with a tool error the model can read: ${said} With --call-everything that's the right answer; it says nothing about a call with real values.`
+            : tools.length > 1
             ? `${lead}${who} returned the same error: ${said} A call that fails tests less than it looks: the menu was checked after it, the tool's own work wasn't.`
             : `${lead}${f.tool} returned an error${many ? ', the same one each time' : ''}: ${said} A call that fails tests less than it looks: the menu was checked after it, the tool's own work wasn't.`
           : tools.length > 1
@@ -1183,14 +1212,19 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
     // timestamp in a description, rewritten at every call). A change that touches
     // anything more is a change of its own.
     const paths = a && b ? allDifferences(toolDefinition(a), toolDefinition(b)).map((d) => d.path).sort().join(',') : '';
+    // Only in fields the model doesn't read (a per-tool version hash, the @pipeworx
+    // servers): the cached prompt is untouched, so not an error about it.
+    const outside = a && b ? outsideModel([a], [b], changes.filter((c) => c.tool === tool)) : undefined;
     out.push({
       rule: 'session/edit',
-      severity: 'error',
+      severity: outside ? 'warn' : 'error',
       step,
       tool,
       cause: `${tool}|${fields.join(',')}|${paths}|${origin ?? ''}`,
       each: `step ${step}: position ${brk?.position ?? '?'} · ~${total.toLocaleString('en-US')} tokens (estimate)${seen[0] ? ` · ${seen[0]}` : ''}`,
-      message: `${tool}: ${fields.join(', ')} changed mid-session. Invalidates the cached prompt: the tool list and the conversation after it are processed again.`,
+      message: outside
+        ? `${tool}: ${outside.join(', ')} changed mid-session, ${outside.length === 1 ? 'a field' : 'fields'} clients keep to themselves: the model doesn't read ${outside.length === 1 ? 'it' : 'them'}, so the cached prompt isn't affected, but a client that compares tool lists sees the tool change.`
+        : `${tool}: ${fields.join(', ')} changed mid-session. Invalidates the cached prompt: the tool list and the conversation after it are processed again.`,
       detail: [...seen, ...cost, ...why],
       fix: origin === 'no tool call in between' ? `Make ${tool}'s definition the same on every tools/list: nothing built from the clock, a random value, or a set's order.` : `Keep ${tool}'s definition fixed for the session; if it has to change, change it between conversations.`,
     });
@@ -1834,3 +1868,38 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
   }
   return out;
 }
+
+/** session/output-schema: one finding for the run, every tool whose result broke its own outputSchema. */
+function outputFindings(list: { step: number; tool: string; problem: string; formatOnly: boolean }[]): Raw[] {
+  if (!list.length) return [];
+  const one = list.length === 1;
+  // Only format checks failed (a URI, a date): many validators skip format, so a warning.
+  const formatOnly = list.every((o) => o.formatOnly);
+  return [
+    {
+      rule: 'session/output-schema',
+      severity: formatOnly ? 'warn' : 'error',
+      step: list[0].step,
+      ...(one ? { tool: list[0].tool } : {}),
+      message: `${one ? `${list[0].tool}'s result` : `${list.length} tools' results`} broke ${one ? 'its' : 'their'} own outputSchema. A tool that declares one MUST return structuredContent that conforms (2025-06-18 and later), and the official SDK client checks: it raises an error where the tool answered.${formatOnly ? ' Only format checks failed (a URI, a date), which many validators skip, so a client may let it through.' : ''}`,
+      detail: list.map((o) => `${o.tool} (step ${o.step}): ${clip(o.problem, 200)}`),
+      fix: 'Return structuredContent that matches the outputSchema on every successful call, or drop the outputSchema from tools whose results vary.',
+    },
+  ];
+}
+
+/**
+ * --call-everything sends made-up values into a sandbox with no network, so a call
+ * that fails, or reaches no network, or none that got through, says how the tool met
+ * that input, not that the server is broken: info. What a result breaks whatever the
+ * input (its own outputSchema, resultType, an error not flagged as one) keeps its level.
+ */
+function madeUpInput(f: Raw): Raw {
+  const note = ' (--call-everything: made-up values, no network)';
+  // Offline, a "rate limit" is most often a network call that couldn't be made.
+  if (f.rule === 'session/step-failed' || f.rule === 'session/untested' || f.rule === 'session/rate-limited') return { ...f, severity: 'info', message: f.message + note };
+  // A server that stops answering after a call is worth knowing, but offline it may be waiting on the network.
+  if (f.rule === 'session/server-unresponsive' && f.severity === 'error') return { ...f, severity: 'warn', message: f.message + note };
+  return f;
+}
+

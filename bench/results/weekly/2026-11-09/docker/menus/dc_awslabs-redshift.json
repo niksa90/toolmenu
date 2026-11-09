@@ -1,0 +1,854 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "awslabs.redshift-mcp-server",
+    "version": "1.23.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:23:34.657Z",
+  "tools": [
+    {
+      "name": "list_clusters",
+      "description": "List all available Amazon Redshift clusters and serverless workgroups.\n\nThis tool discovers and returns information about all Redshift clusters and serverless workgroups\nin your AWS account, including their current status, connection details, and configuration.\n\n## Usage Requirements\n\n- Ensure your AWS credentials are properly configured (via AWS_PROFILE or default credentials).\n- Required IAM permissions: redshift:DescribeClusters, redshift-serverless:ListWorkgroups, redshift-serverless:GetWorkgroup.\n\n## Response Structure\n\nReturns a list of RedshiftCluster objects with the following structure:\n\n- identifier: Unique identifier for the cluster/workgroup.\n- type: Type of cluster (provisioned or serverless).\n- status: Current status of the cluster.\n- database_name: Default database name.\n- endpoint: Connection endpoint information.\n- port: Connection port.\n- vpc_id: VPC ID where the cluster resides.\n- node_type: Node type (for provisioned clusters).\n- number_of_nodes: Number of nodes (for provisioned clusters).\n- creation_time: When the cluster was created.\n- master_username: Master username for the cluster.\n- publicly_accessible: Whether the cluster is publicly accessible.\n- encrypted: Whether the cluster is encrypted.\n- tags: Tags associated with the cluster.\n\n## Usage Tips\n\n1. Use this tool to discover available Redshift instances before attempting connections.\n2. Note the cluster identifiers for use with other database tools.\n3. Check the status field to ensure clusters are 'available' before querying.\n4. Use the endpoint and port information for direct database connections if needed.\n5. Consider the cluster type (provisioned vs serverless) when planning your queries.\n\n## Interpretation Best Practices\n\n1. Filter results by status to find only available clusters.\n2. Use cluster identifiers as input for other Redshift tools.\n3. Consider cluster configuration (node type, encryption) for performance planning.\n4. Check tags for environment or team information to select appropriate clusters.\n",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_clusters_toolArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "RedshiftCluster": {
+            "description": "Information about a Redshift cluster or serverless workgroup.",
+            "properties": {
+              "identifier": {
+                "description": "Unique identifier for the cluster/workgroup",
+                "title": "Identifier",
+                "type": "string"
+              },
+              "type": {
+                "description": "Type of cluster (provisioned or serverless)",
+                "title": "Type",
+                "type": "string"
+              },
+              "status": {
+                "description": "Current status of the cluster",
+                "title": "Status",
+                "type": "string"
+              },
+              "database_name": {
+                "description": "Default database name",
+                "title": "Database Name",
+                "type": "string"
+              },
+              "endpoint": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Connection endpoint",
+                "title": "Endpoint"
+              },
+              "port": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Connection port",
+                "title": "Port"
+              },
+              "vpc_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "VPC ID where the cluster resides",
+                "title": "Vpc Id"
+              },
+              "node_type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Node type (provisioned only)",
+                "title": "Node Type"
+              },
+              "number_of_nodes": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Number of nodes (provisioned only)",
+                "title": "Number Of Nodes"
+              },
+              "creation_time": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "When the cluster was created",
+                "title": "Creation Time"
+              },
+              "master_username": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Master username for the cluster",
+                "title": "Master Username"
+              },
+              "publicly_accessible": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Whether publicly accessible",
+                "title": "Publicly Accessible"
+              },
+              "encrypted": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Whether the cluster is encrypted",
+                "title": "Encrypted"
+              },
+              "tags": {
+                "anyOf": [
+                  {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Tags associated with the cluster",
+                "title": "Tags"
+              }
+            },
+            "required": [
+              "identifier",
+              "type",
+              "status",
+              "database_name"
+            ],
+            "title": "RedshiftCluster",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/RedshiftCluster"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_clusters_toolOutput",
+        "type": "object"
+      },
+      "tokens": 461
+    },
+    {
+      "name": "list_databases",
+      "description": "List all databases in a specified Amazon Redshift cluster.\n\nThis tool queries the SVV_REDSHIFT_DATABASES system view to discover all databases\nthat the user has access to in the specified cluster, including local databases\nand databases created from datashares.\n\n## Usage Requirements\n\n- Ensure your AWS credentials are properly configured (via AWS_PROFILE or default credentials).\n- The cluster must be available and accessible.\n- Required IAM permissions: redshift-data:ExecuteStatement, redshift-data:DescribeStatement, redshift-data:GetStatementResult.\n- The user must have access to the specified database to query system views.\n\n## Parameters\n\n- cluster_identifier: The unique identifier of the Redshift cluster to query.\n                     IMPORTANT: Use a valid cluster identifier from the list_clusters tool.\n- database_name: The database to connect to for querying system views (defaults to 'dev').\n\n## Response Structure\n\nReturns a list of RedshiftDatabase objects with the following structure:\n\n- database_name: The name of the database.\n- database_owner: The database owner user ID.\n- database_type: The type of database (local or shared).\n- database_acl: Access control information (for internal use).\n- database_options: The properties of the database.\n- database_isolation_level: The isolation level (Snapshot Isolation or Serializable).\n\n## Usage Tips\n\n1. First use list_clusters to get valid cluster identifiers.\n2. Ensure the cluster status is 'available' before querying databases.\n3. Use the default database name unless you know a specific database exists.\n4. Note database types to understand if they are local or shared from datashares.\n\n## Interpretation Best Practices\n\n1. Focus on 'local' database types for cluster-native databases.\n2. 'shared' database types indicate databases from datashares.\n3. Use database names for subsequent schema and table discovery.\n4. Consider database isolation levels for transaction planning.\n",
+      "inputSchema": {
+        "properties": {
+          "cluster_identifier": {
+            "description": "The cluster identifier to query for databases. Must be a valid cluster identifier from the list_clusters tool.",
+            "title": "Cluster Identifier",
+            "type": "string"
+          },
+          "database_name": {
+            "default": "dev",
+            "description": "The database to connect to for querying system views. Defaults to \"dev\".",
+            "title": "Database Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cluster_identifier"
+        ],
+        "title": "list_databases_toolArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "RedshiftDatabase": {
+            "description": "Information about a database in a Redshift cluster.\n\nBased on the SVV_REDSHIFT_DATABASES system view.",
+            "properties": {
+              "database_name": {
+                "description": "The name of the database",
+                "title": "Database Name",
+                "type": "string"
+              },
+              "database_owner": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The database owner user ID",
+                "title": "Database Owner"
+              },
+              "database_type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The type of database (local or shared)",
+                "title": "Database Type"
+              },
+              "database_acl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Access control information (for internal use)",
+                "title": "Database Acl"
+              },
+              "database_options": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The properties of the database",
+                "title": "Database Options"
+              },
+              "database_isolation_level": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The isolation level of the database (Snapshot Isolation or Serializable)",
+                "title": "Database Isolation Level"
+              }
+            },
+            "required": [
+              "database_name"
+            ],
+            "title": "RedshiftDatabase",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/RedshiftDatabase"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_databases_toolOutput",
+        "type": "object"
+      },
+      "tokens": 519
+    },
+    {
+      "name": "list_schemas",
+      "description": "List all schemas in a specified database within a Redshift cluster.\n\nThis tool queries the SVV_ALL_SCHEMAS system view to discover all schemas\nthat the user has access to in the specified database, including local schemas,\nexternal schemas, and shared schemas from datashares.\n\n## Usage Requirements\n\n- Ensure your AWS credentials are properly configured (via AWS_PROFILE or default credentials).\n- The cluster must be available and accessible.\n- Required IAM permissions: redshift-data:ExecuteStatement, redshift-data:DescribeStatement, redshift-data:GetStatementResult.\n- The user must have access to the database to query system views.\n\n## Parameters\n\n- cluster_identifier: The unique identifier of the Redshift cluster to query.\n                     IMPORTANT: Use a valid cluster identifier from the list_clusters tool.\n- schema_database_name: The database name to list schemas for. Also used to connect to.\n                       IMPORTANT: Use a valid database name from the list_databases tool.\n\n## Response Structure\n\nReturns a list of RedshiftSchema objects with the following structure:\n\n- database_name: The name of the database where the schema exists.\n- schema_name: The name of the schema.\n- schema_owner: The user ID of the schema owner.\n- schema_type: The type of the schema (external, local, or shared).\n- schema_acl: The permissions for the specified user or user group for the schema.\n- source_database: The name of the source database for external schema.\n- schema_option: The options of the schema (external schema attribute).\n\n## Usage Tips\n\n1. First use list_clusters to get valid cluster identifiers.\n2. Then use list_databases to get valid database names for the cluster.\n3. Ensure the cluster status is 'available' before querying schemas.\n4. Note schema types to understand if they are local, external, or shared.\n5. External schemas connect to external data sources like S3 or other databases.\n\n## Interpretation Best Practices\n\n1. Focus on 'local' schema types for cluster-native schemas.\n2. 'external' schema types indicate connections to external data sources.\n3. 'shared' schema types indicate schemas from datashares.\n4. Use schema names for subsequent table and column discovery.\n5. Consider schema permissions (schema_acl) for access planning.\n",
+      "inputSchema": {
+        "properties": {
+          "cluster_identifier": {
+            "description": "The cluster identifier to query for schemas. Must be a valid cluster identifier from the list_clusters tool.",
+            "title": "Cluster Identifier",
+            "type": "string"
+          },
+          "schema_database_name": {
+            "description": "The database name to list schemas for. Also used to connect to. Must be a valid database name from the list_databases tool.",
+            "title": "Schema Database Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cluster_identifier",
+          "schema_database_name"
+        ],
+        "title": "list_schemas_toolArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "RedshiftSchema": {
+            "description": "Information about a schema in a Redshift database.\n\nBased on the SVV_ALL_SCHEMAS system view.",
+            "properties": {
+              "database_name": {
+                "description": "The name of the database where the schema exists",
+                "title": "Database Name",
+                "type": "string"
+              },
+              "schema_name": {
+                "description": "The name of the schema",
+                "title": "Schema Name",
+                "type": "string"
+              },
+              "schema_owner": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The user ID of the schema owner",
+                "title": "Schema Owner"
+              },
+              "schema_type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The type of the schema (external, local, or shared)",
+                "title": "Schema Type"
+              },
+              "schema_acl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The permissions for the specified user or user group for the schema",
+                "title": "Schema Acl"
+              },
+              "source_database": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The name of the source database for external schema",
+                "title": "Source Database"
+              },
+              "schema_option": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The options of the schema (external schema attribute)",
+                "title": "Schema Option"
+              }
+            },
+            "required": [
+              "database_name",
+              "schema_name"
+            ],
+            "title": "RedshiftSchema",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/RedshiftSchema"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_schemas_toolOutput",
+        "type": "object"
+      },
+      "tokens": 614
+    },
+    {
+      "name": "list_tables",
+      "description": "List all tables in a specified schema within a Redshift database.\n\nThis tool queries the SVV_ALL_TABLES system view to discover all tables\nthat the user has access to in the specified schema, including base tables,\nviews, external tables, and shared tables.\n\n## Usage Requirements\n\n- Ensure your AWS credentials are properly configured (via AWS_PROFILE or default credentials).\n- The cluster must be available and accessible.\n- Required IAM permissions: redshift-data:ExecuteStatement, redshift-data:DescribeStatement, redshift-data:GetStatementResult.\n- The user must have access to the database to query system views.\n\n## Parameters\n\n- cluster_identifier: The unique identifier of the Redshift cluster to query.\n                     IMPORTANT: Use a valid cluster identifier from the list_clusters tool.\n- table_database_name: The database name to list tables for.\n                      IMPORTANT: Use a valid database name from the list_databases tool.\n- table_schema_name: The schema name to list tables for.\n                    IMPORTANT: Use a valid schema name from the list_schemas tool.\n\n## Response Structure\n\nReturns a list of RedshiftTable objects with the following structure:\n\n- database_name: The name of the database where the table exists.\n- schema_name: The schema name for the table.\n- table_name: The name of the table.\n- table_acl: The permissions for the specified user or user group for the table.\n- table_type: The type of the table (views, base tables, external tables, shared tables).\n- remarks: Remarks about the table.\n\n## Usage Tips\n\n1. First use list_clusters to get valid cluster identifiers.\n2. Then use list_databases to get valid database names for the cluster.\n3. Then use list_schemas to get valid schema names for the database.\n4. Ensure the cluster status is 'available' before querying tables.\n5. Note table types to understand if they are base tables, views, external tables, or shared tables.\n\n## Interpretation Best Practices\n\n1. Focus on 'TABLE' table types for regular database tables.\n2. 'VIEW' table types indicate database views.\n3. 'EXTERNAL TABLE' types indicate connections to external data sources.\n4. 'SHARED TABLE' types indicate tables from datashares.\n5. Use table names for subsequent column discovery and query operations.\n6. Consider table permissions (table_acl) for access planning.\n",
+      "inputSchema": {
+        "properties": {
+          "cluster_identifier": {
+            "description": "The cluster identifier to query for tables. Must be a valid cluster identifier from the list_clusters tool.",
+            "title": "Cluster Identifier",
+            "type": "string"
+          },
+          "table_database_name": {
+            "description": "The database name to list tables for. Must be a valid database name from the list_databases tool.",
+            "title": "Table Database Name",
+            "type": "string"
+          },
+          "table_schema_name": {
+            "description": "The schema name to list tables for. Also used to connect to. Must be a valid schema name from the list_schemas tool.",
+            "title": "Table Schema Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cluster_identifier",
+          "table_database_name",
+          "table_schema_name"
+        ],
+        "title": "list_tables_toolArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "RedshiftTable": {
+            "description": "Information about a table in a Redshift database.\n\nBased on the SVV_ALL_TABLES system view.",
+            "properties": {
+              "database_name": {
+                "description": "The name of the database where the table exists",
+                "title": "Database Name",
+                "type": "string"
+              },
+              "schema_name": {
+                "description": "The schema name for the table",
+                "title": "Schema Name",
+                "type": "string"
+              },
+              "table_name": {
+                "description": "The name of the table",
+                "title": "Table Name",
+                "type": "string"
+              },
+              "table_acl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The permissions for the specified user or user group for the table",
+                "title": "Table Acl"
+              },
+              "table_type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The type of the table (views, base tables, external tables, shared tables)",
+                "title": "Table Type"
+              },
+              "remarks": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Remarks about the table",
+                "title": "Remarks"
+              }
+            },
+            "required": [
+              "database_name",
+              "schema_name",
+              "table_name"
+            ],
+            "title": "RedshiftTable",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/RedshiftTable"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_tables_toolOutput",
+        "type": "object"
+      },
+      "tokens": 677
+    },
+    {
+      "name": "list_columns",
+      "description": "List all columns in a specified table within a Redshift schema.\n\nThis tool queries the SVV_ALL_COLUMNS system view to discover all columns\nthat the user has access to in the specified table, including detailed information\nabout data types, constraints, and column properties.\n\n## Usage Requirements\n\n- Ensure your AWS credentials are properly configured (via AWS_PROFILE or default credentials).\n- The cluster must be available and accessible.\n- Required IAM permissions: redshift-data:ExecuteStatement, redshift-data:DescribeStatement, redshift-data:GetStatementResult.\n- The user must have access to the database to query system views.\n\n## Parameters\n\n- cluster_identifier: The unique identifier of the Redshift cluster to query.\n                     IMPORTANT: Use a valid cluster identifier from the list_clusters tool.\n- column_database_name: The database name to list columns for.\n                       IMPORTANT: Use a valid database name from the list_databases tool.\n- column_schema_name: The schema name to list columns for.\n                     IMPORTANT: Use a valid schema name from the list_schemas tool.\n- column_table_name: The table name to list columns for.\n                    IMPORTANT: Use a valid table name from the list_tables tool.\n\n## Response Structure\n\nReturns a list of RedshiftColumn objects with the following structure:\n\n- database_name: The name of the database.\n- schema_name: The name of the schema.\n- table_name: The name of the table.\n- column_name: The name of the column.\n- ordinal_position: The position of the column in the table.\n- column_default: The default value of the column.\n- is_nullable: Whether the column is nullable (yes or no).\n- data_type: The data type of the column.\n- character_maximum_length: The maximum number of characters in the column.\n- numeric_precision: The numeric precision.\n- numeric_scale: The numeric scale.\n- remarks: Remarks about the column.\n\n## Usage Tips\n\n1. First use list_clusters to get valid cluster identifiers.\n2. Then use list_databases to get valid database names for the cluster.\n3. Then use list_schemas to get valid schema names for the database.\n4. Then use list_tables to get valid table names for the schema.\n5. Ensure the cluster status is 'available' before querying columns.\n6. Note data types and constraints for query planning and data validation.\n\n## Interpretation Best Practices\n\n1. Use ordinal_position to understand column order in the table.\n2. Check is_nullable for required vs optional fields.\n3. Use data_type information for proper data handling in queries.\n4. Consider character_maximum_length for string field validation.\n5. Use numeric_precision and numeric_scale for numeric field handling.\n6. Use column names for SELECT statements and query construction.\n",
+      "inputSchema": {
+        "properties": {
+          "cluster_identifier": {
+            "description": "The cluster identifier to query for columns. Must be a valid cluster identifier from the list_clusters tool.",
+            "title": "Cluster Identifier",
+            "type": "string"
+          },
+          "column_database_name": {
+            "description": "The database name to list columns for. Must be a valid database name from the list_databases tool.",
+            "title": "Column Database Name",
+            "type": "string"
+          },
+          "column_schema_name": {
+            "description": "The schema name to list columns for. Must be a valid schema name from the list_schemas tool.",
+            "title": "Column Schema Name",
+            "type": "string"
+          },
+          "column_table_name": {
+            "description": "The table name to list columns for. Must be a valid table name from the list_tables tool.",
+            "title": "Column Table Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cluster_identifier",
+          "column_database_name",
+          "column_schema_name",
+          "column_table_name"
+        ],
+        "title": "list_columns_toolArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "RedshiftColumn": {
+            "description": "Information about a column in a Redshift table.\n\nBased on the SVV_ALL_COLUMNS system view.",
+            "properties": {
+              "database_name": {
+                "description": "The name of the database",
+                "title": "Database Name",
+                "type": "string"
+              },
+              "schema_name": {
+                "description": "The name of the schema",
+                "title": "Schema Name",
+                "type": "string"
+              },
+              "table_name": {
+                "description": "The name of the table",
+                "title": "Table Name",
+                "type": "string"
+              },
+              "column_name": {
+                "description": "The name of the column",
+                "title": "Column Name",
+                "type": "string"
+              },
+              "ordinal_position": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The position of the column in the table",
+                "title": "Ordinal Position"
+              },
+              "column_default": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The default value of the column",
+                "title": "Column Default"
+              },
+              "is_nullable": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Whether the column is nullable (yes or no)",
+                "title": "Is Nullable"
+              },
+              "data_type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The data type of the column",
+                "title": "Data Type"
+              },
+              "character_maximum_length": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The maximum number of characters in the column",
+                "title": "Character Maximum Length"
+              },
+              "numeric_precision": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The numeric precision",
+                "title": "Numeric Precision"
+              },
+              "numeric_scale": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "The numeric scale",
+                "title": "Numeric Scale"
+              },
+              "remarks": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Remarks about the column",
+                "title": "Remarks"
+              }
+            },
+            "required": [
+              "database_name",
+              "schema_name",
+              "table_name",
+              "column_name"
+            ],
+            "title": "RedshiftColumn",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/RedshiftColumn"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_columns_toolOutput",
+        "type": "object"
+      },
+      "tokens": 794
+    },
+    {
+      "name": "execute_query",
+      "description": "Execute a SQL query against a Redshift cluster or serverless workgroup.\n\nThis tool uses the Redshift Data API to execute SQL queries and return results.\nIt supports both provisioned clusters and serverless workgroups, and handles\nvarious data types in the result set.\n\n## Usage Requirements\n\n- Ensure your AWS credentials are properly configured (via AWS_PROFILE or default credentials).\n- The cluster must be available and accessible.\n- Required IAM permissions: redshift-data:ExecuteStatement, redshift-data:DescribeStatement, redshift-data:GetStatementResult.\n- The user must have appropriate permissions to execute queries in the specified database.\n\n## Parameters\n\n- cluster_identifier: The unique identifier of the Redshift cluster to query.\n                     IMPORTANT: Use a valid cluster identifier from the list_clusters tool.\n- database_name: The database name to execute the query against.\n                IMPORTANT: Use a valid database name from the list_databases tool.\n- sql: The SQL statement to execute. Should be a single SQL statement.\n\n## Response Structure\n\nReturns a QueryResult object with the following structure:\n\n- columns: List of column names in the result set.\n- rows: List of rows, where each row is a list of values.\n- row_count: Number of rows returned.\n- execution_time_ms: Query execution time in milliseconds.\n- query_id: Unique identifier for the query execution.\n\n## Usage Tips\n\n1. First use list_clusters to get valid cluster identifiers.\n2. Then use list_databases to get valid database names for the cluster.\n3. Ensure the cluster status is 'available' before executing queries.\n4. Use LIMIT clauses for exploratory queries to avoid large result sets.\n5. Consider using the metadata discovery tools to understand table structures before querying.\n\n## Data Type Handling\n\nThe tool automatically handles various Redshift data types:\n- String values (VARCHAR, CHAR, TEXT).\n- Numeric values (INTEGER, BIGINT, DECIMAL, FLOAT).\n- Boolean values.\n- NULL values.\n- Date and timestamp values (returned as strings).\n\n## Security Considerations\n\n- Avoid dynamic SQL construction with user input.\n- Consider database object permissions.\n- Queries run in read-only mode and must be a single statement; writes and\n  multi-statement submissions are rejected.\n",
+      "inputSchema": {
+        "properties": {
+          "cluster_identifier": {
+            "description": "The cluster identifier to execute the query on. Must be a valid cluster identifier from the list_clusters tool.",
+            "title": "Cluster Identifier",
+            "type": "string"
+          },
+          "database_name": {
+            "description": "The database name to execute the query against. Must be a valid database name from the list_databases tool.",
+            "title": "Database Name",
+            "type": "string"
+          },
+          "sql": {
+            "description": "The SQL statement to execute. Should be a single SQL statement.",
+            "title": "Sql",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cluster_identifier",
+          "database_name",
+          "sql"
+        ],
+        "title": "execute_query_toolArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "description": "Result of a SQL query execution.",
+        "properties": {
+          "columns": {
+            "description": "List of column names in the result set",
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "rows": {
+            "description": "List of rows, where each row is a list of values",
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "row_count": {
+            "description": "Number of rows returned",
+            "title": "Row Count",
+            "type": "integer"
+          },
+          "execution_time_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Query execution time in milliseconds",
+            "title": "Execution Time Ms"
+          },
+          "query_id": {
+            "description": "Unique identifier for the query execution",
+            "title": "Query Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "columns",
+          "rows",
+          "row_count",
+          "query_id"
+        ],
+        "title": "QueryResult",
+        "type": "object"
+      },
+      "tokens": 632
+    }
+  ],
+  "totalTokens": 3697,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

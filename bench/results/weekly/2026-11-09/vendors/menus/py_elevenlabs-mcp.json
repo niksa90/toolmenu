@@ -1,0 +1,4747 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "ElevenLabs",
+    "version": "1.30.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:39:15.115Z",
+  "tools": [
+    {
+      "name": "text_to_speech",
+      "description": "Convert text to speech with a given voice. Saves output file to directory (default: $HOME/Desktop).\n    \n    Only one of voice_id or voice_name can be provided. If none are provided, the default voice will be used.\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n\n     Args:\n        text (str): The text to convert to speech.\n        voice_name (str, optional): The name of the voice to use.\n        model_id (str, optional): The model ID to use for speech synthesis. Options include:\n            - eleven_v3: High quality model with most expressive voices\n            - eleven_multilingual_v2: High quality multilingual model (29 languages)\n            - eleven_flash_v2_5: Fastest model with ultra-low latency (32 languages)\n            - eleven_turbo_v2_5: Balanced quality and speed (32 languages)\n            - eleven_flash_v2: Fast English-only model\n            - eleven_turbo_v2: Balanced English-only model\n            Defaults to eleven_multilingual_v2 or environment variable ELEVENLABS_MODEL_ID.\n        stability (float, optional): Stability of the generated audio. Determines how stable the voice is and the randomness between each generation. Lower values introduce broader emotional range for the voice. Higher values can result in a monotonous voice with limited emotion. Range is 0 to 1.\n        similarity_boost (float, optional): Similarity boost of the generated audio. Determines how closely the AI should adhere to the original voice when attempting to replicate it. Range is 0 to 1.\n        style (float, optional): Style of the generated audio. Determines the style exaggeration of the voice. This setting attempts to amplify the style of the original speaker. It does consume additional computational resources and might increase latency if set to anything other than 0. Range is 0 to 1.\n        use_speaker_boost (bool, optional): Use speaker boost of the generated audio. This setting boosts the similarity to the original speaker. Using this setting requires a slightly higher computational load, which in turn increases latency.\n        speed (float, optional): Speed of the generated audio. Controls the speed of the generated speech. Values range from 0.7 to 1.2, with 1.0 being the default speed. Lower values create slower, more deliberate speech while higher values produce faster-paced speech. Extreme values can impact the quality of the generated speech. Range is 0.7 to 1.2.\n        output_directory (str, optional): Directory where files should be saved (only used when saving files).\n            Defaults to $HOME/Desktop if not provided.\n        language: ISO 639-1 language code for the voice.\n        output_format (str, optional): Output format of the generated audio. Formatted as codec_sample_rate_bitrate. So an mp3 with 22.05kHz sample rate at 32kbs is represented as mp3_22050_32. MP3 with 192kbps bitrate requires you to be subscribed to Creator tier or above. PCM with 44.1kHz sample rate requires you to be subscribed to Pro tier or above. Note that the μ-law format (sometimes written mu-law, often approximated as u-law) is commonly used for Twilio audio inputs.\n            Defaults to \"mp3_44100_128\". Must be one of:\n            mp3_22050_32\n            mp3_44100_32\n            mp3_44100_64\n            mp3_44100_96\n            mp3_44100_128\n            mp3_44100_192\n            pcm_8000\n            pcm_16000\n            pcm_22050\n            pcm_24000\n            pcm_44100\n            ulaw_8000\n            alaw_8000\n            opus_48000_32\n            opus_48000_64\n            opus_48000_96\n            opus_48000_128\n            opus_48000_192\n\n    Returns:\n        Text content with file path or MCP resource with audio data, depending on output mode.\n    ",
+      "inputSchema": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "voice_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Voice Name"
+          },
+          "output_directory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Directory"
+          },
+          "voice_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Voice Id"
+          },
+          "stability": {
+            "default": 0.5,
+            "title": "Stability",
+            "type": "number"
+          },
+          "similarity_boost": {
+            "default": 0.75,
+            "title": "Similarity Boost",
+            "type": "number"
+          },
+          "style": {
+            "default": 0,
+            "title": "Style",
+            "type": "number"
+          },
+          "use_speaker_boost": {
+            "default": true,
+            "title": "Use Speaker Boost",
+            "type": "boolean"
+          },
+          "speed": {
+            "default": 1,
+            "title": "Speed",
+            "type": "number"
+          },
+          "language": {
+            "default": "en",
+            "title": "Language",
+            "type": "string"
+          },
+          "output_format": {
+            "default": "mp3_44100_128",
+            "title": "Output Format",
+            "type": "string"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Model Id"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "text_to_speechArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          },
+          "BlobResourceContents": {
+            "additionalProperties": true,
+            "description": "Binary contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "blob": {
+                "title": "Blob",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "blob"
+            ],
+            "title": "BlobResourceContents",
+            "type": "object"
+          },
+          "EmbeddedResource": {
+            "additionalProperties": true,
+            "description": "The contents of a resource, embedded into a prompt or tool call result.\n\nIt is up to the client how best to render embedded resources for the benefit\nof the LLM and/or the user.",
+            "properties": {
+              "type": {
+                "const": "resource",
+                "title": "Type",
+                "type": "string"
+              },
+              "resource": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/TextResourceContents"
+                  },
+                  {
+                    "$ref": "#/$defs/BlobResourceContents"
+                  }
+                ],
+                "title": "Resource"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "resource"
+            ],
+            "title": "EmbeddedResource",
+            "type": "object"
+          },
+          "TextContent": {
+            "additionalProperties": true,
+            "description": "Text content for a message.",
+            "properties": {
+              "type": {
+                "const": "text",
+                "title": "Type",
+                "type": "string"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "text"
+            ],
+            "title": "TextContent",
+            "type": "object"
+          },
+          "TextResourceContents": {
+            "additionalProperties": true,
+            "description": "Text contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "text"
+            ],
+            "title": "TextResourceContents",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextContent"
+              },
+              {
+                "$ref": "#/$defs/EmbeddedResource"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "text_to_speechOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 1176
+    },
+    {
+      "name": "speech_to_text",
+      "description": "Transcribe speech from an audio file. When save_transcript_to_file=True: Saves output file to directory (default: $HOME/Desktop). When return_transcript_to_client_directly=True, always returns text directly regardless of output mode.\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n\n    Args:\n        file_path: Path to the audio file to transcribe\n        language_code: ISO 639-3 language code for transcription. If not provided, the language will be detected automatically.\n        diarize: Whether to diarize the audio file. If True, which speaker is currently speaking will be annotated in the transcription.\n        save_transcript_to_file: Whether to save the transcript to a file.\n        return_transcript_to_client_directly: Whether to return the transcript to the client directly.\n        output_directory: Directory where files should be saved (only used when saving files).\n            Defaults to $HOME/Desktop if not provided.\n\n    Returns:\n        TextContent containing the transcription or MCP resource with transcript data.\n    ",
+      "inputSchema": {
+        "properties": {
+          "input_file_path": {
+            "title": "Input File Path",
+            "type": "string"
+          },
+          "language_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Language Code"
+          },
+          "diarize": {
+            "default": false,
+            "title": "Diarize",
+            "type": "boolean"
+          },
+          "save_transcript_to_file": {
+            "default": true,
+            "title": "Save Transcript To File",
+            "type": "boolean"
+          },
+          "return_transcript_to_client_directly": {
+            "default": false,
+            "title": "Return Transcript To Client Directly",
+            "type": "boolean"
+          },
+          "output_directory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Directory"
+          }
+        },
+        "required": [
+          "input_file_path"
+        ],
+        "title": "speech_to_textArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          },
+          "BlobResourceContents": {
+            "additionalProperties": true,
+            "description": "Binary contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "blob": {
+                "title": "Blob",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "blob"
+            ],
+            "title": "BlobResourceContents",
+            "type": "object"
+          },
+          "EmbeddedResource": {
+            "additionalProperties": true,
+            "description": "The contents of a resource, embedded into a prompt or tool call result.\n\nIt is up to the client how best to render embedded resources for the benefit\nof the LLM and/or the user.",
+            "properties": {
+              "type": {
+                "const": "resource",
+                "title": "Type",
+                "type": "string"
+              },
+              "resource": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/TextResourceContents"
+                  },
+                  {
+                    "$ref": "#/$defs/BlobResourceContents"
+                  }
+                ],
+                "title": "Resource"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "resource"
+            ],
+            "title": "EmbeddedResource",
+            "type": "object"
+          },
+          "TextContent": {
+            "additionalProperties": true,
+            "description": "Text content for a message.",
+            "properties": {
+              "type": {
+                "const": "text",
+                "title": "Type",
+                "type": "string"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "text"
+            ],
+            "title": "TextContent",
+            "type": "object"
+          },
+          "TextResourceContents": {
+            "additionalProperties": true,
+            "description": "Text contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "text"
+            ],
+            "title": "TextResourceContents",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextContent"
+              },
+              {
+                "$ref": "#/$defs/EmbeddedResource"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "speech_to_textOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 405
+    },
+    {
+      "name": "text_to_sound_effects",
+      "description": "Convert text description of a sound effect to sound effect with a given duration. Saves output file to directory (default: $HOME/Desktop).\n    \n    Duration must be between 0.5 and 5 seconds.\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n\n    Args:\n        text: Text description of the sound effect\n        duration_seconds: Duration of the sound effect in seconds\n        output_directory: Directory where files should be saved (only used when saving files).\n            Defaults to $HOME/Desktop if not provided.\n        loop: Whether to loop the sound effect. Defaults to False.\n        output_format (str, optional): Output format of the generated audio. Formatted as codec_sample_rate_bitrate. So an mp3 with 22.05kHz sample rate at 32kbs is represented as mp3_22050_32. MP3 with 192kbps bitrate requires you to be subscribed to Creator tier or above. PCM with 44.1kHz sample rate requires you to be subscribed to Pro tier or above. Note that the μ-law format (sometimes written mu-law, often approximated as u-law) is commonly used for Twilio audio inputs.\n            Defaults to \"mp3_44100_128\". Must be one of:\n            mp3_22050_32\n            mp3_44100_32\n            mp3_44100_64\n            mp3_44100_96\n            mp3_44100_128\n            mp3_44100_192\n            pcm_8000\n            pcm_16000\n            pcm_22050\n            pcm_24000\n            pcm_44100\n            ulaw_8000\n            alaw_8000\n            opus_48000_32\n            opus_48000_64\n            opus_48000_96\n            opus_48000_128\n            opus_48000_192\n    ",
+      "inputSchema": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "duration_seconds": {
+            "default": 2,
+            "title": "Duration Seconds",
+            "type": "number"
+          },
+          "output_directory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Directory"
+          },
+          "output_format": {
+            "default": "mp3_44100_128",
+            "title": "Output Format",
+            "type": "string"
+          },
+          "loop": {
+            "default": false,
+            "title": "Loop",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "text_to_sound_effectsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          },
+          "BlobResourceContents": {
+            "additionalProperties": true,
+            "description": "Binary contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "blob": {
+                "title": "Blob",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "blob"
+            ],
+            "title": "BlobResourceContents",
+            "type": "object"
+          },
+          "EmbeddedResource": {
+            "additionalProperties": true,
+            "description": "The contents of a resource, embedded into a prompt or tool call result.\n\nIt is up to the client how best to render embedded resources for the benefit\nof the LLM and/or the user.",
+            "properties": {
+              "type": {
+                "const": "resource",
+                "title": "Type",
+                "type": "string"
+              },
+              "resource": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/TextResourceContents"
+                  },
+                  {
+                    "$ref": "#/$defs/BlobResourceContents"
+                  }
+                ],
+                "title": "Resource"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "resource"
+            ],
+            "title": "EmbeddedResource",
+            "type": "object"
+          },
+          "TextContent": {
+            "additionalProperties": true,
+            "description": "Text content for a message.",
+            "properties": {
+              "type": {
+                "const": "text",
+                "title": "Type",
+                "type": "string"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "text"
+            ],
+            "title": "TextContent",
+            "type": "object"
+          },
+          "TextResourceContents": {
+            "additionalProperties": true,
+            "description": "Text contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "text"
+            ],
+            "title": "TextResourceContents",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextContent"
+              },
+              {
+                "$ref": "#/$defs/EmbeddedResource"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "text_to_sound_effectsOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 556
+    },
+    {
+      "name": "search_voices",
+      "description": "\n    Search for existing voices, a voice that has already been added to the user's ElevenLabs voice library.\n    Searches in name, description, labels and category.\n\n    Args:\n        search: Search term to filter voices by. Searches in name, description, labels and category.\n        sort: Which field to sort by. `created_at_unix` might not be available for older voices.\n        sort_direction: Sort order, either ascending or descending.\n\n    Returns:\n        List of voices that match the search criteria.\n    ",
+      "inputSchema": {
+        "properties": {
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Search"
+          },
+          "sort": {
+            "default": "name",
+            "enum": [
+              "created_at_unix",
+              "name"
+            ],
+            "title": "Sort",
+            "type": "string"
+          },
+          "sort_direction": {
+            "default": "desc",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "title": "Sort Direction",
+            "type": "string"
+          }
+        },
+        "title": "search_voicesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "McpVoice": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "category": {
+                "title": "Category",
+                "type": "string"
+              },
+              "fine_tuning_status": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Fine Tuning Status"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "category"
+            ],
+            "title": "McpVoice",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/McpVoice"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_voicesOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 215
+    },
+    {
+      "name": "list_models",
+      "description": "List all available models",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_modelsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "McpLanguage": {
+            "properties": {
+              "language_id": {
+                "title": "Language Id",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              }
+            },
+            "required": [
+              "language_id",
+              "name"
+            ],
+            "title": "McpLanguage",
+            "type": "object"
+          },
+          "McpModel": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "languages": {
+                "items": {
+                  "$ref": "#/$defs/McpLanguage"
+                },
+                "title": "Languages",
+                "type": "array"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "languages"
+            ],
+            "title": "McpModel",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/McpModel"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_modelsOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 30
+    },
+    {
+      "name": "get_voice",
+      "description": "Get details of a specific voice",
+      "inputSchema": {
+        "properties": {
+          "voice_id": {
+            "title": "Voice Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "voice_id"
+        ],
+        "title": "get_voiceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "fine_tuning_status": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fine Tuning Status"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category"
+        ],
+        "title": "McpVoice",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 49
+    },
+    {
+      "name": "voice_clone",
+      "description": "Create an instant voice clone of a voice using provided audio files.\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n    ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          }
+        },
+        "required": [
+          "name",
+          "files"
+        ],
+        "title": "voice_cloneArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 131
+    },
+    {
+      "name": "isolate_audio",
+      "description": "Isolate audio from a file. Saves output file to directory (default: $HOME/Desktop).\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n    ",
+      "inputSchema": {
+        "properties": {
+          "input_file_path": {
+            "title": "Input File Path",
+            "type": "string"
+          },
+          "output_directory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Directory"
+          }
+        },
+        "required": [
+          "input_file_path"
+        ],
+        "title": "isolate_audioArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          },
+          "BlobResourceContents": {
+            "additionalProperties": true,
+            "description": "Binary contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "blob": {
+                "title": "Blob",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "blob"
+            ],
+            "title": "BlobResourceContents",
+            "type": "object"
+          },
+          "EmbeddedResource": {
+            "additionalProperties": true,
+            "description": "The contents of a resource, embedded into a prompt or tool call result.\n\nIt is up to the client how best to render embedded resources for the benefit\nof the LLM and/or the user.",
+            "properties": {
+              "type": {
+                "const": "resource",
+                "title": "Type",
+                "type": "string"
+              },
+              "resource": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/TextResourceContents"
+                  },
+                  {
+                    "$ref": "#/$defs/BlobResourceContents"
+                  }
+                ],
+                "title": "Resource"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "resource"
+            ],
+            "title": "EmbeddedResource",
+            "type": "object"
+          },
+          "TextContent": {
+            "additionalProperties": true,
+            "description": "Text content for a message.",
+            "properties": {
+              "type": {
+                "const": "text",
+                "title": "Type",
+                "type": "string"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "text"
+            ],
+            "title": "TextContent",
+            "type": "object"
+          },
+          "TextResourceContents": {
+            "additionalProperties": true,
+            "description": "Text contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "text"
+            ],
+            "title": "TextResourceContents",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextContent"
+              },
+              {
+                "$ref": "#/$defs/EmbeddedResource"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "isolate_audioOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 127
+    },
+    {
+      "name": "check_subscription",
+      "description": "Check the current subscription status. Could be used to measure the usage of the API.",
+      "inputSchema": {
+        "properties": {},
+        "title": "check_subscriptionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 42
+    },
+    {
+      "name": "create_agent",
+      "description": "Create a conversational AI agent with custom configuration.\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n\n    Args:\n        name: Name of the agent\n        first_message: First message the agent will say i.e. \"Hi, how can I help you today?\"\n        system_prompt: System prompt for the agent\n        voice_id: ID of the voice to use for the agent\n        language: ISO 639-1 language code for the agent\n        llm: LLM to use for the agent\n        temperature: Temperature for the agent. The lower the temperature, the more deterministic the agent's responses will be. Range is 0 to 1.\n        max_tokens: Maximum number of tokens to generate.\n        asr_quality: Quality of the ASR. `high` or `low`.\n        model_id: ID of the ElevenLabs model to use for the agent.\n        optimize_streaming_latency: Optimize streaming latency. Range is 0 to 4.\n        stability: Stability for the agent. Range is 0 to 1.\n        similarity_boost: Similarity boost for the agent. Range is 0 to 1.\n        turn_timeout: Timeout for the agent to respond in seconds. Defaults to 7 seconds.\n        max_duration_seconds: Maximum duration of a conversation in seconds. Defaults to 600 seconds (10 minutes).\n        record_voice: Whether to record the agent's voice.\n        retention_days: Number of days to retain the agent's data.\n    ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "first_message": {
+            "title": "First Message",
+            "type": "string"
+          },
+          "system_prompt": {
+            "title": "System Prompt",
+            "type": "string"
+          },
+          "voice_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "cgSgspJ2msm6clMCkdW9",
+            "title": "Voice Id"
+          },
+          "language": {
+            "default": "en",
+            "title": "Language",
+            "type": "string"
+          },
+          "llm": {
+            "default": "gemini-2.0-flash-001",
+            "title": "Llm",
+            "type": "string"
+          },
+          "temperature": {
+            "default": 0.5,
+            "title": "Temperature",
+            "type": "number"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Max Tokens"
+          },
+          "asr_quality": {
+            "default": "high",
+            "title": "Asr Quality",
+            "type": "string"
+          },
+          "model_id": {
+            "default": "eleven_turbo_v2",
+            "title": "Model Id",
+            "type": "string"
+          },
+          "optimize_streaming_latency": {
+            "default": 3,
+            "title": "Optimize Streaming Latency",
+            "type": "integer"
+          },
+          "stability": {
+            "default": 0.5,
+            "title": "Stability",
+            "type": "number"
+          },
+          "similarity_boost": {
+            "default": 0.8,
+            "title": "Similarity Boost",
+            "type": "number"
+          },
+          "turn_timeout": {
+            "default": 7,
+            "title": "Turn Timeout",
+            "type": "integer"
+          },
+          "max_duration_seconds": {
+            "default": 300,
+            "title": "Max Duration Seconds",
+            "type": "integer"
+          },
+          "record_voice": {
+            "default": true,
+            "title": "Record Voice",
+            "type": "boolean"
+          },
+          "retention_days": {
+            "default": 730,
+            "title": "Retention Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "first_message",
+          "system_prompt"
+        ],
+        "title": "create_agentArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 709
+    },
+    {
+      "name": "add_knowledge_base_to_agent",
+      "description": "Add a knowledge base to ElevenLabs workspace. Allowed types are epub, pdf, docx, txt, html.\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n\n    Args:\n        agent_id: ID of the agent to add the knowledge base to.\n        knowledge_base_name: Name of the knowledge base.\n        url: URL of the knowledge base.\n        input_file_path: Path to the file to add to the knowledge base.\n        text: Text to add to the knowledge base.\n    ",
+      "inputSchema": {
+        "properties": {
+          "agent_id": {
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "knowledge_base_name": {
+            "title": "Knowledge Base Name",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "input_file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Input File Path"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Text"
+          }
+        },
+        "required": [
+          "agent_id",
+          "knowledge_base_name"
+        ],
+        "title": "add_knowledge_base_to_agentArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 275
+    },
+    {
+      "name": "list_agents",
+      "description": "List all available conversational AI agents",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_agentsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 32
+    },
+    {
+      "name": "get_agent",
+      "description": "Get details about a specific conversational AI agent",
+      "inputSchema": {
+        "properties": {
+          "agent_id": {
+            "title": "Agent Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_id"
+        ],
+        "title": "get_agentArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 51
+    },
+    {
+      "name": "get_conversation",
+      "description": "Gets conversation with transcript. Returns: conversation details and full transcript. Use when: analyzing completed agent conversations.\n\n    Args:\n        conversation_id: The unique identifier of the conversation to retrieve, you can get the ids from the list_conversations tool.\n    ",
+      "inputSchema": {
+        "properties": {
+          "conversation_id": {
+            "title": "Conversation Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversation_id"
+        ],
+        "title": "get_conversationArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 99
+    },
+    {
+      "name": "simulate_conversation",
+      "description": "Simulate a text conversation between a conversational AI agent and a\n    simulated user. Runs the full conversation and returns the transcript plus analysis.\n\n    Use this to test agent behaviour, evaluate prompts, and catch failure modes without\n    a live call. The simulated user follows the persona you describe.\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs.\n    Only use when explicitly requested by the user.\n\n    Args:\n        agent_id: ID of the agent to test. Use list_agents to find IDs.\n        simulated_user_prompt: Instructions for how the simulated user should behave.\n            Example: \"You are a frustrated customer who cannot find the cancel button.\"\n        first_message: Optional opening message to kick off the conversation.\n        extra_evaluation_criteria: Optional list of dicts, each with:\n            - id (str): unique key e.g. \"issue_resolved\"\n            - name (str): human label e.g. \"Issue Resolved\"\n            - conversation_goal_prompt (str): the assertion to check\n              e.g. \"The agent fully resolved the user's issue.\"\n            - use_knowledge_base (bool, optional): whether the evaluator should\n              reference the agent's knowledge base when judging. Defaults to False.\n        max_turns: Maximum conversation turns. Defaults to 10.\n    ",
+      "inputSchema": {
+        "properties": {
+          "agent_id": {
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "simulated_user_prompt": {
+            "title": "Simulated User Prompt",
+            "type": "string"
+          },
+          "first_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "First Message"
+          },
+          "extra_evaluation_criteria": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Extra Evaluation Criteria"
+          },
+          "max_turns": {
+            "default": 10,
+            "title": "Max Turns",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "agent_id",
+          "simulated_user_prompt"
+        ],
+        "title": "simulate_conversationArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 446
+    },
+    {
+      "name": "list_conversations",
+      "description": "Lists agent conversations. Returns: conversation list with metadata. Use when: asked about conversation history.\n\n    Args:\n        agent_id (str, optional): Filter conversations by specific agent ID\n        cursor (str, optional): Pagination cursor for retrieving next page of results\n        call_start_before_unix (int, optional): Filter conversations that started before this Unix timestamp\n        call_start_after_unix (int, optional): Filter conversations that started after this Unix timestamp\n        page_size (int, optional): Number of conversations to return per page (1-100, defaults to 30)\n        max_length (int, optional): Maximum character length of the response text (defaults to 10000)\n    ",
+      "inputSchema": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent Id"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cursor"
+          },
+          "call_start_before_unix": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Call Start Before Unix"
+          },
+          "call_start_after_unix": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Call Start After Unix"
+          },
+          "page_size": {
+            "default": 30,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "max_length": {
+            "default": 10000,
+            "title": "Max Length",
+            "type": "integer"
+          }
+        },
+        "title": "list_conversationsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 319
+    },
+    {
+      "name": "speech_to_speech",
+      "description": "Transform audio from one voice to another using provided audio files. Saves output file to directory (default: $HOME/Desktop).\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n    ",
+      "inputSchema": {
+        "properties": {
+          "input_file_path": {
+            "title": "Input File Path",
+            "type": "string"
+          },
+          "voice_name": {
+            "default": "Adam",
+            "title": "Voice Name",
+            "type": "string"
+          },
+          "output_directory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Directory"
+          }
+        },
+        "required": [
+          "input_file_path"
+        ],
+        "title": "speech_to_speechArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          },
+          "BlobResourceContents": {
+            "additionalProperties": true,
+            "description": "Binary contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "blob": {
+                "title": "Blob",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "blob"
+            ],
+            "title": "BlobResourceContents",
+            "type": "object"
+          },
+          "EmbeddedResource": {
+            "additionalProperties": true,
+            "description": "The contents of a resource, embedded into a prompt or tool call result.\n\nIt is up to the client how best to render embedded resources for the benefit\nof the LLM and/or the user.",
+            "properties": {
+              "type": {
+                "const": "resource",
+                "title": "Type",
+                "type": "string"
+              },
+              "resource": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/TextResourceContents"
+                  },
+                  {
+                    "$ref": "#/$defs/BlobResourceContents"
+                  }
+                ],
+                "title": "Resource"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "resource"
+            ],
+            "title": "EmbeddedResource",
+            "type": "object"
+          },
+          "TextContent": {
+            "additionalProperties": true,
+            "description": "Text content for a message.",
+            "properties": {
+              "type": {
+                "const": "text",
+                "title": "Type",
+                "type": "string"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "text"
+            ],
+            "title": "TextContent",
+            "type": "object"
+          },
+          "TextResourceContents": {
+            "additionalProperties": true,
+            "description": "Text contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "text"
+            ],
+            "title": "TextResourceContents",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextContent"
+              },
+              {
+                "$ref": "#/$defs/EmbeddedResource"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "speech_to_speechOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 151
+    },
+    {
+      "name": "text_to_voice",
+      "description": "Create voice previews from a text prompt. Creates three previews with slight variations. Saves output file to directory (default: $HOME/Desktop).\n\n    If no text is provided, the tool will auto-generate text.\n\n    Voice preview files are saved as: voice_design_(generated_voice_id)_(timestamp).mp3\n\n    Example file name: voice_design_Ya2J5uIa5Pq14DNPsbC1_20250403_164949.mp3\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n    ",
+      "inputSchema": {
+        "properties": {
+          "voice_description": {
+            "title": "Voice Description",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Text"
+          },
+          "output_directory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Directory"
+          }
+        },
+        "required": [
+          "voice_description"
+        ],
+        "title": "text_to_voiceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          },
+          "BlobResourceContents": {
+            "additionalProperties": true,
+            "description": "Binary contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "blob": {
+                "title": "Blob",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "blob"
+            ],
+            "title": "BlobResourceContents",
+            "type": "object"
+          },
+          "EmbeddedResource": {
+            "additionalProperties": true,
+            "description": "The contents of a resource, embedded into a prompt or tool call result.\n\nIt is up to the client how best to render embedded resources for the benefit\nof the LLM and/or the user.",
+            "properties": {
+              "type": {
+                "const": "resource",
+                "title": "Type",
+                "type": "string"
+              },
+              "resource": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/TextResourceContents"
+                  },
+                  {
+                    "$ref": "#/$defs/BlobResourceContents"
+                  }
+                ],
+                "title": "Resource"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "resource"
+            ],
+            "title": "EmbeddedResource",
+            "type": "object"
+          },
+          "TextContent": {
+            "additionalProperties": true,
+            "description": "Text content for a message.",
+            "properties": {
+              "type": {
+                "const": "text",
+                "title": "Type",
+                "type": "string"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "text"
+            ],
+            "title": "TextContent",
+            "type": "object"
+          },
+          "TextResourceContents": {
+            "additionalProperties": true,
+            "description": "Text contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "text"
+            ],
+            "title": "TextResourceContents",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/EmbeddedResource"
+                },
+                "type": "array"
+              },
+              {
+                "$ref": "#/$defs/TextContent"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "text_to_voiceOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 229
+    },
+    {
+      "name": "create_voice_from_preview",
+      "description": "Add a generated voice to the voice library. Uses the voice ID from the `text_to_voice` tool.\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n    ",
+      "inputSchema": {
+        "properties": {
+          "generated_voice_id": {
+            "title": "Generated Voice Id",
+            "type": "string"
+          },
+          "voice_name": {
+            "title": "Voice Name",
+            "type": "string"
+          },
+          "voice_description": {
+            "title": "Voice Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "generated_voice_id",
+          "voice_name",
+          "voice_description"
+        ],
+        "title": "create_voice_from_previewArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 138
+    },
+    {
+      "name": "make_outbound_call",
+      "description": "Make an outbound call using an ElevenLabs agent. Automatically detects provider type (Twilio or SIP trunk) and uses the appropriate API.\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n\n    Args:\n        agent_id: The ID of the agent that will handle the call\n        agent_phone_number_id: The ID of the phone number to use for the call\n        to_number: The phone number to call (E.164 format: +1xxxxxxxxxx)\n\n    Returns:\n        TextContent containing information about the call\n    ",
+      "inputSchema": {
+        "properties": {
+          "agent_id": {
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "agent_phone_number_id": {
+            "title": "Agent Phone Number Id",
+            "type": "string"
+          },
+          "to_number": {
+            "title": "To Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_id",
+          "agent_phone_number_id",
+          "to_number"
+        ],
+        "title": "make_outbound_callArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 219
+    },
+    {
+      "name": "search_voice_library",
+      "description": "Search for a voice across the entire ElevenLabs voice library.\n\n    Args:\n        page: Page number to return (0-indexed)\n        page_size: Number of voices to return per page (1-100)\n        search: Search term to filter voices by\n\n    Returns:\n        TextContent containing information about the shared voices\n    ",
+      "inputSchema": {
+        "properties": {
+          "page": {
+            "default": 0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 10,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Search"
+          }
+        },
+        "title": "search_voice_libraryArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 156
+    },
+    {
+      "name": "list_phone_numbers",
+      "description": "List all phone numbers associated with the ElevenLabs account",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_phone_numbersArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 38
+    },
+    {
+      "name": "play_audio",
+      "description": "Play an audio file. Supports WAV and MP3 formats.",
+      "inputSchema": {
+        "properties": {
+          "input_file_path": {
+            "title": "Input File Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "input_file_path"
+        ],
+        "title": "play_audioArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "tokens": 57
+    },
+    {
+      "name": "compose_music",
+      "description": "Convert a prompt to music and save the output audio file to a given directory.\n    Directory is optional, if not provided, the output file will be saved to $HOME/Desktop. Saves output file to directory (default: $HOME/Desktop).\n\n    Two models are supported:\n    - music_v2 (default): latest model. Composition plans use a `chunks` array where each chunk is either a `GenerationChunk` (text, duration_ms, positive_styles, negative_styles, context_adherence, optional conditioning_ref + condition_strength) or an `AudioRefChunk` ({song_id, range: {start_ms, end_ms}}) for inpainting. Inpainting also requires the source song to have been stored — call this tool with store_for_inpainting=True or use upload_music_for_inpainting first to get a song_id.\n    - music_v1: legacy model. Composition plans use positive_global_styles, negative_global_styles, sections.\n\n    Args:\n        prompt: Prompt to convert to music. Must provide either prompt or composition_plan.\n        output_directory: Directory to save the output audio file\n        composition_plan: Composition plan dict. Shape depends on model_id (see above). Must provide either prompt or composition_plan.\n        music_length_ms: Length of the generated music in milliseconds (3000-600000). Cannot be used if composition_plan is provided.\n        model_id: Which music model to use. One of \"music_v1\" or \"music_v2\". Defaults to \"music_v2\".\n        force_instrumental: If True, the model will avoid generating lyrics/vocals.\n        store_for_inpainting: If True, the generated song is stored server-side and the returned song_id can be used in later inpainting calls (as an AudioRefChunk.song_id, or conditioning_ref).\n        seed: Optional integer seed for reproducible generation (music_v2 only).\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.",
+      "inputSchema": {
+        "properties": {
+          "prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Prompt"
+          },
+          "output_directory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Directory"
+          },
+          "composition_plan": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Composition Plan"
+          },
+          "music_length_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Music Length Ms"
+          },
+          "model_id": {
+            "default": "music_v2",
+            "enum": [
+              "music_v1",
+              "music_v2"
+            ],
+            "title": "Model Id",
+            "type": "string"
+          },
+          "force_instrumental": {
+            "default": false,
+            "title": "Force Instrumental",
+            "type": "boolean"
+          },
+          "store_for_inpainting": {
+            "default": false,
+            "title": "Store For Inpainting",
+            "type": "boolean"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Seed"
+          }
+        },
+        "title": "compose_musicArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          },
+          "BlobResourceContents": {
+            "additionalProperties": true,
+            "description": "Binary contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "blob": {
+                "title": "Blob",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "blob"
+            ],
+            "title": "BlobResourceContents",
+            "type": "object"
+          },
+          "EmbeddedResource": {
+            "additionalProperties": true,
+            "description": "The contents of a resource, embedded into a prompt or tool call result.\n\nIt is up to the client how best to render embedded resources for the benefit\nof the LLM and/or the user.",
+            "properties": {
+              "type": {
+                "const": "resource",
+                "title": "Type",
+                "type": "string"
+              },
+              "resource": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/TextResourceContents"
+                  },
+                  {
+                    "$ref": "#/$defs/BlobResourceContents"
+                  }
+                ],
+                "title": "Resource"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "resource"
+            ],
+            "title": "EmbeddedResource",
+            "type": "object"
+          },
+          "TextContent": {
+            "additionalProperties": true,
+            "description": "Text content for a message.",
+            "properties": {
+              "type": {
+                "const": "text",
+                "title": "Type",
+                "type": "string"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "text"
+            ],
+            "title": "TextContent",
+            "type": "object"
+          },
+          "TextResourceContents": {
+            "additionalProperties": true,
+            "description": "Text contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "text"
+            ],
+            "title": "TextResourceContents",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextContent"
+              },
+              {
+                "$ref": "#/$defs/EmbeddedResource"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "compose_musicOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 655
+    },
+    {
+      "name": "create_composition_plan",
+      "description": "Create a composition plan for music generation. Usage of this endpoint does not cost any credits but is subject to rate limiting depending on your tier. Composition plans can be used when generating music with the compose_music tool.\n\n    The returned plan shape depends on model_id:\n    - music_v2 (default): `{\"chunks\": [GenerationChunk | AudioRefChunk, ...]}`. Each GenerationChunk has `text`, `duration_ms`, `positive_styles`, `negative_styles`, `context_adherence` and optional `conditioning_ref` + `condition_strength`. AudioRefChunks reference a stored song via `song_id` and `range: {start_ms, end_ms}` for inpainting.\n    - music_v1: `{\"positive_global_styles\": [...], \"negative_global_styles\": [...], \"sections\": [...]}`.\n\n    Args:\n        prompt: Prompt to create a composition plan for\n        music_length_ms: The length of the composition plan to generate in milliseconds. Must be between 10000ms and 300000ms. Optional - if not provided, the model will choose a length based on the prompt.\n        source_composition_plan: An optional composition plan dict to use as a source for the new composition plan. Should match the shape of the model_id you request.\n        model_id: Which music model to plan for. One of \"music_v1\" or \"music_v2\". Defaults to \"music_v2\".\n    ",
+      "inputSchema": {
+        "properties": {
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "music_length_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Music Length Ms"
+          },
+          "source_composition_plan": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Composition Plan"
+          },
+          "model_id": {
+            "default": "music_v2",
+            "enum": [
+              "music_v1",
+              "music_v2"
+            ],
+            "title": "Model Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "title": "create_composition_planArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 438
+    },
+    {
+      "name": "video_to_music",
+      "description": "Generate background music for one or more video files. Saves output file to directory (default: $HOME/Desktop).\n\n    The videos are concatenated server-side in the order provided; the generated score targets the combined duration. Constraints: 1-10 videos per call, combined size <= 200 MB, combined duration <= 600 seconds.\n\n    Args:\n        input_file_paths: Paths to the video files. Order is preserved.\n        description: Optional natural-language direction for the music (e.g. \"Build suspense, then resolve with a warm cinematic finish.\").\n        tags: Optional list of up to 10 short style cues (e.g. [\"cinematic\", \"suspenseful\", \"uplifting\"]).\n        model_id: Which music model to use. One of \"music_v1\" or \"music_v2\". Defaults to \"music_v2\".\n        output_directory: Directory to save the generated audio file. Defaults to $HOME/Desktop.\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n    ",
+      "inputSchema": {
+        "properties": {
+          "input_file_paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Input File Paths",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tags"
+          },
+          "model_id": {
+            "default": "music_v2",
+            "enum": [
+              "music_v1",
+              "music_v2"
+            ],
+            "title": "Model Id",
+            "type": "string"
+          },
+          "output_directory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Directory"
+          }
+        },
+        "required": [
+          "input_file_paths"
+        ],
+        "title": "video_to_musicArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          },
+          "BlobResourceContents": {
+            "additionalProperties": true,
+            "description": "Binary contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "blob": {
+                "title": "Blob",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "blob"
+            ],
+            "title": "BlobResourceContents",
+            "type": "object"
+          },
+          "EmbeddedResource": {
+            "additionalProperties": true,
+            "description": "The contents of a resource, embedded into a prompt or tool call result.\n\nIt is up to the client how best to render embedded resources for the benefit\nof the LLM and/or the user.",
+            "properties": {
+              "type": {
+                "const": "resource",
+                "title": "Type",
+                "type": "string"
+              },
+              "resource": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/TextResourceContents"
+                  },
+                  {
+                    "$ref": "#/$defs/BlobResourceContents"
+                  }
+                ],
+                "title": "Resource"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "resource"
+            ],
+            "title": "EmbeddedResource",
+            "type": "object"
+          },
+          "TextContent": {
+            "additionalProperties": true,
+            "description": "Text content for a message.",
+            "properties": {
+              "type": {
+                "const": "text",
+                "title": "Type",
+                "type": "string"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              },
+              "annotations": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Annotations"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              }
+            },
+            "required": [
+              "type",
+              "text"
+            ],
+            "title": "TextContent",
+            "type": "object"
+          },
+          "TextResourceContents": {
+            "additionalProperties": true,
+            "description": "Text contents of a resource.",
+            "properties": {
+              "uri": {
+                "format": "uri",
+                "minLength": 1,
+                "title": "Uri",
+                "type": "string"
+              },
+              "mimeType": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Mimetype"
+              },
+              "_meta": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Meta"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "uri",
+              "text"
+            ],
+            "title": "TextResourceContents",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextContent"
+              },
+              {
+                "$ref": "#/$defs/EmbeddedResource"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "video_to_musicOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 406
+    },
+    {
+      "name": "upload_music_for_inpainting",
+      "description": "Upload an existing audio file to ElevenLabs so it can be referenced in music_v2 inpainting workflows. Returns a song_id you can plug into a composition plan's AudioRefChunks (or a generation chunk's conditioning_ref) to edit or extend the track via the compose_music tool.\n\n    Optionally extracts a composition plan from the uploaded audio so you have a starting point to mutate.\n\n    Note: this endpoint is gated to enterprise customers with inpainting access.\n\n    Args:\n        input_file_path: Path to a local audio file to upload.\n        extract_composition_plan: Which model to extract a composition plan for (\"music_v1\" or \"music_v2\"). Pass None to skip extraction. Defaults to \"music_v2\".\n\n    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.\n    ",
+      "inputSchema": {
+        "properties": {
+          "input_file_path": {
+            "title": "Input File Path",
+            "type": "string"
+          },
+          "extract_composition_plan": {
+            "anyOf": [
+              {
+                "enum": [
+                  "music_v1",
+                  "music_v2"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "music_v2",
+            "title": "Extract Composition Plan"
+          }
+        },
+        "required": [
+          "input_file_path"
+        ],
+        "title": "upload_music_for_inpaintingArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Annotations": {
+            "additionalProperties": true,
+            "properties": {
+              "audience": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Audience"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Priority"
+              }
+            },
+            "title": "Annotations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Text content for a message.",
+        "properties": {
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "_meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Meta"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TextContent",
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 286
+    }
+  ],
+  "totalTokens": 7435,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": [
+    {
+      "name": "get_elevenlabs_resource",
+      "uriTemplate": "elevenlabs://{filename}",
+      "description": "\n    Resource handler for ElevenLabs generated files.\n    ",
+      "mimeType": "text/plain"
+    }
+  ]
+}

@@ -1,0 +1,219 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "google-flights-cheapest-finder",
+    "version": "1.21.2",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:09:05.035Z",
+  "tools": [
+    {
+      "name": "get_flights_on_date",
+      "description": "\n    Fetches available one-way flights for a specific date between two airports.\n    Can optionally return only the cheapest flight found.\n\n    Args:\n        origin: Origin airport code (e.g., \"DEN\").\n        destination: Destination airport code (e.g., \"LAX\").\n        date: The specific date to search (YYYY-MM-DD format).\n        adults: Number of adult passengers (default: 1).\n        seat_type: Fare class (e.g., \"economy\", \"business\", default: \"economy\").\n        return_cheapest_only: If True, returns only the cheapest flight (default: False).\n\n    Example Args:\n        {\"origin\": \"SFO\", \"destination\": \"JFK\", \"date\": \"2025-07-20\"}\n        {\"origin\": \"SFO\", \"destination\": \"JFK\", \"date\": \"2025-07-20\", \"return_cheapest_only\": true}\n    ",
+      "inputSchema": {
+        "properties": {
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "adults": {
+            "default": 1,
+            "title": "Adults",
+            "type": "integer"
+          },
+          "seat_type": {
+            "default": "economy",
+            "title": "Seat Type",
+            "type": "string"
+          },
+          "return_cheapest_only": {
+            "default": false,
+            "title": "Return Cheapest Only",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "origin",
+          "destination",
+          "date"
+        ],
+        "title": "get_flights_on_dateArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_flights_on_dateOutput",
+        "type": "object"
+      },
+      "tokens": 340
+    },
+    {
+      "name": "get_round_trip_flights",
+      "description": "\n    Fetches available round-trip flights for specific departure and return dates.\n    Can optionally return only the cheapest flight found.\n\n    Args:\n        origin: Origin airport code (e.g., \"DEN\").\n        destination: Destination airport code (e.g., \"LAX\").\n        departure_date: The specific departure date (YYYY-MM-DD format).\n        return_date: The specific return date (YYYY-MM-DD format).\n        adults: Number of adult passengers (default: 1).\n        seat_type: Fare class (e.g., \"economy\", \"business\", default: \"economy\").\n        return_cheapest_only: If True, returns only the cheapest flight (default: False).\n\n    Example Args:\n        {\"origin\": \"DEN\", \"destination\": \"LAX\", \"departure_date\": \"2025-08-01\", \"return_date\": \"2025-08-08\"}\n        {\"origin\": \"DEN\", \"destination\": \"LAX\", \"departure_date\": \"2025-08-01\", \"return_date\": \"2025-08-08\", \"return_cheapest_only\": true}\n    ",
+      "inputSchema": {
+        "properties": {
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "departure_date": {
+            "title": "Departure Date",
+            "type": "string"
+          },
+          "return_date": {
+            "title": "Return Date",
+            "type": "string"
+          },
+          "adults": {
+            "default": 1,
+            "title": "Adults",
+            "type": "integer"
+          },
+          "seat_type": {
+            "default": "economy",
+            "title": "Seat Type",
+            "type": "string"
+          },
+          "return_cheapest_only": {
+            "default": false,
+            "title": "Return Cheapest Only",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "origin",
+          "destination",
+          "departure_date",
+          "return_date"
+        ],
+        "title": "get_round_trip_flightsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_round_trip_flightsOutput",
+        "type": "object"
+      },
+      "tokens": 397
+    },
+    {
+      "name": "find_all_flights_in_range",
+      "description": "\n    Finds available round-trip flights within a specified date range.\n    Can optionally return only the cheapest flight found for each date pair.\n\n    Args:\n        origin: Origin airport code (e.g., \"DEN\").\n        destination: Destination airport code (e.g., \"LAX\").\n        start_date_str: Start date of the search range (YYYY-MM-DD format).\n        end_date_str: End date of the search range (YYYY-MM-DD format).\n        min_stay_days: Minimum number of days for the stay (optional).\n        max_stay_days: Maximum number of days for the stay (optional).\n        adults: Number of adult passengers (default: 1).\n        seat_type: Fare class (e.g., \"economy\", \"business\", default: \"economy\").\n        return_cheapest_only: If True, returns only the cheapest flight for each date pair (default: False).\n\n    Example Args:\n        {\"origin\": \"JFK\", \"destination\": \"MIA\", \"start_date_str\": \"2025-09-10\", \"end_date_str\": \"2025-09-20\", \"min_stay_days\": 5}\n        {\"origin\": \"JFK\", \"destination\": \"MIA\", \"start_date_str\": \"2025-09-10\", \"end_date_str\": \"2025-09-20\", \"min_stay_days\": 5, \"return_cheapest_only\": true}\n    ",
+      "inputSchema": {
+        "properties": {
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "start_date_str": {
+            "title": "Start Date Str",
+            "type": "string"
+          },
+          "end_date_str": {
+            "title": "End Date Str",
+            "type": "string"
+          },
+          "min_stay_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Min Stay Days"
+          },
+          "max_stay_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Max Stay Days"
+          },
+          "adults": {
+            "default": 1,
+            "title": "Adults",
+            "type": "integer"
+          },
+          "seat_type": {
+            "default": "economy",
+            "title": "Seat Type",
+            "type": "string"
+          },
+          "return_cheapest_only": {
+            "default": false,
+            "title": "Return Cheapest Only",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "origin",
+          "destination",
+          "start_date_str",
+          "end_date_str"
+        ],
+        "title": "find_all_flights_in_rangeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "find_all_flights_in_rangeOutput",
+        "type": "object"
+      },
+      "tokens": 532
+    }
+  ],
+  "totalTokens": 1269,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

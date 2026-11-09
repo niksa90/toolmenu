@@ -3,7 +3,7 @@ import { SEVERITY_RANK } from '../types.js';
 import { buried, cut, lateInstruction } from './description.js';
 import { connectionVariance, hostSpecific, nondeterministic, processVariance } from './determinism.js';
 import { authoredIds } from './ids.js';
-import { clientName } from './clients.js';
+import { clientFeatures, clientLimit, clientName } from './clients.js';
 import { invalidCredential } from './auth.js';
 import { networkDependent } from './network.js';
 import { capabilityDependent } from './capabilities.js';
@@ -36,6 +36,8 @@ export const MENU_RULES: Rule[] = [
   sharedWord,
   route,
   clientName,
+  clientLimit,
+  clientFeatures,
   findable,
   authoredIds,
   handleLifetime,

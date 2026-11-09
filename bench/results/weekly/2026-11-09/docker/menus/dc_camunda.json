@@ -1,0 +1,273 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Camunda BPM MCP Server",
+    "version": "1.0.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:55:06.426Z",
+  "tools": [
+    {
+      "name": "count_incidents",
+      "description": "Count incidents for a specific BPMN process instance in the Camunda process engine. The process is identified by its process instance id or the business key.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "processInstanceIdOrBusinessKey": {
+            "description": "The unique process instance id or business key of the BPMN process.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "processInstanceIdOrBusinessKey"
+        ]
+      },
+      "tokens": 86
+    },
+    {
+      "name": "send_message",
+      "description": "Send a message to a specific BPMN process instance in the Camunda process engine. The process is identified by its process instance id or the business key.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "processInstanceIdOrBusinessKey": {
+            "description": "The unique process instance id or business key of the BPMN process.",
+            "type": "string"
+          },
+          "messageName": {
+            "description": "The name of the message to send.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "processInstanceIdOrBusinessKey",
+          "messageName"
+        ]
+      },
+      "tokens": 107
+    },
+    {
+      "name": "count_variables",
+      "description": "Count variables for a specific BPMN process in the Camunda process engine. The process is identified by its process instance id or the business key. The response information about the number of variables associated with the process instance.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "processInstanceIdOrBusinessKey": {
+            "description": "The unique process instance if of the BPMN process definition. Business key may belong to multiple processes.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "processInstanceIdOrBusinessKey"
+        ]
+      },
+      "tokens": 104
+    },
+    {
+      "name": "complete_user_task",
+      "description": "Complete a user task in the Camunda process engine. The task is identified by its unique task id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "description": "The unique task id of the user task to complete.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ]
+      },
+      "tokens": 66
+    },
+    {
+      "name": "list_definitions",
+      "description": "Retrieve all BPMN process definitions available in the Camunda BPM process engine. The response includes details such as tenant, version, deployment ID, and other metadata for each process definition. Allows narrowing down results by providing parts of the process key or name, and limiting the number of results returned.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "camundaAddress": {
+            "description": "Optional, the address of the Camunda process engine. If not provided, the default address will be used.",
+            "type": "string"
+          },
+          "processKeyLike": {
+            "description": "Optional, part of the BPMN process definiton unique key.",
+            "type": "string"
+          },
+          "processNameLike": {
+            "description": "Optional, part of the BPMN process definition name in human readable form.",
+            "type": "string"
+          },
+          "maxResults": {
+            "description": "Optional, max results to fetch provided as integer.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "camundaAddress",
+          "processKeyLike",
+          "processNameLike",
+          "maxResults"
+        ]
+      },
+      "tokens": 200
+    },
+    {
+      "name": "list_variables",
+      "description": "Retrieve the list of variables for a specific BPMN process in the Camunda process engine. The process is identified by its process instance id or the business key. The response includes details such as tenant, key, business key, process instance id, and other metadata for each process instance.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "processInstanceIdOrBusinessKey": {
+            "description": "The unique process instance if of the BPMN process definition. Business key may belong to multiple processes.",
+            "type": "string"
+          },
+          "maxResults": {
+            "description": "Optional, max results to fetch provided as integer.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "processInstanceIdOrBusinessKey",
+          "maxResults"
+        ]
+      },
+      "tokens": 144
+    },
+    {
+      "name": "list_instances",
+      "description": "Retrieve the list of active instances for a specific BPMN process definition in the Camunda process engine. The process is identified by its key. The response includes details such as tenant, key, business key, process instance id, and other metadata for each process instance.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "processKey": {
+            "description": "The unique key of the BPMN process definition.",
+            "type": "string"
+          },
+          "maxResults": {
+            "description": "Optional, max results to fetch provided as integer.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "processKey",
+          "maxResults"
+        ]
+      },
+      "tokens": 122
+    },
+    {
+      "name": "count_user_tasks",
+      "description": "Count user tasks for a specific BPMN process instance in the Camunda process engine. The process is identified by its process instance id or the business key.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "processInstanceIdOrBusinessKey": {
+            "description": "The unique process instance id or business key of the BPMN process.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "processInstanceIdOrBusinessKey"
+        ]
+      },
+      "tokens": 87
+    },
+    {
+      "name": "count_instances",
+      "description": "Count active instances for a specific BPMN process definition in the Camunda process engine. The process is identified by its key. The response includes information about the number of active instances associated with the process definition.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "processKey": {
+            "description": "The unique key of the BPMN process definition.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "processKey"
+        ]
+      },
+      "tokens": 84
+    },
+    {
+      "name": "list_user_tasks",
+      "description": "List user tasks for a specific BPMN process instance in the Camunda process engine. The process is identified by its process instance id or the business key.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "processInstanceIdOrBusinessKey": {
+            "description": "The unique process instance id or business key of the BPMN process.",
+            "type": "string"
+          },
+          "maxResults": {
+            "description": "Optional, max results to fetch provided as integer.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "processInstanceIdOrBusinessKey",
+          "maxResults"
+        ]
+      },
+      "tokens": 113
+    },
+    {
+      "name": "resolve_incident",
+      "description": "Requests the Cmaunda BPM process engine to resolve an incident. Resolving an incident allows the process instance to continue its execution.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "incidentId": {
+            "description": "The unique identifier of the incident to resolve. This ID is typically generated by the Camunda process engine when an incident occurs.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "incidentId"
+        ]
+      },
+      "tokens": 85
+    },
+    {
+      "name": "list_incidents",
+      "description": "List incidents for a specific BPMN process instance in the Camunda process engine. The process is identified by its process instance id or the business key.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "processInstanceIdOrBusinessKey": {
+            "description": "The unique process instance id or business key of the BPMN process.",
+            "type": "string"
+          },
+          "maxResults": {
+            "description": "Optional, max results to fetch provided as integer.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "processInstanceIdOrBusinessKey",
+          "maxResults"
+        ]
+      },
+      "tokens": 112
+    }
+  ],
+  "totalTokens": 1310
+}

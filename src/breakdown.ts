@@ -170,6 +170,8 @@ function repeatedBlocks(menu: Menu): Repeated[] {
 }
 
 function enumValues(schema: JsonSchema): unknown[] {
+  // A property schema can be anything a server sends (null, true): only an object has an enum.
+  if (!schema || typeof schema !== 'object') return [];
   if (Array.isArray(schema.enum)) return schema.enum;
   if (Array.isArray(schema.items?.enum)) return schema.items!.enum!;
   return [];

@@ -5,7 +5,7 @@
  */
 import { VERSION } from './version.js';
 
-export const COMMANDS = ['init', 'snapshot', 'diff', 'session', 'history', 'auth', 'scan', 'explain', 'mcp'] as const;
+export const COMMANDS = ['init', 'snapshot', 'diff', 'review', 'session', 'history', 'auth', 'scan', 'explain', 'mcp'] as const;
 export type Command = (typeof COMMANDS)[number];
 
 /** Every option, once: its spelling and what it does (continuation lines are indented by the renderer). */
@@ -28,7 +28,7 @@ const OPTIONS: Record<string, [string, string[]]> = {
   protocol: ['--protocol <auto|legacy|modern>', ['which handshake to make (default: auto)', 'legacy: the 2025 handshake only; modern: 2026-07-28 only, an error if the server lacks it']],
   as: ['--as <name>[:<credential>]', ['list the menu as this identity too, repeatable: a header ("reader:Authorization:', 'Bearer ...") or env var ("admin:ROLE=admin") on top of --header/--env. The first', 'is the main one (its menu is saved); the others are compared with it']],
   lists: ['--lists <kinds>', ['which lists to read and check, comma-separated: tools (always),', 'prompts, resources (resources/list and resources/templates/list).', 'Saved in the menu file beside the tools']],
-  client: ['--client <name>', ['check the menu for one client, from its own docs: claude-code (tools deferred,', 'its description cut and search), claude-api-search (Claude API tool search)', 'or openai (Responses API tool_search): cost up front and per tool, names it refuses']],
+  client: ['--client <name>', ['check the menu for one client, from its own docs: claude-code (tools deferred,', 'its description cut and search), claude-api-search (Claude API tool search),', 'openai (Responses API tool_search), codex, antigravity (lazy tools), gemini-cli', '(renames), gemini-api, vscode (128 tools a request), copilot-cloud-agent and', 'copilot-code-review (tools only; review: read-only tools only)']],
   'no-auth': ['--no-auth', ["don't use a stored OAuth login (toolmenu auth login) for this server"]],
   timeout: ['--timeout <ms>', ['per-request timeout (default: 30000)']],
   processes: ['--processes <n>', ['server processes (stdio) or connections (HTTP) to compare, the main', 'one included (default: 2). 1 opens no second one: for servers with one', 'session per client']],
@@ -39,6 +39,7 @@ const OPTIONS: Record<string, [string, string[]]> = {
   init: ['--init', ["write a starter scenario from the server's menu (to --scenario,", 'default scenario.yml; never overwrites)']],
   auto: ['--auto', ['build the steps from the menu: every read-only tool whose required', 'arguments the schema can fill (const, default, examples, enum, type),', 'then the first call again']],
   'create-handles': ['--create-handles', ['with --auto on 2026-07-28, call the tool that creates a session, basket or cart', '(a write, so only with this flag; never one marked destructiveHint) and give', 'the tools that take it back the handle it returned']],
+  'call-everything': ['--call-everything', ['with --auto, call every tool once, writes and open-world ones included, with a', 'made-up value (toolmenu-test, 1) where the schema gives none. Stdio only: run', 'the server in a sandbox with nothing to lose (no credentials, no network)']],
   'open-world': ['--open-world', ['with --auto, also call read-only tools marked openWorldHint: true', '(web search, fetch, scraping): they may cost API credits']],
   'max-calls': ['--max-calls <n>', ['with --auto, at most n calls in all, the tools unlocks bring', 'included (default: 20, plus --max-calls-per-unlock for each unlock value)']],
   'max-calls-per-unlock': ['--max-calls-per-unlock <n>', ['with --auto, at most n calls for the tools each unlock value', 'brings (default: 5), so every toolset gets some']],
@@ -123,6 +124,23 @@ const HELP: Record<Command, CommandHelp> = {
     examples: ['toolmenu diff menu.json new-menu.json', 'toolmenu diff --release 1.4.0..1.5.0 --format markdown old.json new.json'],
     exits: ['0  no findings at or above --fail-on', '1  findings at or above --fail-on', "2  a menu file can't be read, or bad usage"],
   },
+  review: {
+    summary: 'should a new menu file replace the baseline? a verdict, and the findings it adds or clears',
+    usage: ['toolmenu review [options] <baseline.json> <new.json>'],
+    about: [
+      'Compares the new menu with the committed baseline as diff does, runs the menu rules on',
+      'both files, and says whether to accept it: what breaks callers, which findings are new,',
+      'which are gone. Starts no server. Pass --release to check breaking changes against the bump.',
+    ],
+    own: ['release', 'server-version-is-release'],
+    shared: ['config', 'format', 'json', 'fail-on'],
+    examples: ['toolmenu review menu.json new-menu.json', 'toolmenu review --release 1.4.0..2.0.0 --format markdown menu.json new-menu.json'],
+    exits: [
+      '0  accept: unchanged, safe, or breaking changes the release allows',
+      '1  not as it is: breaking changes without a release that allows them, or new findings at or above --fail-on',
+      "2  a menu file can't be read, or bad usage",
+    ],
+  },
   session: {
     summary: 'run a session (scripted or --auto) and watch the menu change',
     usage: [
@@ -136,7 +154,7 @@ const HELP: Record<Command, CommandHelp> = {
       'prompt cache, a different menu in a fresh process.',
       SERVER_NOTE,
     ],
-    own: ['scenario', 'auto', 'init', 'plan', 'value', 'values-file', 'assume-read-only', 'open-world', 'create-handles', 'max-calls', 'max-calls-per-unlock', 'save-scenario', 'union-out', 'elicitation', 'sarif', 'sarif-menu', 'junit', 'html'],
+    own: ['scenario', 'auto', 'init', 'plan', 'value', 'values-file', 'assume-read-only', 'open-world', 'call-everything', 'create-handles', 'max-calls', 'max-calls-per-unlock', 'save-scenario', 'union-out', 'elicitation', 'sarif', 'sarif-menu', 'junit', 'html'],
     shared: ['config', 'format', 'json', 'fail-on', 'header', 'env', 'no-auth', 'protocol', 'timeout', 'processes'],
     examples: [
       'toolmenu session --auto -- node dist/index.js',
@@ -163,21 +181,25 @@ const HELP: Record<Command, CommandHelp> = {
     exits: ['0  at least one version was inspected', '1  every version failed', "2  bad usage, or the package's versions couldn't be listed"],
   },
   auth: {
-    summary: 'log in to an OAuth-protected HTTP server once',
-    usage: ['toolmenu auth login [options] <url>', 'toolmenu auth logout <url>', 'toolmenu auth list'],
+    summary: 'log in to an OAuth-protected HTTP server once, or check its OAuth discovery',
+    usage: ['toolmenu auth login [options] <url>', 'toolmenu auth logout <url>', 'toolmenu auth list', 'toolmenu auth check <url>'],
     about: [
       'login opens the browser once and stores the tokens (only you can read the file);',
       'snapshot and session then use them for that URL (--no-auth to skip).',
       'Stored in $TOOLMENU_AUTH_DIR, else $XDG_CONFIG_HOME/toolmenu/auth, else ~/.config/toolmenu/auth.',
+      'check walks the server\'s OAuth discovery the way a client that follows the spec does,',
+      'without logging in: the 401, the protected resource metadata, the authorization server\'s',
+      'metadata, PKCE and registration (auth/* rules in docs/RULES.md).',
     ],
     own: ['port', 'no-browser', 'scope', 'client-id', 'client-secret'],
-    shared: [],
+    shared: ['format', 'json', 'fail-on', 'timeout'],
     examples: [
       'toolmenu auth login https://example.com/mcp',
+      'toolmenu auth check https://mcp.example.com/mcp',
       'toolmenu auth login --client-id <id> --client-secret <secret> https://example.com/mcp',
       'toolmenu auth list',
     ],
-    exits: ['0  done (logout of a URL with no login is not an error)', '2  the login failed, or bad usage'],
+    exits: ['0  done (logout of a URL with no login is not an error; check: no findings at or above --fail-on)', '1  check: findings at or above --fail-on', '2  the login failed, or bad usage'],
   },
   scan: {
     summary: 'snapshot every server in an MCP client config or a list, side by side',
@@ -238,7 +260,7 @@ export function overview(): string {
   const width = Math.max(...COMMANDS.map((c) => c.length)) + 3;
   return [
     `toolmenu ${VERSION}`,
-    "Lint your MCP server's tool menu for changes that confuse agents or break caches.",
+    "Test your MCP server the way agents and clients meet it: the menu, the calls, the results, the sign-in, every release.",
     '',
     'Usage: toolmenu <command> [options]',
     '',

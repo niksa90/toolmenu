@@ -5,7 +5,7 @@
 <h1 align="center">toolmenu</h1>
 
 <p align="center">
-  <b>Checks for MCP servers' tool lists: changes that confuse agents, break prompt caches or break clients, caught before your users hit them.</b>
+  <b>Tests your MCP server the way agents and clients meet it: the menu they read, the calls they make, the results and sign-in they get back, and every release after. Problems caught before your users hit them.</b>
 </p>
 
 <p align="center">
@@ -22,9 +22,17 @@
 </p>
 
 Your MCP server's tool list is the menu every agent reads before it does anything.
-toolmenu checks that menu the way clients and agents will meet it: across calls,
-connections, clients and releases. No LLM is involved, so the same inputs always give
-the same answer and it fits in CI.
+toolmenu starts there and follows the agent in. It **connects** as a client does (stdio
+or HTTP, every protocol version from 2024-11-05 to 2026-07-28), **reads** the menu,
+**calls** the tools (read-only by default; every tool, writes included, in a sealed
+sandbox with `--call-everything`), **checks** each result against the spec and the tool's
+own `outputSchema`, **walks** the OAuth discovery a client follows before it logs in, and
+**compares** the menu across steps, connections, processes, clients and releases.
+
+It isn't only a linter: a linter grades the text of one snapshot, and much of what
+breaks agents only shows when you call the server, reconnect, or ship the next version.
+No LLM is involved, so the same server gives the same answer on every run and it fits
+in CI. The same checks run [every week on ~3,200 public servers](#tested-on-real-servers).
 
 ```sh
 npx toolmenu snapshot -- node dist/server.js      # or: npx toolmenu snapshot https://example.com/mcp
@@ -33,29 +41,71 @@ npx toolmenu init -- node dist/server.js          # CI: a baseline, a workflow, 
 
 ![toolmenu session output: tools inserted mid-list, a description edited, each pinned to the step that caused it](https://raw.githubusercontent.com/niksa90/toolmenu/main/docs/demo.svg)
 
+> **Status: 0.27.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
+> every rule in [docs/RULES.md](docs/RULES.md), protocol versions in [docs/PROTOCOLS.md](docs/PROTOCOLS.md)
+> (written by a test that runs each one), changes in [CHANGELOG.md](CHANGELOG.md).
+
+**Contents:** [A finding](#what-a-finding-looks-like) ·
+[What it catches](#what-it-catches) · [Why "when it changes" matters](#why-when-it-changes-matters) ·
+[Tested on real servers](#tested-on-real-servers) · [Start here](#start-here) ·
+[CI](#in-ci-one-pr-comment) · [`session`](#session-the-menu-changing-while-the-agent-works) ·
+[`diff`](#diff-compare-releases) · [`review`](#accepting-a-new-baseline-review) · [`snapshot` rules](#snapshot-rules) ·
+[What it can't catch](#what-toolmenu-cant-catch) · [Options](#options)
+
+## What a finding looks like
+
+A server whose `unlock_toolset` tool adds two tools to the menu mid-conversation, run
+with `toolmenu session`:
+
+```
+step 3: call unlock_toolset {"toolset":"audits"} · answered · menu changed · +2 tools · list_changed received
+  ERROR  session/mid-insert
+         +2 tools inserted at position 1 (list_team_audits, get_team_audit). Invalidates the cached prompt:
+         the tool list and the conversation after it are processed again.
+           cost: the whole tool list (this server's part: ~406 tokens, estimate) and the conversation after it
+         → Next: Add new tools at the end of the list, not in the middle; better, list them from the start.
+  WARN   session/unlock-coverage · unsure
+         unlock_toolset looks like it unlocks tools, and the run got through 1 of its 2 toolset values. […]
+           not unlocked: "reports"
+         → Next: Unlock every value: session --init puts each one in the starter.
+```
+
+Every finding has the same parts: a **level** (`ERROR`, `WARN`, `INFO`; `--fail-on`
+decides which fail the run), a **rule id** you can look up (`toolmenu explain
+session/mid-insert`) or turn off in the config, **where** it happened (the step, the
+tool, the parameter path), **what toolmenu saw**, and a **`→ Next:`** step.
+
+How much to trust a finding depends on what it rests on, and the rule id's prefix says which:
+
+| Rule family | What it rests on |
+|---|---|
+| `spec/`, `apps/`, `lists/schema` | The protocol: the official JSON schema for the server's version (pinned in `schemas/`), a MUST/SHOULD in the spec, or the MCP Apps extension |
+| `diff/` | Two menus compared. A **breaking** change is one where a call that passed validation before now fails it |
+| `session/`, `menu/`, `lists/variance`, `auth/`, `catalog/` | Behaviour toolmenu observed: the menu changing after a step, between two calls, between two processes or connections, or served to a bad credential. The finding names the step or the call |
+| `naming/`, `ids/`, `description/`, `write/`, `search/` | How agents read the menu: names, words, descriptions. Tuned on real servers, but heuristics |
+
+A finding marked **`· unsure`**, in any family, rests on names and words rather than on
+something toolmenu saw happen (above: "looks like it unlocks tools"). It says what was
+seen, not what it means. No LLM is involved anywhere: the same server gives the same
+findings on every run.
+
 ## What it catches
 
 | | |
 |---|---|
 | **A menu that changes mid-session** | `session` calls your tools and watches the list. A tool added mid-conversation can rewrite the whole cached prompt: one unlock cost 40–57K tokens of cache in my logs. |
+| **Every tool, called** | `session --auto` calls the tools marked read-only; `--call-everything` calls all of them, writes included, with made-up input in a container with no network and no credentials. A call that crashes, hangs or breaks the protocol is reported; a readable tool error is what the spec asks for. |
+| **Results clients reject** | Results are checked against the tool's `outputSchema` (a MUST since 2025-06-18) and, on 2026-07-28, for `resultType`, the way the official SDK client checks them before your agent ever sees the answer. |
+| **Sign-in, before logging in** | `auth check` walks OAuth discovery as a spec-following client does: the 401, protected resource metadata (RFC 9728), authorization server metadata (RFC 8414 or OpenID Connect), PKCE and registration. |
 | **Breaking releases** | `diff` compares two menus: removed tools, new required parameters, narrowed types, token growth. It also says whether your version bump is big enough. |
 | **The 2026-07-28 protocol** | The tool set must not vary per connection, and results need `resultType`. Elicitation, multi round-trip input and `server/discover` are checked too, as are the 2025 handshakes. |
 | **MCP Apps, Tasks, Server Cards** | It reads `ui://` resources as a host does and checks who may see each tool. It catches tasks sent to clients that can't poll them, and Server Cards that contradict the live server. |
-| **Your client's view** | `--client claude-code \| claude-api-search \| openai` shows what each client loads, cuts, can find and refuses. |
+| **Your client's view** | `--client` with Claude Code, the Claude API, OpenAI, Codex, VS Code (Copilot Chat), Copilot cloud agent and code review, Gemini CLI, the Gemini API or Antigravity shows what each loads, cuts, can find, refuses, rewrites or leaves out, from each one's own docs. |
 | **What agents misread** | It flags vague `id`s, IDs no tool returns, instructions buried late in descriptions, and writes without annotations or marked read-only. |
 | **Words routing to the wrong tool** | `routes.yml` pins which tool each keyword must (and must not) reach, the way a keyword or BM25 tool search sees the menu. A description edit that lets `get_audit_trail` win "audit" fails the check, with no model and no eval budget. [More](#snapshot-rules) |
 | **Menus that drift** | It catches defaults built from the clock or a hash order, menus that differ per process, per connection or offline, and listings that depend on who asks. |
 
-Every finding says what's wrong, where it is and what toolmenu saw, and ends with a `→ Next:` step.
-It runs on the 22-server [bench](bench/README.md) and on hosted servers (GitHub, Atlassian, Sentry,
-Notion, Supabase, Vercel…). What it has found on real servers is in
-[docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md).
-
-> **Status: 0.25.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
-> every rule in [docs/RULES.md](docs/RULES.md), changes in [CHANGELOG.md](CHANGELOG.md).
-
-<details>
-<summary><b>Why "when it changes" matters</b></summary>
+## Why "when it changes" matters
 
 The MCP linters I found grade one snapshot of the menu: tool names, descriptions,
 schemas. toolmenu also checks **when** the menu changes:
@@ -77,10 +127,47 @@ schemas. toolmenu also checks **when** the menu changes:
   old versions with today's dependencies, so it records what they serve now
   (FINDINGS F4).
 
-Run against the reference server, `@modelcontextprotocol/server-everything`, it
-reports no false findings ([bench/](bench/README.md)).
+## Tested on real servers
 
-</details>
+Every rule change is run against real MCP servers before it ships, and every finding
+that changes on one of them is read by hand; a change has to say why in the
+[changelog](CHANGELOG.md). The corpus is pinned to exact versions, so a rerun checks the
+same code ([bench/README.md](bench/README.md) has the commands):
+
+| Corpus | Servers | Checked with |
+|---|---|---|
+| The reference server, `@modelcontextprotocol/server-everything` 2.1.0 (2026-07-28) | 1 | `snapshot --lists`, `session --auto`, and a scenario that answers its elicitation demos. **No false findings**: a change that makes one appear is wrong until shown otherwise |
+| Recent stdio servers from the MCP registry that start without credentials | 86 | `snapshot` |
+| The servers across the stdio lists (registry, popular npm, PyPI) that answer the 2026-07-28 handshake | 39 | `session --auto` |
+| Named servers run in a container: GitHub, Atlassian, Sentry, Notion, Supabase, Playwright, MongoDB… ([`bench/servers.txt`](bench/servers.txt)) | 22 | `snapshot`, `session --init`, `session` |
+| Hosted (Streamable HTTP) servers from the registry that need no headers, sampled with a fixed seed | 200 | `snapshot`, read-only `session --auto --max-calls 10` |
+| Hosted servers behind OAuth: Sentry, GitHub, Atlassian (F14) | 3 | `auth login`, then `snapshot` |
+| **Weekly:** Docker's MCP catalog, every local server at the digest the catalog pins, with a dummy value for each setting it declares (F20) | 237 | `snapshot`, `session --auto`, and the sealed pass: 4,117 of the 4,237 tools listed called |
+| **Weekly:** stdio servers from the registry, npm and PyPI (F17, F18); each week rechecks up to 300 new releases and newly listed servers | 1,090 at baseline | `snapshot`, `session --auto`, and a sealed `--call-everything` pass: 15,550 of 16,518 tools called, every one of the rest accounted for |
+| The servers big vendors publish to run locally: GitHub, AWS Labs, Microsoft, PayPal, Stripe, Atlassian, Notion, HashiCorp, Grafana… as npm, PyPI and container images, with dummy credentials (F19) | 98 | `snapshot`, `session --auto`, and the sealed pass: 2,213 of the 2,292 tools listed called |
+| **Weekly:** hosted servers, 109 vendor endpoints (GitHub, Google, Microsoft, Atlassian, Stripe…) and a seeded 2,000 of the registry's | 2,109 | `snapshot`, read-only `session --auto`, and `auth check` on each that answers 401 |
+
+What those runs found is in [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md),
+including what toolmenu itself got wrong and how it was fixed. A few:
+
+- **mcp-atlassian serves a different menu every time it starts**: a default built from a
+  Python set, in a new order each process, so every restart misses the cache (F12).
+- **Atlassian Rovo served 4 tools to any `Authorization` header**, valid or not, so a
+  client whose token expired gets fewer tools instead of a reason to log in again (`auth/invalid-accepted`).
+- **The official filesystem server has reported `0.2.0` for 19 releases**, so a
+  server's self-reported version can't be used for semver checks (F5).
+- **Notion's server ships the same 9 unused `$defs` in all 24 tools**: 72% of its menu.
+- **12 of 1,090 stdio servers fail in the official SDK client today** (8 lose every tool,
+  4 lose answers), and 22 of 2,000 hosted ones send a 2026-07-28 tool list that client
+  rejects (F18).
+- **PayPal's server builds a new menu on every call**: `list_transactions` defaults its dates to
+  the moment the list is built, so no cached prompt matches the next one (F19).
+- **Microsoft Sentinel's sign-in can't pass a client that follows MCP 2025-11-25 to the
+  letter**: Entra ID supports PKCE but its OpenID Connect metadata doesn't say so, and the
+  spec tells clients to refuse (F18).
+
+The weekly run compares each week with the last: menus that changed, servers that fixed
+or gained a finding, and the trend ([bench/results/weekly](bench/results/weekly)).
 
 ## Start here
 
@@ -113,6 +200,7 @@ By hand:
 ```sh
 npx toolmenu snapshot -- node dist/server.js       # the menu, its findings, menu.json
 npx toolmenu diff menu.json new-menu.json          # what changed between two releases
+npx toolmenu review menu.json new-menu.json        # should the new menu replace the baseline?
 npx toolmenu session --auto -- node dist/server.js # call read-only tools, watch the menu
 ```
 
@@ -126,6 +214,12 @@ npx toolmenu auth login https://mcp.example.com/mcp
 npx toolmenu snapshot https://mcp.example.com/mcp
 ```
 
+Before logging in, `toolmenu auth check https://mcp.example.com/mcp` walks the server's
+OAuth discovery the way a client that follows the spec does: the 401 and its
+`WWW-Authenticate`, the protected resource metadata (and whether its `resource` is the
+server's URL), the authorization server's metadata, PKCE and registration. No login, no
+tokens: only the requests a client makes first.
+
 Logins are stored per server in `~/.config/toolmenu/auth` (readable only by you);
 `auth list` and `auth logout <url>` manage them. A server that doesn't allow
 dynamic registration needs a pre-registered app: `--client-id` (and
@@ -136,11 +230,9 @@ CI, where nobody can sign in, pass a token as a header.
 Both protocol generations are supported: 2026-07-28 (`server/discover`, stateless)
 and the 2025 `initialize` handshake, through the official TypeScript SDK.
 
-Every finding and error says what's wrong, where, what toolmenu saw, and ends in a
-`→ Next:` step. Findings marked `· unsure` are heuristics (names and words): they say
-what was seen, not what it means. `toolmenu explain <rule>` says what a rule checks,
-its default level and how to change it (every rule is in [docs/RULES.md](docs/RULES.md)).
-Every command has its own help: `toolmenu history --help`.
+How to read a finding is [above](#what-a-finding-looks-like). `toolmenu explain <rule>`
+says what a rule checks, its default level and how to change it (every rule is in
+[docs/RULES.md](docs/RULES.md)). Every command has its own help: `toolmenu history --help`.
 
 Behind a proxy (`HTTPS_PROXY`), stdio servers get the proxy and CA settings
 (`HTTPS_PROXY`, `NO_PROXY`, `NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`…)
@@ -255,7 +347,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.26.0
+      - uses: niksa90/toolmenu@v0.27.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -264,7 +356,8 @@ jobs:
 
 It snapshots the PR's build, diffs it against the baseline as it is on the PR's base
 branch (or at the previous tag, on a tag push), runs the scenario, and
-posts **one comment that updates on every push**: breaking changes, the token change
+posts **one comment that updates on every push**: first the verdict (can this menu
+replace the baseline as it is?), then breaking changes, the token change
 ("this PR adds ~1,240 tokens to every conversation"), the suggested version bump,
 and anything `session` caught. The same report goes to the job summary.
 
@@ -279,6 +372,7 @@ and anything `session` caught. The same report goes to the job summary.
 | `baseline-from` | `snapshot` | `session` diffs every tool the scenario saw (the union menu), for servers whose tools appear after an unlock |
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
 | `fail-on` | `error` | Fail the job on findings at or above this level |
+| `gate` | `findings` | `review` passes or fails the job on the [review verdict](#accepting-a-new-baseline-review) instead of `diff`'s findings: a breaking change the release bump allows passes, new findings at `fail-on` fail ([more](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#the-verdict-and-gate-review)) |
 | `comment` | `true` | Post and update the PR comment |
 | `sarif` | | A folder to also write the findings to as SARIF, for code scanning (below) |
 | `version` | the Action's own | toolmenu version from npm: by default the one matching the Action tag you pinned (`latest` for the newest). The Action installs toolmenu from npm, so it needs a published version |
@@ -303,7 +397,7 @@ permissions:
   security-events: write          # to upload SARIF
 steps:
   # … checkout, build, as above
-  - uses: niksa90/toolmenu@v0.26.0
+  - uses: niksa90/toolmenu@v0.27.0
     with:
       command: node dist/server.js
       sarif: toolmenu-sarif
@@ -382,6 +476,22 @@ PRs without secrets are skipped, and a skipped check still passes; the `skipped`
 `session` runs a scripted session (the scenario *is* the agent), lists the menu
 after every step, and reports each change with the step that caused it.
 
+```
+ step   the scenario (the agent)          the menu the client sees          toolmenu
+ ────   ───────────────────────────────   ───────────────────────────────   ─────────────────────────────
+  1     list                              search_forms, get_form, …         baseline: 5 tools
+  2     call search_forms                 (unchanged)                       no change
+  3     call unlock_toolset audits        search_forms, list_team_audits,   +2 tools at position 1:
+                                          get_team_audit, get_form, …       session/mid-insert (error)
+                                                                            fresh process: not there →
+                                                                            session/side-effect (warn)
+```
+
+Each step's menu is compared with the one before it, so a change is pinned to the call
+that caused it, with where in the list it starts and what it costs the prompt cache.
+toolmenu then starts a second process (or opens a second connection) to see whether
+the change is global, or only this session's, which 2026-07-28 rules out.
+
 ```yaml
 # scenario.yml
 allow_writes: false          # refuse to call tools not marked readOnlyHint
@@ -431,6 +541,7 @@ serves, and 23 issue and pull-request tools that only the dynamic mode has.
 | `session/error-not-flagged` | warn | A tool answered with an HTTP error from the API behind it (`{"status":401,"object":"error",…}`) as a plain result, not marked `isError`, so a client that reads `isError` takes the call for a success (Notion's server). An auth one also counts toward `session/untested`. Tools that take a URL are left out: their answer is the page's (heuristic) |
 | `session/server-unresponsive` | error | The server stopped answering after a step: even `tools/list` timed out. The run stops there with this one finding, instead of every later step waiting out its timeout (a server that polls a device-code sign-in inside a tool call) |
 | `session/handle-roundtrip` | warn | With `--create-handles`: the tool that creates a session, basket or cart was called, and the tools that take it back refused the handle it had just returned (info when its result had no handle to find) |
+| `session/output-schema` | error | A tool that declares an `outputSchema` answered with no `structuredContent`, or one that doesn't match it: from 2025-06-18 a **MUST**, and the official SDK client raises an error instead of the answer |
 | `session/rate-limited` | error | The server kept refusing requests for being too many (a 429) after toolmenu waited about a minute, or a tool not marked `readOnlyHint` said it was rate-limited (it isn't called again). The run stops there, with the steps it didn't check; give the run its own server instance or raise the limit for it |
 | `session/scope-unchecked` | info | A second server process or connection couldn't start mid-session (a server that holds a file or a port), so whether a change was global wasn't checked. Said once for the run |
 
@@ -462,6 +573,14 @@ with why each tool was left out, not a clean pass. On the 22 servers in `bench/`
 
 **`session` calls tools for real.** Without `allow_writes: true` it refuses any tool
 not marked `readOnlyHint: true`. `--plan` prints the steps without connecting.
+
+**`--call-everything`** (with `--auto`, stdio only) calls **every** tool once, writes and
+open-world ones included, with a made-up value (`toolmenu-test`, `1`, a one-item list)
+where the schema gives none. It's for a server in a sandbox with nothing to lose: a
+container with no credentials and no network, as `bench/scripts/batch-full.sh` runs
+them with `SEALED=1`. Every tool's answer is then checked: results against their own
+`outputSchema`, errors flagged as errors, calls that hang. It's refused over HTTP,
+because a hosted server's tools act on someone's real account.
 
 ## `diff`: compare releases
 
@@ -540,6 +659,40 @@ server has said `0.2.0` for 19 releases (FINDINGS F5). It's shown, and only chec
 with `--server-version-is-release`. `diff` also enforces an optional `tokenBudget`
 (`diff/token-budget`). Order changes are only a notice here: between releases, prompt caches rebuild. Order
 matters *within* a session.
+
+### Accepting a new baseline: `review`
+
+`diff` says what changed. Before you commit a refreshed `menu.json`, `review` answers
+the question that follows: should it replace the baseline?
+
+```sh
+npx toolmenu snapshot --out new-menu.json -- node dist/server.js
+npx toolmenu review --release 1.4.0..1.5.0 menu.json new-menu.json
+```
+
+```
+toolmenu review  new-menu.json as the new menu.json
+  verdict   ✗ don't accept as is: 1 breaking change, and the release's minor bump is too small (release 2.0.0).
+  changes   1 breaking (1 tool) · 0 minor · 3 notice (13 tools)
+  findings  0 new · 0 gone · 1 changed · 1 unchanged
+```
+
+It runs `diff`, and runs the menu rules on both files, so it also says which findings
+the new menu **adds**, which it **clears**, and which **changed** (a summary that now
+names another tool counts as worse). The verdict is one of:
+
+| Verdict | Exit | When |
+|---|---|---|
+| `unchanged` | 0 | The same menu and the same findings |
+| `safe` | 0 | Nothing breaks callers, and no finding at or above `--fail-on` is new or worse |
+| `breaking-released` | 0 | Breaking changes, and `--release` shows a bump that allows them |
+| `breaking` | 1 | Breaking changes, and no release that allows them: none given, too small, or not checkable (calendar versions) |
+| `review` | 1 | Nothing breaks, but findings at or above `--fail-on` are new or worse, or `diff`'s own checks fail (`tokenBudget`) |
+
+It reads only the two files, so rules that need the live server (a second process,
+the raw `tools/list`) aren't part of it; `snapshot` runs those. `--format markdown`
+gives the same as a PR comment, `--json` for scripts (`verdict`, `accept`, and the
+findings by kind).
 
 ### Operations behind a search tool (`--catalog`)
 
@@ -712,6 +865,26 @@ client doesn't document is left out, not guessed.
 | `claude-code` | tool names; full definitions for tools marked `_meta["anthropic/alwaysLoad"]` | reads a description up to 4,096 characters | 16,384 through search, 4,096 up front | Claude API's |
 | `claude-api-search` | nothing from tools you defer (keep the 3–5 used most loaded) | name, description, argument names and descriptions; 5 results by default | none documented | `^[a-zA-Z0-9_-]{1,128}$` |
 | `openai` | each deferred function's name and description (its schema loads on demand); a deferred MCP server shows only its own name and description | how many results, and which fields, isn't documented, so `search/findable` doesn't run | none documented | `^[a-zA-Z0-9_-]+$`, up to 128 |
+| `codex` | not documented | not documented | none documented | OpenAI's (it sends tools to the Responses API) |
+| `antigravity` | each tool's name; the agent reads a tool's schema before calling it, unless the user marks it `"eager"` | not a search: the agent reads the schema file | none documented | not documented |
+| `gemini-cli` | not documented | not documented | none documented | rewrites: characters outside letters, digits, `_ - . :` become `_`, names over 63 characters are cut in the middle |
+| `gemini-api` | not documented | not documented | none documented | letters, digits, `_ - . :`, up to 128 |
+
+Three more check what a client limits rather than what it loads:
+
+| `--client` | What it checks |
+|---|---|
+| `vscode` | VS Code (GitHub Copilot Chat) sends at most 128 tools a request: a server over it alone is `menu/client-limit` |
+| `copilot-cloud-agent` | uses MCP tools only, not prompts or resources (`menu/client-features`, with `--lists`) |
+| `copilot-code-review` | the same, and only tools marked `readOnlyHint: true`: the rest are listed |
+
+Read, but nothing in them toolmenu can check yet: Copilot CLI defers tools behind a
+search at about 30 (it searches names, descriptions and parameters; how many results
+isn't said); Copilot in JetBrains, Visual Studio, Eclipse and Xcode documents no tool
+limit; JetBrains AI Assistant and Junie document none either (Junie CLI times out any
+request after 60 s, startup and `tools/list` included). Not here, because their docs
+don't state it: Cursor's tool limit (forum posts say 40), Windsurf's (100 in older docs,
+not in the current page), ChatGPT's. A value comes in when the client documents it.
 
 The snapshot adds a line such as `as Claude Code: up front ~524 tokens · on demand ~344
 per tool a search loads (largest: update_contacts, ~2,093)`, and `--json` a `client`
@@ -755,7 +928,9 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --lists <kinds>     snapshot: also read and check prompts, resources (comma-separated);
                     saved in the menu file beside the tools
 --client <name>     snapshot: check the menu for one client, from its own docs:
-                    claude-code, claude-api-search or openai
+                    claude-code, claude-api-search, openai, codex, vscode,
+                    copilot-cloud-agent, copilot-code-review, gemini-cli,
+                    gemini-api or antigravity
 --as <name>:<cred>  snapshot: list the menu as this identity too, repeatable:
                     "reader:Authorization: Bearer …" (HTTP) or "admin:ROLE=admin"
                     (stdio). The first is the menu saved; the others are compared

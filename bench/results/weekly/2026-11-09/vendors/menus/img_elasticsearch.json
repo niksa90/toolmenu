@@ -1,0 +1,141 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "rmcp",
+    "version": "0.1.5",
+    "protocolVersion": "2025-03-26",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:38:43.189Z",
+  "tools": [
+    {
+      "name": "get_mappings",
+      "description": "Get field mappings for a specific Elasticsearch index",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "index": {
+            "description": "Name of the Elasticsearch index to get mappings for",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index"
+        ],
+        "title": "GetMappingsParams",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Get ES index mappings",
+        "readOnlyHint": true
+      },
+      "tokens": 72
+    },
+    {
+      "name": "esql",
+      "description": "Perform an Elasticsearch ES|QL query.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "query": {
+            "description": "Complete Elasticsearch ES|QL query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "EsqlQueryParams",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Elasticsearch ES|QL query",
+        "readOnlyHint": true
+      },
+      "tokens": 68
+    },
+    {
+      "name": "list_indices",
+      "description": "List all available Elasticsearch indices",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "index_pattern": {
+            "description": "Index pattern of Elasticsearch indices to list",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index_pattern"
+        ],
+        "title": "ListIndicesParams",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "List ES indices",
+        "readOnlyHint": true
+      },
+      "tokens": 68
+    },
+    {
+      "name": "get_shards",
+      "description": "Get shard information for all or specific indices.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "index": {
+            "description": "Optional index name to get shard information for",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "title": "GetShardsParams",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Get ES shard information",
+        "readOnlyHint": true
+      },
+      "tokens": 71
+    },
+    {
+      "name": "search",
+      "description": "Perform an Elasticsearch search with the provided query DSL.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "fields": {
+            "description": "Name of the fields that need to be returned (optional)",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "index": {
+            "description": "Name of the Elasticsearch index to search",
+            "type": "string"
+          },
+          "query_body": {
+            "additionalProperties": true,
+            "description": "Complete Elasticsearch query DSL object that can include query, size, from, sort, etc.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "index",
+          "query_body"
+        ],
+        "title": "SearchParams",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Elasticsearch search DSL query",
+        "readOnlyHint": true
+      },
+      "tokens": 137
+    }
+  ],
+  "totalTokens": 416
+}

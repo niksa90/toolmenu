@@ -1,0 +1,359 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "oracle-mcp-server",
+    "version": "1.1.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:16:15.963Z",
+  "tools": [
+    {
+      "name": "execute_query",
+      "description": "Execute a SQL query on the Oracle database",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "SQL query to execute"
+          },
+          "params": {
+            "type": "array",
+            "description": "Query parameters (optional)",
+            "items": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "maxRows": {
+            "type": "number",
+            "description": "Maximum number of rows to return (default: 1000)",
+            "default": 1000
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "tokens": 102
+    },
+    {
+      "name": "list_tables",
+      "description": "List database tables from a schema or all accessible schemas",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "description": "Schema name (optional)"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Table name pattern with % wildcards (optional)"
+          }
+        }
+      },
+      "tokens": 63
+    },
+    {
+      "name": "describe_table",
+      "description": "Describe columns for a table",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "table_name": {
+            "type": "string",
+            "description": "Table name"
+          },
+          "schema": {
+            "type": "string",
+            "description": "Schema name (optional)"
+          }
+        },
+        "required": [
+          "table_name"
+        ]
+      },
+      "tokens": 57
+    },
+    {
+      "name": "get_table_indexes",
+      "description": "List indexes for a table",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "table_name": {
+            "type": "string",
+            "description": "Table name"
+          },
+          "schema": {
+            "type": "string",
+            "description": "Schema name (optional)"
+          }
+        },
+        "required": [
+          "table_name"
+        ]
+      },
+      "tokens": 58
+    },
+    {
+      "name": "get_table_constraints",
+      "description": "List constraints for a table",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "table_name": {
+            "type": "string",
+            "description": "Table name"
+          },
+          "schema": {
+            "type": "string",
+            "description": "Schema name (optional)"
+          }
+        },
+        "required": [
+          "table_name"
+        ]
+      },
+      "tokens": 58
+    },
+    {
+      "name": "list_schemas",
+      "description": "List all accessible schemas in the Oracle database",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 30
+    },
+    {
+      "name": "check_gates",
+      "description": "Check Pre-Flight Mode and cascade-depth gates for a work item in the backend-owned Lab mirror.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "work_item_id": {
+            "type": "string",
+            "description": "Work item UUID"
+          }
+        },
+        "required": [
+          "work_item_id"
+        ]
+      },
+      "tokens": 60
+    },
+    {
+      "name": "get_dispatchable_items",
+      "description": "List backend-owned Lab work items ready for dispatch.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Maximum items to return (default 25)",
+            "default": 25
+          }
+        }
+      },
+      "tokens": 52
+    },
+    {
+      "name": "build_dispatch_packet",
+      "description": "Validate a Lab work item and build an execution packet for an external execution plane.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "work_item_id": {
+            "type": "string",
+            "description": "Work item UUID"
+          }
+        },
+        "required": [
+          "work_item_id"
+        ]
+      },
+      "tokens": 56
+    },
+    {
+      "name": "stamp_dispatch_consumed",
+      "description": "Accept dispatch start, stamp consumption, and move a work item to In Progress.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "work_item_id": {
+            "type": "string",
+            "description": "Work item UUID"
+          },
+          "run_id": {
+            "type": "string",
+            "description": "Dispatch run UUID"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "run_id"
+        ]
+      },
+      "tokens": 74
+    },
+    {
+      "name": "fail_dispatch_preflight",
+      "description": "Record a preflight failure and restore the work item to a dispatch-ready state.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "work_item_id": {
+            "type": "string",
+            "description": "Work item UUID"
+          },
+          "run_id": {
+            "type": "string",
+            "description": "Dispatch run UUID"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Blocking reason"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "run_id",
+          "reason"
+        ]
+      },
+      "tokens": 88
+    },
+    {
+      "name": "handle_final_return",
+      "description": "Ingest a structured execution-plane return payload into the backend-owned Lab mirror.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "work_item_id": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "raw_output": {
+            "type": "string"
+          },
+          "duration_ms": {
+            "type": "number"
+          },
+          "model": {
+            "type": "string"
+          },
+          "lane": {
+            "type": "string"
+          },
+          "verdict": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "artifacts": {
+            "type": [
+              "string",
+              "array"
+            ]
+          },
+          "files_changed": {
+            "type": [
+              "string",
+              "array"
+            ]
+          },
+          "commit_sha": {
+            "type": "string"
+          },
+          "pr_url": {
+            "type": "string"
+          },
+          "tool_calls": {
+            "type": [
+              "string",
+              "array"
+            ]
+          }
+        },
+        "required": [
+          "work_item_id",
+          "run_id",
+          "status",
+          "summary",
+          "raw_output",
+          "duration_ms",
+          "model",
+          "lane"
+        ]
+      },
+      "tokens": 189
+    },
+    {
+      "name": "dispatch_scene",
+      "description": "Create a scene-item row and fire the writers-room entry signal.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scene_name": {
+            "type": "string"
+          },
+          "season": {
+            "type": "number"
+          },
+          "task_type": {
+            "type": "string"
+          },
+          "creative_brief": {
+            "type": "string"
+          },
+          "character_list": {
+            "type": [
+              "string",
+              "array"
+            ]
+          },
+          "episode": {
+            "type": "number"
+          },
+          "prompt_notes": {
+            "type": "string"
+          },
+          "work_item_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "scene_name",
+          "season",
+          "task_type",
+          "creative_brief"
+        ]
+      },
+      "tokens": 111
+    }
+  ],
+  "totalTokens": 998
+}

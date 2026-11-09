@@ -1,0 +1,3043 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mailgun",
+    "version": "2.2.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:35:54.880Z",
+  "tools": [
+    {
+      "name": "post-v3-domain-messages",
+      "description": "Send an email",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name used to send the message"
+          },
+          "from": {
+            "type": "string",
+            "description": "Email address of the `From` header. Can include a friendly name using the format `\"Friendly Name <email@domain.com>\"`. Note: not required if sending with a template that has a pre-set From header, but will override the template's From header if provided."
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": ""
+            },
+            "description": "Email address of the recipient(s). Supports friendly name format. Example: `\"Bob <bob@host.com>\"`. Use commas to separate multiple recipients. Duplicate addresses are automatically ignored."
+          },
+          "cc": {
+            "description": "Same as `to` but for carbon copy recipients. Supports friendly name format.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": ""
+            }
+          },
+          "bcc": {
+            "description": "Same as `to` but for blind carbon copy recipients. Supports friendly name format.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": ""
+            }
+          },
+          "subject": {
+            "type": "string",
+            "description": "Message subject. Note: not required if sending with a template that has a pre-set Subject header, but it will override it if provided."
+          },
+          "text": {
+            "description": "Body of the message (text version)",
+            "type": "string"
+          },
+          "html": {
+            "description": "Body of the message (HTML version)",
+            "type": "string"
+          },
+          "amp-html": {
+            "description": "AMP part of the message.  Please follow Google guidelines to compose and send AMP emails",
+            "type": "string"
+          },
+          "attachment": {
+            "description": "File attachment.  You can post multiple `attachment` values.  **Important:** You must use `multipart/form-data` encoding for sending attachments",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": ""
+            }
+          },
+          "inline": {
+            "description": "Attachment with `inline` disposition.  Can be used to send inline images (see example). You can post multiple `inline` values",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": ""
+            }
+          },
+          "template": {
+            "description": "Name of a template stored via the Templates API to use to render the email body. See [Templates](https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/send-templates) for more information",
+            "type": "string"
+          },
+          "t_version": {
+            "description": "Render a specific version of the given template instead of the latest version. `template` option must also be provided.",
+            "type": "string"
+          },
+          "t_text": {
+            "description": "Generates a plain text version of the template alongside the HTML version when sending templated emails. When set to 'yes', instructs Mailgun to create a text/plain MIME part based on the template content, ensuring compatibility with email clients that don't support HTML or have HTML rendering disabled. This improves email deliverability and accessibility by providing a fallback text version in multipart emails.",
+            "type": "string",
+            "enum": [
+              "yes"
+            ]
+          },
+          "t_variables": {
+            "description": "A valid JSON-encoded dictionary used as the input for template variable expansion.  See [Templates](https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/send-templates) for more information",
+            "type": "string"
+          },
+          "o_tag": {
+            "description": "Tag string.  See [Tagging](https://documentation.mailgun.com/docs/mailgun/user-manual/tracking-messages/track-tagging) for more information",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": ""
+            }
+          },
+          "o_dkim": {
+            "description": "Enables or disables DKIM signatures on a per-message basis. Overrides the domain-level DKIM setting for this specific message.",
+            "type": "string",
+            "enum": [
+              "yes",
+              "no",
+              "true",
+              "false"
+            ]
+          },
+          "o_secondary-dkim": {
+            "description": "Specify a second domain key to sign the email with. The value is formatted as `signing_domain/selector`, e.g. `example.com/s1`. This tells Mailgun to sign the message with the signing domain `example.com` using the selector `s1`. Note: the domain key specified must have been previously created and activated.",
+            "type": "string"
+          },
+          "o_secondary-dkim-public": {
+            "description": "Specify an alias of the domain key specified in `o:secondary-dkim`. Also formatted as `public_signing_domain/selector`. `o:secondary-dkim` option must also be provided. Mailgun will sign the message with the provided key of the secondary DKIM, but use the public secondary DKIM name and selector. Note: We will perform a DNS check prior to signing the message to ensure the public keys matches the secondary DKIM.",
+            "type": "string"
+          },
+          "o_deliverytime": {
+            "description": "Specifies the scheduled delivery time in [RFC-2822 format](https://documentation.mailgun.com/docs/mailgun/api-reference/api-overview#date-format). Depending on your plan, you can schedule messages up to 3 or 7 days in advance. If your domain has a custom message_ttl (time-to-live) setting, this value determines the maximum scheduling duration. Example: 'Fri, 14 Oct 2011 12:00:00 +0000'",
+            "type": "string"
+          },
+          "o_deliver-within": {
+            "description": "Specifies the maximum time window for delivering the message. Accepts values in format `[0-9]+h[0-9]+m` (e.g., `1h30m`, `30m`, `24h`), with a minimum of `5m` and maximum of `24h`. For scheduled messages, the delivery window starts from the scheduled time. The standard retry schedule applies within this window, so shorter timeframes may result in fewer delivery attempts.",
+            "type": "string"
+          },
+          "o_deliverytime-optimize-period": {
+            "description": "Toggles Send Time Optimization (STO) on a per-message basis.  String should be set to the number of hours in `[0-9]+h` format, with the minimum being `24h` and the maximum being `72h`.  This value defines the time window in which Mailgun will run the optimization algorithm based on prior engagement data of a given recipient. See [Sending a Message with STO](https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/send-sto) for details. *Please note that STO is only available on certain plans. See www.mailgun.com/pricing for more info*",
+            "type": "string"
+          },
+          "o_time-zone-localize": {
+            "description": "Toggles Timezone Optimization (TZO) on a per message basis. String should be set to preferred delivery time in `HH:mm` or `hh:mmaa` format, where `HH:mm` is used for 24 hour format without AM/PM and hh:mmaa is used for 12 hour format with AM/PM. See [Sending a Message with TZO](https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/send-tzo) for details. *Please note that TZO is only available on certain plans. See www.mailgun.com/pricing for more info*",
+            "type": "string"
+          },
+          "o_testmode": {
+            "description": "Enables sending in test mode. Messages are processed normally but not actually delivered to recipients. Useful for testing without sending real emails. See [Sending in Test Mode](https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/test-mode)",
+            "type": "string",
+            "enum": [
+              "yes"
+            ]
+          },
+          "o_tracking": {
+            "description": "Toggles both click and open tracking on a per-message basis",
+            "type": "string",
+            "enum": [
+              "yes",
+              "no",
+              "true",
+              "false",
+              "htmlonly"
+            ]
+          },
+          "o_tracking-clicks": {
+            "description": "Toggles click tracking on a per-message basis, see [Tracking Clicks](https://documentation.mailgun.com/docs/mailgun/user-manual/tracking-messages/tracking-clicks).  This overrides the domain-level click tracking setting.",
+            "type": "string",
+            "enum": [
+              "yes",
+              "no",
+              "true",
+              "false",
+              "htmlonly"
+            ]
+          },
+          "o_tracking-opens": {
+            "description": "Toggles opens tracking on a per-message basis, see [Tracking Opens](https://documentation.mailgun.com/docs/mailgun/user-manual/tracking-messages/tracking-opens).  Has higher priority than domain-level setting.",
+            "type": "string",
+            "enum": [
+              "yes",
+              "no",
+              "true",
+              "false"
+            ]
+          },
+          "o_require-tls": {
+            "description": "When set to 'yes', requires the message to be sent only over a TLS connection to the Email Service Provider. If TLS cannot be established, the message will not be delivered. When set to 'no' (default), Mailgun attempts TLS but falls back to plaintext SMTP if needed.",
+            "type": "string",
+            "enum": [
+              "yes",
+              "no",
+              "true",
+              "false"
+            ]
+          },
+          "o_skip-verification": {
+            "description": "If `true`, the certificate and hostname of the resolved MX Host will not be verified when trying to establish a TLS connection. If `false`, Mailgun will verify the certificate and hostname. If either one can not be verified, a TLS connection will not be established. The default is `false`",
+            "type": "string",
+            "enum": [
+              "yes",
+              "no",
+              "true",
+              "false"
+            ]
+          },
+          "o_sending-ip": {
+            "description": "Used to specify an IP Address to send an email that is owned by your account",
+            "type": "string"
+          },
+          "o_sending-ip-pool": {
+            "description": "If an IP Pool ID is provided, the email will be delivered with an IP that belongs in that pool",
+            "type": "string"
+          },
+          "o_tracking-pixel-location-top": {
+            "description": "Places the tracking pixel at the top of emails instead of the bottom. Useful for long emails that may be truncated or have rendering issues, ensuring open tracking works accurately.",
+            "type": "string",
+            "enum": [
+              "yes",
+              "no",
+              "true",
+              "false",
+              "htmlonly"
+            ]
+          },
+          "o_archive-to": {
+            "description": "Sends a copy of successfully delivered messages to the specified URL via HTTP POST. The request uses Content-Type: application/mime and contains the exact message the recipient's SMTP server received. NOTE: These are accounted for and billed as delivered messages",
+            "type": "string"
+          },
+          "o_suppress-headers": {
+            "description": "Removes specified X-Mailgun headers from the delivered message. Provide header names separated by commas (e.g., 'X-Mailgun-Variables,X-Mailgun-Tag') or use 'all' to remove all X-Mailgun headers.Note: X-Mailgun-Sid header is currently used to process complains received via feedback loops.",
+            "type": "string"
+          },
+          "h_X-My-Header": {
+            "description": "Adds custom headers to the email. Use 'h:' prefix followed by header name and value. Example: 'h:X-Custom-Header=my-value'",
+            "type": "string"
+          },
+          "v_my-var": {
+            "description": "Attaches custom data to the message using the 'v:' prefix followed by a variable name. When sending with templates, provides values for template variable substitution (overridden by 't:variables' if both are provided). When not using templates, treated as metadata and included in events/webhooks. Variables are visible in the delivered email's X-Mailgun-Variables header. Example: 'v:user-id=123'. NOTE: Anything over 4KB will be truncated in the event/webhooks.",
+            "type": "string"
+          },
+          "recipient-variables": {
+            "description": "A JSON-encoded dictionary for batch sending with personalized variables per recipient. Each key is a recipient email address, each value is a dictionary of variables for that recipient. Variables can be referenced in the message using %recipient.variablename%. Example: '{\"alice@example.com\": {\"name\":\"Alice\", \"id\":1}, \"bob@example.com\": {\"name\":\"Bob\", \"id\":2}}'. Maximum 1,000 recipients per batch. See [Batch Sending](https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/batch-sending) for more information",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain_name",
+          "from",
+          "to",
+          "subject"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 2440
+    },
+    {
+      "name": "get-v3-domains-domain-messages-storage_key",
+      "description": "Retrieve a stored email",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name that was used to send the email"
+          },
+          "storage_key": {
+            "type": "string",
+            "description": "Storage key from the email's associated events (Example: Accepted/Delivered events `storage.key` field). Note: Storage keys are available for the duration of your domain's message retention policy."
+          }
+        },
+        "required": [
+          "domain_name",
+          "storage_key"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 123
+    },
+    {
+      "name": "post-v3-domains-domain-messages-storage_key",
+      "description": "Resend an email",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name used to send the message"
+          },
+          "storage_key": {
+            "type": "string",
+            "description": "Storage key from the email's associated events (Example: Accepted/Delivered events `storage.key` field). Note: Storage keys are available for the duration of your domain's message retention policy."
+          },
+          "to": {
+            "type": "string",
+            "description": "Email address of the recipient(s). Supports friendly name format. Example: `\"Bob <bob@host.com>\"`. Use commas to separate multiple recipients. Duplicate addresses are automatically ignored."
+          }
+        },
+        "required": [
+          "domain_name",
+          "storage_key",
+          "to"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 170
+    },
+    {
+      "name": "get-v4-domains",
+      "description": "Get domains",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "limit": {
+            "description": "Max count of items. Max: 1000. Default: 100",
+            "type": "number"
+          },
+          "skip": {
+            "description": "Get the list of items starting at the nth element. Default: 0",
+            "type": "number"
+          },
+          "state": {
+            "description": "Get only domains with a specific state. Can be either active, unverified or disabled.",
+            "type": "string"
+          },
+          "sort": {
+            "description": "Valid sort options are `name` which defaults to asc order, `name:asc`, or `name:desc`. If sorting is not specified domains are returned in reverse creation date order.",
+            "type": "string"
+          },
+          "authority": {
+            "description": "Get only domains with a specific authority. If state is specified then only state filtering will be proceed",
+            "type": "string"
+          },
+          "search": {
+            "description": "Search domains by the given partial or complete name. Does not support wildcards",
+            "type": "string"
+          },
+          "include_subaccounts": {
+            "description": "Search on every domain that belongs to any subaccounts under this account. Default to false.",
+            "type": "boolean"
+          }
+        }
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 245
+    },
+    {
+      "name": "get-v4-domains-name",
+      "description": "Get domain details",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the domain you want to fetch"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 64
+    },
+    {
+      "name": "put-v4-domains-name-verify",
+      "description": "Verify Domain",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the domain you want to verify"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 65
+    },
+    {
+      "name": "get-v3-domains-name-sending_queues",
+      "description": "Get messages queue status",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the domain you want get sending queues from"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 71
+    },
+    {
+      "name": "get-v3-domains-name-tracking",
+      "description": "Get tracking settings",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the domain to fetch tracking details for."
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 68
+    },
+    {
+      "name": "put-v3-domains-name-tracking-click",
+      "description": "Update click tracking settings",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the domain you want to update"
+          },
+          "active": {
+            "description": "Set param to `htmlonly`, `true`, or `false`.  Omit this param to make no change to the active status. Click tracking is consider as active if it's in the 'htmlonly' or 'true' state",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 125
+    },
+    {
+      "name": "put-v3-domains-name-tracking-open",
+      "description": "Update open tracking settings",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the domain you want to update"
+          },
+          "active": {
+            "description": "Set this param to true or false to toggle open tracking active status. Omit this param to keep current settings.",
+            "type": "boolean"
+          },
+          "place_at_the_top": {
+            "description": "Setting this param to true will place the open tracking pixel at the top of the HTML body when inserted into the email mime. Omit this param to keep current setting.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 146
+    },
+    {
+      "name": "put-v3-domains-name-tracking-unsubscribe",
+      "description": "Update unsubscribe tracking settings",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the domain you want to update"
+          },
+          "active": {
+            "description": "This param will toggle the active status of unsubscribe tracking on the domain.",
+            "type": "boolean"
+          },
+          "html_footer": {
+            "description": "Updates the html footer for the unsubscribe link inserted into the email html part of the mime.",
+            "type": "string"
+          },
+          "text_footer": {
+            "description": "Updates the text footer for the unsubscribe link inserted into the email plain part of the mime.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 148
+    },
+    {
+      "name": "get-v3-domains-domain-webhooks",
+      "description": "Get domain webhooks",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "Domain name you want webhooks for"
+          }
+        },
+        "required": [
+          "domain"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 65
+    },
+    {
+      "name": "post-v3-domains-domain-webhooks",
+      "description": "Create a domain webhook",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name to create the webhook for"
+          },
+          "id": {
+            "type": "string",
+            "description": "Webhook type to create. Valid types are `accepted`, `clicked`, `opened`, `unsubscribed`, `delivered`, `permanent_fail`, `temporary_fail`, `complained`"
+          },
+          "url": {
+            "type": "string",
+            "description": "url(s) for webhooks to be sent to. Use multiple times to associate more than one url. Maximum of 3 urls for a given webhook type."
+          }
+        },
+        "required": [
+          "domain",
+          "id",
+          "url"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 161
+    },
+    {
+      "name": "get-v3-domains-domain-webhooks-webhook",
+      "description": "Get domain webhooks by type",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name you want webhooks for"
+          },
+          "webhook_name": {
+            "type": "string",
+            "description": "The webhook type you wish to retrieve. Valid types are `accepted`, `clicked`, `opened`, `unsubscribed`, `delivered`, `permanent_fail`, `temporary_fail`, `complained`"
+          }
+        },
+        "required": [
+          "domain_name",
+          "webhook_name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 129
+    },
+    {
+      "name": "put-v3-domains-domain-webhooks-webhook",
+      "description": "Update domain webhook",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "The name of the domain you want to get webhook from"
+          },
+          "webhook_name": {
+            "type": "string",
+            "description": "The webhook type to update."
+          },
+          "url": {
+            "type": "string",
+            "description": "New url(s) to associate to webhook. Use multiple times to associate more than one url. Maximum of 3 urls for a given type."
+          }
+        },
+        "required": [
+          "domain_name",
+          "webhook_name",
+          "url"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 134
+    },
+    {
+      "name": "get-v5-accounts-subaccounts-ip_pools-all",
+      "description": "List DIPPs delegated to subaccounts",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {}
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 52
+    },
+    {
+      "name": "get-v3-ips",
+      "description": "List account IPs",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "dedicated": {
+            "description": "Return only dedicated IPs",
+            "type": "boolean"
+          },
+          "enabled": {
+            "description": "Return only enabled IPs",
+            "type": "boolean"
+          }
+        }
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 71
+    },
+    {
+      "name": "get-v3-ips-ip",
+      "description": "Get details about account IP",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "ip": {
+            "type": "string",
+            "description": "IP address to get details about"
+          }
+        },
+        "required": [
+          "ip"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 63
+    },
+    {
+      "name": "get-v3-ips-ip-domains",
+      "description": "Get all domains of an account where a specific IP is assigned",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "ip": {
+            "type": "string",
+            "description": "The IP to filter on"
+          },
+          "limit": {
+            "type": "number",
+            "description": "The limit to apply to the returned domains"
+          },
+          "search": {
+            "type": "string",
+            "description": "The search query that the returned domains' names must match"
+          },
+          "skip": {
+            "type": "number",
+            "description": "The number of matching domains to skip in the response"
+          }
+        },
+        "required": [
+          "ip",
+          "limit",
+          "search",
+          "skip"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 136
+    },
+    {
+      "name": "get-v3-ip_pools",
+      "description": "List dedicated IP pools of the account",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {}
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 47
+    },
+    {
+      "name": "get-v3-ip_pools-pool_id",
+      "description": "Get DIPP details",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "pool_id": {
+            "type": "string",
+            "description": "Id of the DIPP to get details about"
+          }
+        },
+        "required": [
+          "pool_id"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 70
+    },
+    {
+      "name": "get-v3-ip_pools-pool_id-domains",
+      "description": "Get domains linked to DIPP",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "pool_id": {
+            "type": "string",
+            "description": "Id of the DIPP to get details about"
+          },
+          "limit": {
+            "description": "The maximum number of records to return",
+            "type": "number",
+            "minimum": 10,
+            "maximum": 500
+          },
+          "page": {
+            "description": "Encoded page identifier retrieved from previous call",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pool_id"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 115
+    },
+    {
+      "name": "get-v3-domain-tags",
+      "description": "List all tags",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          },
+          "page": {
+            "description": "The page direction based on the tag parameter; valid choices are (first, last, next, prev)",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Limits the number of items returned in a request",
+            "type": "number"
+          },
+          "tag": {
+            "description": "The tag that marks the end of the current page and the start of the next",
+            "type": "string"
+          },
+          "prefix": {
+            "description": "List only tags that begin with this prefix",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 151
+    },
+    {
+      "name": "get-v3-domain-tag",
+      "description": "Get a tag",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          },
+          "tag": {
+            "type": "string",
+            "description": "The name of the tag"
+          }
+        },
+        "required": [
+          "domain",
+          "tag"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 74
+    },
+    {
+      "name": "get-v3-domain-tag-stats-aggregates",
+      "description": "Get aggregate stat types by tag",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          },
+          "tag": {
+            "type": "string",
+            "description": "The name of the tag"
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of aggregate (country, device, provider)"
+          }
+        },
+        "required": [
+          "domain",
+          "tag",
+          "type"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 105
+    },
+    {
+      "name": "get-v3-domain-tag-stats",
+      "description": "Get stats by tag",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain id"
+          },
+          "start": {
+            "description": "The start date in RFC 2822 format or unix epoch (default: 7 days ago)",
+            "type": "string"
+          },
+          "end": {
+            "description": "The end date in RFC 2822 format or unix epoch (default: current time)",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "The gregorian resolution the query is for 'day, month, hour` (default: day)",
+            "type": "string"
+          },
+          "duration": {
+            "description": "If duration is provided than it's calculated from the 'end' date and overwrites the 'start' date",
+            "type": "string"
+          },
+          "provider": {
+            "description": "The provider value; see `GET /v3/domains/1/tag/providers` for possible values",
+            "type": "string"
+          },
+          "device": {
+            "description": "The device value; see `GET /v3/domains/1/tag/devices` for possible values",
+            "type": "string"
+          },
+          "country": {
+            "description": "The country value; see `GET /v3/domains/1/tag/providers` for possible values",
+            "type": "string"
+          },
+          "event": {
+            "type": "string",
+            "description": "Name of the event(s) to receive the stats for (Multiple events are allowed). Supported events are: accepted, delivered, failed, opened, clicked, unsubscribed, complained, stored"
+          },
+          "tag": {
+            "type": "string",
+            "description": "The name of the tag"
+          }
+        },
+        "required": [
+          "domain",
+          "event",
+          "tag"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 336
+    },
+    {
+      "name": "get-v3-domains-domain-tag-devices",
+      "description": "List of supported devices",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          }
+        },
+        "required": [
+          "domain"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 62
+    },
+    {
+      "name": "get-v3-domains-domain-tag-providers",
+      "description": "List of supported providers",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          }
+        },
+        "required": [
+          "domain"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 62
+    },
+    {
+      "name": "get-v3-domains-domain-tag-countries",
+      "description": "List of supported country codes",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          }
+        },
+        "required": [
+          "domain"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 63
+    },
+    {
+      "name": "get-v3-domains-domain-limits-tag",
+      "description": "Get tag limits",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          }
+        },
+        "required": [
+          "domain"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 61
+    },
+    {
+      "name": "get-v3-stats-total",
+      "description": "Totals for entire account",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "The start date in RFC 2822 format or unix epoch (default: 7 days ago)",
+            "type": "string"
+          },
+          "end": {
+            "description": "The end date in RFC 2822 format or unix epoch (default: current time)",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "The gregorian resolution the query is for 'day, month, hour` (default: day)",
+            "type": "string"
+          },
+          "duration": {
+            "description": "If duration is provided than it's calculated from the 'end' date and overwrites the 'start' date",
+            "type": "string"
+          },
+          "event": {
+            "type": "string",
+            "description": "Name of the event(s) to receive the stats for (Multiple events are allowed). Supported events are: accepted, delivered, failed, opened, clicked, unsubscribed, complained, stored"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 212
+    },
+    {
+      "name": "get-v3-domain-stats-total",
+      "description": "Totals for entire domain",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          },
+          "start": {
+            "description": "The start date in RFC 2822 format or unix epoch (default: 7 days ago)",
+            "type": "string"
+          },
+          "end": {
+            "description": "The end date in RFC 2822 format or unix epoch (default: current time)",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "The gregorian resolution the query is for 'day, month, hour` (default: day)",
+            "type": "string"
+          },
+          "duration": {
+            "description": "If duration is provided than it's calculated from the 'end' date and overwrites the 'start' date",
+            "type": "string"
+          },
+          "event": {
+            "type": "string",
+            "description": "Name of the event(s) to receive the stats for (Multiple events are allowed). Supported events are: accepted, delivered, failed, opened, clicked, unsubscribed, complained, stored"
+          }
+        },
+        "required": [
+          "domain",
+          "event"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 228
+    },
+    {
+      "name": "get-v3-stats-total-domains",
+      "description": "Totals for account domains for a single time resolution",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "description": "Name of the event(s) to receive the stats for (Multiple events are allowed). Supported events are: accepted, delivered, failed, opened, clicked, unsubscribed, complained, stored"
+          },
+          "limit": {
+            "description": "Skip x number of domains; used to page through large numbers of domains",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "The gregorian resolution the query is for 'day, month, hour` (default: day)",
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "The date/time of the 'resolution' we are retrieving"
+          }
+        },
+        "required": [
+          "event",
+          "timestamp"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 177
+    },
+    {
+      "name": "get-v3-stats-filter",
+      "description": "Filtered/grouped totals for entire account",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "The start date in RFC 2822 format or unix epoch (default: 7 days ago)",
+            "type": "string"
+          },
+          "end": {
+            "description": "The end date in RFC 2822 format or unix epoch (default: current time)",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "The gregorian resolution the query is for 'day, month, hour` (default: day)",
+            "type": "string"
+          },
+          "duration": {
+            "description": "If duration is provided than it's calculated from the 'end' date and overwrites the 'start' date",
+            "type": "string"
+          },
+          "event": {
+            "type": "string",
+            "description": "Name of the event(s) to receive the stats for (Multiple events are allowed). Supported events are: accepted, delivered, failed, opened, clicked, unsubscribed, complained, stored"
+          },
+          "filter": {
+            "description": "A filter for account level metrics such as filter=domain:my.example.com",
+            "type": "string"
+          },
+          "group": {
+            "description": "The key to group metrics by.  Must be one of total, time, day, month, domain, ip, provider, tag, country",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 279
+    },
+    {
+      "name": "get-v3-domain-aggregates-providers",
+      "description": "Aggregate counts by ESP",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          }
+        },
+        "required": [
+          "domain"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 62
+    },
+    {
+      "name": "get-v3-domain-aggregates-devices",
+      "description": "Aggregate counts by devices triggering events ",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          }
+        },
+        "required": [
+          "domain"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 64
+    },
+    {
+      "name": "get-v3-domain-aggregates-countries",
+      "description": "Aggregate counts by country",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain name"
+          }
+        },
+        "required": [
+          "domain"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 62
+    },
+    {
+      "name": "post-v1-analytics-metrics",
+      "description": "Query account metrics",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "A start date (default: 7 days before current time). Must be in RFC 2822 format: https://datatracker.ietf.org/doc/html/rfc2822.html#page-14",
+            "type": "string"
+          },
+          "end": {
+            "description": "An end date (default: current time). Must be in RFC 2822 format: https://datatracker.ietf.org/doc/html/rfc2822.html#page-14",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "A resolution in the format of 'day' 'hour' 'month'. Default is day.",
+            "type": "string"
+          },
+          "duration": {
+            "description": "A duration in the format of '1d' '2h' '2m'. If duration is provided then it is calculated from the end date and overwrites the start date.",
+            "type": "string"
+          },
+          "dimensions": {
+            "description": "Attributes of the metric data such as 'subaccount'.  See [dimensions](https://documentation.mailgun.com/docs/mailgun/user-manual/reporting/dimensions)",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "bot",
+                "country",
+                "ip_pool",
+                "recipient_domain",
+                "recipient_provider",
+                "ip",
+                "domain",
+                "tag",
+                "device",
+                "subaccount",
+                "time"
+              ],
+              "description": "Dimension"
+            }
+          },
+          "metrics": {
+            "description": "Name of the metrics to receive the stats for such as 'processed_count'. See [metrics](https://documentation.mailgun.com/docs/mailgun/user-manual/reporting/metric-definitions)",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "accepted_incoming_count",
+                "accepted_outgoing_count",
+                "accepted_count",
+                "delivered_smtp_count",
+                "delivered_http_count",
+                "delivered_optimized_count",
+                "delivered_count",
+                "processed_count",
+                "sent_count",
+                "opened_count",
+                "clicked_count",
+                "unique_opened_count",
+                "unique_clicked_count",
+                "unsubscribed_count",
+                "complained_count",
+                "failed_count",
+                "temporary_failed_count",
+                "permanent_failed_count",
+                "temporary_failed_esp_block_count",
+                "permanent_failed_esp_block_count",
+                "webhook_count",
+                "rate_limit_count",
+                "permanent_failed_optimized_count",
+                "permanent_failed_old_count",
+                "bounced_count",
+                "hard_bounces_count",
+                "soft_bounces_count",
+                "delayed_bounce_count",
+                "suppressed_bounces_count",
+                "suppressed_unsubscribed_count",
+                "suppressed_complaints_count",
+                "delivered_first_attempt_count",
+                "delayed_first_attempt_count",
+                "delivered_two_plus_attempts_count",
+                "delivered_rate",
+                "opened_rate",
+                "clicked_rate",
+                "unique_opened_rate",
+                "unsubscribed_rate",
+                "complained_rate",
+                "bounce_rate",
+                "permanent_fail_rate",
+                "temporary_fail_rate",
+                "delayed_rate",
+                "delayed_first_attempt_rate"
+              ],
+              "description": "Metric"
+            }
+          },
+          "filter": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "include_subaccounts": {
+            "description": "Include stats from all subaccounts.",
+            "type": "boolean"
+          },
+          "include_aggregates": {
+            "description": "Include top-level aggregate metrics.",
+            "type": "boolean"
+          }
+        }
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 631
+    },
+    {
+      "name": "post-v1-analytics-usage-metrics",
+      "description": "Query account usage metrics",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "A start date (default: 7 days before current time). Must be in RFC 2822 format: https://datatracker.ietf.org/doc/html/rfc2822.html#page-14",
+            "type": "string"
+          },
+          "end": {
+            "description": "An end date (default: current time). Must be in RFC 2822 format: https://datatracker.ietf.org/doc/html/rfc2822.html#page-14",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "A resolution in the format of 'day' 'hour' 'month'. Default is day.",
+            "type": "string"
+          },
+          "duration": {
+            "description": "A duration in the format of '1d' '2h' '2m'. If duration is provided then it is calculated from the end date and overwrites the start date.",
+            "type": "string"
+          },
+          "dimensions": {
+            "description": "Attributes of the metric data such as 'subaccount'.  See [dimensions](https://documentation.mailgun.com/docs/mailgun/user-manual/reporting/dimensions)",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "subaccount",
+                "time"
+              ],
+              "description": "Usage Dimension"
+            }
+          },
+          "metrics": {
+            "description": "Name of the metrics to receive the stats for such as 'processed_count'.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "email_validation_count",
+                "email_validation_public_count",
+                "email_validation_valid_count",
+                "email_validation_single_count",
+                "email_validation_bulk_count",
+                "email_validation_list_count",
+                "email_validation_mailgun_count",
+                "email_validation_mailjet_count",
+                "email_preview_count",
+                "email_preview_failed_count",
+                "link_validation_count",
+                "link_validation_failed_count",
+                "seed_test_count",
+                "ip_blocklist_monitoring_count",
+                "domain_blocklist_monitoring_count",
+                "accessibility_count",
+                "accessibility_failed_count",
+                "image_validation_count",
+                "image_validation_failed_count",
+                "archived_count",
+                "processed_count"
+              ],
+              "description": "Usage Metric"
+            }
+          },
+          "filter": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "include_subaccounts": {
+            "description": "Include stats from all subaccounts.",
+            "type": "boolean"
+          },
+          "include_aggregates": {
+            "description": "Include top-level aggregate metrics.",
+            "type": "boolean"
+          }
+        }
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 476
+    },
+    {
+      "name": "post-v1-analytics-logs",
+      "description": "List logs",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "The start date (default: 1 day before current time). Must be in RFC 2822 format: https://datatracker.ietf.org/doc/html/rfc2822.html#page-14",
+            "type": "string"
+          },
+          "end": {
+            "description": "The end date (default: current time). Must be in RFC 2822 format: https://datatracker.ietf.org/doc/html/rfc2822.html#page-14",
+            "type": "string"
+          },
+          "events": {
+            "description": "The set of events to include.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": ""
+            }
+          },
+          "metric_events": {
+            "description": "Optional set of analytics metric events. Will be converted into corresponding events.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": ""
+            }
+          },
+          "filter": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "include_subaccounts": {
+            "description": "Include logs from all subaccounts.",
+            "type": "boolean"
+          },
+          "include_totals": {
+            "description": "Include total number of log entries.",
+            "type": "boolean"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "sort": {
+                "description": "Colon-separated value indicating column name and sort direction e.g. 'timestamp:desc'.",
+                "type": "string"
+              },
+              "token": {
+                "description": "A token to the requested page.",
+                "type": "string"
+              },
+              "limit": {
+                "description": "The maximum number of items returned (100 max).",
+                "type": "number"
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 330
+    },
+    {
+      "name": "get-v3-domain-bounces-address",
+      "description": "Lookup bounce record",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain to retrieve the bounce from"
+          },
+          "address": {
+            "type": "string",
+            "description": "The address to search for"
+          }
+        },
+        "required": [
+          "domain_name",
+          "address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 81
+    },
+    {
+      "name": "get-v3-domain-bounces",
+      "description": "List all bounces",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain to retrieve bounces from"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of records to return (optional, default: 100, max: 1000)"
+          },
+          "page": {
+            "type": "string",
+            "description": "Page direction relative to the above address, can be `next`, `previous` or `last`, if empty, returns the first page"
+          },
+          "term": {
+            "type": "string",
+            "description": "Filter records based on addresses that start with the specified substring."
+          }
+        },
+        "required": [
+          "domain_name",
+          "limit",
+          "page",
+          "term"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 159
+    },
+    {
+      "name": "get-v3-domain-unsubscribes-address",
+      "description": "Lookup unsubscribe record",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain to retrieve the unsubscribe from"
+          },
+          "address": {
+            "type": "string",
+            "description": "The address to search for"
+          }
+        },
+        "required": [
+          "domain_name",
+          "address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 83
+    },
+    {
+      "name": "get-v3-domain-unsubscribes",
+      "description": "List all unsubscribes",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain to retrieve unsubscribes from"
+          },
+          "limit": {
+            "description": "Maximum number of records to return (optional, default: 100, max: 1000)",
+            "type": "number"
+          },
+          "page": {
+            "description": "Page direction relative to the above address, can be `next`, `previous` or `last`, if empty, returns the first page",
+            "type": "string"
+          },
+          "address": {
+            "type": "string",
+            "description": "address serving as a \"divider\" between pages"
+          },
+          "term": {
+            "type": "string",
+            "description": "Filter records based on addresses that start with the specified substring."
+          }
+        },
+        "required": [
+          "domain_name",
+          "address",
+          "term"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 180
+    },
+    {
+      "name": "get-v3-domain-complaints-address",
+      "description": "Lookup complaint record",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain to retrieve the complaint from"
+          },
+          "address": {
+            "type": "string",
+            "description": "The address to search for"
+          }
+        },
+        "required": [
+          "domain_name",
+          "address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 82
+    },
+    {
+      "name": "get-v3-domain-complaints",
+      "description": "List all complaints",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain to retrieve complaints from"
+          },
+          "limit": {
+            "description": "Maximum number of records to return (optional, default: 100, max: 1000)",
+            "type": "number"
+          },
+          "page": {
+            "description": "Page direction relative to the above address, can be `next`, `previous` or `last`, if empty, returns the first page",
+            "type": "string"
+          },
+          "address": {
+            "type": "string",
+            "description": "address serving as a \"divider\" between pages"
+          },
+          "term": {
+            "type": "string",
+            "description": "Filter records based on addresses that start with the specified substring."
+          }
+        },
+        "required": [
+          "domain_name",
+          "address",
+          "term"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 175
+    },
+    {
+      "name": "get-v3-domain-whitelists-value",
+      "description": "Lookup allowlist record",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain to retrieve the allowlist entry from"
+          },
+          "value": {
+            "type": "string",
+            "description": "The address to search for"
+          }
+        },
+        "required": [
+          "domain_name",
+          "value"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 85
+    },
+    {
+      "name": "get-v3-domain-whitelists",
+      "description": "List allowlist records for domain",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain to retrieve allowlist entries from"
+          },
+          "limit": {
+            "description": "Maximum number of records to return (optional, default: 100, max: 1000)",
+            "type": "number"
+          },
+          "page": {
+            "description": "Page direction relative to the above address, can be `next`, `previous` or `last`, if empty, returns the first page",
+            "type": "string"
+          },
+          "address": {
+            "type": "string",
+            "description": "address serving as a \"divider\" between pages"
+          },
+          "term": {
+            "type": "string",
+            "description": "Filter records based on addresses that start with the specified substring."
+          }
+        },
+        "required": [
+          "domain_name",
+          "address",
+          "term"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 180
+    },
+    {
+      "name": "get-v3-routes",
+      "description": "Get all routes",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "skip": {
+            "description": "Number of records to skip. Defaults to 0.",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Maximum number of records to return. Defaults to 100.",
+            "type": "string"
+          }
+        }
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 80
+    },
+    {
+      "name": "get-v3-routes-id",
+      "description": "Get a route",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the route"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 61
+    },
+    {
+      "name": "put-v3-routes-id",
+      "description": "Update a route",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Unique identifier of the route",
+            "type": "string"
+          },
+          "priority": {
+            "description": "Smaller number indicates higher priority. Higher priority routes are handled first.",
+            "type": "number"
+          },
+          "description": {
+            "description": "An arbitrary string.",
+            "type": "string"
+          },
+          "expression": {
+            "description": "The filtering rule.",
+            "type": "string"
+          },
+          "action": {
+            "description": "This action is executed when the expression evaluates to True. You can pass multiple parameters.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": ""
+            }
+          }
+        }
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 141
+    },
+    {
+      "name": "get-v3-lists",
+      "description": "Get mailing lists",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "limit": {
+            "description": "Set limit for the list length returned. Defaults to 100.",
+            "type": "string"
+          },
+          "skip": {
+            "description": "Skip the first n values in the list. Defaults to 0.",
+            "type": "string"
+          },
+          "address": {
+            "description": "Filter mailing lists matching a specific address",
+            "type": "string"
+          }
+        }
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 101
+    },
+    {
+      "name": "post-v3-lists",
+      "description": "Create a mailing list",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "A valid email address for the mailing list, e.g. developers@mailgun.net, or Developers <devs@mg.net>"
+          },
+          "name": {
+            "description": "Mailing list name, e.g. Developers",
+            "type": "string"
+          },
+          "description": {
+            "description": "A description",
+            "type": "string"
+          },
+          "access_level": {
+            "description": "List access level, one of: readonly, members, everyone. Defaults to readonly",
+            "type": "string"
+          },
+          "reply_preference": {
+            "description": "Set where replies should go: list or sender. Defaults to list",
+            "type": "string"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 164
+    },
+    {
+      "name": "get-v3-lists-list_address",
+      "description": "Get a mailing list by address",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "list_address": {
+            "type": "string",
+            "description": "The mailing list's address"
+          }
+        },
+        "required": [
+          "list_address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 66
+    },
+    {
+      "name": "put-v3-lists-list_address",
+      "description": "Update a mailing list",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "list_address": {
+            "type": "string",
+            "description": "The mailing list's address"
+          },
+          "address": {
+            "description": "The new mailing list address.",
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "description": ""
+          },
+          "name": {
+            "type": "string",
+            "description": ""
+          },
+          "access_level": {
+            "description": "One of: readonly, members, everyone. Defaults to readonly.",
+            "type": "string"
+          },
+          "reply_reference": {
+            "description": "Set where replies should go. Can be list or sender. Defaults to list.",
+            "type": "string"
+          },
+          "list-id": {
+            "type": "string",
+            "description": ""
+          }
+        },
+        "required": [
+          "list_address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 160
+    },
+    {
+      "name": "get-v3-lists-list_address-members",
+      "description": "Get mailing lists members",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "list_address": {
+            "type": "string",
+            "description": "The mailing list's address"
+          },
+          "address": {
+            "description": "A valid email address specification.",
+            "type": "string"
+          },
+          "subscribed": {
+            "description": "Filtering list on whether the member is subscribed or not.",
+            "type": "boolean"
+          },
+          "limit": {
+            "description": "Maximum number of records to return. Max is 100. Defaults to 100.",
+            "type": "number"
+          },
+          "skip": {
+            "type": "number",
+            "description": ""
+          }
+        },
+        "required": [
+          "list_address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 138
+    },
+    {
+      "name": "post-v3-lists-list_address-members",
+      "description": "Create a mailing list member",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "list_address": {
+            "type": "string",
+            "description": "The mailing list's address"
+          },
+          "address": {
+            "description": "Valid email address specification.",
+            "type": "string"
+          },
+          "name": {
+            "description": "An optional member name.",
+            "type": "string"
+          },
+          "vars": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "subscribed": {
+            "description": "Set the member as subscribed or not. Defaults to true.",
+            "type": "boolean"
+          },
+          "upsert": {
+            "description": "Set to True to update member if present, False to raise error in case of a duplicate member. Defaults to false.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "list_address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 170
+    },
+    {
+      "name": "get-v3-lists-list_address-members-member_address",
+      "description": "Get a member",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "list_address": {
+            "type": "string",
+            "description": "The mailing list's address"
+          },
+          "member_address": {
+            "type": "string",
+            "description": "The member's address"
+          }
+        },
+        "required": [
+          "list_address",
+          "member_address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 84
+    },
+    {
+      "name": "put-v3-lists-list_address-members-member_address",
+      "description": "Update a mailing list member",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "list_address": {
+            "type": "string",
+            "description": "The mailing list's address"
+          },
+          "member_address": {
+            "type": "string",
+            "description": "The member's address"
+          },
+          "address": {
+            "description": "A valid email address specification.",
+            "type": "string"
+          },
+          "name": {
+            "description": "An optional member name.",
+            "type": "string"
+          },
+          "vars": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "subscribed": {
+            "description": "Set the member to subscribed or not. Defaults to True.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "list_address",
+          "member_address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 157
+    },
+    {
+      "name": "get-v3-domain-templates",
+      "description": "Get templates",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name to fetch the templates for."
+          },
+          "page": {
+            "description": "Name of the page to retrieve. Value can be `first`, `last`, `next`, or `previous`. Defaults to `first`.",
+            "type": "string",
+            "enum": [
+              "first",
+              "last",
+              "next",
+              "previous"
+            ]
+          },
+          "limit": {
+            "description": "Number of templates to retrieve. Default and max limit is 100.",
+            "type": "number"
+          },
+          "p": {
+            "description": "Pivot used to retrieve the next page of templates.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain_name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 153
+    },
+    {
+      "name": "post-v3-domain-templates",
+      "description": "Create a template",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name the template is associated with."
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the template being stored. Supports utf-8 characters and name will be down cased."
+          },
+          "description": {
+            "description": "Description of the template being stored",
+            "type": "string"
+          },
+          "createdBy": {
+            "description": "Optional metadata field api user can indicate who created the template.",
+            "type": "string"
+          },
+          "template": {
+            "description": "Content of the template.",
+            "type": "string"
+          },
+          "tag": {
+            "description": "Initial tag of the created version. If the template parameter is provided and the tag is missing, the default value `initial` is used.",
+            "type": "string"
+          },
+          "comment": {
+            "description": "Version comment. This is valid only if a new version is being created. (template parameter is provided.)",
+            "type": "string"
+          },
+          "headers": {
+            "description": "Key value JSON object of headers to be stored with the template. Where key is the header name and value is the header value. The header names `From`, `Subject`, and `Reply-To` are the only ones currently supported.  These headers will be inserted into the MIME at the time we attempt delivery. \n\nHeaders set at the message level will override headers set on the template. e.g. Setting the From header at the time of sending will override the From header saved on the template. Additionally, headers generated by templates are not reflected on the accepted event as they are not prepended to the message until the message is prepped for delivery. if a From header is not provided either in the message or template, we will default to `postmaster@your-sending-domain.tld`",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain_name",
+          "name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 387
+    },
+    {
+      "name": "get-v3-domain-templates-template",
+      "description": "Get template",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name the template is stored under."
+          },
+          "template_name": {
+            "type": "string",
+            "description": "Template name to fetch."
+          },
+          "active": {
+            "description": "If this flag is set to yes the active version of the template is included in the response.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain_name",
+          "template_name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 110
+    },
+    {
+      "name": "put-v3-domain-templates-template",
+      "description": "Update template",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name the template is associated with."
+          },
+          "template_name": {
+            "type": "string",
+            "description": "The template name."
+          },
+          "description": {
+            "description": "Update description of the template being updated.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain_name",
+          "template_name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 98
+    },
+    {
+      "name": "get-v3-domain-templates-template-versions",
+      "description": "Get all template versions",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name to fetch the templates for."
+          },
+          "template_name": {
+            "type": "string",
+            "description": "template name to fetch the versions for."
+          },
+          "page": {
+            "description": "Name of the page to retrieve. Value can be `first`, `last`, `next`, or `previous`. Defaults to `first`.",
+            "type": "string",
+            "enum": [
+              "first",
+              "last",
+              "next",
+              "previous"
+            ]
+          },
+          "limit": {
+            "description": "Number of templates to retrieve. Default and max limit is 100.",
+            "type": "number"
+          },
+          "p": {
+            "description": "Pivot used to retrieve the next page of templates.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain_name",
+          "template_name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 179
+    },
+    {
+      "name": "post-v3-domain-templates-template-versions",
+      "description": "Create a template version",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name the template is associated with."
+          },
+          "template_name": {
+            "type": "string",
+            "description": "template name to create the new version for."
+          },
+          "template": {
+            "type": "string",
+            "description": "Content of the template."
+          },
+          "tag": {
+            "type": "string",
+            "description": "Tag of the version that is being created. Must be unique to the template."
+          },
+          "comment": {
+            "description": "Comment related to the version that is being created.",
+            "type": "string"
+          },
+          "active": {
+            "description": "If this flag is set to yes, this version becomes active",
+            "type": "string"
+          },
+          "headers": {
+            "description": "Key value JSON object of headers to be stored with the template. Where key is the header name and value is the header value. The header names `From`, `Subject`, and `Reply-To` are the only ones currently supported.  These headers will be inserted into the MIME at the time we attempt delivery. \n\nHeaders set at the message level will override headers set on the template. e.g. Setting the From header at the time of sending will override the From header saved on the template. Additionally, headers generated by templates are not reflected on the accepted event as they are not prepended to the message until the message is prepped for delivery. if a From header is not provided either in the message or template, we will default to `postmaster@your-sending-domain.tld`",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain_name",
+          "template_name",
+          "template",
+          "tag"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 346
+    },
+    {
+      "name": "get-v3-domain-templates-template-versions-version",
+      "description": "Get a version",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name the template is stored under."
+          },
+          "template_name": {
+            "type": "string",
+            "description": "template name the version is for."
+          },
+          "version_name": {
+            "type": "string",
+            "description": "Tag of the version of the template to fetch."
+          }
+        },
+        "required": [
+          "domain_name",
+          "template_name",
+          "version_name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 112
+    },
+    {
+      "name": "put-v3-domain-templates-template-versions-version",
+      "description": "Update a version",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain_name": {
+            "type": "string",
+            "description": "Domain name the template is associated with."
+          },
+          "template_name": {
+            "type": "string",
+            "description": "template name the version is stored under."
+          },
+          "version_name": {
+            "type": "string",
+            "description": "Tag of the version of the template to be updated"
+          },
+          "template": {
+            "description": "Content of the template.",
+            "type": "string"
+          },
+          "comment": {
+            "description": "Comment related to the version that is being created.",
+            "type": "string"
+          },
+          "active": {
+            "description": "If this flag is set to yes, this version becomes active",
+            "type": "string"
+          },
+          "headers": {
+            "description": "Key value JSON object of headers to be stored with the template. Where key is the header name and value is the header value. The header names `From`, `Subject`, and `Reply-To` are the only ones currently supported.  These headers will be inserted into the MIME at the time we attempt delivery.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain_name",
+          "template_name",
+          "version_name"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 240
+    },
+    {
+      "name": "post-v2-bounce-classification-metrics",
+      "description": "List statistic v2",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "end": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "resolution": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "duration": {
+            "description": "A duration in the format of '48h' '60m' '30s'. If duration is provided then it is calculated from the end date and overwrites the start date.",
+            "type": "string"
+          },
+          "dimensions": {
+            "description": "Dimensions.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "entity-name",
+                "domain.name",
+                "envelope.sending-ip",
+                "account.name",
+                "envelope.i-ip-pool-name",
+                "tags",
+                "tag",
+                "recipient-domain",
+                "group-id",
+                "criticality",
+                "severity",
+                "category",
+                "timestamp"
+              ],
+              "description": "Dimension"
+            }
+          },
+          "metrics": {
+            "description": "Metrics to return. See example.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": ""
+            }
+          },
+          "filter": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "include_subaccounts": {
+            "description": "Include stats from all subaccounts.",
+            "type": "boolean"
+          },
+          "pagination": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        }
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 301
+    },
+    {
+      "name": "get-v5-accounts-limit-custom-monthly",
+      "description": "Get current custom sending limit",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {}
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 48
+    },
+    {
+      "name": "validate_email",
+      "description": "Validate Address V4",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The address to be validated"
+          },
+          "provider_lookup": {
+            "description": "Enable/disable provider lookup, default is true",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "validate"
+        ]
+      },
+      "tokens": 77
+    },
+    {
+      "name": "get_inbox_placement_result",
+      "description": "Get Result Details",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string",
+            "description": ""
+          },
+          "provider": {
+            "type": "string",
+            "description": ""
+          }
+        },
+        "required": [
+          "result"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "optimize"
+        ]
+      },
+      "tokens": 66
+    },
+    {
+      "name": "get_preview_result",
+      "description": "Get Test Results",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "description": "Test to get results for"
+          }
+        },
+        "required": [
+          "test_id"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "inspect"
+        ]
+      },
+      "tokens": 59
+    },
+    {
+      "name": "get_metrics_summary",
+      "description": "Retrieve a structured summary of key sending metrics (counts and computed rates) for a domain and time window. Returns raw counts, decimal rates, and data-gap reporting. Use as a data primitive for delivery-health questions.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "Sending domain to retrieve metrics for."
+          },
+          "start": {
+            "description": "Start of time window in ISO 8601 format (e.g. '2026-04-27T00:00:00Z').",
+            "type": "string"
+          },
+          "end": {
+            "description": "End of time window in ISO 8601 format.",
+            "type": "string"
+          },
+          "duration": {
+            "description": "Duration shorthand as alternative to start/end (e.g. '24h', '7d'). Defaults to '24h'.",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "Timezone for the window (e.g. 'UTC', 'America/New_York'). Defaults to UTC.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain"
+        ]
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "com.mailgun/tags": [
+          "send"
+        ]
+      },
+      "tokens": 221
+    }
+  ],
+  "totalTokens": 12887
+}

@@ -1,0 +1,73 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mcp-api-gateway",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:52:11.488Z",
+  "tools": [
+    {
+      "name": "get_api_info",
+      "description": "Get information about available APIs and their endpoints",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "api_name": {
+            "type": "string",
+            "description": "Name of the API (optional, shows all if not provided)"
+          }
+        }
+      },
+      "tokens": 51
+    },
+    {
+      "name": "execute_api",
+      "description": "Execute any API endpoint with custom parameters",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "api_name": {
+            "type": "string",
+            "description": "Name of the API"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE",
+              "PATCH"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "description": "API endpoint path"
+          },
+          "params": {
+            "type": "object",
+            "description": "Query parameters"
+          },
+          "data": {
+            "type": "object",
+            "description": "Request body data"
+          },
+          "headers": {
+            "type": "object",
+            "description": "Additional headers"
+          }
+        },
+        "required": [
+          "api_name",
+          "method",
+          "path"
+        ]
+      },
+      "tokens": 119
+    }
+  ],
+  "totalTokens": 170
+}

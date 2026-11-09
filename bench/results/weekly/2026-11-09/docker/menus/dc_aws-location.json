@@ -1,0 +1,383 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "awslabs.aws-location-mcp-server",
+    "version": "1.23.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:24:03.194Z",
+  "tools": [
+    {
+      "name": "search_places",
+      "description": "Search for places using Amazon Location Service geo-places search_text API. Geocode the query using the geocode API to get BiasPosition. If no results, try a bounding box filter. Includes contact info and opening hours if present. Output is standardized and includes all fields, even if empty or not available.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "description": "Search query (address, place name, etc.)",
+            "title": "Query",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 5,
+            "description": "Maximum number of results to return",
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "mode": {
+            "default": "summary",
+            "description": "Output mode: 'summary' (default) or 'raw' for all AWS fields",
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_placesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_placesOutput",
+        "type": "object"
+      },
+      "tokens": 183
+    },
+    {
+      "name": "get_place",
+      "description": "Get details for a place using Amazon Location Service geo-places get_place API. Output is standardized and includes all fields, even if empty or not available.",
+      "inputSchema": {
+        "properties": {
+          "place_id": {
+            "description": "The unique PlaceId for the place",
+            "title": "Place Id",
+            "type": "string"
+          },
+          "mode": {
+            "default": "summary",
+            "description": "Output mode: 'summary' (default) or 'raw' for all AWS fields",
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "place_id"
+        ],
+        "title": "get_placeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_placeOutput",
+        "type": "object"
+      },
+      "tokens": 118
+    },
+    {
+      "name": "reverse_geocode",
+      "description": "Reverse geocode coordinates to an address using Amazon Location Service geo-places reverse_geocode API.",
+      "inputSchema": {
+        "properties": {
+          "longitude": {
+            "description": "Longitude of the location",
+            "title": "Longitude",
+            "type": "number"
+          },
+          "latitude": {
+            "description": "Latitude of the location",
+            "title": "Latitude",
+            "type": "number"
+          }
+        },
+        "required": [
+          "longitude",
+          "latitude"
+        ],
+        "title": "reverse_geocodeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "reverse_geocodeOutput",
+        "type": "object"
+      },
+      "tokens": 87
+    },
+    {
+      "name": "geocode",
+      "description": "Get coordinates for a location name or address using Amazon Location Service geo-places geocode API.",
+      "inputSchema": {
+        "properties": {
+          "location": {
+            "description": "Location name or address to geocode",
+            "title": "Location",
+            "type": "string"
+          }
+        },
+        "required": [
+          "location"
+        ],
+        "title": "geocodeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "geocodeOutput",
+        "type": "object"
+      },
+      "tokens": 68
+    },
+    {
+      "name": "search_nearby",
+      "description": "Search for places near a location using Amazon Location Service geo-places search_nearby API. If no results, expand the radius up to max_radius. Output is standardized and includes all fields, even if empty or not available.",
+      "inputSchema": {
+        "properties": {
+          "longitude": {
+            "description": "Longitude of the center point",
+            "title": "Longitude",
+            "type": "number"
+          },
+          "latitude": {
+            "description": "Latitude of the center point",
+            "title": "Latitude",
+            "type": "number"
+          },
+          "max_results": {
+            "default": 5,
+            "description": "Maximum number of results to return",
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional search query",
+            "title": "Query"
+          },
+          "radius": {
+            "default": 500,
+            "description": "Search radius in meters",
+            "maximum": 50000,
+            "minimum": 1,
+            "title": "Radius",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "longitude",
+          "latitude"
+        ],
+        "title": "search_nearbyArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_nearbyOutput",
+        "type": "object"
+      },
+      "tokens": 213
+    },
+    {
+      "name": "search_places_open_now",
+      "description": "Search for places that are open now using Amazon Location Service geo-places search_text API and filter by opening hours. If no open places, expand the search radius up to max_radius. Uses BiasPosition from geocode.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "description": "Search query (address, place name, etc.)",
+            "title": "Query",
+            "type": "string"
+          },
+          "initial_radius": {
+            "default": 500,
+            "description": "Initial search radius in meters for expansion",
+            "maximum": 50000,
+            "minimum": 1,
+            "title": "Initial Radius",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_places_open_nowArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_places_open_nowOutput",
+        "type": "object"
+      },
+      "tokens": 136
+    },
+    {
+      "name": "calculate_route",
+      "description": "Calculate a route and return summary info and turn-by-turn directions.\n\nParameters:\n    departure_position: [lon, lat]\n    destination_position: [lon, lat]\n    travel_mode: 'Car', 'Truck', 'Walking', or 'Bicycle' (default: 'Car')\n    optimize_for: 'FastestRoute' or 'ShortestRoute' (default: 'FastestRoute')\n\nReturns:\n    dict with distance, duration, and turn_by_turn directions (list of step summaries).\n",
+      "inputSchema": {
+        "properties": {
+          "departure_position": {
+            "description": "Departure position as [longitude, latitude]",
+            "items": {},
+            "title": "Departure Position",
+            "type": "array"
+          },
+          "destination_position": {
+            "description": "Destination position as [longitude, latitude]",
+            "items": {},
+            "title": "Destination Position",
+            "type": "array"
+          },
+          "travel_mode": {
+            "default": "Car",
+            "description": "Travel mode: 'Car', 'Truck', 'Walking', or 'Bicycle' (default: 'Car')",
+            "title": "Travel Mode",
+            "type": "string"
+          },
+          "optimize_for": {
+            "default": "FastestRoute",
+            "description": "Optimize route for 'FastestRoute' or 'ShortestRoute' (default: 'FastestRoute')",
+            "title": "Optimize For",
+            "type": "string"
+          }
+        },
+        "required": [
+          "departure_position",
+          "destination_position"
+        ],
+        "title": "calculate_routeArguments",
+        "type": "object"
+      },
+      "tokens": 287
+    },
+    {
+      "name": "optimize_waypoints",
+      "description": "Optimize the order of waypoints using Amazon Location Service geo-routes optimize_waypoints API (V2).\n\nReturns summary (optimized order, total distance, duration, etc.) or full response if mode='raw'.\n",
+      "inputSchema": {
+        "properties": {
+          "origin_position": {
+            "description": "Origin position as [longitude, latitude]",
+            "items": {},
+            "title": "Origin Position",
+            "type": "array"
+          },
+          "destination_position": {
+            "description": "Destination position as [longitude, latitude]",
+            "items": {},
+            "title": "Destination Position",
+            "type": "array"
+          },
+          "waypoints": {
+            "description": "List of intermediate waypoints, each as a dict with at least Position [longitude, latitude], optionally Id",
+            "items": {},
+            "title": "Waypoints",
+            "type": "array"
+          },
+          "travel_mode": {
+            "default": "Car",
+            "description": "Travel mode: 'Car', 'Truck', 'Walking', or 'Bicycle' (default: 'Car')",
+            "title": "Travel Mode",
+            "type": "string"
+          },
+          "mode": {
+            "default": "summary",
+            "description": "Output mode: 'summary' (default) or 'raw' for all AWS fields",
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "origin_position",
+          "destination_position",
+          "waypoints"
+        ],
+        "title": "optimize_waypointsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "optimize_waypointsOutput",
+        "type": "object"
+      },
+      "tokens": 261
+    }
+  ],
+  "totalTokens": 1353,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

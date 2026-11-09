@@ -1,0 +1,56 @@
+{
+ "toolmenu": 1,
+ "server": {
+  "name": "storefront-renderer",
+  "version": "0.1.0",
+  "protocolVersion": "2025-11-25",
+  "era": "legacy",
+  "extensions": {}
+ },
+ "capturedAt": "2026-11-09T14:08:47.127Z",
+ "tools": [
+  {
+   "name": "search_shop_policies_and_faqs",
+   "description": "Used to get facts about the stores policies, products, or services.\nSome examples of questions you can ask are:\n  - What is your return policy?\n  - What is your shipping policy?\n  - What is your phone number?\n  - What are your hours of operation?\"\nSet policy_types to also get the store's written policies (full text and URL).\n",
+   "inputSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string",
+      "description": "A natural language query."
+     },
+     "context": {
+      "type": "string",
+      "description": "Additional information about the request such as user demographics, mood, location, or other relevant details that could help in tailoring the response appropriately."
+     },
+     "policy_types": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "refund",
+        "shipping",
+        "privacy",
+        "terms_of_service",
+        "terms_of_sale",
+        "subscription",
+        "legal_notice",
+        "contact"
+       ]
+      },
+      "description": "Policy kinds to fetch, chosen from the user's question \u2014 e.g. [\"refund\"] for returns/exchanges/damaged items, [\"contact\"] for phone/hours/address. Include every kind the question touches. Omit it to get only FAQ answers."
+     }
+    },
+    "required": [
+     "query"
+    ]
+   },
+   "tokens": 270
+  }
+ ],
+ "totalTokens": 270,
+ "prompts": [],
+ "resources": [],
+ "resourceTemplates": []
+}

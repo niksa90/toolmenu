@@ -1,0 +1,332 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "multiversx-mcp",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:17:59.930Z",
+  "tools": [
+    {
+      "name": "get-balance-of-address",
+      "description": "Get the balance for a MultiversX address",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The bech32 representation of the address"
+          }
+        },
+        "required": [
+          "address"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 73
+    },
+    {
+      "name": "get-wallet-address",
+      "description": "Get the bech32 address of the wallet set in the environment config",
+      "inputSchema": {
+        "type": "object"
+      },
+      "tokens": 31
+    },
+    {
+      "name": "create-wallet",
+      "description": "Create a new wallet and save it as a PEM file. PEM file ARE NOT SECURE. If a wallet already exists, will abort operation.",
+      "inputSchema": {
+        "type": "object"
+      },
+      "tokens": 44
+    },
+    {
+      "name": "send-egld",
+      "description": "Create a move balance transaction and send it. Will send EGLD using the wallet set in the env to the specified receiver.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "The amount of EGLD to send. This amount will then be denominated (1 EGLD=1000000000000000000)"
+          },
+          "receiver": {
+            "type": "string",
+            "description": "The bech32 address of the receiver (erd1...)"
+          }
+        },
+        "required": [
+          "amount",
+          "receiver"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 131
+    },
+    {
+      "name": "send-fungible-tokens",
+      "description": "Create a fungible token transfer transaction and send it. Will send the specified token using the wallet set in the env to the specified receiver.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "The amount to send. This amount will then be denominated."
+          },
+          "token": {
+            "type": "string",
+            "description": "The identifier of the token to send."
+          },
+          "receiver": {
+            "type": "string",
+            "description": "The bech32 address of the receiver (erd1...)"
+          }
+        },
+        "required": [
+          "amount",
+          "token",
+          "receiver"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 140
+    },
+    {
+      "name": "send-sft-nft-meta-tokens",
+      "description": "Create a nft, sft or meta esdt transfer transaction and send it. Will send the specified token using the wallet set in the env to the specified receiver.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The extended identifier of the token to send (e.g. NFTEST-123456-0a)."
+          },
+          "amount": {
+            "type": "string",
+            "description": "The amount of tokens to send. ONLY needed for SFT or Meta-ESDT."
+          },
+          "receiver": {
+            "type": "string",
+            "description": "The bech32 address of the receiver (erd1...)"
+          }
+        },
+        "required": [
+          "token",
+          "receiver"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 164
+    },
+    {
+      "name": "issue-fungible-token",
+      "description": "Create a transaction to issue a fungible token and send it. Will issue the token with the specified arguments. All the properties will be set to true.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tokenName": {
+            "type": "string",
+            "description": "The token name."
+          },
+          "tokenTicker": {
+            "type": "string",
+            "description": "The token ticker."
+          },
+          "initialSupply": {
+            "type": "string",
+            "description": "The initial supply that will be minted."
+          },
+          "numDecimals": {
+            "type": "string",
+            "description": "The number of decimals the token will have."
+          }
+        },
+        "required": [
+          "tokenName",
+          "tokenTicker",
+          "initialSupply",
+          "numDecimals"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 152
+    },
+    {
+      "name": "issue-semi-fungible-collection",
+      "description": "Create a transaction to issue a semi-fungible collection (SFT) and send it. Will issue the collection with the specified arguments. All the properties will be set to true.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tokenName": {
+            "type": "string",
+            "description": "The token name."
+          },
+          "tokenTicker": {
+            "type": "string",
+            "description": "The token ticker."
+          }
+        },
+        "required": [
+          "tokenName",
+          "tokenTicker"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 118
+    },
+    {
+      "name": "issue-nft-collection",
+      "description": "Create a transaction to issue a non-fungible token collection (NFT) and send it. Will issue the collection with the specified arguments. All the properties will be set to true.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tokenName": {
+            "type": "string",
+            "description": "The token name."
+          },
+          "tokenTicker": {
+            "type": "string",
+            "description": "The token ticker."
+          }
+        },
+        "required": [
+          "tokenName",
+          "tokenTicker"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 115
+    },
+    {
+      "name": "issue-meta-esdt-collection",
+      "description": "Create a transaction to issue a MetaESDT token collection (MESDT) and send it. Will issue the collection with the specified arguments. All the properties will be set to true.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tokenName": {
+            "type": "string",
+            "description": "The token name."
+          },
+          "tokenTicker": {
+            "type": "string",
+            "description": "The token ticker."
+          },
+          "numDecimals": {
+            "type": "string",
+            "description": "The number of decimals."
+          }
+        },
+        "required": [
+          "tokenName",
+          "tokenTicker",
+          "numDecimals"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 134
+    },
+    {
+      "name": "create-sft-nft-mesdt-tokens",
+      "description": "Create a transaction to issue a semi-fungible token (SFT), or a non-fungible token (NFT), or a MetaESDT token for a collection and send it.\nPlease also specify the initial quantity and the royalties.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tokenIdentifier": {
+            "type": "string",
+            "description": "The identifier of the collection."
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the token."
+          },
+          "initialQuantity": {
+            "type": "string",
+            "description": "The initial quantity(number of tokens) that will be minted. If not provided, defaults to 1."
+          },
+          "royalties": {
+            "type": "string",
+            "description": "The royalties you'll receive."
+          }
+        },
+        "required": [
+          "tokenIdentifier",
+          "name",
+          "initialQuantity"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 183
+    },
+    {
+      "name": "get-tokens-of-address",
+      "description": "Get the tokens of an address. Returns the first 25 fungible tokens and the first 25 NFTs, SFTs and MetaESDT. To get more tokens, specify the number of tokens you want to get. Will return the specified number of fungible tokens and the same number of non-fungible. The returned list will contain twice the number of tokens specified, if tokens are available.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The bech32 address of the account (erd1...)"
+          },
+          "size": {
+            "type": "number",
+            "description": "The number of each token type to be returned. By default, the number is 25."
+          }
+        },
+        "required": [
+          "address"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 177
+    },
+    {
+      "name": "send-egld-to-multiple-receivers",
+      "description": "Create move balance transactions and send them. Will send EGLD using the wallet set in the env to each specified receiver.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "The amount of EGLD to send. This amount will then be denominated (1 EGLD=1000000000000000000)"
+          },
+          "receivers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "An array of bech32 addresses of the receivers (erd1...)"
+          }
+        },
+        "required": [
+          "amount",
+          "receivers"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 147
+    },
+    {
+      "name": "get-network",
+      "description": "Get the network set in the environment config",
+      "inputSchema": {
+        "type": "object"
+      },
+      "tokens": 24
+    }
+  ],
+  "totalTokens": 1633
+}

@@ -20,19 +20,20 @@ const CLIENT = /client capabilit(?:y|ies)\b[^.]{0,60}\b(?:do(?:es)? not|don't|do
 // or the wrong operating system: "Editmamei runs on Windows and macOS; this process
 // is on "linux"" (editmamei), "Unsupported platform: linux" (an OS name, not any
 // "platform" argument: "Unsupported platform: myspace" is the tool's own error).
-const ENVIRONMENT = /could not find [^.]{0,40}executable|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b|\bruns on [^.;]{0,40}; this (?:process|machine|system) is on\b|\bunsupported (?:platform|operating system|OS)(?:\s*[.!]?\s*$|\s*\.\s|[^.\n]{0,40}?\b(?:linux|darwin|macos|win32|windows(?:_nt)?|freebsd|openbsd|aix|sunos|android)(?![a-z]))|\bnot supported on (?:this|the current) (?:platform|operating system|OS)\b/i;
+const ENVIRONMENT = /could not find [^.]{0,40}executable|\bno (?:browser|chrome|chromium) (?:was )?found\b|\bnot a git repository\b|\b(?:extension|app|application|plugin|bridge) is not (?:connected|running)\b|is not found at \/|\bnot installed\b|command not found|cannot find (module|package)|\bENOENT\b|\bruns on [^.;]{0,40}; this (?:process|machine|system) is on\b|\bunsupported (?:platform|operating system|OS)(?:\s*[.!]?\s*$|\s*\.\s|[^.\n]{0,40}?\b(?:linux|darwin|macos|win32|windows(?:_nt)?|freebsd|openbsd|aix|sunos|android)(?![a-z]))|\bnot supported on (?:this|the current) (?:platform|operating system|OS)\b/i;
 // "401 Bad credentials" (GitHub), "Authorization Expired" (Sentry), "Invalid
 // token" (Firecrawl), "authentication token is not valid" (Apify), "Please provide
 // a valid access token" (Supabase), "NetlifyUnauthError: You're not logged into
 // Netlify" (Netlify), "The API key you provided was rejected" (Pinecone), "Admin
-// auth is missing", "Runtime credentials are missing" (securenow). Not a bare
+// auth is missing", "Runtime credentials are missing" (securenow), "ADR Aggregator API key not
+// configured" (mcp-adr-analysis-server). Not a bare
 // "token": plenty of errors mention one.
 // Hosted servers ask the user to sign in in their own words: "Sign in to Ideal (or create
 // your creator account) to continue", "Connect your Novamris account to read its saved chart".
 const SIGN_IN = /\bsign in to\b|\blog ?in to (?:continue|use)\b|\bconnect your [\w .'-]{1,40}? account\b/i;
 // A paid tool: "Payment required: $0.50 over MPP" (a hosted server), HTTP 402, no credits left.
 const PAYMENT = /\bpayment required\b|\b(?:HTTP|status(?: code)?) 402\b|\binsufficient (?:credits?|balance|funds)\b/i;
-const AUTH = /\b(?:auth|authentication|credentials?|api[ _-]?key|access token)\b (?:is |are )?missing\b|\bno (?:authentication|auth|credentials?|api[ _-]?keys?|access tokens?|auth tokens?) (?:was |were )?(?:found|provided|configured|set|given)\b|\b(401|403)\b|unauthori[sz]ed|unauth(enticated|error)|forbidden|bad credentials|authori[sz]ation expired|re-?authori[sz]e|not authenticated|not logged (?:in|into)\b(?! to the browser)|authentication (token|failed|required|error)|(invalid|expired|revoked) (api[ _-]?key|access token|token|credentials)|(token|api[ _-]?key|credentials) (is |are )?(not valid|invalid|expired)|(api[ _-]?key|access token|credentials)\b[^.]{0,30}\b(was|were|is|are) (rejected|refused|revoked)|valid (access )?token/i;
+const AUTH = /\b(?:auth|authentication|credentials?|api[ _-]?key|access token)\b (?:is |are )?missing\b|\b(?:api[ _-]?key|access token|auth token|credentials?)\b (?:is |are |was |were )?not (?:configured|set|provided)\b|\bneeds? (?:an? )?(?:[\w-]+ )?(?:credentials?|api[ _-]?key|access token)\b|\bmissing (?:required )?authentication credentials?\b|\b[a-z0-9_]*(?:api_?key|token|secret)\b (?:is |was )?not (?:set|configured|provided)\b|\bno (?:authentication|auth|credentials?|api[ _-]?keys?|access tokens?|auth tokens?) (?:was |were )?(?:found|provided|configured|set|given)\b|\b(401|403)\b|unauthori[sz]ed|unauth(enticated|error)|forbidden|bad credentials|authori[sz]ation expired|re-?authori[sz]e|not authenticated|not logged (?:in|into)\b(?! to the browser)|authentication (token|failed|required|error)|(invalid|expired|revoked) (api[ _-]?key|access token|token|credentials)|(token|api[ _-]?key|credentials) (is |are )?(not valid|invalid|expired)|(api[ _-]?key|access token|credentials)\b[^.]{0,30}\b(was|were|is|are) (rejected|refused|revoked)|valid (access )?token/i;
 const NETWORK = /\b(ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|EHOSTUNREACH)\b|socket hang up|getaddrinfo|network error/i;
 // "Either 'page_id' OR both 'title' and 'space_key' must be provided" (Atlassian),
 // "**Input Error**" (Sentry), JSON-RPC's invalid params.

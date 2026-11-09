@@ -8,8 +8,11 @@ import { LIST_WORDS } from './lists.js';
 import { loadConfig, type Config } from './config.js';
 import { ELICITATIONS, PROTOCOLS, type Elicitation, type Protocol, type Target } from './connect.js';
 import { comparedTools, diffMenus } from './diff.js';
+import { formatReview, reviewMenus } from './review.js';
+import { authCheck } from './auth-check.js';
 import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
+import { findingLines } from './report.js';
 import { counts, formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
 import { loadScenario, session, starterScenario, unlockListers, valuesFromListing } from './session.js';
 import { listTools, quietExclusions } from './connect.js';
@@ -143,6 +146,26 @@ export async function main(given: string[]): Promise<number> {
   // mcp's stdout above: that's the protocol.
   guardStream(process.stdout);
   guardStream(process.stderr);
+  if (sub === 'auth' && rest[0] === 'check') {
+    if (rest.length !== 2) throw new UsageError('auth check needs one server URL: toolmenu auth check https://example.com/mcp');
+    if (!/^https:\/\//.test(rest[1])) throw new UsageError(`"${rest[1]}" isn't an https URL.`);
+    const checked = await authCheck(rest[1], timeoutMs);
+    if (format === 'json') writeUnguarded(process.stdout, show(JSON.stringify({ command: 'auth check', ...checked }, null, 2)) + '\n');
+    else {
+      const lines = [
+        `toolmenu auth check  ${plain(checked.url)}`,
+        `  without credentials  HTTP ${checked.status ?? '?'}${checked.wwwAuthenticate ? ` · WWW-Authenticate: ${plain(checked.wwwAuthenticate).slice(0, 120)}` : ''}`,
+        ...(checked.metadataUrl ? [`  resource metadata    ${plain(checked.metadataUrl)} (${checked.foundBy})`] : []),
+        ...(checked.authorizationServers?.length ? [`  authorization        ${checked.authorizationServers.map(plain).join(', ')}`] : []),
+        ...(checked.serverMetadataUrl ? [`  server metadata      ${plain(checked.serverMetadataUrl)} · PKCE ${checked.pkce?.join(', ') ?? 'not listed'} · registration ${checked.registration}`] : []),
+        '',
+        ...findingLines(checked.findings),
+        checked.findings.some((f) => f.severity !== 'info') ? '' : '✓ discovery works the way the spec says',
+      ];
+      writeUnguarded(process.stdout, show(lines.filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n')) + '\n');
+    }
+    return checked.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
+  }
   if (sub === 'auth') return authCommand(rest, values);
   if (sub === 'explain') return explainCommand(rest, command, format);
 
@@ -230,6 +253,23 @@ export async function main(given: string[]): Promise<number> {
     });
     await emit(formatDiff(result, before.tools.length, after.tools.length, format), result.findings, 'diff', rest[1], () => diffHtml(result, comparedTools(before, after, config.ignore), { paths: [rest[0], rest[1]] }));
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
+  }
+
+  if (sub === 'review') {
+    if (command) throw new UsageError("review compares two menu files; it doesn't start a server. Run snapshot first.");
+    if (rest.length !== 2) throw new UsageError('review needs the baseline and the new menu file: toolmenu review <baseline.json> <new.json>');
+    if (format === 'github') throw new UsageError('review prints text, markdown or json.');
+    const [before, after] = await Promise.all(rest.map((path) => loadMenu(path)));
+    const result = reviewMenus(before, after, {
+      rules: config.rules,
+      ignore: config.ignore,
+      tokenBudget: config.tokenBudget,
+      release: values.release ? parseRelease(values.release) : undefined,
+      serverVersionIsRelease: values['server-version-is-release'] ?? config.serverVersionIsRelease,
+      failOn,
+    });
+    writeUnguarded(process.stdout, show(formatReview(result, [rest[0], rest[1]], format, failOn)) + '\n');
+    return result.accept ? 0 : 1;
   }
 
   if (sub === 'history') {
@@ -325,24 +365,30 @@ export async function main(given: string[]): Promise<number> {
       throw new UsageError(error instanceof Error ? error.message : String(error));
     }
     const autoTarget = answering(parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol));
+    // Every tool, writes included: only where nothing real can be changed. A hosted
+    // server's tools act on someone's real account or system.
+    if (values['call-everything'] && autoTarget.kind !== 'stdio') {
+      throw new UsageError('--call-everything calls every tool, writes included, so it only runs a local stdio server (in a sandbox with nothing to lose: no credentials, no network). Over HTTP, --auto calls the read-only tools.');
+    }
     const waited = { ms: 0 };
     const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
       throw refusedForTooMany(error, waited.ms);
     });
-    const options = { openWorld: values['open-world'], createHandles: values['create-handles'], values: given, assumeReadOnly };
-    let plan = autoScenario(menu, { ...options, maxCalls: givenMax ?? 20 });
+    const everything = values['call-everything'] === true;
+    const options = { openWorld: values['open-world'], createHandles: values['create-handles'], values: given, assumeReadOnly, everything };
+    let plan = autoScenario(menu, { ...options, maxCalls: givenMax ?? (everything ? Infinity : 20) });
     // Each unlock value gets its own budget for the tools it brings, so the first
     // toolsets can't use up the calls the last ones need. --max-calls, when given,
     // caps every call, and the starting menu leaves up to half of it for the unlocks.
     const reserve = givenMax === undefined ? 0 : Math.min(perUnlock * plan.unlockValues, Math.floor(givenMax / 2));
     if (reserve) plan = autoScenario(menu, { ...options, maxCalls: givenMax! - reserve });
-    const maxCalls = givenMax ?? 20 + perUnlock * plan.unlockValues;
+    const maxCalls = givenMax ?? (everything ? Infinity : 20 + perUnlock * plan.unlockValues);
     if (savePath) await writeFile(savePath, scenarioYaml(plan, menu.server.name));
     if (values.plan) {
       process.stdout.write(formatPlan(plan.scenario, 'auto') + '\n');
       return 0;
     }
-    const auto = { called: plan.called, skipped: plan.skipped, assumed: plan.assumed, withValues: plan.withValues, ignored: plan.ignored, maxCalls, maxCallsPerUnlock: perUnlock };
+    const auto = { called: plan.called, skipped: plan.skipped, assumed: plan.assumed, withValues: plan.withValues, ignored: plan.ignored, maxCalls, maxCallsPerUnlock: perUnlock, ...(everything ? { everything } : {}) };
     // Tools that appear mid-session (behind an unlock) are planned when they appear,
     // under the same rules and what's left of --max-calls. Each tool once.
     const planned = new Set([...plan.called, ...plan.skipped.map((s) => s.tool)]);
@@ -352,7 +398,7 @@ export async function main(given: string[]): Promise<number> {
       for (const t of fresh) planned.add(t.name);
       if (!fresh.length) return [];
       const left = maxCalls - spent;
-      const more = autoScenario({ ...menu, tools: fresh }, { ...options, maxCalls: Math.min(perUnlock, left), callsOnly: true });
+      const more = autoScenario({ ...menu, tools: fresh }, { ...options, maxCalls: everything ? left : Math.min(perUnlock, left), callsOnly: true });
       // Left out by this unlock's own budget, not by the total: say which, for the right flag.
       if (perUnlock < left) for (const s of more.skipped) if (s.reason === 'over the call budget') s.reason = 'over the per-unlock budget';
       spent += more.spent;
@@ -440,7 +486,7 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
     );
     return 0;
   }
-  if (action !== 'login' && action !== 'logout') throw new UsageError(`${action ? `auth has no action "${action}"` : 'auth needs an action'}: login <url>, logout <url> or list. See toolmenu auth --help.`);
+  if (action !== 'login' && action !== 'logout') throw new UsageError(`${action ? `auth has no action "${action}"` : 'auth needs an action'}: login <url>, logout <url>, check <url> or list. See toolmenu auth --help.`);
   if (!url || extra.length) throw new UsageError(`auth ${action} needs one server URL: toolmenu auth ${action} https://example.com/mcp`);
   if (!/^https?:\/\//.test(url)) throw new UsageError(`"${url}" isn't an http(s) URL.`);
   if (action === 'logout') {

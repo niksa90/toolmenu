@@ -9,6 +9,15 @@
 >
 > Protocol claims are checked against the official spec source, pinned in §12.
 
+> **Note, 2026-11-09 (after the freeze).** The scope grew past the tagline above. toolmenu
+> still starts from the menu, but it now also calls every tool (`--call-everything`),
+> checks results against `outputSchema` and `resultType`, and walks OAuth discovery
+> (`auth check`); see the README and docs/RULES.md. The one-line description is now:
+> *test your MCP server the way agents and clients meet it: the menu, the calls, the
+> results, the sign-in, and every release after.* The identity rule below still holds
+> in spirit: a check earns its place by tracing to a failure an agent or a client meets,
+> not to general best practice. The rest of this spec is kept as frozen.
+
 ## 1. Why this exists
 
 There are already MCP linters: mcplint, mcp-lint, mcpx, mcp-tool-card-linter,

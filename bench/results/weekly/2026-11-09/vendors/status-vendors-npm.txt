@@ -1,0 +1,67 @@
+ok _notionhq_notion-mcp-server snapshot=0 tools=24 session=1 review=0
+ok _supabase_mcp-server-supabase snapshot=0 tools=36 session=0 review=0
+ok _sentry_mcp-server snapshot=0 tools=73 session=0 review=0
+ok _playwright_mcp snapshot=0 tools=25 session=0 review=0
+ok chrome-devtools-mcp snapshot=0 tools=32 session=1 review=0
+ok _paypal_mcp snapshot=1 tools=28 session=1 review=0
+ok _hubspot_mcp-server snapshot=0 tools=21 session=0 review=0
+ok _upstash_context7-mcp snapshot=0 tools=2 session=0 review=0
+ok _azure_mcp snapshot=0 tools=73 session=0 review=0
+no-menu _cloudflare_mcp-server-cloudflare snapshot=2
+no-menu _stripe_mcp snapshot=2
+ok _heroku_mcp-server snapshot=0 tools=33 session=0 review=0
+ok _twilio-alpha_mcp snapshot=0 tools=197 session=0 review=0
+ok mongodb-mcp-server snapshot=0 tools=27 session=0 review=0
+install-failed _neondatabase_mcp-server-neon
+ok _modelcontextprotocol_server-github snapshot=0 tools=26 session=0 review=0
+ok _shopify_dev-mcp snapshot=0 tools=5 session=0 review=0
+ok _netlify_mcp snapshot=0 tools=10 session=0 review=0
+ok firecrawl-mcp snapshot=0 tools=30 session=1 review=0
+ok exa-mcp-server snapshot=0 tools=3 session=0 review=0
+ok tavily-mcp snapshot=0 tools=5 session=0 review=0
+ok _elastic_mcp-server-elasticsearch snapshot=0 tools=4 session=0 review=0
+ok _brave_brave-search-mcp-server snapshot=0 tools=8 session=0 review=0
+ok _browserbasehq_mcp-server-browserbase snapshot=0 tools=9 session=0 review=0
+ok figma-developer-mcp snapshot=0 tools=2 session=0 review=0
+ok _launchdarkly_mcp-server snapshot=0 tools=30 session=0 review=0
+no-menu _auth0_auth0-mcp-server snapshot=2
+no-menu _upstash_mcp-server snapshot=2
+ok _circleci_mcp-server-circleci snapshot=0 tools=13 session=0 review=0
+ok firebase-tools snapshot=0 tools=19 session=0 review=0
+no-menu _railway_mcp-server snapshot=2
+ok _postman_postman-mcp-server snapshot=0 tools=42 session=0 review=0
+ok _mapbox_mcp-server snapshot=0 tools=31 session=0 review=0
+ok _mastra_mcp-docs-server snapshot=0 tools=13 session=0 review=0
+ok _microsoft_clarity-mcp-server snapshot=0 tools=3 session=0 review=0
+ok _adyen_mcp snapshot=0 tools=38 session=0 review=0
+ok _contentful_mcp-server snapshot=0 tools=88 session=0 review=0
+ok _apify_actors-mcp-server snapshot=0 tools=15 session=0 review=0
+no-menu _dynatrace-oss_dynatrace-mcp-server snapshot=2
+ok _azure-devops_mcp snapshot=0 tools=44 session=0 review=0
+ok _wix_mcp snapshot=0 tools=15 session=0 review=0
+ok _googlemaps_code-assist-mcp snapshot=0 tools=2 session=0 review=0
+no-menu _21st-dev_magic snapshot=2
+ok _perplexity-ai_mcp-server snapshot=0 tools=4 session=0 review=0
+ok _pulumi_mcp-server snapshot=0 tools=12 session=0 review=0
+ok nx-mcp snapshot=0 tools=1 session=0 review=0
+ok airtable-mcp-server snapshot=0 tools=16 session=1 review=0
+ok _sveltejs_mcp snapshot=0 tools=4 session=0 review=0
+ok _mailgun_mcp-server snapshot=0 tools=73 session=0 review=0
+ok resend-mcp snapshot=0 tools=136 session=0 review=0
+no-menu _jetbrains_mcp-proxy snapshot=2
+ok mcp-server-kubernetes snapshot=0 tools=23 session=0 review=0
+ok _translated_lara-mcp snapshot=0 tools=22 session=1 review=0
+ok _salesforce_mcp snapshot=0 tools=74 session=0 review=0
+ok _agentdeskai_browser-tools-mcp snapshot=0 tools=16 session=0 review=0
+ok _chargebee_mcp snapshot=0 tools=2 session=0 review=0
+ok _gleanwork_local-mcp-server snapshot=0 tools=4 session=0 review=0
+ok dodopayments-mcp snapshot=0 tools=2 session=0 review=0
+ok _paddle_paddle-mcp snapshot=0 tools=63 session=0 review=0
+ok _ahrefs_mcp snapshot=0 tools=42 session=0 review=0
+ok _browserstack_mcp-server snapshot=0 tools=52 session=0 review=0
+ok _knocklabs_agent-toolkit snapshot=0 tools=46 session=0 review=0
+no-menu _azure_mcp snapshot=2
+no-menu _apify_actors-mcp-server snapshot=127
+ok _azure_mcp snapshot=0 tools=73 session=0 review=0
+ok _salesforce_mcp snapshot=0 tools=74 session=0 review=0
+ok _apify_actors-mcp-server snapshot=0 tools=15 session=0 review=0

@@ -1,0 +1,78 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "awslabs.aws-bedrock-data-automation-mcp-server",
+    "version": "1.23.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:21:27.645Z",
+  "tools": [
+    {
+      "name": "getprojects",
+      "description": "[DEPRECATED] Get a list of data automation projects.\n\n## Usage\n\nUse this tool to retrieve a list of all available data automation projects in your account.\nThis is typically the first step when working with data automation to discover what projects\nare available for use.\n\n## Example\n\n```python\n# Get all available data automation projects\nprojects = await getprojects()\n```\n\n## Output Format\n\nThe output is a dictionary containing:\n- `projects`: A list of project objects, each with:\n  - `projectArn`: The Amazon Resource Name (ARN) of the project\n  - `projectName`: The name of the project\n  - `projectStage`: The stage of the project (e.g., DRAFT, PUBLISHED)\n  - `creationTime`: When the project was created\n  - `lastModifiedTime`: When the project was last modified\n\nReturns:\n    A dict containing a list of data automation projects.\n",
+      "inputSchema": {
+        "properties": {},
+        "title": "get_projects_toolArguments",
+        "type": "object"
+      },
+      "tokens": 232
+    },
+    {
+      "name": "getprojectdetails",
+      "description": "[DEPRECATED] Get details of a data automation project.\n\n## Usage\n\nUse this tool to retrieve detailed information about a specific data automation project\nafter you've identified its ARN using the `getprojects` tool.\n\n## Example\n\n```python\n# Get details for a specific project\nproject_details = await getprojectdetails(\n    projectArn='arn:aws:bedrock:us-west-2:123456789012:data-automation-project/my-project'\n)\n```\n\n## Output Format\n\nThe output is a dictionary containing comprehensive project details including:\n- Basic project information (name, ARN, stage)\n- Configuration settings\n- Input/output specifications\n- Associated blueprints\n- Creation and modification timestamps\n\nArgs:\n    projectArn: The ARN of the project.\n\nReturns:\n    The project details.\n",
+      "inputSchema": {
+        "properties": {
+          "projectArn": {
+            "description": "The ARN of the project",
+            "title": "Projectarn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectArn"
+        ],
+        "title": "get_project_details_toolArguments",
+        "type": "object"
+      },
+      "tokens": 234
+    },
+    {
+      "name": "analyzeasset",
+      "description": "[DEPRECATED] Analyze an asset using a data automation project.\n\nThis tool extracts insights from unstructured content (documents, images, videos, audio)\nusing Amazon Bedrock Data Automation.\n\n## Usage\n\nUse this tool to analyze various types of assets (documents, images, videos, audio files)\nusing a data automation project. You can specify a particular project to use for analysis\nor let the system use a default public project if none is provided.\n\n## Supported Asset Types\n\n- Documents: PDF, DOCX, TXT, etc.\n- Images: JPG, PNG, etc.\n- Videos: MP4, MOV, etc.\n- Audio: MP3, WAV, etc.\n\n## Examples\n\n```python\n# Analyze a document using the default public project\nresults = await analyzeasset(assetPath='/path/to/document.pdf')\n\n# Analyze an image using a specific project\nresults = await analyzeasset(\n    assetPath='/path/to/image.jpg',\n    projectArn='arn:aws:bedrock:us-west-2:123456789012:data-automation-project/my-project',\n)\n```\n\n## Output Format\n\nThe output is a dictionary containing the analysis results, which vary based on:\n- The type of asset being analyzed\n- The capabilities of the data automation project used\n- The specific insights extracted (text, entities, sentiment, etc.)\n\nArgs:\n    assetPath: The path to the asset.\n    projectArn: The ARN of the project. Uses default public project if not provided.\n\nReturns:\n    The analysis results.\n",
+      "inputSchema": {
+        "properties": {
+          "assetPath": {
+            "description": "The path to the asset",
+            "title": "Assetpath",
+            "type": "string"
+          },
+          "projectArn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The ARN of the project. Uses default public project if not provided",
+            "title": "Projectarn"
+          }
+        },
+        "required": [
+          "assetPath"
+        ],
+        "title": "analyze_asset_toolArguments",
+        "type": "object"
+      },
+      "tokens": 441
+    }
+  ],
+  "totalTokens": 907,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

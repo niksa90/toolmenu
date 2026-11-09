@@ -1,0 +1,287 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Youtube Transcript",
+    "version": "1.27.1",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T18:39:03.907Z",
+  "tools": [
+    {
+      "name": "get_transcript",
+      "description": "Retrieves the transcript of a YouTube video.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "description": "The URL of the YouTube video",
+            "title": "Url",
+            "type": "string"
+          },
+          "lang": {
+            "default": "en",
+            "description": "The preferred language for the transcript",
+            "title": "Lang",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Cursor to retrieve the next page of the transcript",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "get_transcriptArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "description": "Transcript of a YouTube video.",
+        "properties": {
+          "title": {
+            "description": "Title of the video",
+            "title": "Title",
+            "type": "string"
+          },
+          "transcript": {
+            "description": "Transcript of the video",
+            "title": "Transcript",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Cursor to retrieve the next page of the transcript",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "title",
+          "transcript"
+        ],
+        "title": "Transcript",
+        "type": "object"
+      },
+      "tokens": 123
+    },
+    {
+      "name": "get_timed_transcript",
+      "description": "Retrieves the transcript of a YouTube video with timestamps.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "description": "The URL of the YouTube video",
+            "title": "Url",
+            "type": "string"
+          },
+          "lang": {
+            "default": "en",
+            "description": "The preferred language for the transcript",
+            "title": "Lang",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Cursor to retrieve the next page of the transcript",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "get_timed_transcriptArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "TranscriptSnippet": {
+            "description": "Transcript snippet of a YouTube video.",
+            "properties": {
+              "text": {
+                "description": "Text of the transcript snippet",
+                "title": "Text",
+                "type": "string"
+              },
+              "start": {
+                "description": "The timestamp at which this transcript snippet appears on screen in seconds.",
+                "title": "Start",
+                "type": "number"
+              },
+              "duration": {
+                "description": "The duration of how long the snippet in seconds.",
+                "title": "Duration",
+                "type": "number"
+              }
+            },
+            "required": [
+              "text",
+              "start",
+              "duration"
+            ],
+            "title": "TranscriptSnippet",
+            "type": "object"
+          }
+        },
+        "description": "Transcript of a YouTube video with timestamps.",
+        "properties": {
+          "title": {
+            "description": "Title of the video",
+            "title": "Title",
+            "type": "string"
+          },
+          "snippets": {
+            "description": "Transcript snippets of the video",
+            "items": {
+              "$ref": "#/$defs/TranscriptSnippet"
+            },
+            "title": "Snippets",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Cursor to retrieve the next page of the transcript",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "title",
+          "snippets"
+        ],
+        "title": "TimedTranscript",
+        "type": "object"
+      },
+      "tokens": 129
+    },
+    {
+      "name": "get_video_info",
+      "description": "Retrieves the video information.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "description": "The URL of the YouTube video",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "get_video_infoArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "description": "Video information.",
+        "properties": {
+          "title": {
+            "description": "Title of the video",
+            "title": "Title",
+            "type": "string"
+          },
+          "description": {
+            "description": "Description of the video",
+            "title": "Description",
+            "type": "string"
+          },
+          "uploader": {
+            "description": "Uploader of the video",
+            "title": "Uploader",
+            "type": "string"
+          },
+          "upload_date": {
+            "description": "Upload date of the video",
+            "format": "date-time",
+            "title": "Upload Date",
+            "type": "string"
+          },
+          "duration": {
+            "description": "Duration of the video",
+            "title": "Duration",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "uploader",
+          "upload_date",
+          "duration"
+        ],
+        "title": "VideoInfo",
+        "type": "object"
+      },
+      "tokens": 57
+    },
+    {
+      "name": "get_available_languages",
+      "description": "Retrieves the available languages for the video.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "description": "The URL of the YouTube video",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "get_available_languagesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_available_languagesOutput",
+        "type": "object"
+      },
+      "tokens": 60
+    }
+  ],
+  "totalTokens": 369,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

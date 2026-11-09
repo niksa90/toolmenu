@@ -1,5 +1,114 @@
 # Changelog
 
+## 0.27.0
+
+### New
+
+- **`toolmenu auth check <url>`**: an HTTP server's OAuth discovery, checked the way a
+  client that follows the 2025-11-25 authorization spec walks it, without logging in
+  (`auth/discovery`, `auth/resource-metadata`, `auth/server-metadata`, `auth/pkce`,
+  `auth/registration`). A document it can't read (a 403, a 5xx, no answer) is unchecked,
+  never missing.
+- **`session/output-schema`** (a warning when only `format` checks fail, which many validators skip). A tool that declares an `outputSchema` must return
+  `structuredContent` that matches it (2025-06-18 on, a MUST); the official SDK client
+  raises an error otherwise. `session` now checks every result it gets.
+- **`session --auto --call-everything`** calls every tool once, writes included, with
+  made-up values where the schema gives none, for a stdio server in a sealed sandbox
+  (refused over HTTP). The bench runs it with no network and no credentials, so every
+  tool's answer is checked, not only the read-only ones'.
+  A readable tool error in answer to made-up values is the right answer, so there it's
+  info, not a `session/tool-error` warning. The bench's `SEALED=1` runs it in a container
+  with no network (`bench/scripts/sealed-one.sh`).
+  A call that fails there, or a run where no call got through, is info too: made-up
+  values and no network say how a tool meets such input, not that the server is broken.
+  Results that break their own `outputSchema` or lack `resultType` keep their level.
+- **`toolmenu review <baseline.json> <new.json>`: should the new menu replace the
+  baseline?** `diff`, plus the menu rules on both files: which findings the new menu
+  adds, clears or changes (a summary that now names another tool is worse), and one
+  verdict (`unchanged`, `safe`, `breaking-released`, `breaking`, `review`) with an exit
+  code to match. With `--release`, breaking changes are accepted when the bump allows
+  them. Text, markdown and JSON; `reviewMenus` in the library.
+- **The Action leads with the review verdict.** Every report starts with whether the
+  PR's menu can replace the baseline as it is, and the findings it adds, clears or
+  makes worse; the `verdict` and `accept` outputs carry it. `gate: review` makes the
+  job pass or fail on the verdict instead of `diff`'s findings (a breaking change the
+  release bump allows passes). The default, `gate: findings`, keeps 0.26's behaviour.
+- **Seven more `--client` profiles**, each value read from the client's own docs or source:
+  `codex`, `vscode`, `copilot-cloud-agent`, `copilot-code-review`, `gemini-cli`,
+  `gemini-api` and `antigravity`. Two rules come with them. `menu/client-limit` warns
+  when one server lists more tools than the client sends at once (VS Code: 128 a
+  request). `menu/client-features` says what the client leaves out: Copilot cloud agent
+  and code review use tools only, and code review only tools marked `readOnlyHint: true`.
+  `naming/client-name` now covers clients that rewrite a name instead of refusing it
+  (Gemini CLI). Limits that only forum posts state (Cursor's 40) aren't checked.
+- **`docs/PROTOCOLS.md`, written by a test.** Every protocol version in `schemas/` is
+  run against a fixture server on each `npm test` (handshake, `spec/schema` on a good
+  and a bad list, a session whose call adds a tool mid-list); the table is that run.
+- **False-positive guards.** A fixture server that does everything right gets no
+  finding from snapshot (all options), `--client`, `session --auto` or `diff`, on
+  either protocol; and the findings on nine real menus are recorded
+  (`test/fixtures/golden/findings.json`), so an engine change that moves one fails
+  until it's explained.
+
+### Fixes
+
+- **`diff` and `review` no longer crash on boolean subschemas.** JSON Schema allows
+  `true` and `false` as a whole schema; `"items": true` (figma-mcp-rs 0.1.0) threw
+  "Cannot use 'in' operator to search for 'const' in true", so the Action's diff step
+  failed on any such server. `true` now reads as anything, `false` as nothing. A `null`,
+  a string or a number where a schema belongs (a broken server) no longer crashes
+  `snapshot`'s ID rules, the token breakdown or `diff` either; a change to one is still
+  reported. `test/odd-schemas.test.mjs` runs every analysis on all of them.
+- **`spec/schema` says why the SDK rejected a list.** It quoted the first line of the SDK's
+  error, which for a validation error is "Invalid result for tools/list: [". Each problem
+  is now a detail line: `tools.1.outputSchema.type: Invalid input: expected "object"`.
+- **`session/edit` only in a field the model doesn't read is a warning.** The same
+  `version` hash, changing between two lists mid-session, was an error saying it
+  invalidates the cached prompt. Like the variance rules, it now warns and names the field.
+- **A call refused with HTTP 401 or 403 is a credential failure**, whatever its words:
+  Google's hosted servers list tools to anyone and answer each call with a 401 and a
+  `WWW-Authenticate` for that tool. Those were `session/step-failed` errors.
+- **More setup failures read as setup failures:** "needs credentials" (botverse-mcp),
+  "no browser found" and "the extension is not connected" (mcp-session-bridge), and "not a
+  git repository" (diffci) were `session/step-failed` errors, and "needs an Entyrix API key
+  and ENTYRIX_API_KEY is not set" (@entyrix/mcp) a `session/tool-error`.
+- **"API key not configured" is a missing credential.** A tool that said so (mcp-adr-analysis-server)
+  was a `session/step-failed` error, the server's fault; it's now counted with the other
+  setup failures in `session/untested`.
+- **`session --union-out` keeps the list's cache hints** (`ttlMs`, `cacheScope`), as
+  `snapshot`'s menu file does. Without them, `review` of a snapshot against a union
+  menu from the same server said `spec/cache-hints` was gone (14 of 250 servers).
+- **Variance only in fields the model doesn't read is a warning.** `menu/nondeterministic`,
+  `menu/process-variance` and `menu/connection-variance` said "every conversation can
+  miss the prompt cache" (error) when tools/list differed only in, say, a per-tool
+  `version` hash that changes on every call (59 `@pipeworx` servers). The model reads
+  names, descriptions and input schemas, so no cache is lost; the baseline still never
+  matches. They now warn, name the fields, and say that.
+- **`wait_for: tools_list_changed` after a call sees the notification that call
+  caused.** It counted only notifications that arrived after it started, but a call's
+  `list_changed` usually arrives while the call step runs, so the README's own
+  scenario (`call: unlock_toolset`, then `wait_for`) waited out its timeout and said
+  `timed-out`. It now counts from the start of the last call, or from the end of the
+  last `wait_for`.
+- **`diff/param-type` names only the types calls lose.** `null|string → string` said
+  "Calls that send a null|string fail validation"; it now says "a null".
+
+### Bench
+
+- Four panels, rerun weekly (`bench/scripts/weekly.sh`): the hosted panel, registry stdio
+  servers with a new release (up to 1,000 a week), the servers vendors publish themselves
+  (npm, PyPI, images), and Docker's MCP catalog. Local servers get the sealed
+  `--call-everything` pass. `CHANGES.md` compares each week with the last; FINDINGS
+  F17 to F20 have the first run.
+
+### Docs
+
+- `AGENTS.md`: where things are, how to add a rule, what counts as a finding, how the
+  bench runs third-party servers, and how pull request descriptions read. A PR template.
+- README: what a finding looks like and how much each rule family can be trusted,
+  near the top; the real-server testing in its own section; the session flow as a
+  step-by-step diagram.
+
 ## 0.26.0
 
 ### Security

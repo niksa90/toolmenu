@@ -1,0 +1,577 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "wix-mcp-server",
+    "version": "1.0.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:34:25.927Z",
+  "tools": [
+    {
+      "name": "StartDeployWebsite",
+      "description": "Creates a website on Wix and puts it live, or replaces the files of one deployed earlier. You write the site's code, or take the files the user brought (HTML/CSS/JS, a static build, a zip, another builder's export), and this returns the guide to create the site and upload them. Updates keep the same site and URL. Works with or without a Wix login (anonymous deploy with a save link), through the Wix MCP alone or from a shell. Call it right away, without asking the user anything first.\nWhen a new site needs Wix business features (a store, bookings or appointments, rentals, events and tickets, a restaurant menu with online orders or reservations, a blog, a portfolio, pricing plans and memberships, donations, Wix Forms, members and login, a CMS, payments), call StartHeadlessBuild instead. When the user brought files and the site needs those features, upload the files here first; the upload's result then points to StartHeadlessBuild to connect them.\nReturns the guide; follow it and do the work yourself. Upload with UploadHeadlessWebsiteFiles once the site exists; the drop page is only the fallback.\nNOT for: a user who asked for Wix's editor, the Wix Harmony Editor, a template, Wix Studio or the Classic Editor (WixHarmonyEditorBuild, SearchSiteTemplates); a Claude Design bundle URL (import-claude-design-from-url); migrating a live site by URL or CSV exports; adding HTML or code into an existing Wix editor site; uploading images or documents to a site's media (UploadImageToWixSite).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "userRequest": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A short summary of what the user asked for and the context that led here, in a sentence or two, including whether this is a new site or an edit or new version of a site already on Wix. No personal data: no names, emails, phones, passwords, keys or local paths."
+          },
+          "siteDescription": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the site is: its purpose and who it is for. One or two sentences. No personal data: no names, emails, phones, passwords, keys or local paths."
+          },
+          "siteForm": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The form the site exists in right now (HTML/CSS/JS files, a static build, a zip, a framework project, another builder's export, a design created in this conversation, or something else), roughly how many files, and whether it includes images. For a framework project: which framework, whether you have its built static output (for example dist/) or only the source, and whether it needs a server at runtime (SSR, API routes, a backend), or that you don't know. Also where it came from: built in this conversation, the user's own project or repo, another builder (which one), or a Wix skill or template (which one). No personal data: no names, emails, phones, passwords, keys or local paths."
+          },
+          "siteFunctionality": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the site must be able to do for its visitors beyond showing pages, if anything (for example selling, bookings or reservations, tickets, menus and orders, rentals, forms, memberships or paid plans, donations, a blog, or anything else the user expects to work), in your own words. If it is a plain static site with no such needs, say so. No personal data: no names, emails, phones, passwords, keys or local paths."
+          },
+          "agentIdentity": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Which agent or product you are, which model if you know it, and the harness you run in. No personal data: no names, emails, phones, passwords, keys or local paths."
+          },
+          "wixAccess": {
+            "type": "string",
+            "minLength": 1,
+            "description": "How you can reach Wix from where you run: through this MCP only, or also from a shell whose network can reach wixapis.com; whether you can run the Wix CLI (npx @wix/cli) there and whether it is logged in; which Wix identity you act with — the user's login through this MCP, a CLI login, or none; and which Wix skills you have (for example wix-headless-kit or wix-manage), by name and where they come from (installed on disk, a plugin, read online), or none. Name the kind of identity, not the account or its email. No personal data: no names, emails, phones, passwords, keys or local paths."
+          }
+        },
+        "required": [
+          "userRequest",
+          "siteDescription",
+          "siteForm",
+          "siteFunctionality",
+          "agentIdentity",
+          "wixAccess"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 1008
+    },
+    {
+      "name": "StartHeadlessBuild",
+      "description": "Returns Wix's headless guide, for a site that needs Wix business features (a store, bookings or appointments, rentals, events and tickets, a restaurant menu with online orders or reservations, a blog, a portfolio, pricing plans and memberships, donations, Wix Forms, members and login, a CMS, payments), run by Wix as a Wix Headless site. You write the site; the guide creates it, connects the features, and uploads it. Also to add those features to an existing Wix Headless site (one deployed from files is one), from a project download link, or to move a Wix site to code.\nCall it right away: it only returns the guide, and the site's details are not needed first.\nNOT for: a site that needs no Wix business feature, or files the user brought that are not live yet (StartDeployWebsite: upload them first, then come back here for the features); a user who asked for Wix's editor, the Wix Harmony Editor, a template, Wix Studio or the Classic Editor, even when the site needs business features (WixHarmonyEditorBuild, SearchSiteTemplates); a Claude Design URL (import-claude-design-from-url).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "userRequest": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A short summary of what the user asked for and the context that led here, in a sentence or two, including whether this is a new site or an edit or new version of a site already on Wix. No personal data: no names, emails, phones, passwords, keys or local paths."
+          },
+          "siteDescription": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the site is: its purpose and who it is for. One or two sentences. No personal data: no names, emails, phones, passwords, keys or local paths."
+          },
+          "startingPoint": {
+            "type": "string",
+            "description": "What the site starts from, in your own words: a new site; an existing Wix Headless site (a site deployed from files is one), with its metaSiteId if you have it; a project download link (a download.zip from Wix); a Wix site moving to code; or something else. No personal data: no names, emails, phones, passwords, keys or local paths."
+          },
+          "siteFunctionality": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the site must be able to do for its visitors beyond showing pages, if anything (for example selling, bookings or reservations, tickets, menus and orders, rentals, forms, memberships or paid plans, donations, a blog, or anything else the user expects to work), in your own words. If it is a plain static site with no such needs, say so. No personal data: no names, emails, phones, passwords, keys or local paths."
+          },
+          "agentIdentity": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Which agent or product you are, which model if you know it, and the harness you run in. No personal data: no names, emails, phones, passwords, keys or local paths."
+          },
+          "wixAccess": {
+            "type": "string",
+            "minLength": 1,
+            "description": "How you can reach Wix from where you run: through this MCP only, or also from a shell whose network can reach wixapis.com; whether you can run the Wix CLI (npx @wix/cli) there and whether it is logged in; which Wix identity you act with — the user's login through this MCP, a CLI login, or none; and which Wix skills you have (for example wix-headless-kit or wix-manage), by name and where they come from (installed on disk, a plugin, read online), or none. Name the kind of identity, not the account or its email. No personal data: no names, emails, phones, passwords, keys or local paths."
+          }
+        },
+        "required": [
+          "userRequest",
+          "siteDescription",
+          "siteFunctionality",
+          "agentIdentity",
+          "wixAccess"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 841
+    },
+    {
+      "name": "WixREADME",
+      "description": "# Tool: WixREADME\nThe context every other Wix tool assumes. Call it first, once per conversation, for any Wix task or question; for another site later in the conversation, call `GetSiteContext` instead of calling this again.\nA Wix task includes reading or changing a site's or account's data: products, inventory, carts, checkouts, orders, bookings, services, staff, time slots, rentals, restaurant menus, online orders, reservations, events, tickets, RSVPs, blog posts, CMS collections and items, pricing plans, subscriptions, portfolios, gift cards, coupons, donations, forms, form submissions, contacts, members, loyalty points, groups, reviews, inbox messages, CRM tasks, automations, email campaigns, payments, invoices, SEO, redirects, translations, locations, analytics, media files, site properties, installed apps, and the account's sites and domains (searching whether a domain is available, buying one, and connecting one bought elsewhere).\nThese requests skip it and go straight to their own tool:\n- **Creating a new site.** Skip the docs too. A site is written in code and uploaded: StartDeployWebsite returns the upload guide; StartHeadlessBuild returns the headless guide, for a site that needs Wix business features (a store, bookings or appointments, rentals, events and tickets, a restaurant menu with online orders or reservations, a blog, a portfolio, pricing plans and memberships, donations, Wix Forms, members and login, a CMS, payments). Call one right away, without asking the user anything first: StartHeadlessBuild when the site needs Wix business features, otherwise StartDeployWebsite. WixHarmonyEditorBuild or SearchSiteTemplates only when the user asked for Wix's editor, the Wix Harmony Editor, a template, Wix Studio or the Classic Editor. Never create a site through ManageWixSite, CallWixSiteAPI or ExecuteWixAPI.\n- **Suggesting domain names**: call GetSuggestedDomains directly, with the business or site name as the query.\n- **Listing, showing or finding their Wix sites**: call ListWixSites directly.\n- **Uploading local or attached image files to a Wix site**: call UploadImageToWixSite directly, with no docs, schema or API calls. Do NOT use ExecuteWixAPI, SearchWixAPISpec, or any Media Manager REST API for image uploads.\nA question about one of those goes to the same tool (\"can you show my sites?\" is ListWixSites). Any other Wix question is answered from a Wix skill or the docs, never from memory, and never with a reply that you lack the tools to answer.\nIt returns, in full:\n- **Source of truth**: nothing Wix-specific from memory. Every URL, ID, setting location, product fact, request shape and field name comes from the docs tools, a Wix skill, an earlier tool result in the conversation, or the user.\n- **The site**: the account's sites with their properties and installed apps. The `siteId` comes from there (ask when several fit); a business solution's API works only on a site with its app installed, and an app's version changes its endpoints.\n- **Find the method**: an earlier tool result, else a Wix skill's recipe (wix-manage to manage a site, wix-headless-kit to build a headless one), else the docs: SearchWixRESTDocumentation or BrowseWixRESTDocsMenu, then ReadFullDocsArticle; the SDK, CLI, headless and apps docs for code.\n- **The exact shape**: model a call only on an example that matches the case; fill the rest with SearchWixAPISpec on the method's docs URL (request and response schemas, `method.publicUrl` for REST, `method.sdk` for the JavaScript SDK). A query's filter and sort fields and operators are a closed list per method.\n- **The call, or the code**: ExecuteWixAPI runs one async function holding every step code can resolve, the reads and the writes they feed together. Code the user keeps (an app, a headless site, a script over REST or the JavaScript SDK) is written from the same shapes; the headless skills are a shortcut on that path.\n- **When a call fails**: the error says what was wrong and carries a Wix request id; fix that, never resend unchanged or guess.\n- **Wix skills**, what each is for and how to read one: from disk when installed (the Wix plugin, or `npx skills add wix/skills`, `--skill <name>` for one, `-g` for the user's home, into `.agents/skills/<skill>/` or a similar folder the client reads, such as `.claude/skills/<skill>/`), else online with ReadFullDocsArticle at `https://www.wix.com/skills/<skill>/<path>`.\n  - **wix-manage**: REST recipes for managing a site's business solutions, one per task; follow the recipe and make its calls with ExecuteWixAPI, its docs URL in `sourceDocUrls`. Its list of recipes is `SKILL.md` in the installed skill, or online https://dev.wix.com/docs/api-reference/articles/ai-tools/wix-mcp/skills/wix-management-recipes-index.md, and each API area has its own `<API section>/skills.md` (for example https://dev.wix.com/docs/api-reference/business-solutions/bookings/skills.md).\n  - **wix-headless-kit**: builds a Wix Headless site on shipped, verified code from wix-headless-templates, a `@wix/sdk` React core or the same data layer as plain REST calls: scaffold with the CLI, deploy, seed, design on the shipped hooks, release. https://www.wix.com/skills/headless-kit/SKILL.md\n  - **wix-headless-templates**: the code wix-headless-kit builds from, one folder per Wix Business Solution. https://www.wix.com/skills/headless-templates/\nWhen the user asks you to do something in Wix, do it yourself, in as few steps and questions as you can; don't tell them which docs to read or which API to call.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 1353
+    },
+    {
+      "name": "SearchWixWDSDocumentation",
+      "description": "Searches the Wix Design System (WDS) documentation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "The search term to search for in the Wix Design System Documentation"
+          },
+          "maxResults": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 15,
+            "description": "The maximum number of results to return, default is 10, max is 15",
+            "default": 15
+          }
+        },
+        "required": [
+          "searchTerm"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 122
+    },
+    {
+      "name": "SearchWixRESTDocumentation",
+      "description": "**Searches the official Wix REST API documentation — the starting point for any Wix REST API task.** Unless you already have the exact method `docsUrl` in context, begin the task here; this is how you discover the right endpoint. Reach for it before `SearchWixAPISpec`, and avoid writing code that scans or filters `lightIndex` to find an endpoint (e.g. `lightIndex.filter(...)`, `lightIndex.flatMap(...)`, or substring-matching on `docsUrl`/`name`/`summary`) — that has no relevance ranking and silently misses composite and method-level operations. This is the ranked semantic-search discovery tool over the Wix REST API docs: describe your intent in natural language and it returns the matching REST endpoints/methods (with their `docsUrl`) ranked by relevance. It is the first step whenever you need to do something on a Wix site via HTTP and don't already have the exact `docsUrl` in context — for creating, reading, updating, or deleting any kind of Wix entity, across every business domain.\nIt covers all Wix REST domains equally, every product's data: products, inventory, carts, checkouts, orders, bookings, services, staff, time slots, rentals, restaurant menus, online orders, reservations, events, tickets, RSVPs, blog posts, CMS collections and items, pricing plans, subscriptions, portfolios, gift cards, coupons, donations, forms, form submissions, contacts, members, loyalty points, groups, reviews, inbox messages, CRM tasks, automations, email campaigns, payments, invoices, SEO, redirects, translations, locations, analytics, media files, site properties, installed apps, and the account's sites and domains (searching whether a domain is available, buying one, and connecting one bought elsewhere), and the rest. Just describe the resource, action, or goal in plain words (e.g. 'add a catalog item with inventory', 'book a service', 'update a data collection item', 'create a discount', 'list contacts', 'get site details endpoint', 'REST authentication'); the ranking handles matching your wording to the right API regardless of domain.\n**Next step after this tool:** take the `docsUrl` it returns and inspect that method's exact request/response schema with `SearchWixAPISpec` (`getResourceSchemaByUrl(docsUrl)`), then execute. `SearchWixAPISpec` is only for INSPECTING a `docsUrl` you already have — it is NOT a discovery tool. Skipping this step to hand-search `lightIndex` yourself is a mistake: raw index filtering has no relevance ranking and misses operations this ranked search finds. Discover here first, every time.\nIf you can't find what you need, rephrase your search term or use a bigger maxResults value.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "The search term to look up in the Wix REST API Documentation — a natural-language description of the endpoint, resource, or action you need across any Wix domain (Stores, eCommerce, Bookings, CRM, Members, CMS, Events, Blog, Forms, Media, site settings, etc.), e.g. \"create a catalog item with inventory\", \"book a service\", \"update data collection items\". Match the wording to how many entities you will act on: a plural term (\"update products\") surfaces the resource's bulk methods, which a singular term (\"update a product\") ranks lower or leaves out. Results are ranked by relevance, so describe the goal rather than guessing an exact API name."
+          },
+          "maxResults": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 17,
+            "description": "The maximum number of results to return (1–17, default 17). Results mix REST API documentation with matching recipes and skills.",
+            "default": 17
+          },
+          "reason": {
+            "type": "string",
+            "description": "One sentence describing the original user request and the task you are trying to accomplish with this search."
+          }
+        },
+        "required": [
+          "searchTerm",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 857
+    },
+    {
+      "name": "SearchWixSDKDocumentation",
+      "description": "Searches the Wix JavaScript SDK documentation.\nNext step for an API-reference method it returns: pass its docs URL (with or without `?apiView=SDK`) to `SearchWixAPISpec`'s `getResourceSchemaByUrl` when available, and read `method.sdk` for the exact import, call signature, typed parameters, return type, and examples.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "The search term to search for in the Wix SDK Documentation"
+          },
+          "maxResults": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 15,
+            "description": "The maximum number of results to return, default is 10, max is 15",
+            "default": 15
+          }
+        },
+        "required": [
+          "searchTerm"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 187
+    },
+    {
+      "name": "SearchBuildAppsDocumentation",
+      "description": "Searches the Wix Build Apps documentation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "The search term to search for in the Build Apps Documentation"
+          },
+          "maxResults": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 15,
+            "description": "The maximum number of results to return, default is 10, max is 15",
+            "default": 15
+          }
+        },
+        "required": [
+          "searchTerm"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 115
+    },
+    {
+      "name": "SearchDevelopmentDocumentation",
+      "description": "Broad Wix development documentation (platform concepts, developer guides, getting started). **Last resort — development tasks only.**\nSkip it entirely for general, business, support, or Wix-editor questions; for those, use `SearchWixHelpCenter`.\nCall it only after the specific search for your task returned nothing useful: `SearchWixRESTDocumentation` (REST), `SearchWixSDKDocumentation` (JS SDK), `SearchWixCLIDocumentation` (CLI), `SearchBuildAppsDocumentation` (apps), `SearchWixHeadlessDocumentation` (Headless), `SearchWixWDSDocumentation` (WDS). Never use it as a first search.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "The development-related search term. Use only after a more specific docs search (REST/SDK/CLI/Build Apps/Headless/WDS) came back empty."
+          },
+          "maxResults": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 15,
+            "description": "The maximum number of results to return, default is 10, max is 15",
+            "default": 15
+          }
+        },
+        "required": [
+          "searchTerm"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 268
+    },
+    {
+      "name": "SearchWixHeadlessDocumentation",
+      "description": "Searches the Wix Headless documentation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "The search term to search for in the Headless Documentation"
+          },
+          "maxResults": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 17,
+            "description": "The maximum number of results to return (1–17, default 17). Results mix Headless documentation with matching recipes and skills.",
+            "default": 17
+          }
+        },
+        "required": [
+          "searchTerm"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 126
+    },
+    {
+      "name": "SearchWixHelpCenter",
+      "description": "Searches the Wix Help Center (support.wix.com): how site owners do things in the Wix dashboard and editors, such as connecting a domain, managing a Premium plan, setting up a store or bookings, and fixing account or site issues.\nThe Help Center is written for people doing things by hand in Wix's dashboard and editors. To act on a site yourself, the Wix developer docs come first: find the method with SearchWixRESTDocumentation or BrowseWixRESTDocsMenu.\nUse it for \"how do I ... in Wix\" questions about the product, or to give the user click-by-click steps for something no API covers.\nNot for building with code: for Wix APIs, SDK, CLI, apps, or Headless, use the matching developer documentation search.\nResults are excerpts; read a full article by passing its support.wix.com link to `ReadFullDocsArticle`.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "What the site owner wants to do or fix, in plain words (e.g. \"connect a domain bought elsewhere\", \"cancel a Premium plan\")"
+          },
+          "maxResults": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 15,
+            "description": "The maximum number of articles to return (1–15, default 15). Each article is returned with up to 60 lines.",
+            "default": 15
+          },
+          "reason": {
+            "type": "string",
+            "description": "One sentence describing the original user request and the task you are trying to accomplish with this search."
+          }
+        },
+        "required": [
+          "searchTerm",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 350
+    },
+    {
+      "name": "SearchWixCLIDocumentation",
+      "description": "Searches the Wix CLI documentation for website development and CLI commands.\nUse this tool when you need information about Wix CLI commands, local development workflows, or CLI-based website development.\nSpecify what you need information about (e.g., 'wix dev command', 'local development setup', 'CLI authentication', 'wix deploy').\nIf you can't find what you need, try to rephrase your search term or use bigger maxResults value.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "The search term to search for in the Wix CLI Documentation"
+          },
+          "maxResults": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 15,
+            "description": "The maximum number of results to return, default is 10, max is 15",
+            "default": 15
+          },
+          "reason": {
+            "type": "string",
+            "description": "One sentence describing the original user request and the task you are trying to accomplish with this search."
+          }
+        },
+        "required": [
+          "searchTerm",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 231
+    },
+    {
+      "name": "ReadFullDocsArticle",
+      "description": "Fetches the full Wix docs article or method article with code examples for using the method.\nDocs articles looks like this: https://dev.wix.com/docs/... and they can either be general docs articles or method articles.\nAlso reads Wix skills pages — https://www.wix.com/skills/<skill>, https://dev.wix.com/docs/skills/<skill>, and the files they link (e.g. .../<skill>/references/<file>.md) — and Wix Headless agent pages under https://www.wix.com/headless/ (e.g. https://www.wix.com/headless/skill.md), exactly as served.\nTake the URL from the user's message or an earlier tool result. To reach an article you have no URL for, search or browse the docs first.\nIt returns the whole file. For part of a long skills file, ExecuteWixAPI can fetch the same URL, split the text into lines and return only the lines needed (\"How to read a skill\" in WixREADME has the code). In ExecuteWixAPI, a dev.wix.com docs page needs `.md` added to its URL, and Help Center articles are not reachable: those are read only with this tool.\nFor REST docs, use the URL as-is. For SDK docs, the URL SHOULD include ?apiView=SDK.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "articleUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "The URL of the docs article or method article to fetch. Should be something like https://dev.wix.com/docs/.../... For REST docs, use the URL as-is. For SDK docs, the URL SHOULD include the query param ?apiView=SDK (e.g. https://dev.wix.com/docs/...?apiView=SDK). Wix Help Center articles (https://support.wix.com/en/article/...) are read as-is. Wix skills pages (https://www.wix.com/skills/..., https://dev.wix.com/docs/skills/...) and Wix Headless agent pages (https://www.wix.com/headless/..., e.g. https://www.wix.com/headless/skill.md) are read as-is, including their referenced files. Source links (https://dev.wix.com/rawdocs/api/get-source-content?repo=...&path=...) found in skills and recipes are read as-is."
+          }
+        },
+        "required": [
+          "articleUrl"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 525
+    },
+    {
+      "name": "ReadFullDocsMethodSchema",
+      "description": "Fetches the full method schema for a given method.\nThis will give you the entire request/response schema with all the fields and their descriptions.\nFor REST and SDK API-reference methods, prefer SearchWixAPISpec when it is available: it can fetch and inspect the exact method schema by docs URL, return the request/response shape, the JavaScript SDK call (`method.sdk`: package, namespace, method, positional parameters, examples), and inspect selected nested component schemas without dumping unrelated fields. Use ReadFullDocsMethodSchema only when SearchWixAPISpec is unavailable or did not provide the needed detail.\nFor REST docs, use the URL as-is. For SDK docs, the URL SHOULD include ?apiView=SDK.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "articleUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "The URL of the documentation to fetch. Should be something like https://dev.wix.com/docs/.../... For REST docs, use the URL as-is. For SDK docs, the URL SHOULD include the query param ?apiView=SDK (e.g. https://dev.wix.com/docs/...?apiView=SDK)."
+          },
+          "reason": {
+            "type": "string",
+            "description": "One sentence describing the original user request, the task you are trying to accomplish, and why you need the full schema (e.g., no relevant code example found in docs or recipes)."
+          }
+        },
+        "required": [
+          "articleUrl",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 326
+    },
+    {
+      "name": "BrowseWixRESTDocsMenu",
+      "description": "Browse the Wix REST API documentation menu hierarchy.\nAlternative to SearchWixRESTDocumentation - use this to explore and discover APIs by navigating the menu structure instead of searching by keywords.\n- Omit the `menuUrl` param to see top-level categories\n- Pass a `menuUrl` param to drill into a category - copy the URL from previous responses\nExample `menuUrl` param values for main Wix verticals:\n- Stores: \"https://dev.wix.com/docs/api-reference/business-solutions/stores\"\n- Bookings: \"https://dev.wix.com/docs/api-reference/business-solutions/bookings\"\n- CMS: \"https://dev.wix.com/docs/api-reference/business-solutions/cms\"\n- CRM: \"https://dev.wix.com/docs/api-reference/crm\"\n- eCommerce: \"https://dev.wix.com/docs/api-reference/business-solutions/e-commerce\"\n- Events: \"https://dev.wix.com/docs/api-reference/business-solutions/events\"\n- Blog: \"https://dev.wix.com/docs/api-reference/business-solutions/blog\"\n- Pricing Plans: \"https://dev.wix.com/docs/api-reference/business-solutions/pricing-plans\"\n- Restaurants: \"https://dev.wix.com/docs/api-reference/business-solutions/restaurants\"\n- Media: \"https://dev.wix.com/docs/api-reference/assets/media\"\n- Site Properties: \"https://dev.wix.com/docs/api-reference/business-management/site-properties\"",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "menuUrl": {
+            "type": "string",
+            "description": "URL of the menu to browse. Empty/omitted returns the root menu. Copy the URL from links in previous responses of this tool. Example: \"https://dev.wix.com/docs/api-reference/ecommerce\" or \"https://dev.wix.com/docs/api-reference/ecommerce/catalog\""
+          },
+          "reason": {
+            "type": "string",
+            "description": "One sentence describing the original user request and why you are browsing this part of the docs menu."
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 448
+    },
+    {
+      "name": "CheckDomainAvailability",
+      "title": "Check Domain Availability",
+      "description": "Checks whether one or more domain names can be registered through Wix.\n\nCall this when the user asks if a specific domain is available, e.g. \"is mybakery.com available?\" or \"check these: a.com, b.net\". Pass every name in one call; do not call it once per name.\n\nDo not use this tool to come up with domain ideas or alternatives: call GetSuggestedDomains for that.\n\nReturns one `{ domain, status }` per name, in the order given. Answer in plain language, one line per domain, in that order:\n- AVAILABLE: it is available.\n- PREMIUM: it is available as a premium domain, which costs more than a standard one.\n- REGISTERED: it is already registered.\n- UNSUPPORTED_TLD: Wix doesn't support its extension, e.g. \".ws domains aren't supported by Wix\".\n- UNABLE_TO_CHECK: you couldn't check it.\n\nThen ask one question that offers only the actions for the statuses present:\n- AVAILABLE or PREMIUM: get an available name for their Wix site.\n- REGISTERED: connect it to their Wix site if it's theirs, or see similar names.\n- UNSUPPORTED_TLD: try a supported extension.\n- UNABLE_TO_CHECK: retry the names you couldn't check.\n\nSay that a domain is premium only when its status is PREMIUM. Never state or estimate a price. Never name an error, a code or an API to the user.\n\nThis tool only checks availability. It does not purchase or connect a domain, look up an owner or search for names: act on those only after the user answers your question.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "domains": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 253
+            },
+            "minItems": 1,
+            "maxItems": 60,
+            "description": "The domain names to check, with their extension, e.g. [\"mybakery.com\", \"mybakery.net\"]. Use the names exactly as the user wrote them."
+          }
+        },
+        "required": [
+          "domains"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "offline_access"
+            ]
+          }
+        ],
+        "ui": {
+          "visibility": [
+            "app",
+            "model"
+          ]
+        },
+        "openai/toolInvocation/invoking": "Checking domain availability",
+        "openai/toolInvocation/invoked": "Domain availability checked"
+      },
+      "tokens": 461
+    }
+  ],
+  "totalTokens": 7218
+}

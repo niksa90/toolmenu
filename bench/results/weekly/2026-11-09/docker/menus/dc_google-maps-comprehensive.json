@@ -1,0 +1,219 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "google-maps",
+    "version": "1.0.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:02:24.732Z",
+  "tools": [
+    {
+      "name": "maps_directions",
+      "description": "Get directions between two locations using Google Routes API",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "description": "Origin address"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Destination address"
+          },
+          "travelMode": {
+            "type": "string",
+            "enum": [
+              "DRIVE",
+              "WALK",
+              "BICYCLE",
+              "TRANSIT"
+            ],
+            "default": "DRIVE",
+            "description": "Travel mode"
+          }
+        },
+        "required": [
+          "origin",
+          "destination"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 113
+    },
+    {
+      "name": "maps_search_places",
+      "description": "Search places using Google Places API (New)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query for places"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 67
+    },
+    {
+      "name": "maps_reverse_geocode",
+      "description": "Get address from latitude/longitude using Google Places Nearby",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "description": "Latitude coordinate"
+          },
+          "longitude": {
+            "type": "number",
+            "description": "Longitude coordinate"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 81
+    },
+    {
+      "name": "maps_geocode",
+      "description": "Convert address to coordinates using Google Geocoding API",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Address to geocode"
+          }
+        },
+        "required": [
+          "address"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 68
+    },
+    {
+      "name": "maps_place_details",
+      "description": "Get detailed information about a place using Google Places API",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "place_id": {
+            "type": "string",
+            "description": "Google Place ID"
+          }
+        },
+        "required": [
+          "place_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 69
+    },
+    {
+      "name": "maps_distance_matrix",
+      "description": "Calculate distances and travel times between multiple origins and destinations",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "origins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of origin addresses"
+          },
+          "destinations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of destination addresses"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "driving",
+              "walking",
+              "bicycling",
+              "transit"
+            ],
+            "default": "driving",
+            "description": "Travel mode"
+          }
+        },
+        "required": [
+          "origins",
+          "destinations"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 134
+    },
+    {
+      "name": "maps_elevation",
+      "description": "Get elevation data for geographic points using Google Elevation API",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "latitude": {
+                  "type": "number",
+                  "description": "Latitude coordinate"
+                },
+                "longitude": {
+                  "type": "number",
+                  "description": "Longitude coordinate"
+                }
+              },
+              "required": [
+                "latitude",
+                "longitude"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Array of locations to get elevation for"
+          }
+        },
+        "required": [
+          "locations"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 116
+    },
+    {
+      "name": "maps_ping",
+      "description": "Check if the Google Maps MCP server is alive",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 49
+    }
+  ],
+  "totalTokens": 697
+}

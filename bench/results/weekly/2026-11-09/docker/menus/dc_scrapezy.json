@@ -1,0 +1,39 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "scrapezy-mcp-server",
+    "version": "0.1.1",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:00:46.762Z",
+  "tools": [
+    {
+      "name": "extract-structured-data",
+      "description": "Extract structured data from a website.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the website to extract data from"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Prompt to extract data from the website"
+          }
+        },
+        "required": [
+          "url",
+          "prompt"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 92
+    }
+  ],
+  "totalTokens": 92
+}

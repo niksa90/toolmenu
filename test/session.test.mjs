@@ -96,6 +96,21 @@ test('session over stdio (2026-07-28): each change is pinned to the step that ca
   assert.equal(r.final.tools, 8);
 });
 
+for (const legacy of [false, true]) {
+  test(`session (${legacy ? '2025' : '2026-07-28'}): wait_for after a call sees the list_changed that call caused`, async () => {
+    // The README's own scenario: the unlock's notification arrives while the call
+    // step runs, before the wait_for begins. A second wait_for needs a new one.
+    const scenario = parseScenario({
+      steps: ['list', { call: 'unlock_toolset', args: { toolset: 'audits' } }, { wait_for: 'tools_list_changed', timeout_ms: 2000 }, { wait_for: 'tools_list_changed', timeout_ms: 200 }],
+    });
+    const started = Date.now();
+    const r = await session(stdio(legacy ? { LEGACY: '1' } : {}), scenario, { timeoutMs: TIMEOUT_MS, processes: 1 });
+    assert.ok(r.steps[1].listChanged > 0, 'the call step got the notification');
+    assert.deepEqual(r.steps.map((s) => s.status), ['ok', 'ok', 'ok', 'timed-out']);
+    assert.ok(Date.now() - started < 2000, 'the first wait_for did not wait out its timeout');
+  });
+}
+
 test('session: a server that holds a lock still gets its report, with the scope left unchecked', async () => {
   const lock = join(tempDir(), 'db.lock');
   const r = await session(stdio({ LOCKFILE: lock }), UNLOCK, { timeoutMs: TIMEOUT_MS });
@@ -943,7 +958,7 @@ test('session: a tool error shows the server\'s reason, keeps its whole text in 
 });
 
 test('clip: a long path loses its middle, not the reason after it', () => {
-  const text = 'Error reading histogram: spawn /tmp/claude-0/-home-user-toolmenu/6a15a4c2-e096-5e7f-9772-f567d7616568/scratchpad/em/node_modules/editmamei/dist/bin/editmamei-core-linux-x64 ENOENT';
+  const text = 'Error reading histogram: spawn /home/runner/work/bench/servers/editmamei-3f9c2a71/install/prefix/lib/em/node_modules/editmamei/dist/bin/editmamei-core-linux-x64 ENOENT';
   assert.equal(clip(text, 120), 'Error reading histogram: spawn …/bin/editmamei-core-linux-x64 ENOENT');
   // Short enough already: nothing changes.
   assert.equal(clip('spawn /usr/local/bin/x ENOENT', 120), 'spawn /usr/local/bin/x ENOENT');
@@ -1024,4 +1039,20 @@ test('session/error-not-flagged: an API\'s HTTP error passed on as a plain answe
   const [only] = ign.findings.filter((x) => x.rule === 'session/error-not-flagged');
   assert.equal(only.tool, 'get_report');
   assert.match(only.message, /^get_report answered with an HTTP error/);
+});
+
+test('the union menu keeps the starting list\'s cache hints, so review of a snapshot against it is unchanged (bench, 2026-11-09)', async () => {
+  const r = await session(stdio(), parseScenario({ steps: ['list'] }), { timeoutMs: TIMEOUT_MS, processes: 1 });
+  assert.ok(r.union.listMeta && 'ttlMs' in r.union.listMeta, JSON.stringify(r.union.listMeta));
+});
+
+test('session/edit only in a field the model does not read is a warning that says so (@pipeworx version hash, bench 2026-11-09)', () => {
+  const t = (version, description = 'Get a thing.') => [{ name: 'get_x', description, inputSchema: { type: 'object' }, version }];
+  const run = (a, b) => changeFindings(menuOf(a).tools, menuOf(b).tools, compareMenus(menuOf(a).tools, menuOf(b).tools), 2, 'no tool call in between').filter((f) => f.rule === 'session/edit');
+  const quiet = run(t('v1.bb26ead1'), t('v1.ef282cca'));
+  assert.deepEqual(quiet.map((f) => f.severity), ['warn']);
+  assert.match(quiet[0].message, /^get_x: version changed mid-session, a field clients keep to themselves: .*cached prompt isn't affected/);
+  const loud = run(t('v1.bb26ead1'), t('v1.ef282cca', 'Get a thing, now.'));
+  assert.deepEqual(loud.map((f) => f.severity), ['error']);
+  assert.match(loud[0].message, /Invalidates the cached prompt/);
 });

@@ -1,0 +1,2022 @@
+{
+ "toolmenu": 1,
+ "server": {
+  "name": "huggingface.co/mcp",
+  "version": "0.4.33",
+  "protocolVersion": "2026-07-28",
+  "era": "modern",
+  "extensions": {
+   "io.modelcontextprotocol/skills": {
+    "directoryRead": true
+   }
+  }
+ },
+ "capturedAt": "2026-11-09T14:08:11.302Z",
+ "tools": [
+  {
+   "name": "hf_whoami",
+   "title": "Hugging Face User Info",
+   "description": "Inspect the current Hugging Face authentication context, including the account, visible organization memberships, and credential access details. Read-only and never returns credential values.",
+   "inputSchema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {}
+   },
+   "annotations": {
+    "title": "Hugging Face User Info",
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "readOnlyHint": true,
+    "openWorldHint": false
+   },
+   "outputSchema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "oneOf": [
+     {
+      "type": "object",
+      "properties": {
+       "status": {
+        "type": "string",
+        "const": "authenticated"
+       },
+       "account": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string",
+          "minLength": 1
+         },
+         "type": {
+          "type": "string",
+          "enum": [
+           "user",
+           "org",
+           "app"
+          ]
+         },
+         "name": {
+          "type": "string",
+          "minLength": 1
+         },
+         "url": {
+          "type": "string",
+          "format": "uri"
+         },
+         "is_pro": {
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "id",
+         "type",
+         "name"
+        ],
+        "additionalProperties": false
+       },
+       "organizations": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string",
+           "minLength": 1
+          },
+          "name": {
+           "type": "string",
+           "minLength": 1
+          },
+          "display_name": {
+           "type": "string",
+           "minLength": 1
+          },
+          "url": {
+           "type": "string",
+           "format": "uri"
+          },
+          "role": {
+           "type": "string",
+           "minLength": 1
+          },
+          "plan": {
+           "type": "string",
+           "minLength": 1
+          },
+          "security_restrictions": {
+           "type": "array",
+           "items": {
+            "type": "string",
+            "minLength": 1
+           }
+          },
+          "resource_groups": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "minLength": 1
+             },
+             "name": {
+              "type": "string",
+              "minLength": 1
+             },
+             "role": {
+              "type": "string",
+              "minLength": 1
+             }
+            },
+            "required": [
+             "id",
+             "name",
+             "role"
+            ],
+            "additionalProperties": false
+           }
+          }
+         },
+         "required": [
+          "id",
+          "name",
+          "display_name",
+          "url"
+         ],
+         "additionalProperties": false
+        }
+       },
+       "credential": {
+        "oneOf": [
+         {
+          "type": "object",
+          "properties": {
+           "type": {
+            "type": "string",
+            "const": "personal_access_token"
+           },
+           "role": {
+            "type": "string",
+            "enum": [
+             "read",
+             "write",
+             "fine_grained"
+            ]
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+           },
+           "permissions": {
+            "type": "object",
+            "properties": {
+             "scoped": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "entity": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "minLength": 1
+                  },
+                  "type": {
+                   "type": "string",
+                   "enum": [
+                    "model",
+                    "dataset",
+                    "space",
+                    "bucket",
+                    "kernel",
+                    "collection",
+                    "org",
+                    "user",
+                    "resource_group",
+                    "oauth_app"
+                   ]
+                  },
+                  "name": {
+                   "type": "string",
+                   "minLength": 1
+                  }
+                 },
+                 "required": [
+                  "id",
+                  "type"
+                 ],
+                 "additionalProperties": false
+                },
+                "permissions": {
+                 "type": "array",
+                 "items": {
+                  "type": "string",
+                  "minLength": 1
+                 }
+                },
+                "restrictions": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "resource_type": {
+                    "type": "string",
+                    "const": "inference_endpoint"
+                   },
+                   "patterns": {
+                    "type": "array",
+                    "items": {
+                     "type": "string",
+                     "minLength": 1
+                    }
+                   }
+                  },
+                  "required": [
+                   "resource_type",
+                   "patterns"
+                  ],
+                  "additionalProperties": false
+                 }
+                }
+               },
+               "required": [
+                "entity",
+                "permissions"
+               ],
+               "additionalProperties": false
+              }
+             },
+             "global": {
+              "type": "array",
+              "items": {
+               "type": "string",
+               "minLength": 1
+              }
+             },
+             "can_read_gated_repos": {
+              "type": "boolean"
+             }
+            },
+            "required": [
+             "scoped"
+            ],
+            "additionalProperties": false
+           }
+          },
+          "required": [
+           "type",
+           "role"
+          ],
+          "additionalProperties": false
+         },
+         {
+          "type": "object",
+          "properties": {
+           "type": {
+            "type": "string",
+            "const": "oauth"
+           },
+           "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+           },
+           "scopes": {
+            "type": "array",
+            "items": {
+             "type": "string",
+             "minLength": 1
+            }
+           }
+          },
+          "required": [
+           "type"
+          ],
+          "additionalProperties": false
+         },
+         {
+          "type": "object",
+          "properties": {
+           "type": {
+            "type": "string",
+            "const": "app_token"
+           },
+           "role": {
+            "type": "string",
+            "minLength": 1
+           },
+           "entities": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "type": {
+               "type": "string",
+               "enum": [
+                "model",
+                "dataset",
+                "space",
+                "bucket",
+                "kernel",
+                "org"
+               ]
+              },
+              "name": {
+               "type": "string",
+               "minLength": 1
+              }
+             },
+             "required": [
+              "name"
+             ],
+             "additionalProperties": false
+            }
+           }
+          },
+          "required": [
+           "type",
+           "entities"
+          ],
+          "additionalProperties": false
+         },
+         {
+          "type": "object",
+          "properties": {
+           "type": {
+            "type": "string",
+            "const": "other"
+           },
+           "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+           }
+          },
+          "required": [
+           "type"
+          ],
+          "additionalProperties": false
+         }
+        ]
+       }
+      },
+      "required": [
+       "status",
+       "account",
+       "organizations",
+       "credential"
+      ],
+      "additionalProperties": false
+     },
+     {
+      "type": "object",
+      "properties": {
+       "status": {
+        "type": "string",
+        "const": "anonymous"
+       },
+       "account": {
+        "type": "null"
+       },
+       "organizations": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string",
+           "minLength": 1
+          },
+          "name": {
+           "type": "string",
+           "minLength": 1
+          },
+          "display_name": {
+           "type": "string",
+           "minLength": 1
+          },
+          "url": {
+           "type": "string",
+           "format": "uri"
+          },
+          "role": {
+           "type": "string",
+           "minLength": 1
+          },
+          "plan": {
+           "type": "string",
+           "minLength": 1
+          },
+          "security_restrictions": {
+           "type": "array",
+           "items": {
+            "type": "string",
+            "minLength": 1
+           }
+          },
+          "resource_groups": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "minLength": 1
+             },
+             "name": {
+              "type": "string",
+              "minLength": 1
+             },
+             "role": {
+              "type": "string",
+              "minLength": 1
+             }
+            },
+            "required": [
+             "id",
+             "name",
+             "role"
+            ],
+            "additionalProperties": false
+           }
+          }
+         },
+         "required": [
+          "id",
+          "name",
+          "display_name",
+          "url"
+         ],
+         "additionalProperties": false
+        }
+       },
+       "credential": {
+        "type": "null"
+       },
+       "guidance": {
+        "type": "string",
+        "minLength": 1
+       }
+      },
+      "required": [
+       "status",
+       "account",
+       "organizations",
+       "credential",
+       "guidance"
+      ],
+      "additionalProperties": false
+     },
+     {
+      "type": "object",
+      "properties": {
+       "status": {
+        "type": "string",
+        "const": "authentication_unverified"
+       },
+       "account": {
+        "type": "null"
+       },
+       "organizations": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string",
+           "minLength": 1
+          },
+          "name": {
+           "type": "string",
+           "minLength": 1
+          },
+          "display_name": {
+           "type": "string",
+           "minLength": 1
+          },
+          "url": {
+           "type": "string",
+           "format": "uri"
+          },
+          "role": {
+           "type": "string",
+           "minLength": 1
+          },
+          "plan": {
+           "type": "string",
+           "minLength": 1
+          },
+          "security_restrictions": {
+           "type": "array",
+           "items": {
+            "type": "string",
+            "minLength": 1
+           }
+          },
+          "resource_groups": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "minLength": 1
+             },
+             "name": {
+              "type": "string",
+              "minLength": 1
+             },
+             "role": {
+              "type": "string",
+              "minLength": 1
+             }
+            },
+            "required": [
+             "id",
+             "name",
+             "role"
+            ],
+            "additionalProperties": false
+           }
+          }
+         },
+         "required": [
+          "id",
+          "name",
+          "display_name",
+          "url"
+         ],
+         "additionalProperties": false
+        }
+       },
+       "credential": {
+        "type": "null"
+       },
+       "guidance": {
+        "type": "string",
+        "minLength": 1
+       }
+      },
+      "required": [
+       "status",
+       "account",
+       "organizations",
+       "credential",
+       "guidance"
+      ],
+      "additionalProperties": false
+     }
+    ]
+   },
+   "tokens": 69
+  },
+  {
+   "name": "hub_repo_search",
+   "title": "Repo Search",
+   "description": "Search and list Hugging Face models, datasets and Spaces (sort by downloads, likes, trending) with a shared query interface. You can target models, datasets, spaces, or aggregate across multiple repo types in one call. Include links to repositories in your response.",
+   "inputSchema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+     "query": {
+      "description": "Search term. Leave blank and specify sort + limit to browse trending or recent repositories.",
+      "type": "string"
+     },
+     "repo_types": {
+      "default": [
+       "model",
+       "dataset"
+      ],
+      "description": "Repository types to search. Defaults to [\"model\", \"dataset\"]. space uses keyword search via /api/spaces.",
+      "minItems": 1,
+      "maxItems": 3,
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "model",
+        "dataset",
+        "space"
+       ]
+      }
+     },
+     "author": {
+      "description": "Organization or user namespace to filter by (e.g. 'google', 'meta-llama', 'huggingface').",
+      "type": "string"
+     },
+     "filters": {
+      "description": "Optional hub filter tags. Applied to each selected repo type (e.g. [\"text-generation\"], [\"language:en\"], [\"mcp-server\"]).",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "sort": {
+      "description": "Sort order (descending): trendingScore, downloads, likes, createdAt, lastModified",
+      "type": "string",
+      "enum": [
+       "trendingScore",
+       "downloads",
+       "likes",
+       "createdAt",
+       "lastModified"
+      ]
+     },
+     "limit": {
+      "default": 20,
+      "description": "Maximum number of results to return per selected repo type",
+      "type": "number",
+      "minimum": 1,
+      "maximum": 100
+     }
+    }
+   },
+   "annotations": {
+    "title": "Repo Search",
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "readOnlyHint": true,
+    "openWorldHint": true
+   },
+   "tokens": 342
+  },
+  {
+   "name": "hub_repo_details",
+   "title": "Hub Repository Details",
+   "description": "Get details for one or more Hugging Face repos (model, dataset, or space): card metadata, license, downloads, files, Space hardware/status, dataset configs, splits, columns and preview rows. Auto-detects type unless specified. For datasets, use operations: overview, dataset_structure, dataset_preview. Use dataset_structure first to discover configs, splits, sizes, and schema. Use dataset_preview only when config and split are known, unless the dataset has a single config/split.",
+   "inputSchema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+     "repo_ids": {
+      "minItems": 1,
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+       "type": "string",
+       "minLength": 1
+      },
+      "description": "Repo IDs for (models|dataset/space) - usually in author/name format (e.g. openai/gpt-oss-120b)"
+     },
+     "repo_type": {
+      "description": "Specify lookup type; otherwise auto-detects",
+      "type": "string",
+      "enum": [
+       "model",
+       "dataset",
+       "space"
+      ]
+     },
+     "operations": {
+      "description": "Details to return. Defaults to [\"overview\"]. For datasets, prefer [\"overview\", \"dataset_structure\"] first; then call [\"dataset_preview\"] with config and split.",
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "overview",
+        "dataset_structure",
+        "dataset_preview"
+       ]
+      }
+     },
+     "config": {
+      "description": "Dataset Viewer config. Required for dataset_preview when the dataset has multiple config/split options. Discover via dataset_structure.",
+      "type": "string"
+     },
+     "split": {
+      "description": "Dataset Viewer split. Required for dataset_preview when the dataset has multiple config/split options. Discover via dataset_structure.",
+      "type": "string"
+     },
+     "offset": {
+      "description": "Row offset for dataset_preview. Defaults to 0.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "limit": {
+      "description": "Row count for dataset_preview. Defaults to 5 and is clamped to 1-100.",
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+     }
+    },
+    "required": [
+     "repo_ids"
+    ]
+   },
+   "annotations": {
+    "title": "Hub Repository Details",
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "readOnlyHint": true,
+    "openWorldHint": true
+   },
+   "tokens": 437
+  },
+  {
+   "name": "hf_fs",
+   "title": "Hugging Face Hub: Find, use and view models, datasets, spaces, buckets, papers, documentation and collections. Get daily papers reports, and browse trending content. ",
+   "description": "When to use: Hugging Face Hub models, datasets, Spaces, collections, papers, daily papers, today's trending models, current paper leaderboard, docs; list and read repository files, model and dataset cards (README, license).\n\nExamples:\n  {\"operations\":[{\"cmd\":\"ls\",\"args\":[\"hf://models/trending\",\"--limit\",\"10\"]}]}\n  {\"operations\":[{\"cmd\":\"ls\",\"args\":[\"hf://papers/trending\"]}]}\n  {\"operations\":[{\"cmd\":\"ls\",\"args\":[\"hf://papers/daily/latest\"]}]}\n  {\"operations\":[{\"cmd\":\"cat\",\"args\":[\"hf://papers/2501.00001/paper.md\"]}]}\n  {\"operations\":[{\"cmd\":\"search\",\"args\":[\"hf://models\",\"--tag\",\"base_model:finetune:org/repo\"]}]}\n\nUse hf_fs for Hugging Face Hub filesystem operations. Call it with operations, an array of {cmd, args} items; multiple operations may be submitted together.\n\nUsage:\n  {\"operations\":[{\"cmd\":\"ls\",\"args\":[\"hf://models/org/repo\"]}]}\n\nGrammar; each string below is one args array item:\n  ls     URI [--recursive] [--glob GLOB] [--type TYPE] [--sort SORT] [--limit N]\n  cat    URI [--offset N] [--max-bytes N]\n  attach URI [--max-bytes N]\n  stat   URI\n  find   URI [--name GLOB] [--path GLOB] [--type TYPE] [--limit N]\n  search URI [QUERY] [--type TYPE] [--sort SORT] [--tag TAG] [--kind mcp] [--limit N]\n\nCOMMAND = ls|cat|attach|stat|find|search.\nTYPE = file|dir|repo|bucket|collection|paper|link.\nSORT = createdAt|downloads|likes|lastModified|likes30d|trendingScore|mainSize|id|trending|upvotes.\nURI is a canonical hf:// URI. QUERY and GLOB are each one string.\n\nUse search for resource discovery, not repository-content search; ls for a known directory, find for recursive file discovery by name/path (not file contents), stat for filesystem metadata or an uncertain target type, cat for text contents, and attach for a complete JPEG, PNG, or WebP image. When the request gives an exact text-file URI, use cat directly; do not add ls or stat first. stat does not read the contents of JSON, Markdown, or other text files.\n\nSearch scopes: hf://models[/OWNER], hf://datasets[/OWNER], hf://spaces[/OWNER], hf://collections[/OWNER], hf://papers, and hf://docs[/...]. Repository and repository-file scopes are not supported: search a resource root or owner scope to discover resources; use find for file discovery within a repository or cat for a known text file. Paper and documentation search require QUERY. --tag filters models, datasets, and Spaces by Hub tag (repeatable; all must match) and applies only to hf://models|datasets|spaces[/OWNER]; omit QUERY when the tag already identifies the target, because QUERY also filters repository names. Derived models carry base_model:ID and base_model:RELATION:ID tags, where RELATION is finetune, adapter, merge, or quantized. --kind applies only to hf://spaces[/OWNER]; the only valid --kind value is mcp, which selects MCP Spaces. Tag families are documented at hf://README.md.\nUse ls hf://models/trending, hf://datasets/trending, hf://spaces/trending, or hf://papers/trending for trending listings.\nhf://papers/ID is a paper directory, not paper text. Use cat hf://papers/ID/paper.md for paper text and cat hf://papers/ID/metadata.json for metadata. No preliminary listing is needed for these known paths. Use ls hf://papers/ID to discover other resources.\nOmit --limit, --sort, and --type unless the request requires them. Limits and path-specific behavior are documented at hf://README.md. Issue one hf_fs call.\n\nLinks: hf://models|datasets|spaces/OWNER/NAME/PATH maps to https://huggingface.co[/datasets|/spaces]/OWNER/NAME/resolve/main/PATH (buckets: https://huggingface.co/buckets/OWNER/NAME/resolve/PATH); URL-encode each path segment. arXiv ids (for example 2502.16161) link papers, models and datasets.",
+   "inputSchema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+     "operations": {
+      "minItems": 1,
+      "maxItems": 30,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "cmd": {
+         "type": "string",
+         "enum": [
+          "ls",
+          "cat",
+          "attach",
+          "stat",
+          "find",
+          "search"
+         ],
+         "description": "Command to execute."
+        },
+        "args": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         },
+         "description": "Command arguments. First item must be an hf:// URI, not a local path or bare filename. One argument per array item. search discovers resources, not repository contents; use root/owner discovery scopes, find for file discovery, or cat for a known text file. --tag requires hf://models|datasets|spaces[/OWNER]; --kind requires hf://spaces[/OWNER] and its only valid value is mcp."
+        }
+       },
+       "required": [
+        "cmd",
+        "args"
+       ],
+       "additionalProperties": false
+      }
+     }
+    },
+    "required": [
+     "operations"
+    ],
+    "additionalProperties": false
+   },
+   "annotations": {
+    "title": "Hugging Face Hub: Find, use and view models, datasets, spaces, buckets, papers, documentation and collections. Get daily papers reports, and browse trending content. ",
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "readOnlyHint": true,
+    "openWorldHint": true
+   },
+   "outputSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+     "results": {
+      "minItems": 1,
+      "maxItems": 30,
+      "type": "array",
+      "items": {
+       "oneOf": [
+        {
+         "type": "object",
+         "properties": {
+          "index": {
+           "type": "integer",
+           "minimum": 0,
+           "maximum": 9007199254740991
+          },
+          "status": {
+           "type": "string",
+           "const": "success"
+          },
+          "result": {
+           "type": "object",
+           "properties": {
+            "uri": {
+             "type": "string"
+            },
+            "op": {
+             "type": "string",
+             "enum": [
+              "ls",
+              "cat",
+              "attach",
+              "stat",
+              "find",
+              "search"
+             ]
+            },
+            "entries": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "type": {
+                "type": "string",
+                "enum": [
+                 "file",
+                 "dir",
+                 "repo",
+                 "bucket",
+                 "collection",
+                 "paper",
+                 "link"
+                ]
+               },
+               "path": {
+                "type": "string"
+               },
+               "uri": {
+                "type": "string"
+               },
+               "name": {
+                "type": "string"
+               },
+               "target_uri": {
+                "type": "string"
+               },
+               "repo_type": {
+                "type": "string",
+                "enum": [
+                 "model",
+                 "dataset",
+                 "space",
+                 "bucket"
+                ]
+               },
+               "size": {
+                "type": "number"
+               },
+               "total_files": {
+                "type": "number"
+               },
+               "lfs": {
+                "type": "boolean"
+               },
+               "private": {
+                "type": "boolean"
+               },
+               "gated": {
+                "anyOf": [
+                 {
+                  "type": "boolean",
+                  "const": false
+                 },
+                 {
+                  "type": "string",
+                  "enum": [
+                   "auto",
+                   "manual"
+                  ]
+                 }
+                ]
+               },
+               "likes": {
+                "type": "number"
+               },
+               "downloads": {
+                "type": "number"
+               },
+               "task": {
+                "type": "string"
+               },
+               "library": {
+                "type": "string"
+               },
+               "tags": {
+                "type": "array",
+                "items": {
+                 "type": "string"
+                }
+               },
+               "trending_score": {
+                "type": "number"
+               },
+               "sdk": {
+                "type": "string"
+               },
+               "title": {
+                "type": "string"
+               },
+               "category": {
+                "type": "string"
+               },
+               "semantic_relevance": {
+                "type": "number"
+               },
+               "anchor": {
+                "type": "string"
+               },
+               "description": {
+                "type": "string"
+               },
+               "upvotes": {
+                "type": "number"
+               },
+               "created_at": {
+                "type": "string"
+               },
+               "published_at": {
+                "type": "string"
+               },
+               "daily_papers_date": {
+                "type": "string"
+               },
+               "daily_papers_uri": {
+                "type": "string"
+               },
+               "url": {
+                "type": "string"
+               },
+               "arxiv_url": {
+                "type": "string"
+               },
+               "observed_at": {
+                "type": "string"
+               },
+               "updated_at": {
+                "type": "string"
+               },
+               "content_type": {
+                "type": "string",
+                "enum": [
+                 "application/json",
+                 "text/markdown"
+                ]
+               }
+              },
+              "required": [
+               "type",
+               "path"
+              ],
+              "additionalProperties": false
+             }
+            },
+            "path": {
+             "type": "string"
+            },
+            "content": {
+             "type": "string"
+            },
+            "content_type": {
+             "type": "string",
+             "enum": [
+              "application/json",
+              "text/markdown"
+             ]
+            },
+            "mime_type": {
+             "type": "string",
+             "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+             ]
+            },
+            "section": {
+             "type": "string"
+            },
+            "bytes": {
+             "type": "number"
+            },
+            "exists": {
+             "type": "boolean"
+            },
+            "type": {
+             "type": "string",
+             "enum": [
+              "namespace",
+              "repo",
+              "dir",
+              "file",
+              "collection",
+              "paper",
+              "link",
+              "missing"
+             ]
+            },
+            "namespace": {
+             "type": "string"
+            },
+            "size": {
+             "type": "number"
+            },
+            "lfs": {
+             "type": "boolean"
+            },
+            "target_uri": {
+             "type": "string"
+            },
+            "published_at": {
+             "type": "string"
+            },
+            "daily_papers_date": {
+             "type": "string"
+            },
+            "daily_papers_uri": {
+             "type": "string"
+            },
+            "url": {
+             "type": "string"
+            },
+            "arxiv_url": {
+             "type": "string"
+            },
+            "truncated": {
+             "type": "boolean"
+            },
+            "truncation_reason": {
+             "type": "string",
+             "enum": [
+              "entry_limit",
+              "max_bytes",
+              "limit",
+              "provider_limit",
+              "output_budget"
+             ]
+            },
+            "truncation_message": {
+             "type": "string"
+            },
+            "next_offset": {
+             "type": "number"
+            },
+            "warnings": {
+             "type": "array",
+             "items": {
+              "type": "string"
+             }
+            }
+           },
+           "required": [
+            "uri",
+            "op"
+           ],
+           "additionalProperties": false,
+           "allOf": [
+            {
+             "if": {
+              "properties": {
+               "op": {
+                "const": "attach"
+               }
+              },
+              "required": [
+               "op"
+              ]
+             },
+             "then": {
+              "properties": {
+               "path": {
+                "type": "string"
+               },
+               "mime_type": {
+                "type": "string",
+                "enum": [
+                 "image/jpeg",
+                 "image/png",
+                 "image/webp"
+                ]
+               },
+               "bytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 8388608
+               }
+              },
+              "required": [
+               "path",
+               "mime_type",
+               "bytes"
+              ]
+             }
+            }
+           ]
+          },
+          "output_truncated": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "index",
+          "status",
+          "result"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "object",
+         "properties": {
+          "index": {
+           "type": "integer",
+           "minimum": 0,
+           "maximum": 9007199254740991
+          },
+          "status": {
+           "type": "string",
+           "const": "error"
+          },
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "enum": [
+              "HF_FS_INVALID_ARGUMENT",
+              "HF_FS_NOT_FOUND",
+              "HF_FS_NOT_A_DIRECTORY",
+              "HF_FS_NOT_A_FILE",
+              "HF_FS_UNSUPPORTED_OPERATION",
+              "HF_FS_ACCESS_DENIED",
+              "HF_FS_TEXT_ONLY",
+              "HF_FS_IMAGE_ONLY",
+              "HF_FS_UNSUPPORTED_MEDIA",
+              "HF_FS_IMAGE_TOO_LARGE",
+              "HF_FS_ATTACHMENT_BUDGET_EXCEEDED",
+              "HF_FS_IMAGE_CONTENT_DISABLED",
+              "HF_FS_ATTACHMENT_INTEGRITY"
+             ]
+            },
+            "message": {
+             "type": "string"
+            },
+            "recovery": {
+             "type": "string"
+            },
+            "retryable": {
+             "type": "boolean",
+             "const": false
+            },
+            "suggestedOperation": {
+             "type": "string",
+             "enum": [
+              "ls",
+              "cat",
+              "attach",
+              "stat",
+              "search"
+             ]
+            }
+           },
+           "required": [
+            "code",
+            "message",
+            "recovery",
+            "retryable"
+           ],
+           "additionalProperties": false
+          }
+         },
+         "required": [
+          "index",
+          "status",
+          "error"
+         ],
+         "additionalProperties": false
+        }
+       ]
+      }
+     },
+     "truncated": {
+      "type": "boolean"
+     },
+     "truncation_reason": {
+      "type": "string",
+      "const": "output_budget"
+     }
+    },
+    "required": [
+     "results"
+    ],
+    "additionalProperties": false
+   },
+   "tokens": 1210
+  }
+ ],
+ "totalTokens": 2058,
+ "listMeta": {
+  "ttlMs": 300000,
+  "cacheScope": "private"
+ },
+ "resources": [
+  {
+   "uri": "skill://hf-cli/SKILL.md",
+   "name": "hf-cli",
+   "description": "Hugging Face Hub CLI (`hf`) for downloading, uploading, and managing models, datasets, spaces, buckets, repos, papers, jobs, and more on the Hugging Face Hub. Use when: handling authentication; managing local cache; managing Hugging Face Buckets; running or scheduling jobs on Hugging Face infrastructure; managing Hugging Face repos; discussions and pull requests; browsing models, datasets and spaces; reading, searching, or browsing academic papers; managing collections; querying datasets; configuring spaces; setting up webhooks; or deploying and managing HF Inference Endpoints. Make sure to use this skill whenever the user mentions 'hf', 'huggingface', 'Hugging Face', 'huggingface-cli', or 'hugging face cli', or wants to do anything related to the Hugging Face ecosystem and to AI and ML in general. Also use for cloud storage needs like training checkpoints, data pipelines, or agent traces. Use even if the user doesn't explicitly ask for a CLI command. Replaces the deprecated `huggingface-cli`.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://hf-cloud-aws-context-discovery/SKILL.md",
+   "name": "hf-cloud-aws-context-discovery",
+   "description": "Discover the user's local AWS context (active profile, region, account ID, caller identity) at the start of any AWS task. Use this skill before any other AWS work \u2014 deploying to SageMaker, creating resources, calling AWS APIs, or anything that touches an AWS account. Use it especially when the user has not specified a region or profile explicitly, when they say things like \"use my AWS account\", \"deploy to AWS\", \"use my profile\", or when about to make any AWS CLI or SDK call. Never guess the region or account ID \u2014 always use this skill to read it from the local configuration first.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://hf-cloud-python-env-setup/SKILL.md",
+   "name": "hf-cloud-python-env-setup",
+   "description": "Set up an isolated Python environment for SageMaker / AWS work, with the right Python version and current boto3. Use this skill whenever Python code will be executed for a SageMaker deployment, training job, or any AWS automation \u2014 including when about to run `pip install`, when about to invoke `boto3`, when creating or activating a virtualenv, or when the user asks to \"set up the environment\". Never use system Python and never `pip install` into it. Always isolate. This skill prevents the most common failure modes: wrong Python version, dependency conflicts, and stale SDKs.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://hf-cloud-python-env-setup/requirements.txt",
+   "name": "requirements.txt",
+   "mimeType": "text/plain"
+  },
+  {
+   "uri": "skill://hf-cloud-python-env-setup/scripts/check_versions.py",
+   "name": "check_versions.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-cloud-python-env-setup/scripts/setup_env.py",
+   "name": "setup_env.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-deployment-planner/SKILL.md",
+   "name": "hf-cloud-sagemaker-deployment-planner",
+   "description": "Plan and coordinate the deployment of a model to Amazon SageMaker AI. Use this skill whenever the user wants to deploy, host, serve, or expose a model on SageMaker or AWS \u2014 including phrases like \"deploy a model\", \"host this LLM on AWS\", \"serve this embedding model\", \"deploy a reranker\", \"deploy a text-to-image / diffusion model\", \"host this for async inference\", \"create an endpoint\", \"serve my fine-tuned model\", or any request that involves making a model available for inference on AWS. Use this even when the user is vague (e.g. \"I just want to get this running on AWS, you figure it out\"). Works for text-generation LLMs, embedding models, rerankers, classifiers, text-to-image / diffusion models \u2014 picks the right serving stack and chooses between real-time and async inference. This is the entry-point skill for SageMaker deployment work \u2014 it asks clarifying questions, picks a deployment pathway, and coordinates the other deployment skills.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-iam-preflight/SKILL.md",
+   "name": "hf-cloud-sagemaker-iam-preflight",
+   "description": "Ensure a usable SageMaker execution role exists before deploying or training. Use this skill whenever about to create a SageMaker endpoint, model, training job, or any resource that requires an execution role. Use it especially when the user has not provided a role ARN explicitly, when scripts are about to call `iam:CreateRole`, or when an AccessDenied error mentions an IAM action. Never blindly call `iam:CreateRole` \u2014 always check for existing roles first. This skill prevents the most common SageMaker deployment failure: trying to create IAM resources from an SSO principal that has no IAM write permissions.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-iam-preflight/references/minimum-permissions.json",
+   "name": "minimum-permissions.json",
+   "mimeType": "application/json"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-iam-preflight/references/trust-policy.json",
+   "name": "trust-policy.json",
+   "mimeType": "application/json"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-iam-preflight/scripts/check_role.py",
+   "name": "check_role.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-iam-preflight/scripts/create_role.py",
+   "name": "create_role.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-production-defaults/SKILL.md",
+   "name": "hf-cloud-sagemaker-production-defaults",
+   "description": "Create a SageMaker endpoint (real-time, real-time scale-to-zero, or async) with autoscaling, CloudWatch alarms, and tagging enabled by default. Use this skill whenever about to create a SageMaker endpoint, write deployment code that calls `create_endpoint`, or finalize a deployment after the image URI and IAM role are known. Provides deploy.py for real-time endpoints, deploy_ic.py for real-time endpoints that scale to zero instances via inference components, and deploy_async.py for async endpoints (also scale-to-zero). This is the last step in the SageMaker deployment workflow. Never generate a bare `create_endpoint` call without these defaults \u2014 endpoints without autoscaling or alarms are demos, not deployments.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-production-defaults/references/deployment-template.md",
+   "name": "deployment-template.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-production-defaults/scripts/_common.py",
+   "name": "_common.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-production-defaults/scripts/deploy.py",
+   "name": "deploy.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-production-defaults/scripts/deploy_async.py",
+   "name": "deploy_async.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-production-defaults/scripts/deploy_ic.py",
+   "name": "deploy_ic.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-production-defaults/scripts/invoke_endpoint.py",
+   "name": "invoke_endpoint.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-cloud-sagemaker-production-defaults/scripts/teardown.py",
+   "name": "teardown.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-cloud-serving-image-selection/SKILL.md",
+   "name": "hf-cloud-serving-image-selection",
+   "description": "Pick the right serving container for a SageMaker model deployment and find its current image URI. Use this skill whenever about to deploy a model to a SageMaker endpoint and an image URI needs to be chosen \u2014 including when the user says \"deploy this LLM\", \"host this HuggingFace model\", \"serve this fine-tuned model\", \"deploy this embedding model\", \"host a reranker\", \"serve a sentence-transformers model\", or when about to hardcode any container URI in deployment code. HuggingFace-curated Deep Learning Containers are ALWAYS preferred: HuggingFace vLLM (LLMs and generative rerankers), HuggingFace vLLM-Omni (multimodal), TEI (embeddings/cross-encoder rerankers), HF Inference Toolkit (other transformers). Generic images (AWS vLLM, DJL-LMI, SGLang) are used only when no HuggingFace image is compatible \u2014 never merely because they carry a newer version. Never hardcode a container URI from memory and never default to TGI. Prevents stale-image failures and wrong-region URIs.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://hf-cloud-serving-image-selection/references/model-to-image.md",
+   "name": "model-to-image.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://hf-cloud-serving-image-selection/scripts/mirror_image.py",
+   "name": "mirror_image.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://hf-mem/SKILL.md",
+   "name": "hf-mem",
+   "description": "Hugging Face CLI to estimate the required memory to load Safetensors or GGUF model weights for inference from the Hugging Face Hub",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-best/SKILL.md",
+   "name": "huggingface-best",
+   "description": "Use when the user asks about finding the best, top, or recommended model for a task, wants to know what AI model to use, or wants to compare models by benchmark scores. Triggers on: \"best model for X\", \"what model should I use for\", \"top models for [task]\", \"which model runs on my laptop/machine/device\", \"recommend a model for\", \"what LLM should I use for\", \"compare models for\", \"what's state of the art for\", or any question about choosing an AI model for a specific use case. Always use this skill when the user wants model recommendations or comparisons, even if they don't explicitly mention HuggingFace or benchmarks.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-community-evals/SKILL.md",
+   "name": "huggingface-community-evals",
+   "description": "Run evaluations for Hugging Face Hub models using inspect-ai and lighteval on local hardware. Use for backend selection, local GPU evals, and choosing between vLLM / Transformers / accelerate. Not for HF Jobs orchestration, model-card PRs, .eval_results publication, or community-evals automation.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-community-evals/examples/.env.example",
+   "name": ".env.example",
+   "mimeType": "application/octet-stream"
+  },
+  {
+   "uri": "skill://huggingface-community-evals/examples/USAGE_EXAMPLES.md",
+   "name": "USAGE_EXAMPLES.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-community-evals/scripts/inspect_eval_uv.py",
+   "name": "inspect_eval_uv.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-community-evals/scripts/inspect_vllm_uv.py",
+   "name": "inspect_vllm_uv.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-community-evals/scripts/lighteval_vllm_uv.py",
+   "name": "lighteval_vllm_uv.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-datasets/SKILL.md",
+   "name": "huggingface-datasets",
+   "description": "Use this skill for Hugging Face Dataset Viewer API workflows that fetch subset/split metadata, paginate rows, search text, apply filters, download parquet URLs, and read size or statistics.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-gradio/SKILL.md",
+   "name": "huggingface-gradio",
+   "description": "Build Gradio web UIs and demos in Python. Use when creating or editing Gradio apps, components, event listeners, layouts, or chatbots.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-gradio/examples.md",
+   "name": "examples.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/SKILL.md",
+   "name": "huggingface-llm-trainer",
+   "description": "Train or fine-tune language and vision models using TRL (Transformer Reinforcement Learning) or Unsloth with Hugging Face Jobs infrastructure. Covers SFT, DPO, GRPO and reward modeling training methods, plus GGUF conversion for local deployment. Includes guidance on the TRL Jobs package, UV scripts with PEP 723 format, dataset preparation and validation, hardware selection, cost estimation, Trackio monitoring, Hub authentication, model selection/leaderboards and model persistence. Use for tasks involving cloud GPU training, GGUF conversion, or when users mention training on Hugging Face Jobs without local GPU setup.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/references/gguf_conversion.md",
+   "name": "gguf_conversion.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/references/hardware_guide.md",
+   "name": "hardware_guide.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/references/hub_saving.md",
+   "name": "hub_saving.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/references/local_training_macos.md",
+   "name": "local_training_macos.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/references/reliability_principles.md",
+   "name": "reliability_principles.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/references/trackio_guide.md",
+   "name": "trackio_guide.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/references/training_methods.md",
+   "name": "training_methods.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/references/training_patterns.md",
+   "name": "training_patterns.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/references/troubleshooting.md",
+   "name": "troubleshooting.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/references/unsloth.md",
+   "name": "unsloth.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/scripts/convert_to_gguf.py",
+   "name": "convert_to_gguf.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/scripts/dataset_inspector.py",
+   "name": "dataset_inspector.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/scripts/estimate_cost.py",
+   "name": "estimate_cost.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/scripts/hf_benchmarks.py",
+   "name": "hf_benchmarks.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/scripts/train_dpo_example.py",
+   "name": "train_dpo_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/scripts/train_grpo_example.py",
+   "name": "train_grpo_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/scripts/train_sft_example.py",
+   "name": "train_sft_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-llm-trainer/scripts/unsloth_sft_example.py",
+   "name": "unsloth_sft_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-local-models/SKILL.md",
+   "name": "huggingface-local-models",
+   "description": "Use to select models to run locally with llama.cpp and GGUF on CPU, Mac Metal, CUDA, or ROCm. Covers finding GGUFs, quant selection, running servers, exact GGUF file lookup, conversion, and OpenAI-compatible local serving.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-local-models/references/hardware.md",
+   "name": "hardware.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-local-models/references/hub-discovery.md",
+   "name": "hub-discovery.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-local-models/references/quantization.md",
+   "name": "quantization.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-lora-space-builder/SKILL.md",
+   "name": "huggingface-lora-space-builder",
+   "description": "Build and publish a Gradio demo on Hugging Face Spaces for a user-provided LoRA. Use when someone asks to create, generate, ship, or publish a Space, demo, Gradio app, or playground for a LoRA \u2014 including LoRAs for Qwen-Image, Qwen-Image-Edit, LTX-Video, Wan, FLUX, SDXL, or other diffusion base models. Also triggers when someone describes a LoRA they trained or hosts on the Hub and wants to share it. Covers picking the right base pipeline and `diffusers` inference recipe, designing a UI tailored to the LoRA's task and inputs (Union/multi-task control, edit, video, image, etc.), respecting model-card recommendations (trigger words, steps, guidance, LoRA scale, example inputs), and shipping to ZeroGPU hardware as a private Space by default.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-lora-space-builder/references/adapting-to-the-lora.md",
+   "name": "adapting-to-the-lora.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-lora-space-builder/references/base-models/krea-2.md",
+   "name": "krea-2.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-lora-space-builder/references/base-models/ltx.md",
+   "name": "ltx.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-lora-space-builder/references/base-models/qwen-image.md",
+   "name": "qwen-image.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-lora-space-builder/references/creative-mode.md",
+   "name": "creative-mode.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-lora-space-builder/references/tasks.md",
+   "name": "tasks.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-lora-space-builder/references/zerogpu-and-publishing.md",
+   "name": "zerogpu-and-publishing.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-paper-publisher/SKILL.md",
+   "name": "huggingface-paper-publisher",
+   "description": "Publish and manage research papers on Hugging Face Hub. Supports creating paper pages, linking papers to models/datasets, claiming authorship, and generating professional markdown-based research articles.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-paper-publisher/examples/example_usage.md",
+   "name": "example_usage.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-paper-publisher/references/quick_reference.md",
+   "name": "quick_reference.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-paper-publisher/scripts/paper_manager.py",
+   "name": "paper_manager.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-paper-publisher/templates/arxiv.md",
+   "name": "arxiv.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-paper-publisher/templates/ml-report.md",
+   "name": "ml-report.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-paper-publisher/templates/modern.md",
+   "name": "modern.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-paper-publisher/templates/standard.md",
+   "name": "standard.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-papers/SKILL.md",
+   "name": "huggingface-papers",
+   "description": "Look up and read Hugging Face paper pages in markdown, and use the papers API for structured metadata such as authors, linked models/datasets/spaces, Github repo and project page. Use when the user shares a Hugging Face paper page URL, an arXiv URL or ID, or asks to summarize, explain, or analyze an AI research paper.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/README.md",
+   "name": "README.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/SKILL.md",
+   "name": "huggingface-spaces",
+   "description": "Build, deploy, and maintain applications on Hugging Face Spaces \u2014 Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants. Use whenever the user asks to create or host an app on Hugging Face, port code onto ZeroGPU, fix a Space that won't build or run, or otherwise work with `hf spaces \u2026`, `@spaces.GPU`, Space README frontmatter, or the `spaces` Python package.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/3d-cuda-extensions.md",
+   "name": "3d-cuda-extensions.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/3d-generation.md",
+   "name": "3d-generation.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/3d-gsplat.md",
+   "name": "3d-gsplat.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/3d-models.md",
+   "name": "3d-models.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/3d-outputs.md",
+   "name": "3d-outputs.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/buckets.md",
+   "name": "buckets.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/debugging.md",
+   "name": "debugging.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/gradio.md",
+   "name": "gradio.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/grants.md",
+   "name": "grants.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/inference-providers.md",
+   "name": "inference-providers.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/known-errors.md",
+   "name": "known-errors.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/requirements.md",
+   "name": "requirements.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-spaces/references/zerogpu.md",
+   "name": "zerogpu.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-tool-builder/SKILL.md",
+   "name": "huggingface-tool-builder",
+   "description": "Use this skill when the user wants to build tool/scripts or achieve a task where using data from the Hugging Face API would help. This is especially useful when chaining or combining API calls or the task will be repeated/automated. This Skill creates a reusable script to fetch, enrich or process data.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-tool-builder/references/baseline_hf_api.py",
+   "name": "baseline_hf_api.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-tool-builder/references/baseline_hf_api.sh",
+   "name": "baseline_hf_api.sh",
+   "mimeType": "application/x-sh"
+  },
+  {
+   "uri": "skill://huggingface-tool-builder/references/baseline_hf_api.tsx",
+   "name": "baseline_hf_api.tsx",
+   "mimeType": "text/x-typescript"
+  },
+  {
+   "uri": "skill://huggingface-tool-builder/references/find_models_by_paper.sh",
+   "name": "find_models_by_paper.sh",
+   "mimeType": "application/x-sh"
+  },
+  {
+   "uri": "skill://huggingface-tool-builder/references/hf_enrich_models.sh",
+   "name": "hf_enrich_models.sh",
+   "mimeType": "application/x-sh"
+  },
+  {
+   "uri": "skill://huggingface-tool-builder/references/hf_model_card_frontmatter.sh",
+   "name": "hf_model_card_frontmatter.sh",
+   "mimeType": "application/x-sh"
+  },
+  {
+   "uri": "skill://huggingface-tool-builder/references/hf_model_papers_auth.sh",
+   "name": "hf_model_papers_auth.sh",
+   "mimeType": "application/x-sh"
+  },
+  {
+   "uri": "skill://huggingface-trackio/SKILL.md",
+   "name": "huggingface-trackio",
+   "description": "Track and visualize ML training experiments with Trackio. Use when logging metrics during training (Python API), firing alerts for training diagnostics, or retrieving/analyzing logged metrics (CLI). Supports real-time dashboard visualization, alerts with webhooks, HF Space syncing, and JSON output for automation.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-trackio/references/alerts.md",
+   "name": "alerts.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-trackio/references/logging_metrics.md",
+   "name": "logging_metrics.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-trackio/references/retrieving_metrics.md",
+   "name": "retrieving_metrics.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/SKILL.md",
+   "name": "huggingface-vision-trainer",
+   "description": "Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS), image classification (timm models \u2014 MobileNetV3, MobileViT, ResNet, ViT/DINOv3 \u2014 plus any Transformers classifier), and SAM/SAM2 segmentation using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. Covers COCO-format dataset preparation, Albumentations augmentation, mAP/mAR evaluation, accuracy metrics, SAM segmentation with bbox/point prompts, DiceCE loss, hardware selection, cost estimation, Trackio monitoring, and Hub persistence. Use when users mention training object detection, image classification, SAM, SAM2, segmentation, image matting, DETR, D-FINE, RT-DETR, ViT, timm, MobileNet, ResNet, bounding box models, or fine-tuning vision models on Hugging Face Jobs.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/references/finetune_sam2_trainer.md",
+   "name": "finetune_sam2_trainer.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/references/hub_saving.md",
+   "name": "hub_saving.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/references/image_classification_training_notebook.md",
+   "name": "image_classification_training_notebook.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/references/object_detection_training_notebook.md",
+   "name": "object_detection_training_notebook.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/references/reliability_principles.md",
+   "name": "reliability_principles.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/references/timm_trainer.md",
+   "name": "timm_trainer.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/scripts/dataset_inspector.py",
+   "name": "dataset_inspector.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/scripts/estimate_cost.py",
+   "name": "estimate_cost.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/scripts/image_classification_training.py",
+   "name": "image_classification_training.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/scripts/object_detection_training.py",
+   "name": "object_detection_training.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-vision-trainer/scripts/sam_segmentation_training.py",
+   "name": "sam_segmentation_training.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://huggingface-zerogpu/SKILL.md",
+   "name": "huggingface-zerogpu",
+   "description": "AI demos and GPU compute with Gradio Spaces and Hugging Face Spaces ZeroGPU. Use when writing or reviewing code that uses `@spaces.GPU`, configuring `python_version` or `requirements.txt` for a ZeroGPU Space, or handling ZeroGPU-specific code constraints \u2014 pickle-based process isolation, `gr.State` semantics across the worker boundary, no `torch.compile` (use AoTI instead), CUDA wheel-only builds (no `nvcc` at build or runtime), large vs xlarge sizing, and dynamic duration callables. Make sure to use this skill whenever the user mentions ZeroGPU, `@spaces.GPU`, or the `spaces` Python package, or hits ZeroGPU-specific code errors like `PicklingError` across the worker boundary, `illegal duration`, or `flash-attn` wheel-build failures \u2014 even when the user does not explicitly ask for ZeroGPU coding guidance. Trigger on `import spaces` or `@spaces.GPU` in code.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-zerogpu/references/concurrency.md",
+   "name": "concurrency.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-zerogpu/references/cuda-and-deps.md",
+   "name": "cuda-and-deps.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-zerogpu/references/how-quota-works.md",
+   "name": "how-quota-works.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://huggingface-zerogpu/references/how-zerogpu-works.md",
+   "name": "how-zerogpu-works.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/SKILL.md",
+   "name": "train-sentence-transformers",
+   "description": "Train or fine-tune sentence-transformers models across `SentenceTransformer` (bi-encoder, dense or static embedding model for retrieval, similarity, clustering, classification, paraphrase mining, dedup, multimodal), `CrossEncoder` (reranker, pair scoring for two-stage retrieval / pair classification), `SparseEncoder` (SPLADE, sparse embedding model for learned-sparse retrieval), and `MultiVectorEncoder` (ColBERT / late-interaction, per-token embeddings scored with MaxSim). Covers loss selection, hard-negative mining, evaluators, distillation, LoRA, Matryoshka, and Hugging Face Hub publishing. Use for any sentence-transformers training task.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/base_model_selection.md",
+   "name": "base_model_selection.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/dataset_formats.md",
+   "name": "dataset_formats.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/evaluators_cross_encoder.md",
+   "name": "evaluators_cross_encoder.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/evaluators_multi_vector_encoder.md",
+   "name": "evaluators_multi_vector_encoder.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/evaluators_sentence_transformer.md",
+   "name": "evaluators_sentence_transformer.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/evaluators_sparse_encoder.md",
+   "name": "evaluators_sparse_encoder.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/hardware_guide.md",
+   "name": "hardware_guide.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/hf_jobs_execution.md",
+   "name": "hf_jobs_execution.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/losses_cross_encoder.md",
+   "name": "losses_cross_encoder.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/losses_multi_vector_encoder.md",
+   "name": "losses_multi_vector_encoder.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/losses_sentence_transformer.md",
+   "name": "losses_sentence_transformer.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/losses_sparse_encoder.md",
+   "name": "losses_sparse_encoder.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/model_architectures.md",
+   "name": "model_architectures.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/prompts_and_instructions.md",
+   "name": "prompts_and_instructions.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/training_args.md",
+   "name": "training_args.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/references/troubleshooting.md",
+   "name": "troubleshooting.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/mine_hard_negatives.py",
+   "name": "mine_hard_negatives.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_cross_encoder_distillation_example.py",
+   "name": "train_cross_encoder_distillation_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_cross_encoder_example.py",
+   "name": "train_cross_encoder_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_cross_encoder_listwise_example.py",
+   "name": "train_cross_encoder_listwise_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_multi_vector_encoder_example.py",
+   "name": "train_multi_vector_encoder_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_sentence_transformer_distillation_example.py",
+   "name": "train_sentence_transformer_distillation_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_sentence_transformer_example.py",
+   "name": "train_sentence_transformer_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_sentence_transformer_make_multilingual_example.py",
+   "name": "train_sentence_transformer_make_multilingual_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_sentence_transformer_matryoshka_example.py",
+   "name": "train_sentence_transformer_matryoshka_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_sentence_transformer_multi_dataset_example.py",
+   "name": "train_sentence_transformer_multi_dataset_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_sentence_transformer_static_embedding_example.py",
+   "name": "train_sentence_transformer_static_embedding_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_sentence_transformer_with_lora_example.py",
+   "name": "train_sentence_transformer_with_lora_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_sparse_encoder_distillation_example.py",
+   "name": "train_sparse_encoder_distillation_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://train-sentence-transformers/scripts/train_sparse_encoder_example.py",
+   "name": "train_sparse_encoder_example.py",
+   "mimeType": "text/x-python"
+  },
+  {
+   "uri": "skill://transformers-js/SKILL.md",
+   "name": "transformers-js",
+   "description": "Use Transformers.js to run state-of-the-art machine learning models directly in JavaScript/TypeScript. Supports NLP (text classification, translation, summarization), computer vision (image classification, object detection), audio (speech recognition, audio classification), and multimodal tasks. Works in browsers and server-side runtimes (Node.js, Bun, Deno) with WebGPU/WASM using pre-trained models from Hugging Face Hub.",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://transformers-js/references/CACHE.md",
+   "name": "CACHE.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://transformers-js/references/CONFIGURATION.md",
+   "name": "CONFIGURATION.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://transformers-js/references/EXAMPLES.md",
+   "name": "EXAMPLES.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://transformers-js/references/MODEL_ARCHITECTURES.md",
+   "name": "MODEL_ARCHITECTURES.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://transformers-js/references/MODEL_REGISTRY.md",
+   "name": "MODEL_REGISTRY.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://transformers-js/references/PIPELINE_OPTIONS.md",
+   "name": "PIPELINE_OPTIONS.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://transformers-js/references/TEXT_GENERATION.md",
+   "name": "TEXT_GENERATION.md",
+   "mimeType": "text/markdown"
+  },
+  {
+   "uri": "skill://trl-training/SKILL.md",
+   "name": "trl-training",
+   "description": "Post-train LLMs with TRL (Transformers Reinforcement Learning) \u2014 SFT, DPO, GRPO, KTO, and reward-model training. Use when writing or debugging training code with the TRL Python API or the trl CLI.",
+   "mimeType": "text/markdown"
+  }
+ ],
+ "resourceTemplates": []
+}

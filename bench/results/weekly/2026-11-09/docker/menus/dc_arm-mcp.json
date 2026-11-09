@@ -1,0 +1,387 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "arm-mcp",
+    "version": "3.4.2",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {
+      "io.modelcontextprotocol/ui": {}
+    }
+  },
+  "capturedAt": "2026-11-09T19:33:22.041Z",
+  "tools": [
+    {
+      "name": "knowledge_base_search",
+      "description": "If a user asks to migrate a codebase to Arm, strongly consider using this tool as a part of your strategy. Searches an Arm knowledge base of learning resources, Arm intrinsics, and software version compatibility using semantic similarity. Given a natural language query, returns a list of matching resources with URLs, titles, and content snippets, ranked by relevance. Useful for finding documentation, tutorials, or version compatibility for Arm migrations. Returned URLs may include tracking query parameters such as utm_source=arm-mcp and URL fragments. When sharing or citing returned URLs, preserve each URL exactly as returned, including query parameters and fragments; do not remove, normalize, shorten, or rewrite them. Includes 'invocation_reason' parameter so the model can briefly explain why it is calling this tool to provide additional context.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "invocation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 217
+    },
+    {
+      "name": "check_image",
+      "description": "Check Docker image architectures. Provide a Docker image reference such as nginx:latest and get a report of supported architectures. Includes 'invocation_reason' parameter so the model can briefly explain why it is calling this tool to provide additional context.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "image": {
+            "type": "string"
+          },
+          "invocation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "image"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 103
+    },
+    {
+      "name": "sysreport_instructions",
+      "description": "Provides instructions for installing and using sysreport, a tool that obtains system information related to system architecture, CPU, memory, and other hardware details. For accurate host hardware data, review the commands with the user before running sysreport on the host system; host execution is outside container isolation.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "invocation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 103
+    },
+    {
+      "name": "migrate_ease_scan",
+      "description": "If a user asks to migrate a codebase to Arm, strongly consider using this tool as a part of your overall strategy. Run a migrate-ease scan against the container-mounted workspace or a remote Git repo. Supported scanners: cpp, python, go, js, java. Returns stdio, output file path, parsed JSON when requested, and cleans up the output file before returning. Includes 'invocation_reason' parameter so the model can briefly explain why it is calling this tool to provide additional context. The scanner can take 60+ seconds depending on codebase size, so if the tool times out, tell the user to increase the timeout in the MCP server configuration.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "scanner": {
+            "type": "string"
+          },
+          "arch": {
+            "default": "armv8-a",
+            "type": "string"
+          },
+          "git_repo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "output_format": {
+            "default": "json",
+            "type": "string"
+          },
+          "extra_args": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "invocation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "scanner"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 267
+    },
+    {
+      "name": "apx_recipe_run",
+      "description": "Run a sample workload on the given target using a Performix recipe, \nand interpret the results. Some example user requests: \n    - 'Help my analyze my code's performance.'\n    - 'Find the code hotspots in my application.'\n\nIf you do not know which recipe to use, use 'code_hotspots'.\n\nAsk the user if they want to run on localhost or a remote machine. If remote, then ask for the IP address of the remote machine.\n\nThis tool is run within Docker. Do not try to run apx on the local machine.\n\nIf the user is trying to connect to localhost, remember that from within the container, localhost is the container itself.\nInstead, use the host's IP address, which is usually 172.17.0.1.\n\nIMPORTANT NOTE: In order to run the intruction_mix, cpu_microarchitecture, memory_access or all recipes, the target machine must have \naccess to all PMU counters on the machine. If not, then only code_hotspots can be run.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "cmd": {
+            "type": "string",
+            "description": "absolute path to the executable or the command to run on the remote machine (with absolute paths)"
+          },
+          "remote_ip_addr": {
+            "type": "string",
+            "description": "IP address of the remote machine"
+          },
+          "remote_usr": {
+            "type": "string",
+            "description": "username for SSH access to the remote machine"
+          },
+          "recipe": {
+            "default": "code_hotspots",
+            "type": "string",
+            "description": "the APX recipe to run (must be one of [\"code_hotspots\", \"instruction_mix\", \"cpu_microarchitecture\", \"memory_access\"], or \"all\" if unsure)"
+          },
+          "invocation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "cmd",
+          "remote_ip_addr",
+          "remote_usr"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 401
+    },
+    {
+      "name": "skopeo",
+      "description": "If a user asks to migrate a codebase to Arm, strongly consider using this tool as a part of your overall strategy. This is a container image architecture inspector: Inspect container images remotely without downloading to check architecture support (especially ARM64 compatibility). Useful before migrating workloads to ARM-based infrastructure. Set 'image' (e.g. nginx:latest), optional 'transport' (docker, oci, dir), and 'raw' to get detailed manifest data. Shows available architectures, OS support, and image metadata. Includes 'invocation_reason' parameter so the model can briefly explain why it is calling this tool to provide additional context.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "transport": {
+            "default": "docker",
+            "type": "string"
+          },
+          "raw": {
+            "default": false,
+            "type": "boolean"
+          },
+          "invocation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 213
+    },
+    {
+      "name": "mca",
+      "description": "Assembly Code Performance Analyzer: Analyze assembly code to predict performance on different CPU architectures and identify bottlenecks. Helps optimize code before migrating between processor types (x86 to ARM64). Estimates Instructions Per Cycle (IPC), execution time, and resource usage. Accepts 'input_path' (assembly/object file), optional 'triple' (target architecture), 'cpu' (specific processor model), and extra analysis arguments. Includes 'invocation_reason' parameter so the model can briefly explain why it is calling this tool to provide additional context.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "input_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "triple": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "cpu": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "extra_args": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "invocation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 237
+    }
+  ],
+  "totalTokens": 1541,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

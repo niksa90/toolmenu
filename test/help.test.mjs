@@ -29,7 +29,7 @@ test('cli: <command> --help and help <command> show that command; an unknown one
   assert.equal((await run(['help', 'auth'])).stdout, commandHelp('auth'));
   const unknown = await run(['snap', '--help']);
   assert.equal(unknown.code, 2);
-  assert.match(unknown.stderr, /Unknown command "snap"\. Did you mean snapshot\? The commands are init, snapshot, diff, session, history, auth/);
+  assert.match(unknown.stderr, /Unknown command "snap"\. Did you mean snapshot\? The commands are init, snapshot, diff, review, session, history, auth/);
   assert.match(unknownCommand('frobnicate'), /^Unknown command "frobnicate"\. The commands are/);
 });
 

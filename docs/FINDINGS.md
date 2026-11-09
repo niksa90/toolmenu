@@ -672,3 +672,238 @@ every changed finding read by hand.
   `extensions` capability each returned `-32021` and counted as client gaps. Its
   `x-mcp-header` is valid, its lists stable; the only `spec/` finding is the logging
   capability, which 2026-07-28 deprecates.
+
+## F17. 1,090 servers new to the bench, every command on each
+
+*(Run again with every tool called, and with 2,109 hosted servers: F18.)*
+
+*Checked 2026-11-09 with `bench/scripts/batch-full.sh` on `corpus/registry-2026-11.tsv`:
+the first 1,600 npm stdio servers from the MCP registry, in a seeded random order, that need
+no credentials and weren't in an earlier corpus. 1,090 started and listed tools. Of the
+rest, 463 exited before `initialize` or listed nothing (mostly wanting an argument or an API
+key), 39 didn't install, and 8 had no command. Every server was checked by the same build
+(`acaa34c`); data in `bench/results/2026-11-09/`.* Each got `snapshot` with `--lists
+prompts,resources --client claude-code --offline-check`, `session --auto --union-out`, and
+`review` of the snapshot against the union menu.
+
+Two publishers dominate: `@pipeworx` with 242 servers from one code generator, and
+`@mrfentmen` with 110. The other 738 servers come from 690 publishers, and the counts
+below say where the two account for a pattern.
+
+| | |
+|---|---|
+| Protocols | 2025-11-25: 754 · 2025-03-26: 244 · 2026-07-28: 55 · 2024-11-05: 19 · 2025-06-18: 18 |
+| Menus | 16,520 tools, ~4.3M tokens |
+| Runtime coverage | tools called on 189 servers (17%), an answer on 150 (14%); 659 of 1,156 calls answered. 898 servers mark no tool `readOnlyHint`, so `--auto` called nothing on them |
+| `review` | 1,000 unchanged, 87 safe (the snapshot and the session's union differ: the `@pipeworx` version hash), 3 without a session |
+
+**What toolmenu got wrong, fixed along the way** (each with a regression test):
+
+- **`diff` and `review` crashed on boolean subschemas** (`"items": true`, figma-mcp-rs), and
+  on `null` ones in three more places, `snapshot` among them (`f4479e4`).
+- **A change only in a field the model doesn't read was an error about prompt caches**:
+  `menu/nondeterministic`, the variance rules (`f4479e4`) and `session/edit` (`c021a3f`)
+  now warn, name the field and say what it costs (the baseline never matches).
+- **`review` said "safe" for a snapshot against its own session's union menu**: a "not
+  compared" note counted as a change (`ffd3622`), and the union menu lost `ttlMs`
+  (`077884a`).
+- **Setup failures read as the server failing**: "API key not configured" (`0a7a559`),
+  "needs credentials", "no browser found" (`c021a3f`), "not a git repository", "the extension
+  is not connected", "ENTYRIX_API_KEY is not set" (the two commits after).
+- **`spec/schema` quoted only "Invalid result for tools/list: ["** of the SDK's rejection
+  (`a1b871e`); each problem is now a detail line.
+
+**What the servers get wrong.**
+
+- **Clients list none of the tools** (`spec/schema`, 7 servers): `inputSchema` without
+  `"type"` (test-coverage-mcp), an `outputSchema` whose type isn't `object` (4 `@pipeworx`
+  servers), and 2026-07-28 `tools/list` results without `ttlMs` and `cacheScope`
+  (@sylphx/lockdocs, oss-search). The official SDK client rejects each list.
+- **Duplicate tool names** (`menu/duplicate-name`): one server lists four tools twice; the
+  Claude API refuses the list.
+- **Other spec violations**: resource lists that fail the schema (`lists/schema`, 6 errors
+  on 29 servers with a finding: URI templates in `resources/list`, unencoded spaces, a scheme
+  starting with a digit, 2026 lists without cache hints); `tools/call` results with no
+  `resultType` on 2026-07-28 (2); MCP Apps tools marked app-only but listed to clients
+  without Apps (2), and a UI resource that doesn't exist (1); a malformed extension ID (1).
+- **Offline, a different menu** (`menu/network-dependent`, 187 servers, 159 of them from
+  the two big publishers): `@pipeworx` tools lose every annotation, `readOnlyHint`
+  included, without the network.
+- **A menu that changes per call or per process** (`menu/nondeterministic` 85,
+  `menu/process-variance` 104): almost all `@pipeworx`'s version hash, now a warning. Two
+  errors are model-visible: @ixo/asks-mcp's `plan` parameter is in one process's menu and
+  not another's.
+- **Writes without annotations** (`write/unannotated`, a heuristic): 223 servers, 147 of
+  them outside the two big publishers.
+
+No server crashed toolmenu after the fixes. Every server that didn't start got a message
+naming why: the usage text a command printed, "bun: No such file or directory", or the
+module it couldn't find.
+
+## F18. Every tool called, and 2,109 hosted servers, the big vendors' among them
+
+*Checked 2026-11-09; data in `bench/results/weekly/2026-11-09/`, the weekly run's
+baseline.* The stdio servers of F17 ran again with toolmenu `3b338ac`, now with a sealed
+pass. The hosted panel (`corpus/http-panel.tsv`) is 109 vendor endpoints plus a seeded
+2,000 of the registry's hosted servers, one per domain.
+
+**94% of stdio tools, called.** `session --auto --call-everything` (new) calls every tool
+once, writes included, with the schema's own values or made-up ones (`toolmenu-test`,
+`1`), in a container with `--network none` and no credentials (`SEALED=1`). The read-only
+session alone called 6%: it calls only tools marked `readOnlyHint: true`, and annotations
+are hints the server provides, not guarantees. Every one of the 16,518 tools is
+accounted for:
+
+| | Tools |
+|---|---|
+| **Called** | **15,550 (94.1%)** |
+| a result | 3,066 |
+| a readable tool error to the made-up input: what the spec asks for | 9,044 |
+| an error because the sealed container has no network (1,323), something missing on the machine (900), no key or login (799) | 3,022 |
+| a protocol error or a crash | 236 |
+| timed out (10 s) | 182 |
+| Not called: 32 servers wouldn't start without the network | 926 |
+| Not called: in the online menu, not in the one listed offline | 22 |
+| Not called: planned, but the session stopped first (the server stopped answering) | 20 |
+
+With made-up input and no network, a failed call says how a tool meets such input, not
+that the server is broken, so those are info. What holds whatever the input keeps its
+level. "The official SDK client" here is `@modelcontextprotocol/client` 2.4.0
+(TypeScript), whose source confirms each check cited. Two servers' tools declare an
+`outputSchema` and answer without `structuredContent` (`session/output-schema`, new: a
+MUST since 2025-06-18; that SDK raises an error where the tool answered): `@domainkits/mcp`
+and `@mindjack/mcp`, 8 tools each. 12 stdio servers fail in that client today (8 lose
+every tool, 4 lose answers); with smaller spec problems, 22 unique servers have a spec or
+client finding.
+
+**The vendors' sign-in, checked without logging in** (`toolmenu auth check`, new). 79 of
+the 109 vendor endpoints answer 401:
+- 54 follow the 2025-11-25 OAuth discovery spec with no finding, and 11 with notes only.
+- 12 put a `resource` in their metadata that is a parent of the server's URL, or differs
+  by a trailing slash: Airtable, Visa, DigitalOcean, Vercel, Box, Semgrep, Stytch, Paddle,
+  New Relic, Railway, Ahrefs, Instatus. RFC 9728 says identical; the official SDK accepts
+  these, a client that follows the RFC to the letter doesn't. Warnings.
+- Stack Overflow's 401 names metadata that isn't there (`auth/discovery`).
+- Microsoft Sentinel signs in through Entra ID, whose OpenID Connect metadata omits
+  `code_challenge_methods_supported`. Entra supports PKCE (Microsoft documents S256 for its
+  auth code flow), but MCP 2025-11-25 requires the field of OpenID Connect providers and
+  tells clients to refuse without it: a client that follows the MCP spec to the letter
+  won't log in, though PKCE would work (`auth/pkce`; the finding now says so).
+
+29 vendor endpoints list tools without a login. Google's 15 do so and answer every call
+with HTTP 401 and a per-tool `WWW-Authenticate`: a design, not a failure.
+
+**The hosted long tail.** Of the 2,000:
+- 1,091 list tools to anyone (14,886 tools), 659 use OAuth, 31 another credential, and 219
+  were unreachable.
+- 22 send a 2026-07-28 `tools/list` without `ttlMs` and `cacheScope`, which the SDK rejects.
+- 9 send results without `resultType`, and 4 break their own `outputSchema`.
+- 12 have sign-in discovery errors. Seven of those name a `resource` on another host;
+  `mcp-server.zomato.com` serves the authorization server's metadata where the protected
+  resource's belongs.
+
+**What toolmenu got wrong this time** (each fixed with a test):
+- **A 403 from the network in between read as a missing document.** github.com answered
+  the run's requests with 403, which first looked like GitHub serving no authorization
+  server metadata. A document that can't be read is now reported as unchecked, never as
+  missing.
+- **`auth check` was stricter than real clients.** It called a same-origin parent `resource`
+  an error. A 401 without OAuth hints, which may be an API-key server, was an error too.
+- **A call refused with HTTP 401** (Google) was read as the server failing.
+- **In the sealed pass,** a failed call or a "rate limit" offline was an error.
+- **An output that fails only `format`** is a warning: many validators skip format.
+
+
+## F19. 98 servers the big vendors publish, every tool called
+
+*Checked 2026-11-09; data in `bench/results/weekly/2026-11-09/vendors/`.* Most vendors' hosted
+endpoints (F18) show their tools only after a login. So this run used what they publish
+for agents to run locally: 62 npm packages, 22 PyPI packages and 14 container images
+(GitHub, AWS Labs, Microsoft, PayPal, Stripe, Atlassian, Notion, HashiCorp, Grafana,
+Salesforce and others). Each ran with dummy credentials through `snapshot`, a read-only
+`session --auto`, and the sealed `--call-everything` pass (no network).
+
+**Coverage.**
+- 78 of the 98 listed tools, 2,292 in all; 2,213 were called in the sealed pass.
+- By first answer: 571 gave a result, 1,185 a tool error (most of them the API refusing the dummy key, or no network), 293 failed and 164 timed out.
+- Not called: 78, from six servers that won't start without the network (Supabase, Firebase, Apify, Svelte, AWS API, Qdrant), and 1 that Netlify lists only online.
+- 20 didn't list tools at all, each with the server's own reason in `servers.tsv`.
+  - Some need a real account: Stripe's npm package forwards to its hosted server, Upstash, Dynatrace.
+  - Some are deprecated: Cloudflare's local server, Railway's, 21st.dev's.
+  - Some need software that isn't there: an IDE, keytar, a kubeconfig.
+  - Four don't start when installed today (below).
+
+**What holds whatever the input:**
+- **PayPal** (`@paypal/mcp` 1.8.1): `list_transactions` defaults `start_date` and `end_date` to the moment the menu is built. Every `tools/list` differs (`menu/nondeterministic`), and no `list_changed` is sent though it is declared.
+- **AWS Labs** `cdk-mcp-server` and `terraform-mcp-server` don't start when installed today. They require `mcp>=1.23.0`, which resolves to 2.3.0, and 2.x moved `FastMCP`. Both are deprecated (their PyPI pages point to `aws-iac-mcp-server` and HashiCorp's server), and the cap went into the repository's maintained servers (awslabs/mcp #4356, #4448), so only these two old releases are left broken.
+- **Chroma** `chroma-mcp` 0.2.6 doesn't start either. It pins `mcp==1.6.0` but not pydantic, and pydantic 2.14.3 no longer has a function mcp 1.6.0 imports.
+- **HashiCorp** Terraform MCP server 1.4.1: resource URIs without a scheme (`/terraform/style-guide`), against the schema's `format: uri` (`lists/schema`).
+- **GitHub** `github-mcp-server` v2.1.0: the app-only `ui_get` is listed to clients without MCP Apps (`apps/app-only-listed`).
+- **Notion** `@notionhq/notion-mcp-server` 2.6.1: the API's HTTP 401 comes back as a plain result, not `isError` (`session/error-not-flagged`).
+- **Elastic**'s Rust server (Docker's `mcp/elasticsearch`): its tool order differs per process. The server is deprecated in favour of Elastic Agent Builder's MCP endpoint.
+- **Docker's** `mcp/atlassian` image still ships an mcp-atlassian with F12's per-process order. The current PyPI release doesn't have it.
+
+**What the run fixed in the bench** (not toolmenu):
+- Image servers first got no credentials: `read` with a tab separator merges empty columns.
+- Python servers were started with a dependency's console script (`idna`, `keyring`). Now only the package's own counts.
+- .NET single-file servers (Azure) need a writable `HOME`.
+
+## F20. Docker's MCP catalog, 237 servers, every tool called
+
+*Checked 2026-11-09; data in `bench/results/weekly/2026-11-09/docker/`.* Docker's MCP
+catalog (`desktop.docker.com/mcp/catalog/v3/catalog.yaml`) is what the Docker MCP Toolkit
+installs from: 237 local servers, each pinned to an image digest, each with the secrets and
+settings it needs. Every one ran with the catalog's own arguments and a dummy value for each
+declared setting, through `snapshot`, a read-only `session --auto`, and the sealed
+`--call-everything` pass (no network).
+
+**Coverage.**
+- 196 listed tools, 4,237 in all. By protocol: 2025-11-25 on 89, 2024-11-05 on 54,
+  2025-06-18 on 37, 2025-03-26 on 13, 2026-07-28 on 3.
+- 4,117 tools called in the sealed pass. By first answer: 1,288 a result, 2,299 a tool
+  error (mostly the service behind it refusing a dummy key, or no network), 523 failed and
+  7 timed out. Not called: 102 planned in sessions that stopped first, and SonarQube's 18
+  (its Java backend takes longer than the 10 s the pass allows to start offline).
+- 41 didn't list tools:
+  - 5 catalog entries pin a digest that no longer resolves (Alfresco, .NET Types Explorer,
+    Hummingbot, Kafka Schema Registry, SimpleCheckList).
+  - 12 images install their packages each time they start (`uv run`: "Building … @
+    file:///app"), so they need a package index at every start. They didn't start in this
+    run; offline, they never would.
+  - Most of the rest need the real service to start: a Neo4j `bolt://` address, an Okta
+    org URL in its exact format, a reachable Dynatrace environment, MongoDB Atlas Local.
+  - `database-server` imports `mcp.server.fastmcp` with an uncapped `mcp`, which 2.x removed
+    (the same break as F19's AWS Labs servers).
+
+**What holds whatever the input** (each checked against the raw output):
+- **Menus that change from one process to the next**, so no restart, and no client that
+  starts its own copy, can reuse a cached prompt:
+  - tool order: Elastic's Rust server (F19), Zscaler, Hoverfly, Ramparts;
+  - JSON key order inside the schemas: SonarQube (same content, different bytes);
+  - a list of parameter names inside a description: AKS (`inspektor_gadget_observability`);
+  - the container's ID inside a description: Desktop Commander (`start_process` says
+    `Container: dd8370e53c20`, then `58a6c4c3d29f`), so every container start is a new menu;
+  - Docker's Atlassian image, with F12's default order (F19).
+- **`resources/list` answers `{"resources": null}`**: AKS and Razorpay, both Go servers.
+  The schema requires an array, so a client that validates the result rejects it.
+- **SchemaCrawler AI**: URI templates such as `catalog://routines/{routine-name}`; a
+  variable name can't contain a hyphen (RFC 6570), so they fail `format: uri-template`.
+- **Atlan**: tool errors come back with `isError: false` and the error object as
+  `structuredContent`, which then breaks the tool's own `outputSchema`; the official SDK
+  client raises an error there instead of passing on the message.
+- **HashiCorp's Terraform server**: resource URIs without a scheme (F19).
+
+**The clients** (checked with this release's `--client` profiles):
+- **6 servers list more tools than VS Code sends in one request** (128): Proxmox 286,
+  kubectl 281, Zscaler 239, Teamwork 194, EduBase 165, SmartBear 162. Each needs tools
+  turned off before it works there, on its own.
+- **147 of 196 mark no tool `readOnlyHint: true`**, so Copilot code review, which uses
+  only those, can use none of their tools.
+- **Tool names with spaces** (Husqvarna Automower's `Husqvarna Automowers Status`,
+  Hyperspell's `Search Hyperspell`): the Claude API and OpenAI refuse them, and Gemini CLI
+  rewrites them. SmartBear has names over Gemini CLI's 63 characters, which it cuts.
+
+**What the bench got wrong** (fixed before the numbers above): the dummy values were picked
+by the setting's name, and the patterns were loose. `NEO4J_DATABASE` matched "BASE" and got a
+URL, `*_TRANSPORT` matched "PORT", a region got `toolmenu`. Ports, transports, regions,
+switches and numbers now get values of their kind, and the servers they broke ran again.

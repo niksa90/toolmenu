@@ -98,6 +98,43 @@ export function synthesize(schema: JsonSchema | undefined, name = ''): Synthesiz
   }
 }
 
+/** Made-up values are marked as toolmenu's, so they're easy to find in a server's logs. */
+export const INVENTED = 'toolmenu-test';
+
+/**
+ * A value of the right type where the schema itself vouches for none, for
+ * `session --auto --call-everything`: the schema's own value first (synthesize),
+ * then a made-up one ("toolmenu-test", 1, a one-item list, an object of invented
+ * required fields). A pattern it can't satisfy gets the made-up string anyway: the
+ * tool's answer to a value it refuses is part of what's checked.
+ */
+export function invent(schema: JsonSchema | undefined, name = '', depth = 0): unknown {
+  const own = synthesize(schema, name);
+  if (own.ok) return own.value;
+  if (!schema || typeof schema !== 'object' || depth > 8) return INVENTED;
+  const branches = (schema.anyOf ?? schema.oneOf) as JsonSchema[] | undefined;
+  const type = Array.isArray(schema.type) ? schema.type.find((t) => t !== 'null') : schema.type;
+  if (!type && Array.isArray(branches) && branches.length) return invent(branches.find((b) => b && typeof b === 'object' && b.type !== 'null') ?? branches[0], name, depth + 1);
+  switch (type) {
+    case 'boolean':
+      return false;
+    case 'integer':
+    case 'number':
+      return 1;
+    case 'array':
+      return [invent(schema.items as JsonSchema | undefined, name, depth + 1)];
+    case 'object': {
+      const out: Record<string, unknown> = {};
+      for (const p of schema.required ?? []) out[p] = invent(schema.properties?.[p], p, depth + 1);
+      return out;
+    }
+    case 'null':
+      return null;
+    default:
+      return INVENTED;
+  }
+}
+
 /**
  * A value the user gave (--value), made to fit the parameter: `5` is the number 5
  * for an integer and the string "5" for a string; JSON that doesn't fit the type
@@ -112,7 +149,7 @@ export function fitValue(given: { raw?: string; value: unknown }, schema: JsonSc
 }
 
 /** Where a tool's argument came from: the user (--value) or the schema. */
-export type ArgSource = 'value' | 'schema';
+export type ArgSource = 'value' | 'schema' | 'invented';
 
 /**
  * Arguments for a tool's required parameters, or the ones it can't fill. `given`:
@@ -122,6 +159,7 @@ export type ArgSource = 'value' | 'schema';
 export function synthesizeArgs(
   schema: JsonSchema | undefined,
   given: Record<string, { raw?: string; value: unknown }> = {},
+  options: { invent?: boolean } = {},
 ): { ok: true; args: Record<string, unknown>; sources: Record<string, ArgSource> } | { ok: false; missing: string[] } {
   const args: Record<string, unknown> = {};
   const sources: Record<string, ArgSource> = {};
@@ -137,6 +175,9 @@ export function synthesizeArgs(
     if (v.ok) {
       args[param] = v.value;
       sources[param] = 'schema';
+    } else if (options.invent) {
+      args[param] = invent(schema?.properties?.[param], param);
+      sources[param] = 'invented';
     } else missing.push(param);
   }
   if (missing.length) return { ok: false, missing };

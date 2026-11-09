@@ -1,0 +1,2168 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Lara Translate",
+    "version": "2.2.0",
+    "protocolVersion": "2026-07-28",
+    "era": "modern",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:36:12.607Z",
+  "tools": [
+    {
+      "name": "translate",
+      "description": "Translate text between languages using Lara Translate. Supports language detection, context-aware translations, translation memories, and glossaries. The optional 'instructions' parameter accepts short localization directives (e.g., 'Translate formally') — only provide them when the content specifically requires tone, formality, or terminology adjustments. IMPORTANT: 'target' accepts exactly one language code per call. If the user asks to translate into multiple languages (e.g., 'into Italian and German'), call this tool once per target language and present all resulting translations together. IMPORTANT: 'glossaries' requires glossary IDs in the 'gls_*' format, not glossary names. If the user refers to a glossary by name (e.g., 'our company glossary', 'the marketing glossary'), call list_glossaries first, match the name, and use the returned ID here. If no matching glossary is found, tell the user instead of guessing an ID.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "text": {
+            "minItems": 1,
+            "maxItems": 128,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "Text content of the block"
+                },
+                "translatable": {
+                  "description": "Whether the block should be translated. Omitted on response blocks the engine treats as wholly translatable.",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "text"
+              ]
+            },
+            "description": "An array of text blocks to translate. Each block contains a text string and a boolean indicating whether it should be translated. This allows for selective translation where some text blocks can be preserved in their original form while others are translated. Max 128 blocks per call: split larger inputs into multiple calls."
+          },
+          "source": {
+            "description": "The source language code (e.g., 'en-EN' for English). If not specified, the system will attempt to detect it automatically. If you have a hint about the source language, you should specify it in the source_hint field.",
+            "type": "string"
+          },
+          "target": {
+            "type": "string",
+            "description": "The target language code (e.g., 'it-IT' for Italian). This specifies the single language you want the text translated into. This field accepts ONE language code only. If the user wants the text translated into multiple languages, call this tool once per target language."
+          },
+          "context": {
+            "description": "Additional context string to improve translation quality (e.g., 'This is a legal document' or 'Im talking with a doctor'). This helps the translation system better understand the domain.",
+            "type": "string"
+          },
+          "instructions": {
+            "description": "Optional list of short localization directives to adjust translation output. Keep each instruction short (about 20 words). These are NOT free-form LLM prompts — they are expert localization directives about formality, tone, or domain-specific terminology. Only provide instructions when the content specifically requires them; omitting instructions for general content preserves higher translation quality. Do NOT combine contradictory instructions (e.g., formal and informal tone together). Examples: 'Translate formally', 'Use a creative and concise tone', 'Make translation gender-neutral', 'Mask any price with the [price] placeholder', 'Use quotation marks (« ») for quotations'.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_hint": {
+            "description": "Used to guide language detection. Specify this when the source language is uncertain to improve detection accuracy.",
+            "type": "string"
+          },
+          "adapt_to": {
+            "description": "A list of translation memory IDs (format 'mem_*') for adapting the translation. If the user refers to a memory by name rather than by ID, call list_memories first to resolve the name to its ID before calling this tool.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "glossaries": {
+            "description": "Array of glossary IDs to apply during translation (max 10). IDs must match format: gls_* (e.g., ['gls_xyz123', 'gls_abc456']). Glossaries enforce specific terminology and terms. If the user refers to a glossary by name rather than by ID (e.g., 'my company glossary'), call list_glossaries first to resolve the name to its ID before calling this tool.",
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "pattern": "^gls_[a-zA-Z0-9_-]+$"
+            }
+          },
+          "no_trace": {
+            "description": "Privacy flag. If set to true, the request content will not be stored or traced by Lara. Use for sensitive content.",
+            "type": "boolean"
+          },
+          "priority": {
+            "description": "Translation priority. 'normal' for real-time translations, 'background' for batch processing with lower priority.",
+            "type": "string",
+            "enum": [
+              "normal",
+              "background"
+            ]
+          },
+          "timeout_in_millis": {
+            "description": "Custom timeout for the translation request in milliseconds. Max: 300000ms (5 minutes). Useful for very long texts.",
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 300000
+          },
+          "style": {
+            "description": "Controls how the translation balances accuracy against natural readability. 'faithful' stays close to the source, 'fluid' prioritizes natural readability, 'creative' allows more freedom in the translation.",
+            "type": "string",
+            "enum": [
+              "faithful",
+              "fluid",
+              "creative"
+            ]
+          },
+          "reasoning_effort": {
+            "description": "Lara Think reasoning level. Requires reasoning: true; defaults to high.",
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "reasoning": {
+            "description": "Enables Lara Think multi-step linguistic analysis. Can increase processing time up to 10x but may improve translation quality for complex texts.",
+            "type": "boolean"
+          },
+          "content_type": {
+            "description": "Specifies the content type of the text. Autodetected if omitted.",
+            "type": "string",
+            "enum": [
+              "text/plain",
+              "text/html",
+              "application/xliff+xml"
+            ]
+          }
+        },
+        "required": [
+          "text",
+          "target"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "warnings": {
+            "type": "object",
+            "properties": {
+              "reasoning": {
+                "type": "object",
+                "properties": {
+                  "applied": {
+                    "type": "boolean"
+                  },
+                  "error": {
+                    "type": "object",
+                    "properties": {
+                      "statusCode": {
+                        "type": "number"
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "statusCode",
+                      "message"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "applied"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "reasoning"
+            ],
+            "additionalProperties": false
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "Text content of the block"
+                },
+                "translatable": {
+                  "description": "Whether the block should be translated. Omitted on response blocks the engine treats as wholly translatable.",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "text"
+              ]
+            },
+            "description": "Translated text blocks, in the same order and structure as the input. Blocks marked translatable: false are preserved verbatim."
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Translate text",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "openai/toolInvocation/invoking": "Translating…",
+        "openai/toolInvocation/invoked": "Translation ready"
+      },
+      "tokens": 1185
+    },
+    {
+      "name": "detect_language",
+      "description": "Detects the language of the provided text. Returns the detected language, content type, and a list of predictions with confidence scores. Accepts a single string or an array of strings (up to 128 elements). Use this tool explicitly whenever the user asks to know or confirm what language a text is written in — including when that request is combined with a translation request (e.g., 'detect the language of this text and translate it into English'). In that case, call this tool first, tell the user which language was detected, and only then call the translate tool (you do not need to pass the detected language as 'source' to translate — translate can auto-detect on its own — but the user still expects to be told the result of detection).",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "maxItems": 128,
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "description": "The text to detect the language of. Can be a single string or an array of strings (up to 128 elements)."
+          },
+          "hint": {
+            "description": "Optional language code hint to guide detection (e.g., 'en-EN').",
+            "type": "string"
+          },
+          "passlist": {
+            "description": "Optional list of language codes to restrict detection results to.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string",
+            "description": "Detected language code (e.g., 'en-US')"
+          },
+          "contentType": {
+            "type": "string",
+            "description": "Content type of the analysed text"
+          },
+          "predictions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "language": {
+                  "type": "string",
+                  "description": "Candidate language code"
+                },
+                "confidence": {
+                  "type": "number",
+                  "description": "Confidence score between 0 and 1"
+                }
+              },
+              "required": [
+                "language",
+                "confidence"
+              ]
+            },
+            "description": "Ranked list of candidate languages with confidence scores"
+          }
+        },
+        "required": [
+          "language",
+          "contentType",
+          "predictions"
+        ]
+      },
+      "annotations": {
+        "title": "Detect language",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "openai/toolInvocation/invoking": "Detecting language…",
+        "openai/toolInvocation/invoked": "Language detected"
+      },
+      "tokens": 306
+    },
+    {
+      "name": "list_languages",
+      "description": "Lists all supported languages in your Lara Translate account.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Supported language codes (e.g., 'en-US', 'it-IT')"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "List supported languages",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 51
+    },
+    {
+      "name": "list_memories",
+      "description": "Lists all translation memories in your Lara Translate account.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Unique memory identifier (format: mem_*)"
+                },
+                "createdAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "description": "ISO 8601 timestamp"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "updatedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "description": "ISO 8601 timestamp"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sharedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "description": "ISO 8601 timestamp"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Display name of the memory"
+                },
+                "externalId": {
+                  "description": "External identifier (e.g. MyMemory ID) when imported",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "secret": {
+                  "description": "Memory secret, if any",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "ownerId": {
+                  "description": "Identifier of the memory owner",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "collaboratorsCount": {
+                  "description": "Number of collaborators with access to the memory",
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "isPersonal": {
+                  "description": "True if the memory is private to the owner. Omitted for some account types (e.g. team plans).",
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            },
+            "description": "Translation memories accessible to the authenticated account"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "List translation memories",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 52
+    },
+    {
+      "name": "create_memory",
+      "description": "Create a translation memory with a custom name in your Lara Translate account. Translation memories store pairs of source and target text segments (translation units) for reuse in future translations.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the new memory, it should be short and generic, like 'catch_phrases' or 'brand_names'"
+          },
+          "external_id": {
+            "type": "string",
+            "description": "The ID of the memory to be imported from MyMemory. Use this to initialize the memory with external content. Format: ext_my_[MyMemory ID]"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique memory identifier (format: mem_*)"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sharedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the memory"
+          },
+          "externalId": {
+            "description": "External identifier (e.g. MyMemory ID) when imported",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "secret": {
+            "description": "Memory secret, if any",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ownerId": {
+            "description": "Identifier of the memory owner",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collaboratorsCount": {
+            "description": "Number of collaborators with access to the memory",
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isPersonal": {
+            "description": "True if the memory is private to the owner. Omitted for some account types (e.g. team plans).",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "annotations": {
+        "title": "Create translation memory",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 156
+    },
+    {
+      "name": "update_memory",
+      "description": "Updates a translation memory in your Lara Translate account.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the memory to update. Format: mem_xyz123"
+          },
+          "name": {
+            "type": "string",
+            "description": "The new name for the memory"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique memory identifier (format: mem_*)"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sharedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the memory"
+          },
+          "externalId": {
+            "description": "External identifier (e.g. MyMemory ID) when imported",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "secret": {
+            "description": "Memory secret, if any",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ownerId": {
+            "description": "Identifier of the memory owner",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collaboratorsCount": {
+            "description": "Number of collaborators with access to the memory",
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isPersonal": {
+            "description": "True if the memory is private to the owner. Omitted for some account types (e.g. team plans).",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "annotations": {
+        "title": "Rename translation memory",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 96
+    },
+    {
+      "name": "delete_memory",
+      "description": "Deletes a translation memory from your Lara Translate account.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the memory to update. Format: mem_xyz123"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique memory identifier (format: mem_*)"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sharedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the memory"
+          },
+          "externalId": {
+            "description": "External identifier (e.g. MyMemory ID) when imported",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "secret": {
+            "description": "Memory secret, if any",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ownerId": {
+            "description": "Identifier of the memory owner",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collaboratorsCount": {
+            "description": "Number of collaborators with access to the memory",
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isPersonal": {
+            "description": "True if the memory is private to the owner. Omitted for some account types (e.g. team plans).",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "annotations": {
+        "title": "Delete translation memory",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 78
+    },
+    {
+      "name": "add_translation",
+      "description": "Adds a translation to a translation memory in your Lara Translate account.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The ID or list of IDs where to save the translation unit. Format: mem_xyz123"
+          },
+          "source": {
+            "type": "string",
+            "description": "The source language code of the sentence, it MUST be a language supported by the system, use the list_languages tool to get a list of all the supported languages"
+          },
+          "target": {
+            "type": "string",
+            "description": "The target language code of the translation, it MUST be a language supported by the system, use the list_languages tool to get a list of all the supported languages"
+          },
+          "sentence": {
+            "type": "string",
+            "description": "The source sentence"
+          },
+          "translation": {
+            "type": "string",
+            "description": "The translated sentence"
+          },
+          "tuid": {
+            "type": "string",
+            "description": "Translation Unit unique identifier"
+          },
+          "sentence_before": {
+            "type": "string",
+            "description": "The sentence before the source sentence to specify the context of the translation unit"
+          },
+          "sentence_after": {
+            "type": "string",
+            "description": "The sentence after the source sentence to specify the context of the translation unit"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "target",
+          "sentence",
+          "translation"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Import job identifier"
+          },
+          "begin": {
+            "description": "Begin offset of the import",
+            "type": "number"
+          },
+          "end": {
+            "description": "End offset of the import",
+            "type": "number"
+          },
+          "channel": {
+            "description": "Channel identifier used by the import",
+            "type": "number"
+          },
+          "size": {
+            "description": "Total number of units in the import",
+            "type": "number"
+          },
+          "progress": {
+            "description": "Import progress between 0 and 1 (1 means complete)",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "title": "Add translation unit to memory",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 275
+    },
+    {
+      "name": "delete_translation",
+      "description": "Deletes a translation from a translation memory in your Lara Translate account.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The ID or list of IDs where to delete the translation unit from. Format: mem_xyz123"
+          },
+          "source": {
+            "type": "string",
+            "description": "The source language code of the sentence"
+          },
+          "target": {
+            "type": "string",
+            "description": "The target language code of the translation"
+          },
+          "sentence": {
+            "type": "string",
+            "description": "The source sentence"
+          },
+          "translation": {
+            "type": "string",
+            "description": "The translated sentence"
+          },
+          "tuid": {
+            "type": "string",
+            "description": "Translation Unit unique identifier"
+          },
+          "sentence_before": {
+            "type": "string",
+            "description": "The sentence before the source sentence to specify the context of the translation unit"
+          },
+          "sentence_after": {
+            "type": "string",
+            "description": "The sentence after the source sentence to specify the context of the translation unit"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "target",
+          "sentence",
+          "translation"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Import job identifier"
+          },
+          "begin": {
+            "description": "Begin offset of the import",
+            "type": "number"
+          },
+          "end": {
+            "description": "End offset of the import",
+            "type": "number"
+          },
+          "channel": {
+            "description": "Channel identifier used by the import",
+            "type": "number"
+          },
+          "size": {
+            "description": "Total number of units in the import",
+            "type": "number"
+          },
+          "progress": {
+            "description": "Import progress between 0 and 1 (1 means complete)",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "title": "Delete translation unit from memory",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 226
+    },
+    {
+      "name": "import_tmx",
+      "description": "Imports a TMX file into a translation memory. This is an async operation that returns an import job object containing an import_id. Poll with check_import_status using the returned import_id until the import is complete.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the memory to update. Format: mem_xyz123."
+          },
+          "tmx_content": {
+            "type": "string",
+            "description": "The content of the tmx file to upload."
+          }
+        },
+        "required": [
+          "id",
+          "tmx_content"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Import job identifier"
+          },
+          "begin": {
+            "description": "Begin offset of the import",
+            "type": "number"
+          },
+          "end": {
+            "description": "End offset of the import",
+            "type": "number"
+          },
+          "channel": {
+            "description": "Channel identifier used by the import",
+            "type": "number"
+          },
+          "size": {
+            "description": "Total number of units in the import",
+            "type": "number"
+          },
+          "progress": {
+            "description": "Import progress between 0 and 1 (1 means complete)",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "title": "Import TMX file",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "openai/toolInvocation/invoking": "Queuing TMX import…",
+        "openai/toolInvocation/invoked": "TMX import queued"
+      },
+      "tokens": 136
+    },
+    {
+      "name": "check_import_status",
+      "description": "Checks the status of a TMX import job started by import_tmx. Poll this tool with the import_id returned from import_tmx until the import is complete. The response includes a progress field to track completion.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the import job"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Import job identifier"
+          },
+          "begin": {
+            "description": "Begin offset of the import",
+            "type": "number"
+          },
+          "end": {
+            "description": "End offset of the import",
+            "type": "number"
+          },
+          "channel": {
+            "description": "Channel identifier used by the import",
+            "type": "number"
+          },
+          "size": {
+            "description": "Total number of units in the import",
+            "type": "number"
+          },
+          "progress": {
+            "description": "Import progress between 0 and 1 (1 means complete)",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "title": "Check TMX import status",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "openai/toolInvocation/invoking": "Checking import status…",
+        "openai/toolInvocation/invoked": "Status retrieved"
+      },
+      "tokens": 104
+    },
+    {
+      "name": "list_glossaries",
+      "description": "Lists all glossaries in your Lara Translate account. Glossaries are collections of terms with their translations that enforce specific terminology during translation.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Unique glossary identifier (format: gls_*)"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Display name of the glossary"
+                },
+                "ownerId": {
+                  "description": "Identifier of the glossary owner",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "createdAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "description": "ISO 8601 timestamp"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "updatedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "description": "ISO 8601 timestamp"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "isPersonal": {
+                  "description": "True if the glossary is private to the owner. Omitted for some account types (e.g. team plans).",
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            },
+            "description": "Glossaries accessible to the authenticated account"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "List glossaries",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 69
+    },
+    {
+      "name": "get_glossary",
+      "description": "Retrieves a specific glossary by ID from your Lara Translate account. Returns null if the glossary is not found.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^gls_[a-zA-Z0-9_-]+$",
+            "description": "The glossary ID (format: gls_*, e.g., 'gls_xyz123')"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "glossary": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique glossary identifier (format: gls_*)"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Display name of the glossary"
+                  },
+                  "ownerId": {
+                    "description": "Identifier of the glossary owner",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "createdAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "description": "ISO 8601 timestamp"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "updatedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "description": "ISO 8601 timestamp"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "isPersonal": {
+                    "description": "True if the glossary is private to the owner. Omitted for some account types (e.g. team plans).",
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The requested glossary, or null when no glossary has that id"
+          }
+        },
+        "required": [
+          "glossary"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Get glossary",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 124
+    },
+    {
+      "name": "create_glossary",
+      "description": "Create a glossary with a custom name in your Lara Translate account. Glossaries enforce specific terminology during translation.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 250,
+            "description": "The name of the new glossary, it should be short and descriptive, like 'brand_terms' or 'legal_terminology'"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique glossary identifier (format: gls_*)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the glossary"
+          },
+          "ownerId": {
+            "description": "Identifier of the glossary owner",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isPersonal": {
+            "description": "True if the glossary is private to the owner. Omitted for some account types (e.g. team plans).",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "annotations": {
+        "title": "Create glossary",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 108
+    },
+    {
+      "name": "update_glossary",
+      "description": "Updates the name of a glossary in your Lara Translate account.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^gls_[a-zA-Z0-9_-]+$",
+            "description": "The glossary ID (format: gls_*, e.g., 'gls_xyz123')"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 250,
+            "description": "The new name for the glossary"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique glossary identifier (format: gls_*)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the glossary"
+          },
+          "ownerId": {
+            "description": "Identifier of the glossary owner",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isPersonal": {
+            "description": "True if the glossary is private to the owner. Omitted for some account types (e.g. team plans).",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "annotations": {
+        "title": "Rename glossary",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 137
+    },
+    {
+      "name": "delete_glossary",
+      "description": "Deletes a glossary from your Lara Translate account.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^gls_[a-zA-Z0-9_-]+$",
+            "description": "The glossary ID to delete (format: gls_*, e.g., 'gls_xyz123')"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique glossary identifier (format: gls_*)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the glossary"
+          },
+          "ownerId": {
+            "description": "Identifier of the glossary owner",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isPersonal": {
+            "description": "True if the glossary is private to the owner. Omitted for some account types (e.g. team plans).",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "annotations": {
+        "title": "Delete glossary",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 113
+    },
+    {
+      "name": "add_glossary_entry",
+      "description": "Adds or replaces an entry in a glossary in your Lara Translate account. Supports both monodirectional and multidirectional glossaries.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^gls_[a-zA-Z0-9_-]+$",
+            "description": "The glossary ID (format: gls_*, e.g., 'gls_xyz123')"
+          },
+          "terms": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "language": {
+                  "type": "string",
+                  "description": "The language code of the term. Use the list_languages tool to get supported languages."
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The term value in the specified language"
+                }
+              },
+              "required": [
+                "language",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Array of terms with language and value. For monodirectional glossaries, the first term is the source and the rest are targets. For multidirectional glossaries, all terms are treated equally. Use the list_languages tool to get supported language codes."
+          },
+          "guid": {
+            "description": "Optional entry identifier. Use this for multidirectional glossaries or to update a specific entry.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "terms"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Import job identifier"
+          },
+          "begin": {
+            "description": "Begin offset of the import",
+            "type": "number"
+          },
+          "end": {
+            "description": "End offset of the import",
+            "type": "number"
+          },
+          "channel": {
+            "description": "Channel identifier used by the import",
+            "type": "number"
+          },
+          "size": {
+            "description": "Total number of entries in the import",
+            "type": "number"
+          },
+          "progress": {
+            "description": "Import progress between 0 and 1 (1 means complete)",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "title": "Add or replace glossary entry",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 284
+    },
+    {
+      "name": "delete_glossary_entry",
+      "description": "Deletes an entry from a glossary in your Lara Translate account. Use term for monodirectional glossaries or guid for multidirectional glossaries.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^gls_[a-zA-Z0-9_-]+$",
+            "description": "The glossary ID (format: gls_*, e.g., 'gls_xyz123')"
+          },
+          "term": {
+            "description": "The term to delete. Use this for monodirectional glossaries.",
+            "type": "object",
+            "properties": {
+              "language": {
+                "type": "string",
+                "description": "The language code of the term"
+              },
+              "value": {
+                "type": "string",
+                "description": "The term value"
+              }
+            },
+            "required": [
+              "language",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "guid": {
+            "description": "The entry GUID to delete. Use this for multidirectional glossaries.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Import job identifier"
+          },
+          "begin": {
+            "description": "Begin offset of the import",
+            "type": "number"
+          },
+          "end": {
+            "description": "End offset of the import",
+            "type": "number"
+          },
+          "channel": {
+            "description": "Channel identifier used by the import",
+            "type": "number"
+          },
+          "size": {
+            "description": "Total number of entries in the import",
+            "type": "number"
+          },
+          "progress": {
+            "description": "Import progress between 0 and 1 (1 means complete)",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "title": "Delete glossary entry",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 219
+    },
+    {
+      "name": "import_glossary_csv",
+      "description": "Imports a CSV file into a glossary. Supports unidirectional and multidirectional formats. This is an async operation that returns an import job object containing an import_id. Poll with check_glossary_import_status using the returned import_id until the import is complete.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^gls_[a-zA-Z0-9_-]+$",
+            "description": "The glossary ID (format: gls_*, e.g., 'gls_xyz123')"
+          },
+          "csv_content": {
+            "type": "string",
+            "description": "The content of the CSV file to upload"
+          },
+          "content_type": {
+            "default": "csv/table-uni",
+            "description": "The format of the CSV file. 'csv/table-uni' for unidirectional, 'csv/table-multi' for multidirectional",
+            "type": "string",
+            "enum": [
+              "csv/table-uni",
+              "csv/table-multi"
+            ]
+          },
+          "gzip": {
+            "description": "Whether the CSV content is gzip compressed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "csv_content",
+          "content_type"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Import job identifier"
+          },
+          "begin": {
+            "description": "Begin offset of the import",
+            "type": "number"
+          },
+          "end": {
+            "description": "End offset of the import",
+            "type": "number"
+          },
+          "channel": {
+            "description": "Channel identifier used by the import",
+            "type": "number"
+          },
+          "size": {
+            "description": "Total number of entries in the import",
+            "type": "number"
+          },
+          "progress": {
+            "description": "Import progress between 0 and 1 (1 means complete)",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "title": "Import glossary CSV",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "openai/toolInvocation/invoking": "Queuing glossary import…",
+        "openai/toolInvocation/invoked": "Glossary import queued"
+      },
+      "tokens": 254
+    },
+    {
+      "name": "check_glossary_import_status",
+      "description": "Checks the status of a glossary CSV import job started by import_glossary_csv. Poll this tool with the import_id returned from import_glossary_csv until the import is complete.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the glossary import job"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Import job identifier"
+          },
+          "begin": {
+            "description": "Begin offset of the import",
+            "type": "number"
+          },
+          "end": {
+            "description": "End offset of the import",
+            "type": "number"
+          },
+          "channel": {
+            "description": "Channel identifier used by the import",
+            "type": "number"
+          },
+          "size": {
+            "description": "Total number of entries in the import",
+            "type": "number"
+          },
+          "progress": {
+            "description": "Import progress between 0 and 1 (1 means complete)",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "annotations": {
+        "title": "Check glossary import status",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "openai/toolInvocation/invoking": "Checking glossary import status…",
+        "openai/toolInvocation/invoked": "Status retrieved"
+      },
+      "tokens": 102
+    },
+    {
+      "name": "export_glossary",
+      "description": "Exports a glossary as CSV from your Lara Translate account. Supports unidirectional and multidirectional formats.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^gls_[a-zA-Z0-9_-]+$",
+            "description": "The glossary ID (format: gls_*, e.g., 'gls_xyz123')"
+          },
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "csv/table-uni",
+              "csv/table-multi"
+            ],
+            "description": "The export format. 'csv/table-uni' for unidirectional (requires source parameter), 'csv/table-multi' for multidirectional"
+          },
+          "source": {
+            "description": "The source language code. Required when content_type is 'csv/table-uni'",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "content_type"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "The exported glossary content serialised as CSV"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Export glossary as CSV",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "openai/toolInvocation/invoking": "Exporting glossary…",
+        "openai/toolInvocation/invoked": "Glossary exported"
+      },
+      "tokens": 203
+    },
+    {
+      "name": "get_glossary_counts",
+      "description": "Retrieves the term and language counts for a glossary in your Lara Translate account.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^gls_[a-zA-Z0-9_-]+$",
+            "description": "The glossary ID (format: gls_*, e.g., 'gls_xyz123')"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "unidirectional": {
+            "description": "Entry counts keyed by language code for unidirectional glossaries",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "multidirectional": {
+            "description": "Total entry count for multidirectional glossaries",
+            "type": "number"
+          }
+        }
+      },
+      "annotations": {
+        "title": "Get glossary entry count",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 119
+    }
+  ],
+  "totalTokens": 4397,
+  "listMeta": {
+    "ttlMs": 3600000,
+    "cacheScope": "private"
+  },
+  "resources": [
+    {
+      "name": "Translation Memories",
+      "description": "List of translation memories in your Lara Translate account.",
+      "uri": "memories://list"
+    },
+    {
+      "name": "Supported Languages",
+      "description": "List of Lara Translate supported languages.",
+      "uri": "languages://list"
+    }
+  ],
+  "resourceTemplates": [
+    {
+      "name": "Get Memory by Name",
+      "uriTemplate": "memories://list/{name}",
+      "description": "Returns a memory by its name"
+    }
+  ]
+}

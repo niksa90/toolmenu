@@ -972,7 +972,21 @@ function sameKind(a: JsonSchema, b: JsonSchema): boolean {
  * path, and the path nested fields hang off: `gen.rows[]` for array items,
  * `gen.block(kind="text")` for a union option.
  */
-function compareSchema(w: Walk, at: string, before: JsonSchema, after: JsonSchema, depth: number): void {
+/**
+ * A schema as an object. JSON Schema allows `true` (anything) and `false` (nothing)
+ * as a whole schema (`"items": true`, figma-mcp-rs); a broken server may send null or
+ * a string. Those are wrapped, not dropped, so a change to them still shows.
+ */
+export function asSchema(node: unknown): JsonSchema {
+  if (node === true) return {};
+  if (node === false) return { not: {} };
+  if (node && typeof node === 'object' && !Array.isArray(node)) return node as JsonSchema;
+  return { 'x-toolmenu-not-a-schema': node } as JsonSchema;
+}
+
+function compareSchema(w: Walk, at: string, rawBefore: JsonSchema, rawAfter: JsonSchema, depth: number): void {
+  const before = asSchema(rawBefore);
+  const after = asSchema(rawAfter);
   // Past the limit, a change is said as such, not passed off as an unclassified one.
   if (depth >= MAX_DEPTH) {
     if (canonical(sameTypes(before)) !== canonical(sameTypes(after))) {
@@ -998,7 +1012,10 @@ function compareSchema(w: Walk, at: string, before: JsonSchema, after: JsonSchem
       const pair = `${oldType || 'any'} → ${newType || 'any'}`;
       if (accepts(after, before)) say(w, 'diff/type-widened', at, ` now accepts more types: ${pair}`, '', [before, after]);
       else {
-        say(w, 'diff/param-type', at, ` changed type: ${pair}`, `Calls that send ${oldType ? `${article(oldType)} ${oldType}` : 'any other type'} fail validation.`, [before, after], {
+        // Only the types the new schema no longer takes: null|string → string loses null.
+        const newTypes = new Set(typesOf(after) ?? []);
+        const lost = [...new Set(typesOf(before) ?? [])].filter((t) => !newTypes.has(t) && !(t === 'integer' && newTypes.has('number'))).sort().join(' or ');
+        say(w, 'diff/param-type', at, ` changed type: ${pair}`, `Calls that send ${lost ? `${article(lost)} ${lost}` : 'any other type'} fail validation.`, [before, after], {
           fix: oldType && newType ? `Accept both (${[...new Set([...oldType.split('|'), ...newType.split('|')])].join('|')}) for one release, or ${BREAKING_RELEASE}.` : `Restore the old type, or ${BREAKING_RELEASE}.`,
         });
       }
@@ -1064,7 +1081,7 @@ function compareSchema(w: Walk, at: string, before: JsonSchema, after: JsonSchem
  * node's), as the one option.
  */
 function optionsOf(s: JsonSchema): JsonSchema[] {
-  const options = unionOptions(s);
+  const options = unionOptions(s)?.map(asSchema);
   return options && options.length > 0 ? options : [undescribed(s)];
 }
 
@@ -1313,8 +1330,9 @@ function discriminator(options: JsonSchema[]): string | undefined {
   return names.find((n) => own.every((o) => fixedValue(o.properties![n]) !== undefined));
 }
 
-function fixedValue(s: JsonSchema | undefined): unknown {
-  if (!s) return undefined;
+function fixedValue(raw: JsonSchema | undefined): unknown {
+  if (raw === undefined) return undefined;
+  const s = asSchema(raw);
   if ('const' in s) return s.const;
   return Array.isArray(s.enum) && s.enum.length === 1 ? s.enum[0] : undefined;
 }
@@ -1686,7 +1704,7 @@ function destructive(a: Record<string, unknown>): boolean {
 }
 
 function hasDefault(schema: JsonSchema): boolean {
-  return 'default' in schema;
+  return 'default' in asSchema(schema);
 }
 
 function show(value: unknown): string {
@@ -1785,7 +1803,8 @@ function typeAlternatives(schema: JsonSchema): string[] | undefined {
 /** The values a schema limits itself to: its enum, or a const as a one-value enum. */
 function allowedValues(schema: JsonSchema): unknown[] | undefined {
   if (Array.isArray(schema.enum)) return schema.enum;
-  return 'const' in schema ? [schema.const] : undefined;
+  const s = asSchema(schema);
+  return 'const' in s ? [s.const] : undefined;
 }
 
 function enumChange(before: JsonSchema, after: JsonSchema): { rule: string; head: string; tail: string; fix?: string } | undefined {

@@ -1,0 +1,344 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mcp-omi",
+    "version": "1.10.1",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:07:42.472Z",
+  "tools": [
+    {
+      "name": "get_memories",
+      "description": "Retrieve a list of memories. A memory is a known fact about the user across multiple domains.",
+      "inputSchema": {
+        "$defs": {
+          "MemoryCategory": {
+            "enum": [
+              "core",
+              "hobbies",
+              "lifestyle",
+              "interests",
+              "habits",
+              "work",
+              "skills",
+              "learnings",
+              "other"
+            ],
+            "title": "MemoryCategory",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The user's MCP API key. If not provided, it will be read from the OMI_API_KEY environment variable. For more details, see https://docs.omi.me/doc/developer/MCP",
+            "title": "Api Key"
+          },
+          "categories": {
+            "default": [],
+            "description": "The categories of memories to filter by.",
+            "items": {
+              "$ref": "#/$defs/MemoryCategory"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "limit": {
+            "default": 100,
+            "description": "The number of memories to retrieve.",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "description": "The offset of the memories to retrieve.",
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "title": "GetMemories",
+        "type": "object"
+      },
+      "tokens": 239
+    },
+    {
+      "name": "create_memory",
+      "description": "Create a new memory. A memory is a known fact about the user across multiple domains.",
+      "inputSchema": {
+        "$defs": {
+          "MemoryCategory": {
+            "enum": [
+              "core",
+              "hobbies",
+              "lifestyle",
+              "interests",
+              "habits",
+              "work",
+              "skills",
+              "learnings",
+              "other"
+            ],
+            "title": "MemoryCategory",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The user's MCP API key. If not provided, it will be read from the OMI_API_KEY environment variable. For more details, see https://docs.omi.me/doc/developer/MCP",
+            "title": "Api Key"
+          },
+          "content": {
+            "description": "The content of the memory.",
+            "title": "Content",
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/$defs/MemoryCategory",
+            "description": "The category of the memory to create."
+          }
+        },
+        "required": [
+          "content",
+          "category"
+        ],
+        "title": "CreateMemory",
+        "type": "object"
+      },
+      "tokens": 200
+    },
+    {
+      "name": "delete_memory",
+      "description": "Delete a memory by ID. A memory is a known fact about the user across multiple domains.",
+      "inputSchema": {
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The user's MCP API key. If not provided, it will be read from the OMI_API_KEY environment variable. For more details, see https://docs.omi.me/doc/developer/MCP",
+            "title": "Api Key"
+          },
+          "memory_id": {
+            "description": "The ID of the memory to delete.",
+            "title": "Memory Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "memory_id"
+        ],
+        "title": "DeleteMemory",
+        "type": "object"
+      },
+      "tokens": 138
+    },
+    {
+      "name": "edit_memory",
+      "description": "Edit a memory's content. A memory is a known fact about the user across multiple domains.",
+      "inputSchema": {
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The user's MCP API key. If not provided, it will be read from the OMI_API_KEY environment variable. For more details, see https://docs.omi.me/doc/developer/MCP",
+            "title": "Api Key"
+          },
+          "memory_id": {
+            "description": "The ID of the memory to edit.",
+            "title": "Memory Id",
+            "type": "string"
+          },
+          "content": {
+            "description": "The new content for the memory.",
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "memory_id",
+          "content"
+        ],
+        "title": "EditMemory",
+        "type": "object"
+      },
+      "tokens": 160
+    },
+    {
+      "name": "get_conversations",
+      "description": "Retrieve a list of conversation metadata. To get full transcripts, use get_conversation_by_id.",
+      "inputSchema": {
+        "$defs": {
+          "ConversationCategory": {
+            "enum": [
+              "personal",
+              "education",
+              "health",
+              "finance",
+              "legal",
+              "philosophy",
+              "spiritual",
+              "science",
+              "entrepreneurship",
+              "parenting",
+              "romantic",
+              "travel",
+              "inspiration",
+              "technology",
+              "business",
+              "social",
+              "work",
+              "sports",
+              "politics",
+              "literature",
+              "history",
+              "architecture",
+              "music",
+              "weather",
+              "news",
+              "entertainment",
+              "psychology",
+              "real",
+              "design",
+              "family",
+              "economics",
+              "environment",
+              "other"
+            ],
+            "title": "ConversationCategory",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The user's MCP API key. If not provided, it will be read from the OMI_API_KEY environment variable. For more details, see https://docs.omi.me/doc/developer/MCP",
+            "title": "Api Key"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter conversations after this date (yyyy-mm-dd)",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter conversations before this date (yyyy-mm-dd)",
+            "title": "End Date"
+          },
+          "categories": {
+            "default": [],
+            "description": "Filter by conversation categories.",
+            "items": {
+              "$ref": "#/$defs/ConversationCategory"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "limit": {
+            "default": 20,
+            "description": "The number of conversations to retrieve.",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "description": "The offset of the conversations to retrieve.",
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "title": "GetConversations",
+        "type": "object"
+      },
+      "tokens": 371
+    },
+    {
+      "name": "get_conversation_by_id",
+      "description": "Retrieve a conversation by ID including each segment of the transcript.",
+      "inputSchema": {
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The user's MCP API key. If not provided, it will be read from the OMI_API_KEY environment variable. For more details, see https://docs.omi.me/doc/developer/MCP",
+            "title": "Api Key"
+          },
+          "conversation_id": {
+            "description": "The ID of the conversation to retrieve.",
+            "title": "Conversation Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversation_id"
+        ],
+        "title": "GetConversationById",
+        "type": "object"
+      },
+      "tokens": 136
+    }
+  ],
+  "totalTokens": 1244
+}

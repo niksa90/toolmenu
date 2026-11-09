@@ -1,0 +1,4082 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "CharmHealth API Assistant",
+    "version": "3.4.2",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {
+      "io.modelcontextprotocol/ui": {}
+    }
+  },
+  "capturedAt": "2026-11-09T19:28:46.016Z",
+  "tools": [
+    {
+      "name": "findPatients",
+      "description": "Find patients.\n\n<usecase>\nFind patients quickly using natural search terms or specific criteria. Handles everything from \n\"find John Smith\" to complex searches like \"elderly diabetes patients in California\". \nEssential first step for any patient-related task.\n</usecase>\n\n<instructions>\nQuick searches: Use search_type=\"name\" with query=\"John Smith\" for basic name searches\nPhone lookups: Use search_type=\"phone\" with query=\"555-1234\" (handles any format)\nMedical record: Use search_type=\"record_id\" with query=\"MR123456\"\n\nComplex searches: Use search_type=\"advanced\" with multiple criteria:\n- Age ranges: age_min=65, age_max=80 for elderly patients\n- Location: state=\"CA\", city=\"Los Angeles\" for geographic filtering  \n- Medical: blood_group=\"O+\", language=\"Spanish\" for clinical needs\n\nAlways returns patient_id needed for other tools. Start here before any patient operations.\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "search_type": {
+            "default": "name",
+            "enum": [
+              "name",
+              "phone",
+              "email",
+              "record_id",
+              "demographics",
+              "advanced"
+            ],
+            "type": "string"
+          },
+          "facility_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "ALL"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 10
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "age_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "age_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "blood_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "marital_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "created_after": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "created_before": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "modified_after": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "modified_before": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "active",
+                  "inactive",
+                  "all"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "active"
+          },
+          "has_phr_account": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "enum": [
+                  "name",
+                  "created_date",
+                  "modified_date"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "name"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "enum": [
+                  "asc",
+                  "desc"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "asc"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 796
+    },
+    {
+      "name": "getPracticeInfo",
+      "description": "Get practice information.\n\n<usecase>\nGet essential practice information needed for other operations - available facilities,\nproviders, vital signs templates, etc. Use this to understand practice setup and get IDs for other tools.\n</usecase>\n\n<instructions>\n- \"facilities\": List all practice locations with IDs needed for scheduling\n- \"providers\": List all providers with IDs needed for appointments and encounters\n- \"vitals\": Available vital sign templates for documentation\n- \"overview\": Summary of practice setup with key counts and recent activity\n- \"templates\": List all available SOAP templates (id, name, type) for the practice\n- \"template_details\": Full template schema (widgets + entries) for given template_ids (comma-separated)\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "info_type": {
+            "default": "overview",
+            "enum": [
+              "facilities",
+              "providers",
+              "vitals",
+              "overview",
+              "templates",
+              "template_details"
+            ],
+            "type": "string"
+          },
+          "template_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 259
+    },
+    {
+      "name": "managePatient",
+      "description": "Manage patients.\n\n<usecase>\nComplete patient management with comprehensive demographic, social, and administrative data.\nHandles patient creation, updates, status changes, and complex relationships. Supports all \nCharmHealth patient data fields for complete EHR functionality.\n</usecase>\n\n<instructions>\nActions:\n- \"create\": Add new patient (requires first_name, last_name, gender, date_of_birth OR age, facility_ids)\n- \"update\": Modify existing patient (requires patient_id + fields to change).\n- \"activate\": Reactivate deactivated patient (requires patient_id only)\n- \"deactivate\": Deactivate patient (requires patient_id only)\n\nUpdate Modes:\n- update_specific_details=True: Only updates the fields you provide, preserves all other existing data (RECOMMENDED, Default)\n- update_specific_details=False: Complete record update - must provide all fields or existing data will be lost\n\nDemographics: Supports comprehensive patient information including social history, family data\nAddresses: If any address field provided, country is required (defaults to US)\nFacilities: Pass as list of facility IDs like \"facility_123,facility_456\".\nCategories: Pass as list like [{\"category_id\": \"category_123\"}]\n\nComplex Relationships:\n- caregivers: [{\"first_name\": str, \"last_name\": str, \"relationship\": str, \"contact\": {...}, \"address\": {...}}]\n- guarantor: [{\"first_name\": str, \"last_name\": str, \"relationship\": str, \"contact\": {...}, \"address\": {...}}]\n- id_qualifiers: [{\"id_qualifier\": 1-8 or 99, \"id_of_patient\": \"ID_value\"}]\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "create",
+              "update",
+              "activate",
+              "deactivate"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "enum": [
+                  "male",
+                  "female",
+                  "unknown",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "date_of_birth": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "age": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "middle_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "nick_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "suffix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "maiden_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "gender_identity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "home_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "work_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "work_phone_extn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "primary_phone": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Home Phone",
+                  "Mobile Phone",
+                  "Work Phone"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "address_line1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "address_line2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "county_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "zip_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "post_box": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "district": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "US"
+          },
+          "facility_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "blood_group": {
+            "anyOf": [
+              {
+                "enum": [
+                  "unknown",
+                  "B+",
+                  "B-",
+                  "O+",
+                  "O-",
+                  "A+",
+                  "A-",
+                  "A1+",
+                  "A1-",
+                  "A2+",
+                  "A2-",
+                  "AB+",
+                  "AB-",
+                  "A1B+",
+                  "A1B-",
+                  "A2B+",
+                  "A2B-"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "race": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "ethnicity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "smoking_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Current every day smoker",
+                  "Current some day smoker",
+                  "Former Smoker",
+                  "Never Smoker",
+                  "Smoker current status unknown",
+                  "Unknown if ever smoked",
+                  "Heavy tobacco smoker",
+                  "Light tobacco smoker"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "marital_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Single",
+                  "Married",
+                  "Other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "employment_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Employed",
+                  "Full-Time Student",
+                  "Part-Time Student",
+                  "Unemployed",
+                  "Retired"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "sexual_orientation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "mother_first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "mother_last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "is_multiple_birth": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "birth_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "emergency_contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "emergency_contact_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "emergency_extn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "preferred_communication": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ChARM PHR",
+                  "Email",
+                  "Phone",
+                  "Fax",
+                  "Mail"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "email_notification": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "text_notification": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "voice_notification": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "introduction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "custom_field_1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "custom_field_2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "custom_field_3": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "custom_field_4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "custom_field_5": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "source_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "source_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "payment_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "payment_start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "payment_end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "rep_first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "rep_last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "deceased": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "dod": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "cause_of_death": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "caregivers": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "guarantor": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "linked_patient_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "id_qualifiers": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "send_phr_invite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": false
+          },
+          "duplicate_check": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": true
+          },
+          "update_specific_details": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": true
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 2155
+    },
+    {
+      "name": "reviewPatientHistory",
+      "description": "Review patient history.\n\n<usecase>\nGet comprehensive patient information including medical history, current medications, recent visits.\nPerfect for clinical decision-making and preparing for patient encounters.\n</usecase>\n\n<instructions>\nReturns a consolidated view of patient information organized by medical relevance.\nBy default includes all sections (include_sections=None). Specify include_sections to focus on specific areas.\nResults include clinical context and suggestions for next actions.\n\nOptional filters (apply to specific sections):\n- diagnosis_status_filter: filter diagnoses by status (e.g., diagnosis_status_filter=\"Active\")\n- medication_status_filter: filter medications by status (e.g., medication_status_filter=\"active\")\n- supplement_status_filter: filter supplements by status (e.g., supplement_status_filter=\"active\")\n- vitals_limit: limit number of vital entries returned (e.g., vitals_limit=10)\n- encounters_limit: limit number of encounters returned (e.g., encounters_limit=5)\n\nFor each filtered section, the response includes `<section>_total_count` and `<section>_filtered_count`.\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "patient_id": {
+            "type": "string"
+          },
+          "include_demographics": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_vitals": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_medications": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_supplements": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_allergies": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_diagnoses": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_encounters": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_appointments": {
+            "default": true,
+            "type": "boolean"
+          },
+          "diagnosis_status_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "medication_status_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "supplement_status_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "vitals_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "encounters_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 516
+    },
+    {
+      "name": "manageAppointments",
+      "description": "Manage appointments.\n\n<usecase>\nComplete appointment lifecycle management - schedule new appointments, reschedule existing ones,\ncancel appointments, and list appointments with flexible filtering. Handles the full appointment workflow.\n</usecase>\n\n<instructions>\nActions:\n- \"schedule\": Create new appointment (requires patient_id, provider_id, facility_id, appointment_date, appointment_time). Check the provider's availability with manageAppointments(action='list') and provider_id, and across all facilities for the provider before suggesting a time.\n- \"reschedule\": Change existing appointment time (requires appointment_id + new scheduling details)\n- \"cancel\": Cancel appointment (requires appointment_id + cancel_reason)\n- \"list\": Show appointments with filtering (requires start_date, end_date_range, facility_ids; optionally filter by status/provider/mode)\n\nTime format: Use 12-hour format like \"09:30 AM\" or \"02:15 PM\"\nFor recurring: Set repetition to \"Weekly\" or \"Daily\" and provide frequency + end_date\nFor double booking: Use provider_double_booking=\"allow\" or resource_double_booking=\"allow\" to override checks\nFor cancellation: Use delete_type \"Current\" for single appointment or \"Entire\" for recurring series\n\nList filters (applied after fetching all appointments in the date range):\n- status_filter: e.g., status_filter=\"Confirmed\"\n- provider_filter: provider_id or provider_name substring (e.g., provider_filter=\"12345\" or provider_filter=\"Smith\")\n- mode_filter: e.g., mode_filter=\"Video Consult\"\n- limit: e.g., limit=25\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "schedule",
+              "reschedule",
+              "cancel",
+              "list"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "appointment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "facility_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "appointment_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "appointment_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 30
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "In Person",
+                  "Phone call",
+                  "Video Consult"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "In Person"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Confirmed",
+                  "Pending",
+                  "Tentative",
+                  "Cancelled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "Confirmed"
+          },
+          "visit_type_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "repetition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "Single Date"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "weekly_days": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "message_to_patient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "questionnaire": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "consent_forms": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "provider_double_booking": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "resource_double_booking": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "receipt_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "cancel_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "delete_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "end_date_range": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "facility_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "member_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "provider_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "mode_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 1167
+    },
+    {
+      "name": "manageEncounter",
+      "description": "Manage encounters.\n\n<usecase>\nComplete encounter workflow - create, review, and sign encounters with comprehensive clinical documentation.\nEssential for clinical workflow from initial documentation through final signature.\n</usecase>\n\n<instructions>\nActions:\n- \"list\": List encounters for a patient (requires patient_id; optionally filter by filter_by, start_date, end_date, per_page, page)\n- \"create\": Create new encounter and document clinical findings (default)\n- \"review\": Display complete encounter details for review before signing\n- \"sign\": Electronically sign encounter after review and confirmation\n- \"unlock\": Unlock a previously signed encounter to allow modifications\n\nFor creating encounters (two paths):\n- From appointment: patient_id + appointment_id (provider/facility/date come from the appointment)\n- From scratch: patient_id + provider_id + facility_id + encounter_date\n- Optional: visit_type_id, encounter_mode, chief_complaint\n\nFor reviewing encounters:\n- Requires: patient_id, encounter_id\n- Shows comprehensive encounter details including vitals, diagnoses, medications, notes\n\nFor signing encounters:\n- Requires: patient_id, encounter_id  \n- Only use after reviewing and confirming all information is accurate\n\nFor unlocking encounters:\n- Requires: patient_id, encounter_id, reason\n- Used to unlock signed encounters when modifications are needed\n- Must provide a valid reason for unlocking the encounter\n\nFor updating encounters with template data:\n- action=\"update\" with chief_complaint always saved as narrative fallback\n- template_ids: comma-separated IDs of templates to attach to the encounter\n- entries: JSON array string of populated template entries, e.g. '[{\"entry_id\":\"123\",\"answer\":\"text\"}]'\n- Templates are attached first, then entries + chief_complaints saved together\n- entry_id values must come from getPracticeInfo(info_type='template_details') — hallucinated IDs are dropped client-side\n\nRecommended workflow:\n1. Create encounter: manageEncounter(patient_id, appointment_id, action=\"create\") — or without appointment: manageEncounter(patient_id, provider_id, facility_id, encounter_date, action=\"create\")\n2. Add clinical data using managePatientVitals(), managePatientDrugs(), managePatientDiagnoses()\n3. Review before signing: manageEncounter(patient_id, encounter_id, action=\"review\")\n4. Sign to finalize: manageEncounter(patient_id, encounter_id, action=\"sign\")\n5. If modifications needed: manageEncounter(patient_id, encounter_id, reason=\"reason for changes\", action=\"unlock\")\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "patient_id": {
+            "type": "string"
+          },
+          "action": {
+            "default": "create",
+            "enum": [
+              "create",
+              "review",
+              "sign",
+              "unlock",
+              "update",
+              "list"
+            ],
+            "type": "string"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "facility_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "encounter_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "encounter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "appointment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "visit_type_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "encounter_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "In Person",
+                  "Phone Call",
+                  "Video Consult"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "In Person"
+          },
+          "chief_complaint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "template_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "entries": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "filter_by": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Status.Signed",
+                  "Status.Unsigned",
+                  "Status.All"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "per_page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 997
+    },
+    {
+      "name": "managePatientVitals",
+      "description": "Manage patient vitals and vital signs.\n\n<usecase>\nComplete patient vital signs management - record vitals during encounters, review vital trends,\nupdate incorrect readings, and track patient health metrics over time. Essential for clinical monitoring.\n</usecase>\n\n<instructions>\nActions:\n- \"add\": Record new vitals (requires patient_id + vitals dict OR individual vital fields, plus encounter_id OR entry_date; defaults to today if neither provided). Check available vitals with getPracticeInfo(info_type='vitals') first to ensure all vital names and units are correct.\n- \"list\": Show patient vital history (optionally filter by vital name and/or date range)\n- \"update\": Modify existing vital record (requires record_id + fields to change)\n- \"delete\": Remove incorrect vital record (requires record_id)\n\nVitals Format:\n- As dict: keys are EXACT CharmHealth vital names, values are \"value unit\" strings.\n  Example: {\"Systolic BP\": \"120 mmHg\", \"Diastolic BP\": \"80 mmHg\", \"Weight\": \"150 lbs\", \"Temp\": \"98 F\"}\n- Individual: vital_name=\"Systolic BP\", vital_value=\"120\", vital_unit=\"mmHg\"\n\nIMPORTANT: vital_name must be the exact CharmHealth API name. NEVER include units inside the name.\nCorrect: \"Systolic BP\" | Wrong: \"Systolic BP (mmHg)\" or \"Blood Pressure\"\nKnown names: Weight, Height, BMI, Temp, Systolic BP, Diastolic BP, Pulse Rate, Pulse Pattern, Pulse Volume, Vision\nCall getPracticeInfo(info_type='vitals') to get the full list of valid names and units for this practice.\n\nList filters:\n- vital_name_filter: e.g., vital_name_filter=\"Blood Pressure\" (matches case-insensitively, substring ok)\n- from_date / to_date: e.g., from_date=\"2025-01-01\", to_date=\"2025-12-31\"\n- limit: e.g., limit=20\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "add",
+              "list",
+              "update"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "type": "string"
+          },
+          "encounter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "vitals": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "items": {
+                  "description": "A single vital sign reading with name, value, and unit.",
+                  "properties": {
+                    "vital_name": {
+                      "description": "Exact CharmHealth vital name (e.g., 'Height', 'Weight', 'Systolic BP')",
+                      "type": "string"
+                    },
+                    "vital_value": {
+                      "description": "The vital value",
+                      "type": "string"
+                    },
+                    "vital_unit": {
+                      "default": "",
+                      "description": "Unit of measurement (e.g., 'ft', 'ins', 'lbs', 'mmHg')",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "vital_name",
+                    "vital_value"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "vital_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "vital_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "vital_unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "vital_name_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "from_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "to_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "entry_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action",
+          "patient_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 891
+    },
+    {
+      "name": "managePatientDrugs",
+      "description": "Manage patient drugs and supplements.\n\n<usecase>\nUnified drug management for medications, supplements, and vitamins - prescribe medications, \ndocument supplements, manage drug interactions. Includes automatic allergy checking and \ncomprehensive drug safety workflow for optimal patient care.\n</usecase>\n\n<instructions>\nActions:\n- \"add\": Prescribe new drug (requires drug_name, directions for medications; drug_name, dosage for supplements)\n- \"update\": Modify existing prescription (requires record_id + fields to change). IMPORTANT: drug name and strength CANNOT be changed via update — use discontinue + add instead. Updatable fields: directions, dispense, refills, status.\n- \"discontinue\": Stop drug (requires record_id)\n- \"list\": Show all patient drugs by type (filter by substance_type, optionally filter by status)\n\nSubstance Types:\n- \"medication\": Prescription drugs (requires directions, refills)\n- \"supplement\": OTC supplements/vitamins (requires dosage as integer)\n- \"vitamin\": Specific vitamins (requires dosage as integer)\n\nSafety: Automatically checks allergies before prescribing unless check_allergies=False\nList filters:\n- status_filter: e.g., status_filter=\"active\"\n- limit: e.g., limit=25\nFor medications: Use clear directions like \"Take 1 tablet by mouth twice daily with food\"\nFor supplements: Provide dosage as integer (e.g., 5) and use strength for units (e.g., \"500mg\")\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "add",
+              "update",
+              "discontinue",
+              "list"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "type": "string"
+          },
+          "substance_type": {
+            "default": "medication",
+            "enum": [
+              "medication",
+              "supplement",
+              "vitamin"
+            ],
+            "type": "string"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "drug_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "dosage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "strength": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "directions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "refills": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "active",
+                  "inactive"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "active"
+          },
+          "encounter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "dose_form": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "dosage_unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "intake_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "comments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "weaning_schedule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "check_allergies": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": true
+          },
+          "status_filter": {
+            "anyOf": [
+              {
+                "enum": [
+                  "active",
+                  "inactive"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action",
+          "patient_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 877
+    },
+    {
+      "name": "managePatientAllergies",
+      "description": "Manage patient allergies.\n\n<usecase>\nCritical allergy management with safety alerts - document patient allergies, update allergy information,\nand maintain allergy safety checks. Essential for safe prescribing and clinical decision-making.\n</usecase>\n\n<instructions>\nActions:\n- \"add\": Document new allergy (requires allergen, allergy_type, severity, reactions, allergy_date)\n- \"list\": Show all patient allergies (optionally filter by severity/type)\n- \"update\": Modify existing allergy (requires record_id, allergen, allergy_type, severity, allergy_status — use action='list' first to get current values, then pass all required fields with your changes)\n- \"delete\": Remove allergy record (requires record_id)\n\nSafety critical: Always check allergies before prescribing medications.\nCommon allergens: \"Penicillin\", \"Latex\", \"Shellfish\", \"Nuts\", \"Contrast dye\"\nSeverity levels: \"Mild\", \"Moderate\", \"Severe\"\nAllergy types: \"Medication\", \"Drug Substance\", \"Environmental\", \"Food\", \"Plant\", \"Animal\", \"Latex\"\nStatus values: \"Active\", \"Inactive\"\n\nList filters:\n- severity_filter: e.g., severity_filter=\"Severe\"\n- type_filter: e.g., type_filter=\"Drug\"\n- limit: e.g., limit=50\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "add",
+              "list",
+              "update",
+              "delete"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "type": "string"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "allergen": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "allergy_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "reactions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "allergy_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "allergy_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "comments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "severity_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "type_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action",
+          "patient_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 598
+    },
+    {
+      "name": "managePatientDiagnoses",
+      "description": "Manage patient diagnoses.\n\n<usecase>\nComplete diagnosis management for patient problem lists - add new diagnoses, update existing conditions,\nand maintain accurate medical problem lists. Essential for clinical reasoning and care planning.\n</usecase>\n\n<instructions>\nActions:\n- \"add\": Add new diagnosis (requires diagnosis_name, diagnosis_code, code_type)\n- \"list\": Show all patient diagnoses (optionally filter by status, code type, and/or date range)\n- \"update\": Modify existing diagnosis (requires record_id + fields to change)\n- \"delete\": Remove diagnosis (requires record_id). Ask the user if they are sure they want to delete the diagnosis before proceeding.\n\nCode types: \"ICD10\", \"SNOMED\"\nStatus options: \"Active\", \"Inactive\", \"Resolved\"\nList filters:\n- status_filter: filter by diagnosis_status (e.g., status_filter=\"Active\")\n- code_type_filter: filter by code_type (e.g., code_type_filter=\"ICD10\")\n- from_date / to_date: best-effort date filtering (e.g., from_date=\"2025-01-01\", to_date=\"2025-12-31\")\n- limit: e.g., limit=25\nUse encounter_id to link diagnosis to specific visit for billing and documentation\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "add",
+              "list",
+              "update",
+              "delete"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "type": "string"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "diagnosis_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "diagnosis_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "code_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ICD10",
+                  "SNOMED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "diagnosis_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Active",
+                  "Inactive",
+                  "Resolved"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "from_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "to_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "encounter_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "diagnosis_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "comments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "code_type_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action",
+          "patient_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 653
+    },
+    {
+      "name": "managePatientNotes",
+      "description": "Manage patient notes.\n\n<usecase>\nQuick clinical note management for important patient information - add care notes, provider communications,\nand clinical observations that need to be highlighted across all patient interactions.\n</usecase>\n\n<instructions>\nActions:\n- \"add\": Add new clinical note (requires notes content)\n- \"list\": Show all patient notes (optionally filter by date range)\n- \"update\": Modify existing note (requires record_id + notes content)\n- \"delete\": Remove note (requires record_id). Ask the user if they are sure they want to delete the note before proceeding.\n\nUse for: Important care instructions, provider alerts, patient preferences, social determinants\nFormal encounter notes should use manageEncounter() instead\n\nList filters:\n- from_date / to_date: e.g., from_date=\"2025-01-01\", to_date=\"2025-12-31\"\n- limit: e.g., limit=50\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "add",
+              "list",
+              "update",
+              "delete"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "type": "string"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "from_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "to_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action",
+          "patient_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 388
+    },
+    {
+      "name": "managePatientRecalls",
+      "description": "Manage patient recalls.\n\n<usecase>\nPatient recall and follow-up management - schedule preventive care reminders, follow-up appointments,\nand care plan reminders. Ensures patients receive timely care according to clinical guidelines.\n</usecase>\n\n<instructions>\nActions:\n- \"add\": Schedule new recall (requires recall_type, notes, provider_id, facility_id)\n- \"list\": Show all patient recalls (optionally filter by type/date range)\n- \"update\": Modify existing recall (requires record_id, recall_type, notes — use action='list' first to get current values, then pass all required fields with your changes)\n- \"delete\": Remove recall (requires record_id). Ask the user if they are sure they want to delete the recall before proceeding.\n\nrecall_type is a free-form string set by the practice (e.g. \"Office Visit\", \"Follow-up\", \"Imaging\", \"Annual Physical\"). Do not invent verbose names — use short descriptive terms.\nScheduling: PREFER recall_date (ISO date string, e.g. \"2026-07-10\"). If using recall_time/recall_timeunit instead, recall_period is also REQUIRED (e.g. recall_time=3, recall_timeunit=\"Months\", recall_period=\"after\") — omitting recall_period causes a server error.\nReminder timing: email_reminder_before/text_reminder_before in days (e.g., 7 for one week)\nUse getPracticeInfo() to get valid provider_id and facility_id values\n\nList filters:\n- type_filter: e.g., type_filter=\"Annual Physical\"\n- from_date / to_date: e.g., from_date=\"2025-01-01\", to_date=\"2025-12-31\" (compares against recall_date when available)\n- limit: e.g., limit=25\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "add",
+              "list",
+              "update",
+              "delete"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "type": "string"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "recall_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "facility_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "recall_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "recall_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "recall_timeunit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "recall_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "encounter_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "send_email_reminder": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "email_reminder_before": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "send_text_reminder": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "text_reminder_before": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "type_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "from_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "to_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action",
+          "patient_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 852
+    },
+    {
+      "name": "managePatientFiles",
+      "description": "Manage patient files and documents.\n\n<usecase>\nPatient file and document management - upload patient photos, manage identity documents, \nand send PHR (Personal Health Record) invitations. Handles the complete patient file workflow.\n</usecase>\n\n<instructions>\nActions:\n- \"upload_photo\": Upload patient photo (requires photo_file path)\n- \"delete_photo\": Remove patient photo (requires only patient_id)\n- \"upload_id\": Upload identity document (requires id_file, id_qualifier)\n- \"send_phr_invite\": Send PHR portal invitation (requires email)\n\nID Qualifiers: military_id, state_issued_id, drivers_license_id, passport_id, social_security_number, etc.\nFile paths should be absolute paths to image/PDF files on the system.\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "upload_photo",
+              "delete_photo",
+              "upload_id",
+              "send_phr_invite"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "type": "string"
+          },
+          "photo_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "id_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "id_qualifier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "military_id",
+                  "state_issued_id",
+                  "unique_system_id",
+                  "permanent_resident_card",
+                  "passport_id",
+                  "drivers_license_id",
+                  "social_security_number",
+                  "tribal_id",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "id_of_patient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "rep_first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "rep_last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action",
+          "patient_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 448
+    },
+    {
+      "name": "managePatientLabs",
+      "description": "Manage patient laboratory results.\n\n<usecase>\nLaboratory results management - list lab results and get detailed reports.\nLab results arrive automatically from integrated labs (LabCorp, Quest). For manual entry, use the CharmHealth web portal.\n</usecase>\n\n<instructions>\nActions:\n- \"list\": Show lab results with filtering (optionally filter by patient_id, reviewer_id, status, date range)\n- \"get_details\": Get detailed lab report (requires group_id OR lab_order_id)\nFor detailed results: Use group_id for result groups or lab_order_id for specific orders\nStatus codes: 0 for pending, 2 for final results\n\nList filters (in addition to API parameters):\n- status_filter: 0 (pending) or 2 (final)\n- from_date / to_date: e.g., from_date=\"2025-01-01\", to_date=\"2025-12-31\" (best-effort against common date fields)\n- limit: e.g., limit=50\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "list",
+              "get_details"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "lab_order_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status_filter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "from_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "to_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "start_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "no_of_records": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "enum": [
+                  "DATE",
+                  "FULL_NAME"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "is_ascending": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 563
+    },
+    {
+      "name": "manageTasks",
+      "description": "Manage CharmHealth tasks.\n\n<usecase>\nTask management with task creation, updating, and listing.\n</usecase>\n\n<instructions>\nActions:\n- \"add\": Create new task (requires task, owner_id (look up members using getPracticeInfo()), priority (0-Low, 1-Medium, 2-High, 3-Critical), status (Pending, In-progress, Completed), comments, due_date, reminder_options, tasklist. optional: patient_id if task is related to a patient)\n- \"update\": Modify existing task (requires task_id, task, owner_id, priority, status, tasklist — use manageTasks(action='list') first to get current values, then pass all required fields with your changes)\n- \"list\": Show tasks with filtering (supports view/date range/pagination plus client-side filters)\n- \"change_status\": Change the status of a task (requires task_id (use manageTasks(action='list') to get task_id) + new_status (Pending, In-progress, Completed))\n\nWhen required parameters are missing, ask the user to provide the specific values rather than proceeding with defaults or auto-generated values.\n\nList filters:\n- status_filter: filter by status (e.g., status_filter=\"Pending\")\n- priority_filter: \"0\"-\"3\" or \"Low\"/\"Medium\"/\"High\"/\"Critical\"\n- owner_filter: filter by owner_id\n- limit: max tasks to return (applied after filtering)\n\nExamples:\n- manageTasks(action=\"list\", view=\"MyTasks\", status_filter=\"In-progress\", limit=20)\n- manageTasks(action=\"list\", view=\"All\", priority_filter=\"High\", owner_filter=\"12345\")\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "add",
+              "update",
+              "list",
+              "change_status"
+            ],
+            "type": "string"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "task": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "enum": [
+                  "0",
+                  "1",
+                  "2",
+                  "3"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "comments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "reminder_options": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "tasklist": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "view": {
+            "anyOf": [
+              {
+                "enum": [
+                  "All",
+                  "MyTasks",
+                  "AssignedToMe",
+                  "AssignedByMe"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "from_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "to_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "per_page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "priority_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "owner_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "task_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 864
+    },
+    {
+      "name": "manageMessages",
+      "description": "Manage patient and provider messaging across SMS, WhatsApp, and secure messaging channels.\n\n<usecase>\nSend messages to patients, read inbox messages, and retrieve conversation threads.\nSupports SMS (Twilio/Telnyx), WhatsApp Business, and secure portal messaging.\nUse this for patient communication, follow-ups, appointment confirmations, and\nresponding to patient inquiries.\n</usecase>\n\n<instructions>\nActions:\n- \"send\": Send a message to a patient (requires patient_id, content, and facility_id).\n  Channel options:\n    - \"sms\": Send via text message (patient must have TEXT_NOTIFY_ENABLED)\n    - \"whatsapp\": Send via WhatsApp (patient must be opted in)\n    - \"secure\": Send via secure portal message (requires subject)\n    - \"auto\": Automatically select best available channel (default)\n  facility_id is required for all channels. Use getPracticeInfo() to look up facility IDs.\n  For WhatsApp templates, provide template_name and placeholder values.\n  For secure messages to providers, use recipient_member_ids.\n\n- \"list\": Show recent secure portal messages from inbox.\n  Filter by section: \"FROM_PATIENTS\" (inbox) or \"TO_PATIENTS\" (sent).\n  Use facility_id to filter by facility.\n  Note: SMS and WhatsApp conversations are not available via list — use action='get_thread'\n  with a patient_id to retrieve those.\n\n- \"get_thread\": Get full conversation history with a specific patient (requires patient_id).\n  Filter by thread_channel to see only SMS, WhatsApp, secure, or all channels.\n\nBefore sending clinical content, confirm with the provider. Routine messages\n(appointment reminders, general notifications) can be sent directly.\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "send",
+              "list",
+              "get_thread"
+            ],
+            "type": "string"
+          },
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "facility_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "sms",
+                  "whatsapp",
+                  "secure",
+                  "auto"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "auto"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "recipient_member_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "template_header_placeholders": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "template_body_placeholders": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "message_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "incoming",
+                  "outgoing",
+                  "all"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "all"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "enum": [
+                  "FROM_PATIENTS",
+                  "TO_PATIENTS",
+                  "ALL"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "ALL"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 20
+          },
+          "thread_channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "sms",
+                  "whatsapp",
+                  "secure",
+                  "all"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "all"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 775
+    },
+    {
+      "name": "manageFax",
+      "description": "Send faxes and check fax delivery status.\n\n<usecase>\nFax clinical documents (referrals, records, prior auth forms) to providers,\nfacilities, pharmacies, and insurance companies. Check delivery status of sent faxes.\n</usecase>\n\n<instructions>\nActions:\n- \"send\": Fax a document (requires recipient_fax_number, recipient_name, document_content_base64).\n  document_content_base64 must be a base64-encoded PDF.\n  Optionally include subject, remarks, and reference for the cover page.\n  facility_id determines which facility's fax credentials and return number are used.\n\n- \"status\": Check fax delivery status (requires fax_id).\n  Status values: QUEUED, SENT, FAILED, YET_TO_SEND.\n\nCommon fax use cases:\n- Referral letters to specialists\n- Medical records requests\n- Prior authorization forms to insurance\n- Prescription orders to pharmacies without e-prescribe\n</instructions>",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "send",
+              "status"
+            ],
+            "type": "string"
+          },
+          "recipient_fax_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "recipient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "document_content_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "facility_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "fax_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 409
+    }
+  ],
+  "totalTokens": 13208,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

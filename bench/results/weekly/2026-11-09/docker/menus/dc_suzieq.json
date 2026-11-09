@@ -1,0 +1,79 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "SuzieQ MCP Server",
+    "version": "1.9.4",
+    "protocolVersion": "2025-03-26",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:07:46.897Z",
+  "tools": [
+    {
+      "name": "run_suzieq_show",
+      "description": "\n    Runs a SuzieQ 'show' query via its REST API.\n\n    Args:\n        table: The name of the SuzieQ table to query (e.g., 'device', 'bgp', 'interface', 'route').\n        filters: An optional dictionary of filter parameters for the SuzieQ query\n                 (e.g., {\"hostname\": \"leaf01\", \"vrf\": \"default\", \"state\": \"Established\"}).\n                 Keys should match SuzieQ filter names. Values can be strings or lists of strings.\n                 If no filters are needed, this can be None, null, or an empty dictionary.\n\n    Returns:\n        A JSON string representing the result from the SuzieQ API, or a JSON string with an error message.\n    ",
+      "inputSchema": {
+        "properties": {
+          "table": {
+            "title": "Table",
+            "type": "string"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Filters"
+          }
+        },
+        "required": [
+          "table"
+        ],
+        "title": "run_suzieq_showArguments",
+        "type": "object"
+      },
+      "tokens": 247
+    },
+    {
+      "name": "run_suzieq_summarize",
+      "description": "\n    Runs a SuzieQ 'summarize' query via its REST API.\n\n    Args:\n        table: The name of the SuzieQ table to summarize (e.g., 'device', 'bgp', 'interface', 'route').\n        filters: An optional dictionary of filter parameters for the SuzieQ query\n                 (e.g., {\"hostname\": \"leaf01\", \"vrf\": \"default\"}).\n                 Keys should match SuzieQ filter names. Values can be strings or lists of strings.\n                 If no filters are needed, this can be None, null, or an empty dictionary.\n\n    Returns:\n        A JSON string representing the summarized result from the SuzieQ API,\n        or a JSON string with an error message.\n    ",
+      "inputSchema": {
+        "properties": {
+          "table": {
+            "title": "Table",
+            "type": "string"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Filters"
+          }
+        },
+        "required": [
+          "table"
+        ],
+        "title": "run_suzieq_summarizeArguments",
+        "type": "object"
+      },
+      "tokens": 250
+    }
+  ],
+  "totalTokens": 497,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

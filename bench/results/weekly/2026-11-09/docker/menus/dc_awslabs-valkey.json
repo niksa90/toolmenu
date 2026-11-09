@@ -1,0 +1,4339 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "awslabs.valkey-mcp-server",
+    "version": "1.23.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:23:56.079Z",
+  "tools": [
+    {
+      "name": "bitmap_set",
+      "description": "Set the bit at offset to value.\n\nArgs:\n    key: The name of the bitmap key\n    offset: The bit offset (0-based)\n    value: The bit value (0 or 1)\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "offset",
+          "value"
+        ],
+        "title": "bitmap_setArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "bitmap_setOutput",
+        "type": "object"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "bitmap_get",
+      "description": "Get the bit value at offset.\n\nArgs:\n    key: The name of the bitmap key\n    offset: The bit offset (0-based)\n\nReturns:\n    Bit value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "offset"
+        ],
+        "title": "bitmap_getArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "bitmap_getOutput",
+        "type": "object"
+      },
+      "tokens": 97
+    },
+    {
+      "name": "bitmap_count",
+      "description": "Count the number of set bits (1) in a range.\n\nArgs:\n    key: The name of the bitmap key\n    start: Start offset (inclusive, optional)\n    end: End offset (inclusive, optional)\n\nReturns:\n    Count of set bits or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "End"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "bitmap_countArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "bitmap_countOutput",
+        "type": "object"
+      },
+      "tokens": 151
+    },
+    {
+      "name": "bitmap_pos",
+      "description": "Find positions of bits set to a specific value.\n\nArgs:\n    key: The name of the bitmap key\n    bit: Bit value to search for (0 or 1)\n    start: Start offset (inclusive, optional)\n    end: End offset (inclusive, optional)\n    count: Maximum number of positions to return (optional)\n\nReturns:\n    List of positions or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "bit": {
+            "title": "Bit",
+            "type": "integer"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "End"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          }
+        },
+        "required": [
+          "key",
+          "bit"
+        ],
+        "title": "bitmap_posArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "bitmap_posOutput",
+        "type": "object"
+      },
+      "tokens": 212
+    },
+    {
+      "name": "hash_set",
+      "description": "Set field in hash.\n\nArgs:\n    key: The name of the key\n    field: The field name\n    value: The value to set\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "field",
+          "value"
+        ],
+        "title": "hash_setArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_setOutput",
+        "type": "object"
+      },
+      "tokens": 107
+    },
+    {
+      "name": "hash_set_multiple",
+      "description": "Set multiple fields in hash.\n\nArgs:\n    key: The name of the key\n    mapping: Dictionary of field-value pairs\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "mapping": {
+            "additionalProperties": true,
+            "title": "Mapping",
+            "type": "object"
+          }
+        },
+        "required": [
+          "key",
+          "mapping"
+        ],
+        "title": "hash_set_multipleArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_set_multipleOutput",
+        "type": "object"
+      },
+      "tokens": 100
+    },
+    {
+      "name": "hash_set_if_not_exists",
+      "description": "Set field in hash only if it does not exist.\n\nArgs:\n    key: The name of the key\n    field: The field name\n    value: The value to set\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "field",
+          "value"
+        ],
+        "title": "hash_set_if_not_existsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_set_if_not_existsOutput",
+        "type": "object"
+      },
+      "tokens": 119
+    },
+    {
+      "name": "hash_get",
+      "description": "Get field from hash.\n\nArgs:\n    key: The name of the key\n    field: The field name\n\nReturns:\n    Field value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "field"
+        ],
+        "title": "hash_getArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_getOutput",
+        "type": "object"
+      },
+      "tokens": 90
+    },
+    {
+      "name": "hash_get_all",
+      "description": "Get all fields and values from hash.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    Dictionary of field-value pairs or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "hash_get_allArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_get_allOutput",
+        "type": "object"
+      },
+      "tokens": 78
+    },
+    {
+      "name": "hash_exists",
+      "description": "Check if field exists in hash.\n\nArgs:\n    key: The name of the key\n    field: The field name\n\nReturns:\n    Boolean result or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "field"
+        ],
+        "title": "hash_existsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_existsOutput",
+        "type": "object"
+      },
+      "tokens": 92
+    },
+    {
+      "name": "hash_increment",
+      "description": "Increment field value in hash.\n\nArgs:\n    key: The name of the key\n    field: The field name\n    amount: Amount to increment by (default: 1)\n\nReturns:\n    New value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "default": 1,
+            "title": "Amount"
+          }
+        },
+        "required": [
+          "key",
+          "field"
+        ],
+        "title": "hash_incrementArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_incrementOutput",
+        "type": "object"
+      },
+      "tokens": 129
+    },
+    {
+      "name": "hash_keys",
+      "description": "Get all field names from hash.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    List of field names or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "hash_keysArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_keysOutput",
+        "type": "object"
+      },
+      "tokens": 74
+    },
+    {
+      "name": "hash_length",
+      "description": "Get number of fields in hash.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    Number of fields or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "hash_lengthArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_lengthOutput",
+        "type": "object"
+      },
+      "tokens": 73
+    },
+    {
+      "name": "hash_random_field",
+      "description": "Get random field(s) from hash.\n\nArgs:\n    key: The name of the key\n    count: Number of fields to return (optional)\n\nReturns:\n    Random field(s) or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "hash_random_fieldArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_random_fieldOutput",
+        "type": "object"
+      },
+      "tokens": 113
+    },
+    {
+      "name": "hash_random_field_with_values",
+      "description": "Get random field(s) with their values from hash.\n\nArgs:\n    key: The name of the key\n    count: Number of field-value pairs to return\n\nReturns:\n    Random field-value pairs or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "count"
+        ],
+        "title": "hash_random_field_with_valuesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_random_field_with_valuesOutput",
+        "type": "object"
+      },
+      "tokens": 108
+    },
+    {
+      "name": "hash_strlen",
+      "description": "Get length of field value in hash.\n\nArgs:\n    key: The name of the key\n    field: The field name\n\nReturns:\n    Length of field value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "field"
+        ],
+        "title": "hash_strlenArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_strlenOutput",
+        "type": "object"
+      },
+      "tokens": 95
+    },
+    {
+      "name": "hash_values",
+      "description": "Get all values from hash.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    List of values or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "hash_valuesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hash_valuesOutput",
+        "type": "object"
+      },
+      "tokens": 72
+    },
+    {
+      "name": "hll_add",
+      "description": "Add one element to a HyperLogLog.\n\nArgs:\n    key: The name of the HyperLogLog key\n    element: One element to add\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "element": {
+            "title": "Element",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "element"
+        ],
+        "title": "hll_addArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hll_addOutput",
+        "type": "object"
+      },
+      "tokens": 100
+    },
+    {
+      "name": "hll_count",
+      "description": "Get the estimated cardinality of a HyperLogLog.\n\nArgs:\n    key: The name of the HyperLogLog key\n\nReturns:\n    Estimated cardinality or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "hll_countArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "hll_countOutput",
+        "type": "object"
+      },
+      "tokens": 82
+    },
+    {
+      "name": "json_set",
+      "description": "Set the JSON value at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document (e.g., \"$.name\" or \".\" for root)\n    value: The value to set\n    nx: Only set if path doesn't exist\n    xx: Only set if path exists\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "nx": {
+            "default": false,
+            "title": "Nx",
+            "type": "boolean"
+          },
+          "xx": {
+            "default": false,
+            "title": "Xx",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "path",
+          "value"
+        ],
+        "title": "json_setArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_setOutput",
+        "type": "object"
+      },
+      "tokens": 177
+    },
+    {
+      "name": "json_get",
+      "description": "Get the JSON value at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document (optional, defaults to root)\n    indent: Number of spaces for indentation (optional)\n    newline: Add newlines in formatted output (optional)\n    space: Add spaces in formatted output (optional)\n\nReturns:\n    JSON value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Path"
+          },
+          "indent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Indent"
+          },
+          "newline": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Newline"
+          },
+          "space": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Space"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "json_getArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_getOutput",
+        "type": "object"
+      },
+      "tokens": 223
+    },
+    {
+      "name": "json_type",
+      "description": "Get the type of JSON value at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document (optional, defaults to root)\n\nReturns:\n    JSON type or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Path"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "json_typeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_typeOutput",
+        "type": "object"
+      },
+      "tokens": 115
+    },
+    {
+      "name": "json_numincrby",
+      "description": "Increment the number at path by value.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n    value: The increment value (integer or float)\n\nReturns:\n    New value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "path",
+          "value"
+        ],
+        "title": "json_numincrbyArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_numincrbyOutput",
+        "type": "object"
+      },
+      "tokens": 136
+    },
+    {
+      "name": "json_nummultby",
+      "description": "Multiply the number at path by value.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n    value: The multiplier value (integer or float)\n\nReturns:\n    New value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "path",
+          "value"
+        ],
+        "title": "json_nummultbyArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_nummultbyOutput",
+        "type": "object"
+      },
+      "tokens": 136
+    },
+    {
+      "name": "json_strappend",
+      "description": "Append a string to the string at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n    value: The string to append\n\nReturns:\n    New string length or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "path",
+          "value"
+        ],
+        "title": "json_strappendArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_strappendOutput",
+        "type": "object"
+      },
+      "tokens": 121
+    },
+    {
+      "name": "json_strlen",
+      "description": "Get the length of string at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n\nReturns:\n    String length or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "path"
+        ],
+        "title": "json_strlenArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_strlenOutput",
+        "type": "object"
+      },
+      "tokens": 96
+    },
+    {
+      "name": "json_arrappend",
+      "description": "Append values to the array at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n    *values: One or more values to append\n\nReturns:\n    New array length or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "values": {
+            "title": "Values"
+          }
+        },
+        "required": [
+          "key",
+          "path",
+          "values"
+        ],
+        "title": "json_arrappendArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_arrappendOutput",
+        "type": "object"
+      },
+      "tokens": 119
+    },
+    {
+      "name": "json_arrindex",
+      "description": "Get the index of value in array at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n    value: The value to search for\n    start: Start offset (optional)\n    stop: Stop offset (optional)\n\nReturns:\n    Index or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start"
+          },
+          "stop": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Stop"
+          }
+        },
+        "required": [
+          "key",
+          "path",
+          "value"
+        ],
+        "title": "json_arrindexArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_arrindexOutput",
+        "type": "object"
+      },
+      "tokens": 183
+    },
+    {
+      "name": "json_arrlen",
+      "description": "Get the length of array at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n\nReturns:\n    Array length or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "path"
+        ],
+        "title": "json_arrlenArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_arrlenOutput",
+        "type": "object"
+      },
+      "tokens": 98
+    },
+    {
+      "name": "json_arrpop",
+      "description": "Pop a value from the array at path and index.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n    index: The index to pop from (-1 for last element)\n\nReturns:\n    Popped value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "index": {
+            "default": -1,
+            "title": "Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "path"
+        ],
+        "title": "json_arrpopArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_arrpopOutput",
+        "type": "object"
+      },
+      "tokens": 133
+    },
+    {
+      "name": "json_arrtrim",
+      "description": "Trim array at path to include only elements within range.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n    start: Start index (inclusive)\n    stop: Stop index (inclusive)\n\nReturns:\n    New array length or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "start": {
+            "title": "Start",
+            "type": "integer"
+          },
+          "stop": {
+            "title": "Stop",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "path",
+          "start",
+          "stop"
+        ],
+        "title": "json_arrtrimArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_arrtrimOutput",
+        "type": "object"
+      },
+      "tokens": 146
+    },
+    {
+      "name": "json_objkeys",
+      "description": "Get the keys in the object at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n\nReturns:\n    List of keys or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "path"
+        ],
+        "title": "json_objkeysArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_objkeysOutput",
+        "type": "object"
+      },
+      "tokens": 100
+    },
+    {
+      "name": "json_objlen",
+      "description": "Get the number of keys in the object at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n\nReturns:\n    Number of keys or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "path"
+        ],
+        "title": "json_objlenArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_objlenOutput",
+        "type": "object"
+      },
+      "tokens": 102
+    },
+    {
+      "name": "json_toggle",
+      "description": "Toggle boolean value at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n\nReturns:\n    New boolean value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "path"
+        ],
+        "title": "json_toggleArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_toggleOutput",
+        "type": "object"
+      },
+      "tokens": 95
+    },
+    {
+      "name": "json_clear",
+      "description": "Clear container at path (array or object).\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "path"
+        ],
+        "title": "json_clearArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_clearOutput",
+        "type": "object"
+      },
+      "tokens": 97
+    },
+    {
+      "name": "json_del",
+      "description": "Delete value at path.\n\nArgs:\n    key: The name of the key\n    path: The path in the JSON document\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "path"
+        ],
+        "title": "json_delArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "json_delOutput",
+        "type": "object"
+      },
+      "tokens": 93
+    },
+    {
+      "name": "list_append",
+      "description": "Append value to list.\n\nArgs:\n    key: The name of the key\n    value: The value to append\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "list_appendArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_appendOutput",
+        "type": "object"
+      },
+      "tokens": 87
+    },
+    {
+      "name": "list_prepend",
+      "description": "Prepend value to list.\n\nArgs:\n    key: The name of the key\n    value: The value to prepend\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "list_prependArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_prependOutput",
+        "type": "object"
+      },
+      "tokens": 90
+    },
+    {
+      "name": "list_append_multiple",
+      "description": "Append multiple values to list.\n\nArgs:\n    key: The name of the key\n    values: List of values to append\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "values": {
+            "items": {},
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "values"
+        ],
+        "title": "list_append_multipleArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_append_multipleOutput",
+        "type": "object"
+      },
+      "tokens": 99
+    },
+    {
+      "name": "list_prepend_multiple",
+      "description": "Prepend multiple values to list.\n\nArgs:\n    key: The name of the key\n    values: List of values to prepend\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "values": {
+            "items": {},
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "values"
+        ],
+        "title": "list_prepend_multipleArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_prepend_multipleOutput",
+        "type": "object"
+      },
+      "tokens": 102
+    },
+    {
+      "name": "list_get",
+      "description": "Get value at index from list.\n\nArgs:\n    key: The name of the key\n    index: The index (0-based, negative indices supported)\n\nReturns:\n    Value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "index"
+        ],
+        "title": "list_getArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_getOutput",
+        "type": "object"
+      },
+      "tokens": 98
+    },
+    {
+      "name": "list_set",
+      "description": "Set value at index in list.\n\nArgs:\n    key: The name of the key\n    index: The index (0-based, negative indices supported)\n    value: The value to set\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "index",
+          "value"
+        ],
+        "title": "list_setArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_setOutput",
+        "type": "object"
+      },
+      "tokens": 116
+    },
+    {
+      "name": "list_range",
+      "description": "Get range of values from list.\n\nArgs:\n    key: The name of the key\n    start: Start index (inclusive, default 0)\n    stop: Stop index (inclusive, default -1 for end)\n\nReturns:\n    List of values or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "start": {
+            "default": 0,
+            "title": "Start",
+            "type": "integer"
+          },
+          "stop": {
+            "default": -1,
+            "title": "Stop",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "list_rangeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_rangeOutput",
+        "type": "object"
+      },
+      "tokens": 132
+    },
+    {
+      "name": "list_trim",
+      "description": "Trim list to specified range.\n\nArgs:\n    key: The name of the key\n    start: Start index (inclusive)\n    stop: Stop index (inclusive)\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "start": {
+            "title": "Start",
+            "type": "integer"
+          },
+          "stop": {
+            "title": "Stop",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "start",
+          "stop"
+        ],
+        "title": "list_trimArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_trimOutput",
+        "type": "object"
+      },
+      "tokens": 115
+    },
+    {
+      "name": "list_length",
+      "description": "Get length of list.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    Length or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "list_lengthArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_lengthOutput",
+        "type": "object"
+      },
+      "tokens": 69
+    },
+    {
+      "name": "list_pop_left",
+      "description": "Pop value(s) from left of list.\n\nArgs:\n    key: The name of the key\n    count: Number of values to pop (optional)\n\nReturns:\n    Value(s) or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "list_pop_leftArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_pop_leftOutput",
+        "type": "object"
+      },
+      "tokens": 113
+    },
+    {
+      "name": "list_pop_right",
+      "description": "Pop value(s) from right of list.\n\nArgs:\n    key: The name of the key\n    count: Number of values to pop (optional)\n\nReturns:\n    Value(s) or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "list_pop_rightArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_pop_rightOutput",
+        "type": "object"
+      },
+      "tokens": 113
+    },
+    {
+      "name": "list_position",
+      "description": "Find position(s) of value in list.\n\nArgs:\n    key: The name of the key\n    value: Value to search for\n    rank: Match the Nth occurrence (optional)\n    count: Return this many matches (optional)\n    maxlen: Limit search to first N elements (optional)\n\nReturns:\n    Position(s) or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Rank"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          },
+          "maxlen": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Maxlen"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "list_positionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_positionOutput",
+        "type": "object"
+      },
+      "tokens": 203
+    },
+    {
+      "name": "list_move",
+      "description": "Move element from one list to another.\n\nArgs:\n    source: Source list key\n    destination: Destination list key\n    wherefrom: Where to pop from (\"LEFT\" or \"RIGHT\")\n    whereto: Where to push to (\"LEFT\" or \"RIGHT\")\n\nReturns:\n    Moved value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "wherefrom": {
+            "default": "LEFT",
+            "title": "Wherefrom",
+            "type": "string"
+          },
+          "whereto": {
+            "default": "RIGHT",
+            "title": "Whereto",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "destination"
+        ],
+        "title": "list_moveArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_moveOutput",
+        "type": "object"
+      },
+      "tokens": 165
+    },
+    {
+      "name": "list_insert_before",
+      "description": "Insert value before pivot in list.\n\nArgs:\n    key: The name of the key\n    pivot: The pivot value\n    value: The value to insert\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "pivot": {
+            "title": "Pivot"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "pivot",
+          "value"
+        ],
+        "title": "list_insert_beforeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_insert_beforeOutput",
+        "type": "object"
+      },
+      "tokens": 107
+    },
+    {
+      "name": "list_insert_after",
+      "description": "Insert value after pivot in list.\n\nArgs:\n    key: The name of the key\n    pivot: The pivot value\n    value: The value to insert\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "pivot": {
+            "title": "Pivot"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "pivot",
+          "value"
+        ],
+        "title": "list_insert_afterArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_insert_afterOutput",
+        "type": "object"
+      },
+      "tokens": 107
+    },
+    {
+      "name": "list_remove",
+      "description": "Remove occurrences of value from list.\n\nArgs:\n    key: The name of the key\n    value: Value to remove\n    count: Number of occurrences to remove (0 for all, positive for left-to-right, negative for right-to-left)\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "list_removeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_removeOutput",
+        "type": "object"
+      },
+      "tokens": 129
+    },
+    {
+      "name": "delete",
+      "description": "Delete a Valkey key.\n\nArgs:\n    key (str): The key to delete.\n\nReturns:\n    str: Confirmation message or an error message.\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "deleteArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "deleteOutput",
+        "type": "object"
+      },
+      "tokens": 75
+    },
+    {
+      "name": "type",
+      "description": "Returns the string representation of the type of the value stored at key.\n\nArgs:\n    key (str): The key to check.\n\nReturns:\n    str: The type of key, or none when key doesn't exist\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "typeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "typeOutput",
+        "type": "object"
+      },
+      "tokens": 87
+    },
+    {
+      "name": "expire",
+      "description": "Set an expiration time for a Redis key.\n\nArgs:\n    name: The Redis key.\n    expire_seconds: Time in seconds after which the key should expire.\n\nReturns:\n    A success message or an error message.\n",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "expire_seconds": {
+            "title": "Expire Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "expire_seconds"
+        ],
+        "title": "expireArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "expireOutput",
+        "type": "object"
+      },
+      "tokens": 105
+    },
+    {
+      "name": "rename",
+      "description": "Renames a Redis key from old_key to new_key.\n\nArgs:\n    old_key (str): The current name of the Redis key to rename.\n    new_key (str): The new name to assign to the key.\n\nReturns:\n    Dict[str, Any]: A dictionary containing the result of the operation.\n        On success: {\"status\": \"success\", \"message\": \"...\"}\n        On error: {\"error\": \"...\"}\n",
+      "inputSchema": {
+        "properties": {
+          "old_key": {
+            "title": "Old Key",
+            "type": "string"
+          },
+          "new_key": {
+            "title": "New Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "old_key",
+          "new_key"
+        ],
+        "title": "renameArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "renameOutput",
+        "type": "object"
+      },
+      "tokens": 159
+    },
+    {
+      "name": "dbsize",
+      "description": "Get the number of keys stored in the Valkey database.",
+      "inputSchema": {
+        "properties": {},
+        "title": "dbsizeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "dbsizeOutput",
+        "type": "object"
+      },
+      "tokens": 37
+    },
+    {
+      "name": "info",
+      "description": "Get Valkey server information and statistics.\n\nArgs:\n    section: The section of the info command (default, memory, cpu, etc.).\n\nReturns:\n    A dictionary of server information or an error message.\n",
+      "inputSchema": {
+        "properties": {
+          "section": {
+            "default": "default",
+            "title": "Section",
+            "type": "string"
+          }
+        },
+        "title": "infoArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "infoOutput",
+        "type": "object"
+      },
+      "tokens": 86
+    },
+    {
+      "name": "client_list",
+      "description": "Get a list of connected clients to the Valkey server.",
+      "inputSchema": {
+        "properties": {},
+        "title": "client_listArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "client_listOutput",
+        "type": "object"
+      },
+      "tokens": 37
+    },
+    {
+      "name": "set_add",
+      "description": "Add member to set.\n\nArgs:\n    key: The name of the key\n    member: Member to add\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "member": {
+            "title": "Member",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "member"
+        ],
+        "title": "set_addArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "set_addOutput",
+        "type": "object"
+      },
+      "tokens": 90
+    },
+    {
+      "name": "set_remove",
+      "description": "Remove member from set.\n\nArgs:\n    key: The name of the key\n    member: Member to remove\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "member": {
+            "title": "Member",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "member"
+        ],
+        "title": "set_removeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "set_removeOutput",
+        "type": "object"
+      },
+      "tokens": 90
+    },
+    {
+      "name": "set_pop",
+      "description": "Remove and return random member(s) from set.\n\nArgs:\n    key: The name of the key\n    count: Number of members to pop (optional)\n\nReturns:\n    Popped member(s) or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "set_popArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "set_popOutput",
+        "type": "object"
+      },
+      "tokens": 114
+    },
+    {
+      "name": "set_move",
+      "description": "Move member from one set to another.\n\nArgs:\n    source: Source set key\n    destination: Destination set key\n    member: Member to move\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "member": {
+            "title": "Member"
+          }
+        },
+        "required": [
+          "source",
+          "destination",
+          "member"
+        ],
+        "title": "set_moveArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "set_moveOutput",
+        "type": "object"
+      },
+      "tokens": 107
+    },
+    {
+      "name": "set_cardinality",
+      "description": "Get number of members in set.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    Number of members or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "set_cardinalityArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "set_cardinalityOutput",
+        "type": "object"
+      },
+      "tokens": 75
+    },
+    {
+      "name": "set_members",
+      "description": "Get all members in set.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    List of members or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "set_membersArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "set_membersOutput",
+        "type": "object"
+      },
+      "tokens": 72
+    },
+    {
+      "name": "set_random_member",
+      "description": "Get random member(s) from set without removing.\n\nArgs:\n    key: The name of the key\n    count: Number of members to return (optional)\n\nReturns:\n    Random member(s) or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "set_random_memberArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "set_random_memberOutput",
+        "type": "object"
+      },
+      "tokens": 115
+    },
+    {
+      "name": "set_contains",
+      "description": "Check if member exists in set.\n\nArgs:\n    key: The name of the key\n    member: Member to check\n\nReturns:\n    Boolean result or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "member": {
+            "title": "Member"
+          }
+        },
+        "required": [
+          "key",
+          "member"
+        ],
+        "title": "set_containsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "set_containsOutput",
+        "type": "object"
+      },
+      "tokens": 88
+    },
+    {
+      "name": "sorted_set_add",
+      "description": "Add member-score pairs to sorted set.\n\nArgs:\n    key: The name of the key\n    mapping: Dictionary of member-score pairs\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "mapping": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Mapping",
+            "type": "object"
+          }
+        },
+        "required": [
+          "key",
+          "mapping"
+        ],
+        "title": "sorted_set_addArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_addOutput",
+        "type": "object"
+      },
+      "tokens": 105
+    },
+    {
+      "name": "sorted_set_add_incr",
+      "description": "Add member to sorted set or increment its score.\n\nArgs:\n    key: The name of the key\n    member: The member to add/update\n    score: Score to add to existing score (or initial score)\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "member": {
+            "title": "Member"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "key",
+          "member",
+          "score"
+        ],
+        "title": "sorted_set_add_incrArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_add_incrOutput",
+        "type": "object"
+      },
+      "tokens": 127
+    },
+    {
+      "name": "sorted_set_remove",
+      "description": "Remove member(s) from sorted set.\n\nArgs:\n    key: The name of the key\n    *members: Members to remove\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "members": {
+            "title": "Members"
+          }
+        },
+        "required": [
+          "key",
+          "members"
+        ],
+        "title": "sorted_set_removeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_removeOutput",
+        "type": "object"
+      },
+      "tokens": 92
+    },
+    {
+      "name": "sorted_set_remove_by_rank",
+      "description": "Remove members by rank range.\n\nArgs:\n    key: The name of the key\n    start: Start rank (inclusive)\n    stop: Stop rank (inclusive)\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "start": {
+            "title": "Start",
+            "type": "integer"
+          },
+          "stop": {
+            "title": "Stop",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "start",
+          "stop"
+        ],
+        "title": "sorted_set_remove_by_rankArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_remove_by_rankOutput",
+        "type": "object"
+      },
+      "tokens": 121
+    },
+    {
+      "name": "sorted_set_remove_by_score",
+      "description": "Remove members by score range.\n\nArgs:\n    key: The name of the key\n    min_score: Minimum score (inclusive)\n    max_score: Maximum score (inclusive)\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "min_score": {
+            "title": "Min Score",
+            "type": "number"
+          },
+          "max_score": {
+            "title": "Max Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "key",
+          "min_score",
+          "max_score"
+        ],
+        "title": "sorted_set_remove_by_scoreArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_remove_by_scoreOutput",
+        "type": "object"
+      },
+      "tokens": 129
+    },
+    {
+      "name": "sorted_set_remove_by_lex",
+      "description": "Remove members by lexicographical range.\n\nArgs:\n    key: The name of the key\n    min_lex: Minimum value (inclusive)\n    max_lex: Maximum value (inclusive)\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "min_lex": {
+            "title": "Min Lex",
+            "type": "string"
+          },
+          "max_lex": {
+            "title": "Max Lex",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "min_lex",
+          "max_lex"
+        ],
+        "title": "sorted_set_remove_by_lexArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_remove_by_lexOutput",
+        "type": "object"
+      },
+      "tokens": 139
+    },
+    {
+      "name": "sorted_set_cardinality",
+      "description": "Get number of members in sorted set.\n\nArgs:\n    key: The name of the key\n    min_score: Minimum score (optional)\n    max_score: Maximum score (optional)\n\nReturns:\n    Number of members or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "min_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Min Score"
+          },
+          "max_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Max Score"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "sorted_set_cardinalityArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_cardinalityOutput",
+        "type": "object"
+      },
+      "tokens": 150
+    },
+    {
+      "name": "sorted_set_score",
+      "description": "Get score of member in sorted set.\n\nArgs:\n    key: The name of the key\n    member: The member to get score for\n\nReturns:\n    Score or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "member": {
+            "title": "Member"
+          }
+        },
+        "required": [
+          "key",
+          "member"
+        ],
+        "title": "sorted_set_scoreArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_scoreOutput",
+        "type": "object"
+      },
+      "tokens": 93
+    },
+    {
+      "name": "sorted_set_rank",
+      "description": "Get rank of member in sorted set.\n\nArgs:\n    key: The name of the key\n    member: The member to get rank for\n    reverse: If True, get rank in reverse order (highest first)\n\nReturns:\n    Rank or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "member": {
+            "title": "Member"
+          },
+          "reverse": {
+            "default": false,
+            "title": "Reverse",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "member"
+        ],
+        "title": "sorted_set_rankArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_rankOutput",
+        "type": "object"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "sorted_set_range",
+      "description": "Get range of members from sorted set.\n\nArgs:\n    key: The name of the key\n    start: Start index (inclusive)\n    stop: Stop index (inclusive)\n    withscores: Include scores in result\n    reverse: Return results in reverse order\n\nReturns:\n    List of members (with scores if requested) or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "start": {
+            "default": 0,
+            "title": "Start",
+            "type": "integer"
+          },
+          "stop": {
+            "default": -1,
+            "title": "Stop",
+            "type": "integer"
+          },
+          "withscores": {
+            "default": false,
+            "title": "Withscores",
+            "type": "boolean"
+          },
+          "reverse": {
+            "default": false,
+            "title": "Reverse",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "sorted_set_rangeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_rangeOutput",
+        "type": "object"
+      },
+      "tokens": 181
+    },
+    {
+      "name": "sorted_set_range_by_score",
+      "description": "Get range of members by score.\n\nArgs:\n    key: The name of the key\n    min_score: Minimum score (inclusive)\n    max_score: Maximum score (inclusive)\n    withscores: Include scores in result\n    reverse: Return results in reverse order\n    offset: Number of members to skip\n    count: Maximum number of members to return\n\nReturns:\n    List of members (with scores if requested) or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "min_score": {
+            "title": "Min Score",
+            "type": "number"
+          },
+          "max_score": {
+            "title": "Max Score",
+            "type": "number"
+          },
+          "withscores": {
+            "default": false,
+            "title": "Withscores",
+            "type": "boolean"
+          },
+          "reverse": {
+            "default": false,
+            "title": "Reverse",
+            "type": "boolean"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Offset"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          }
+        },
+        "required": [
+          "key",
+          "min_score",
+          "max_score"
+        ],
+        "title": "sorted_set_range_by_scoreArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_range_by_scoreOutput",
+        "type": "object"
+      },
+      "tokens": 254
+    },
+    {
+      "name": "sorted_set_range_by_lex",
+      "description": "Get range of members by lexicographical order.\n\nArgs:\n    key: The name of the key\n    min_lex: Minimum value (inclusive)\n    max_lex: Maximum value (inclusive)\n    reverse: Return results in reverse order\n    offset: Number of members to skip\n    count: Maximum number of members to return\n\nReturns:\n    List of members or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "min_lex": {
+            "title": "Min Lex",
+            "type": "string"
+          },
+          "max_lex": {
+            "title": "Max Lex",
+            "type": "string"
+          },
+          "reverse": {
+            "default": false,
+            "title": "Reverse",
+            "type": "boolean"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Offset"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          }
+        },
+        "required": [
+          "key",
+          "min_lex",
+          "max_lex"
+        ],
+        "title": "sorted_set_range_by_lexArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_range_by_lexOutput",
+        "type": "object"
+      },
+      "tokens": 233
+    },
+    {
+      "name": "sorted_set_popmin",
+      "description": "Remove and return members with lowest scores.\n\nArgs:\n    key: The name of the key\n    count: Number of members to pop (optional)\n\nReturns:\n    Popped members with scores or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "sorted_set_popminArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_popminOutput",
+        "type": "object"
+      },
+      "tokens": 116
+    },
+    {
+      "name": "sorted_set_popmax",
+      "description": "Remove and return members with highest scores.\n\nArgs:\n    key: The name of the key\n    count: Number of members to pop (optional)\n\nReturns:\n    Popped members with scores or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "sorted_set_popmaxArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "sorted_set_popmaxOutput",
+        "type": "object"
+      },
+      "tokens": 116
+    },
+    {
+      "name": "stream_add",
+      "description": "Add entry to stream.\n\nArgs:\n    key: The name of the key\n    field_dict: Dictionary of field-value pairs\n    id: Entry ID (default \"*\" for auto-generation)\n    maxlen: Maximum length of stream (optional)\n    approximate: Whether maxlen is approximate\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "field_dict": {
+            "additionalProperties": true,
+            "title": "Field Dict",
+            "type": "object"
+          },
+          "id": {
+            "default": "*",
+            "title": "Id",
+            "type": "string"
+          },
+          "maxlen": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Maxlen"
+          },
+          "approximate": {
+            "default": true,
+            "title": "Approximate",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "field_dict"
+        ],
+        "title": "stream_addArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_addOutput",
+        "type": "object"
+      },
+      "tokens": 195
+    },
+    {
+      "name": "stream_delete",
+      "description": "Delete entries from stream.\n\nArgs:\n    key: The name of the key\n    id: Entry ID to delete\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "id"
+        ],
+        "title": "stream_deleteArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_deleteOutput",
+        "type": "object"
+      },
+      "tokens": 91
+    },
+    {
+      "name": "stream_trim",
+      "description": "Trim stream to specified length.\n\nArgs:\n    key: The name of the key\n    maxlen: Maximum length to trim to\n    approximate: Whether maxlen is approximate\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "maxlen": {
+            "title": "Maxlen",
+            "type": "integer"
+          },
+          "approximate": {
+            "default": true,
+            "title": "Approximate",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "maxlen"
+        ],
+        "title": "stream_trimArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_trimOutput",
+        "type": "object"
+      },
+      "tokens": 123
+    },
+    {
+      "name": "stream_length",
+      "description": "Get length of stream.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    Length or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "stream_lengthArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_lengthOutput",
+        "type": "object"
+      },
+      "tokens": 69
+    },
+    {
+      "name": "stream_range",
+      "description": "Get range of entries from stream.\n\nArgs:\n    key: The name of the key\n    start: Start ID (default \"-\" for beginning)\n    end: End ID (default \"+\" for end)\n    count: Maximum number of entries to return\n    reverse: Return entries in reverse order\n\nReturns:\n    List of entries or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "start": {
+            "default": "-",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "default": "+",
+            "title": "End",
+            "type": "string"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          },
+          "reverse": {
+            "default": false,
+            "title": "Reverse",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "stream_rangeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_rangeOutput",
+        "type": "object"
+      },
+      "tokens": 188
+    },
+    {
+      "name": "stream_read",
+      "description": "Read entries from stream.\n\nArgs:\n    key: The name of the key\n    count: Maximum number of entries to return\n    block: Milliseconds to block (optional)\n    last_id: Last ID received (default \"$\" for new entries only)\n\nReturns:\n    List of entries or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          },
+          "block": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Block"
+          },
+          "last_id": {
+            "default": "$",
+            "title": "Last Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "stream_readArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_readOutput",
+        "type": "object"
+      },
+      "tokens": 174
+    },
+    {
+      "name": "stream_group_create",
+      "description": "Create consumer group.\n\nArgs:\n    key: The name of the key\n    group_name: Name of consumer group\n    id: ID to start reading from (default \"$\" for new entries only)\n    mkstream: Create stream if it doesn't exist\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "default": "$",
+            "title": "Id",
+            "type": "string"
+          },
+          "mkstream": {
+            "default": false,
+            "title": "Mkstream",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "group_name"
+        ],
+        "title": "stream_group_createArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_group_createOutput",
+        "type": "object"
+      },
+      "tokens": 157
+    },
+    {
+      "name": "stream_group_destroy",
+      "description": "Destroy consumer group.\n\nArgs:\n    key: The name of the key\n    group_name: Name of consumer group\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "group_name"
+        ],
+        "title": "stream_group_destroyArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_group_destroyOutput",
+        "type": "object"
+      },
+      "tokens": 96
+    },
+    {
+      "name": "stream_group_set_id",
+      "description": "Set consumer group's last delivered ID.\n\nArgs:\n    key: The name of the key\n    group_name: Name of consumer group\n    id: ID to set as last delivered\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "group_name",
+          "id"
+        ],
+        "title": "stream_group_set_idArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_group_set_idOutput",
+        "type": "object"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "stream_group_delete_consumer",
+      "description": "Delete consumer from group.\n\nArgs:\n    key: The name of the key\n    group_name: Name of consumer group\n    consumer_name: Name of consumer to delete\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "consumer_name": {
+            "title": "Consumer Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "group_name",
+          "consumer_name"
+        ],
+        "title": "stream_group_delete_consumerArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_group_delete_consumerOutput",
+        "type": "object"
+      },
+      "tokens": 127
+    },
+    {
+      "name": "stream_read_group",
+      "description": "Read entries from stream as part of consumer group.\n\nArgs:\n    key: The name of the key\n    group_name: Name of consumer group\n    consumer_name: Name of this consumer\n    count: Maximum number of entries to return\n    block: Milliseconds to block (optional)\n    noack: Don't require acknowledgment\n\nReturns:\n    List of entries or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "consumer_name": {
+            "title": "Consumer Name",
+            "type": "string"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          },
+          "block": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Block"
+          },
+          "noack": {
+            "default": false,
+            "title": "Noack",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "group_name",
+          "consumer_name"
+        ],
+        "title": "stream_read_groupArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_read_groupOutput",
+        "type": "object"
+      },
+      "tokens": 222
+    },
+    {
+      "name": "stream_info",
+      "description": "Get information about stream.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    Stream information or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "stream_infoArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_infoOutput",
+        "type": "object"
+      },
+      "tokens": 70
+    },
+    {
+      "name": "stream_info_groups",
+      "description": "Get information about consumer groups.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    Consumer groups information or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "stream_info_groupsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_info_groupsOutput",
+        "type": "object"
+      },
+      "tokens": 74
+    },
+    {
+      "name": "stream_info_consumers",
+      "description": "Get information about consumers in group.\n\nArgs:\n    key: The name of the key\n    group_name: Name of consumer group\n\nReturns:\n    Consumers information or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "group_name"
+        ],
+        "title": "stream_info_consumersArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "stream_info_consumersOutput",
+        "type": "object"
+      },
+      "tokens": 101
+    },
+    {
+      "name": "string_set",
+      "description": "Set string value.\n\nArgs:\n    key: The name of the key\n    value: The value to set\n    ex: Expire time in seconds\n    px: Expire time in milliseconds\n    nx: Only set if key does not exist\n    xx: Only set if key exists\n    keepttl: Retain the time to live associated with the key\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "ex": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ex"
+          },
+          "px": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Px"
+          },
+          "nx": {
+            "default": false,
+            "title": "Nx",
+            "type": "boolean"
+          },
+          "xx": {
+            "default": false,
+            "title": "Xx",
+            "type": "boolean"
+          },
+          "keepttl": {
+            "default": false,
+            "title": "Keepttl",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "string_setArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "string_setOutput",
+        "type": "object"
+      },
+      "tokens": 238
+    },
+    {
+      "name": "string_get",
+      "description": "Get string value.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    Value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "string_getArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "string_getOutput",
+        "type": "object"
+      },
+      "tokens": 68
+    },
+    {
+      "name": "string_append",
+      "description": "Append to string value.\n\nArgs:\n    key: The name of the key\n    value: String to append\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "string_appendArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "string_appendOutput",
+        "type": "object"
+      },
+      "tokens": 90
+    },
+    {
+      "name": "string_get_range",
+      "description": "Get substring.\n\nArgs:\n    key: The name of the key\n    start: Start index (inclusive)\n    end: End index (inclusive)\n\nReturns:\n    Substring or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "start": {
+            "title": "Start",
+            "type": "integer"
+          },
+          "end": {
+            "title": "End",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "start",
+          "end"
+        ],
+        "title": "string_get_rangeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "string_get_rangeOutput",
+        "type": "object"
+      },
+      "tokens": 114
+    },
+    {
+      "name": "string_get_set",
+      "description": "Set new value and return old value.\n\nArgs:\n    key: The name of the key\n    value: New value to set\n\nReturns:\n    Old value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "string_get_setArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "string_get_setOutput",
+        "type": "object"
+      },
+      "tokens": 92
+    },
+    {
+      "name": "string_increment",
+      "description": "Increment integer value.\n\nArgs:\n    key: The name of the key\n    amount: Amount to increment by (default 1)\n\nReturns:\n    New value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "amount": {
+            "default": 1,
+            "title": "Amount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "string_incrementArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "string_incrementOutput",
+        "type": "object"
+      },
+      "tokens": 97
+    },
+    {
+      "name": "string_increment_float",
+      "description": "Increment float value.\n\nArgs:\n    key: The name of the key\n    amount: Amount to increment by\n\nReturns:\n    New value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "number"
+          }
+        },
+        "required": [
+          "key",
+          "amount"
+        ],
+        "title": "string_increment_floatArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "string_increment_floatOutput",
+        "type": "object"
+      },
+      "tokens": 92
+    },
+    {
+      "name": "string_decrement",
+      "description": "Decrement integer value.\n\nArgs:\n    key: The name of the key\n    amount: Amount to decrement by (default 1)\n\nReturns:\n    New value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "amount": {
+            "default": 1,
+            "title": "Amount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "string_decrementArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "string_decrementOutput",
+        "type": "object"
+      },
+      "tokens": 100
+    },
+    {
+      "name": "string_length",
+      "description": "Get string length.\n\nArgs:\n    key: The name of the key\n\nReturns:\n    Length or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "string_lengthArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "string_lengthOutput",
+        "type": "object"
+      },
+      "tokens": 68
+    },
+    {
+      "name": "string_set_range",
+      "description": "Overwrite part of string.\n\nArgs:\n    key: The name of the key\n    offset: Position to start overwriting\n    value: String to write\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "offset",
+          "value"
+        ],
+        "title": "string_set_rangeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "string_set_rangeOutput",
+        "type": "object"
+      },
+      "tokens": 114
+    }
+  ],
+  "totalTokens": 12232,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

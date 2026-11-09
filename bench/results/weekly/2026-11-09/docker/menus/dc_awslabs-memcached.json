@@ -1,0 +1,821 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "awslabs.memcached-mcp-server",
+    "version": "1.23.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:22:30.510Z",
+  "tools": [
+    {
+      "name": "cache_get",
+      "description": "Get a value from the cache.\n\nArgs:\n    key: The key to retrieve\n\nReturns:\n    Value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "cache_getArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_getOutput",
+        "type": "object"
+      },
+      "tokens": 70
+    },
+    {
+      "name": "cache_gets",
+      "description": "Get a value and its CAS token from the cache.\n\nArgs:\n    key: The key to retrieve\n\nReturns:\n    Value and CAS token or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "cache_getsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_getsOutput",
+        "type": "object"
+      },
+      "tokens": 79
+    },
+    {
+      "name": "cache_get_many",
+      "description": "Get multiple values from the cache.\n\nArgs:\n    keys: List of keys to retrieve\n\nReturns:\n    Dictionary of key-value pairs or error message\n",
+      "inputSchema": {
+        "properties": {
+          "keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keys",
+            "type": "array"
+          }
+        },
+        "required": [
+          "keys"
+        ],
+        "title": "cache_get_manyArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_get_manyOutput",
+        "type": "object"
+      },
+      "tokens": 84
+    },
+    {
+      "name": "cache_get_multi",
+      "description": "Get multiple values from the cache (alias for get_many).\n\nArgs:\n    keys: List of keys to retrieve\n\nReturns:\n    Dictionary of key-value pairs or error message\n",
+      "inputSchema": {
+        "properties": {
+          "keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keys",
+            "type": "array"
+          }
+        },
+        "required": [
+          "keys"
+        ],
+        "title": "cache_get_multiArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_get_multiOutput",
+        "type": "object"
+      },
+      "tokens": 89
+    },
+    {
+      "name": "cache_set",
+      "description": "Set a value in the cache.\n\nArgs:\n    key: The key to set\n    value: The value to store\n    expire: Optional expiration time in seconds\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "expire": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expire"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "cache_setArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_setOutput",
+        "type": "object"
+      },
+      "tokens": 121
+    },
+    {
+      "name": "cache_cas",
+      "description": "Set a value using CAS (Check And Set).\n\nArgs:\n    key: The key to set\n    value: The value to store\n    cas: CAS token from gets()\n    expire: Optional expiration time in seconds\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "cas": {
+            "title": "Cas",
+            "type": "integer"
+          },
+          "expire": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expire"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "cas"
+        ],
+        "title": "cache_casArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_casOutput",
+        "type": "object"
+      },
+      "tokens": 148
+    },
+    {
+      "name": "cache_set_many",
+      "description": "Set multiple values in the cache.\n\nArgs:\n    mapping: Dictionary of key-value pairs\n    expire: Optional expiration time in seconds\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "mapping": {
+            "additionalProperties": true,
+            "title": "Mapping",
+            "type": "object"
+          },
+          "expire": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expire"
+          }
+        },
+        "required": [
+          "mapping"
+        ],
+        "title": "cache_set_manyArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_set_manyOutput",
+        "type": "object"
+      },
+      "tokens": 112
+    },
+    {
+      "name": "cache_set_multi",
+      "description": "Set multiple values in the cache (alias for set_many).\n\nArgs:\n    mapping: Dictionary of key-value pairs\n    expire: Optional expiration time in seconds\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "mapping": {
+            "additionalProperties": true,
+            "title": "Mapping",
+            "type": "object"
+          },
+          "expire": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expire"
+          }
+        },
+        "required": [
+          "mapping"
+        ],
+        "title": "cache_set_multiArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_set_multiOutput",
+        "type": "object"
+      },
+      "tokens": 117
+    },
+    {
+      "name": "cache_add",
+      "description": "Add a value to the cache only if the key doesn't exist.\n\nArgs:\n    key: The key to add\n    value: The value to store\n    expire: Optional expiration time in seconds\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "expire": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expire"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "cache_addArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_addOutput",
+        "type": "object"
+      },
+      "tokens": 127
+    },
+    {
+      "name": "cache_replace",
+      "description": "Replace a value in the cache only if the key exists.\n\nArgs:\n    key: The key to replace\n    value: The new value\n    expire: Optional expiration time in seconds\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "expire": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expire"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "cache_replaceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_replaceOutput",
+        "type": "object"
+      },
+      "tokens": 125
+    },
+    {
+      "name": "cache_append",
+      "description": "Append a string to an existing value.\n\nArgs:\n    key: The key to append to\n    value: String to append\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "cache_appendArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_appendOutput",
+        "type": "object"
+      },
+      "tokens": 93
+    },
+    {
+      "name": "cache_prepend",
+      "description": "Prepend a string to an existing value.\n\nArgs:\n    key: The key to prepend to\n    value: String to prepend\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "cache_prependArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_prependOutput",
+        "type": "object"
+      },
+      "tokens": 96
+    },
+    {
+      "name": "cache_delete",
+      "description": "Delete a value from the cache.\n\nArgs:\n    key: The key to delete\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "cache_deleteArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_deleteOutput",
+        "type": "object"
+      },
+      "tokens": 71
+    },
+    {
+      "name": "cache_delete_many",
+      "description": "Delete multiple values from the cache.\n\nArgs:\n    keys: List of keys to delete\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keys",
+            "type": "array"
+          }
+        },
+        "required": [
+          "keys"
+        ],
+        "title": "cache_delete_manyArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_delete_manyOutput",
+        "type": "object"
+      },
+      "tokens": 81
+    },
+    {
+      "name": "cache_delete_multi",
+      "description": "Delete multiple values from the cache (alias for delete_many).\n\nArgs:\n    keys: List of keys to delete\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keys",
+            "type": "array"
+          }
+        },
+        "required": [
+          "keys"
+        ],
+        "title": "cache_delete_multiArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_delete_multiOutput",
+        "type": "object"
+      },
+      "tokens": 86
+    },
+    {
+      "name": "cache_incr",
+      "description": "Increment a counter in the cache.\n\nArgs:\n    key: The key to increment\n    value: Amount to increment by (default 1)\n\nReturns:\n    New value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "default": 1,
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "cache_incrArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_incrOutput",
+        "type": "object"
+      },
+      "tokens": 101
+    },
+    {
+      "name": "cache_decr",
+      "description": "Decrement a counter in the cache.\n\nArgs:\n    key: The key to decrement\n    value: Amount to decrement by (default 1)\n\nReturns:\n    New value or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "default": 1,
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "cache_decrArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_decrOutput",
+        "type": "object"
+      },
+      "tokens": 102
+    },
+    {
+      "name": "cache_touch",
+      "description": "Update the expiration time for a key.\n\nArgs:\n    key: The key to update\n    expire: New expiration time in seconds\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "expire": {
+            "title": "Expire",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "expire"
+        ],
+        "title": "cache_touchArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_touchOutput",
+        "type": "object"
+      },
+      "tokens": 94
+    },
+    {
+      "name": "cache_stats",
+      "description": "Get cache statistics.\n\nArgs:\n    args: Optional list of stats to retrieve\n\nReturns:\n    Statistics or error message\n",
+      "inputSchema": {
+        "properties": {
+          "args": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Args"
+          }
+        },
+        "title": "cache_statsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_statsOutput",
+        "type": "object"
+      },
+      "tokens": 84
+    },
+    {
+      "name": "cache_flush_all",
+      "description": "Flush all cache entries.\n\nArgs:\n    delay: Optional delay in seconds before flushing\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {
+          "delay": {
+            "default": 0,
+            "title": "Delay",
+            "type": "integer"
+          }
+        },
+        "title": "cache_flush_allArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_flush_allOutput",
+        "type": "object"
+      },
+      "tokens": 72
+    },
+    {
+      "name": "cache_quit",
+      "description": "Close the connection to the cache server.\n\nReturns:\n    Success message or error message\n",
+      "inputSchema": {
+        "properties": {},
+        "title": "cache_quitArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_quitOutput",
+        "type": "object"
+      },
+      "tokens": 48
+    },
+    {
+      "name": "cache_version",
+      "description": "Get the version of the cache server.\n\nReturns:\n    Version string or error message\n",
+      "inputSchema": {
+        "properties": {},
+        "title": "cache_versionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "cache_versionOutput",
+        "type": "object"
+      },
+      "tokens": 46
+    }
+  ],
+  "totalTokens": 2046,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

@@ -1,0 +1,56 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "code-assist-mcp",
+    "version": "0.1.7",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:34:37.933Z",
+  "tools": [
+    {
+      "name": "retrieve-google-maps-platform-docs",
+      "description": "Searches Google Maps Platform documentation, code samples, architecture center, trust center, GitHub repositories (including sample code and client libraries for react-google-maps, flutter, compose, utilities, swiftui, and more), and terms of service to answer user questions. CRITICAL: You MUST call the `retrieve-instructions` tool or load the `instructions` resource BEFORE using this tool. This provides essential context required for this tool to function correctly.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "You are an expert prompt engineer for a Retrieval-Augmented Generation (RAG) system.\n\n**Instructions:**\n1.  Analyze the user's intent (e.g., are they trying to implement, troubleshoot, or learn?).\n2.  Identify the Google Maps Platform product and feature the user is asking about.\n3.  You must keep all details provided by the user in the original query.\n4.  Do not remove key information provided in the request, such as city, country, address, or lat/lng.\n5.  Add extra information that is relevant to the RAG system without removing user provided information."
+          },
+          "search_context": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Supplemental context to aid the search if the prompt alone is ambiguous or too broad. Put names of existing Google Maps Platform products or features specified in the user prompt."
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      },
+      "tokens": 309
+    },
+    {
+      "name": "retrieve-instructions",
+      "description": "CRITICAL: Call this tool first for any queries related to location, mapping, addresses, routing, points of interest, location analytics, or geospatial data (e.g., Google Earth). It provides the foundational context on Google Maps Platform (APIs for maps, routes, and places) and best practices that are essential for the other tools to function correctly. This tool MUST be called before any other tool.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tokens": 103
+    }
+  ],
+  "totalTokens": 412,
+  "resources": [
+    {
+      "name": "instructions",
+      "title": "Instructions containing system instructions and preamble.",
+      "mimeType": "text/plain",
+      "uri": "mcp://google-maps-platform-code-assist/instructions",
+      "description": "Contains critical system instructions and context for Google Maps Platform (APIs for maps, routes, and places), Location Analytics, Google Earth, and Google Earth Engine. You MUST load this resource or call the `retrieve-instructions` tool before using any other tool, especially `retrieve-google-maps-platform-docs`, to understand how to handle location-based use cases."
+    }
+  ]
+}

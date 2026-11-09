@@ -1,0 +1,338 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "pomodash-mcp-server",
+    "version": "1.0.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:31:40.876Z",
+  "tools": [
+    {
+      "name": "create_task",
+      "description": "Create a new task in PomoDash",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Task title (required)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Task description (optional)"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Due date in ISO format (optional)"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "description": "Task priority (default: medium)"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Start time for timeboxing (optional)"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "End time for timeboxing (optional)"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "tokens": 159
+    },
+    {
+      "name": "list_tasks",
+      "description": "List all tasks",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tokens": 26
+    },
+    {
+      "name": "update_task",
+      "description": "Update an existing task",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "Task ID to update (required)"
+          },
+          "title": {
+            "type": "string",
+            "description": "New task title (optional)"
+          },
+          "description": {
+            "type": "string",
+            "description": "New task description (optional)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_progress",
+              "completed",
+              "archived"
+            ],
+            "description": "New task status (optional)"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "description": "New task priority (optional)"
+          }
+        },
+        "required": [
+          "task_id"
+        ]
+      },
+      "tokens": 132
+    },
+    {
+      "name": "delete_task",
+      "description": "Delete a task",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "Task ID to delete (required)"
+          }
+        },
+        "required": [
+          "task_id"
+        ]
+      },
+      "tokens": 45
+    },
+    {
+      "name": "create_task_for_project",
+      "description": "Create a task linked to a specific project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Task title (required)"
+          },
+          "project_id": {
+            "type": "string",
+            "description": "Project ID to link task to (required)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Task description (optional)"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "description": "Task priority (optional)"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Due date in ISO format (optional)"
+          }
+        },
+        "required": [
+          "title",
+          "project_id"
+        ]
+      },
+      "tokens": 134
+    },
+    {
+      "name": "create_note",
+      "description": "Create a new note in PomoDash",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Note content (required)"
+          },
+          "reference_type": {
+            "type": "string",
+            "enum": [
+              "general",
+              "task",
+              "project",
+              "category"
+            ],
+            "description": "Type of reference (default: general)"
+          },
+          "reference_id": {
+            "type": "string",
+            "description": "Reference ID (default: general)"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "tokens": 94
+    },
+    {
+      "name": "list_notes",
+      "description": "List all notes",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tokens": 26
+    },
+    {
+      "name": "update_note",
+      "description": "Update an existing note",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "note_id": {
+            "type": "string",
+            "description": "Note ID to update (required)"
+          },
+          "content": {
+            "type": "string",
+            "description": "New note content (optional)"
+          }
+        },
+        "required": [
+          "note_id"
+        ]
+      },
+      "tokens": 62
+    },
+    {
+      "name": "delete_note",
+      "description": "Delete a note",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "note_id": {
+            "type": "string",
+            "description": "Note ID to delete (required)"
+          }
+        },
+        "required": [
+          "note_id"
+        ]
+      },
+      "tokens": 45
+    },
+    {
+      "name": "create_note_for_task",
+      "description": "Create a note linked to a specific task",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "ID of the task to link the note to (required)"
+          },
+          "content": {
+            "type": "string",
+            "description": "Note content (required)"
+          }
+        },
+        "required": [
+          "task_id",
+          "content"
+        ]
+      },
+      "tokens": 74
+    },
+    {
+      "name": "create_note_for_project",
+      "description": "Create a note linked to a specific project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "description": "ID of the project to link the note to (required)"
+          },
+          "content": {
+            "type": "string",
+            "description": "Note content (required)"
+          }
+        },
+        "required": [
+          "project_id",
+          "content"
+        ]
+      },
+      "tokens": 74
+    },
+    {
+      "name": "list_note_references",
+      "description": "List available tasks and projects for note linking",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tokens": 33
+    },
+    {
+      "name": "list_categories",
+      "description": "List all categories and projects",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tokens": 28
+    },
+    {
+      "name": "create_category",
+      "description": "Create a new category or project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Category/Project name (required)"
+          },
+          "color": {
+            "type": "string",
+            "description": "Category color (default: #3b82f6)"
+          },
+          "is_project": {
+            "type": "boolean",
+            "description": "Whether this is a project (default: false)"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "tokens": 89
+    }
+  ],
+  "totalTokens": 1021
+}

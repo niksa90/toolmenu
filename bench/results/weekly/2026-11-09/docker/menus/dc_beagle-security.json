@@ -1,0 +1,375 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "beagle-security-mcp-server",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:06:45.403Z",
+  "tools": [
+    {
+      "name": "beagle_create_project",
+      "description": "Create a new project in Beagle Security",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Project name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description"
+          },
+          "teamId": {
+            "type": "string",
+            "description": "Team ID (optional)"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "tokens": 73
+    },
+    {
+      "name": "beagle_list_projects",
+      "description": "List all projects and applications",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "includeTeam": {
+            "type": "boolean",
+            "description": "Include team projects"
+          }
+        }
+      },
+      "tokens": 39
+    },
+    {
+      "name": "beagle_modify_project",
+      "description": "Modify an existing project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "description": "Project key"
+          },
+          "name": {
+            "type": "string",
+            "description": "Project name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description"
+          }
+        },
+        "required": [
+          "projectKey",
+          "name",
+          "description"
+        ]
+      },
+      "tokens": 71
+    },
+    {
+      "name": "beagle_delete_project",
+      "description": "Delete a project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "description": "Project key to delete"
+          }
+        },
+        "required": [
+          "projectKey"
+        ]
+      },
+      "tokens": 44
+    },
+    {
+      "name": "beagle_create_application",
+      "description": "Create a new application in a project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Application name"
+          },
+          "url": {
+            "type": "string",
+            "description": "Application URL"
+          },
+          "projectKey": {
+            "type": "string",
+            "description": "Project key"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "WEB",
+              "API"
+            ],
+            "description": "Application type"
+          }
+        },
+        "required": [
+          "name",
+          "url",
+          "projectKey",
+          "type"
+        ]
+      },
+      "tokens": 95
+    },
+    {
+      "name": "beagle_get_application",
+      "description": "Get application details by token",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applicationToken": {
+            "type": "string",
+            "description": "Application token"
+          }
+        },
+        "required": [
+          "applicationToken"
+        ]
+      },
+      "tokens": 44
+    },
+    {
+      "name": "beagle_modify_application",
+      "description": "Modify an existing application",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applicationToken": {
+            "type": "string",
+            "description": "Application token"
+          },
+          "name": {
+            "type": "string",
+            "description": "Application name"
+          },
+          "url": {
+            "type": "string",
+            "description": "Application URL"
+          }
+        },
+        "required": [
+          "applicationToken",
+          "name",
+          "url"
+        ]
+      },
+      "tokens": 71
+    },
+    {
+      "name": "beagle_list_applications",
+      "description": "List all applications under a project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "description": "Project key"
+          }
+        },
+        "required": [
+          "projectKey"
+        ]
+      },
+      "tokens": 46
+    },
+    {
+      "name": "beagle_delete_application",
+      "description": "Delete an application",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applicationToken": {
+            "type": "string",
+            "description": "Application token"
+          }
+        },
+        "required": [
+          "applicationToken"
+        ]
+      },
+      "tokens": 42
+    },
+    {
+      "name": "beagle_get_domain_signature",
+      "description": "Get domain verification signature",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applicationToken": {
+            "type": "string",
+            "description": "Application token"
+          }
+        },
+        "required": [
+          "applicationToken"
+        ]
+      },
+      "tokens": 44
+    },
+    {
+      "name": "beagle_verify_domain",
+      "description": "Complete domain verification",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applicationToken": {
+            "type": "string",
+            "description": "Application token"
+          },
+          "signatureType": {
+            "type": "string",
+            "enum": [
+              "FILE",
+              "DNS",
+              "API"
+            ],
+            "description": "Type of signature verification"
+          },
+          "pluginType": {
+            "type": "string",
+            "enum": [
+              "WORDPRESS"
+            ],
+            "description": "Plugin type (optional)"
+          }
+        },
+        "required": [
+          "applicationToken",
+          "signatureType"
+        ]
+      },
+      "tokens": 91
+    },
+    {
+      "name": "beagle_start_test",
+      "description": "Start an automated penetration test",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applicationToken": {
+            "type": "string",
+            "description": "Application token"
+          }
+        },
+        "required": [
+          "applicationToken"
+        ]
+      },
+      "tokens": 44
+    },
+    {
+      "name": "beagle_get_test_status",
+      "description": "Get the status of a running test",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applicationToken": {
+            "type": "string",
+            "description": "Application token"
+          },
+          "resultToken": {
+            "type": "string",
+            "description": "Result token from test start"
+          }
+        },
+        "required": [
+          "applicationToken",
+          "resultToken"
+        ]
+      },
+      "tokens": 66
+    },
+    {
+      "name": "beagle_stop_test",
+      "description": "Stop a running test",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applicationToken": {
+            "type": "string",
+            "description": "Application token"
+          }
+        },
+        "required": [
+          "applicationToken"
+        ]
+      },
+      "tokens": 43
+    },
+    {
+      "name": "beagle_get_test_result",
+      "description": "Get detailed test results in JSON format",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applicationToken": {
+            "type": "string",
+            "description": "Application token"
+          },
+          "resultToken": {
+            "type": "string",
+            "description": "Result token from test start"
+          }
+        },
+        "required": [
+          "applicationToken",
+          "resultToken"
+        ]
+      },
+      "tokens": 66
+    },
+    {
+      "name": "beagle_list_test_sessions",
+      "description": "List all test sessions for an application",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applicationToken": {
+            "type": "string",
+            "description": "Application token"
+          },
+          "count": {
+            "type": "number",
+            "description": "Number of sessions to retrieve"
+          }
+        },
+        "required": [
+          "applicationToken"
+        ]
+      },
+      "tokens": 62
+    },
+    {
+      "name": "beagle_list_running_tests",
+      "description": "List all running tests for user or team",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "description": "Team ID (optional, for team tests)"
+          }
+        }
+      },
+      "tokens": 49
+    }
+  ],
+  "totalTokens": 990
+}

@@ -1,0 +1,808 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "testkube-mcp",
+    "version": "999.0.0-dev",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:07:18.651Z",
+  "tools": [
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Abort a running workflow execution. Stops the execution and marks it as aborted. Use for cancelling long-running or stuck executions.",
+      "inputSchema": {
+        "properties": {
+          "executionId": {
+            "description": "The unique execution ID in MongoDB ObjectID format (24 hex chars, e.g., '67d2cdbc351aecb2720afdf2').\nUse lookup_execution_id if you only have an execution name.",
+            "type": "string"
+          },
+          "workflowName": {
+            "description": "The name of the workflow. Workflow names are lowercase alphanumeric with dashes \n(e.g., 'my-workflow', 'api-tests'). This uniquely identifies a TestWorkflow within the organization.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflowName",
+          "executionId"
+        ],
+        "type": "object"
+      },
+      "name": "abort_workflow_execution",
+      "tokens": 158
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Build dashboard URLs for Testkube workflows and executions. Supports deep linking to a specific step in the execution log view via stepRef.",
+      "inputSchema": {
+        "properties": {
+          "executionId": {
+            "description": "Execution ID (required for execution URLs)",
+            "type": "string"
+          },
+          "executionTab": {
+            "description": "Execution tab to navigate to (e.g. 'log-output'). Defaults to 'log-output' when stepRef is provided.",
+            "type": "string"
+          },
+          "resourceType": {
+            "description": "Type of dashboard resource: 'workflow' or 'execution'",
+            "type": "string"
+          },
+          "stepRef": {
+            "description": "Step reference ID to deep link to a specific workflow step in the log view (e.g. 'rwhc2zn'). Obtain from execution info signatures. Requires executionId.",
+            "type": "string"
+          },
+          "workflowName": {
+            "description": "Name of the test workflow",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resourceType",
+          "workflowName"
+        ],
+        "type": "object"
+      },
+      "name": "build_dashboard_url",
+      "tokens": 193
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a new TestWorkflow from a YAML definition. The workflow is immediately available for execution after creation.",
+      "inputSchema": {
+        "properties": {
+          "yaml": {
+            "description": "Complete YAML definition of the TestWorkflow to create in Testkube. This should be the full workflow specification including metadata, spec, and all steps.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "yaml"
+        ],
+        "type": "object"
+      },
+      "name": "create_workflow",
+      "tokens": 82
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a new TestWorkflowTemplate from a YAML definition. The template is immediately available for use by workflows.",
+      "inputSchema": {
+        "properties": {
+          "yaml": {
+            "description": "Complete YAML definition of the TestWorkflowTemplate to create in Testkube. This should be the full template specification including metadata and spec.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "yaml"
+        ],
+        "type": "object"
+      },
+      "name": "create_workflowtemplate",
+      "tokens": 81
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Retrieve logs from a test workflow execution. Default returns last 100 lines. Use grep to search the full log (capped at 100 matches). Always paginate in 100-line chunks. For parallel workflows with workers, call get_execution_info first to get valid worker refs (do not use step refs).",
+      "inputSchema": {
+        "properties": {
+          "endLine": {
+            "description": "1-based line number to stop reading at (inclusive). Use with startLine for a range.",
+            "type": "string"
+          },
+          "executionId": {
+            "description": "The unique execution ID in MongoDB format (e.g., '67d2cdbc351aecb2720afdf2').",
+            "type": "string"
+          },
+          "grep": {
+            "description": "Filter to lines containing this substring (e.g., grep=ERROR).",
+            "type": "string"
+          },
+          "startLine": {
+            "description": "1-based line number to start reading from. Use with endLine for a range.",
+            "type": "string"
+          },
+          "step": {
+            "description": "Filter to logs from a specific workflow step by reference name (e.g., 'run-tests', 'setup-env').",
+            "type": "string"
+          },
+          "tail": {
+            "description": "Return the last N lines of the log. Example: '50'",
+            "type": "string"
+          },
+          "workerIndex": {
+            "description": "0-based index of the parallel worker to fetch logs from (default: 0). Use with workerRef.",
+            "type": "string"
+          },
+          "workerRef": {
+            "description": "Worker instance ref from the 'workers' array returned by get_execution_info (e.g., 'r72qph9'). ONLY use values from that array — do NOT use step refs from the main log metadata. When set, fetches that specific worker's logs instead of the main execution log.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "executionId"
+        ],
+        "type": "object"
+      },
+      "name": "fetch_execution_logs",
+      "tokens": 363
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get detailed information about a specific workflow execution: status, timing, results, configuration, and worker instances. Requires executionId. workflowName is optional for disambiguation.",
+      "inputSchema": {
+        "properties": {
+          "executionId": {
+            "description": "The unique execution ID in MongoDB ObjectID format (24 hex chars, e.g., '67d2cdbc351aecb2720afdf2').\nUse lookup_execution_id if you only have an execution name.",
+            "type": "string"
+          },
+          "workflowName": {
+            "description": "Optional workflow name for scoping an execution name lookup. Safe to omit when you have an execution ID.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "executionId"
+        ],
+        "type": "object"
+      },
+      "name": "get_execution_info",
+      "tokens": 146
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get the YAML schema for TestWorkflowExecution data. Returns all available fields, their types, and descriptions. Use to understand execution data structure when analyzing results.",
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "get_execution_schema",
+      "tokens": 54
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get detailed workflow information including execution history, health metrics, and current status.",
+      "inputSchema": {
+        "properties": {
+          "workflowName": {
+            "description": "The name of the workflow. Workflow names are lowercase alphanumeric with dashes \n(e.g., 'my-workflow', 'api-tests'). This uniquely identifies a TestWorkflow within the organization.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflowName"
+        ],
+        "type": "object"
+      },
+      "name": "get_workflow",
+      "tokens": 88
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get the YAML definition of a specific Testkube workflow. Returns the complete specification including steps, configuration schema, and metadata.",
+      "inputSchema": {
+        "properties": {
+          "workflowName": {
+            "description": "The name of the workflow. Workflow names are lowercase alphanumeric with dashes \n(e.g., 'my-workflow', 'api-tests'). This uniquely identifies a TestWorkflow within the organization.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflowName"
+        ],
+        "type": "object"
+      },
+      "name": "get_workflow_definition",
+      "tokens": 99
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get raw resource metrics (CPU, memory, disk, network) for a single workflow execution as time-series data. Use for deep-dive debugging of a specific run. Requires workflowName and executionId.",
+      "inputSchema": {
+        "properties": {
+          "executionId": {
+            "description": "The unique execution ID in MongoDB ObjectID format (24 hex chars, e.g., '67d2cdbc351aecb2720afdf2').\nUse lookup_execution_id if you only have an execution name.",
+            "type": "string"
+          },
+          "maxSamples": {
+            "description": "Maximum number of time-series data points to return per metric (default: 50). Increase for more granular data, decrease for a more compact response.",
+            "type": "number"
+          },
+          "workflowName": {
+            "description": "The name of the workflow. Workflow names are lowercase alphanumeric with dashes \n(e.g., 'my-workflow', 'api-tests'). This uniquely identifies a TestWorkflow within the organization.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflowName",
+          "executionId"
+        ],
+        "type": "object"
+      },
+      "name": "get_workflow_execution_metrics",
+      "tokens": 216
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get execution metrics for a workflow: execution statistics, health scores, pass rates, and performance data. Use to analyze workflow reliability over time.",
+      "inputSchema": {
+        "properties": {
+          "workflowName": {
+            "description": "The name of the workflow. Workflow names are lowercase alphanumeric with dashes \n(e.g., 'my-workflow', 'api-tests'). This uniquely identifies a TestWorkflow within the organization.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflowName"
+        ],
+        "type": "object"
+      },
+      "name": "get_workflow_metrics",
+      "tokens": 102
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Analyze resource consumption patterns (CPU, memory, disk, network) across recent executions of a workflow. Computes cross-execution statistics (mean, min, max, stdDev), detects trends, and identifies outliers. Use to investigate growing resource usage or find abnormal runs. Requires workflowName.",
+      "inputSchema": {
+        "properties": {
+          "lastN": {
+            "description": "Number of recent executions to analyze (default: 50, max: 100)",
+            "type": "string"
+          },
+          "metrics": {
+            "description": "Filter to specific metrics: cpu, memory, disk, network. Comma-separated for multiple. Default: all metrics.",
+            "type": "string"
+          },
+          "workflowName": {
+            "description": "The name of the workflow. Workflow names are lowercase alphanumeric with dashes \n(e.g., 'my-workflow', 'api-tests'). This uniquely identifies a TestWorkflow within the organization.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflowName"
+        ],
+        "type": "object"
+      },
+      "name": "get_workflow_resource_history",
+      "tokens": 194
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get the YAML schema for TestWorkflow definitions. Returns all available fields, their types, and descriptions. Use to understand workflow structure when creating or querying workflows.",
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "get_workflow_schema",
+      "tokens": 55
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get the YAML definition of a specific TestWorkflowTemplate. Returns the complete template specification including steps, config schema, and metadata.",
+      "inputSchema": {
+        "properties": {
+          "templateName": {
+            "description": "The name of the workflow template. Template names are lowercase alphanumeric with dashes \n(e.g., 'my-template', 'official--k6--v1'). This uniquely identifies a TestWorkflowTemplate within the environment.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "templateName"
+        ],
+        "type": "object"
+      },
+      "name": "get_workflowtemplate_definition",
+      "tokens": 106
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List available agents in the organization for workflow execution targeting. Returns agent names, types, capabilities, labels, and status. Use before run_workflow to discover target agents.",
+      "inputSchema": {
+        "properties": {
+          "capability": {
+            "description": "Filter by capability (e.g., 'runner')",
+            "type": "string"
+          },
+          "page": {
+            "description": "Page number (default: 0)",
+            "type": "string"
+          },
+          "pageSize": {
+            "description": "Number of items per page (default: 20)",
+            "type": "string"
+          },
+          "type": {
+            "description": "Filter by agent type (e.g., 'runner')",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "list_agents",
+      "tokens": 136
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List all artifacts (files, reports, logs) generated by a workflow execution. Returns artifact names, sizes, and status. Use to discover available outputs before reading specific artifacts.",
+      "inputSchema": {
+        "properties": {
+          "executionId": {
+            "description": "The unique execution ID in MongoDB ObjectID format (24 hex chars, e.g., '67d2cdbc351aecb2720afdf2').\nUse lookup_execution_id if you only have an execution name.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "executionId"
+        ],
+        "type": "object"
+      },
+      "name": "list_artifacts",
+      "tokens": 116
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List test workflow executions with filtering by workflow, status, date range, labels, tags, or text search. Returns execution summaries including status, duration, and metadata. Use to discover recent runs or find specific executions.",
+      "inputSchema": {
+        "properties": {
+          "endDate": {
+            "description": "Filter items on or before this time. Accepts a date (YYYY-MM-DD, e.g., '2024-01-31')\nor an RFC 3339 timestamp (e.g., '2024-01-31T16:00:00Z'). Combine with startDate for date ranges.",
+            "type": "string"
+          },
+          "page": {
+            "description": "Page number for pagination (default: 0)",
+            "type": "string"
+          },
+          "pageSize": {
+            "description": "Number of items to return per page (default: 10, max: 100)",
+            "type": "string"
+          },
+          "selector": {
+            "description": "Filter workflows by label using key=value format. For single label use 'key=value',\nfor multiple labels use comma-separated format 'key1=value1,key2=value2' (e.g., 'tool=cypress,env=prod').\nNote: filters workflow-level labels, not execution tags — use tagSelector for execution tags.",
+            "type": "string"
+          },
+          "since": {
+            "description": "Filter executions created after this time (ISO 8601 format)",
+            "type": "string"
+          },
+          "startDate": {
+            "description": "Filter items on or after this time. Accepts a date (YYYY-MM-DD, e.g., '2024-01-15')\nor an RFC 3339 timestamp (e.g., '2024-01-15T13:00:00Z').",
+            "type": "string"
+          },
+          "status": {
+            "description": "Filter by execution status. Available statuses: 'queued', 'running', 'passed', \n'failed', 'skipped', 'aborted', 'timeout', 'paused'",
+            "type": "string"
+          },
+          "tagSelector": {
+            "description": "Filter executions by tag using key=value format. For single tag use 'key=value',\nfor multiple tags use comma-separated format 'key1=value1,key2=value2' (e.g., 'type=suite,env=prod').\nNote: filters execution-level tags (set via update_execution_tags), not workflow labels — use selector for workflow labels.",
+            "type": "string"
+          },
+          "textSearch": {
+            "description": "Text search filter for names or descriptions. Can use space-separated words\nto find items containing all terms",
+            "type": "string"
+          },
+          "workflowName": {
+            "description": "The name of the workflow. Workflow names are lowercase alphanumeric with dashes \n(e.g., 'my-workflow', 'api-tests'). This uniquely identifies a TestWorkflow within the organization.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "list_executions",
+      "tokens": 565
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List all workflow labels and their values in the environment. Use to discover available filters for selector parameters in other tools.",
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "list_labels",
+      "tokens": 45
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List available resource groups in the organization. Use to discover group slugs for filtering workflows and executions.",
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "list_resource_groups",
+      "tokens": 43
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List Testkube workflows with optional filtering by resource group, selector, status, and text search. Returns workflow names, descriptions, and execution status.",
+      "inputSchema": {
+        "properties": {
+          "page": {
+            "description": "Page number for pagination (default: 0)",
+            "type": "string"
+          },
+          "pageSize": {
+            "description": "Number of items to return per page (default: 10, max: 100)",
+            "type": "string"
+          },
+          "resourceGroup": {
+            "description": "Filter by resource group using the group slug (e.g., 'demo-resource-group', 'accounting-tests'). Use the list_resource_groups tool to discover available groups",
+            "type": "string"
+          },
+          "selector": {
+            "description": "Filter workflows by label using key=value format. For single label use 'key=value',\nfor multiple labels use comma-separated format 'key1=value1,key2=value2' (e.g., 'tool=cypress,env=prod').\nNote: filters workflow-level labels, not execution tags — use tagSelector for execution tags.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Filter by execution status. Available statuses: 'queued', 'running', 'passed', \n'failed', 'skipped', 'aborted', 'timeout', 'paused'",
+            "type": "string"
+          },
+          "textSearch": {
+            "description": "Text search filter for names or descriptions. Can use space-separated words\nto find items containing all terms",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "list_workflows",
+      "tokens": 299
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List all TestWorkflowTemplates with optional label filtering. Returns template names, descriptions, and labels.",
+      "inputSchema": {
+        "properties": {
+          "selector": {
+            "description": "Filter workflows by label using key=value format. For single label use 'key=value',\nfor multiple labels use comma-separated format 'key1=value1,key2=value2' (e.g., 'tool=cypress,env=prod').\nNote: filters workflow-level labels, not execution tags — use tagSelector for execution tags.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "list_workflowtemplates",
+      "tokens": 119
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Resolve an execution name (e.g., 'my-workflow-123') to its execution ID. Use when you have an execution name but need the ID for other tools.",
+      "inputSchema": {
+        "properties": {
+          "executionName": {
+            "description": "The name of the execution (e.g., 'my-workflow-123'). Execution names follow\nthe pattern of workflow name plus a numeric suffix. Use lookup_execution_id to get the ID from a name.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "executionName"
+        ],
+        "type": "object"
+      },
+      "name": "lookup_execution_id",
+      "tokens": 112
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Read content from an artifact file produced by a workflow execution. Default returns first 100 lines (max 200 per request). Always paginate in 100-200 line chunks. For binary artifacts, returns a summary instead of content.",
+      "inputSchema": {
+        "properties": {
+          "endLine": {
+            "description": "1-based line number to stop reading at (inclusive). Use with startLine for a range.",
+            "type": "string"
+          },
+          "executionId": {
+            "description": "The unique execution ID in MongoDB ObjectID format (24 hex chars, e.g., '67d2cdbc351aecb2720afdf2').\nUse lookup_execution_id if you only have an execution name.",
+            "type": "string"
+          },
+          "fileName": {
+            "description": "The name of the artifact file to retrieve",
+            "type": "string"
+          },
+          "grep": {
+            "description": "Case-insensitive substring filter. Returns matching lines with 3 lines of context. When set, startLine and endLine are ignored — use grep OR line range, not both.",
+            "type": "string"
+          },
+          "startLine": {
+            "description": "1-based line number to start reading from. Use with endLine for a range.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "executionId",
+          "fileName"
+        ],
+        "type": "object"
+      },
+      "name": "read_artifact",
+      "tokens": 250
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Run a TestWorkflow with optional configuration parameters and agent targeting. Use get_workflow_definition first to discover available config parameters. Use list_agents to discover available target agents.",
+      "inputSchema": {
+        "properties": {
+          "config": {
+            "description": "Configuration parameters for the workflow. Use get_workflow_definition tool first to examine the spec.config section to see what parameters are available.",
+            "properties": {},
+            "type": "object"
+          },
+          "target": {
+            "description": "Target specification for multi-agent execution (optional). Supports: {\"name\": \"agent-name\"} for name-based targeting, {\"labels\": {\"env\": \"prod\"}} for label-based targeting, or standard ExecutionTarget format with match/not/replicate fields.",
+            "properties": {},
+            "type": "object"
+          },
+          "workflowName": {
+            "description": "The name of the workflow. Workflow names are lowercase alphanumeric with dashes \n(e.g., 'my-workflow', 'api-tests'). This uniquely identifies a TestWorkflow within the organization.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflowName"
+        ],
+        "type": "object"
+      },
+      "name": "run_workflow",
+      "tokens": 213
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Update tags on a workflow execution. Uses replace semantics: provided tags completely replace existing tags. Send empty map {} to clear all tags. Tags are key-value pairs for categorization and filtering.",
+      "inputSchema": {
+        "properties": {
+          "executionId": {
+            "description": "The unique execution ID in MongoDB ObjectID format (24 hex chars, e.g., '67d2cdbc351aecb2720afdf2').\nUse lookup_execution_id if you only have an execution name.",
+            "type": "string"
+          },
+          "tags": {
+            "description": "Key-value tag pairs (e.g., {\"env\":\"prod\",\"bug\":\"found\"}). Replaces all existing tags. Use {} to clear all tags.",
+            "properties": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "executionId",
+          "tags"
+        ],
+        "type": "object"
+      },
+      "name": "update_execution_tags",
+      "tokens": 166
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Update an existing TestWorkflow with a new YAML definition. The workflow is updated immediately and available for execution with the new configuration.",
+      "inputSchema": {
+        "properties": {
+          "workflowName": {
+            "description": "The name of the workflow. Workflow names are lowercase alphanumeric with dashes \n(e.g., 'my-workflow', 'api-tests'). This uniquely identifies a TestWorkflow within the organization.",
+            "type": "string"
+          },
+          "yaml": {
+            "description": "Complete YAML definition of the TestWorkflow to update in Testkube. This should be the full workflow specification including metadata, spec, and all steps.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflowName",
+          "yaml"
+        ],
+        "type": "object"
+      },
+      "name": "update_workflow",
+      "tokens": 139
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Update an existing TestWorkflowTemplate with a new YAML definition. Workflows using the template pick up the changes.",
+      "inputSchema": {
+        "properties": {
+          "templateName": {
+            "description": "The name of the workflow template. Template names are lowercase alphanumeric with dashes \n(e.g., 'my-template', 'official--k6--v1'). This uniquely identifies a TestWorkflowTemplate within the environment.",
+            "type": "string"
+          },
+          "yaml": {
+            "description": "Complete YAML definition of the TestWorkflowTemplate to update in Testkube. This should be the full template specification including metadata and spec.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "templateName",
+          "yaml"
+        ],
+        "type": "object"
+      },
+      "name": "update_workflowtemplate",
+      "tokens": 140
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Wait for a list of workflow executions to complete. Returns the final status of all executions. Use for synchronizing dependent workflows.",
+      "inputSchema": {
+        "properties": {
+          "executionIds": {
+            "description": "Comma-separated list of execution IDs to wait for (e.g., 'exec1,exec2,exec3').",
+            "type": "string"
+          },
+          "timeoutMinutes": {
+            "description": "Maximum time to wait in minutes before timing out (default: 30). Set to 0 for no timeout.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "executionIds"
+        ],
+        "type": "object"
+      },
+      "name": "wait_for_executions",
+      "tokens": 118
+    }
+  ],
+  "totalTokens": 4398
+}

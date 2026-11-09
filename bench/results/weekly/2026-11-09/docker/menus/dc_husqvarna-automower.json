@@ -1,0 +1,30 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "HusqvarnaAutomower",
+    "version": "1.0.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T19:18:33.675Z",
+  "tools": [
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get status of my husqvarna automowers",
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "Husqvarna Automowers Status",
+      "tokens": 37
+    }
+  ],
+  "totalTokens": 37
+}

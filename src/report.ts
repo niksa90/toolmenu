@@ -136,7 +136,7 @@ export function githubLines(findings: Finding[]): string[] {
   });
 }
 
-function signed(n: number): string {
+export function signed(n: number): string {
   return `${n > 0 ? '+' : n < 0 ? '−' : '±'}${Math.abs(n).toLocaleString('en-US')}`;
 }
 
@@ -148,7 +148,7 @@ function tokenSentence(d: DiffResult): string {
 }
 
 /** "3 breaking (25 tools) · 2 minor (2 tools) · 11 notice (10 tools)": changes, and the tools they touch. */
-function classLine(d: DiffResult): string {
+export function classLine(d: DiffResult): string {
   const part = (c: 'breaking' | 'minor' | 'notice') => {
     const { changes, tools } = d.classes[c];
     return `${changes} ${c}${changes && tools ? ` (${plural(tools, 'tool')})` : ''}`;
@@ -160,7 +160,7 @@ function classLine(d: DiffResult): string {
  * The version verdict: the bump these changes suggest, then whether the release's
  * bump is enough (and what to release instead), or why it wasn't checked.
  */
-function bumpVerdict(d: DiffResult, md = false): { line: string; short: boolean } {
+export function bumpVerdict(d: DiffResult, md = false): { line: string; short: boolean } {
   const b = (s: string) => (md ? `**${s}**` : s);
   /** A version, as given: from --release or the server. */
   const v = (s: string) => (md ? mdText(s) : plain(s));
@@ -174,7 +174,7 @@ function bumpVerdict(d: DiffResult, md = false): { line: string; short: boolean 
   return { line: `${suggested} · ${pair}: ${b(`too small, release ${d.releaseAs ? v(d.releaseAs) : `a ${required}`}`)}${below1}`, short: true };
 }
 
-function releasePair(d: DiffResult, md = false): string {
+export function releasePair(d: DiffResult, md = false): string {
   const v = (s: string) => (md ? mdText(s) : plain(s));
   // Name the release versions when there are some; otherwise say whose version this is.
   return d.release?.source === 'release' ? `${v(d.release.before)} → ${v(d.release.after)}` : `${v(d.before.version ?? '?')} → ${v(d.after.version ?? '?')} (server-reported)`;
