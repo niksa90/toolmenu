@@ -54,6 +54,7 @@ export const CLI_OPTIONS = {
   'with-session': { type: 'boolean' },
   catalog: { type: 'boolean' },
   'open-world': { type: 'boolean' },
+  'call-everything': { type: 'boolean' },
   'max-calls': { type: 'string' },
   'max-calls-per-unlock': { type: 'string' },
   'save-scenario': { type: 'string' },

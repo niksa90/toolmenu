@@ -343,18 +343,24 @@ export async function main(given: string[]): Promise<number> {
       throw new UsageError(error instanceof Error ? error.message : String(error));
     }
     const autoTarget = answering(parseTarget(rest, command, values.header ?? [], values.env ?? [], values['no-auth'], prefix, protocol));
+    // Every tool, writes included: only where nothing real can be changed. A hosted
+    // server's tools act on someone's real account or system.
+    if (values['call-everything'] && autoTarget.kind !== 'stdio') {
+      throw new UsageError('--call-everything calls every tool, writes included, so it only runs a local stdio server (in a sandbox with nothing to lose: no credentials, no network). Over HTTP, --auto calls the read-only tools.');
+    }
     const waited = { ms: 0 };
     const menu = await probeMenu(seeded(autoTarget, MAIN_SEED), timeoutMs, undefined, waited).catch((error) => {
       throw refusedForTooMany(error, waited.ms);
     });
-    const options = { openWorld: values['open-world'], createHandles: values['create-handles'], values: given, assumeReadOnly };
-    let plan = autoScenario(menu, { ...options, maxCalls: givenMax ?? 20 });
+    const everything = values['call-everything'] === true;
+    const options = { openWorld: values['open-world'], createHandles: values['create-handles'], values: given, assumeReadOnly, everything };
+    let plan = autoScenario(menu, { ...options, maxCalls: givenMax ?? (everything ? Infinity : 20) });
     // Each unlock value gets its own budget for the tools it brings, so the first
     // toolsets can't use up the calls the last ones need. --max-calls, when given,
     // caps every call, and the starting menu leaves up to half of it for the unlocks.
     const reserve = givenMax === undefined ? 0 : Math.min(perUnlock * plan.unlockValues, Math.floor(givenMax / 2));
     if (reserve) plan = autoScenario(menu, { ...options, maxCalls: givenMax! - reserve });
-    const maxCalls = givenMax ?? 20 + perUnlock * plan.unlockValues;
+    const maxCalls = givenMax ?? (everything ? Infinity : 20 + perUnlock * plan.unlockValues);
     if (savePath) await writeFile(savePath, scenarioYaml(plan, menu.server.name));
     if (values.plan) {
       process.stdout.write(formatPlan(plan.scenario, 'auto') + '\n');
@@ -370,7 +376,7 @@ export async function main(given: string[]): Promise<number> {
       for (const t of fresh) planned.add(t.name);
       if (!fresh.length) return [];
       const left = maxCalls - spent;
-      const more = autoScenario({ ...menu, tools: fresh }, { ...options, maxCalls: Math.min(perUnlock, left), callsOnly: true });
+      const more = autoScenario({ ...menu, tools: fresh }, { ...options, maxCalls: everything ? left : Math.min(perUnlock, left), callsOnly: true });
       // Left out by this unlock's own budget, not by the total: say which, for the right flag.
       if (perUnlock < left) for (const s of more.skipped) if (s.reason === 'over the call budget') s.reason = 'over the per-unlock budget';
       spent += more.spent;

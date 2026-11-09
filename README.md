@@ -509,6 +509,7 @@ serves, and 23 issue and pull-request tools that only the dynamic mode has.
 | `session/error-not-flagged` | warn | A tool answered with an HTTP error from the API behind it (`{"status":401,"object":"error",…}`) as a plain result, not marked `isError`, so a client that reads `isError` takes the call for a success (Notion's server). An auth one also counts toward `session/untested`. Tools that take a URL are left out: their answer is the page's (heuristic) |
 | `session/server-unresponsive` | error | The server stopped answering after a step: even `tools/list` timed out. The run stops there with this one finding, instead of every later step waiting out its timeout (a server that polls a device-code sign-in inside a tool call) |
 | `session/handle-roundtrip` | warn | With `--create-handles`: the tool that creates a session, basket or cart was called, and the tools that take it back refused the handle it had just returned (info when its result had no handle to find) |
+| `session/output-schema` | error | A tool that declares an `outputSchema` answered with no `structuredContent`, or one that doesn't match it: from 2025-06-18 a **MUST**, and the official SDK client raises an error instead of the answer |
 | `session/rate-limited` | error | The server kept refusing requests for being too many (a 429) after toolmenu waited about a minute, or a tool not marked `readOnlyHint` said it was rate-limited (it isn't called again). The run stops there, with the steps it didn't check; give the run its own server instance or raise the limit for it |
 | `session/scope-unchecked` | info | A second server process or connection couldn't start mid-session (a server that holds a file or a port), so whether a change was global wasn't checked. Said once for the run |
 
@@ -540,6 +541,14 @@ with why each tool was left out, not a clean pass. On the 22 servers in `bench/`
 
 **`session` calls tools for real.** Without `allow_writes: true` it refuses any tool
 not marked `readOnlyHint: true`. `--plan` prints the steps without connecting.
+
+**`--call-everything`** (with `--auto`, stdio only) calls **every** tool once, writes and
+open-world ones included, with a made-up value (`toolmenu-test`, `1`, a one-item list)
+where the schema gives none. It's for a server in a sandbox with nothing to lose: a
+container with no credentials and no network, as `bench/scripts/batch-full.sh` runs
+them with `SEALED=1`. Every tool's answer is then checked: results against their own
+`outputSchema`, errors flagged as errors, calls that hang. It's refused over HTTP,
+because a hosted server's tools act on someone's real account.
 
 ## `diff`: compare releases
 

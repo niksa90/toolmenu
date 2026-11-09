@@ -4,6 +4,13 @@
 
 ### New
 
+- **`session/output-schema`.** A tool that declares an `outputSchema` must return
+  `structuredContent` that matches it (2025-06-18 on, a MUST); the official SDK client
+  raises an error otherwise. `session` now checks every result it gets.
+- **`session --auto --call-everything`** calls every tool once, writes included, with
+  made-up values where the schema gives none, for a stdio server in a sealed sandbox
+  (refused over HTTP). The bench runs it with no network and no credentials, so every
+  tool's answer is checked, not only the read-only ones'.
 - **`toolmenu review <baseline.json> <new.json>`: should the new menu replace the
   baseline?** `diff`, plus the menu rules on both files: which findings the new menu
   adds, clears or changes (a summary that now names another tool is worse), and one

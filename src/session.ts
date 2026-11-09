@@ -14,6 +14,7 @@ import { allDifferences, describeToolDifference } from './difference.js';
 import { autoNextStep, neededValues, writeSign, type AutoSummary } from './auto.js';
 import { LOOKUP_VERBS, singular, VERBS, verbOf, words, WRITE_VERBS } from './words.js';
 import { handleFromResult } from './rules/handles.js';
+import { OUTPUT_SCHEMA_SINCE, outputProblem } from './rules/output.js';
 
 export type Step =
   | { kind: 'list' }
@@ -226,6 +227,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   const roundtrips: { step: number; tool: string; kind: string; creator?: string; problem: string }[] = [];
   // HTTP errors passed on as plain answers, not isError (session/error-not-flagged).
   const unflagged: { step: number; tool: string; said: string }[] = [];
+  // Successful results that break the tool's own outputSchema (session/output-schema).
+  const outputs: { step: number; tool: string; problem: string }[] = [];
   // --auto's calls with a made-up handle that got a protocol error back (session/handle-error).
   const handleErrors: { step: number; tool: string; probe: import('./rules/handles.js').HandleProbe; value: unknown; message: string; code: number }[] = [];
   // The main process runs with a pinned hash seed, and so does every scope probe:
@@ -466,6 +469,11 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           } else {
             const result = call.result;
             record.outcome = result.isError ? 'tool-error' : 'answered';
+            // A tool that declares an outputSchema promises its successful results (2025-06-18 on).
+            if (!result.isError && tool?.outputSchema && (conn.protocolVersion ?? '') >= OUTPUT_SCHEMA_SINCE && !outputs.some((o) => o.tool === step.tool)) {
+              const problem = outputProblem(tool.outputSchema, result);
+              if (problem) outputs.push({ step: index, tool: step.tool, problem });
+            }
             if (call.input.rounds && !result.isError) record.note = inputNote(call.input, answer);
             if (step.creates) {
               // The handle this result carries, for the probes after it.
@@ -704,6 +712,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
     raw.push(...inputFindings(inputs, answer));
     raw.push(...handleErrorFindings(handleErrors));
     raw.push(...roundtripFindings(roundtrips));
+    raw.push(...outputFindings(outputs));
     // `ignore` is applied by tool name; this finding sums several tools up, so it's applied here.
     const ignored = (options.ignore ?? []).map((g) => new RegExp('^' + g.split('*').map((x) => x.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$'));
     raw.push(...unflaggedFindings(unflagged.filter((u) => !ignored.some((re) => re.test(u.tool)))));
@@ -1850,3 +1859,21 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
   }
   return out;
 }
+
+/** session/output-schema: one finding for the run, every tool whose result broke its own outputSchema. */
+function outputFindings(list: { step: number; tool: string; problem: string }[]): Raw[] {
+  if (!list.length) return [];
+  const one = list.length === 1;
+  return [
+    {
+      rule: 'session/output-schema',
+      severity: 'error',
+      step: list[0].step,
+      ...(one ? { tool: list[0].tool } : {}),
+      message: `${one ? `${list[0].tool}'s result` : `${list.length} tools' results`} broke ${one ? 'its' : 'their'} own outputSchema. A tool that declares one MUST return structuredContent that conforms (2025-06-18 and later), and the official SDK client checks: it raises an error where the tool answered.`,
+      detail: list.map((o) => `${o.tool} (step ${o.step}): ${clip(o.problem, 200)}`),
+      fix: 'Return structuredContent that matches the outputSchema on every successful call, or drop the outputSchema from tools whose results vary.',
+    },
+  ];
+}
+

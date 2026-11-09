@@ -43,6 +43,12 @@ export interface AutoOptions {
    * never called.
    */
   assumeReadOnly?: string[];
+  /**
+   * --call-everything: every tool, once, writes and open-world ones included, with a
+   * made-up value where the schema gives none. Only for a stdio server in a sandbox
+   * with nothing to lose (the bench's sealed container): the CLI refuses it over HTTP.
+   */
+  everything?: boolean;
 }
 
 export type SkipReason = 'not read-only' | 'unmarked' | 'open world' | 'needs values' | 'over the call budget' | 'over the per-unlock budget';
@@ -91,7 +97,8 @@ export function writeSign(tool: MenuTool): string | undefined {
  * in assumeReadOnly and nothing marks or names it as a write.
  */
 export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
-  const maxCalls = options.maxCalls ?? 20;
+  // --call-everything: every tool once, unless --max-calls says otherwise.
+  const maxCalls = options.maxCalls ?? (options.everything ? Infinity : 20);
   const skipped: AutoPlan['skipped'] = [];
   const ignored: AutoPlan['ignored'] = [];
   const byName = new Map(menu.tools.map((t) => [t.name, t]));
@@ -130,6 +137,11 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   for (const tool of menu.tools) {
     if (unlocking.has(tool.name)) continue;
     const a = tool.annotations ?? {};
+    if (options.everything) {
+      const filled = synthesizeArgs(tool.inputSchema, perTool.get(tool.name), { invent: true });
+      if (filled.ok) candidates.push({ tool, args: filled.args, rank: rank(tool, filled.args), valued: Object.values(filled.sources).includes('value') });
+      continue;
+    }
     if (!readOnly(tool)) {
       const write =
         a.readOnlyHint === true && namedWrite(tool)
@@ -229,7 +241,7 @@ export function autoScenario(menu: Menu, options: AutoOptions = {}): AutoPlan {
   if (chosen.length && !options.callsOnly) steps.push({ kind: 'call', tool: chosen[0].tool.name, args: chosen[0].args, ...(chosen[0].probe ? { probe: chosen[0].probe } : {}) });
   const called = [...creators.map((c) => c.tool.name), ...chosen.map((c) => c.tool.name), ...unlocks.map((u) => u.tool.name)];
   return {
-    scenario: { allowWrites: false, steps, ...(assumed.size ? { assumeReadOnly: [...assumed] } : {}) },
+    scenario: { allowWrites: options.everything === true, steps, ...(assumed.size ? { assumeReadOnly: [...assumed] } : {}) },
     called,
     assumed: called.filter((n) => assumed.has(n)),
     withValues: chosen.filter((c) => c.valued).map((c) => c.tool.name),
