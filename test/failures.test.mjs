@@ -65,3 +65,11 @@ test('errorWords puts the reason of a JSON error body up front', () => {
   assert.equal(errorWords('failed: {not json}'), 'failed: {not json}');
   assert.equal(errorWords('{"code":12}'), '{"code":12}');
 });
+
+test('"API key not configured" is a missing credential, not the server failing (mcp-adr-analysis-server, bench 2026-11-09)', () => {
+  assert.equal(classifyFailure('ADR Aggregator API key not configured. Set ADR_AGGREGATOR_API_KEY environment variable.', { hadArguments: false }), 'auth');
+  assert.equal(classifyFailure('Access token is not set', { hadArguments: false }), 'auth');
+  assert.equal(classifyFailure('API key not provided', { hadArguments: false }), 'auth');
+  // A key that isn't a credential stays the server's.
+  assert.equal(classifyFailure('The key is not configured for this region', { hadArguments: false }), 'other');
+});

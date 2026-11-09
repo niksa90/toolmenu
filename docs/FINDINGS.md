@@ -708,6 +708,9 @@ from one publisher (`@pipeworx/*`), so its patterns are counted apart below.
   "unchanged",** twice over: `diff/lists-unread` (a note that prompts weren't compared)
   counted as a change, and the union menu had no `ttlMs`, so `spec/cache-hints` read as
   gone (14 servers). Both fixed.
+- **A missing API key read as the server failing.** "ADR Aggregator API key not
+  configured. Set ADR_AGGREGATOR_API_KEY…" was a `session/step-failed` error on
+  mcp-adr-analysis-server; it's a credential the run didn't have (`session/untested`).
 
 **What the servers get wrong.**
 
