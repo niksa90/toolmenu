@@ -33,6 +33,9 @@
   a string or a number where a schema belongs (a broken server) no longer crashes
   `snapshot`'s ID rules, the token breakdown or `diff` either; a change to one is still
   reported. `test/odd-schemas.test.mjs` runs every analysis on all of them.
+- **`session --union-out` keeps the list's cache hints** (`ttlMs`, `cacheScope`), as
+  `snapshot`'s menu file does. Without them, `review` of a snapshot against a union
+  menu from the same server said `spec/cache-hints` was gone (14 of 250 servers).
 - **Variance only in fields the model doesn't read is a warning.** `menu/nondeterministic`,
   `menu/process-variance` and `menu/connection-variance` said "every conversation can
   miss the prompt cache" (error) when tools/list differed only in, say, a per-tool

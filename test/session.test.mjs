@@ -1040,3 +1040,8 @@ test('session/error-not-flagged: an API\'s HTTP error passed on as a plain answe
   assert.equal(only.tool, 'get_report');
   assert.match(only.message, /^get_report answered with an HTTP error/);
 });
+
+test('the union menu keeps the starting list\'s cache hints, so review of a snapshot against it is unchanged (bench, 2026-11-09)', async () => {
+  const r = await session(stdio(), parseScenario({ steps: ['list'] }), { timeoutMs: TIMEOUT_MS, processes: 1 });
+  assert.ok(r.union.listMeta && 'ttlMs' in r.union.listMeta, JSON.stringify(r.union.listMeta));
+});

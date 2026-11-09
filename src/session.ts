@@ -254,7 +254,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       }
     }
 
-    const menuOf = async (c: Connection) => buildMenu((await listTools(c, { timeoutMs })).tools, serverOf(c));
+    const menuOf = async (c: Connection) => {
+      const listed = await listTools(c, { timeoutMs });
+      return buildMenu(listed.tools, serverOf(c), listed.listMeta);
+    };
     const listPatiently = (waited = { ms: 0 }) => patiently(() => menuOf(conn), { waits, error: tooMany, waited });
     // A refusal that outlasts the waits, or a write's that isn't sent again, ends
     // the run with one finding, not one per step. `tool`: the write not sent again.
@@ -735,7 +738,9 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       findings: settle(mergeRepeats(raw), options),
       ...(options.auto ? { auto: { ...options.auto, ...(leftOut.length ? { stopped: leftOut } : {}) } } : {}),
       // Marked: its order is the order tools were first seen (unlock order), so diff doesn't compare it.
-      union: { ...buildMenu([...seen.values()].map(toolDefinition), baseline.server), from: 'session' },
+      // With the starting list's cache hints (ttlMs, cacheScope), as snapshot's menu file has
+      // them: without, review saw spec/cache-hints as gone from a baseline made this way.
+      union: { ...buildMenu([...seen.values()].map(toolDefinition), baseline.server, baseline.listMeta), from: 'session' },
     };
   } finally {
     await conn.close().catch(() => {});
