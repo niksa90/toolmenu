@@ -76,6 +76,8 @@ export type AutoSummary = Pick<AutoPlan, 'called' | 'skipped'> &
     maxCallsPerUnlock?: number;
     /** Guessed unlocks whose first value changed nothing, and how many calls to them were left out. */
     stopped?: { tool: string; calls: number }[];
+    /** --call-everything: every tool called, with made-up values where the schema gives none. */
+    everything?: boolean;
   };
 
 /** Marked or named as a write: never called on the user's word. Says why, or undefined. */

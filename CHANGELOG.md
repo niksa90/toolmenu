@@ -11,6 +11,9 @@
   made-up values where the schema gives none, for a stdio server in a sealed sandbox
   (refused over HTTP). The bench runs it with no network and no credentials, so every
   tool's answer is checked, not only the read-only ones'.
+  A readable tool error in answer to made-up values is the right answer, so there it's
+  info, not a `session/tool-error` warning. The bench's `SEALED=1` runs it in a container
+  with no network (`bench/scripts/sealed-one.sh`).
 - **`toolmenu review <baseline.json> <new.json>`: should the new menu replace the
   baseline?** `diff`, plus the menu rules on both files: which findings the new menu
   adds, clears or changes (a summary that now names another tool is worse), and one

@@ -25,4 +25,5 @@ if [ "$sc" -le 1 ] && [ "$tools" -gt 0 ]; then
 else
   echo "no-menu $id snapshot=$sc" >> /out/status.txt
 fi
-rm -rf pkg .npm
+# KEEP_INSTALL=1: the sealed pass (sealed-one.sh) calls every tool next, then deletes it.
+if [ "${KEEP_INSTALL:-}" = 1 ] && [ "$sc" -le 1 ] && [ "$tools" -gt 0 ]; then echo "$bin" > bin.txt; rm -rf .npm; else rm -rf pkg .npm; fi

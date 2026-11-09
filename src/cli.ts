@@ -366,7 +366,7 @@ export async function main(given: string[]): Promise<number> {
       process.stdout.write(formatPlan(plan.scenario, 'auto') + '\n');
       return 0;
     }
-    const auto = { called: plan.called, skipped: plan.skipped, assumed: plan.assumed, withValues: plan.withValues, ignored: plan.ignored, maxCalls, maxCallsPerUnlock: perUnlock };
+    const auto = { called: plan.called, skipped: plan.skipped, assumed: plan.assumed, withValues: plan.withValues, ignored: plan.ignored, maxCalls, maxCallsPerUnlock: perUnlock, ...(everything ? { everything } : {}) };
     // Tools that appear mid-session (behind an unlock) are planned when they appear,
     // under the same rules and what's left of --max-calls. Each tool once.
     const planned = new Set([...plan.called, ...plan.skipped.map((s) => s.tool)]);

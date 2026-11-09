@@ -988,9 +988,12 @@ function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Ra
       const call = `${c.tool} ${JSON.stringify(c.args)}`;
       return `call: ${call.length > 200 ? call.slice(0, 199) + '…' : call}`;
     });
+    // --call-everything: made-up values go in, so a readable tool error is the right
+    // answer to most of them (the spec asks for exactly that). Said as info.
+    const madeUp = auto?.everything === true && f.rule === 'session/tool-error';
     return {
       rule: f.rule,
-      severity: f.severity,
+      severity: madeUp ? 'info' : f.severity,
       step: f.steps[0],
       ...(many ? { steps: f.steps } : {}),
       tool: f.tool,
@@ -999,7 +1002,9 @@ function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Ra
       ...(!f.timedOutMs && (unavailable || (noParams && argsCan)) ? { confidence: 'unsure' as const } : {}),
       message:
         f.rule === 'session/tool-error'
-          ? tools.length > 1
+          ? madeUp
+            ? `${lead}${tools.length > 1 ? `${who} answered` : `${f.tool} answered`} the made-up values with a tool error the model can read: ${said} With --call-everything that's the right answer; it says nothing about a call with real values.`
+            : tools.length > 1
             ? `${lead}${who} returned the same error: ${said} A call that fails tests less than it looks: the menu was checked after it, the tool's own work wasn't.`
             : `${lead}${f.tool} returned an error${many ? ', the same one each time' : ''}: ${said} A call that fails tests less than it looks: the menu was checked after it, the tool's own work wasn't.`
           : tools.length > 1

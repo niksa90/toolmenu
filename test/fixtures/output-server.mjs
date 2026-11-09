@@ -36,6 +36,11 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   else if (m.method === 'tools/list') send({ id: m.id, result: { tools } });
   else if (m.method === 'tools/call') {
     if (process.env.CALL_LOG) appendFileSync(process.env.CALL_LOG, JSON.stringify(m.params) + '\n');
+    // A record_id that isn't one: a readable tool error, as the spec asks.
+    if (m.params?.name === 'get_record' && !/^rec_[0-9]+$/.test(m.params?.arguments?.record_id ?? '')) {
+      send({ id: m.id, result: { isError: true, content: [{ type: 'text', text: `Record not found: ${m.params?.arguments?.record_id}` }] } });
+      return;
+    }
     send({ id: m.id, result: answers[m.params?.name] ?? { isError: true, content: [{ type: 'text', text: 'no such tool' }] } });
   } else send({ id: m.id, error: { code: -32601, message: 'Method not found' } });
 });

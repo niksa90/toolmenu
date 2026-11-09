@@ -55,6 +55,10 @@ test('session/output-schema on a real session; --call-everything reaches the wri
   assert.deepEqual([...e.auto.called].sort(), ['bad_shape', 'delete_all', 'get_record', 'good_shape', 'no_structured']);
   const calls = readFileSync(log, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   assert.deepEqual(calls.find((c) => c.name === 'get_record').arguments, { record_id: INVENTED });
+  // Its "Record not found" is the right answer to a made-up ID: info, not a warning.
+  const refused = e.findings.find((x) => x.rule === 'session/tool-error');
+  assert.equal(refused.severity, 'info');
+  assert.match(refused.message, /answered the made-up values with a tool error the model can read/);
 });
 
 test('--call-everything is refused over HTTP: a hosted server\'s tools act on real accounts', async () => {
