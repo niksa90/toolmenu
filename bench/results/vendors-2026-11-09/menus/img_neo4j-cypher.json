@@ -1,0 +1,117 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mcp-neo4j-cypher",
+    "version": "2.13.3",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:39:20.425Z",
+  "tools": [
+    {
+      "name": "get_neo4j_schema",
+      "title": "Get Neo4j Schema",
+      "description": "Returns nodes, their properties (with types and indexed flags), and relationships\nusing APOC's schema inspection.\n\nYou should only provide a `sample_size` value if requested by the user, or tuning the retrieval performance.\n\nPerformance Notes:\n    - If `sample_size` is not provided, uses the server's default sample setting defined in the server configuration.\n    - If retrieving the schema times out, try lowering the sample size, e.g. `sample_size=100`.\n    - To sample the entire graph use `sample_size=-1`.",
+      "inputSchema": {
+        "properties": {
+          "sample_size": {
+            "default": null,
+            "description": "The sample size used to infer the graph schema. Larger samples are slower, but more accurate. Smaller samples are faster, but might miss information.",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Get Neo4j Schema",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 182
+    },
+    {
+      "name": "read_neo4j_cypher",
+      "title": "Read Neo4j Cypher",
+      "description": "Execute a read Cypher query on the neo4j database.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "description": "The Cypher query to execute.",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "default": {},
+            "description": "The parameters to pass to the Cypher query.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Read Neo4j Cypher",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 85
+    },
+    {
+      "name": "write_neo4j_cypher",
+      "title": "Write Neo4j Cypher",
+      "description": "Execute a write Cypher query on the neo4j database.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "description": "The Cypher query to execute.",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "default": {},
+            "description": "The parameters to pass to the Cypher query.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Write Neo4j Cypher",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "_fastmcp": {
+          "tags": []
+        }
+      },
+      "tokens": 85
+    }
+  ],
+  "totalTokens": 352,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

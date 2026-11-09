@@ -1,0 +1,25 @@
+ok py_awslabs.aws-documentation-mcp-server snapshot=0 tools=5 session=0 review=0
+ok py_awslabs.eks-mcp-server snapshot=0 tools=16 session=0 review=0
+no-menu py_awslabs.ecs-mcp-server snapshot=2
+ok py_awslabs.cloudwatch-mcp-server snapshot=0 tools=19 session=0 review=0
+ok py_awslabs.aws-api-mcp-server snapshot=0 tools=2 session=0 review=0
+install-failed py_awslabs.core-mcp-server
+no-menu py_awslabs.terraform-mcp-server snapshot=2
+no-menu py_awslabs.cdk-mcp-server snapshot=2
+ok py_elevenlabs-mcp snapshot=0 tools=27 session=0 review=0
+ok py_mcp-atlassian snapshot=0 tools=98 session=0 review=0
+no-menu py_mcp-server-motherduck snapshot=2
+ok py_mcp-clickhouse snapshot=0 tools=3 session=0 review=0
+no-menu py_dbt-mcp snapshot=2
+no-menu py_chroma-mcp snapshot=2
+ok py_mcp-server-qdrant snapshot=0 tools=2 session=0 review=0
+ok py_mcp-neo4j-cypher snapshot=0 tools=3 session=0 review=0
+ok py_langfuse-mcp snapshot=0 tools=48 session=0 review=0
+ok py_awslabs.aws-pricing-mcp-server snapshot=0 tools=9 session=0 review=0
+no-menu py_snowflake-labs-mcp snapshot=2
+ok py_awslabs.dynamodb-mcp-server snapshot=0 tools=8 session=0 review=0
+no-menu py_e2b-mcp-server snapshot=2
+ok py_redis-mcp-server snapshot=0 tools=53 session=0 review=0
+ok py_awslabs.aws-api-mcp-server snapshot=0 tools=2 session=0 review=0
+ok py_mcp-server-qdrant snapshot=0 tools=2 session=0 review=0
+no-bin py_e2b-mcp-server

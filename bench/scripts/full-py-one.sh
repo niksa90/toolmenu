@@ -17,10 +17,9 @@ name=${spec%%==*}
 # The column after the args can name the console script; otherwise the one named for the package, or for mcp/server.
 pick=$(printf '%s' "$line" | cut -f6 -s)
 # Else the console scripts the package itself declares (its entry_points.txt), preferring
-# one named for the package or for mcp/server; a dependency's scripts are never picked.
+# one named for the package or for mcp/server. None declared: no-bin (a dependency's
+# scripts, like idna or keyring, are never the server).
 [ -z "$pick" ] && pick=$("$d/pkg/venv/bin/python" /toolmenu/bench/scripts/py-entry.py "$name")
-[ -z "$pick" ] && pick=$(ls "$d/pkg/venv/bin" | grep -vE '^(python|pip|activate|deactivate|uv|f2py|normalizer|httpx|dotenv|jsonschema|mcp|uvicorn|websockets|typer|markdown-it|pygmentize|fastmcp|openai|tqdm|distro|watchfiles|cyclopts|email_validator)' | grep -vE '\.(fish|csh|ps1|nu|bat)$' \
-  | awk -v n="$name" 'BEGIN{IGNORECASE=1} {s=0; if ($0==n) s=3; else if (index($0,n)) s=2; else if ($0 ~ /mcp|server/) s=1; print s"\t"$0}' | sort -rn | head -1 | cut -f2)
 [ -z "$pick" ] && { echo "no-bin $id" >> /out/status.txt; rm -rf pkg .uvcache; exit; }
 bin="$d/pkg/venv/bin/$pick"
 rm -rf .uvcache

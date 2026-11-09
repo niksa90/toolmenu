@@ -1,0 +1,338 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "exa-search-server",
+    "version": "3.4.3",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:31:21.922Z",
+  "tools": [
+    {
+      "name": "web_search_exa",
+      "title": "Web Search",
+      "description": "Search the web for any topic and get clean, ready-to-use content.\n\n      Best for: Finding current information, news, facts, people, companies, or answering questions about any topic.\n      Returns: Clean text content from top search results.\n\n      Query tips:\n      describe the ideal page, not keywords. \"blog post comparing React and Vue performance\" not \"React vs Vue\".\n      Use category:people / category:company to search through Linkedin profiles / companies respectively.\n      If highlights are insufficient, follow up with web_fetch_exa on the best URLs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Natural language search query. Should be a semantically rich description of the ideal page, not just keywords. Optionally include category:<type> (company, people) to focus results — e.g. 'category:people John Doe software engineer'."
+          },
+          "numResults": {
+            "type": "number",
+            "description": "Number of search results to return (default: 10)."
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": true,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 253
+    },
+    {
+      "name": "web_fetch_exa",
+      "title": "Fetch Web Pages",
+      "description": "Read a webpage's full content as clean markdown. Use after web_search_exa when highlights are insufficient or to read any URL.\n\nBest for: Extracting full content from known URLs. Batch multiple URLs in one call.\nReturns: Clean text content and metadata from the page(s).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "URLs to read. Batch multiple URLs in one call."
+          },
+          "maxCharacters": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Maximum characters to extract per page (default: 3000)"
+          }
+        },
+        "required": [
+          "urls"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": true,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 159
+    },
+    {
+      "name": "agent_run",
+      "title": "Run Exa Agent",
+      "description": "Start or resume an Exa Agent run for multi-step research, list-building, or enrichment. Use it instead of running many searches yourself when a task needs multiple searches, cross-source verification, or a structured table of results. Long-running: returns a run ID; resume with runId when the tool reports the run is still running. Not for a single question or lookup or reading a known URL. An interrupted tool call is not an explicit cancellation request.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Natural-language research or enrichment objective. Provide query or runId, not both."
+          },
+          "runId": {
+            "type": "string",
+            "pattern": "^agent_run_",
+            "description": "ID returned by an earlier call. Use it to check or continue waiting for the same run. Do not start a duplicate run."
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "System-level guidance for the Agent."
+          },
+          "outputSchema": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "JSON Schema describing the desired research output. Prefer a top-level object with bounded arrays and source/evidence fields."
+          },
+          "input": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "description": "Known rows/entities to enrich or process."
+              },
+              "exclusion": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "description": "Entities, rows, or records Agent should avoid returning again."
+              }
+            },
+            "additionalProperties": false
+          },
+          "dataSources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Exa Connect provider ID. Self-serve providers: fiber, financial_datasets, similarweb, baselayer, affiliate, particle, jinko, polymarket, macrobond. Other providers work only when enabled for your Exa team."
+                }
+              },
+              "required": [
+                "provider"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 5,
+            "description": "Exa Connect providers to enable for this run."
+          },
+          "previousRunId": {
+            "type": "string",
+            "pattern": "^agent_run_",
+            "description": "ID of a completed prior run to use as context for a new run."
+          },
+          "effort": {
+            "type": "string",
+            "enum": [
+              "minimal",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "ultra",
+              "auto"
+            ],
+            "description": "Agent effort level. Defaults to low."
+          },
+          "budget": {
+            "type": "object",
+            "properties": {
+              "maxCostDollars": {
+                "type": "number",
+                "description": "Maximum spend for the run in US dollars, $1–$100. Only for effort auto or ultra; defaults to $5 for auto and $20 for ultra."
+              },
+              "maxDurationSeconds": {
+                "type": "integer",
+                "description": "Soft wall-clock limit in seconds, 300–10800. Only for effort ultra; the run returns what it has found as it nears the limit."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Per-run spend and duration limits for the metered auto and ultra efforts. Set it when the user names a cost or time limit."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True for completed and running runs; false for failed and cancelled."
+          },
+          "id": {
+            "type": "string",
+            "description": "agent_run_... ID. Pass as runId to resume a running run."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "running",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "outputReady": {
+            "type": "boolean",
+            "description": "True only when status is completed."
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Prose answer."
+                  },
+                  "structured": {
+                    "description": "Output matching the caller-supplied outputSchema, if any."
+                  },
+                  "grounding": {
+                    "description": "Per-field citations and confidence."
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                },
+                "additionalProperties": true
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stopReason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why the run stopped, e.g. complete, cancelled, error."
+          },
+          "usage": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "costDollars": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "error": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "message": {
+            "type": "string",
+            "description": "Next-step guidance for running runs."
+          }
+        },
+        "required": [
+          "success",
+          "id",
+          "status",
+          "outputReady"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "tokens": 644
+    }
+  ],
+  "totalTokens": 1056,
+  "prompts": [
+    {
+      "name": "web_search_help",
+      "description": "Get help with web search using Exa"
+    },
+    {
+      "name": "agent_research_help",
+      "description": "Get help structuring a multi-step Exa Agent research run.",
+      "arguments": [
+        {
+          "name": "task",
+          "description": "The research task to turn into an Exa Agent run",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "uri": "exa://tools/list",
+      "name": "tools_list",
+      "mimeType": "application/json",
+      "description": "List of available Exa tools and their descriptions"
+    },
+    {
+      "uri": "exa://agent/skill",
+      "name": "agent_research_guide",
+      "mimeType": "text/markdown",
+      "description": "Exa Agent research workflow, schema rules, and coverage guidance"
+    },
+    {
+      "uri": "exa://agent/schema-templates",
+      "name": "agent_schema_templates",
+      "mimeType": "application/json",
+      "description": "Starter JSON Schema templates for common Agent workflows"
+    }
+  ],
+  "resourceTemplates": []
+}

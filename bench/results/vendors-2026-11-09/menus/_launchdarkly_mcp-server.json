@@ -1,0 +1,2570 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "LaunchDarkly",
+    "version": "0.7.2",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:31:55.326Z",
+  "tools": [
+    {
+      "name": "get-audit-log-entries",
+      "description": "Fetches audit log entries for a LaunchDarkly account. Use the `spec` parameter with format `proj/<projectKey>:env/<envKey>:flag/<flagKey>` to query a specific flag's change history (use `env/*` for all environments). The `before` and `after` parameters accept Unix epoch timestamps in milliseconds for date-range filtering. Returns at most 20 entries per call, ordered newest-first.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "before": {
+                "type": "integer"
+              },
+              "after": {
+                "type": "integer"
+              },
+              "q": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "spec": {
+                "type": "string"
+              },
+              "member": {
+                "type": "string"
+              },
+              "token": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 198
+    },
+    {
+      "name": "get-code-references",
+      "description": "Identifies which repositories have code references to a given flag, helping agents determine if they're operating on the correct repository and understand the scope of cleanup (single vs multi-repo).\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "withBranches": {
+                "type": "string"
+              },
+              "withReferencesForDefaultBranch": {
+                "type": "string"
+              },
+              "projKey": {
+                "type": "string"
+              },
+              "flagKey": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 130
+    },
+    {
+      "name": "get-flag-status-across-environments",
+      "description": "Returns lifecycle status (new, active, inactive, launched) based on actual usage patterns, evaluation counts, and configuration stability. This is the key intelligence for removal readiness assessment.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "featureFlagKey": {
+                "type": "string"
+              },
+              "env": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "featureFlagKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 133
+    },
+    {
+      "name": "list-feature-flags",
+      "description": "Retrieves all feature flags within a project, including metadata and targeting rules. Enables AI agents to enumerate existing flags for inspection, configuration analysis, or generating flag usage reports across environments.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "env": {
+                "type": "string"
+              },
+              "tag": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "offset": {
+                "type": "integer"
+              },
+              "archived": {
+                "type": "boolean"
+              },
+              "summary": {
+                "type": "boolean"
+              },
+              "filter": {
+                "type": "string"
+              },
+              "sort": {
+                "type": "string"
+              },
+              "compare": {
+                "type": "boolean"
+              },
+              "expand": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 181
+    },
+    {
+      "name": "create-feature-flag",
+      "description": "Creates a new feature flag within a project. AI agents can use this operation to define feature toggles for controlled rollouts, experimentation, or gated features, automating the flag setup process.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "clone": {
+                "type": "string"
+              },
+              "FeatureFlagBody": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "includeInSnippet": {
+                    "type": "boolean"
+                  },
+                  "clientSideAvailability": {
+                    "type": "object",
+                    "properties": {
+                      "usingEnvironmentId": {
+                        "type": "boolean"
+                      },
+                      "usingMobileKey": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "usingEnvironmentId",
+                      "usingMobileKey"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "variations": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "_id": {
+                          "type": "string"
+                        },
+                        "value": {},
+                        "valueHash": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "temporary": {
+                    "type": "boolean"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "customProperties": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "defaults": {
+                    "type": "object",
+                    "properties": {
+                      "onVariation": {
+                        "type": "integer"
+                      },
+                      "offVariation": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "onVariation",
+                      "offVariation"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "migration",
+                      "holdout"
+                    ]
+                  },
+                  "migrationSettings": {
+                    "type": "object",
+                    "properties": {
+                      "contextKind": {
+                        "type": "string"
+                      },
+                      "stageCount": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "stageCount"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "maintainerId": {
+                    "type": "string"
+                  },
+                  "maintainerTeamKey": {
+                    "type": "string"
+                  },
+                  "initialPrerequisites": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "variationId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "variationId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "isFlagOn": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "key"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "FeatureFlagBody"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 505
+    },
+    {
+      "name": "get-feature-flag",
+      "description": "Fetches the full configuration for a specific feature flag, including environments, variations, and targeting rules. Useful for agents auditing or managing specific feature toggles in a detailed, contextual manner.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "featureFlagKey": {
+                "type": "string"
+              },
+              "env": {
+                "type": "string"
+              },
+              "expand": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "featureFlagKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 138
+    },
+    {
+      "name": "update-feature-flag",
+      "description": "Updates the configuration of an existing feature flag. Enables agents to change targeting rules, modify variations, or adapt rollout strategies dynamically in response to user behavior or experiment results.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "featureFlagKey": {
+                "type": "string"
+              },
+              "ignoreConflicts": {
+                "type": "boolean"
+              },
+              "dryRun": {
+                "type": "boolean"
+              },
+              "PatchWithComment": {
+                "type": "object",
+                "properties": {
+                  "patch": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "op": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        },
+                        "value": {}
+                      },
+                      "required": [
+                        "op",
+                        "path"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "comment": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "patch"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "featureFlagKey",
+              "PatchWithComment"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 215
+    },
+    {
+      "name": "delete-feature-flag",
+      "description": "Removes a feature flag from the project. Used by AI agents to clean up deprecated toggles that are no longer in use, improving system hygiene and maintainability.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "featureFlagKey": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "featureFlagKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 120
+    },
+    {
+      "name": "list-metrics",
+      "description": "Lists metrics in a project. Use to find metric keys to attach to an experiment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "expand": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "offset": {
+                "type": "integer"
+              },
+              "sort": {
+                "type": "string"
+              },
+              "filter": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 123
+    },
+    {
+      "name": "create-metric",
+      "description": "Creates a metric in a project, for use in experiments and guarded rollouts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "MetricPost": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "pageview",
+                      "click",
+                      "custom",
+                      "trace"
+                    ]
+                  },
+                  "selector": {
+                    "type": "string"
+                  },
+                  "urls": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "exact",
+                            "canonical",
+                            "substring",
+                            "regex"
+                          ]
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "substring": {
+                          "type": "string"
+                        },
+                        "pattern": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "isNumeric": {
+                    "type": "boolean"
+                  },
+                  "unit": {
+                    "type": "string"
+                  },
+                  "eventKey": {
+                    "type": "string"
+                  },
+                  "successCriteria": {
+                    "type": "string",
+                    "enum": [
+                      "HigherThanBaseline",
+                      "LowerThanBaseline"
+                    ]
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "randomizationUnits": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "analysisUnits": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "maintainerId": {
+                    "type": "string"
+                  },
+                  "unitAggregationType": {
+                    "type": "string",
+                    "enum": [
+                      "average",
+                      "sum",
+                      "count_distinct"
+                    ]
+                  },
+                  "analysisType": {
+                    "type": "string"
+                  },
+                  "percentileValue": {
+                    "type": "integer"
+                  },
+                  "eventDefault": {
+                    "type": "object",
+                    "properties": {
+                      "disabled": {
+                        "type": "boolean"
+                      },
+                      "value": {
+                        "type": "number"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "dataSource": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string"
+                      },
+                      "environmentKey": {
+                        "type": "string"
+                      },
+                      "_name": {
+                        "type": "string"
+                      },
+                      "_integrationKey": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "key"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "filters": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string"
+                      },
+                      "attribute": {
+                        "type": "string"
+                      },
+                      "op": {
+                        "type": "string"
+                      },
+                      "values": {
+                        "type": "array"
+                      },
+                      "contextKind": {
+                        "type": "string"
+                      },
+                      "negate": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "op",
+                      "values",
+                      "negate"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "windowStartOffset": {
+                    "type": "integer"
+                  },
+                  "windowEndOffset": {
+                    "type": "integer"
+                  },
+                  "winsorLowerPercentile": {
+                    "type": "number"
+                  },
+                  "winsorUpperPercentile": {
+                    "type": "number"
+                  },
+                  "winsorIncludeImputed": {
+                    "type": "boolean"
+                  },
+                  "traceQuery": {
+                    "type": "string"
+                  },
+                  "traceValueLocation": {
+                    "type": "string"
+                  },
+                  "unitAggregationField": {
+                    "type": "string"
+                  },
+                  "valueColumn": {
+                    "type": "string"
+                  },
+                  "denominator": {
+                    "type": "object",
+                    "properties": {
+                      "eventName": {
+                        "type": "string"
+                      },
+                      "isNumeric": {
+                        "type": "boolean"
+                      },
+                      "dataSource": {
+                        "$ref": "#/properties/request/properties/MetricPost/properties/dataSource"
+                      },
+                      "unitAggregationType": {
+                        "type": "string"
+                      },
+                      "unitAggregationField": {
+                        "type": "string"
+                      },
+                      "valueColumn": {
+                        "type": "string"
+                      },
+                      "filters": {
+                        "$ref": "#/properties/request/properties/MetricPost/properties/filters"
+                      },
+                      "windowStartOffset": {
+                        "type": "integer"
+                      },
+                      "windowEndOffset": {
+                        "type": "integer"
+                      },
+                      "winsorLowerPercentile": {
+                        "type": "number"
+                      },
+                      "winsorUpperPercentile": {
+                        "type": "number"
+                      },
+                      "winsorIncludeImputed": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "key",
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "MetricPost"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 724
+    },
+    {
+      "name": "get-metric",
+      "description": "Fetches one metric's configuration.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "metricKey": {
+                "type": "string"
+              },
+              "expand": {
+                "type": "string"
+              },
+              "versionId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "metricKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 104
+    },
+    {
+      "name": "update-metric",
+      "description": "Updates a metric using a JSON patch.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "metricKey": {
+                "type": "string"
+              },
+              "RequestBody": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "op": {
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "value": {}
+                  },
+                  "required": [
+                    "op",
+                    "path"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "projectKey",
+              "metricKey",
+              "RequestBody"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 140
+    },
+    {
+      "name": "get-environments",
+      "description": "Identifies which environments exist in a project and determines which are marked as \"critical\" (production, staging, etc.). Allows agents to programmatically identify critical environments instead of hardcoding assumptions.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "offset": {
+                "type": "integer"
+              },
+              "filter": {
+                "type": "string"
+              },
+              "sort": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 139
+    },
+    {
+      "name": "list-experiments",
+      "description": "Lists experiments in a project environment, including their current iteration and status.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "environmentKey": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "offset": {
+                "type": "integer"
+              },
+              "filter": {
+                "type": "string"
+              },
+              "expand": {
+                "type": "string"
+              },
+              "lifecycleState": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "environmentKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 134
+    },
+    {
+      "name": "create-experiment",
+      "description": "Creates an experiment in a project environment, with an initial iteration that sets the hypothesis, flag, treatments, and metrics.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "environmentKey": {
+                "type": "string"
+              },
+              "ExperimentPost": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "maintainerId": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "iteration": {
+                    "type": "object",
+                    "properties": {
+                      "hypothesis": {
+                        "type": "string"
+                      },
+                      "canReshuffleTraffic": {
+                        "type": "boolean"
+                      },
+                      "metrics": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string"
+                            },
+                            "isGroup": {
+                              "type": "boolean"
+                            },
+                            "primary": {
+                              "type": "boolean"
+                            },
+                            "analysisUnit": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "key"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "primarySingleMetricKey": {
+                        "type": "string"
+                      },
+                      "primaryFunnelKey": {
+                        "type": "string"
+                      },
+                      "treatments": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "baseline": {
+                              "type": "boolean"
+                            },
+                            "allocationPercent": {
+                              "type": "string"
+                            },
+                            "parameters": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "flagKey": {
+                                    "type": "string"
+                                  },
+                                  "variationId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "flagKey",
+                                  "variationId"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "baseline",
+                            "allocationPercent",
+                            "parameters"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "flags": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "object",
+                          "properties": {
+                            "ruleId": {
+                              "type": "string"
+                            },
+                            "flagConfigVersion": {
+                              "type": "integer"
+                            },
+                            "notInExperimentVariationId": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "ruleId",
+                            "flagConfigVersion"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "randomizationUnit": {
+                        "type": "string"
+                      },
+                      "reallocationFrequencyMillis": {
+                        "type": "integer"
+                      },
+                      "covariateId": {
+                        "type": "string"
+                      },
+                      "attributes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "hypothesis",
+                      "metrics",
+                      "treatments",
+                      "flags"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "holdoutId": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "methodology": {
+                    "type": "string",
+                    "enum": [
+                      "bayesian",
+                      "frequentist",
+                      "export_only"
+                    ]
+                  },
+                  "analysisConfig": {
+                    "type": "object",
+                    "properties": {
+                      "bayesianThreshold": {
+                        "type": "string"
+                      },
+                      "significanceThreshold": {
+                        "type": "string"
+                      },
+                      "testDirection": {
+                        "type": "string"
+                      },
+                      "multipleComparisonCorrectionMethod": {
+                        "type": "string",
+                        "enum": [
+                          "bonferroni",
+                          "benjamini-hochberg"
+                        ]
+                      },
+                      "multipleComparisonCorrectionScope": {
+                        "type": "string",
+                        "enum": [
+                          "variations",
+                          "variations-and-metrics",
+                          "metrics"
+                        ]
+                      },
+                      "sequentialTestingEnabled": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "dataSource": {
+                    "type": "string",
+                    "enum": [
+                      "launchdarkly",
+                      "snowflake"
+                    ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "experiment",
+                      "mab",
+                      "holdout"
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "key",
+                  "iteration"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "environmentKey",
+              "ExperimentPost"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 660
+    },
+    {
+      "name": "get-experiment",
+      "description": "Fetches one experiment, including its current and past iterations, treatments, and metrics.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "environmentKey": {
+                "type": "string"
+              },
+              "experimentKey": {
+                "type": "string"
+              },
+              "expand": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "environmentKey",
+              "experimentKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 117
+    },
+    {
+      "name": "update-experiment",
+      "description": "Updates an experiment using semantic patch instructions, such as starting or stopping an iteration, or changing its name or description.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "environmentKey": {
+                "type": "string"
+              },
+              "experimentKey": {
+                "type": "string"
+              },
+              "ExperimentPatchInput": {
+                "type": "object",
+                "properties": {
+                  "comment": {
+                    "type": "string"
+                  },
+                  "instructions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                },
+                "required": [
+                  "instructions"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "environmentKey",
+              "experimentKey",
+              "ExperimentPatchInput"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 167
+    },
+    {
+      "name": "create-experiment-iteration",
+      "description": "Creates a new iteration of an experiment. Start it afterwards with update-experiment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "environmentKey": {
+                "type": "string"
+              },
+              "experimentKey": {
+                "type": "string"
+              },
+              "IterationInput": {
+                "type": "object",
+                "properties": {
+                  "hypothesis": {
+                    "type": "string"
+                  },
+                  "canReshuffleTraffic": {
+                    "type": "boolean"
+                  },
+                  "metrics": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "isGroup": {
+                          "type": "boolean"
+                        },
+                        "primary": {
+                          "type": "boolean"
+                        },
+                        "analysisUnit": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "key"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "primarySingleMetricKey": {
+                    "type": "string"
+                  },
+                  "primaryFunnelKey": {
+                    "type": "string"
+                  },
+                  "treatments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "baseline": {
+                          "type": "boolean"
+                        },
+                        "allocationPercent": {
+                          "type": "string"
+                        },
+                        "parameters": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "flagKey": {
+                                "type": "string"
+                              },
+                              "variationId": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "flagKey",
+                              "variationId"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "baseline",
+                        "allocationPercent",
+                        "parameters"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "flags": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "ruleId": {
+                          "type": "string"
+                        },
+                        "flagConfigVersion": {
+                          "type": "integer"
+                        },
+                        "notInExperimentVariationId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "ruleId",
+                        "flagConfigVersion"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "randomizationUnit": {
+                    "type": "string"
+                  },
+                  "reallocationFrequencyMillis": {
+                    "type": "integer"
+                  },
+                  "covariateId": {
+                    "type": "string"
+                  },
+                  "attributes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "hypothesis",
+                  "metrics",
+                  "treatments",
+                  "flags"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "environmentKey",
+              "experimentKey",
+              "IterationInput"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 439
+    },
+    {
+      "name": "list-experiments-any-environment",
+      "description": "Lists experiments in a project across all environments. Use to discover experiments before fetching one by environment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "offset": {
+                "type": "integer"
+              },
+              "filter": {
+                "type": "string"
+              },
+              "expand": {
+                "type": "string"
+              },
+              "lifecycleState": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 131
+    },
+    {
+      "name": "get-ai-config-targeting",
+      "description": "Retrieves the targeting details of a specific AI Config, including individual targets, rules, and rollouts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "configKey": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "configKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 105
+    },
+    {
+      "name": "update-ai-config-targeting",
+      "description": "Updates the targeting of an existing AI Config.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "configKey": {
+                "type": "string"
+              },
+              "AIConfigTargetingPatch": {
+                "type": "object",
+                "properties": {
+                  "comment": {
+                    "type": "string"
+                  },
+                  "environmentKey": {
+                    "type": "string"
+                  },
+                  "instructions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                },
+                "required": [
+                  "environmentKey",
+                  "instructions"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "configKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 153
+    },
+    {
+      "name": "list-ai-configs",
+      "description": "Retrieves AI configuration settings for a specific project. This endpoint allows agents to access and modify AI-related configurations, ensuring that the AI's behavior aligns with project requirements and user expectations.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "sort": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "offset": {
+                "type": "integer"
+              },
+              "filter": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 138
+    },
+    {
+      "name": "create-ai-config",
+      "description": "Creates a new AI Config within a project. Useful for setting up LLM configurations programmatically.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "AIConfigPost": {
+                "type": "object",
+                "properties": {
+                  "description": {
+                    "type": "string",
+                    "default": ""
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "maintainerId": {
+                    "type": "string"
+                  },
+                  "maintainerTeamKey": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "agent",
+                      "completion",
+                      "judge"
+                    ],
+                    "default": "completion"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "viewKeys": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "defaultVariation": {
+                    "type": "object",
+                    "properties": {
+                      "classifiers": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "bool",
+                                "float",
+                                "enum"
+                              ]
+                            },
+                            "instructions": {
+                              "type": "string"
+                            },
+                            "criteria": {}
+                          },
+                          "required": [
+                            "key",
+                            "type",
+                            "instructions"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "comment": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "instructions": {
+                        "type": "string"
+                      },
+                      "key": {
+                        "type": "string"
+                      },
+                      "messages": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "content": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "content",
+                            "role"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "model": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": false
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "modelConfigKey": {
+                        "type": "string"
+                      },
+                      "modelConfigVersion": {
+                        "type": "integer"
+                      },
+                      "outputFormat": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      "tools": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string"
+                            },
+                            "version": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "version"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "toolKeys": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "skills": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string"
+                            },
+                            "version": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "version"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "judgeConfiguration": {
+                        "type": "object",
+                        "properties": {
+                          "judges": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "judgeConfigKey": {
+                                  "type": "string"
+                                },
+                                "samplingRate": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "judgeConfigKey",
+                                "samplingRate"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "key",
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "evaluationMetricKey": {
+                    "type": "string"
+                  },
+                  "isInverted": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "key",
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "AIConfigPost"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 593
+    },
+    {
+      "name": "delete-ai-config",
+      "description": "Deletes an AI Config and its associated variations. Intended for cleanup or deprecation workflows.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "configKey": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "configKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 101
+    },
+    {
+      "name": "get-ai-config",
+      "description": "Retrieves details of a specific AI Config, including variations and model settings.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "configKey": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "configKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 97
+    },
+    {
+      "name": "update-ai-config",
+      "description": "Updates metadata or configuration of an existing AI Config.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "configKey": {
+                "type": "string"
+              },
+              "AIConfigPatch": {
+                "type": "object",
+                "properties": {
+                  "defaultVariationKey": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "maintainerId": {
+                    "type": "string"
+                  },
+                  "maintainerTeamKey": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "evaluationMetricKey": {
+                    "type": "string"
+                  },
+                  "isInverted": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "configKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 181
+    },
+    {
+      "name": "create-ai-config-variation",
+      "description": "Adds a new variation to an AI Config, supporting experimentation or multi-model strategies.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "configKey": {
+                "type": "string"
+              },
+              "AIConfigVariationPost": {
+                "type": "object",
+                "properties": {
+                  "classifiers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "bool",
+                            "float",
+                            "enum"
+                          ]
+                        },
+                        "instructions": {
+                          "type": "string"
+                        },
+                        "criteria": {}
+                      },
+                      "required": [
+                        "key",
+                        "type",
+                        "instructions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "comment": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "instructions": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "content",
+                        "role"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "model": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": false
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "modelConfigKey": {
+                    "type": "string"
+                  },
+                  "modelConfigVersion": {
+                    "type": "integer"
+                  },
+                  "outputFormat": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "toolKeys": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "skills": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "judgeConfiguration": {
+                    "type": "object",
+                    "properties": {
+                      "judges": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "judgeConfigKey": {
+                              "type": "string"
+                            },
+                            "samplingRate": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "judgeConfigKey",
+                            "samplingRate"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "key",
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "configKey",
+              "AIConfigVariationPost"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 476
+    },
+    {
+      "name": "delete-ai-config-variation",
+      "description": "Deletes an AI Config variation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "configKey": {
+                "type": "string"
+              },
+              "variationKey": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "configKey",
+              "variationKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 101
+    },
+    {
+      "name": "get-ai-config-variation",
+      "description": "Retrieves an AI configuration variation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "configKey": {
+                "type": "string"
+              },
+              "variationKey": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectKey",
+              "configKey",
+              "variationKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 102
+    },
+    {
+      "name": "update-ai-config-variation",
+      "description": "Updates a specific variation within an AI Config. Enables fine-tuned control of model behavior.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "projectKey": {
+                "type": "string"
+              },
+              "configKey": {
+                "type": "string"
+              },
+              "variationKey": {
+                "type": "string"
+              },
+              "AIConfigVariationPatch": {
+                "type": "object",
+                "properties": {
+                  "classifiers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "bool",
+                            "float",
+                            "enum"
+                          ]
+                        },
+                        "instructions": {
+                          "type": "string"
+                        },
+                        "criteria": {}
+                      },
+                      "required": [
+                        "key",
+                        "type",
+                        "instructions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "comment": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "instructions": {
+                    "type": "string"
+                  },
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "content",
+                        "role"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "model": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": false
+                  },
+                  "modelConfigKey": {
+                    "type": "string"
+                  },
+                  "modelConfigVersion": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "outputFormat": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "published": {
+                    "type": "boolean"
+                  },
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "archived",
+                      "published"
+                    ]
+                  },
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "toolKeys": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "skills": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "judgeConfiguration": {
+                    "type": "object",
+                    "properties": {
+                      "judges": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "judgeConfigKey": {
+                              "type": "string"
+                            },
+                            "samplingRate": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "judgeConfigKey",
+                            "samplingRate"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "projectKey",
+              "configKey",
+              "variationKey"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 491
+    }
+  ],
+  "totalTokens": 7036
+}

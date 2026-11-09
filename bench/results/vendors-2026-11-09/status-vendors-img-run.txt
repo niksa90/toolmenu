@@ -1,0 +1,14 @@
+ok img_vault-mcp-server snapshot=0 tools=16 session=0 review=0
+ok img_terraform-mcp-server snapshot=1 tools=9 session=0 review=0
+ok img_mcp-grafana snapshot=0 tools=80 session=0 review=0
+ok img_github-mcp-server snapshot=0 tools=92 session=0 review=0
+ok img_gitlab snapshot=0 tools=9 session=0 review=0
+no-menu img_dynatrace snapshot=2
+no-menu img_kubernetes-mcp-server snapshot=2
+ok img_slack snapshot=0 tools=8 session=0 review=0
+ok img_elasticsearch snapshot=1 tools=5 session=1 review=0
+ok img_aws-documentation snapshot=0 tools=4 session=0 review=0
+ok img_neo4j-cypher snapshot=0 tools=3 session=0 review=0
+ok img_stripe snapshot=0 tools=22 session=0 review=0
+ok img_redis snapshot=0 tools=53 session=0 review=0
+ok img_atlassian snapshot=1 tools=80 session=1 review=0

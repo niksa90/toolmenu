@@ -84,7 +84,7 @@ for lst, run in zip(pairs[::2], pairs[1::2]):
                'error': 0, 'warn': 0, 'info': 0, 'review': '', 'why': ''}
         snap = load(os.path.join(d, 'snapshot.json')) if st == 'ok' else None
         if not snap:
-            row['why'] = why(d)
+            row['why'] = 'the package declares no console script (run as python -m?)' if st == 'no-bin' else why(d)
             servers.append(row)
             continue
         sess, rev, sealed = (load(os.path.join(d, f)) for f in ('session.json', 'review.json', 'everything.json'))

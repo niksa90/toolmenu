@@ -1,0 +1,517 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "vault-mcp-server",
+    "version": "0.2.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:38:00.111Z",
+  "tools": [
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "idempotentHint": false
+      },
+      "description": "Mount a new secrets engine on a specific path in Vault.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "default": "",
+            "description": "A description for the mount.",
+            "type": "string"
+          },
+          "options": {
+            "description": "Optional mount options, specific to the mount type.",
+            "properties": {},
+            "type": "object"
+          },
+          "path": {
+            "description": "The path where the mount will be created. Examples would be 'secrets' or 'kv'.",
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of mount. Examples would be 'kv' or 'kv2' for a versioned kv store.",
+            "enum": [
+              "kv",
+              "kv2"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "path"
+        ]
+      },
+      "name": "create_mount",
+      "tokens": 146
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a new PKI  SSL certificate issuer in Vault. When creating names, avoid using words like example, demo, or test as they are too generic and may lead to confusion in a production environment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "common_name": {
+            "description": "Common Name (CN) for the PKI issuer. This is typically the name of the organization or entity that the certificates will be issued for. Examples would be example.com or My Company.",
+            "type": "string"
+          },
+          "issuer_name": {
+            "description": "Unique name of the issuer which will be used to identify the issuer in Vault. This is not the common name of the certificate itself but, could be derived from the common name if it makes sense.",
+            "type": "string"
+          },
+          "mount": {
+            "default": "pki",
+            "description": "The mount where the pki issuer will be created. Defaults to 'pki'.",
+            "type": "string"
+          },
+          "root_issuer": {
+            "default": "",
+            "description": "Optional root issuer name. This issuer must be present in the Vault PKI mount specified by 'root_mount'.",
+            "type": "string"
+          },
+          "root_mount": {
+            "default": "",
+            "description": "Optional root certificate mount, if you are creating an intermediate certificate issuer.",
+            "type": "string"
+          },
+          "ttl": {
+            "default": "30d",
+            "description": "Optional default ttl for the issuer. Defaults to '30d' (30 days). Other formats are also accepted, such as '87600h' for 10 years.",
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of issuer. Currently only 'internal' is supported for PKI issuers.",
+            "enum": [
+              "internal"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "common_name",
+          "issuer_name"
+        ]
+      },
+      "name": "create_pki_issuer",
+      "tokens": 345
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a new PKI SSL certificate role in Vault. When creating names, avoid using words like example, demo, or test as they are too generic and may lead to confusion in a production environment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "allow_any_name": {
+            "default": true,
+            "description": "This parameter allows the role to issue certificates with any Common Name (CN). If set to true, the role will not restrict the CN of the issued certificates. If set to false, the CN must match one of the allowed domains specified in 'allowed_domains'. Defaults to true.",
+            "type": "boolean"
+          },
+          "allow_glob_domains": {
+            "default": false,
+            "description": "This parameter allows the role to issue certificates with wildcard domains. If set to true, you can use wildcards in the allowed domains (e.g., '*.example.com'). If set to false, only exact domain matches are allowed. Defaults to false.",
+            "type": "boolean"
+          },
+          "allow_ip_sans": {
+            "default": false,
+            "description": "This parameter allows the role to issue certificates with IP Subject Alternative Names (SANs). If set to true, you can specify IP addresses in the 'allowed_domains' list. If set to false, only domain names are allowed. Defaults to false.",
+            "type": "boolean"
+          },
+          "allowed_domains": {
+            "default": "",
+            "description": "This is a comma separated list of allowed domains for the role. If 'allow_any_name' is true, this list will be ignored. If 'allow_glob_domains' is true, you can use wildcards in the domains (e.g., '*.example.com'). If 'allow_ip_sans' is true, you can also specify IP addresses in this list.",
+            "type": "string"
+          },
+          "issuer_name": {
+            "default": "default",
+            "description": "The name of the issuer. This is the name of the issuer that was created with the create_pki_issuer tool. If not specified, it defaults to 'default'. This is useful when you have multiple issuers and want to specify which one to use for this role.",
+            "type": "string"
+          },
+          "max_ttl": {
+            "default": "30d",
+            "description": "Optional maximum TTL for the role. This is the maximum time that a certificate issued by this role can be valid. Defaults to '30d' (30 days). Other formats are also accepted, such as '87600h' for 10 years.",
+            "type": "string"
+          },
+          "mount": {
+            "default": "pki",
+            "description": "The mount where the pki role will be created. Defaults to 'pki'.",
+            "type": "string"
+          },
+          "role_name": {
+            "description": "The name of the role. You can use this name to refer to the role when issuing certificates via the issue_pki_certificate tool. This name must be unique within the mount and should be descriptive enough to clearly identify it's use.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role_name"
+        ]
+      },
+      "name": "create_pki_role",
+      "tokens": 579
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": true
+      },
+      "description": "Delete a mounted secret engine in Vault. Use with extreme caution as this will remove all data under the mount path!",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "description": "The path where of mount to be deleted. Examples would be 'secrets' or 'kv'.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "name": "delete_mount",
+      "tokens": 76
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Delete a PKI SSL role in Vault.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mount": {
+            "default": "pki",
+            "description": "The mount where the pki role will be deleted. Defaults to 'pki'.",
+            "type": "string"
+          },
+          "role_name": {
+            "description": "The name of the role.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role_name"
+        ]
+      },
+      "name": "delete_pki_role",
+      "tokens": 82
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false
+      },
+      "description": "Delete a secret from a KV mount in Vault using the specified path and mount. If you specify a key, only that key will be deleted. If no key is specified or you delete the last key, the entire secret will be deleted.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "default": "",
+            "description": "A optional key in the secret to delete. If not specified, all keys in the the secret will be deleted.",
+            "type": "string"
+          },
+          "mount": {
+            "description": "The mount path of the secret engine. For example, if you want to delete to 'secrets/application/credentials', this should be 'secrets' without the trailing slash.",
+            "type": "string"
+          },
+          "path": {
+            "description": "The full path to delete the secret to without the mount prefix. For example, if you want to delete to 'secrets/application/credentials', this should be 'application/credentials'.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mount",
+          "path"
+        ]
+      },
+      "name": "delete_secret",
+      "tokens": 198
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Enable the PKI (Public Key Infrastructure) secrets engine in Vault, allowing for the issuance and management of SSL/TLS certificates.\n## Setting up the Root CA\n  - Create a root PKI mount using this tool, giving it a suitable name that best describes its intended use. Examples could incorporate the domain name in to the name and include 'pki', 'pki_root', or 'pki_ca'.\n  - Create a PKI issuer using the 'create_pki_issuer' tool, which will define the CA (Certificate Authority) for the PKI root mount.\n  - Create a PKI role using the 'create_pki_role' tool, which will define the policies and constraints for issuing certificates against this root issuer.\n\n## Setting up an Intermediate CA\n  - Make sure you have set up the root CA as described above.\n  - Create a new intermediate PKI mount using this tool, giving it a suitable name that best describes its intended use. Examples could incorporate the domain name in to the name and include 'pki_int' or 'pki_int_ca'. You will need to specify the 'root_mount' and 'root_issuer' parameters to link it to the root CA.\n  - Create a PKI issuer using the 'create_pki_issuer' tool, which will define the CA (Certificate Authority) for the PKI intermediate mount.\n  - Create a PKI role using the 'create_pki_role' tool, which will define the policies and constraints for issuing certificates against this intermediate issuer.\n\n## Issuing SSL/TLS Certificates as an Intermediate CA or Root CA\n  - Set up the root CA according to the instructions above. If you want to issue certificates as an intermediate CA, make sure you have set up the intermediate CA as well.\n  - Create a PKI issuer using the 'create_pki_issuer' tool, which will define the CA (Certificate Authority) for the PKI mount.\n  - Create a PKI role using the 'create_pki_role' tool, which will define the policies and constraints for issuing certificates.\n  - Issue certificates using the 'issue_pki_certificate' tool, which will allow you to generate certificates based on the defined role.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "default": "",
+            "description": "A description for the pki mount.",
+            "type": "string"
+          },
+          "max_ttl": {
+            "default": "87600h",
+            "description": "The maximum time-to-live (TTL) for certificates issued by this PKI mount. Defaults to '87600h' (10 years).",
+            "type": "string"
+          },
+          "path": {
+            "default": "pki",
+            "description": "The path where the pki mount will be created. Defaults to 'pki'.",
+            "type": "string"
+          }
+        }
+      },
+      "name": "enable_pki",
+      "tokens": 582
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a new PKI SSL certificate issuer in Vault, allowing for the issuance of SSL/TLS certificates.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "common_name": {
+            "description": "Common Name (CN) for the PKI certificate. This is typically the name of the organization or entity that the certificates will be issued for. Examples would be example.com or My Company.",
+            "type": "string"
+          },
+          "mount": {
+            "default": "pki",
+            "description": "The mount where the pki issuer will be created. Defaults to 'pki'.",
+            "type": "string"
+          },
+          "role_name": {
+            "description": "The name of the role you want to use to generate the certificate. This name must correspond to a role_name in the data returned from the list_pki_roles function.",
+            "type": "string"
+          },
+          "ttl": {
+            "default": "30d",
+            "description": "Optional TTL for the certificate. This is the time that the certificate will be valid for. Defaults to '30d' (30 days). Other formats are also accepted, such as '87600h' for 10 years.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role_name",
+          "common_name"
+        ]
+      },
+      "name": "issue_pki_certificate",
+      "tokens": 233
+    },
+    {
+      "annotations": {
+        "idempotentHint": true
+      },
+      "description": "List the available mounted secrets engines on a Vault Server.",
+      "inputSchema": {
+        "type": "object"
+      },
+      "name": "list_mounts",
+      "tokens": 27
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get a list of PKI issuers on a specific pki mount in Vault, allowing you to see all the configured issuers for that mount.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mount": {
+            "default": "pki",
+            "description": "The mount where the pki issuer will be listed. Defaults to 'pki'.",
+            "type": "string"
+          }
+        }
+      },
+      "name": "list_pki_issuers",
+      "tokens": 83
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get a list of PKI roles which are able to issue certificates, allowing you to see all the configured roles for a specific PKI mount in Vault.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mount": {
+            "default": "pki",
+            "description": "The mount where the pki roles will be listed. Defaults to 'pki'.",
+            "type": "string"
+          }
+        }
+      },
+      "name": "list_pki_roles",
+      "tokens": 82
+    },
+    {
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "description": "List secrets in a KV mount under a specific path in Vault",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mount": {
+            "description": "The mount path of the secret engine. For example, if you want to list 'secrets/application/credentials', this should be 'secrets' without the trailing slash.",
+            "type": "string"
+          },
+          "path": {
+            "default": "",
+            "description": "The full path to list the secrets to without the mount prefix. For example, if you want to list from 'secrets/application/credentials', this should be 'application/credentials'.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mount"
+        ]
+      },
+      "name": "list_secrets",
+      "tokens": 129
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Read a PKI issuer details from a specific mount in Vault, allowing you to retrieve information about a specific PKI issuer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "issuer_name": {
+            "description": "The name of the issuer you want to retrieve. This name must correspond to an issuer_name in the data returned from the list_pki_issuers function.",
+            "type": "string"
+          },
+          "mount": {
+            "default": "pki",
+            "description": "The mount where the pki issuer will be created. Defaults to 'pki'.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issuer_name"
+        ]
+      },
+      "name": "read_pki_issuer",
+      "tokens": 125
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Read a PKI role details from a specific mount in Vault. This allows you to retrieve information about a specific PKI role.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mount": {
+            "default": "pki",
+            "description": "The mount where the pki role will be created. Defaults to 'pki'.",
+            "type": "string"
+          },
+          "role_name": {
+            "description": "The name of the role you want to retrieve. This name must correspond to a role_name in the data returned from the list_pki_roles function.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role_name"
+        ]
+      },
+      "name": "read_pki_role",
+      "tokens": 123
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Read a secret from a KV mount in at a specific path in Vault.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mount": {
+            "description": "The mount path of the secret engine. For example, if you want to read from 'secrets/application/credentials', this should be 'secrets' without the trailing slash.",
+            "type": "string"
+          },
+          "path": {
+            "description": "The full path to read the secret to without the mount prefix. For example, if you want to read from 'secrets/application/credentials', this should be 'application/credentials'.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mount",
+          "path"
+        ]
+      },
+      "name": "read_secret",
+      "tokens": 131
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false
+      },
+      "description": "Writes a secret value to a KV store in Vault using the specified path and mount. Supports both KV v1 and v2 mounts. If a KV v2 mount is detected, the currently stored version of the secret will be returned.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The key name for the secret. For example if you want to write mysecret=myvalue, this should be 'mysecret'",
+            "type": "string"
+          },
+          "mount": {
+            "description": "The mount path of the secret engine. For example, if you want to write to 'secrets/application/credentials', this should be 'secrets' without the trailing slash.",
+            "type": "string"
+          },
+          "path": {
+            "description": "The full path to write the secret to without the mount prefix. For example, if you want to write to 'secrets/application/credentials', this should be 'application/credentials'.",
+            "type": "string"
+          },
+          "value": {
+            "description": "The value to store the given key. For example if you want to write mysecret=myvalue, this should be 'myvalue'",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mount",
+          "path",
+          "key",
+          "value"
+        ]
+      },
+      "name": "write_secret",
+      "tokens": 240
+    }
+  ],
+  "totalTokens": 3181,
+  "resources": [],
+  "resourceTemplates": []
+}

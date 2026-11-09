@@ -1,0 +1,1808 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Knock",
+    "version": "0.5.8",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T17:37:03.898Z",
+  "tools": [
+    {
+      "name": "list_channels",
+      "description": "\n  Returns a list of all of the channels configured in the account. Each channel returns information about the type of channel it is (email, sms, push, etc), and the provider that's used to power the channel. Channels can be used across all environments.\n\n  Use this tool when you need to know about the channels configured in the Knock account, like when configuring a workflow.\n  ",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {}
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 118
+    },
+    {
+      "name": "list_commits",
+      "description": "\n  Returns all commits available in the environment. Use this tool when you are asked to see what changes are available to be deployed.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to list commits for."
+          },
+          "promoted": {
+            "type": "boolean",
+            "description": "(boolean): Whether to only return promoted commits. Defaults to `false`."
+          }
+        },
+        "required": [
+          "promoted"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 121
+    },
+    {
+      "name": "commit_all_changes",
+      "description": "\n  Commit all pending changes. This can only be used in the development environment.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to commit all changes to."
+          },
+          "message": {
+            "type": "string",
+            "description": "(string): The message to include in the commit."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 100
+    },
+    {
+      "name": "promote_all_commits",
+      "description": "\n  Promote all commits to the next environment. Use this tool when you are asked to deploy all changes.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "toEnvironment": {
+            "type": "string",
+            "description": "(string): The environment to promote all commits to."
+          }
+        },
+        "required": [
+          "toEnvironment"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 94
+    },
+    {
+      "name": "search_documentation",
+      "description": "Search the Knock documentation for a given query",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The query to search the documentation for"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 69
+    },
+    {
+      "name": "get_email_layout",
+      "description": "Retrieves a single email layout by its key. Returns the layout's name, HTML content, and text content. Use this tool when you need to inspect the details of a specific email layout.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to retrieve the email layout from."
+          },
+          "key": {
+            "type": "string",
+            "description": "(string): The key of the email layout to retrieve."
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 125
+    },
+    {
+      "name": "list_email_layouts",
+      "description": "List all email layouts within the environment given. Returns information about the email layout, including the name and the key. \n  \n  Use this tool when building a workflow that is building an email notification when you need to know the available email layouts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to list email layouts for."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 112
+    },
+    {
+      "name": "upsert_email_layout",
+      "description": "Create or update a new email layout within the environment given. Use this tool when you need to define shared pieces of content across multiple email templates, like a header/footer. The email layout will be used to render the email template.\n\n  Here are the rules for creating an email layout:\n\n  - Every email layout must have a `{{ content }}` tag. This is where the content of the email will be injected.\n  - You must set both an HTML and text version of the email layout.\n  - CSS should be included in the HTML version of the email layout under <style> tags.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to create or update the email layout for."
+          },
+          "key": {
+            "type": "string",
+            "description": "(string): The key of the email layout to create or update."
+          },
+          "name": {
+            "type": "string",
+            "description": "(string): The name of the email layout."
+          },
+          "htmlContent": {
+            "type": "string",
+            "description": "(string): The HTML content of the email layout."
+          },
+          "textContent": {
+            "type": "string",
+            "description": "(string): The text content of the email layout."
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "htmlContent",
+          "textContent"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 289
+    },
+    {
+      "name": "list_environments",
+      "description": "\n  Lists all environments available, returning the slug and name of each environment. Use this tool when you need to see what environments are available.\n  ",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {}
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 69
+    },
+    {
+      "name": "list_guides",
+      "description": "\n  List all guides available for the given environment. Returns structural information about the guides, including the key, name, description, type, and status.\n\n  Use this tool when you need to understand which guides are available in the environment.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to list guides for."
+          },
+          "page_size": {
+            "type": "number",
+            "description": "(number): The number of guides to return per page."
+          },
+          "after": {
+            "type": "string",
+            "description": "(string): The cursor to use for pagination."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 153
+    },
+    {
+      "name": "get_guide",
+      "description": "\n  Get a guide by its key. Returns structural information about the guide, including the key, name, description, type, and status.\n\n  Use this tool when you need to retrieve information about a specific guide.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to get the guide for."
+          },
+          "guideKey": {
+            "type": "string",
+            "description": "(string): The key of the guide to get."
+          },
+          "hide_uncommitted_changes": {
+            "type": "boolean",
+            "description": "(boolean): Whether to hide uncommitted changes and return only published version."
+          }
+        },
+        "required": [
+          "guideKey"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 165
+    },
+    {
+      "name": "upsert_guide",
+      "description": "\n  Create or update a guide. A guide defines an in-app guide that can be displayed to users based on priority and other conditions.\n\n  Use this tool when you need to create a new guide or update an existing one. The guide will be created with the specified configuration.\n\n  Note: This endpoint only operates on guides in the \"development\" environment.\n\n  ## Guide step schema\n\n  When working with guide steps, you must use a `schemaKey` and `schemaVariantKey` to reference the message type schema that the step's content conforms to. You can use the `list_message_types` tool to get a list of available message types and the available variants for that message type.\n\n  You **must** supply a `schemaContent` that sets the content for each of the fields in the `fields` object inside of the message type schema variant you select.\n\n  For example, if you have a message type schema with a `fields` object that looks like this:\n\n  ```json\n  {\n    \"fields\": {\n      \"title\": {\n        \"type\": \"string\",\n        \"required\": true\n      }\n    }\n  }\n  ```\n\n  You would need to supply a `schemaContent` that looks like this:\n\n  ```json\n  {\n    \"title\": \"Hello, world!\"\n  }\n  ```\n\n  ### Guide targeting\n\n  By default, a guide will target all users. If you want to target users with specific attributes, you can use `targetPropertyConditions` to describe the targeting conditions.\n\n  When using targeting conditions, you can use the following properties:\n\n  - `recipient`: Use a property on the recipient\n  - `data`: Use data coming from the application\n  - `tenant`: Use a property on the tenant\n\n  For example, if you want to target users with the email `john.doe@example.com`, you would supply the following targeting conditions:\n\n  ```json\n  [\n    { \"operator\": \"equal_to\", \"argument\": \"john.doe@example.com\", \"variable\": \"recipient.email\" }\n  ]\n  ```\n\n  ### Activation URL patterns\n\n  You can supply a list of activation URL patterns to describe where in your application the guide should be shown. Each activation pattern is a directive that describes whether the guide should be shown or hidden based on the pathname and/or search (query string) of the page. Each pattern must include at least one of `pathname` or `search` (both may be provided together).\n\n  For example, if you want to show the guide on all pages except for the `admin` path, you would supply the following activation URL patterns:\n\n  ```json\n  [\n    { \"directive\": \"allow\", \"pathname\": \"*\" },\n    { \"directive\": \"block\", \"pathname\": \"/admin\" }\n  ]\n  ```\n\n  You can also match on the query string using `search`. For example, to show the guide only when the URL has a `tour=welcome` query parameter:\n\n  ```json\n  [\n    { \"directive\": \"allow\", \"search\": \"*tour=welcome*\" }\n  ]\n  ```\n\n  You can combine `pathname` and `search` in a single rule to match both. For example, to show the guide only on `/dashboard` when `tab=overview` is present:\n\n  ```json\n  [\n    { \"directive\": \"allow\", \"pathname\": \"/dashboard\", \"search\": \"*tab=overview*\" }\n  ]\n  ```\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to upsert the guide for."
+          },
+          "guideKey": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 255,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "description": "(string): The key of the guide to upsert. Must be at minimum 3 characters and at maximum 255 characters in length. Must be in the format of ^[a-zA-Z0-9_-]+$. Uppercase characters will be normalized to lowercase."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "(string): A name for the guide. Must be at maximum 255 characters in length."
+          },
+          "channelKey": {
+            "type": "string",
+            "description": "(string): The key of the channel in which the guide exists. Defaults to `knock-guide`.",
+            "default": "knock-guide"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 280,
+            "description": "(string): An arbitrary string attached to a guide object. Maximum of 280 characters allowed."
+          },
+          "step": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "(string): The name of the step."
+              },
+              "ref": {
+                "type": "string",
+                "description": "(string): The unique identifier of the step.",
+                "default": "step_1"
+              },
+              "schemaKey": {
+                "type": "string",
+                "minLength": 1,
+                "description": "(string): The key of the message type to use for the step's content. Note, Knock provides out-of-the-box message types: `banner`, `card`, and `modal` in addition to any user created ones."
+              },
+              "schemaVariantKey": {
+                "type": "string",
+                "description": "(string): The key of the schema variant that the step's content conforms to.",
+                "default": "default"
+              },
+              "schemaContent": {
+                "type": "object",
+                "additionalProperties": {},
+                "description": "(object): A map of values that make up the step's content. Each value must conform to its respective template schema field settings."
+              }
+            },
+            "required": [
+              "schemaKey",
+              "schemaContent"
+            ],
+            "additionalProperties": false,
+            "description": "(object): The guide step to upsert."
+          },
+          "targetPropertyConditions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "equal_to",
+                    "not_equal_to",
+                    "greater_than",
+                    "less_than",
+                    "greater_than_or_equal_to",
+                    "less_than_or_equal_to",
+                    "contains",
+                    "not_contains",
+                    "contains_all",
+                    "not_contains_all",
+                    "empty",
+                    "not_empty",
+                    "exists",
+                    "not_exists",
+                    "is_timestamp"
+                  ],
+                  "description": "(string): The operator to apply to the argument."
+                },
+                "variable": {
+                  "type": "string",
+                  "description": "(string): The variable of the condition."
+                },
+                "argument": {
+                  "type": "string",
+                  "description": "(string): The argument of the condition. Required unless operator is empty, not_empty, exists, not_exists, is_timestamp."
+                }
+              },
+              "required": [
+                "operator",
+                "variable"
+              ],
+              "additionalProperties": false,
+              "description": "(object): A condition."
+            },
+            "description": "(array): A list of target conditions to be met for the guide to be shown to a user. Conditions are joined as AND operations."
+          },
+          "activationUrlPatterns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "directive": {
+                  "type": "string",
+                  "enum": [
+                    "allow",
+                    "block"
+                  ],
+                  "description": "(string): The directive to apply to the activation URL rule (allow or block)."
+                },
+                "pathname": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "(string): The URL pathname pattern to match against. Must be a valid URI path."
+                },
+                "search": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "(string): The URL query string pattern to match against (without the leading '?'). Supports URLPattern API syntax."
+                }
+              },
+              "required": [
+                "directive"
+              ],
+              "additionalProperties": false
+            },
+            "description": "(array): A list of activation URL rules that describe where in your application the guide should be shown."
+          }
+        },
+        "required": [
+          "guideKey",
+          "name",
+          "step"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 1633
+    },
+    {
+      "name": "list_message_types",
+      "description": "List the account-wide message type catalog shared by root environments. Each message type includes its variants and available fields. Optionally provide an environment for explicit root context or a branch for Development branch context. Use this tool when you need to understand the message types available for Guides.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): Optional root environment context. Omit this to use the account default."
+          },
+          "branch": {
+            "type": "string",
+            "description": "(string): Optional Development branch context. If environment is also supplied, it must be \"development\"."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 149
+    },
+    {
+      "name": "upsert_message_type",
+      "description": "\n  Create or update a message type in the account-wide catalog shared by root environments. A message type is a schema that defines fields available to an editor within Knock. Message types always have at least one variant, that MUST be named \"default\". Optionally provide an environment for explicit root context or a branch for Development branch context. Use this tool when you need to create a new message type, or update an existing message type.\n\n  ## Schema and fields\n\n  The schema defines the fields available to an editor within Knock. A variant should have at least one field. Fields can be of different types, including: text, markdown, select, multi-select, image, and button.\n\n  Each field must have a key, label, and type. Some fields like `select` and `multi_select` have additional settings that can be used to configure the field.\n\n  <example>\n  {\n    \"key\": \"text\",\n    \"label\": \"Text\",\n    \"type\": \"text\",\n  </example>\n\n  <example>\n  {\n    \"key\": \"select\",\n    \"label\": \"Select\",\n    \"type\": \"select\",\n    \"settings\": {\n      \"options\": [\n        {\n          \"value\": \"option1\",\n          \"label\": \"Option 1\",\n        },\n      ],\n    },\n  }\n  </example>\n\n  ## Preview templates\n\n  The preview is a string of HTML that will be rendered in the Knock UI as a representation of the message type. It is shared across all variants. It supports liquid, where the field name is available as a variable, so a field named \"text\" will be rendered as {{ text }}. All fields should be included in the preview.\n\n  You can make an educated guess as to what the preview template should look like based on the name of the message type and the fields. You can use plain CSS to style the preview by supplying a style tag in the preview. Use simple selectors like .class-name to style elements.\n\n  <example>\n  {\n    \"preview\": \"<style>div { color: red; }</style>\n<div>Hello there, {{ text }}</div>\"\n  }\n  </example>\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): Optional root environment context. Omit this to use the account default."
+          },
+          "branch": {
+            "type": "string",
+            "description": "(string): Optional Development branch context. If environment is also supplied, it must be \"development\"."
+          },
+          "messageTypeKey": {
+            "type": "string",
+            "description": "(string): The key of the message type to create or update."
+          },
+          "name": {
+            "type": "string",
+            "description": "(string): The name of the message type."
+          },
+          "description": {
+            "type": "string",
+            "description": "(string): The description of the message type."
+          },
+          "preview": {
+            "type": "string",
+            "description": "(string): The preview of the variant. This is a string of HTML that will be rendered in the preview of the message type. There is a single preview shared by all variants."
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "(string): The key of the variant."
+                },
+                "name": {
+                  "type": "string",
+                  "description": "(string): The name of the variant."
+                },
+                "description": {
+                  "type": "string",
+                  "description": "(string): The description of the variant."
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "description": "(string): The key of the field."
+                      },
+                      "type": {
+                        "type": "string",
+                        "description": "(string): The type of the field. One of `text`, `textarea`, `button`, `markdown`, `select`, `multi_select`, `image`."
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "(string): The label of the field."
+                      },
+                      "settings": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": false,
+                        "description": "(object): The settings of the field."
+                      }
+                    },
+                    "required": [
+                      "key",
+                      "type",
+                      "label"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "description": "(array): The fields of the variant."
+                }
+              },
+              "required": [
+                "key",
+                "name",
+                "fields"
+              ],
+              "additionalProperties": false
+            },
+            "description": "(array): The variants of the message type."
+          }
+        },
+        "required": [
+          "messageTypeKey",
+          "name",
+          "variants"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 951
+    },
+    {
+      "name": "get_message",
+      "description": "\n  Retrieves a single message by its ID, including its current status and engagement statuses (e.g. seen, read, interacted, link_clicked). Use this tool when you need to check the delivery status or engagement state of a specific message.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to retrieve the message from."
+          },
+          "messageId": {
+            "type": "string",
+            "description": "(string): The ID of the message to retrieve."
+          }
+        },
+        "required": [
+          "messageId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 138
+    },
+    {
+      "name": "get_message_content",
+      "description": "\n  Retrieves the complete contents of a single message, specified by the messageId. The message contents includes the rendered template that was sent to the recipient. Use this tool when you want to surface information about the emails, SMS, and push notifications that were sent to a user.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to retrieve the message from."
+          },
+          "messageId": {
+            "type": "string",
+            "description": "(string): The messageId of the message to retrieve."
+          }
+        },
+        "required": [
+          "messageId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 147
+    },
+    {
+      "name": "get_message_delivery_logs",
+      "description": "\n  Retrieves the delivery logs for a specific message. Delivery logs contain details about each delivery attempt, including any errors that occurred. Use this tool when you need to debug why a message was not delivered or to inspect delivery attempt details.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to retrieve the delivery logs from."
+          },
+          "messageId": {
+            "type": "string",
+            "description": "(string): The ID of the message to retrieve delivery logs for."
+          }
+        },
+        "required": [
+          "messageId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 142
+    },
+    {
+      "name": "get_message_events",
+      "description": "\n  Retrieves the event timeline for a specific message. Events include delivery, bounce, open, click, and other engagement events. Use this tool when you need to see the full lifecycle of a message.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to retrieve the message events from."
+          },
+          "messageId": {
+            "type": "string",
+            "description": "(string): The ID of the message to retrieve events for."
+          }
+        },
+        "required": [
+          "messageId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 134
+    },
+    {
+      "name": "list_objects",
+      "description": "List all objects in a single collection. Objects are used to model custom collections in Knock that are NOT users or tenants. Use this tool when you need to return a paginated list of objects in a single collection.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to list objects from."
+          },
+          "collection": {
+            "type": "string",
+            "description": "(string): The collection to list objects from."
+          }
+        },
+        "required": [
+          "collection"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 124
+    },
+    {
+      "name": "get_object",
+      "description": "Get an object wihin a collection. Returns information about the object including any custom properties. Use this tool when you need to retrieve an object to understand it's properties.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to get the object from."
+          },
+          "collection": {
+            "type": "string",
+            "description": "(string): The collection to get the object from."
+          },
+          "objectId": {
+            "type": "string",
+            "description": "(string): The ID of the object to get."
+          }
+        },
+        "required": [
+          "collection",
+          "objectId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 140
+    },
+    {
+      "name": "upsert_object",
+      "description": "Create or update an object in a specific collection. Objects are used to model custom collections in Knock that are NOT users or tenants. If the object does not exist, it will be created. If the object exists, it will be updated with the provided properties. The update will always perform an upsert operation, so you do not need to provide the full properties each time.\n  \n  Use this tool when you need to create a new object, or update an existing custom-object. Custom objects can be used to subscribe users' to as lists, and also send non-user facing notifications to.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to create or update the object in."
+          },
+          "collection": {
+            "type": "string",
+            "description": "(string): The collection to create or update the object in."
+          },
+          "objectId": {
+            "type": "string",
+            "description": "(string): The ID of the object to create or update."
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "(object): The properties to set on the object."
+          }
+        },
+        "required": [
+          "collection",
+          "objectId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 260
+    },
+    {
+      "name": "subscribe_users_to_object",
+      "description": "\n  Subscribe a list of users to an object in a specific collection. We use this to model lists of users, for pub-sub use cases.\n  \n  Use this tool when you need to subscribe one or more users to an object where you will then trigger workflows for those lists of users to send notifications to.\n\n  Before using this tool, you should create the object in the collection using the createOrUpdateObject tool.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to subscribe the user to."
+          },
+          "collection": {
+            "type": "string",
+            "description": "(string): The collection to subscribe the user to."
+          },
+          "objectId": {
+            "type": "string",
+            "description": "(string): The ID of the object to subscribe the user to."
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "(array): The IDs of the users to subscribe to the object. If not provided, the current user will be subscribed."
+          }
+        },
+        "required": [
+          "collection",
+          "objectId",
+          "userIds"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 251
+    },
+    {
+      "name": "unsubscribe_users_from_object",
+      "description": "Unsubscribe a list of users from an object in a specific collection. We use this to model lists of users, for pub-sub use cases.\n  \n  Use this tool when you need to unsubscribe one or more users from an object where you will then trigger workflows for those lists of users to send notifications to.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to unsubscribe the user from."
+          },
+          "collection": {
+            "type": "string",
+            "description": "(string): The collection to unsubscribe the user from."
+          },
+          "objectId": {
+            "type": "string",
+            "description": "(string): The ID of the object to unsubscribe the user from."
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "(array): The IDs of the users to unsubscribe from the object."
+          }
+        },
+        "required": [
+          "collection",
+          "objectId",
+          "userIds"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 211
+    },
+    {
+      "name": "get_partial",
+      "description": "\n  Get a partial by its key. Use this tool when you need to know if a specific partial exists by key.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to get the partial for."
+          },
+          "key": {
+            "type": "string",
+            "description": "(string): The key of the partial to get."
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 112
+    },
+    {
+      "name": "list_partials",
+      "description": "\n  List all partials within the environment given. Partials provide common building blocks for notification templates. Returns information about the partial, including the name and the key.  \n  Use this tool when you need to know the available partials for the environment, like when building a notification template and wanting to use a partial to build the template.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to list partials for."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 131
+    },
+    {
+      "name": "upsert_partial",
+      "description": "\n  Create or update a partial. A partial is a reusable piece of content that can be used in a template. Use this tool when you need to create a new partial or update an existing one.\n\n  When working with a partial you must chose the type of the partial. The type determines the format of the content. If you're working with an email template, you should use the \"html\" or \"markdown\" type.\n\n  If you need to work with dynamic content in your partial you can use liquid syntax. Liquid is a templating language that is supported in Knock. You can supply a variable like {{ some_variable }} in the content and it will be replaced with the actual value when the partial is used in a template.\n\n  <example>\n  {\n    \"name\": \"Greeting\",\n    \"key\": \"greeting\",\n    \"type\": \"html\",\n    \"content\": \"<div>Hello, {{ recipient_name }}</div>\"\n  }\n  </example>\n\n  Changes to a partial MUST be committed before they can be used in a template.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to upsert the partial for."
+          },
+          "key": {
+            "type": "string",
+            "description": "(string): The key of the partial to upsert."
+          },
+          "name": {
+            "type": "string",
+            "description": "(string): The name of the partial."
+          },
+          "description": {
+            "type": "string",
+            "description": "(string): The description of the partial."
+          },
+          "content": {
+            "type": "string",
+            "description": "(string): The content of the partial."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "html",
+              "text",
+              "json",
+              "markdown"
+            ],
+            "description": "(string): The type of the partial."
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "content",
+          "type"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 408
+    },
+    {
+      "name": "get_tenant",
+      "description": "\n  Retrieves a tenant by their ID. Tenants in Knock are used to model organizations, teams, and other groups of users. They are a special type of object.\n  \n  Use this tool when you need to lookup the information about a tenant, including name, and if there are any custom properties set.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to retrieve the tenant from."
+          },
+          "tenantId": {
+            "type": "string",
+            "description": "(string): The ID of the tenant to retrieve."
+          }
+        },
+        "required": [
+          "tenantId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 156
+    },
+    {
+      "name": "list_tenants",
+      "description": "\n  Retrieves a list of tenants. Tenants in Knock are used to model organizations, teams, and other groups of users. They are a special type of object. \n  \n  Use this tool when you need to list all tenants in an environment.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to retrieve the tenants from."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 117
+    },
+    {
+      "name": "upsert_tenant",
+      "description": "\n  Creates or updates a tenant using the properties provided. Tenants in Knock are used to model organizations, teams, and other groups of users. They are a special type of object.\n  \n  Use this tool when you need to create a new tenant, or update an existing tenant's properties.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to set the tenant in."
+          },
+          "tenantId": {
+            "type": "string",
+            "description": "(string): The ID of the tenant to update."
+          },
+          "name": {
+            "type": "string",
+            "description": "(string): The name of the tenant."
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "(object): The properties to set on the tenant."
+          }
+        },
+        "required": [
+          "tenantId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 197
+    },
+    {
+      "name": "get_user",
+      "description": "\n   Retrieves the complete user object for the given userId, including email, name, phone number, and any custom properties. Use this tool when you need to retrieve a user's complete profile.\n\n   If the userId is not provided, it will use the userId from the config.\n   ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to retrieve the user from."
+          },
+          "userId": {
+            "type": "string",
+            "description": "(string): The userId of the User to retrieve."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 144
+    },
+    {
+      "name": "upsert_user",
+      "description": "\n  Creates a new user if they don't exist, or updates the user object for the given userId, including email, name, phone number, and any custom properties.\n  \n  Use this tool when you need to update a user's profile.\n\n  If the userId is not provided, it will use the userId from the config.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to create or update the user in."
+          },
+          "userId": {
+            "type": "string",
+            "description": "(string): The userId of the User to update."
+          },
+          "email": {
+            "type": "string",
+            "description": "(string): The email of the User to update."
+          },
+          "name": {
+            "type": "string",
+            "description": "(string): The name of the User to update."
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "(string): The phone number of the User to update."
+          },
+          "customProperties": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "(object): A dictionary of custom properties to update for the User."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 251
+    },
+    {
+      "name": "get_user_preferences",
+      "description": "\n  Retrieves the user's notification preferences for the given userId.\n\n  If the userId is not provided, it will use the userId from the config. \n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to retrieve the user preferences from."
+          },
+          "userId": {
+            "type": "string",
+            "description": "(string): The userId of the User to retrieve Preferences for."
+          },
+          "preferenceSetId": {
+            "type": "string",
+            "description": "(string): The preferenceSetId of the User to retrieve preferences for. Defaults to `default`."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 156
+    },
+    {
+      "name": "set_user_preferences",
+      "description": "\n  Overwrites the user's notification preferences for the given userId. Allows setting per-workflow, per-category, or per-channel notification preferences. Use this tool when you are asked to update a user's notification preferences.\n\n  If the userId is not provided, it will use the userId from the config.\n\n  Instructions:\n\n  - You must ALWAYS provide a full preference set to this tool.\n  - When setting per-workflow preferences, the key in the object should be the workflow key.\n  - Workflow and category preferences should always have channel types underneath.\n  - The channel types available to you are: email, sms, push, chat, and in_app_feed.\n  - To turn OFF a preference, you must set it to false.\n  - To turn ON a preference, you must set it to true.\n\n  <examples>\n    <example>\n      <description>\n        Update the user's preferences to turn off email notifications for the \"welcome\" workflow.\n      </description>\n      <input>\n        {\n          \"workflows\": {\n            \"welcome\": {\n              \"channel_types\": {\n                \"email\": false\n              }\n            }\n          }\n        }\n    </example>\n  </examples>\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to set the user preferences in."
+          },
+          "userId": {
+            "type": "string",
+            "description": "(string): The userId of the User to update preferences for."
+          },
+          "workflows": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "(object): The workflows to update where the key is the workflow key, and the value of the object is an object that contains a `channel_types` key with a boolean value for each channel type."
+          },
+          "categories": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "(object): The categories to update where the key is the category key, and the value of the object is an object that contains a `channel_types` key with a boolean value for each channel type."
+          },
+          "channel_types": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "description": "(object): The channel types to update where the key is the channel type, and the value of the object is a boolean value."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 515
+    },
+    {
+      "name": "get_user_messages",
+      "description": "\n  Retrieves the messages that this user has received from the service. Use this tool when you need information about the notifications that the user has received, including if the message has been read, seen, or interacted with. This will return a list of messages across all of the channels.\n\n  If the userId is not provided, it will use the userId from the config.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to retrieve the user messages from."
+          },
+          "userId": {
+            "type": "string",
+            "description": "(string): The userId of the User to retrieve messages for."
+          },
+          "workflowRunId": {
+            "type": "string",
+            "description": "(string): The workflowRunId of the User to retrieve. Use this when you want to retrieve messages sent from a workflow trigger."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 204
+    },
+    {
+      "name": "list_workflows",
+      "description": "\n  List all workflows available for the given environment. Returns structural information about the workflows, including the key, name, description, and categories.\n\n  Use this tool when you need to understand which workflows are available to be called.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to list workflows for."
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 110
+    },
+    {
+      "name": "get_workflow",
+      "description": "\n  Get a workflow by key. Returns structural information about the workflow, including the key, name, description, and categories.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to get the workflow for."
+          },
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to get."
+          }
+        },
+        "required": [
+          "workflowKey"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 116
+    },
+    {
+      "name": "trigger_workflow",
+      "description": "\n  Trigger a workflow for one or more recipients, which may produce one or more messages for each recipient depending on the workflow's steps.\n\n  Use this tool when you need to trigger a workflow to send a notification across the channels configured for the workflow. \n\n  When recipients aren't provided, the workflow will be triggered for the current user specified in the config.\n\n  Returns the workflow run ID, which can be used to lookup messages produced by the workflow.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to trigger the workflow in."
+          },
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to trigger."
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "(array): The recipients to trigger the workflow for. This is an array of user IDs."
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "(object): Data to pass to the workflow."
+          },
+          "tenant": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "(object): The tenant to trigger the workflow for. Must contain an id if being sent."
+          }
+        },
+        "required": [
+          "workflowKey"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 280
+    },
+    {
+      "name": "create_workflow",
+      "description": "\n  Create a new workflow, which is used to control the flow of notifications. Use this tool when you're asked to create a new workflow, or you need to create a new workflow before adding a step to it.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to create the workflow in."
+          },
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to create. Only use a kebab-case string with no spaces or special characters."
+          },
+          "name": {
+            "type": "string",
+            "description": "(string): The name of the workflow."
+          },
+          "description": {
+            "type": "string",
+            "description": "(string): The description of the workflow."
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "(array): The categories to add to the workflow."
+          }
+        },
+        "required": [
+          "workflowKey",
+          "name",
+          "description",
+          "categories"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 217
+    },
+    {
+      "name": "upsert_workflow_email_step",
+      "description": "\n  Creates or updates an email step in a workflow. Use this tool when you're asked to create an email notification and you need to specify the content of the email.\n\n  \n  To use this tool, you MUST first create a workflow using the `createWorkflow` tool, or get an existing workflow using the `getWorkflow` tool. \n  \n  If you are updating an existing step, you can pass the `stepRef` parameter to the tool. If you do not pass the `stepRef` parameter, a new step will be created and added to the end of the workflow's steps array. You should ONLY pass the `stepRef` parameter if you are updating an existing step.\n  \n\n  When you're asked to create an email step, you can either set the HTML content directly or use blocks to build the email. If you're asked to set the HTML content directly, you can use the `htmlContent` parameter. We prefer to use blocks.\n\n  ## Blocks\n\n  The content of the email is supplied as an array of \"blocks\". The simplest block is a \"markdown\" block, which supports content in a markdown format. That should always be your default block type.\n\n  The following block types are supported:\n\n  - `markdown`: A block that supports markdown content.\n  - `html`: A block that supports markdown content.\n  - `image`: A block that supports an image.\n  - `button_set`: A block that adds one or more buttons.\n  - `divider`: A block that supports a divider.\n  - `partial`: A block that supports rendering a shared content partial.\n\n  <example>\n  {\n    \"blocks\": [\n      {\n        \"type\": \"markdown\",\n        \"content\": \"# Greetings from Knock!\nHello, {{ recipient.name }}.\"\n      },\n      {\n        \"type\": \"divider\"\n      },\n      {\n        \"type\": \"button_set\",\n        \"buttons\": [\n          {\n            \"label\": \"Approve\",\n            \"action\": \"{{ data.primary_action_url }}\",\n            \"variant\": \"solid\"\n          }\n        ]\n      }\n    ]\n  }\n  </example>\n\n  ### Markdown\n\n  When using the `markdown` block, you must supply a `content` key. The `content` key supports markdown.\n\n  <example>\n  {\n    \"type\": \"markdown\",\n    \"content\": \"Hello, world!\"\n  }\n  </example>\n\n  ### HTML\n\n  The `html` block supports raw HTML content. This should be used sparingly, and only when you need to include custom HTML content that markdown doesn't support. When using the `html` block, you must supply a `content` key. HTML content can include liquid personalization.\n\n  ### Button sets\n\n  Button sets are a special type of block that allows you to add one or more buttons to the email. They're useful for directing users to take specific actions. Button sets support one or more buttons. You must always include at least one button in a button set.\n\n  Buttons are specified in a button set under the `buttons` key. Each button requires a `label`, `action`, and `variant`. The ONLY valid variants are `solid` and `outline`. The label and action can allowed be dynamic variables using liquid.\n\n  <example>\n  {\n    \"type\": \"button_set\",\n    \"buttons\": [\n      {\n        \"label\": \"Approve\",\n        \"action\": \"https://example.com\",\n        \"variant\": \"solid\"\n      }\n    ]\n  }\n  </example>\n\n  ### Image\n\n  Images are a special type of block that allows you to add an image to the email. When using the `image` block, you must supply a `url` key. The `url` key supports a URL to an image.\n\n  <example>\n  {\n    \"type\": \"image\",\n    \"url\": \"https://example.com/image.png\"\n  }\n  </example>\n\n  \n  ## Personalization\n\n  If you need to include personalization, you can use liquid to include dynamic content in the email and the subject line.\n  The following variables are always available to use in liquid:\n\n  - `recipient.id`: The ID of the recipient.\n  - `recipient.name`: The name of the recipient.\n  - `recipient.email`: The email of the recipient.\n  - `recipient.phone_number`: The phone number of the recipient.\n\n  You can supply **any** other dynamic variables you think are needed by referencing them under the `data` key. You add those like `{{ data.variable_name }}`.\n\n  <example>\n  # Hello, {{ recipient.name }}\n\n  This is a dynamic message:\n\n  > {{ data.message }}\n  </example>\n\n  ## Liquid helpers\n\n  You have access to a full suite of liquid helpers to help you perform common templating tasks. The full list of helper is available here: https://docs.knock.app/designing-workflows/template-editor/reference-liquid-helpers.\n\n  <example>\n  Hello, {{ recipient.name | split: \" \" | first | default: \"there\" }}\n  </example>\n  \n\n  ## Partials\n\n  If you need to reuse content across multiple emails, you can create or reference an existing partial and reference it in the email. You should only use partials if you're instructed to do so.\n\n  When you do need to use a partial in an email, you can use the `partial` block and then set the `key` to the key of the partial you want to use. If the partial requires any variables, you pass those in the `attrs` key.\n\n  ## Writing style\n\n  Unless asked otherwise, you should write content for the email in a concise and formal writing style. Do NOT use complex language or try to over explain. Keep the subject line to 8 words or less.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to add the step to."
+          },
+          "stepRef": {
+            "type": "string",
+            "description": "(string): The reference of the step to update. If not provided, a new step will be created."
+          },
+          "channelKey": {
+            "type": "string",
+            "description": "(string): The key of the channel to use for this step. Use `list_channels` to see available channels. If not provided, the first email channel will be used."
+          },
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to operate in."
+          },
+          "htmlContent": {
+            "type": "string",
+            "description": "(string): The HTML content of the email template. Use this when not setting blocks."
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "markdown"
+                    },
+                    "content": {
+                      "type": "string",
+                      "description": "(string): The markdown content of the block."
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "content"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "html"
+                    },
+                    "content": {
+                      "type": "string",
+                      "description": "(string): The HTML content of the block."
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "content"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "image"
+                    },
+                    "url": {
+                      "type": "string",
+                      "description": "(string): The URL of the image."
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "button_set"
+                    },
+                    "buttons": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "description": "(string): The label of the button."
+                          },
+                          "action": {
+                            "type": "string",
+                            "description": "(string): The action of the button."
+                          },
+                          "variant": {
+                            "type": "string",
+                            "enum": [
+                              "solid",
+                              "outline"
+                            ],
+                            "default": "solid",
+                            "description": "(enum): The variant of the button. Defaults to `solid`."
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "action"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "(array): The buttons for the button set."
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "buttons"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "divider"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "partial"
+                    },
+                    "key": {
+                      "type": "string",
+                      "description": "(string): The key of the partial to use."
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "(string): The name of the partial."
+                    },
+                    "attrs": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "(object): The attributes for the partial. ALWAYS supply an empty object when you don't know which params are required."
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "key",
+                    "name",
+                    "attrs"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "description": "(array): The blocks for the email step. Use this when you don't need to set HTML directly."
+          },
+          "layoutKey": {
+            "type": "string",
+            "description": "(string): The key of the layout to use for the email step."
+          },
+          "subject": {
+            "type": "string",
+            "description": "(string): The subject of the email step."
+          }
+        },
+        "required": [
+          "workflowKey",
+          "layoutKey",
+          "subject"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 2039
+    },
+    {
+      "name": "upsert_workflow_sms_step",
+      "description": "\n  Creates an SMS step in a workflow. Use this tool when you're asked to create an SMS notification and you need to specify the content of the SMS.\n\n  \n  To use this tool, you MUST first create a workflow using the `createWorkflow` tool, or get an existing workflow using the `getWorkflow` tool. \n  \n  If you are updating an existing step, you can pass the `stepRef` parameter to the tool. If you do not pass the `stepRef` parameter, a new step will be created and added to the end of the workflow's steps array. You should ONLY pass the `stepRef` parameter if you are updating an existing step.\n  \n\n  \n  ## Personalization\n\n  If you need to include personalization, you can use liquid to include dynamic content in the email and the subject line.\n  The following variables are always available to use in liquid:\n\n  - `recipient.id`: The ID of the recipient.\n  - `recipient.name`: The name of the recipient.\n  - `recipient.email`: The email of the recipient.\n  - `recipient.phone_number`: The phone number of the recipient.\n\n  You can supply **any** other dynamic variables you think are needed by referencing them under the `data` key. You add those like `{{ data.variable_name }}`.\n\n  <example>\n  # Hello, {{ recipient.name }}\n\n  This is a dynamic message:\n\n  > {{ data.message }}\n  </example>\n\n  ## Liquid helpers\n\n  You have access to a full suite of liquid helpers to help you perform common templating tasks. The full list of helper is available here: https://docs.knock.app/designing-workflows/template-editor/reference-liquid-helpers.\n\n  <example>\n  Hello, {{ recipient.name | split: \" \" | first | default: \"there\" }}\n  </example>\n  \n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to add the step to."
+          },
+          "stepRef": {
+            "type": "string",
+            "description": "(string): The reference of the step to update. If not provided, a new step will be created."
+          },
+          "channelKey": {
+            "type": "string",
+            "description": "(string): The key of the channel to use for this step. Use `list_channels` to see available channels. If not provided, the first SMS channel will be used."
+          },
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to operate in."
+          },
+          "content": {
+            "type": "string",
+            "description": "(string): The content of the SMS."
+          }
+        },
+        "required": [
+          "workflowKey",
+          "content"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 610
+    },
+    {
+      "name": "upsert_workflow_push_step",
+      "description": "\n  Creates a push step in a workflow. Use this tool when you're asked to create a push notification and you need to specify the content of the push notification.\n\n  \n  To use this tool, you MUST first create a workflow using the `createWorkflow` tool, or get an existing workflow using the `getWorkflow` tool. \n  \n  If you are updating an existing step, you can pass the `stepRef` parameter to the tool. If you do not pass the `stepRef` parameter, a new step will be created and added to the end of the workflow's steps array. You should ONLY pass the `stepRef` parameter if you are updating an existing step.\n  \n\n  \n  ## Personalization\n\n  If you need to include personalization, you can use liquid to include dynamic content in the email and the subject line.\n  The following variables are always available to use in liquid:\n\n  - `recipient.id`: The ID of the recipient.\n  - `recipient.name`: The name of the recipient.\n  - `recipient.email`: The email of the recipient.\n  - `recipient.phone_number`: The phone number of the recipient.\n\n  You can supply **any** other dynamic variables you think are needed by referencing them under the `data` key. You add those like `{{ data.variable_name }}`.\n\n  <example>\n  # Hello, {{ recipient.name }}\n\n  This is a dynamic message:\n\n  > {{ data.message }}\n  </example>\n\n  ## Liquid helpers\n\n  You have access to a full suite of liquid helpers to help you perform common templating tasks. The full list of helper is available here: https://docs.knock.app/designing-workflows/template-editor/reference-liquid-helpers.\n\n  <example>\n  Hello, {{ recipient.name | split: \" \" | first | default: \"there\" }}\n  </example>\n  \n\n  Be terse in your writing as this is a push notification and should be direct and to the point.\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to add the step to."
+          },
+          "stepRef": {
+            "type": "string",
+            "description": "(string): The reference of the step to update. If not provided, a new step will be created."
+          },
+          "channelKey": {
+            "type": "string",
+            "description": "(string): The key of the channel to use for this step. Use `list_channels` to see available channels. If not provided, the first push channel will be used."
+          },
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to operate in."
+          },
+          "title": {
+            "type": "string",
+            "description": "(string): The title of the push notification."
+          },
+          "content": {
+            "type": "string",
+            "description": "(string): The content (body) of the push notification."
+          }
+        },
+        "required": [
+          "workflowKey",
+          "title",
+          "content"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 659
+    },
+    {
+      "name": "upsert_workflow_in_app_step",
+      "description": "\n  Creates an in app feed step in a workflow. Use this tool when you're asked to create an in app feed notification and you need to specify the content of the in app feed notification.\n\n  \n  To use this tool, you MUST first create a workflow using the `createWorkflow` tool, or get an existing workflow using the `getWorkflow` tool. \n  \n  If you are updating an existing step, you can pass the `stepRef` parameter to the tool. If you do not pass the `stepRef` parameter, a new step will be created and added to the end of the workflow's steps array. You should ONLY pass the `stepRef` parameter if you are updating an existing step.\n  \n\n  \n  ## Personalization\n\n  If you need to include personalization, you can use liquid to include dynamic content in the email and the subject line.\n  The following variables are always available to use in liquid:\n\n  - `recipient.id`: The ID of the recipient.\n  - `recipient.name`: The name of the recipient.\n  - `recipient.email`: The email of the recipient.\n  - `recipient.phone_number`: The phone number of the recipient.\n\n  You can supply **any** other dynamic variables you think are needed by referencing them under the `data` key. You add those like `{{ data.variable_name }}`.\n\n  <example>\n  # Hello, {{ recipient.name }}\n\n  This is a dynamic message:\n\n  > {{ data.message }}\n  </example>\n\n  ## Liquid helpers\n\n  You have access to a full suite of liquid helpers to help you perform common templating tasks. The full list of helper is available here: https://docs.knock.app/designing-workflows/template-editor/reference-liquid-helpers.\n\n  <example>\n  Hello, {{ recipient.name | split: \" \" | first | default: \"there\" }}\n  </example>\n  \n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to add the step to."
+          },
+          "stepRef": {
+            "type": "string",
+            "description": "(string): The reference of the step to update. If not provided, a new step will be created."
+          },
+          "channelKey": {
+            "type": "string",
+            "description": "(string): The key of the channel to use for this step. Use `list_channels` to see available channels. If not provided, the first in-app feed channel will be used."
+          },
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to operate in."
+          },
+          "actionUrl": {
+            "type": "string",
+            "description": "(string): The URL to navigate to when the in app feed is tapped."
+          },
+          "body": {
+            "type": "string",
+            "description": "(string): The markdown content of the in app feed."
+          }
+        },
+        "required": [
+          "workflowKey",
+          "actionUrl",
+          "body"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 652
+    },
+    {
+      "name": "upsert_workflow_chat_step",
+      "description": "\n  Creates a chat step in a workflow. Use this tool when you're asked to create a chat, Slack, Discord, or Microsoft Teams notification and you need to specify the content of the chat notification.\n\n  \n  To use this tool, you MUST first create a workflow using the `createWorkflow` tool, or get an existing workflow using the `getWorkflow` tool. \n  \n  If you are updating an existing step, you can pass the `stepRef` parameter to the tool. If you do not pass the `stepRef` parameter, a new step will be created and added to the end of the workflow's steps array. You should ONLY pass the `stepRef` parameter if you are updating an existing step.\n  \n\n  \n  ## Personalization\n\n  If you need to include personalization, you can use liquid to include dynamic content in the email and the subject line.\n  The following variables are always available to use in liquid:\n\n  - `recipient.id`: The ID of the recipient.\n  - `recipient.name`: The name of the recipient.\n  - `recipient.email`: The email of the recipient.\n  - `recipient.phone_number`: The phone number of the recipient.\n\n  You can supply **any** other dynamic variables you think are needed by referencing them under the `data` key. You add those like `{{ data.variable_name }}`.\n\n  <example>\n  # Hello, {{ recipient.name }}\n\n  This is a dynamic message:\n\n  > {{ data.message }}\n  </example>\n\n  ## Liquid helpers\n\n  You have access to a full suite of liquid helpers to help you perform common templating tasks. The full list of helper is available here: https://docs.knock.app/designing-workflows/template-editor/reference-liquid-helpers.\n\n  <example>\n  Hello, {{ recipient.name | split: \" \" | first | default: \"there\" }}\n  </example>\n  \n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to add the step to."
+          },
+          "stepRef": {
+            "type": "string",
+            "description": "(string): The reference of the step to update. If not provided, a new step will be created."
+          },
+          "channelKey": {
+            "type": "string",
+            "description": "(string): The key of the channel to use for this step. Use `list_channels` to see available channels. If not provided, the first chat channel will be used."
+          },
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to operate in."
+          },
+          "body": {
+            "type": "string",
+            "description": "(string): The markdown content of the notification."
+          }
+        },
+        "required": [
+          "workflowKey",
+          "stepRef",
+          "body"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 623
+    },
+    {
+      "name": "upsert_workflow_delay_step",
+      "description": "\n  Creates a delay step in a workflow. Use this tool when you're asked to add a delay to the workflow that pauses, or waits for a period of time before continuing.\n\n  \n  To use this tool, you MUST first create a workflow using the `createWorkflow` tool, or get an existing workflow using the `getWorkflow` tool. \n  \n  If you are updating an existing step, you can pass the `stepRef` parameter to the tool. If you do not pass the `stepRef` parameter, a new step will be created and added to the end of the workflow's steps array. You should ONLY pass the `stepRef` parameter if you are updating an existing step.\n  \n\n  Delays are specified in \"unit\" and \"value\" pairs. The only valid units are \"seconds\", \"minutes\", \"hours\", and \"days\".\n\n  <example>\n  {\n    \"delayValue\": 5,\n    \"delayUnit\": \"minutes\"\n  }\n  </example>\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to add the step to."
+          },
+          "stepRef": {
+            "type": "string",
+            "description": "(string): The reference of the step to update. If not provided, a new step will be created."
+          },
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to operate in."
+          },
+          "delayValue": {
+            "type": "number",
+            "description": "(number): The value of the delay."
+          },
+          "delayUnit": {
+            "type": "string",
+            "enum": [
+              "seconds",
+              "minutes",
+              "hours",
+              "days"
+            ],
+            "description": "(enum): The unit of the delay."
+          }
+        },
+        "required": [
+          "workflowKey",
+          "delayValue",
+          "delayUnit"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 404
+    },
+    {
+      "name": "upsert_workflow_batch_step",
+      "description": "\n  Creates a batch step in a workflow. Use this tool when you're asked to create a batch step or asked to add digesting behavior to a workflow. The batch step collects multiple workflow triggers for a single recipient over a period of time and then flushes the content to the next step.\n\n  \n  To use this tool, you MUST first create a workflow using the `createWorkflow` tool, or get an existing workflow using the `getWorkflow` tool. \n  \n  If you are updating an existing step, you can pass the `stepRef` parameter to the tool. If you do not pass the `stepRef` parameter, a new step will be created and added to the end of the workflow's steps array. You should ONLY pass the `stepRef` parameter if you are updating an existing step.\n  \n\n  Batch windows are specified in \"unit\" and \"value\" pairs. The only valid units are \"seconds\", \"minutes\", \"hours\", and \"days\".\n\n  <example>\n  {\n    \"batchWindow\": {\n      \"value\": 5,\n      \"unit\": \"minutes\"\n    }\n  }\n  </example>\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to add the step to."
+          },
+          "stepRef": {
+            "type": "string",
+            "description": "(string): The reference of the step to update. If not provided, a new step will be created."
+          },
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to operate in."
+          },
+          "batchWindow": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "number",
+                "description": "(number): The value of the batch window."
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "seconds",
+                  "minutes",
+                  "hours",
+                  "days"
+                ],
+                "description": "(enum): The unit of the batch window."
+              }
+            },
+            "required": [
+              "value",
+              "unit"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "workflowKey",
+          "batchWindow"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 454
+    },
+    {
+      "name": "create_one_off_workflow_schedule",
+      "description": "\n  Create a one-off workflow schedule for a user. Use this tool when you need to schedule the execution of a workflow for a specific user in the future, like to power a delayed notification.\n  \n  Schedules can accept a set of data that will be passed to the workflow trigger when it is executed. When the userId is not provided, the schedule will be created for the current user specified in the config.\n\n  Examples:\n  \n  - In three days, send a welcome email to a user\n  - In one hour, send a password reset email to a user\n  - In two weeks, send a survey to a user\n  ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "(string): The environment to create the workflow in."
+          },
+          "workflowKey": {
+            "type": "string",
+            "description": "(string): The key of the workflow to schedule."
+          },
+          "userId": {
+            "type": "string",
+            "description": "(string): The userId of the user to schedule the workflow for."
+          },
+          "scheduledAt": {
+            "type": "string",
+            "description": "(string): The date and time to schedule the workflow for. Must be in ISO 8601 format."
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "(object): Data to pass to the workflow."
+          }
+        },
+        "required": [
+          "workflowKey",
+          "userId",
+          "scheduledAt"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "tokens": 318
+    }
+  ],
+  "totalTokens": 14568
+}

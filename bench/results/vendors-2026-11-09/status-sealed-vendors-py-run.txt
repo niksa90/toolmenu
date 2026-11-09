@@ -1,0 +1,15 @@
+2 py_awslabs.aws-api-mcp-server
+0 py_awslabs.aws-documentation-mcp-server
+0 py_awslabs.dynamodb-mcp-server
+0 py_elevenlabs-mcp
+0 py_mcp-clickhouse
+0 py_awslabs.aws-pricing-mcp-server
+0 py_mcp-neo4j-cypher
+2 py_mcp-server-qdrant
+0 py_awslabs.eks-mcp-server
+0 py_langfuse-mcp
+0 py_awslabs.cloudwatch-mcp-server
+0 py_redis-mcp-server
+0 py_mcp-atlassian
+2 py_awslabs.aws-api-mcp-server
+2 py_mcp-server-qdrant
