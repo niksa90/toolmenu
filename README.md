@@ -41,7 +41,7 @@ npx toolmenu init -- node dist/server.js          # CI: a baseline, a workflow, 
 
 ![toolmenu session output: tools inserted mid-list, a description edited, each pinned to the step that caused it](https://raw.githubusercontent.com/niksa90/toolmenu/main/docs/demo.svg)
 
-> **Status: 0.26.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
+> **Status: 0.27.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
 > every rule in [docs/RULES.md](docs/RULES.md), protocol versions in [docs/PROTOCOLS.md](docs/PROTOCOLS.md)
 > (written by a test that runs each one), changes in [CHANGELOG.md](CHANGELOG.md).
 
@@ -347,7 +347,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci && npm run build
-      - uses: niksa90/toolmenu@v0.26.0
+      - uses: niksa90/toolmenu@v0.27.0
         with:
           command: node dist/server.js
           baseline: menu.json          # your committed snapshot
@@ -397,7 +397,7 @@ permissions:
   security-events: write          # to upload SARIF
 steps:
   # … checkout, build, as above
-  - uses: niksa90/toolmenu@v0.26.0
+  - uses: niksa90/toolmenu@v0.27.0
     with:
       command: node dist/server.js
       sarif: toolmenu-sarif

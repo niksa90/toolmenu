@@ -228,7 +228,7 @@ version in a comment, and let Dependabot's `github-actions` updates keep the pin
 current:
 
 ```yaml
-      - uses: niksa90/toolmenu@<commit SHA of the release> # v0.26.0
+      - uses: niksa90/toolmenu@<commit SHA of the release> # v0.27.0
 ```
 
 `toolmenu init` writes the actions it sets up (checkout, setup-node, …) pinned this

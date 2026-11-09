@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.27.0
 
 ### New
 
@@ -33,6 +33,14 @@
   makes worse; the `verdict` and `accept` outputs carry it. `gate: review` makes the
   job pass or fail on the verdict instead of `diff`'s findings (a breaking change the
   release bump allows passes). The default, `gate: findings`, keeps 0.26's behaviour.
+- **Seven more `--client` profiles**, each value read from the client's own docs or source:
+  `codex`, `vscode`, `copilot-cloud-agent`, `copilot-code-review`, `gemini-cli`,
+  `gemini-api` and `antigravity`. Two rules come with them. `menu/client-limit` warns
+  when one server lists more tools than the client sends at once (VS Code: 128 a
+  request). `menu/client-features` says what the client leaves out: Copilot cloud agent
+  and code review use tools only, and code review only tools marked `readOnlyHint: true`.
+  `naming/client-name` now covers clients that rewrite a name instead of refusing it
+  (Gemini CLI). Limits that only forum posts state (Cursor's 40) aren't checked.
 - **`docs/PROTOCOLS.md`, written by a test.** Every protocol version in `schemas/` is
   run against a fixture server on each `npm test` (handshake, `spec/schema` on a good
   and a bad list, a session whose call adds a tool mid-list); the table is that run.
@@ -85,8 +93,18 @@
 - **`diff/param-type` names only the types calls lose.** `null|string → string` said
   "Calls that send a null|string fail validation"; it now says "a null".
 
+### Bench
+
+- Four panels, rerun weekly (`bench/scripts/weekly.sh`): the hosted panel, registry stdio
+  servers with a new release (up to 1,000 a week), the servers vendors publish themselves
+  (npm, PyPI, images), and Docker's MCP catalog. Local servers get the sealed
+  `--call-everything` pass. `CHANGES.md` compares each week with the last; FINDINGS
+  F17 to F20 have the first run.
+
 ### Docs
 
+- `AGENTS.md`: where things are, how to add a rule, what counts as a finding, how the
+  bench runs third-party servers, and how pull request descriptions read. A PR template.
 - README: what a finding looks like and how much each rule family can be trusted,
   near the top; the real-server testing in its own section; the session flow as a
   step-by-step diagram.

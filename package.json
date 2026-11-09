@@ -1,6 +1,6 @@
 {
   "name": "toolmenu",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "mcpName": "io.github.niksa90/toolmenu",
   "description": "Test your MCP server the way agents and clients meet it: the menu, the calls, the results, the sign-in, and every release after. No LLM involved.",
   "author": "Nikša Perović (https://niksa.me)",
