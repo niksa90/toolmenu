@@ -69,8 +69,10 @@ for id, spec, repo in order:
     # current toolmenu says it); what a result breaks whatever the input keeps its level.
     def sealed_grade(f):
         f = regrade(f)
-        if f['rule'] in ('session/step-failed', 'session/untested') and f['severity'] != 'info':
+        if f['rule'] in ('session/step-failed', 'session/untested', 'session/rate-limited') and f['severity'] != 'info':
             return {**f, 'severity': 'info', 'regraded': f.get('regraded') or 'sealed pass: made-up values, no network'}
+        if f['rule'] == 'session/server-unresponsive' and f['severity'] == 'error':
+            return {**f, 'severity': 'warn', 'regraded': f.get('regraded') or 'sealed pass: made-up values, no network'}
         return f
     fs += [(sealed_grade(f), 'sealed') for f in (sealed['findings'] if sealed else []) if (f['rule'], f.get('tool')) not in seen]
     for f, cmd in fs:

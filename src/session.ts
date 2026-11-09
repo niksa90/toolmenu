@@ -1895,7 +1895,11 @@ function outputFindings(list: { step: number; tool: string; problem: string; for
  * input (its own outputSchema, resultType, an error not flagged as one) keeps its level.
  */
 function madeUpInput(f: Raw): Raw {
-  if (f.rule !== 'session/step-failed' && f.rule !== 'session/untested') return f;
-  return { ...f, severity: 'info', message: `${f.message} (--call-everything: made-up values, no network)` };
+  const note = ' (--call-everything: made-up values, no network)';
+  // Offline, a "rate limit" is most often a network call that couldn't be made.
+  if (f.rule === 'session/step-failed' || f.rule === 'session/untested' || f.rule === 'session/rate-limited') return { ...f, severity: 'info', message: f.message + note };
+  // A server that stops answering after a call is worth knowing, but offline it may be waiting on the network.
+  if (f.rule === 'session/server-unresponsive' && f.severity === 'error') return { ...f, severity: 'warn', message: f.message + note };
+  return f;
 }
 
