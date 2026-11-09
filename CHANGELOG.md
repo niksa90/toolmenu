@@ -33,6 +33,9 @@
   a string or a number where a schema belongs (a broken server) no longer crashes
   `snapshot`'s ID rules, the token breakdown or `diff` either; a change to one is still
   reported. `test/odd-schemas.test.mjs` runs every analysis on all of them.
+- **`spec/schema` says why the SDK rejected a list.** It quoted the first line of the SDK's
+  error, which for a validation error is "Invalid result for tools/list: [". Each problem
+  is now a detail line: `tools.1.outputSchema.type: Invalid input: expected "object"`.
 - **"API key not configured" is a missing credential.** A tool that said so (mcp-adr-analysis-server)
   was a `session/step-failed` error, the server's fault; it's now counted with the other
   setup failures in `session/untested`.

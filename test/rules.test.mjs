@@ -969,3 +969,11 @@ test('variance only in fields the model does not read is a warning that says so 
   assert.deepEqual(loud.map((f) => f.severity), ['error', 'error']);
   assert.match(loud[0].message, /miss the prompt cache/);
 });
+
+test('spec/schema: the SDK\'s rejection names each problem, not only "…tools/list: [" (@pipeworx/mcp-rfc-editor, bench 2026-11-09)', async () => {
+  const { sdkIssues } = await import('../dist/rules/spec.js');
+  const said = sdkIssues('Invalid result for tools/list: [\n  {\n    "code": "invalid_value",\n    "path": ["tools", 1, "outputSchema", "type"],\n    "message": "Invalid input: expected \\"object\\""\n  }\n]');
+  assert.equal(said.summary, 'Invalid result for tools/list, one problem.');
+  assert.deepEqual(said.detail, ['tools.1.outputSchema.type: Invalid input: expected "object"']);
+  assert.deepEqual(sdkIssues('Some plain\n  error text'), { summary: 'Some plain error text', detail: [] });
+});
