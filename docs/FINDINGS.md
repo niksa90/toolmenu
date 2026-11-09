@@ -784,8 +784,11 @@ the 109 vendor endpoints answer 401:
   New Relic, Railway, Ahrefs, Instatus. RFC 9728 says identical; the official SDK accepts
   these, a client that follows the RFC to the letter doesn't. Warnings.
 - Stack Overflow's 401 names metadata that isn't there (`auth/discovery`).
-- Microsoft Sentinel's sign-in is Entra ID, whose metadata doesn't advertise PKCE.
-  Spec-following clients must check for it and refuse without it (`auth/pkce`).
+- Microsoft Sentinel signs in through Entra ID, whose OpenID Connect metadata omits
+  `code_challenge_methods_supported`. Entra supports PKCE (Microsoft documents S256 for its
+  auth code flow), but MCP 2025-11-25 requires the field of OpenID Connect providers and
+  tells clients to refuse without it: a client that follows the MCP spec to the letter
+  won't log in, though PKCE would work (`auth/pkce`; the finding now says so).
 
 29 vendor endpoints list tools without a login. Google's 15 do so and answer every call
 with HTTP 401 and a per-tool `WWW-Authenticate`: a design, not a failure.

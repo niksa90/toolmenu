@@ -122,3 +122,9 @@ test('authorization server metadata served where the protected resource metadata
   assert.deepEqual(rules(r), ['auth/resource-metadata:error']);
   assert.match(r.findings[0].message, /serves authorization server metadata .* not protected resource metadata/);
 });
+
+test('auth/pkce on OpenID Connect metadata says PKCE isn\'t advertised, not that it\'s missing (Entra ID)', async () => {
+  const r = await check((b) => ({ '/.well-known/oauth-protected-resource/mcp': prm(b), '/.well-known/oauth-authorization-server': 404, '/.well-known/openid-configuration': { issuer: b, registration_endpoint: '/r' } }));
+  assert.deepEqual(rules(r), ['auth/pkce:error']);
+  assert.match(r.findings[0].message, /doesn't show the server lacks PKCE .* MCP 2025-11-25 requires providers that use OpenID Connect Discovery to include it/);
+});
