@@ -1,0 +1,1035 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "rust-mcp-filesystem",
+    "version": "0.4.2",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-09T20:19:41.056Z",
+  "tools": [
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Read the complete contents of a text file from the file system as text. Handles various text encodings and provides detailed error messages if the file cannot be read. Use this tool when you need to examine the contents of a single file. Optionally include line numbers for precise code targeting. Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/read_text_file.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "description": "The path of the file to read.",
+            "type": "string"
+          },
+          "with_line_numbers": {
+            "description": "Optional: Include line numbers in output (default: false).\nWhen enabled, each line is prefixed with a right-aligned, 1-based line number\nFollowed by a space, a vertical bar (`|`), and another space in the format: `   123 | <original line content>`",
+            "nullable": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "name": "read_text_file",
+      "title": "Read a text file",
+      "tokens": 182
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Create a new directory or ensure a directory exists. Can create multiple nested directories in one operation. If the directory already exists, this operation will succeed silently. Perfect for setting up directory structures for projects or ensuring required paths exist. Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/create_directory.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "description": "The path where the directory will be created.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "name": "create_directory",
+      "title": "Create directory",
+      "tokens": 91
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Get a recursive tree view of files and directories as a JSON structure. Each entry includes 'name', 'type' (file/directory), and 'children' for directories. Files have no children array, while directories always have a children array (which may be empty). If the 'max_depth' parameter is provided, the traversal will be limited to the specified depth. As a result, the returned directory structure may be incomplete or provide a skewed representation of the full directory tree, since deeper-level files and subdirectories beyond the specified depth will be excluded. The output is formatted with 2-space indentation for readability. Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/directory_tree.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "description": "The root path of the directory tree to generate.",
+            "type": "string"
+          },
+          "max_depth": {
+            "description": "Limits the depth of directory traversal",
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "name": "directory_tree",
+      "title": "Directory tree",
+      "tokens": 192
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Make line-based edits to a text file. Each edit replaces exact line sequences with new content. Returns a git-style diff showing the changes made. Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/edit_file.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "dryRun": {
+            "description": "Preview changes using git-style diff format without applying them.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "edits": {
+            "description": "The list of edit operations to apply.",
+            "items": {
+              "properties": {
+                "newText": {
+                  "description": "Text to replace the matched text with.",
+                  "type": "string"
+                },
+                "oldText": {
+                  "description": "Text to search for - must match exactly.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "oldText",
+                "newText"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "path": {
+            "description": "The path of the file to edit.",
+            "type": "string"
+          },
+          "replaceAll": {
+            "description": "Optional flag to replace all occurrences of `oldText`.\n\nDefault: `false`.\n- `false` or `null` → if multiple matches are found, an error is returned.\n- `true`  → replace all matches.",
+            "nullable": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "path",
+          "edits"
+        ],
+        "type": "object"
+      },
+      "name": "edit_file",
+      "title": "Edit file",
+      "tokens": 241
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Retrieve detailed metadata about a file or directory. Returns comprehensive information including size, creation time, last modified time, permissions, and type. This tool is perfect for understanding file characteristics without reading the actual content. Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/get_file_info.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "description": "The path of the file to get information for.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "name": "get_file_info",
+      "title": "Get file info",
+      "tokens": 89
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Returns a list of directories that the server has permission to access Subdirectories within these allowed directories are also accessible. Use this to identify which directories and their nested paths are available before attempting to access files.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/list_allowed_directories.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "list_allowed_directories",
+      "title": "List allowed directories",
+      "tokens": 61
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Get a detailed listing of all files and directories in a specified path. Results clearly distinguish between files and directories with [FILE] and [DIR] prefixes. This tool is essential for understanding directory structure and finding specific files within a directory. Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/list_directory.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "description": "The path of the directory to list.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "name": "list_directory",
+      "title": "List directory",
+      "tokens": 92
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Move or rename files and directories. Can move files between directories and rename them in a single operation. If the destination exists, the operation will fail. Works across different directories and can be used for simple renaming within the same directory. Both source and destination must be within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/move_file.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "destination": {
+            "description": "The destination path to move the file to.",
+            "type": "string"
+          },
+          "source": {
+            "description": "The source path of the file to move.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "destination"
+        ],
+        "type": "object"
+      },
+      "name": "move_file",
+      "title": "Move file",
+      "tokens": 117
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Read the contents of multiple text files simultaneously as text. This is more efficient than reading files one by one when you need to analyze or compare multiple files. Each file's content is returned with its path as a reference. Failed reads for individual files won't stop the entire operation. Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/read_multiple_text_files.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "paths": {
+            "description": "The list of file paths to read.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "paths"
+        ],
+        "type": "object"
+      },
+      "name": "read_multiple_text_files",
+      "title": "Read multiple text files",
+      "tokens": 109
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Recursively search for files and directories matching a pattern. Searches through all subdirectories from the starting path. The search is case-insensitive and matches partial names. Returns full paths to all matching items.Optional 'min_bytes' and 'max_bytes' arguments can be used to filter files by size, ensuring that only files within the specified byte range are included in the search. This tool is great for finding files when you don't know their exact location or find files by their size.Only searches within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/search_files.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "pattern": {
+            "description": "Glob pattern used to match target files (e.g., \"*.rs\").",
+            "type": "string"
+          },
+          "excludePatterns": {
+            "description": "Optional list of patterns to exclude from the search.",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "max_bytes": {
+            "description": "Maximum file size (in bytes) to include in the search (optional).",
+            "nullable": true,
+            "type": "integer"
+          },
+          "path": {
+            "description": "The directory path to search in.",
+            "type": "string"
+          },
+          "min_bytes": {
+            "description": "Minimum file size (in bytes) to include in the search (optional).",
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "pattern"
+        ],
+        "type": "object"
+      },
+      "name": "search_files",
+      "title": "Search files",
+      "tokens": 258
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Create a new file or completely overwrite an existing file with new content. Use with caution as it will overwrite existing files without warning. Handles text content with proper encoding. Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/write_file.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "content": {
+            "description": "The content to write to the file.",
+            "type": "string"
+          },
+          "path": {
+            "description": "The path of the file to write to.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ],
+        "type": "object"
+      },
+      "name": "write_file",
+      "title": "Write file",
+      "tokens": 98
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Creates a ZIP archive by compressing files. It takes a list of files to compress and a target path for the resulting ZIP file. Both the source files and the target ZIP file should reside within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/zip_files.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "target_zip_file": {
+            "description": "Path to save the resulting ZIP file, including filename and .zip extension",
+            "type": "string"
+          },
+          "input_files": {
+            "description": "The list of files to include in the ZIP archive.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "input_files",
+          "target_zip_file"
+        ],
+        "type": "object"
+      },
+      "name": "zip_files",
+      "title": "Zip files",
+      "tokens": 123
+    },
+    {
+      "description": "Extracts the contents of a ZIP archive to a specified target directory.\nIt takes a source ZIP file path and a target extraction directory.\nThe tool decompresses all files and directories stored in the ZIP, recreating their structure in the target location.\nBoth the source ZIP file and the target directory should reside within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/unzip_file.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "target_path": {
+            "description": "Path to the target directory where the contents of the ZIP file will be extracted.",
+            "type": "string"
+          },
+          "zip_file": {
+            "description": "A filesystem path to an existing ZIP file to be extracted.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "zip_file",
+          "target_path"
+        ],
+        "type": "object"
+      },
+      "name": "unzip_file",
+      "title": "Unzip Files",
+      "tokens": 142
+    },
+    {
+      "description": "Creates a ZIP archive by compressing a directory , including files and subdirectories matching a specified glob pattern.\nIt takes a path to the folder and a glob pattern to identify files to compress and a target path for the resulting ZIP file.\nBoth the source directory and the target ZIP file should reside within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/zip_directory.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "pattern": {
+            "description": "A optional glob pattern to match files and subdirectories to zip, defaults to **/*\"",
+            "nullable": true,
+            "type": "string"
+          },
+          "target_zip_file": {
+            "description": "Path to save the resulting ZIP file, including filename and .zip extension",
+            "type": "string"
+          },
+          "input_directory": {
+            "description": "Path to the directory to zip",
+            "type": "string"
+          }
+        },
+        "required": [
+          "input_directory",
+          "target_zip_file"
+        ],
+        "type": "object"
+      },
+      "name": "zip_directory",
+      "title": "Zip Directory",
+      "tokens": 166
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Searches for text or regex patterns in the content of files matching matching a GLOB pattern.Returns detailed matches with file path, line number, column number and a preview of matched text.By default, it performs a literal text search; if the 'is_regex' parameter is set to true, it performs a regular expression (regex) search instead.Optional 'min_bytes' and 'max_bytes' arguments can be used to filter files by size, ensuring that only files within the specified byte range are included in the search. Ideal for finding specific code, comments, or text when you don’t know their exact location.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/search_files_content.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "description": "The file or directory path to search in.",
+            "type": "string"
+          },
+          "pattern": {
+            "description": "The file glob pattern to match (e.g., \"*.rs\").",
+            "type": "string"
+          },
+          "query": {
+            "description": "Text or regex pattern to find in file contents (e.g., 'TODO' or '^function\\\\s+').",
+            "type": "string"
+          },
+          "excludePatterns": {
+            "description": "Optional list of patterns to exclude from the search.",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "is_regex": {
+            "description": "Whether the query is a regular expression. If false, the query as plain text. (Default : false)",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "max_bytes": {
+            "description": "Maximum file size (in bytes) to include in the search (optional).",
+            "nullable": true,
+            "type": "integer"
+          },
+          "min_bytes": {
+            "description": "Minimum file size (in bytes) to include in the search (optional).",
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "pattern",
+          "query"
+        ],
+        "type": "object"
+      },
+      "name": "search_files_content",
+      "title": "Search files content",
+      "tokens": 354
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Get a detailed listing of all files and directories in a specified path, including sizes. Results clearly distinguish between files and directories with [FILE] and [DIR] prefixes. This tool is useful for understanding directory structure and finding specific files within a directory. Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/list_directory_with_sizes.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "description": "The path of the directory to list.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "name": "list_directory_with_sizes",
+      "title": "List directory with file sizes",
+      "tokens": 97
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Reads an image or audio file and returns its Base64-encoded content along with the corresponding MIME type. The max_bytes argument could be used to enforce an upper limit on the size of a file to read if the media file exceeds this limit, the operation will return an error instead of reading the media file. Access is restricted to files within allowed directories only.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/read_media_file.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "max_bytes": {
+            "description": "Maximum allowed file size (in bytes) to be read.",
+            "nullable": true,
+            "type": "integer"
+          },
+          "path": {
+            "description": "The path of the file to read.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "name": "read_media_file",
+      "title": "Read a media (Image/Audio) file",
+      "tokens": 138
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Reads multiple image or audio files and returns their Base64-encoded contents along with corresponding MIME types. This method is more efficient than reading files individually. The max_bytes argument could be used to enforce an upper limit on the size of a file to read Failed reads for specific files are skipped without interrupting the entire operation. Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/read_multiple_media_files.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "paths": {
+            "description": "The list of media file paths to read.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "max_bytes": {
+            "description": "Maximum allowed file size (in bytes) to be read.",
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "paths"
+        ],
+        "type": "object"
+      },
+      "name": "read_multiple_media_files",
+      "title": "Read multiple media (Image/Audio) files",
+      "tokens": 145
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Reads and returns the first N lines of a text file.This is useful for quickly previewing file contents without loading the entire file into memory.If the file has fewer than N lines, the entire file will be returned.Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/head_file.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "lines": {
+            "description": "The number of lines to read from the beginning of the file.",
+            "type": "integer"
+          },
+          "path": {
+            "description": "The path of the file to get information for.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "lines"
+        ],
+        "type": "object"
+      },
+      "name": "head_file",
+      "title": "Head file",
+      "tokens": 114
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Reads and returns the last N lines of a text file.This is useful for quickly previewing file contents without loading the entire file into memory.If the file has fewer than N lines, the entire file will be returned.Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/tail_file.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "description": "The path of the file to get information for.",
+            "type": "string"
+          },
+          "lines": {
+            "description": "The number of lines to read from the ending of the file.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "lines"
+        ],
+        "type": "object"
+      },
+      "name": "tail_file",
+      "title": "Tail file",
+      "tokens": 114
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Reads lines from a text file starting at a specified line offset (0-based) and continues for the specified number of lines if a limit is provided.This function skips the first 'offset' lines and then reads up to 'limit' lines if specified, or reads until the end of the file otherwise.It's useful for partial reads, pagination, or previewing sections of large text files.Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/read_file_lines.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "limit": {
+            "description": "Optional maximum number of lines to read after the offset.",
+            "nullable": true,
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Number of lines to skip from the start (0-based).",
+            "type": "integer"
+          },
+          "path": {
+            "description": "The path of the file to get information for.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "name": "read_file_lines",
+      "title": "Read file lines",
+      "tokens": 173
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Recursively finds all empty directories within the given root path.A directory is considered empty if it contains no files in itself or any of its subdirectories.Operating system metadata files `.DS_Store` (macOS) and `Thumbs.db` (Windows) will be ignored.The optional exclude_patterns argument accepts glob-style patterns to exclude specific paths from the search.Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/find_empty_directories.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "output_format": {
+            "description": "Specify the output format, accepts either `text` or `json` (default: text).",
+            "nullable": true,
+            "oneOf": [
+              {
+                "enum": [
+                  "text"
+                ]
+              },
+              {
+                "enum": [
+                  "json"
+                ]
+              }
+            ]
+          },
+          "path": {
+            "description": "The path of the file to get information for.",
+            "type": "string"
+          },
+          "exclude_patterns": {
+            "description": "Optional list of glob patterns to exclude from the search. Directories matching these patterns will be ignored.",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "name": "find_empty_directories",
+      "title": "Find empty directories",
+      "tokens": 207
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Calculates the total size of a directory specified by `root_path`.It recursively searches for files and sums their sizes. The result can be returned in either a `human-readable` format or as `bytes`, depending on the specified `output_format` argument.Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/calculate_directory_size.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "output_format": {
+            "default": "human-readable",
+            "description": "Defines the output format, which can be either `human-readable` or `bytes`.",
+            "nullable": true,
+            "oneOf": [
+              {
+                "enum": [
+                  "human-readable"
+                ]
+              },
+              {
+                "enum": [
+                  "bytes"
+                ]
+              }
+            ]
+          },
+          "root_path": {
+            "description": "The root directory path to start the size calculation.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "root_path"
+        ],
+        "type": "object"
+      },
+      "name": "calculate_directory_size",
+      "title": "Calculate directory size",
+      "tokens": 151
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Find duplicate files within a directory and return list of duplicated files as text or json formatOptional `pattern` argument can be used to narrow down the file search to specific glob pattern.Optional `exclude_patterns` can be used to exclude certain files matching a glob.`min_bytes` and `max_bytes` are optional arguments that can be used to restrict the search to files with sizes within a specified range.The output_format argument specifies the format of the output and accepts either `text` or `json` (default: text).Only works within allowed directories.",
+      "icons": [
+        {
+          "mimeType": "image/png",
+          "sizes": [
+            "128x128"
+          ],
+          "src": "https://rust-mcp-stack.github.io/rust-mcp-filesystem/_media/tool_icons/find_duplicate_files.png"
+        }
+      ],
+      "inputSchema": {
+        "properties": {
+          "max_bytes": {
+            "description": "Maximum file size (in bytes) to include in the search (optional).",
+            "nullable": true,
+            "type": "integer"
+          },
+          "output_format": {
+            "default": "text",
+            "description": "Specify the output format, accepts either `text` or `json` (default: text).",
+            "nullable": true,
+            "oneOf": [
+              {
+                "enum": [
+                  "text"
+                ]
+              },
+              {
+                "enum": [
+                  "json"
+                ]
+              }
+            ]
+          },
+          "pattern": {
+            "description": "Optional glob pattern can be used to match target files.",
+            "nullable": true,
+            "type": "string"
+          },
+          "root_path": {
+            "description": "The root directory path to start the search.",
+            "type": "string"
+          },
+          "min_bytes": {
+            "default": "1",
+            "description": "Minimum file size (in bytes) to include in the search (default to 1).",
+            "nullable": true,
+            "type": "integer"
+          },
+          "exclude_patterns": {
+            "description": "Optional list of glob patterns to exclude from the search. File matching these patterns will be ignored.",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          }
+        },
+        "required": [
+          "root_path"
+        ],
+        "type": "object"
+      },
+      "name": "find_duplicate_files",
+      "title": "Find duplicate files",
+      "tokens": 332
+    }
+  ],
+  "totalTokens": 3786
+}

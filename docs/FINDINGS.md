@@ -759,7 +759,7 @@ accounted for:
 | **Called** | **15,550 (94.1%)** |
 | a result | 3,066 |
 | a readable tool error to the made-up input: what the spec asks for | 9,044 |
-| an error because the sandbox has no network (1,323), something missing on the machine (900), no key or login (799) | 3,022 |
+| an error because the sealed container has no network (1,323), something missing on the machine (900), no key or login (799) | 3,022 |
 | a protocol error or a crash | 236 |
 | timed out (10 s) | 182 |
 | Not called: 32 servers wouldn't start without the network | 926 |
@@ -803,8 +803,9 @@ with HTTP 401 and a per-tool `WWW-Authenticate`: a design, not a failure.
   resource's belongs.
 
 **What toolmenu got wrong this time** (each fixed with a test):
-- **From this sandbox, github.com answers 403 to everything**, which first read as GitHub
-  serving no authorization server metadata. An unreadable document is unchecked now, never
+- **A 403 from the network in between read as a missing document.** github.com answered
+  the run's requests with 403, which first looked like GitHub serving no authorization
+  server metadata. A document that can't be read is now reported as unchecked, never as
   missing.
 - **`auth check` was stricter than real clients.** It called a same-origin parent `resource`
   an error. A 401 without OAuth hints, which may be an API-key server, was an error too.
@@ -846,3 +847,63 @@ Salesforce and others). Each ran with dummy credentials through `snapshot`, a re
 - Image servers first got no credentials: `read` with a tab separator merges empty columns.
 - Python servers were started with a dependency's console script (`idna`, `keyring`). Now only the package's own counts.
 - .NET single-file servers (Azure) need a writable `HOME`.
+
+## F20. Docker's MCP catalog, 237 servers, every tool called
+
+*Checked 2026-11-09; data in `bench/results/weekly/2026-11-09/docker/`.* Docker's MCP
+catalog (`desktop.docker.com/mcp/catalog/v3/catalog.yaml`) is what the Docker MCP Toolkit
+installs from: 237 local servers, each pinned to an image digest, each with the secrets and
+settings it needs. Every one ran with the catalog's own arguments and a dummy value for each
+declared setting, through `snapshot`, a read-only `session --auto`, and the sealed
+`--call-everything` pass (no network).
+
+**Coverage.**
+- 196 listed tools, 4,237 in all. By protocol: 2025-11-25 on 89, 2024-11-05 on 54,
+  2025-06-18 on 37, 2025-03-26 on 13, 2026-07-28 on 3.
+- 4,117 tools called in the sealed pass. By first answer: 1,288 a result, 2,299 a tool
+  error (mostly the service behind it refusing a dummy key, or no network), 523 failed and
+  7 timed out. Not called: 102 planned in sessions that stopped first, and SonarQube's 18
+  (its Java backend takes longer than the 10 s the pass allows to start offline).
+- 41 didn't list tools:
+  - 5 catalog entries pin a digest that no longer resolves (Alfresco, .NET Types Explorer,
+    Hummingbot, Kafka Schema Registry, SimpleCheckList).
+  - 12 images install their packages each time they start (`uv run`: "Building … @
+    file:///app"), so they need a package index at every start. They didn't start in this
+    run; offline, they never would.
+  - Most of the rest need the real service to start: a Neo4j `bolt://` address, an Okta
+    org URL in its exact format, a reachable Dynatrace environment, MongoDB Atlas Local.
+  - `database-server` imports `mcp.server.fastmcp` with an uncapped `mcp`, which 2.x removed
+    (the same break as F19's AWS Labs servers).
+
+**What holds whatever the input** (each checked against the raw output):
+- **Menus that change from one process to the next**, so no restart, and no client that
+  starts its own copy, can reuse a cached prompt:
+  - tool order: Elastic's Rust server (F19), Zscaler, Hoverfly, Ramparts;
+  - JSON key order inside the schemas: SonarQube (same content, different bytes);
+  - a list of parameter names inside a description: AKS (`inspektor_gadget_observability`);
+  - the container's ID inside a description: Desktop Commander (`start_process` says
+    `Container: dd8370e53c20`, then `58a6c4c3d29f`), so every container start is a new menu;
+  - Docker's Atlassian image, with F12's default order (F19).
+- **`resources/list` answers `{"resources": null}`**: AKS and Razorpay, both Go servers.
+  The schema requires an array, so a client that validates the result rejects it.
+- **SchemaCrawler AI**: URI templates such as `catalog://routines/{routine-name}`; a
+  variable name can't contain a hyphen (RFC 6570), so they fail `format: uri-template`.
+- **Atlan**: tool errors come back with `isError: false` and the error object as
+  `structuredContent`, which then breaks the tool's own `outputSchema`; the official SDK
+  client raises an error there instead of passing on the message.
+- **HashiCorp's Terraform server**: resource URIs without a scheme (F19).
+
+**The clients** (checked with this release's `--client` profiles):
+- **6 servers list more tools than VS Code sends in one request** (128): Proxmox 286,
+  kubectl 281, Zscaler 239, Teamwork 194, EduBase 165, SmartBear 162. Each needs tools
+  turned off before it works there, on its own.
+- **147 of 196 mark no tool `readOnlyHint: true`**, so Copilot code review, which uses
+  only those, can use none of their tools.
+- **Tool names with spaces** (Husqvarna Automower's `Husqvarna Automowers Status`,
+  Hyperspell's `Search Hyperspell`): the Claude API and OpenAI refuse them, and Gemini CLI
+  rewrites them. SmartBear has names over Gemini CLI's 63 characters, which it cuts.
+
+**What the bench got wrong** (fixed before the numbers above): the dummy values were picked
+by the setting's name, and the patterns were loose. `NEO4J_DATABASE` matched "BASE" and got a
+URL, `*_TRANSPORT` matched "PORT", a region got `toolmenu`. Ports, transports, regions,
+switches and numbers now get values of their kind, and the servers they broke ran again.

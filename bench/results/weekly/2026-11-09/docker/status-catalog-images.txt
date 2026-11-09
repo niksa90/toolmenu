@@ -235,3 +235,8 @@ ok dc_terraform snapshot=1 tools=9 session=0 review=0
 no-menu dc_victoriametrics snapshot=2
 no-menu dc_victoriatraces snapshot=2
 ok dc_task-orchestrator snapshot=0 tools=17 session=0 review=0
+no-menu dc_neo4j-cypher snapshot=2
+no-menu dc_neo4j-memory snapshot=2
+ok dc_neo4j-cloud-aura-api snapshot=0 tools=12 session=0 review=0
+ok dc_aws-api snapshot=0 tools=2 session=0 review=0
+ok dc_rust-mcp-filesystem snapshot=1 tools=24 session=1 review=0

@@ -12,13 +12,15 @@ cat = yaml.safe_load(open(sys.argv[1]))['registry']
 
 
 def dummy(name):
+    """A dummy value that fits a setting's name, so a server that checks the format starts."""
     n = name.upper()
-    if re.search(r'URL|URI|ENDPOINT|HOST|BASE|SERVER|ADDR', n):
-        return 'http://localhost:9'
-    if re.search(r'PORT', n):
-        return '9'
-    if re.search(r'PATH|DIR|FOLDER|ROOT', n):
-        return '/tmp'
+    if re.search(r'TRANSPORT', n): return 'stdio'
+    if re.search(r'(^|_)PORT($|_)', n): return '9'
+    if re.search(r'REGION', n): return 'us-east-1'
+    if re.search(r'(^|_)(ALLOW|ENABLE|ENABLED|USE|READ_?ONLY|DEBUG|VERBOSE)($|_)', n): return 'true'
+    if re.search(r'TIMEOUT|LIMIT|SIZE|COUNT|(^|_)MAX($|_)|SECONDS|(^|_)MS($|_)', n): return '30'
+    if re.search(r'PATH|DIR|FOLDER|ROOT', n): return '/tmp'
+    if re.search(r'URL|URI|ENDPOINT|HOST|(^|_)BASE($|_)|SERVER|ADDR', n): return 'http://localhost:9'
     return 'toolmenu'
 
 

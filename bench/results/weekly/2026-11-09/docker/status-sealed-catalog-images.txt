@@ -191,3 +191,6 @@
 0 dc_terraform
 0 dc_task-orchestrator
 0 dc_zscaler-mcp-server
+0 dc_neo4j-cloud-aura-api
+0 dc_aws-api
+1 dc_rust-mcp-filesystem

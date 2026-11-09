@@ -40,7 +40,7 @@ dc_google-maps	mcp/google-maps@sha256:d8652c8c9c52ac9d82e9cadd1dc0468ade7a4f8c53
 dc_perplexity-ask	mcp/perplexity-ask@sha256:7816f45a6f266ad30a21d96c69749f88dd15552c0d1db0ce38704156a49ee538	image	ok	2024-11-05	3	392	0	0	3	0	4	0	0	0	1	3	unchanged	
 dc_SQLite	mcp/sqlite@sha256:efbc05ccace18df122f26b674bd1730c76ece716551df2b3961d519909c34696	image	ok	2024-11-05	6	267	0	0	6	7	0	0	0	0	2	3	unchanged	
 dc_markdownify	mcp/markdownify@sha256:afa1ab8e15633d8b6fc310166d6e6eaeab5c55e1906764832aa58fc071d557c6	image	ok	2025-11-25	11	661	0	0	11	0	12	0	0	0	1	6	unchanged	
-dc_neo4j-cypher	mcp/neo4j-cypher@sha256:b252997d16d37633a5a1b30e21ac0bf368b1c64e5895e4005313c84d77a05310	image	no-menu		0	0	0	0	0	0	0	0	0	0	0	0		ValueError: invalid literal for int() with base 10: 'http://localhost:9'
+dc_neo4j-cypher	mcp/neo4j-cypher@sha256:b252997d16d37633a5a1b30e21ac0bf368b1c64e5895e4005313c84d77a05310	image	no-menu		0	0	0	0	0	0	0	0	0	0	0	0		db_url,
 dc_mcp-hackernews	mcp/hackernews-mcp@sha256:2e5c5cc89490848e1b5c0dc677f0dd5076dd09984be699e230cad387fb5f582f	image	ok	2024-11-05	4	386	0	0	4	0	5	0	0	0	1	3	unchanged	
 dc_openweather	mcp/openweather@sha256:e2f49acbb718e28b6f2f1bb00d8eebcc4dfc73e6788ed2040974496856375d5f	image	ok	2024-11-05	1	170	0	0	1	2	0	0	0	0	1	3	unchanged	
 dc_sentry	mcp/sentry@sha256:f38467297a1ed273009e0ad85bd0fc9f4ce44578114be0f349d6333c5000558b	image	ok	2024-11-05	1	117	0	0	1	0	2	0	0	0	1	3	unchanged	
@@ -68,11 +68,11 @@ dc_stripe	mcp/stripe@sha256:92ba43f82377f3f84b06a2bae8d9e8d98e6e5bfa785aedc532a1
 dc_paper-search	mcp/paper-search@sha256:19d0af269a5531403fbb042aad8277d1a9ec2315c972769c7ca8efb3a76eca34	image	ok	2025-11-25	57	8813	0	0	57	44	14	0	0	0	2	18	unchanged	
 dc_github-chat	mcp/github-chat@sha256:c9b12a1664919c8dbae726ef3f36761ee42b1a729ae17b820f73e6c59063047b	image	ok	2024-11-05	2	244	0	0	2	3	0	0	0	0	1	2	unchanged	
 dc_cloud-run-mcp	mcp/cloud-run-mcp@sha256:e90e95bce1d6b89b91512ebe8e74116c4a886b40d1c2b3d822dca962ec9a1e61	image	ok	2025-11-25	8	1046	0	0	8	9	0	0	0	0	2	2	unchanged	
-dc_neo4j-memory	mcp/neo4j-memory@sha256:0f04105a1006ea5305521c0ae2b74509b23df5f90459fdd77f9214c5ccd7d2d6	image	no-menu		0	0	0	0	0	0	0	0	0	0	0	0		ValueError: invalid literal for int() with base 10: 'http://localhost:9'
+dc_neo4j-memory	mcp/neo4j-memory@sha256:0f04105a1006ea5305521c0ae2b74509b23df5f90459fdd77f9214c5ccd7d2d6	image	no-menu		0	0	0	0	0	0	0	0	0	0	0	0		neo4j_uri,
 dc_osp_marketing_tools	mcp/osp_marketing_tools@sha256:34b72f4cc3d274a9b975bca22adb0f664055a1ca2c74a9417c8149512e772eaa	image	ok	2024-11-05	6	300	0	0	6	7	0	0	0	0	1	3	unchanged	
 dc_openapi	mcp/openapi@sha256:26234065b6a786e69088b9b22ec4f9130572704664211e76e9b0887c388186e5	image	ok	2025-06-18	5	642	0	0	5	1	5	0	0	0	2	6	unchanged	
 dc_hyperbrowser	mcp/hyperbrowser@sha256:11ed80138c334c419249c79e5f5acda3f4e7052c04f62f54548f00a3b9815140	image	ok	2025-03-26	10	3165	0	0	10	0	11	0	0	0	2	6	unchanged	
-dc_rust-mcp-filesystem	mcp/rust-mcp-filesystem@sha256:0a8d6879a67649fc9801c48e33e39c4f994e5fbfd9b5df8ba7260d63dbc1a242	image	no-menu		0	0	0	0	0	0	0	0	0	0	0	0		error: invalid value 'toolmenu' for '--allow-write'
+dc_rust-mcp-filesystem	mcp/rust-mcp-filesystem@sha256:0a8d6879a67649fc9801c48e33e39c4f994e5fbfd9b5df8ba7260d63dbc1a242	image	ok	2025-11-25	24	3786	2	2	24	4	21	0	0	33	0	5	unchanged	
 dc_mcp-discord	mcp/mcp-discord@sha256:a9f146c6e7cc88bca04aee004c24d98d050fc01c54a9cc03731484754a401282	image	ok	2024-11-05	20	1186	0	0	20	2	19	0	0	0	2	7	unchanged	
 dc_temporal	mcp/temporal@sha256:8d5df30a1c6c64ac660aba96a22661c753db3da77ea60f62eb03c6eb47a73197	image	ok	2026-07-28	31	2690	0	0	31	32	0	0	0	0	2	5	unchanged	
 dc_gemini-api-docs	mcp/gemini-api-docs-mcp@sha256:ba912546626d7bb5acdbcca0af56a9afb00cc2015013edd0f5ec2f68a6d45c52	image	no-menu		0	0	0	0	0	0	0	0	0	0	0	0		Building gemini-docs-mcp @ file:///app
@@ -89,7 +89,7 @@ dc_mcp-python-refactoring	mcp/mcp-python-refactoring@sha256:4cd4303da424f021f03e
 dc_vizro	mcp/vizro@sha256:ddec90039ea179c359b9025b70bee3468e0ad503e7298ba7a653f23687a656af	image	no-menu		0	0	0	0	0	0	0	0	0	0	0	0		Building vizro-mcp @ file:///app
 dc_exa	mcp/exa@sha256:d88edd571d982faa22eba1bff35e39b4d72c0aa51584e3c90c255e684626aaf8	image	ok	2025-11-25	2	412	2	0	2	0	3	0	0	0	1	3	unchanged	
 dc_securenote-link-mcp-server	mcp/securenote-link-mcp-server@sha256:b3aff281c846cf9403c96c8b7bf568440b9163b857c83d343c316141510f9b37	image	ok	2025-11-25	3	386	0	0	3	4	0	0	0	0	2	3	unchanged	
-dc_aws-api	mcp/aws-api-mcp-server@sha256:d7a48c778ce2f467d9a6dd55e20fbbe10f241bc656508d55af81dbace4159080	image	no-menu		0	0	0	0	0	0	0	0	0	0	0	0		ValueError: toolmenu is not a valid AWS Region
+dc_aws-api	mcp/aws-api-mcp-server@sha256:d7a48c778ce2f467d9a6dd55e20fbbe10f241bc656508d55af81dbace4159080	image	ok	2025-11-25	2	1528	2	0	2	1	2	0	0	0	1	4	unchanged	
 dc_couchbase	mcp/couchbase@sha256:85a104706d8b2b3bceddf47f2a0e30e68dd5ddcdc2cbff3faa48e885d4b9f4bc	image	ok	2025-11-25	20	2029	5	1	20	3	18	0	0	2	0	21	unchanged	
 dc_quantconnect	mcp/quantconnect@sha256:f96cc99e83a03ac242bf3cfa99389358578cbf0c3efb4364a05c825f100610f8	image	ok	2025-11-25	64	21074	5	1	64	1	64	0	0	0	4	63	unchanged	
 dc_schogini-mcp-image-border	mcp/schogini_mcp_image_border@sha256:aadb75058ed149533d43a5011cf61f3daaed9787acdfe4082093c6ddc494d061	image	ok	2025-06-18	3	235	0	0	3	4	0	0	0	0	2	2	unchanged	
@@ -157,7 +157,7 @@ dc_multiversx-mx	mcp/multiversx-mx@sha256:0c62c76ac87aec3d840e1f9ebdeb436dc7c858
 dc_gyazo	mcp/gyazo@sha256:0e12dbdc7b626608474938ec0f731d459dad57fce3436cbae0d58ec30d532b8e	image	ok	2025-06-18	4	402	0	0	4	0	0	5	0	0	3	4	unchanged	
 dc_husqvarna-automower	mcp/husqvarna-automower@sha256:60b551d1e001e5e155bb79e5ddbc00e975b7e6056676e4be0b799d34eba07493	image	ok	2025-11-25	1	37	0	0	1	0	2	0	0	0	3	4	unchanged	
 dc_hyperspell	mcp/hyperspell@sha256:43c099e5d33499f8be38e7cdc96b389fd85e34e1929782680fb85a44bcb37d85	image	ok	2025-11-25	3	176	0	0	3	0	4	0	0	0	4	5	unchanged	
-dc_neo4j-cloud-aura-api	mcp/neo4j-cloud-aura-api@sha256:c3db64e4e2bc47f8c2e65e4bfaf8e78db944ac6d9ea09822346b0afd9f4a5999	image	no-menu		0	0	0	0	0	0	0	0	0	0	0	0		ValueError: Invalid transport: 9. Allowed transports are: ['stdio', 'http', 'sse']
+dc_neo4j-cloud-aura-api	mcp/neo4j-cloud-aura-api@sha256:c3db64e4e2bc47f8c2e65e4bfaf8e78db944ac6d9ea09822346b0afd9f4a5999	image	ok	2025-11-25	12	746	0	0	12	0	13	0	0	0	1	15	unchanged	
 dc_iaptic	mcp/iaptic@sha256:7f86e3becb719e8b9ab4dddea0dad8638d45c1ecaefd549fc4c72d715521064b	image	ok	2025-11-25	17	2081	0	0	17	2	16	0	0	0	2	8	unchanged	
 dc_render	mcp/render@sha256:96ee41e6433a8da9844d6b46cc72e9ab296dffbf5a56cd70dce049c203906d7b	image	ok	2025-03-26	24	5475	0	0	24	5	20	0	0	0	2	15	unchanged	
 dc_fibery	mcp/fibery@sha256:377120c9fea108ea1fd2daf2613c517b4d622a54ec2fe5db9204b27e136398a9	image	ok	2025-11-25	7	2596	0	0	7	8	0	0	0	0	2	2	unchanged	
