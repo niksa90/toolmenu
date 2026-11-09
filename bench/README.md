@@ -15,6 +15,7 @@ from its own folder for that reason.
 | `corpus/registry.tsv` | Recent stdio servers from the MCP registry (npm), no required credentials, that started and listed their tools | 86 |
 | `corpus/npm-popular.tsv` | MCP servers on npm by downloads | 60 |
 | `corpus/pypi.tsv` | Recent stdio servers on PyPI | 37 |
+| `corpus/registry-2026-11.tsv` | npm stdio servers from the MCP registry, new to the bench, that started and listed their tools: every command on each with `scripts/batch-full.sh` (FINDINGS F17) | 250 |
 | `corpus/hosted.tsv` | Hosted (Streamable HTTP) servers from the MCP registry that declare no required headers, one per host, sampled with a fixed seed | 200 |
 
 Each line: `id<TAB>package@version` (npm) or `package==version` (PyPI)`<TAB>repository`;
