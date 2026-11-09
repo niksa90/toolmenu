@@ -3,8 +3,8 @@
 # servers that went up, down or behind a login; menus that changed (tools added and
 # removed by name; for the vendors, toolmenu review of last week's menu against this
 # week's); findings that appeared or went away. Each week's dir holds http/ (build-http.py),
-# when stdio servers were rechecked stdio/ (build-results.py), and vendors/ (build-vendors.py):
-# the servers vendors publish, rerun at their latest release every week.
+# when stdio servers were rechecked stdio/ (build-results.py), vendors/ (build-vendors.py: the
+# servers vendors publish, at their latest release) and docker/ (Docker's MCP catalog).
 import json, os, subprocess, sys, collections
 
 PREV, CUR = sys.argv[1], sys.argv[2]
@@ -128,14 +128,14 @@ def tsv(path):
     return [dict(zip(cols, l.split('\t'))) for l in lines[1:]]
 
 
-def vendor_rows(d):
-    return {r['id']: r for r in tsv(os.path.join(d, 'vendors', 'servers.tsv'))}
+def vendor_rows(d, kind='vendors'):
+    return {r['id']: r for r in tsv(os.path.join(d, kind, 'servers.tsv'))}
 
 
-def vendor_findings(d, rows):
+def vendor_findings(d, rows, kind='vendors'):
     by_spec = {r['server']: i for i, r in rows.items()}
     out = collections.defaultdict(set)
-    path = os.path.join(d, 'vendors', 'findings.jsonl')
+    path = os.path.join(d, kind, 'findings.jsonl')
     if os.path.exists(path):
         for line in open(path):
             if not line.strip():
@@ -153,26 +153,29 @@ def menu_tools(path):
         return None
 
 
-va, vb = vendor_rows(PREV), vendor_rows(CUR)
-v_changed = []
-if vb:
-    vfa, vfb = vendor_findings(PREV, va), vendor_findings(CUR, vb)
-    both = [i for i in vb if i in va]
-    bumped = [i for i in both if va[i]['server'] != vb[i]['server']]
-    started = [i for i in both if int(va[i]['tools'] or 0) == 0 and int(vb[i]['tools'] or 0) > 0]
-    stopped = [i for i in both if int(va[i]['tools'] or 0) > 0 and int(vb[i]['tools'] or 0) == 0]
+def own_servers(kind, title):
+    """vendors/ or docker/: the same servers every week, matched by id whatever the version."""
+    pa, pb = vendor_rows(PREV, kind), vendor_rows(CUR, kind)
+    changed = []
+    if not pb:
+        return pb, changed
+    fa_, fb_ = vendor_findings(PREV, pa, kind), vendor_findings(CUR, pb, kind)
+    both = [i for i in pb if i in pa]
+    bumped = [i for i in both if pa[i]['server'] != pb[i]['server']]
+    started = [i for i in both if int(pa[i]['tools'] or 0) == 0 and int(pb[i]['tools'] or 0) > 0]
+    stopped = [i for i in both if int(pa[i]['tools'] or 0) > 0 and int(pb[i]['tools'] or 0) == 0]
     for i in both:
-        old, new = os.path.join(PREV, 'vendors', 'menus', i + '.json'), os.path.join(CUR, 'vendors', 'menus', i + '.json')
+        old, new = os.path.join(PREV, kind, 'menus', i + '.json'), os.path.join(CUR, kind, 'menus', i + '.json')
         if menu_tools(old) is not None and menu_tools(new) is not None and menu_tools(old) != menu_tools(new):
-            v_changed.append((i, old, new))
-    lines += ['### Vendors\' own servers', '', f'{len(vb)} this week, {len(both)} also last week: {len(bumped)} new releases, {len(v_changed)} menus changed, {len(started)} started that didn\'t, {len(stopped)} stopped.', '']
+            changed.append((i, old, new))
+    lines.extend([f'### {title}', '', f'{len(pb)} this week, {len(both)} also last week: {len(bumped)} new releases, {len(changed)} menus changed, {len(started)} started that didn\'t, {len(stopped)} stopped.', ''])
     for i in sorted(bumped):
-        lines.append(f'- new release: `{va[i]["server"]}` → `{vb[i]["server"]}`')
+        lines.append(f'- new release: `{pa[i]["server"]}` → `{pb[i]["server"]}`')
     for i in sorted(started):
-        lines.append(f'- now starts: `{vb[i]["server"]}` ({vb[i]["tools"]} tools)')
+        lines.append(f'- now starts: `{pb[i]["server"]}` ({pb[i]["tools"]} tools)')
     for i in sorted(stopped):
-        lines.append(f'- stopped starting: `{vb[i]["server"]}`: {vb[i]["why"] or vb[i]["status"]}')
-    for i, old, new in sorted(v_changed):
+        lines.append(f'- stopped starting: `{pb[i]["server"]}`: {pb[i]["why"] or pb[i]["status"]}')
+    for i, old, new in sorted(changed):
         names = lambda p: {t['name'] for t in menu_tools(p)}
         added, removed = sorted(names(new) - names(old)), sorted(names(old) - names(new))
         what = '; '.join(filter(None, [added and f'added {", ".join(added[:8])}{" …" if len(added) > 8 else ""}', removed and f'removed {", ".join(removed[:8])}{" …" if len(removed) > 8 else ""}'])) or 'same tools, definitions changed'
@@ -183,12 +186,17 @@ if vb:
             verdict = f' · review: **{j["verdict"]}**, {j["summary"]}'
         except Exception:
             pass
-        lines.append(f'- menu changed: `{vb[i]["server"]}`: {what} ({va[i]["tools"]} → {vb[i]["tools"]} tools){verdict}')
+        lines.append(f'- menu changed: `{pb[i]["server"]}`: {what} ({pa[i]["tools"]} → {pb[i]["tools"]} tools){verdict}')
     for i in sorted(both):
-        new_v, gone_v = vfb.get(i, set()) - vfa.get(i, set()), vfa.get(i, set()) - vfb.get(i, set())
-        if gone_v: lines.append(f'- fixed in `{vb[i]["server"]}`: ' + ', '.join(f'`{r}`' for r, _ in sorted(gone_v)))
-        if new_v: lines.append(f'- new in `{vb[i]["server"]}`: ' + ', '.join(f'`{r}` ({sev})' for r, sev in sorted(new_v)))
+        new_v, gone_v = fb_.get(i, set()) - fa_.get(i, set()), fa_.get(i, set()) - fb_.get(i, set())
+        if gone_v: lines.append(f'- fixed in `{pb[i]["server"]}`: ' + ', '.join(f'`{r}`' for r, _ in sorted(gone_v)))
+        if new_v: lines.append(f'- new in `{pb[i]["server"]}`: ' + ', '.join(f'`{r}` ({sev})' for r, sev in sorted(new_v)))
     lines.append('')
+    return pb, changed
+
+
+vb, v_changed = own_servers('vendors', "Vendors' own servers")
+db, d_changed = own_servers('docker', "Docker's MCP catalog")
 
 
 # The running trend: one line per week, the same measures every week.
@@ -204,15 +212,16 @@ http_f = findings(CUR)
 row = [os.path.basename(CUR.rstrip('/')), str(len(b)), str(sum(1 for r in b.values() if r['mode'] == 'open')), str(len(changed)),
        str(breaking(http_f, CLIENT_FAILS)), str(sum(1 for v in http_f.values() if v)),
        str(len(cur_versions)), str(breaking(stdio_findings(CUR), CLIENT_FAILS)) if cur_versions else '0',
-       str(len(vb)), str(sum(1 for r in vb.values() if int(r['tools'] or 0) > 0)), str(len(v_changed))]
-header = 'week\thosted\thosted_open\thosted_menus_changed\thosted_client_fails\thosted_with_findings\tstdio_rechecked\tstdio_client_fails\tvendors\tvendors_listing\tvendors_menus_changed\n'
+       str(len(vb)), str(sum(1 for r in vb.values() if int(r['tools'] or 0) > 0)), str(len(v_changed)),
+       str(len(db)), str(sum(1 for r in db.values() if int(r['tools'] or 0) > 0)), str(len(d_changed))]
+header = 'week\thosted\thosted_open\thosted_menus_changed\thosted_client_fails\thosted_with_findings\tstdio_rechecked\tstdio_client_fails\tvendors\tvendors_listing\tvendors_menus_changed\tdocker\tdocker_listing\tdocker_menus_changed\n'
 existing = open(trend).read().splitlines() if os.path.exists(trend) else []
 kept = [l for l in existing[1:] if not l.startswith(row[0] + '\t')]
 with open(trend, 'w') as h:
     h.write(header + ''.join(l + '\n' for l in sorted(kept + ['\t'.join(row)])))
-lines += ['### Trend', '', '| Week | Hosted | Open | Menus changed | Hosted that fail in a client | stdio rechecked | stdio that fail in a client | Vendor servers listing tools | Vendor menus changed |', '|---|---|---|---|---|---|---|---|---|']
+lines += ['### Trend', '', '| Week | Hosted | Open | Menus changed | Hosted that fail in a client | stdio rechecked | stdio that fail in a client | Vendor servers listing tools | Vendor menus changed | Docker catalog listing tools | Docker menus changed |', '|---|---|---|---|---|---|---|---|---|---|---|']
 for l in sorted(kept + ['\t'.join(row)])[-8:]:
-    c = l.split('\t') + [''] * 3
-    lines.append(f'| {c[0]} | {c[1]} | {c[2]} | {c[3]} | {c[4]} | {c[6]} | {c[7]} | {c[9]} | {c[10]} |')
+    c = l.split('\t') + [''] * 6
+    lines.append(f'| {c[0]} | {c[1]} | {c[2]} | {c[3]} | {c[4]} | {c[6]} | {c[7]} | {c[9]} | {c[10]} | {c[12]} | {c[13]} |')
 lines.append('')
 print('\n'.join(lines))

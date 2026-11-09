@@ -77,7 +77,7 @@ test('compare-weeks: menus changed, servers moved, fixes and regressions, and th
   assert.match(out, /- fixed in `@pay\/mcp@1\.1\.0`: `menu\/nondeterministic`/);
   const trend = readFileSync(join(dir, 'trend.tsv'), 'utf8').trim().split('\n');
   assert.equal(trend.length, 2, 'a header and this week');
-  assert.deepEqual(trend[1].split('\t'), ['2026-11-16', '2', '1', '1', '1', '1', '3', '1', '2', '1', '1']);
+  assert.deepEqual(trend[1].split('\t'), ['2026-11-16', '2', '1', '1', '1', '1', '3', '1', '2', '1', '1', '0', '0', '0']);
   // Run again for the same week: the line is replaced, not added twice.
   spawnSync('python3', ['-I', join(ROOT, 'bench/scripts/compare-weeks.py'), prev, cur, CLI], { encoding: 'utf8' });
   assert.equal(readFileSync(join(dir, 'trend.tsv'), 'utf8').trim().split('\n').length, 2);

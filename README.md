@@ -877,9 +877,13 @@ Three more check what a client limits rather than what it loads:
 | `copilot-cloud-agent` | uses MCP tools only, not prompts or resources (`menu/client-features`, with `--lists`) |
 | `copilot-code-review` | the same, and only tools marked `readOnlyHint: true`: the rest are listed |
 
-Not here, because their docs don't state it: Cursor's tool limit (forum posts say 40),
-Windsurf's (100 in older docs, not in the current page), ChatGPT's. A value comes in
-when the client documents it.
+Read, but nothing in them toolmenu can check yet: Copilot CLI defers tools behind a
+search at about 30 (it searches names, descriptions and parameters; how many results
+isn't said); Copilot in JetBrains, Visual Studio, Eclipse and Xcode documents no tool
+limit; JetBrains AI Assistant and Junie document none either (Junie CLI times out any
+request after 60 s, startup and `tools/list` included). Not here, because their docs
+don't state it: Cursor's tool limit (forum posts say 40), Windsurf's (100 in older docs,
+not in the current page), ChatGPT's. A value comes in when the client documents it.
 
 The snapshot adds a line such as `as Claude Code: up front ~524 tokens · on demand ~344
 per tool a search loads (largest: update_contacts, ~2,093)`, and `--json` a `client`
