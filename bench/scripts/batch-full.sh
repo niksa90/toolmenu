@@ -28,7 +28,7 @@ for ((start = 1; start <= total; start += chunk)); do
     -e HOME=/tmp/home -v "$repo:/toolmenu:ro" -v "$out:/out" -v "$part:/list.tsv:ro" "${py[@]}" \
     node:22-bookworm bash -c "cut -f1,2 /list.tsv | tr '\\t' ' ' | xargs -P 6 -L 1 bash /toolmenu/bench/scripts/$one"
   if [ "${SEALED:-}" = 1 ]; then
-    docker run --rm --network none -e HOME=/tmp/home -v "$repo:/toolmenu:ro" -v "$out:/out" -v "$part:/list.tsv:ro" \
+    docker run --rm --network none -e HOME=/tmp/home -e SEALED_TIMEOUT -v "$repo:/toolmenu:ro" -v "$out:/out" -v "$part:/list.tsv:ro" \
       node:22-bookworm bash -c 'cut -f1 /list.tsv | xargs -P 6 -L 1 bash /toolmenu/bench/scripts/sealed-one.sh'
   fi
 done

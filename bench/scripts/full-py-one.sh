@@ -4,6 +4,7 @@
 # for it, stay in the server's folder until the sealed pass has run.
 id=$1; spec=$2; d=/out/$id; mkdir -p "$d"; cd "$d" || exit
 T=/toolmenu/dist/cli.js
+mkdir -p "$HOME"   # some servers unpack into it (.NET single-file bundles)
 line=$(awk -F'\t' -v id="$id" '$1 == id' /list.tsv)
 env_kv=$(printf '%s' "$line" | cut -f4 -s); args=$(printf '%s' "$line" | cut -f5 -s)
 printf '%s\n%s\n' "$env_kv" "$args" > extra.txt

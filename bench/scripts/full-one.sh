@@ -3,6 +3,7 @@
 # in /out/status.txt: ok (with each step's exit code), no-menu, install-failed or no-bin.
 id=$1; spec=$2; d=/out/$id; mkdir -p "$d"; cd "$d" || exit
 T=/toolmenu/dist/cli.js
+mkdir -p "$HOME"   # some servers unpack into it (.NET single-file bundles)
 # Optional 4th and 5th columns of the list: KEY=value pairs (dummy credentials, so a server
 # that exits without a key starts) and arguments after the binary. Saved for the sealed pass.
 line=$(awk -F'\t' -v id="$id" '$1 == id' /list.tsv)
