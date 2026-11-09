@@ -156,10 +156,12 @@ export async function authCheck(url: string, timeoutMs = 15_000): Promise<AuthCh
     const sameButSlash = out.resource.replace(/\/$/, '') === expected.replace(/\/$/, '');
     // The official SDK's checkResourceAllowed takes a resource on the same origin whose
     // path is a parent of the URL's (trailing slashes aside); RFC 9728 says identical.
+    // What the official SDK compares: the server's URL against the resource, a same-origin
+    // parent path accepted (checkResourceAllowed), whatever URI the metadata came from.
     const parent = (() => {
       try {
         const r = new URL(out.resource);
-        const e = new URL(expected);
+        const e = new URL(url);
         const slash = (p: string) => (p.endsWith('/') ? p : p + '/');
         return r.origin === e.origin && slash(e.pathname).startsWith(slash(r.pathname));
       } catch {
@@ -168,7 +170,7 @@ export async function authCheck(url: string, timeoutMs = 15_000): Promise<AuthCh
     })();
     say('auth/resource-metadata',
       sameButSlash || parent ? 'warn' : 'error',
-      `The protected resource metadata (${out.foundBy === 'header' ? 'named by WWW-Authenticate' : `at the ${out.foundBy} URI`}) says resource "${out.resource}", not "${expected}"${out.foundBy === 'header' ? ', the URL the client called' : ', the identifier that URI is built from'}. RFC 9728 §3.3: a client MUST NOT use metadata whose resource isn't identical to it.${sameButSlash ? ' Only a trailing slash differs: the official MCP SDK client accepts it, a client that follows the RFC to the letter doesn\'t.' : parent ? ' It\'s a parent of that URL on the same origin: the official MCP SDK client accepts it, a client that follows the RFC to the letter doesn\'t.' : ''}`,
+      `The protected resource metadata (${out.foundBy === 'header' ? 'named by WWW-Authenticate' : `at the ${out.foundBy} URI`}) says resource "${out.resource}", not "${expected}"${out.foundBy === 'header' ? ', the URL the client called' : ', the identifier that URI is built from'}. RFC 9728 §3.3: a client MUST NOT use metadata whose resource isn't identical to it.${sameButSlash ? ' Only a trailing slash differs: the official MCP SDK client accepts it, a client that follows the RFC to the letter doesn\'t.' : parent ? (out.resource.replace(/\/$/, '') === url.replace(/\/$/, '') ? ' It\'s the server\'s own URL, which the official MCP SDK client compares against and accepts; a client that follows the RFC to the letter doesn\'t.' : ' It\'s a parent of the server\'s URL on the same origin: the official MCP SDK client accepts it, a client that follows the RFC to the letter doesn\'t.') : ''}`,
       `Make "resource" exactly ${expected}.`,
     );
   }

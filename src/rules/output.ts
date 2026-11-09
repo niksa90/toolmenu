@@ -16,7 +16,7 @@ const addFormats = ((addFormatsImport as unknown as { default?: unknown }).defau
 /** The protocol version output schemas came in. */
 export const OUTPUT_SCHEMA_SINCE = '2025-06-18';
 
-type Validate = ((data: unknown) => boolean) & { errors?: { instancePath: string; message?: string }[] | null };
+type Validate = ((data: unknown) => boolean) & { errors?: { instancePath: string; keyword?: string; message?: string }[] | null };
 const validators = new WeakMap<object, Validate>();
 
 /**
@@ -25,7 +25,15 @@ const validators = new WeakMap<object, Validate>();
  * schema that's broken, which spec/schema reports, not the result).
  */
 export function outputProblem(schema: JsonSchema, result: { structuredContent?: unknown }): string | undefined {
-  if (result.structuredContent === undefined) return 'returned no structuredContent, although the tool declares an outputSchema';
+  return outputCheck(schema, result)?.problem;
+}
+
+/**
+ * The same, and whether only `format` checks failed (a URI, a date): many validators
+ * skip format unless told to, so such a result may well pass a client.
+ */
+export function outputCheck(schema: JsonSchema, result: { structuredContent?: unknown }): { problem: string; formatOnly: boolean } | undefined {
+  if (result.structuredContent === undefined) return { problem: 'returned no structuredContent, although the tool declares an outputSchema', formatOnly: false };
   let validate = validators.get(schema);
   if (!validate) {
     const draft2020 = typeof schema.$schema !== 'string' || schema.$schema.includes('2020-12');
@@ -39,6 +47,7 @@ export function outputProblem(schema: JsonSchema, result: { structuredContent?: 
     validators.set(schema, validate);
   }
   if (validate(result.structuredContent)) return undefined;
-  const errors = (validate.errors ?? []).slice(0, 3).map((e) => `${e.instancePath || '(the result)'} ${e.message ?? 'is invalid'}`);
-  return `returned structuredContent that doesn't match its outputSchema: ${errors.join('; ')}`;
+  const all = validate.errors ?? [];
+  const errors = all.slice(0, 3).map((e) => `${e.instancePath || '(the result)'} ${e.message ?? 'is invalid'}`);
+  return { problem: `returned structuredContent that doesn't match its outputSchema: ${errors.join('; ')}`, formatOnly: all.length > 0 && all.every((e) => e.keyword === 'format') };
 }

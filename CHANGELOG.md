@@ -9,7 +9,7 @@
   (`auth/discovery`, `auth/resource-metadata`, `auth/server-metadata`, `auth/pkce`,
   `auth/registration`). A document it can't read (a 403, a 5xx, no answer) is unchecked,
   never missing.
-- **`session/output-schema`.** A tool that declares an `outputSchema` must return
+- **`session/output-schema`** (a warning when only `format` checks fail, which many validators skip). A tool that declares an `outputSchema` must return
   `structuredContent` that matches it (2025-06-18 on, a MUST); the official SDK client
   raises an error otherwise. `session` now checks every result it gets.
 - **`session --auto --call-everything`** calls every tool once, writes included, with

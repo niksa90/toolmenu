@@ -1,0 +1,100 @@
+{
+ "toolmenu": 1,
+ "server": {
+  "name": "docs-ai-search",
+  "version": "0.5.0",
+  "protocolVersion": "2026-07-28",
+  "era": "modern",
+  "extensions": {}
+ },
+ "capturedAt": "2026-11-09T14:07:57.100Z",
+ "tools": [
+  {
+   "name": "search_cloudflare_documentation",
+   "description": "Search the Cloudflare documentation.\n\n\t\tThis tool should be used to answer any question about Cloudflare products or features, including:\n\t\t- Workers, Pages, R2, Images, Stream, D1, Durable Objects, KV, Workflows, Hyperdrive, Queues\n\t\t- AI Search, Workers AI, Vectorize, AI Gateway, Browser Run\n\t\t- Zero Trust, Access, Tunnel, Gateway, Browser Isolation, WARP, DDOS, Magic Transit, Magic WAN\n\t\t- CDN, Cache, DNS, Zaraz, Argo, Rulesets, Terraform, Account and Billing\n\n\t\tResults are returned as semantically similar chunks to the query.\n\t\t",
+   "inputSchema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+     "query": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "query"
+    ]
+   },
+   "annotations": {
+    "title": "Search Cloudflare docs",
+    "readOnlyHint": true
+   },
+   "outputSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+     "results": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "similarity": {
+         "type": "number",
+         "description": "Similarity score from AI Search"
+        },
+        "url": {
+         "type": "string",
+         "description": "Developer documentation URL"
+        },
+        "title": {
+         "type": "string",
+         "description": "Documentation page title"
+        },
+        "text": {
+         "type": "string",
+         "description": "Matching documentation chunk text"
+        }
+       },
+       "required": [
+        "similarity",
+        "url",
+        "title",
+        "text"
+       ],
+       "additionalProperties": false
+      }
+     }
+    },
+    "required": [
+     "results"
+    ],
+    "additionalProperties": false
+   },
+   "tokens": 197
+  },
+  {
+   "name": "migrate_pages_to_workers_guide",
+   "description": "ALWAYS read this guide before migrating Pages projects to Workers.",
+   "inputSchema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {}
+   },
+   "annotations": {
+    "title": "Get Pages migration guide",
+    "readOnlyHint": true
+   },
+   "tokens": 54
+  }
+ ],
+ "totalTokens": 251,
+ "listMeta": {
+  "ttlMs": 0,
+  "cacheScope": "private"
+ },
+ "prompts": [
+  {
+   "name": "workers-prompt-full",
+   "description": "Detailed prompt for generating Cloudflare Workers code (and other developer platform products) from https://developers.cloudflare.com/workers/prompt.txt"
+  }
+ ]
+}

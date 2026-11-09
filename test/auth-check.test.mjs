@@ -110,3 +110,9 @@ test('metadata found at the root well-known URI has the origin as its resource (
   assert.equal(r.foundBy, 'well-known root');
   assert.deepEqual(rules(r), ['auth/discovery:info']);
 });
+
+test('root well-known metadata whose resource is the server URL itself: a warning (the SDK accepts it), not an error', async () => {
+  const r = await check((b) => ({ '/.well-known/oauth-protected-resource': { resource: `${b}/mcp`, authorization_servers: [b] }, '/.well-known/oauth-authorization-server': as() }), { header: false });
+  assert.deepEqual(rules(r), ['auth/discovery:info', 'auth/resource-metadata:warn']);
+  assert.match(r.findings[1].message, /server's own URL/);
+});

@@ -14,7 +14,7 @@ import { allDifferences, describeToolDifference } from './difference.js';
 import { autoNextStep, neededValues, writeSign, type AutoSummary } from './auto.js';
 import { LOOKUP_VERBS, singular, VERBS, verbOf, words, WRITE_VERBS } from './words.js';
 import { handleFromResult } from './rules/handles.js';
-import { OUTPUT_SCHEMA_SINCE, outputProblem } from './rules/output.js';
+import { OUTPUT_SCHEMA_SINCE, outputCheck } from './rules/output.js';
 
 export type Step =
   | { kind: 'list' }
@@ -228,7 +228,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
   // HTTP errors passed on as plain answers, not isError (session/error-not-flagged).
   const unflagged: { step: number; tool: string; said: string }[] = [];
   // Successful results that break the tool's own outputSchema (session/output-schema).
-  const outputs: { step: number; tool: string; problem: string }[] = [];
+  const outputs: { step: number; tool: string; problem: string; formatOnly: boolean }[] = [];
   // --auto's calls with a made-up handle that got a protocol error back (session/handle-error).
   const handleErrors: { step: number; tool: string; probe: import('./rules/handles.js').HandleProbe; value: unknown; message: string; code: number }[] = [];
   // The main process runs with a pinned hash seed, and so does every scope probe:
@@ -471,8 +471,8 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             record.outcome = result.isError ? 'tool-error' : 'answered';
             // A tool that declares an outputSchema promises its successful results (2025-06-18 on).
             if (!result.isError && tool?.outputSchema && (conn.protocolVersion ?? '') >= OUTPUT_SCHEMA_SINCE && !outputs.some((o) => o.tool === step.tool)) {
-              const problem = outputProblem(tool.outputSchema, result);
-              if (problem) outputs.push({ step: index, tool: step.tool, problem });
+              const checked = outputCheck(tool.outputSchema, result);
+              if (checked) outputs.push({ step: index, tool: step.tool, ...checked });
             }
             if (call.input.rounds && !result.isError) record.note = inputNote(call.input, answer);
             if (step.creates) {
@@ -1870,16 +1870,18 @@ function inputFindings(inputs: { step: number; tool: string; input: InputTrace }
 }
 
 /** session/output-schema: one finding for the run, every tool whose result broke its own outputSchema. */
-function outputFindings(list: { step: number; tool: string; problem: string }[]): Raw[] {
+function outputFindings(list: { step: number; tool: string; problem: string; formatOnly: boolean }[]): Raw[] {
   if (!list.length) return [];
   const one = list.length === 1;
+  // Only format checks failed (a URI, a date): many validators skip format, so a warning.
+  const formatOnly = list.every((o) => o.formatOnly);
   return [
     {
       rule: 'session/output-schema',
-      severity: 'error',
+      severity: formatOnly ? 'warn' : 'error',
       step: list[0].step,
       ...(one ? { tool: list[0].tool } : {}),
-      message: `${one ? `${list[0].tool}'s result` : `${list.length} tools' results`} broke ${one ? 'its' : 'their'} own outputSchema. A tool that declares one MUST return structuredContent that conforms (2025-06-18 and later), and the official SDK client checks: it raises an error where the tool answered.`,
+      message: `${one ? `${list[0].tool}'s result` : `${list.length} tools' results`} broke ${one ? 'its' : 'their'} own outputSchema. A tool that declares one MUST return structuredContent that conforms (2025-06-18 and later), and the official SDK client checks: it raises an error where the tool answered.${formatOnly ? ' Only format checks failed (a URI, a date), which many validators skip, so a client may let it through.' : ''}`,
       detail: list.map((o) => `${o.tool} (step ${o.step}): ${clip(o.problem, 200)}`),
       fix: 'Return structuredContent that matches the outputSchema on every successful call, or drop the outputSchema from tools whose results vary.',
     },

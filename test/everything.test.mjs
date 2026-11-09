@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { invent, synthesizeArgs, INVENTED } from '../dist/args.js';
 import { autoScenario } from '../dist/auto.js';
-import { outputProblem } from '../dist/rules/output.js';
+import { outputCheck, outputProblem } from '../dist/rules/output.js';
 import { FIXTURES, menuOf, run, tempDir } from './helpers.mjs';
 
 const SERVER = ['--', process.execPath, join(FIXTURES, 'output-server.mjs')];
@@ -75,4 +75,10 @@ test('--call-everything: a failed call or an untested run is info, not an error 
     { timeoutMs: 30000, processes: 1, auto: { called: [], skipped: [], everything: true } },
   );
   for (const f of r.findings.filter((x) => x.rule === 'session/step-failed' || x.rule === 'session/untested')) assert.equal(f.severity, 'info', f.message);
+});
+
+test('outputCheck: a result failing only format checks is marked formatOnly (many validators skip format)', () => {
+  const schema = { type: 'object', properties: { url: { type: 'string', format: 'uri' }, n: { type: 'number' } }, required: ['url'] };
+  assert.equal(outputCheck(schema, { structuredContent: { url: 'not a uri' } }).formatOnly, true);
+  assert.equal(outputCheck(schema, { structuredContent: { url: 'not a uri', n: 'x' } }).formatOnly, false);
 });

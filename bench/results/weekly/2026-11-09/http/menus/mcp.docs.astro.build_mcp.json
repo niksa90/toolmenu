@@ -1,0 +1,34 @@
+{
+ "toolmenu": 1,
+ "server": {
+  "name": "Astro Docs server",
+  "version": "1.0.0",
+  "protocolVersion": "2025-06-18",
+  "era": "legacy",
+  "extensions": {}
+ },
+ "capturedAt": "2026-11-09T14:08:39.012Z",
+ "tools": [
+  {
+   "name": "search_astro_docs",
+   "title": "Search Astro Docs",
+   "description": "Search the official Astro framework docs",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string",
+      "description": "Search query"
+     }
+    },
+    "required": [
+     "query"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "tokens": 63
+  }
+ ],
+ "totalTokens": 63
+}
