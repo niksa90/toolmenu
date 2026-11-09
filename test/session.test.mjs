@@ -958,7 +958,7 @@ test('session: a tool error shows the server\'s reason, keeps its whole text in 
 });
 
 test('clip: a long path loses its middle, not the reason after it', () => {
-  const text = 'Error reading histogram: spawn /tmp/claude-0/-home-user-toolmenu/6a15a4c2-e096-5e7f-9772-f567d7616568/scratchpad/em/node_modules/editmamei/dist/bin/editmamei-core-linux-x64 ENOENT';
+  const text = 'Error reading histogram: spawn /home/runner/work/bench/servers/editmamei-3f9c2a71/install/prefix/lib/em/node_modules/editmamei/dist/bin/editmamei-core-linux-x64 ENOENT';
   assert.equal(clip(text, 120), 'Error reading histogram: spawn …/bin/editmamei-core-linux-x64 ENOENT');
   // Short enough already: nothing changes.
   assert.equal(clip('spawn /usr/local/bin/x ENOENT', 120), 'spawn /usr/local/bin/x ENOENT');
