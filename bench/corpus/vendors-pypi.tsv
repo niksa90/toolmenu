@@ -19,5 +19,4 @@ py_mcp-server-qdrant	mcp-server-qdrant==0.8.1		QDRANT_LOCAL_PATH=/tmp/qdrant COL
 py_chroma-mcp	chroma-mcp==0.2.6			--client-type ephemeral
 py_snowflake-labs-mcp	snowflake-labs-mcp==1.4.2		SNOWFLAKE_ACCOUNT=toolmenu SNOWFLAKE_USER=toolmenu SNOWFLAKE_PASSWORD=toolmenu	
 py_e2b-mcp-server	e2b-mcp-server==0.1.1		E2B_API_KEY=e2b_toolmenu	
-py_mcp-grafana	mcp-grafana==2.2.0		GRAFANA_URL=http://localhost:3000 GRAFANA_API_KEY=toolmenu	
 py_langfuse-mcp	langfuse-mcp==0.14.0		LANGFUSE_PUBLIC_KEY=pk-lf-toolmenu LANGFUSE_SECRET_KEY=sk-lf-toolmenu LANGFUSE_HOST=https://cloud.langfuse.com	
