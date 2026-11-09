@@ -834,12 +834,12 @@ Salesforce and others). Each ran with dummy credentials through `snapshot`, a re
 
 **What holds whatever the input:**
 - **PayPal** (`@paypal/mcp` 1.8.1): `list_transactions` defaults `start_date` and `end_date` to the moment the menu is built. Every `tools/list` differs (`menu/nondeterministic`), and no `list_changed` is sent though it is declared.
-- **AWS Labs** `cdk-mcp-server` and `terraform-mcp-server` don't start when installed today. They require `mcp>=1.23.0`, which resolves to 2.3.0, and 2.x moved `FastMCP`.
+- **AWS Labs** `cdk-mcp-server` and `terraform-mcp-server` don't start when installed today. They require `mcp>=1.23.0`, which resolves to 2.3.0, and 2.x moved `FastMCP`. Both are deprecated (their PyPI pages point to `aws-iac-mcp-server` and HashiCorp's server), and the cap went into the repository's maintained servers (awslabs/mcp #4356, #4448), so only these two old releases are left broken.
 - **Chroma** `chroma-mcp` 0.2.6 doesn't start either. It pins `mcp==1.6.0` but not pydantic, and pydantic 2.14.3 no longer has a function mcp 1.6.0 imports.
 - **HashiCorp** Terraform MCP server 1.4.1: resource URIs without a scheme (`/terraform/style-guide`), against the schema's `format: uri` (`lists/schema`).
 - **GitHub** `github-mcp-server` v2.1.0: the app-only `ui_get` is listed to clients without MCP Apps (`apps/app-only-listed`).
 - **Notion** `@notionhq/notion-mcp-server` 2.6.1: the API's HTTP 401 comes back as a plain result, not `isError` (`session/error-not-flagged`).
-- **Elastic**'s Rust server (Docker's `mcp/elasticsearch`): its tool order differs per process.
+- **Elastic**'s Rust server (Docker's `mcp/elasticsearch`): its tool order differs per process. The server is deprecated in favour of Elastic Agent Builder's MCP endpoint.
 - **Docker's** `mcp/atlassian` image still ships an mcp-atlassian with F12's per-process order. The current PyPI release doesn't have it.
 
 **What the run fixed in the bench** (not toolmenu):
