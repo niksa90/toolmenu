@@ -1,9 +1,21 @@
 # usage: python3 -I bench/scripts/registry-stdio.py <exclude-file> > list.tsv
-# npm stdio servers from the MCP registry: latest version, no required env vars or
-# arguments, none whose package@ appears in <exclude-file> (earlier corpora; /dev/null for
-# none), in a seeded random order. Writes id<TAB>pkg@ver<TAB>repo.
+# npm stdio servers from the MCP registry: latest version, no required arguments, none
+# whose package@ appears in <exclude-file> (earlier corpora; /dev/null for none), in a
+# seeded random order. Writes id<TAB>pkg@ver<TAB>repo<TAB>KEY=value pairs: each env var the
+# registry marks required gets a dummy value that fits its name (batch-full.sh sets them),
+# so servers that need a key start and say how they meet a key that opens nothing.
 import json, sys, urllib.request, urllib.parse, re, random
 corpus = open(sys.argv[1]).read()
+
+
+def dummy(name):
+    n = name.upper()
+    if re.search(r'URL|URI|ENDPOINT|HOST|BASE|SERVER|ADDR', n): return 'http://localhost:9'
+    if re.search(r'PORT', n): return '9'
+    if re.search(r'PATH|DIR|FOLDER|ROOT', n): return '/tmp'
+    return 'toolmenu'
+
+
 seen, rows, cursor = set(), [], None
 while True:
     q = {'limit': '100', 'version': 'latest'}
@@ -14,15 +26,15 @@ while True:
         s = item['server']
         for p in s.get('packages') or []:
             if p.get('registryType') != 'npm' or (p.get('transport') or {}).get('type') != 'stdio': continue
-            if any(e.get('isRequired') for e in p.get('environmentVariables') or []): continue
             if any(a.get('isRequired') for a in (p.get('packageArguments') or []) + (p.get('runtimeArguments') or [])): continue
             name, ver = p.get('identifier'), p.get('version')
             if not name or not ver or name in seen or re.search(r'(^|[\s@/])' + re.escape(name) + r'@', corpus): continue
             seen.add(name)
             repo = (s.get('repository') or {}).get('url', '')
-            rows.append((re.sub(r'[^A-Za-z0-9._-]', '_', name), f'{name}@{ver}', repo))
+            env = ' '.join(f"{e['name']}={dummy(e['name'])}" for e in p.get('environmentVariables') or [] if e.get('isRequired') and e.get('name') and re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', e['name']))
+            rows.append((re.sub(r'[^A-Za-z0-9._-]', '_', name), f'{name}@{ver}', repo, env))
     cursor = d.get('metadata', {}).get('nextCursor')
     if not cursor: break
 print(len(rows), file=sys.stderr)
 random.Random(20261109).shuffle(rows)
-for r in rows: print('\t'.join(r))
+for r in rows: print('\t'.join(r).rstrip('\t'))
