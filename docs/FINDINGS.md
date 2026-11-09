@@ -747,26 +747,34 @@ baseline.* The stdio servers of F17 ran again with toolmenu `3b338ac`, now with 
 pass. The hosted panel (`corpus/http-panel.tsv`) is 109 vendor endpoints plus a seeded
 2,000 of the registry's hosted servers, one per domain.
 
-**Every stdio tool, called.** `session --auto --call-everything` (new) calls every tool
+**94% of stdio tools, called.** `session --auto --call-everything` (new) calls every tool
 once, writes included, with the schema's own values or made-up ones (`toolmenu-test`,
-`1`), in a container with `--network none` and no credentials (`SEALED=1`). The sealed
-pass ran on 1,057 of the 1,089 servers; the other 32 wouldn't start without the network.
-15,566 of 16,518 tools were called (94.2%, against 6% with read-only calls alone). Each
-tool's first answer:
+`1`), in a container with `--network none` and no credentials (`SEALED=1`). The read-only
+session alone called 6%: it calls only tools marked `readOnlyHint: true`, and annotations
+are hints the server provides, not guarantees. Every one of the 16,518 tools is
+accounted for:
 
 | | Tools |
 |---|---|
-| A result | 3,066 (19.7%) |
-| A readable tool error to the made-up input: what the spec asks for | 9,040 (58.1%) |
-| A readable error because the sandbox has no network (1,322), no browser or app (878), no key (770) | 2,970 (19.1%) |
-| A protocol error or a crash | 288 (1.9%) |
-| Timed out (10 s) | 182 (1.2%) |
+| **Called** | **15,550 (94.1%)** |
+| a result | 3,066 |
+| a readable tool error to the made-up input: what the spec asks for | 9,044 |
+| an error because the sandbox has no network (1,323), something missing on the machine (900), no key or login (799) | 3,022 |
+| a protocol error or a crash | 236 |
+| timed out (10 s) | 182 |
+| Not called: 32 servers wouldn't start without the network | 926 |
+| Not called: in the online menu, not in the one listed offline | 22 |
+| Not called: planned, but the session stopped first (the server stopped answering) | 20 |
 
 With made-up input and no network, a failed call says how a tool meets such input, not
 that the server is broken, so those are info. What holds whatever the input keeps its
-level. Two servers' tools declare an `outputSchema` and answer without `structuredContent`
-(`session/output-schema`, new: a MUST since 2025-06-18; the official SDK client raises an
-error where the tool answered): `@domainkits/mcp` and `@mindjack/mcp`, 8 tools each.
+level. "The official SDK client" here is `@modelcontextprotocol/client` 2.4.0
+(TypeScript), whose source confirms each check cited. Two servers' tools declare an
+`outputSchema` and answer without `structuredContent` (`session/output-schema`, new: a
+MUST since 2025-06-18; that SDK raises an error where the tool answered): `@domainkits/mcp`
+and `@mindjack/mcp`, 8 tools each. 12 stdio servers fail in that client today (8 lose
+every tool, 4 lose answers); with smaller spec problems, 22 unique servers have a spec or
+client finding.
 
 **The vendors' sign-in, checked without logging in** (`toolmenu auth check`, new). 79 of
 the 109 vendor endpoints answer 401:
