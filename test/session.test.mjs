@@ -1045,3 +1045,14 @@ test('the union menu keeps the starting list\'s cache hints, so review of a snap
   const r = await session(stdio(), parseScenario({ steps: ['list'] }), { timeoutMs: TIMEOUT_MS, processes: 1 });
   assert.ok(r.union.listMeta && 'ttlMs' in r.union.listMeta, JSON.stringify(r.union.listMeta));
 });
+
+test('session/edit only in a field the model does not read is a warning that says so (@pipeworx version hash, bench 2026-11-09)', () => {
+  const t = (version, description = 'Get a thing.') => [{ name: 'get_x', description, inputSchema: { type: 'object' }, version }];
+  const run = (a, b) => changeFindings(menuOf(a).tools, menuOf(b).tools, compareMenus(menuOf(a).tools, menuOf(b).tools), 2, 'no tool call in between').filter((f) => f.rule === 'session/edit');
+  const quiet = run(t('v1.bb26ead1'), t('v1.ef282cca'));
+  assert.deepEqual(quiet.map((f) => f.severity), ['warn']);
+  assert.match(quiet[0].message, /^get_x: version changed mid-session, a field clients keep to themselves: .*cached prompt isn't affected/);
+  const loud = run(t('v1.bb26ead1'), t('v1.ef282cca', 'Get a thing, now.'));
+  assert.deepEqual(loud.map((f) => f.severity), ['error']);
+  assert.match(loud[0].message, /Invalidates the cached prompt/);
+});

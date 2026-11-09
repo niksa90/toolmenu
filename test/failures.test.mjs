@@ -73,3 +73,9 @@ test('"API key not configured" is a missing credential, not the server failing (
   // A key that isn't a credential stays the server's.
   assert.equal(classifyFailure('The key is not configured for this region', { hadArguments: false }), 'other');
 });
+
+test('"needs credentials" and "no browser found" are setup failures (botverse-mcp, mcp-session-bridge, bench 2026-11-09)', () => {
+  assert.equal(classifyFailure('Botverse needs credentials to run a job. Set BOTVERSE_API_KEY or BOTVERSE_CONNECTOR_URL.', { hadArguments: false }), 'auth');
+  assert.equal(classifyFailure('No browser found for standalone mode. Install Chrome/Chromium/Brave/Edge', { hadArguments: false }), 'environment');
+  assert.equal(classifyFailure('This tool needs a project id', { hadArguments: false }), 'other');
+});

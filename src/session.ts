@@ -5,7 +5,7 @@ import { listTools, type Connection, type Elicitation, type Target } from './con
 import { AfterInputError, callWithInput, MAX_CONTINUATIONS, MAX_ROUNDS, type InputKind, type InputTrace } from './mrtr.js';
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeSameEra, probeVariance, seeded } from './probe.js';
-import { varianceFinding } from './rules/determinism.js';
+import { outsideModel, varianceFinding } from './rules/determinism.js';
 import { classifyFailure, errorWords, structuredError, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
@@ -1194,14 +1194,19 @@ export function changeFindings(before: MenuTool[], after: MenuTool[], changes: T
     // timestamp in a description, rewritten at every call). A change that touches
     // anything more is a change of its own.
     const paths = a && b ? allDifferences(toolDefinition(a), toolDefinition(b)).map((d) => d.path).sort().join(',') : '';
+    // Only in fields the model doesn't read (a per-tool version hash, the @pipeworx
+    // servers): the cached prompt is untouched, so not an error about it.
+    const outside = a && b ? outsideModel([a], [b], changes.filter((c) => c.tool === tool)) : undefined;
     out.push({
       rule: 'session/edit',
-      severity: 'error',
+      severity: outside ? 'warn' : 'error',
       step,
       tool,
       cause: `${tool}|${fields.join(',')}|${paths}|${origin ?? ''}`,
       each: `step ${step}: position ${brk?.position ?? '?'} · ~${total.toLocaleString('en-US')} tokens (estimate)${seen[0] ? ` · ${seen[0]}` : ''}`,
-      message: `${tool}: ${fields.join(', ')} changed mid-session. Invalidates the cached prompt: the tool list and the conversation after it are processed again.`,
+      message: outside
+        ? `${tool}: ${outside.join(', ')} changed mid-session, ${outside.length === 1 ? 'a field' : 'fields'} clients keep to themselves: the model doesn't read ${outside.length === 1 ? 'it' : 'them'}, so the cached prompt isn't affected, but a client that compares tool lists sees the tool change.`
+        : `${tool}: ${fields.join(', ')} changed mid-session. Invalidates the cached prompt: the tool list and the conversation after it are processed again.`,
       detail: [...seen, ...cost, ...why],
       fix: origin === 'no tool call in between' ? `Make ${tool}'s definition the same on every tools/list: nothing built from the clock, a random value, or a set's order.` : `Keep ${tool}'s definition fixed for the session; if it has to change, change it between conversations.`,
     });
