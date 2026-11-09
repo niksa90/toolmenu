@@ -5,7 +5,7 @@
  */
 import { VERSION } from './version.js';
 
-export const COMMANDS = ['init', 'snapshot', 'diff', 'session', 'history', 'auth', 'scan', 'explain', 'mcp'] as const;
+export const COMMANDS = ['init', 'snapshot', 'diff', 'review', 'session', 'history', 'auth', 'scan', 'explain', 'mcp'] as const;
 export type Command = (typeof COMMANDS)[number];
 
 /** Every option, once: its spelling and what it does (continuation lines are indented by the renderer). */
@@ -122,6 +122,23 @@ const HELP: Record<Command, CommandHelp> = {
     shared: ['config', 'format', 'json', 'fail-on'],
     examples: ['toolmenu diff menu.json new-menu.json', 'toolmenu diff --release 1.4.0..1.5.0 --format markdown old.json new.json'],
     exits: ['0  no findings at or above --fail-on', '1  findings at or above --fail-on', "2  a menu file can't be read, or bad usage"],
+  },
+  review: {
+    summary: 'should a new menu file replace the baseline? a verdict, and the findings it adds or clears',
+    usage: ['toolmenu review [options] <baseline.json> <new.json>'],
+    about: [
+      'Compares the new menu with the committed baseline as diff does, runs the menu rules on',
+      'both files, and says whether to accept it: what breaks callers, which findings are new,',
+      'which are gone. Starts no server. Pass --release to check breaking changes against the bump.',
+    ],
+    own: ['release', 'server-version-is-release'],
+    shared: ['config', 'format', 'json', 'fail-on'],
+    examples: ['toolmenu review menu.json new-menu.json', 'toolmenu review --release 1.4.0..2.0.0 --format markdown menu.json new-menu.json'],
+    exits: [
+      '0  accept: unchanged, safe, or breaking changes the release allows',
+      '1  not as it is: breaking changes without a release that allows them, or new findings at or above --fail-on',
+      "2  a menu file can't be read, or bad usage",
+    ],
   },
   session: {
     summary: 'run a session (scripted or --auto) and watch the menu change',

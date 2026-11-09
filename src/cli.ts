@@ -8,6 +8,7 @@ import { LIST_WORDS } from './lists.js';
 import { loadConfig, type Config } from './config.js';
 import { ELICITATIONS, PROTOCOLS, type Elicitation, type Protocol, type Target } from './connect.js';
 import { comparedTools, diffMenus } from './diff.js';
+import { formatReview, reviewMenus } from './review.js';
 import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
 import { counts, formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
@@ -230,6 +231,23 @@ export async function main(given: string[]): Promise<number> {
     });
     await emit(formatDiff(result, before.tools.length, after.tools.length, format), result.findings, 'diff', rest[1], () => diffHtml(result, comparedTools(before, after, config.ignore), { paths: [rest[0], rest[1]] }));
     return result.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
+  }
+
+  if (sub === 'review') {
+    if (command) throw new UsageError("review compares two menu files; it doesn't start a server. Run snapshot first.");
+    if (rest.length !== 2) throw new UsageError('review needs the baseline and the new menu file: toolmenu review <baseline.json> <new.json>');
+    if (format === 'github') throw new UsageError('review prints text, markdown or json.');
+    const [before, after] = await Promise.all(rest.map((path) => loadMenu(path)));
+    const result = reviewMenus(before, after, {
+      rules: config.rules,
+      ignore: config.ignore,
+      tokenBudget: config.tokenBudget,
+      release: values.release ? parseRelease(values.release) : undefined,
+      serverVersionIsRelease: values['server-version-is-release'] ?? config.serverVersionIsRelease,
+      failOn,
+    });
+    writeUnguarded(process.stdout, show(formatReview(result, [rest[0], rest[1]], format, failOn)) + '\n');
+    return result.accept ? 0 : 1;
   }
 
   if (sub === 'history') {

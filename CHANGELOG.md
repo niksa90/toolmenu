@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### New
+
+- **`toolmenu review <baseline.json> <new.json>`: should the new menu replace the
+  baseline?** `diff`, plus the menu rules on both files: which findings the new menu
+  adds, clears or changes (a summary that now names another tool is worse), and one
+  verdict (`unchanged`, `safe`, `breaking-released`, `breaking`, `review`) with an exit
+  code to match. With `--release`, breaking changes are accepted when the bump allows
+  them. Text, markdown and JSON; `reviewMenus` in the library.
+- **`docs/PROTOCOLS.md`, written by a test.** Every protocol version in `schemas/` is
+  run against a fixture server on each `npm test` (handshake, `spec/schema` on a good
+  and a bad list, a session whose call adds a tool mid-list); the table is that run.
+- **False-positive guards.** A fixture server that does everything right gets no
+  finding from snapshot (all options), `--client`, `session --auto` or `diff`, on
+  either protocol; and the findings on nine real menus are recorded
+  (`test/fixtures/golden/findings.json`), so an engine change that moves one fails
+  until it's explained.
+
 ### Fixes
 
 - **`wait_for: tools_list_changed` after a call sees the notification that call

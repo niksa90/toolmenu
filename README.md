@@ -34,13 +34,14 @@ npx toolmenu init -- node dist/server.js          # CI: a baseline, a workflow, 
 ![toolmenu session output: tools inserted mid-list, a description edited, each pinned to the step that caused it](https://raw.githubusercontent.com/niksa90/toolmenu/main/docs/demo.svg)
 
 > **Status: 0.26.** Spec in [docs/SPEC.md](https://github.com/niksa90/toolmenu/blob/main/docs/SPEC.md),
-> every rule in [docs/RULES.md](docs/RULES.md), changes in [CHANGELOG.md](CHANGELOG.md).
+> every rule in [docs/RULES.md](docs/RULES.md), protocol versions in [docs/PROTOCOLS.md](docs/PROTOCOLS.md)
+> (written by a test that runs each one), changes in [CHANGELOG.md](CHANGELOG.md).
 
 **Contents:** [A finding](#what-a-finding-looks-like) ·
 [What it catches](#what-it-catches) · [Why "when it changes" matters](#why-when-it-changes-matters) ·
 [Tested on real servers](#tested-on-real-servers) · [Start here](#start-here) ·
 [CI](#in-ci-one-pr-comment) · [`session`](#session-the-menu-changing-while-the-agent-works) ·
-[`diff`](#diff-compare-releases) · [`snapshot` rules](#snapshot-rules) ·
+[`diff`](#diff-compare-releases) · [`review`](#accepting-a-new-baseline-review) · [`snapshot` rules](#snapshot-rules) ·
 [What it can't catch](#what-toolmenu-cant-catch) · [Options](#options)
 
 ## What a finding looks like
@@ -173,6 +174,7 @@ By hand:
 ```sh
 npx toolmenu snapshot -- node dist/server.js       # the menu, its findings, menu.json
 npx toolmenu diff menu.json new-menu.json          # what changed between two releases
+npx toolmenu review menu.json new-menu.json        # should the new menu replace the baseline?
 npx toolmenu session --auto -- node dist/server.js # call read-only tools, watch the menu
 ```
 
@@ -614,6 +616,40 @@ server has said `0.2.0` for 19 releases (FINDINGS F5). It's shown, and only chec
 with `--server-version-is-release`. `diff` also enforces an optional `tokenBudget`
 (`diff/token-budget`). Order changes are only a notice here: between releases, prompt caches rebuild. Order
 matters *within* a session.
+
+### Accepting a new baseline: `review`
+
+`diff` says what changed. Before you commit a refreshed `menu.json`, `review` answers
+the question that follows: should it replace the baseline?
+
+```sh
+npx toolmenu snapshot --out new-menu.json -- node dist/server.js
+npx toolmenu review --release 1.4.0..1.5.0 menu.json new-menu.json
+```
+
+```
+toolmenu review  new-menu.json as the new menu.json
+  verdict   ✗ don't accept as is: 1 breaking change, and the release's minor bump is too small (release 2.0.0).
+  changes   1 breaking (1 tool) · 0 minor · 3 notice (13 tools)
+  findings  0 new · 0 gone · 1 changed · 1 unchanged
+```
+
+It runs `diff`, and runs the menu rules on both files, so it also says which findings
+the new menu **adds**, which it **clears**, and which **changed** (a summary that now
+names another tool counts as worse). The verdict is one of:
+
+| Verdict | Exit | When |
+|---|---|---|
+| `unchanged` | 0 | The same menu and the same findings |
+| `safe` | 0 | Nothing breaks callers, and no finding at or above `--fail-on` is new or worse |
+| `breaking-released` | 0 | Breaking changes, and `--release` shows a bump that allows them |
+| `breaking` | 1 | Breaking changes, and no release that allows them: none given, too small, or not checkable (calendar versions) |
+| `review` | 1 | Nothing breaks, but findings at or above `--fail-on` are new or worse, or `diff`'s own checks fail (`tokenBudget`) |
+
+It reads only the two files, so rules that need the live server (a second process,
+the raw `tools/list`) aren't part of it; `snapshot` runs those. `--format markdown`
+gives the same as a PR comment, `--json` for scripts (`verdict`, `accept`, and the
+findings by kind).
 
 ### Operations behind a search tool (`--catalog`)
 
