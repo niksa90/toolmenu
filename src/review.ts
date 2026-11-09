@@ -170,7 +170,25 @@ function nextStep(r: ReviewResult, paths: [string, string]): string {
 export function formatReview(r: ReviewResult, paths: [string, string], format: Format, failOn: Severity = 'error'): string {
   const f = r.findings;
   if (format === 'json') {
-    return JSON.stringify({ command: 'review', verdict: r.verdict, accept: r.accept, baseline: paths[0], candidate: paths[1], tools: r.tools, findings: f, diff: { ...r.diff, counts: counts(r.diff.findings) } }, null, 2);
+    const v = verdictLine(r, failOn);
+    return JSON.stringify(
+      {
+        command: 'review',
+        verdict: r.verdict,
+        accept: r.accept,
+        // The verdict and next step as the text report says them, for a PR comment or a log line.
+        summary: `${v.mark} ${v.text}`,
+        next: nextStep(r, paths),
+        baseline: paths[0],
+        candidate: paths[1],
+        tools: r.tools,
+        counts: { introduced: f.introduced.length, resolved: f.resolved.length, changed: f.changed.length, worse: f.changed.filter((c) => c.worse).length, kept: f.kept },
+        findings: f,
+        diff: { ...r.diff, counts: counts(r.diff.findings) },
+      },
+      null,
+      2,
+    );
   }
   const v = verdictLine(r, failOn);
   const d = r.diff;

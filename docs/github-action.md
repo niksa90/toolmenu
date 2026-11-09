@@ -166,6 +166,34 @@ check even though nothing was checked. The PR comment and a notice say so, and t
           exit 1
 ```
 
+## The verdict, and `gate: review`
+
+Every report starts with `toolmenu review`'s verdict on the PR's menu: can it replace
+the baseline as it is? It names the breaking changes, and the findings the PR adds,
+clears or makes worse:
+
+```
+Verdict: ✗ don't accept as is: 1 breaking change, and the release's minor bump is too small (release 2.0.0).
+         Findings against the baseline: 1 new, 0 gone, 0 changed.
+→ Next: Release it as 2.0.0, or keep the old shape for one more release.
+```
+
+By default the job still passes or fails on `diff`'s findings at or above `fail-on`,
+as before. With `gate: review` it follows the verdict instead: a breaking change the
+release bump allows (`release: auto` reads it from your manifest) passes, and a PR
+that adds findings at or above `fail-on` fails even when nothing breaks. Snapshot and
+session findings count either way.
+
+```yaml
+      - uses: niksa90/toolmenu@v0.27.0
+        with:
+          command: node dist/server.js
+          gate: review
+```
+
+`gate: review` needs toolmenu 0.27.0 or later; with an older `version`, the job fails
+and says so.
+
 ## Outputs
 
 | Output | |
@@ -173,6 +201,8 @@ check even though nothing was checked. The PR comment and a notice say so, and t
 | `report` | Path to the markdown report |
 | `exit-code` | `0` clean, `1` findings at or above `fail-on`, `2` couldn't run |
 | `skipped` | `'true'` when the check was skipped for missing secrets |
+| `verdict` | Should this PR's menu replace the baseline (`toolmenu review`): `unchanged`, `safe`, `breaking-released`, `breaking` or `review`. Empty with no baseline |
+| `accept` | `'true'` when the verdict says it can, as it is |
 
 ## Node
 

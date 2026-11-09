@@ -10,6 +10,11 @@
   verdict (`unchanged`, `safe`, `breaking-released`, `breaking`, `review`) with an exit
   code to match. With `--release`, breaking changes are accepted when the bump allows
   them. Text, markdown and JSON; `reviewMenus` in the library.
+- **The Action leads with the review verdict.** Every report starts with whether the
+  PR's menu can replace the baseline as it is, and the findings it adds, clears or
+  makes worse; the `verdict` and `accept` outputs carry it. `gate: review` makes the
+  job pass or fail on the verdict instead of `diff`'s findings (a breaking change the
+  release bump allows passes). The default, `gate: findings`, keeps 0.26's behaviour.
 - **`docs/PROTOCOLS.md`, written by a test.** Every protocol version in `schemas/` is
   run against a fixture server on each `npm test` (handshake, `spec/schema` on a good
   and a bad list, a session whose call adds a tool mid-list); the table is that run.

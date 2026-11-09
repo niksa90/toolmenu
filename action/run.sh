@@ -51,6 +51,12 @@ mkdir -p "$OUT"
 BODY="$OUT/comment.md"
 MARKER='<!-- toolmenu-report -->'
 FAIL_ON="${TOOLMENU_FAIL_ON:-error}"
+# What decides the job for the comparison with the baseline: diff's findings at or above
+# fail-on ("findings", the default), or review's verdict ("review": breaking changes the
+# release bump allows pass; new findings at fail-on fail). Snapshot and session findings
+# count either way.
+GATE="${TOOLMENU_GATE:-findings}"
+VERDICT=""; ACCEPT=""
 
 # Connection options, one per line: HTTP headers ("Name: value", e.g. an API key
 # from a secret) and environment variables for a stdio server ("KEY=value"). They
@@ -274,6 +280,36 @@ elif [ "${TOOLMENU_BASELINE_FROM:-snapshot}" != "snapshot" ]; then
   echo "::error title=toolmenu::'baseline-from' is 'snapshot' or 'session', not '${TOOLMENU_BASELINE_FROM}'."
   exit 2
 fi
+if [ "$GATE" != findings ] && [ "$GATE" != review ]; then
+  echo "::error title=toolmenu::'gate' is 'findings' or 'review', not '$GATE'."
+  exit 2
+fi
+
+# review: should this PR's menu replace the baseline? One verdict line for the top of the
+# report, the verdict and accept outputs, and its exit code for gate: review. An older
+# CLI (the version input) has no review: then there's no verdict line, and gate: review fails.
+run_review() {
+  REVIEW_CODE=2
+  $CLI review --json --fail-on "$FAIL_ON" ${RELEASE_ARGS[@]+"${RELEASE_ARGS[@]}"} "$BASELINE" "$CURRENT" > "$OUT/review.json" 2> "$OUT/review.err"
+  local rc=$?
+  [ "$rc" -le 1 ] || return 0
+  # The verdict line is toolmenu's own words; markdown in it (a version given as the
+  # release input) is escaped all the same.
+  node -e '
+    const fs = require("fs");
+    const r = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    if (typeof r.verdict !== "string" || typeof r.summary !== "string") process.exit(3);
+    // In a workflow the versions come from the release input, not the CLI flag.
+    const inputs = (t) => String(t).replace(/--release old\.\.new/g, "the Action\x27s release input").replace(/--release\b/g, "the Action\x27s release input");
+    const md = (t) => inputs(t).replace(/[\\`*_[\]()<>#!|@~]/g, "\\$&").replace(/\r?\n/g, " ");
+    const c = r.counts || {};
+    const found = c.introduced !== undefined ? ` Findings against the baseline: ${c.introduced} new, ${c.resolved} gone, ${c.changed} changed${c.worse ? ` (${c.worse} worse)` : ""}.` : "";
+    fs.writeFileSync(process.argv[2], `**Verdict:** ${md(r.summary)}${md(found)}\n\n${r.accept ? "" : `→ Next: ${md(r.next)}\n\n`}`);
+    process.stdout.write(`${r.verdict}\n${r.accept}\n`);
+  ' "$OUT/review.json" "$OUT/review.md" > "$OUT/review.out" 2>/dev/null || return 0
+  { read -r VERDICT; read -r ACCEPT; } < "$OUT/review.out"
+  REVIEW_CODE=$rc
+}
 
 SESSION_RAN=false
 run_session() {
@@ -336,7 +372,18 @@ else
   elif [ -n "$BASELINE" ]; then
     release_args
     $CLI diff --format markdown ${SARIF_DIFF[@]+"${SARIF_DIFF[@]}"} --fail-on "$FAIL_ON" ${RELEASE_ARGS[@]+"${RELEASE_ARGS[@]}"} "$BASELINE" "$CURRENT" > "$OUT/diff.md" 2> "$OUT/diff.err"
-    code=$?; note "$code"
+    code=$?
+    [ "$code" -eq 2 ] || run_review
+    if [ "$GATE" = review ] && [ "$code" -ne 2 ]; then
+      if [ "$REVIEW_CODE" -eq 2 ]; then
+        echo "::error title=toolmenu::gate: review needs toolmenu 0.27.0 or later (review); this one couldn't give a verdict."
+        ERROR_SHOWN=true
+      fi
+      note "$REVIEW_CODE"
+    else
+      note "$code"
+    fi
+    [ -s "$OUT/review.md" ] && cat "$OUT/review.md" >> "$BODY"
     if [ "$code" -eq 2 ]; then { echo "**Couldn't compare with the baseline:**"; echo; head -1 "$OUT/diff.err" | fenced; echo; } >> "$BODY"; else { sed -e "s/pass --release/set the Action's \`release\` input/" -e "s/Check the --release order/Check the order in the Action's \`release\` input/" "$OUT/diff.md"; echo; echo "<sub>Baseline: $BASELINE_FROM</sub>"; echo; } >> "$BODY"; fi
   else
     if [ "$FROM_SESSION" = true ]; then hint="npx toolmenu session $([ "$TOOLMENU_SCENARIO" = auto ] && echo --auto || echo "--scenario $TOOLMENU_SCENARIO") --union-out ${TOOLMENU_BASELINE:-menu.json} $(hint_target)"; else hint="npx toolmenu snapshot $(hint_target)"; fi
@@ -358,6 +405,8 @@ echo "<sub>[toolmenu](https://github.com/niksa90/toolmenu) · token counts are e
 echo "report=$BODY" >> "${GITHUB_OUTPUT:-/dev/null}"
 echo "exit-code=$status" >> "${GITHUB_OUTPUT:-/dev/null}"
 echo "skipped=$SKIPPED" >> "${GITHUB_OUTPUT:-/dev/null}"
+echo "verdict=$VERDICT" >> "${GITHUB_OUTPUT:-/dev/null}"
+echo "accept=$ACCEPT" >> "${GITHUB_OUTPUT:-/dev/null}"
 OUTPUTS_WRITTEN=true
 
 # 4. One PR comment, updated in place on every push.
@@ -393,6 +442,8 @@ if [ "$status" -eq 2 ] && [ "$ERROR_SHOWN" = true ]; then
   :  # the specific error is already out
 elif [ "$status" -eq 2 ]; then
   echo "::error title=toolmenu::The check couldn't run: the server didn't start or couldn't be reached, or a baseline or scenario couldn't be read. See the job summary."
+elif [ "$status" -ne 0 ] && [ "$GATE" = review ] && [ "$ACCEPT" = false ]; then
+  echo "::error title=toolmenu::The new menu shouldn't replace the baseline as it is ($VERDICT). See the job summary."
 elif [ "$status" -ne 0 ]; then
   echo "::error title=toolmenu::Findings at or above '$FAIL_ON'. See the job summary."
 fi

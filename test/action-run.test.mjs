@@ -15,7 +15,7 @@ function runAction(env, setup) {
   // like a failed snapshot.
   // Also writes the file --union-out names, like session does.
   // Also records TOOLMENU_ARGS, the connection options the Action passes in the environment.
-  writeFileSync(stub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$0.$1.args"\nprintf "%s" "${TOOLMENU_ARGS-unset}" > "$0.$1.env"\nfor ((i=1;i<$#;i++)); do if [ "${!i}" = --union-out ]; then j=$((i+1)); echo "{}" > "${!j}"; fi; done\nprintf "%s\\n" "$STUB_ERR" >&2\nexit "${STUB_CODE:-0}"\n');
+  writeFileSync(stub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$0.$1.args"\nprintf "%s" "${TOOLMENU_ARGS-unset}" > "$0.$1.env"\nfor ((i=1;i<$#;i++)); do if [ "${!i}" = --union-out ]; then j=$((i+1)); echo "{}" > "${!j}"; fi; done\nif [ "$1" = review ] && [ -n "$STUB_REVIEW" ]; then printf "%s" "$STUB_REVIEW"; exit "${STUB_REVIEW_CODE:-0}"; fi\nprintf "%s\\n" "$STUB_ERR" >&2\nexit "${STUB_CODE:-0}"\n');
   chmodSync(stub, 0o755);
   const r = spawnSync('bash', [join(ROOT, 'action/run.sh')], {
     cwd: dir,
@@ -427,4 +427,58 @@ test('action: an older toolmenu (the version input) gets headers as arguments, w
   assert.deepEqual(args.slice(-3), ['--header', 'x-api-key: k1', 'https://example.com/mcp']);
   assert.equal(readFileSync(join(r.dir, 'stub-cli.sh.snapshot.env'), 'utf8'), 'unset');
   assert.match(r.stdout, /::warning title=toolmenu::toolmenu 0\.25\.2 takes headers and env as arguments/);
+});
+
+// review's verdict at the top of the report, the outputs, and gate: review.
+const reviewJson = (verdict, accept, extra = {}) =>
+  JSON.stringify({ command: 'review', verdict, accept, summary: accept ? '✓ safe to accept: nothing breaks callers.' : "✗ don't accept as is: 1 breaking change.", next: 'Release it as 2.0.0.', counts: { introduced: 1, resolved: 2, changed: 0, worse: 0, kept: 3 }, ...extra });
+const withBaseline = (dir) => {
+  writeFileSync(join(dir, 'menu.json'), '{}');
+  return { GITHUB_OUTPUT: join(dir, 'outputs.txt') };
+};
+const outputs = (r) => Object.fromEntries(readFileSync(join(r.dir, 'outputs.txt'), 'utf8').trim().split('\n').map((l) => l.split(/=(.*)/s).slice(0, 2)));
+
+test('action: the review verdict heads the report and sets the verdict and accept outputs', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_RELEASE: 'off', STUB_REVIEW: reviewJson('breaking', false), STUB_REVIEW_CODE: '1' }, withBaseline);
+  const reviewArgs = readFileSync(join(r.dir, 'stub-cli.sh.review.args'), 'utf8').split('\n');
+  assert.deepEqual(reviewArgs.slice(0, 4), ['review', '--json', '--fail-on', 'error']);
+  assert.match(r.comment, /\*\*Verdict:\*\* ✗ don't accept as is: 1 breaking change\. Findings against the baseline: 1 new, 2 gone, 0 changed\./);
+  assert.match(r.comment, /→ Next: Release it as 2\.0\.0\./);
+  assert.ok(r.comment.indexOf('**Verdict:**') < r.comment.indexOf('<sub>Baseline:'), 'the verdict comes before the diff');
+  const out = outputs(r);
+  assert.equal(out.verdict, 'breaking');
+  assert.equal(out.accept, 'false');
+  // gate: findings (the default) goes by diff's exit code (the stub's: 0), not the verdict.
+  assert.equal(r.code, 0, r.stdout);
+});
+
+test('action: gate review fails on a verdict that does not accept, and passes one that does, whatever diff said', () => {
+  const no = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_RELEASE: 'off', TOOLMENU_GATE: 'review', STUB_REVIEW: reviewJson('breaking', false), STUB_REVIEW_CODE: '1' }, withBaseline);
+  assert.equal(no.code, 1);
+  assert.match(no.stdout, /shouldn't replace the baseline as it is \(breaking\)/);
+  // A breaking change the release allows: diff exits 1 (its errors), review accepts.
+  const yes = runAction(
+    { TOOLMENU_COMMAND: 'node server.js', TOOLMENU_RELEASE: 'off', TOOLMENU_GATE: 'review', STUB_REVIEW: reviewJson('breaking-released', true), STUB_REVIEW_CODE: '0' },
+    withBaseline,
+  );
+  assert.equal(yes.code, 0, yes.stdout);
+  assert.doesNotMatch(yes.comment, /→ Next:/, 'no next step for an accepted verdict');
+});
+
+test('action: gate review with a CLI that has no review fails clearly; gate findings just leaves the verdict out', () => {
+  const gated = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_RELEASE: 'off', TOOLMENU_GATE: 'review' }, withBaseline);
+  assert.equal(gated.code, 2);
+  assert.match(gated.stdout, /gate: review needs toolmenu 0\.27\.0 or later/);
+  const plain = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_RELEASE: 'off' }, withBaseline);
+  assert.equal(plain.code, 0);
+  assert.doesNotMatch(plain.comment, /Verdict:/);
+  assert.equal(outputs(plain).verdict, '');
+  const typo = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_GATE: 'reveiw' });
+  assert.equal(typo.code, 2);
+  assert.match(typo.stdout, /'gate' is 'findings' or 'review'/);
+});
+
+test('action: markdown in the verdict line is escaped', () => {
+  const r = runAction({ TOOLMENU_COMMAND: 'node server.js', TOOLMENU_RELEASE: 'off', STUB_REVIEW: reviewJson('breaking', false, { summary: '✗ release `1.0` ![x](https://evil.example) @org' }), STUB_REVIEW_CODE: '1' }, withBaseline);
+  assert.match(r.comment, /release \\`1\.0\\` \\!\\\[x\\\]\\\(https:\/\/evil\.example\\\) \\@org/);
 });

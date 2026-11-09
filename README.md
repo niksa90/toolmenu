@@ -324,7 +324,8 @@ jobs:
 
 It snapshots the PR's build, diffs it against the baseline as it is on the PR's base
 branch (or at the previous tag, on a tag push), runs the scenario, and
-posts **one comment that updates on every push**: breaking changes, the token change
+posts **one comment that updates on every push**: first the verdict (can this menu
+replace the baseline as it is?), then breaking changes, the token change
 ("this PR adds ~1,240 tokens to every conversation"), the suggested version bump,
 and anything `session` caught. The same report goes to the job summary.
 
@@ -339,6 +340,7 @@ and anything `session` caught. The same report goes to the job summary.
 | `baseline-from` | `snapshot` | `session` diffs every tool the scenario saw (the union menu), for servers whose tools appear after an unlock |
 | `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
 | `fail-on` | `error` | Fail the job on findings at or above this level |
+| `gate` | `findings` | `review` passes or fails the job on the [review verdict](#accepting-a-new-baseline-review) instead of `diff`'s findings: a breaking change the release bump allows passes, new findings at `fail-on` fail ([more](https://github.com/niksa90/toolmenu/blob/main/docs/github-action.md#the-verdict-and-gate-review)) |
 | `comment` | `true` | Post and update the PR comment |
 | `sarif` | | A folder to also write the findings to as SARIF, for code scanning (below) |
 | `version` | the Action's own | toolmenu version from npm: by default the one matching the Action tag you pinned (`latest` for the newest). The Action installs toolmenu from npm, so it needs a published version |
