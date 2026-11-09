@@ -44,7 +44,7 @@ https://mcp.svelte.dev/mcp	svelte	open	2026-07-28	4	1147	2b9af792c775c4fe	2	2	0	
 https://mcp.kiwi.com	kiwi	open	2026-07-28	2	3321	fea9a2b74ad8a5a3	0	0	0	1	2	unchanged	feedback-to-devs,search-flight
 https://mcp.sanity.io	sanity	oauth		0	0		0	0	0	0	0		
 https://mcp.jam.dev/mcp	jam	oauth		0	0		0	0	0	0	0		
-https://mcp.dodopayments.com/mcp	dodo	oauth		0	0		0	0	0	0	0		
+https://mcp.dodopayments.com/mcp	dodo	unreachable		0	0		0	0	0	0	0		
 https://mcp.linear.app/mcp/readonly	app.linear/linear	oauth		0	0		0	0	0	0	0		
 https://huggingface.co/mcp?login	co.huggingface/hf-mcp-server	oauth		0	0		0	0	0	0	0		
 https://api.ahrefs.com/mcp/mcp	com.ahrefs/mcp	oauth		0	0		0	0	0	1	0		
@@ -471,7 +471,7 @@ https://mashapeltsdds.com/wp-json/dental-guide/v1/mcp	io.github.gregpelts/masha-
 https://app.airogeledit.org/api/v1/mcp	io.github.Airogel/airogel-editor	oauth		0	0		0	0	0	0	0		
 https://mcp.servicegraph.co	co.servicegraph.mcp/servicegraph	unreachable		0	0		0	0	0	0	0		
 https://mcp.panjanga.com/mcp	com.tamilcalendar/panchangam	auth		0	0		0	0	0	0	1		
-https://api.foxreach.io/mcp	io.foxreach/foxreach	oauth		0	0		0	0	0	0	1		
+https://api.foxreach.io/mcp	io.foxreach/foxreach	oauth		0	0		0	0	0	0	0		
 https://kicksma.sh/mcp	sh.kicksma/kicksmash	open	2025-06-18	15	3632	640a1dc00884a754	6	6	0	0	3	unchanged	about_kicksmash,book_lesson,cancel_lesson,coach_slots,create_api_key,create_match,find_clubs,find_coaches,find_matches,find_series,generate_schedule,get_group,get_match,join_match,request_coach
 https://mcp.colacloud.us/mcp	us.colacloud/mcp	oauth		0	0		0	0	0	1	0		
 https://archangel-agency-mcp.jordan-trana.workers.dev/mcp	io.github.Jthora/archangel-agency-mcp	open	2024-11-05	4	356	4c66827fd0566360	0	0	0	1	1	unchanged	get_agent_info,get_context_jsons,get_service_catalog,get_universal_language_briefing
@@ -824,7 +824,7 @@ https://openrobotkits.com/mcp	com.openrobotkits/openrobotkits	open	2025-11-25	3	
 https://api.usesequential.com/mcp	io.github.Acro/sequential	oauth		0	0		0	0	0	0	0		
 https://mcp.ukleads.byhubo.com/mcp	com.byhubo/ukleads	open	2025-11-25	4	577	a96f5266b01c785b	3	1	0	2	1	unchanged	balance,coverage,search,unlock
 https://idcheck.noahsarch.tech/mcp	tech.noahsarch/id-format-oracle	open	2026-07-28	7	1601	8565ec505f7c5955	2	2	0	0	1	unchanged	detect_identifier,list_identifiers,validate_bic,validate_iban,validate_identifier,validate_phone,validate_postal_code
-https://edusignal.ai/mcp	ai.edusignal/districts	oauth		0	0		0	0	1	0	1		
+https://edusignal.ai/mcp	ai.edusignal/districts	oauth		0	0		0	0	0	1	1		
 https://onelesstool.com/api/mcp	com.onelesstool/onelesstool	open	2025-11-25	9	1576	26781d6c34bea1a9	5	4	0	1	1	unchanged	compare_solutions,estimate_savings,find_alternatives,find_workflows,get_pricing,get_tool,get_workflow,recommend_stack,search_catalog
 https://gluecron.com/mcp	com.gluecron/gluecron	open	2025-06-18	131	26631	97f6855b40f6dd62	11	0	1	1	7	unchanged	merjax_acquire_lease,merjax_ai_cost_summary,merjax_apply_patch,merjax_approve_pr,merjax_assign_issue,merjax_atomic_multi_file_commit,merjax_backup_status,merjax_cancel_workflow_run,merjax_chat_continue,merjax_chat_with_repo,merjax_ci_executor,merjax_ci_health,merjax_ci_queue_status,merjax_clone_url,merjax_close_issue,merjax_close_pr,merjax_comment_issue,merjax_comment_pr,merjax_commit_pr_conflict_resolution,merjax_create_agent_session,merjax_create_branch,merjax_create_deploy_token,merjax_create_issue,merjax_create_pr,merjax_create_repo_token,merjax_create_runner_registration_token,merjax_delete_branch,merjax_delete_comment,merjax_delete_file,merjax_delete_loop_secret,merjax_delete_repo,merjax_delete_repo_secret,merjax_delete_variable,merjax_dismiss_review,merjax_edit_comment,merjax_explain_failure,merjax_explain_repo,merjax_find_symbol,merjax_fork_repo,merjax_generate_commit_message,merjax_generate_pr_description,merjax_generate_release_notes,merjax_generate_tests,merjax_get_agent_budget,merjax_get_branch_protection,merjax_get_commit,merjax_get_diff,merjax_get_pr,merjax_get_pr_checks,merjax_get_preview_url,merjax_get_token,merjax_get_variable,merjax_get_workflow_logs,merjax_get_workflow_run,merjax_handover,merjax_import_action,merjax_label_issue,merjax_learning_status,merjax_list_ai_workspaces,merjax_list_deleted_repos,merjax_list_flaky_tests,merjax_list_loop_secrets,merjax_list_pr_comments,merjax_list_pr_conflicts,merjax_list_prs,merjax_list_ready_to_merge,merjax_list_repo_secrets,merjax_list_repo_tokens,merjax_list_runners,merjax_list_token_spend,merjax_list_tokens,merjax_list_tree,merjax_list_variables,merjax_list_workflow_runs,merjax_merge_pr,merjax_open_draft_pr,merjax_pr_status_summary,merjax_press_kill_switch,merjax_prioritize_workflow_run,merjax_propose_doc_update,merjax_propose_migration,merjax_propose_pr_conflict_resolution,merjax_provision_pr_sandbox,merjax_purge_repo,merjax_read_file,merjax_refactor_across_repos,merjax_release_lease,merjax_reopen_issue,merjax_repo_explain_codebase,merjax_repo_health,merjax_repo_list_issues,merjax_repo_rating,merjax_repo_read_file,merjax_repo_search,merjax_request_changes,merjax_rerun_failed_jobs,merjax_resolve_pr_conflict,merjax_restore_repo,merjax_resume_token,merjax_review_deployment,merjax_revoke_all_credentials,merjax_revoke_repo_token,merjax_revoke_runner,merjax_revoke_token,merjax_rotate_token,merjax_search_code,merjax_search_issues,merjax_search_prs,merjax_search_repos,merjax_security_ioc_hits,merjax_security_scan,merjax_semantic_search,merjax_set_ai_workspace_quota,merjax_set_auto_merge,merjax_set_branch_protection,merjax_set_loop_secret,merjax_set_pr_ai_settings,merjax_set_pr_draft,merjax_set_repo_secret,merjax_set_token_bucket,merjax_set_variable,merjax_ship_spec,merjax_trigger_workflow,merjax_undo_kill_switch,merjax_unlabel_issue,merjax_update_pr,merjax_update_pr_branch,merjax_update_repo,merjax_voice_to_pr,merjax_whoami,merjax_write_file
 https://bilig.proompteng.ai/mcp	io.github.proompteng/bilig-workpaper	open	2025-03-26	8	960	a5ed19f74e3d7e48	3	3	0	0	3	unchanged	export_workpaper_document,get_cell_display_value,list_sheets,read_cell,read_range,set_cell_contents,set_cell_contents_and_readback,validate_formula
@@ -1096,7 +1096,7 @@ https://efiuqwcazixoetzaqyxh.supabase.co/functions/v1/mcp	com.timioapp/agenda	op
 https://mcp.terminal49.com	io.github.Terminal49/terminal49	oauth		0	0		0	0	0	0	0		
 https://mcp.filingpulse.io/mcp	io.filingpulse/filingpulse	open	2025-11-25	7	1626	447bc7cc54162ad5	6	6	0	0	2	unchanged	get_corporate_events,get_dataset_status,get_insider_filing,get_insider_trades,get_ipo_registrations,get_registration_event,get_schema
 https://jobherder.com/mcp	com.jobherder/job-search	open	2026-07-28	5	4617	4eb28dad0c8d8d90	3	1	0	4	1	unchanged	get_pricing,get_search_status,quick_job_search,register_agent,start_job_search
-https://praetorium.gg/mcp	io.github.richardsolomou/praetorium	open	2025-11-25	15	18903	956605d34b6b7088	6	3	1	2	7	unchanged	create_battle,get_my_battle,get_my_roster,get_reference,get_reference_record,list_factions,list_my_battles,list_my_rosters,list_reference,list_units,save_roster,search_reference,set_roster_visibility,simulate_combat,submit_battle_action
+https://praetorium.gg/mcp	io.github.richardsolomou/praetorium	open	2025-11-25	15	18903	956605d34b6b7088	6	3	0	3	7	unchanged	create_battle,get_my_battle,get_my_roster,get_reference,get_reference_record,list_factions,list_my_battles,list_my_rosters,list_reference,list_units,save_roster,search_reference,set_roster_visibility,simulate_combat,submit_battle_action
 https://agentread.omar-cv.workers.dev/mcp	io.github.omarhassanatef/agentread	open	2025-11-25	3	690	7a0ef7718f848a22	0	0	0	1	1	unchanged	extract_url,extract_url_structured,inspect_url
 https://mcp.cloudhpc.cloud/mcp	cloud.cloudhpc/mcp	oauth		0	0		0	0	0	0	0		
 https://swap.thorchain.org/mcp	org.thorchain.swap/thorchain-swap	unreachable		0	0		0	0	0	0	0		
@@ -1201,7 +1201,7 @@ https://lahend.ee/api/lahend-mcp/mcp	io.github.Nimistu/lahend-mcp	open	2025-11-2
 https://api.quantjourney.cloud/mcp	io.github.QuantJourneyOrg/qj-api-mcp	oauth		0	0		0	0	0	0	0		
 https://mcp.rial.io/mcp	io.rial/mcp	oauth		0	0		0	0	0	1	0		
 https://synero.ai/api/mcp	ai.synero/council	oauth		0	0		0	0	0	0	0		
-https://app.fanaura.com/mcp	com.fanaura/journey	oauth		0	0		0	0	1	0	1		
+https://app.fanaura.com/mcp	com.fanaura/journey	oauth		0	0		0	0	0	1	1		
 https://www.bubblav.com/mcp	io.github.bubblav-org/bubblav	oauth		0	0		0	0	0	0	0		
 https://hashiq.io/mcp	io.hashiq/hashiq	oauth		0	0		0	0	0	0	0		
 https://myimage2life.com/mcp	com.myimage2life/print	open	2026-07-28	15	2648	34146f1d8dd46d2e	3	3	0	0	2	unchanged	create_design,create_plan,create_proof,edit_design,get_order_status,get_price,get_product,get_upload,get_upload_link,place_order,restyle_design,search_products,show_examples,use_chat_image,use_example

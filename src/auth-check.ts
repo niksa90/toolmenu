@@ -142,8 +142,20 @@ export async function authCheck(url: string, timeoutMs = 15_000): Promise<AuthCh
   out.resource = typeof prm.resource === 'string' ? prm.resource : undefined;
   const servers = Array.isArray(prm.authorization_servers) ? prm.authorization_servers.filter((s): s is string => typeof s === 'string') : [];
   out.authorizationServers = servers;
+  // Authorization server metadata (RFC 8414: issuer, authorization_endpoint) served where
+  // the protected resource metadata belongs: a mix-up worth naming (mcp-server.zomato.com).
+  const serverDoc = typeof prm.issuer === 'string' && typeof prm.authorization_endpoint === 'string';
   if (!servers.length) {
-    say('auth/resource-metadata', 'error', `The protected resource metadata (${out.metadataUrl}) lists no authorization_servers. It MUST list at least one, or a client has nowhere to log in.`, 'Add "authorization_servers": ["https://your-auth-server"] to the metadata.');
+    say(
+      'auth/resource-metadata',
+      'error',
+      serverDoc
+        ? `${out.metadataUrl} serves authorization server metadata (issuer, authorization_endpoint: RFC 8414), not protected resource metadata (RFC 9728), so it lists no authorization_servers. A client that follows the 2025-06-18 or later spec can't find where to log in; one that falls back to the server's own origin as its authorization server (the 2025-03-26 way) may still manage.`
+        : `The protected resource metadata (${out.metadataUrl}) lists no authorization_servers. It MUST list at least one, or a client has nowhere to log in.`,
+      serverDoc
+        ? `Serve protected resource metadata there instead: {"resource": "${url}", "authorization_servers": ["${typeof prm.issuer === 'string' ? prm.issuer.replace(/\/$/, '') : 'https://your-auth-server'}"]}, and keep the authorization server metadata at /.well-known/oauth-authorization-server.`
+        : 'Add "authorization_servers": ["https://your-auth-server"] to the metadata.',
+    );
   }
   // RFC 9728 §3.3: metadata named by WWW-Authenticate must have the URL the client
   // called as its resource; metadata from a well-known URI, the identifier that URI was
@@ -151,7 +163,8 @@ export async function authCheck(url: string, timeoutMs = 15_000): Promise<AuthCh
   const u = new URL(url);
   const expected = out.foundBy === 'well-known root' ? u.origin : out.foundBy === 'well-known path' ? `${u.origin}${u.pathname.replace(/\/$/, '')}` : url;
   if (!out.resource) {
-    say('auth/resource-metadata', 'error', `The protected resource metadata (${out.metadataUrl}) has no "resource". RFC 9728 requires it, and a client checks it against the server it's connecting to.`, `Add "resource": "${url}" to the metadata.`);
+    // Said once, with the mix-up, when it's the authorization server's document.
+    if (!serverDoc) say('auth/resource-metadata', 'error', `The protected resource metadata (${out.metadataUrl}) has no "resource". RFC 9728 requires it, and a client checks it against the server it's connecting to.`, `Add "resource": "${url}" to the metadata.`);
   } else if (out.resource !== expected) {
     const sameButSlash = out.resource.replace(/\/$/, '') === expected.replace(/\/$/, '');
     // The official SDK's checkResourceAllowed takes a resource on the same origin whose

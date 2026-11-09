@@ -116,3 +116,9 @@ test('root well-known metadata whose resource is the server URL itself: a warnin
   assert.deepEqual(rules(r), ['auth/discovery:info', 'auth/resource-metadata:warn']);
   assert.match(r.findings[1].message, /server's own URL/);
 });
+
+test('authorization server metadata served where the protected resource metadata belongs: one error that names the mix-up', async () => {
+  const r = await check((b) => ({ '/.well-known/oauth-protected-resource/mcp': { issuer: `${b}/`, authorization_endpoint: `${b}/authorize`, code_challenge_methods_supported: ['S256'] } }));
+  assert.deepEqual(rules(r), ['auth/resource-metadata:error']);
+  assert.match(r.findings[0].message, /serves authorization server metadata .* not protected resource metadata/);
+});
