@@ -1,0 +1,87 @@
+{
+ "snapshot": {
+  "firecrawl-mcp-3.26.0.json": [
+   "info description/late-instruction",
+   "info search/findable firecrawl_scrape",
+   "info write/no-dry-run",
+   "warn naming/vague-id"
+  ],
+  "mongodb-mcp-server-3.0.4.json": [
+   "info naming/shared-word",
+   "info write/no-dry-run"
+  ],
+  "notionhq__notion-mcp-server-2.5.2.json": [
+   "info naming/shared-word",
+   "info write/no-dry-run"
+  ],
+  "playwright__mcp-0.0.83.json": [
+   "info write/no-dry-run"
+  ],
+  "server-filesystem-2025.7.1.json": [
+   "info naming/shared-word",
+   "warn write/unannotated"
+  ],
+  "server-filesystem-2025.11.25.json": [
+   "info naming/shared-word",
+   "info write/no-dry-run write_file"
+  ],
+  "server-filesystem-2026.1.14.json": [
+   "info naming/shared-word",
+   "info write/no-dry-run write_file"
+  ],
+  "server-filesystem-2026.8.31.json": [
+   "info naming/shared-word",
+   "info write/no-dry-run"
+  ],
+  "supabase__mcp-server-supabase-0.13.0.json": [
+   "info description/late-instruction get_publishable_keys",
+   "info naming/shared-word",
+   "info write/no-dry-run",
+   "warn naming/vague-id"
+  ]
+ },
+ "diff": {
+  "server-filesystem-2025.7.1.json → server-filesystem-2025.11.25.json": {
+   "bump": "minor",
+   "findings": [
+    "info diff/annotations [notice] create_directory",
+    "info diff/annotations [notice] edit_file",
+    "info diff/annotations [notice] move_file",
+    "info diff/annotations [notice] read_file,read_multiple_files,list_directory,list_directory_with_sizes,directory_tree,search_files,get_file_info,list_allowed_directories",
+    "info diff/annotations [notice] write_file",
+    "info diff/description [notice] list_allowed_directories",
+    "info diff/description [notice] read_file",
+    "info diff/description [notice] search_files",
+    "info diff/other [notice] create_directory",
+    "info diff/other [notice] directory_tree",
+    "info diff/other [notice] edit_file",
+    "info diff/other [notice] get_file_info",
+    "info diff/other [notice] list_allowed_directories",
+    "info diff/other [notice] list_directory",
+    "info diff/other [notice] list_directory_with_sizes",
+    "info diff/other [notice] move_file",
+    "info diff/other [notice] read_file",
+    "info diff/other [notice] read_multiple_files",
+    "info diff/other [notice] search_files",
+    "info diff/other [notice] write_file",
+    "info diff/schema-dialect [notice] list_allowed_directories",
+    "info diff/schema-other [notice] read_file,read_multiple_files,write_file,edit_file,create_directory,list_directory,list_directory_with_sizes,directory_tree,move_file,search_files,get_file_info",
+    "info diff/schema-other [notice] read_file,read_multiple_files,write_file,edit_file,create_directory,list_directory,list_directory_with_sizes,directory_tree,move_file,search_files,get_file_info,list_allowed_directories",
+    "info diff/tool-added [minor] read_text_file,read_media_file"
+   ]
+  },
+  "server-filesystem-2025.11.25.json → server-filesystem-2026.1.14.json": {
+   "bump": "none",
+   "findings": []
+  },
+  "server-filesystem-2026.1.14.json → server-filesystem-2026.8.31.json": {
+   "bump": "major",
+   "findings": [
+    "error diff/safety-hint [breaking] move_file",
+    "info diff/annotations [notice] read_file,read_text_file,read_media_file,read_multiple_files,write_file,edit_file,create_directory,list_directory,list_directory_with_sizes,directory_tree,search_files,get_file_info,list_allowed_directories",
+    "info diff/description [notice] read_media_file",
+    "info diff/schema-other [notice] read_media_file"
+   ]
+  }
+ }
+}
