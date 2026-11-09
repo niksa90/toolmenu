@@ -143,6 +143,7 @@ same code ([bench/README.md](bench/README.md) has the commands):
 | Hosted (Streamable HTTP) servers from the registry that need no headers, sampled with a fixed seed | 200 | `snapshot`, read-only `session --auto --max-calls 10` |
 | Hosted servers behind OAuth: Sentry, GitHub, Atlassian (F14) | 3 | `auth login`, then `snapshot` |
 | **Weekly:** stdio servers from the registry, npm and PyPI (F17, F18); each week rechecks up to 300 new releases and newly listed servers | 1,090 at baseline | `snapshot`, `session --auto`, and a sealed `--call-everything` pass: 15,550 of 16,518 tools called, every one of the rest accounted for |
+| The servers big vendors publish to run locally: GitHub, AWS Labs, Microsoft, PayPal, Stripe, Atlassian, Notion, HashiCorp, Grafana… as npm, PyPI and container images, with dummy credentials (F19) | 98 | `snapshot`, `session --auto`, and the sealed pass: 2,213 of the 2,292 tools listed called |
 | **Weekly:** hosted servers, 109 vendor endpoints (GitHub, Google, Microsoft, Atlassian, Stripe…) and a seeded 2,000 of the registry's | 2,109 | `snapshot`, read-only `session --auto`, and `auth check` on each that answers 401 |
 
 What those runs found is in [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md),
@@ -158,6 +159,8 @@ including what toolmenu itself got wrong and how it was fixed. A few:
 - **12 of 1,090 stdio servers fail in the official SDK client today** (8 lose every tool,
   4 lose answers), and 22 of 2,000 hosted ones send a 2026-07-28 tool list that client
   rejects (F18).
+- **PayPal's server builds a new menu on every call**: `list_transactions` defaults its dates to
+  the moment the list is built, so no cached prompt matches the next one (F19).
 - **Microsoft Sentinel's sign-in can't pass a client that follows MCP 2025-11-25 to the
   letter**: Entra ID supports PKCE but its OpenID Connect metadata doesn't say so, and the
   spec tells clients to refuse (F18).

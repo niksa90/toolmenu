@@ -812,3 +812,37 @@ with HTTP 401 and a per-tool `WWW-Authenticate`: a design, not a failure.
 - **In the sealed pass,** a failed call or a "rate limit" offline was an error.
 - **An output that fails only `format`** is a warning: many validators skip format.
 
+
+## F19. 98 servers the big vendors publish, every tool called
+
+*Checked 2026-11-09; data in `bench/results/vendors-2026-11-09/`.* Most vendors' hosted
+endpoints (F18) show their tools only after a login. So this run used what they publish
+for agents to run locally: 62 npm packages, 22 PyPI packages and 14 container images
+(GitHub, AWS Labs, Microsoft, PayPal, Stripe, Atlassian, Notion, HashiCorp, Grafana,
+Salesforce and others). Each ran with dummy credentials through `snapshot`, a read-only
+`session --auto`, and the sealed `--call-everything` pass (no network).
+
+**Coverage.**
+- 78 of the 98 listed tools, 2,292 in all; 2,213 were called in the sealed pass.
+- By first answer: 571 gave a result, 1,185 a tool error (most of them the API refusing the dummy key, or no network), 293 failed and 164 timed out.
+- Not called: 78, from six servers that won't start without the network (Supabase, Firebase, Apify, Svelte, AWS API, Qdrant), and 1 that Netlify lists only online.
+- 20 didn't list tools at all, each with the server's own reason in `servers.tsv`.
+  - Some need a real account: Stripe's npm package forwards to its hosted server, Upstash, Dynatrace.
+  - Some are deprecated: Cloudflare's local server, Railway's, 21st.dev's.
+  - Some need software that isn't there: an IDE, keytar, a kubeconfig.
+  - Four don't start when installed today (below).
+
+**What holds whatever the input:**
+- **PayPal** (`@paypal/mcp` 1.8.1): `list_transactions` defaults `start_date` and `end_date` to the moment the menu is built. Every `tools/list` differs (`menu/nondeterministic`), and no `list_changed` is sent though it is declared.
+- **AWS Labs** `cdk-mcp-server` and `terraform-mcp-server` don't start when installed today. They require `mcp>=1.23.0`, which resolves to 2.3.0, and 2.x moved `FastMCP`.
+- **Chroma** `chroma-mcp` 0.2.6 doesn't start either. It pins `mcp==1.6.0` but not pydantic, and pydantic 2.14.3 no longer has a function mcp 1.6.0 imports.
+- **HashiCorp** Terraform MCP server 1.4.1: resource URIs without a scheme (`/terraform/style-guide`), against the schema's `format: uri` (`lists/schema`).
+- **GitHub** `github-mcp-server` v2.1.0: the app-only `ui_get` is listed to clients without MCP Apps (`apps/app-only-listed`).
+- **Notion** `@notionhq/notion-mcp-server` 2.6.1: the API's HTTP 401 comes back as a plain result, not `isError` (`session/error-not-flagged`).
+- **Elastic**'s Rust server (Docker's `mcp/elasticsearch`): its tool order differs per process.
+- **Docker's** `mcp/atlassian` image still ships an mcp-atlassian with F12's per-process order. The current PyPI release doesn't have it.
+
+**What the run fixed in the bench** (not toolmenu):
+- Image servers first got no credentials: `read` with a tab separator merges empty columns.
+- Python servers were started with a dependency's console script (`idna`, `keyring`). Now only the package's own counts.
+- .NET single-file servers (Azure) need a writable `HOME`.
