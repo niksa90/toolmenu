@@ -73,13 +73,72 @@ if new_f or gone_f:
     lines += [f'- new on {b[u]["name"]}: ' + ', '.join(f'`{r}` ({s})' for r, s in sorted(v)) for u, v in sorted(new_f.items())]
     lines += [f'- gone from {b[u]["name"]}: ' + ', '.join(f'`{r}` ({s})' for r, s in sorted(v)) for u, v in sorted(gone_f.items())]
     lines.append('')
-stdio = os.path.join(CUR, 'stdio', 'servers.tsv')
-if os.path.exists(stdio):
-    rows = open(stdio).read().splitlines()[1:]
-    errs = [r.split('\t') for r in rows if r.split('\t')[7] != '0']
-    lines += ['### stdio servers rechecked (new releases and new servers)', '', f'{len(rows)} rechecked; {len(errs)} with an error-level finding.', '']
-    lines += [f'- `{r[0]}`: {r[7]} error(s)' for r in errs[:30]]
+# stdio: each package rechecked this week against its last check in an earlier week.
+WEEKS = os.path.dirname(os.path.abspath(CUR))
+
+
+def pkg_name(spec):
+    i = spec.rfind('@')
+    return spec[:i] if i > 0 else spec
+
+
+def stdio_findings(d):
+    path = os.path.join(d, 'stdio', 'findings.jsonl')
+    out = collections.defaultdict(set)
+    if os.path.exists(path):
+        for line in open(path):
+            f = json.loads(line)
+            if f['severity'] != 'info' and f['kind'] in ('spec', 'client'):
+                out[f['pkg']].add((f['rule'], f['severity']))
+    return out
+
+
+def stdio_versions(d):
+    path = os.path.join(d, 'stdio', 'servers.tsv')
+    return {pkg_name(l.split('\t')[0]): l.split('\t')[0] for l in open(path).read().splitlines()[1:]} if os.path.exists(path) else {}
+
+
+cur_versions = stdio_versions(CUR)
+if cur_versions:
+    cur_f = stdio_findings(CUR)
+    earlier = sorted(d for d in (os.path.join(WEEKS, x) for x in os.listdir(WEEKS)) if os.path.isdir(d) and os.path.basename(d) < os.path.basename(CUR.rstrip('/')))
+    fixed, broke, new_pkgs = [], [], []
+    for name, spec in sorted(cur_versions.items()):
+        prev = next((d for d in reversed(earlier) if name in stdio_versions(d)), None)
+        if not prev:
+            new_pkgs.append(spec)
+            continue
+        old_spec = stdio_versions(prev)[name]
+        before, after = stdio_findings(prev).get(old_spec, set()), cur_f.get(spec, set())
+        if before - after: fixed.append((old_spec, spec, sorted(before - after)))
+        if after - before: broke.append((old_spec, spec, sorted(after - before)))
+    lines += ['### stdio: new releases and new servers', '', f'{len(cur_versions)} rechecked: {len(cur_versions) - len(new_pkgs)} new releases of servers checked before, {len(new_pkgs)} servers new to the bench. Spec and client findings: {len(fixed)} releases fixed some, {len(broke)} brought new ones.', '']
+    lines += [f'- fixed in `{b}` (was `{a_}`): ' + ', '.join(f'`{r}`' for r, _ in v) for a_, b, v in fixed[:30]]
+    lines += [f'- new in `{b}` (was `{a_}`): ' + ', '.join(f'`{r}` ({sev})' for r, sev in v) for a_, b, v in broke[:30]]
     lines.append('')
-if len(lines) <= 4:
-    lines.append('Nothing changed.')
+
+
+# The running trend: one line per week, the same measures every week.
+CLIENT_FAILS = {'spec/schema', 'menu/duplicate-name', 'session/result-type', 'session/output-schema'}
+
+
+def breaking(findings_by_server, rules=None):
+    return sum(1 for v in findings_by_server.values() if any((rules is None or r in rules) and sev == 'error' for r, sev in v))
+
+
+trend = os.path.join(WEEKS, 'trend.tsv')
+http_f = findings(CUR)
+row = [os.path.basename(CUR.rstrip('/')), str(len(b)), str(sum(1 for r in b.values() if r['mode'] == 'open')), str(len(changed)),
+       str(breaking(http_f, CLIENT_FAILS)), str(sum(1 for v in http_f.values() if v)),
+       str(len(cur_versions)), str(breaking(stdio_findings(CUR), CLIENT_FAILS)) if cur_versions else '0']
+header = 'week\thosted\thosted_open\thosted_menus_changed\thosted_client_fails\thosted_with_findings\tstdio_rechecked\tstdio_client_fails\n'
+existing = open(trend).read().splitlines() if os.path.exists(trend) else []
+kept = [l for l in existing[1:] if not l.startswith(row[0] + '\t')]
+with open(trend, 'w') as h:
+    h.write(header + ''.join(l + '\n' for l in sorted(kept + ['\t'.join(row)])))
+lines += ['### Trend', '', '| Week | Hosted | Open | Menus changed | Hosted that fail in a client | stdio rechecked | stdio that fail in a client |', '|---|---|---|---|---|---|---|']
+for l in sorted(kept + ['\t'.join(row)])[-8:]:
+    c = l.split('\t')
+    lines.append(f'| {c[0]} | {c[1]} | {c[2]} | {c[3]} | {c[4]} | {c[6]} | {c[7]} |')
+lines.append('')
 print('\n'.join(lines))
