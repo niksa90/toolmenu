@@ -27,5 +27,6 @@ one() {
   fi
 }
 export -f one; export T out
-# Columns split by awk, not read: read would merge the empty repo column with the next.
-awk -F'\t' '{ printf "%s\0%s\0%s\0%s\0%s\0", $1, $2, $3, $4, $5 }' "$1" | xargs -0 -n 5 -P "${PARALLEL:-4}" bash -c 'one "$@"' _
+# Columns split by awk, not read (read would merge the empty repo column with the next),
+# one per line; xargs -d keeps the empty ones.
+awk -F'\t' '{ for (i = 1; i <= 5; i++) print $i }' "$1" | xargs -d '\n' -n 5 -P "${PARALLEL:-4}" bash -c 'one "$@"' _
