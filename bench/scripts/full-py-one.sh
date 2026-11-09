@@ -1,6 +1,6 @@
 #!/bin/bash
 # full-one.sh for a PyPI package (batch-full.sh with PY=1): the same steps, with the server
-# installed by uv (mounted at /uv) into its own venv. The venv, and any Python uv downloads
+# installed by uv (mounted at /uv) into its own venv, on the container's Python (PYVER to change it). The venv, and any Python uv downloads
 # for it, stay in the server's folder until the sealed pass has run.
 id=$1; spec=$2; d=/out/$id; mkdir -p "$d"; cd "$d" || exit
 T=/toolmenu/dist/cli.js
@@ -8,7 +8,8 @@ line=$(awk -F'\t' -v id="$id" '$1 == id' /list.tsv)
 env_kv=$(printf '%s' "$line" | cut -f4 -s); args=$(printf '%s' "$line" | cut -f5 -s)
 printf '%s\n%s\n' "$env_kv" "$args" > extra.txt
 export UV_CACHE_DIR="$d/.uvcache" UV_PYTHON_INSTALL_DIR="$d/pkg/python"
-if ! { timeout 300 /uv venv -q --python 3.12 "$d/pkg/venv" && VIRTUAL_ENV="$d/pkg/venv" timeout 600 /uv pip install -q "$spec"; } > install.txt 2>&1; then
+[ -f /ca.crt ] && export SSL_CERT_FILE=/ca.crt
+if ! { timeout 300 /uv venv -q --python "${PYVER:-/usr/bin/python3}" "$d/pkg/venv" && VIRTUAL_ENV="$d/pkg/venv" timeout 600 /uv pip install -q "$spec"; } > install.txt 2>&1; then
   echo "install-failed $id" >> /out/status.txt; rm -rf pkg .uvcache; exit
 fi
 name=${spec%%==*}
