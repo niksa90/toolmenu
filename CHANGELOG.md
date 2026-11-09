@@ -41,7 +41,8 @@
   invalidates the cached prompt. Like the variance rules, it now warns and names the field.
 - **More setup failures read as setup failures:** "needs credentials" (botverse-mcp),
   "no browser found" and "the extension is not connected" (mcp-session-bridge), and "not a
-  git repository" (diffci) were `session/step-failed` errors.
+  git repository" (diffci) were `session/step-failed` errors, and "needs an Entyrix API key
+  and ENTYRIX_API_KEY is not set" (@entyrix/mcp) a `session/tool-error`.
 - **"API key not configured" is a missing credential.** A tool that said so (mcp-adr-analysis-server)
   was a `session/step-failed` error, the server's fault; it's now counted with the other
   setup failures in `session/untested`.

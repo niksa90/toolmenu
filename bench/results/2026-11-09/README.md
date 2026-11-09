@@ -7,7 +7,7 @@ credentials and weren't in an earlier corpus (FINDINGS F17).
 - **Run with:** toolmenu at commit `acaa34c`, the same build for every server.
 - **Re-graded with:** the rules as of `c021a3f` and the commit after it. Each finding a later rule changes carries a `regraded` field:
   - a mid-session edit only in a field the model doesn't read: `session/edit` error → warn (55);
-  - a setup failure read as a failed step ("needs credentials", "no browser found", "not a git repository", "the extension is not connected"): `session/step-failed` → `session/untested` (4).
+  - a setup failure read as the server's ("needs credentials", "no browser found", "not a git repository", "the extension is not connected", "ENTYRIX_API_KEY is not set"): `session/step-failed` or `session/tool-error` → `session/untested` (7).
 - **`tried.json`:** what happened to each of the 1,600:
   - `ok`: started and listed tools (1,090);
   - `no-menu`: exited before `initialize`, or listed nothing (463);

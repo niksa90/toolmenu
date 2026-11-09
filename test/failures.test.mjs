@@ -85,3 +85,10 @@ test('"not a git repository" and "the extension is not connected" are this machi
   assert.equal(classifyFailure('The T3rnel Browser extension is not connected — install it here: https://browser.t3ratech.co.zw/', { hadArguments: false }), 'environment');
   assert.equal(classifyFailure('Request timed out', { hadArguments: false }), 'other');
 });
+
+test('"needs an <X> API key" and "<X>_API_KEY is not set" are missing credentials (@entyrix/mcp, bench 2026-11-09)', () => {
+  assert.equal(classifyFailure('This tool needs an Entyrix API key and ENTYRIX_API_KEY is not set. Ways to get access: sign in.', { hadArguments: false }), 'auth');
+  assert.equal(classifyFailure('GITHUB_TOKEN is not set', { hadArguments: false }), 'auth');
+  // A word between "needs" and "key" that isn't one: not a credential.
+  assert.equal(classifyFailure('The index needs a primary key column', { hadArguments: false }), 'other');
+});

@@ -707,7 +707,7 @@ below say where the two account for a pattern.
   (`077884a`).
 - **Setup failures read as the server failing**: "API key not configured" (`0a7a559`),
   "needs credentials", "no browser found" (`c021a3f`), "not a git repository", "the extension
-  is not connected" (the commit after).
+  is not connected", "ENTYRIX_API_KEY is not set" (the two commits after).
 - **`spec/schema` quoted only "Invalid result for tools/list: ["** of the SDK's rejection
   (`a1b871e`); each problem is now a detail line.
 
