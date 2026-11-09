@@ -143,3 +143,16 @@ means for semver: breaking → major, minor → minor, notice → no bump.
 | `session/unlock-coverage` | warn | An unlock whose enum lists its values, called with only some of them: the tools behind the rest were never seen, so a baseline from the session misses them. With `--union-out` or `--auto`, an unlock never called at all too, with why `--auto` skipped it |
 | `session/undeclared-task` | error | 2026-07-28 with the Tasks extension (ext-tasks). A call answered with a task to poll (`resultType: "task"`), though session declares no `io.modelcontextprotocol/tasks` support. ext-tasks: "A server MUST NOT return CreateTaskResult to a client that did not include the extension capability on its request"; it should answer in one go or return -32021 naming the extension. Such a client has no `tasks/get` to poll with, so the agent gets no result |
 | `session/untested` | warn, error if no call got through | Calls that failed before reaching the tool: authentication, something missing on this machine (no Chrome), the network; or an answer, not marked `isError`, that is the API's 401 or 403 passed on as JSON (`{"status":401,"code":"unauthorized"}`, Notion's server). One finding for the run, not one per step, so an expired CI secret doesn't pass a run that tested nothing |
+
+## auth
+
+`toolmenu auth check <url>`: an HTTP server's OAuth discovery, checked the way a client that follows the 2025-11-25 authorization spec walks it, without logging in. A document that can't be read (a 401 or 403 on the document itself, a 5xx, no answer) is reported as unchecked (info), never as missing.
+
+| Rule | Default | What it checks |
+|---|---|---|
+| `auth/discovery` | error | The server answered 401, but serves no OAuth protected resource metadata: neither named in the 401's `WWW-Authenticate` (`resource_metadata`) nor at a well-known URI. Servers **MUST** implement RFC 9728 and one of the two. Info when only the header is missing or lacks `resource_metadata`, or when the metadata couldn't be read |
+| `auth/resource-metadata` | error | The protected resource metadata lists no `authorization_servers` (it **MUST** list one), or has no `resource`, or a `resource` that isn't the server's URL: RFC 9728 §3.3, a client **MUST NOT** use it then. A warning when only a trailing slash differs |
+| `auth/server-metadata` | error | No authorization server metadata at the URIs the spec has clients try (RFC 8414, then OpenID Connect Discovery, path-aware), so a client can't find where to send the user |
+| `auth/pkce` | error | The authorization server's metadata doesn't list `S256` in `code_challenge_methods_supported`. Clients **MUST** verify PKCE support from it and refuse to go on without it |
+| `auth/registration` | info | No registration endpoint and no Client ID Metadata Documents: every client needs an app registered ahead of time |
+

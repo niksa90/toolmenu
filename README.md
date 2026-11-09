@@ -188,6 +188,12 @@ npx toolmenu auth login https://mcp.example.com/mcp
 npx toolmenu snapshot https://mcp.example.com/mcp
 ```
 
+Before logging in, `toolmenu auth check https://mcp.example.com/mcp` walks the server's
+OAuth discovery the way a client that follows the spec does: the 401 and its
+`WWW-Authenticate`, the protected resource metadata (and whether its `resource` is the
+server's URL), the authorization server's metadata, PKCE and registration. No login, no
+tokens: only the requests a client makes first.
+
 Logins are stored per server in `~/.config/toolmenu/auth` (readable only by you);
 `auth list` and `auth logout <url>` manage them. A server that doesn't allow
 dynamic registration needs a pre-registered app: `--client-id` (and

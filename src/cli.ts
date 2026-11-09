@@ -9,8 +9,10 @@ import { loadConfig, type Config } from './config.js';
 import { ELICITATIONS, PROTOCOLS, type Elicitation, type Protocol, type Target } from './connect.js';
 import { comparedTools, diffMenus } from './diff.js';
 import { formatReview, reviewMenus } from './review.js';
+import { authCheck } from './auth-check.js';
 import { loadMenu } from './menu.js';
 import { history, historyCsv } from './history.js';
+import { findingLines } from './report.js';
 import { counts, formatDiff, formatHistory, formatPlan, formatSession, formatSnapshot, type Format } from './report.js';
 import { loadScenario, session, starterScenario, unlockListers, valuesFromListing } from './session.js';
 import { listTools, quietExclusions } from './connect.js';
@@ -144,6 +146,26 @@ export async function main(given: string[]): Promise<number> {
   // mcp's stdout above: that's the protocol.
   guardStream(process.stdout);
   guardStream(process.stderr);
+  if (sub === 'auth' && rest[0] === 'check') {
+    if (rest.length !== 2) throw new UsageError('auth check needs one server URL: toolmenu auth check https://example.com/mcp');
+    if (!/^https:\/\//.test(rest[1])) throw new UsageError(`"${rest[1]}" isn't an https URL.`);
+    const checked = await authCheck(rest[1], timeoutMs);
+    if (format === 'json') writeUnguarded(process.stdout, show(JSON.stringify({ command: 'auth check', ...checked }, null, 2)) + '\n');
+    else {
+      const lines = [
+        `toolmenu auth check  ${plain(checked.url)}`,
+        `  without credentials  HTTP ${checked.status ?? '?'}${checked.wwwAuthenticate ? ` · WWW-Authenticate: ${plain(checked.wwwAuthenticate).slice(0, 120)}` : ''}`,
+        ...(checked.metadataUrl ? [`  resource metadata    ${plain(checked.metadataUrl)} (${checked.foundBy})`] : []),
+        ...(checked.authorizationServers?.length ? [`  authorization        ${checked.authorizationServers.map(plain).join(', ')}`] : []),
+        ...(checked.serverMetadataUrl ? [`  server metadata      ${plain(checked.serverMetadataUrl)} · PKCE ${checked.pkce?.join(', ') ?? 'not listed'} · registration ${checked.registration}`] : []),
+        '',
+        ...findingLines(checked.findings),
+        checked.findings.some((f) => f.severity !== 'info') ? '' : '✓ discovery works the way the spec says',
+      ];
+      writeUnguarded(process.stdout, show(lines.filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n')) + '\n');
+    }
+    return checked.findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
+  }
   if (sub === 'auth') return authCommand(rest, values);
   if (sub === 'explain') return explainCommand(rest, command, format);
 
@@ -464,7 +486,7 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
     );
     return 0;
   }
-  if (action !== 'login' && action !== 'logout') throw new UsageError(`${action ? `auth has no action "${action}"` : 'auth needs an action'}: login <url>, logout <url> or list. See toolmenu auth --help.`);
+  if (action !== 'login' && action !== 'logout') throw new UsageError(`${action ? `auth has no action "${action}"` : 'auth needs an action'}: login <url>, logout <url>, check <url> or list. See toolmenu auth --help.`);
   if (!url || extra.length) throw new UsageError(`auth ${action} needs one server URL: toolmenu auth ${action} https://example.com/mcp`);
   if (!/^https?:\/\//.test(url)) throw new UsageError(`"${url}" isn't an http(s) URL.`);
   if (action === 'logout') {
