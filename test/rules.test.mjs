@@ -955,3 +955,17 @@ test("spec/tool-name: names outside the spec's format warn; hidden characters ar
   const many = spec(Array.from({ length: 14 }, (_, i) => tool(`t ${i}`, [], read)));
   assert.equal(many[0].detail.at(-1), 'and 2 more');
 });
+
+test('variance only in fields the model does not read is a warning that says so (the @pipeworx version hash, bench 2026-11-09)', () => {
+  const t = (version, description = 'Get a thing.') => [{ name: 'get_x', description, inputSchema: { type: 'object' }, version, annotations: { readOnlyHint: true } }];
+  const run = (a, b) =>
+    runRules(MENU_RULES, { menu: menuOf(a), secondList: menuOf(b).tools, probes: [{ tools: menuOf(b).tools }], transport: 'stdio', pages: [], capabilities: { tools: {} }, usedAuth: false })
+      .filter((f) => f.rule === 'menu/nondeterministic' || f.rule === 'menu/process-variance');
+  const quiet = run(t('v1.ef282cca'), t('v1.bb26ead1'));
+  assert.deepEqual(quiet.map((f) => [f.rule, f.severity]), [['menu/nondeterministic', 'warn'], ['menu/process-variance', 'warn']]);
+  assert.match(quiet[0].message, /only in version, which clients keep to themselves: .*prompt caches aren't affected, but no baseline matches/);
+  // The same, with the description changing too: the model reads it, so an error.
+  const loud = run(t('v1.ef282cca'), t('v1.bb26ead1', 'Get a thing, now.'));
+  assert.deepEqual(loud.map((f) => f.severity), ['error', 'error']);
+  assert.match(loud[0].message, /miss the prompt cache/);
+});

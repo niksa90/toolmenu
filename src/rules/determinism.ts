@@ -65,6 +65,35 @@ function places(before: MenuTool[], after: MenuTool[]): string[] {
 
 const isTime = (s: Spot) => TIMESTAMP.test(String(s.before)) && TIMESTAMP.test(String(s.after));
 
+/**
+ * Changes the model reads: the tool set, its order, names, descriptions and input
+ * schemas (and their bytes: key order). Output schemas, annotations and other fields
+ * (a per-tool "version" hash: the @pipeworx servers) stay with the client.
+ */
+const MODEL_KINDS = new Set<ToolChange['kind']>(['added', 'removed', 'moved', 'description', 'inputSchema', 'serialization']);
+
+/** The fields that differ, when none of them is one the model reads; undefined otherwise. */
+export function outsideModel(before: MenuTool[], after: MenuTool[], changes: ToolChange[]): string[] | undefined {
+  if (!changes.length || changes.some((c) => MODEL_KINDS.has(c.kind))) return undefined;
+  const fields = new Set<string>();
+  for (const s of everySpot(before, after, changes)) {
+    const rest = s.where.slice(s.tool.length + 1);
+    if (rest) fields.add(rest.split(/[.[]/)[0]);
+  }
+  for (const c of changes) if (c.kind === 'outputSchema' || c.kind === 'annotations') fields.add(c.kind);
+  return [...fields].sort();
+}
+
+/** "version", "version and annotations". */
+function fieldList(fields: string[]): string {
+  return fields.length <= 1 ? fields.join('') : `${fields.slice(0, -1).join(', ')} and ${fields.at(-1)}`;
+}
+
+/** Why a variance only in fields the model doesn't read still matters. */
+function outsideModelCost(fields: string[]): string {
+  return `It differs only in ${fieldList(fields)}, which clients keep to themselves: the model doesn't read ${fields.length === 1 ? 'it' : 'them'}, so prompt caches aren't affected, but no baseline matches, so every diff and review reports a change.`;
+}
+
 /** "list_transactions.end_date.default" or "a.b, c.d and 3 more places". */
 function placesOf(found: Spot[]): string {
   const shown = found.slice(0, 2).map((s) => s.where).join(', ');
@@ -109,10 +138,14 @@ export const nondeterministic: Rule = {
     const onlyOrder = changes.every((c) => c.kind === 'moved');
     const found = spots(ctx.menu.tools, ctx.secondList, changes);
     const tools = [...new Set(changes.map((c) => c.tool))];
+    const outside = outsideModel(ctx.menu.tools, ctx.secondList, changes);
     return [
       {
         ...(tools.length === 1 ? { tool: tools[0] } : {}),
-        message: onlyOrder
+        ...(outside ? { severity: 'warn' as const } : {}),
+        message: outside
+          ? `Two identical tools/list calls, back to back, returned different menus. ${outsideModelCost(outside)} ${whatDiffers(changes, found)}`.trim()
+          : onlyOrder
           ? 'Two identical tools/list calls, back to back, returned the tools in a different order, so a cached prompt with the tool list rarely matches the next one: every conversation can miss the prompt cache. The spec says servers SHOULD keep the order stable.'
           : `Two identical tools/list calls, back to back, returned different menus, so a cached prompt with the tool list rarely matches the next one: every conversation can miss the prompt cache. ${whatDiffers(changes, found)}`.trim(),
         detail: detailFor(ctx.menu.tools, ctx.secondList, changes),
@@ -177,10 +210,13 @@ export function varianceFinding(
     detail = lines.slice(0, 10).concat(lines.length > 10 ? [`…and ${lines.length - 10} more`] : []);
   }
   const reordered = found.some((s) => s.reordered);
+  const outside = outsideModel(main, other, why);
   const message = [
-    stdio
-      ? 'A second server process, started the same way, served a different menu, so every restart, and every client that starts its own copy, gets a tool list that no cached prompt matches.'
-      : `A second connection with the same credentials got a different menu, so clients can't share a cached tool list.${opts.modern ? ' On 2026-07-28 the tool set MUST NOT vary per connection.' : ''}`,
+    outside
+      ? `A second ${stdio ? 'server process, started the same way,' : 'connection with the same credentials'} served a different menu. ${outsideModelCost(outside)}`
+      : stdio
+        ? 'A second server process, started the same way, served a different menu, so every restart, and every client that starts its own copy, gets a tool list that no cached prompt matches.'
+        : `A second connection with the same credentials got a different menu, so clients can't share a cached tool list.${opts.modern ? ' On 2026-07-28 the tool set MUST NOT vary per connection.' : ''}`,
     lead,
     whatDiffers(why, found),
     reordered
@@ -193,7 +229,8 @@ export function varianceFinding(
   ].filter(Boolean).join(' ');
   return {
     rule: stdio ? 'menu/process-variance' : 'menu/connection-variance',
-    severity: stdio || opts.modern ? 'error' : 'warn',
+    // Only in fields the model doesn't read: a warning, not an error (no cache is lost).
+    severity: outside ? (stdio || opts.modern ? 'warn' : 'info') : stdio || opts.modern ? 'error' : 'warn',
     message,
     detail,
     fix: fixFor(why, found, stdio ? 'process' : 'connection'),

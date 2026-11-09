@@ -77,6 +77,8 @@ export function idParams(tool: MenuTool): IdParam[] {
 }
 
 function looksLikeIdValue(schema: JsonSchema): boolean {
+  // null, true, false: not a schema an ID's value is described by.
+  if (!schema || typeof schema !== 'object') return false;
   if (schema.enum) return false; // a fixed set of values is chosen, not invented
   const type = schema.type;
   return type === undefined || type === 'string' || type === 'integer' || (Array.isArray(type) && type.includes('string'));
@@ -95,7 +97,8 @@ function withOperations(tools: MenuTool[]): MenuTool[] {
   const out = [...tools];
   for (const t of tools) {
     for (const schema of Object.values(t.inputSchema?.properties ?? {})) {
-      for (const v of Array.isArray(schema.enum) ? schema.enum : []) {
+      // A property schema can be anything a server sends (null, true): only an object has an enum.
+      for (const v of schema && typeof schema === 'object' && Array.isArray(schema.enum) ? schema.enum : []) {
         if (typeof v !== 'string' || !/^[a-z]+(?:_[a-z]+)+$/.test(v)) continue;
         // Lists and searches only: a router's get_workflow needs the ID it would hand out.
         if (!COLLECTION_VERBS.has(singular(v.split('_')[0]))) continue;

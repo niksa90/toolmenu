@@ -26,6 +26,19 @@
 
 ### Fixes
 
+- **`diff` and `review` no longer crash on boolean subschemas.** JSON Schema allows
+  `true` and `false` as a whole schema; `"items": true` (figma-mcp-rs 0.1.0) threw
+  "Cannot use 'in' operator to search for 'const' in true", so the Action's diff step
+  failed on any such server. `true` now reads as anything, `false` as nothing. A `null`,
+  a string or a number where a schema belongs (a broken server) no longer crashes
+  `snapshot`'s ID rules, the token breakdown or `diff` either; a change to one is still
+  reported. `test/odd-schemas.test.mjs` runs every analysis on all of them.
+- **Variance only in fields the model doesn't read is a warning.** `menu/nondeterministic`,
+  `menu/process-variance` and `menu/connection-variance` said "every conversation can
+  miss the prompt cache" (error) when tools/list differed only in, say, a per-tool
+  `version` hash that changes on every call (59 `@pipeworx` servers). The model reads
+  names, descriptions and input schemas, so no cache is lost; the baseline still never
+  matches. They now warn, name the fields, and say that.
 - **`wait_for: tools_list_changed` after a call sees the notification that call
   caused.** It counted only notifications that arrived after it started, but a call's
   `list_changed` usually arrives while the call step runs, so the README's own
