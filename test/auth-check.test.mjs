@@ -60,8 +60,12 @@ test('no WWW-Authenticate, but the well-known URI: info, it still works', async 
   assert.equal(r.foundBy, 'well-known path');
 });
 
-test('no protected resource metadata anywhere (404): an error', async () => {
+test('a 401 naming metadata that isn\'t there (404): an error', async () => {
   assert.deepEqual(rules(await check(() => ({}))), ['auth/discovery:error']);
+});
+
+test('a 401 with no WWW-Authenticate and no metadata: OAuth not advertised, info (the server may take API keys)', async () => {
+  assert.deepEqual(rules(await check(() => ({}), { header: false })), ['auth/discovery:info']);
 });
 
 test('metadata that can\'t be read (403 everywhere): not checked, said as info, never an error', async () => {
@@ -70,8 +74,9 @@ test('metadata that can\'t be read (403 everywhere): not checked, said as info, 
   assert.deepEqual(rules(r), ['auth/server-metadata:info']);
 });
 
-test('a resource that isn\'t the server\'s URL: an error; a trailing slash only: a warning', async () => {
+test('a resource on another origin: an error; a same-origin parent, or a trailing slash only: a warning (the SDK accepts them)', async () => {
   assert.deepEqual(rules(await check((b) => ({ '/.well-known/oauth-protected-resource/mcp': prm(b, { resource: 'https://elsewhere.example/mcp' }), '/.well-known/oauth-authorization-server': as() }))), ['auth/resource-metadata:error']);
+  assert.deepEqual(rules(await check((b) => ({ '/.well-known/oauth-protected-resource/mcp': prm(b, { resource: b }), '/.well-known/oauth-authorization-server': as() }))), ['auth/resource-metadata:warn']);
   assert.deepEqual(rules(await check((b) => ({ '/.well-known/oauth-protected-resource/mcp': prm(b, { resource: `${b}/mcp/` }), '/.well-known/oauth-authorization-server': as() }))), ['auth/resource-metadata:warn']);
 });
 
@@ -98,4 +103,10 @@ test('a server that doesn\'t ask for credentials: nothing to check', async () =>
   } finally {
     await new Promise((r) => server.close(r));
   }
+});
+
+test('metadata found at the root well-known URI has the origin as its resource (RFC 9728 §3.3): no finding', async () => {
+  const r = await check((b) => ({ '/.well-known/oauth-protected-resource': { resource: b, authorization_servers: [b] }, '/.well-known/oauth-authorization-server': as() }), { header: false });
+  assert.equal(r.foundBy, 'well-known root');
+  assert.deepEqual(rules(r), ['auth/discovery:info']);
 });

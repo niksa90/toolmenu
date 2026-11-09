@@ -92,3 +92,7 @@ test('"needs an <X> API key" and "<X>_API_KEY is not set" are missing credential
   // A word between "needs" and "key" that isn't one: not a credential.
   assert.equal(classifyFailure('The index needs a primary key column', { hadArguments: false }), 'other');
 });
+
+test('"missing required authentication credential" is a missing credential (Google\'s hosted MCP servers, bench 2026-11-09)', () => {
+  assert.equal(classifyFailure('Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential.', { hadArguments: true }), 'auth');
+});

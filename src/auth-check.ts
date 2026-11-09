@@ -112,6 +112,10 @@ export async function authCheck(url: string, timeoutMs = 15_000): Promise<AuthCh
       break;
     }
   }
+  if (!out.wwwAuthenticate && !prm) {
+    say('auth/discovery', 'info', `The 401 has no WWW-Authenticate header, and there's no OAuth protected resource metadata, so the server doesn't advertise OAuth. Authorization is OPTIONAL in MCP: if it takes an API key or another credential, that's fine; if it means OAuth, no client can find where to log in.`, 'If the server uses OAuth, answer 401 with WWW-Authenticate: Bearer resource_metadata="…" and serve the metadata (RFC 9728).', [`tried ${known.path}`, `tried ${known.root}`]);
+    return out;
+  }
   if (!out.wwwAuthenticate) {
     say('auth/discovery', prm ? 'info' : 'error', `The 401 has no WWW-Authenticate header${prm ? ', so clients find the metadata only at the well-known URI' : ''}.`, 'Answer 401 with WWW-Authenticate: Bearer resource_metadata="<your metadata URL>" (RFC 9728 §5.1).');
   } else if (!fromHeader && prm) {
@@ -141,14 +145,31 @@ export async function authCheck(url: string, timeoutMs = 15_000): Promise<AuthCh
   if (!servers.length) {
     say('auth/resource-metadata', 'error', `The protected resource metadata (${out.metadataUrl}) lists no authorization_servers. It MUST list at least one, or a client has nowhere to log in.`, 'Add "authorization_servers": ["https://your-auth-server"] to the metadata.');
   }
+  // RFC 9728 §3.3: metadata named by WWW-Authenticate must have the URL the client
+  // called as its resource; metadata from a well-known URI, the identifier that URI was
+  // built from (the origin for the root one, origin and path for the path one).
+  const u = new URL(url);
+  const expected = out.foundBy === 'well-known root' ? u.origin : out.foundBy === 'well-known path' ? `${u.origin}${u.pathname.replace(/\/$/, '')}` : url;
   if (!out.resource) {
     say('auth/resource-metadata', 'error', `The protected resource metadata (${out.metadataUrl}) has no "resource". RFC 9728 requires it, and a client checks it against the server it's connecting to.`, `Add "resource": "${url}" to the metadata.`);
-  } else if (out.resource !== url) {
-    const sameButSlash = out.resource.replace(/\/$/, '') === url.replace(/\/$/, '');
+  } else if (out.resource !== expected) {
+    const sameButSlash = out.resource.replace(/\/$/, '') === expected.replace(/\/$/, '');
+    // The official SDK's checkResourceAllowed takes a resource on the same origin whose
+    // path is a parent of the URL's (trailing slashes aside); RFC 9728 says identical.
+    const parent = (() => {
+      try {
+        const r = new URL(out.resource);
+        const e = new URL(expected);
+        const slash = (p: string) => (p.endsWith('/') ? p : p + '/');
+        return r.origin === e.origin && slash(e.pathname).startsWith(slash(r.pathname));
+      } catch {
+        return false;
+      }
+    })();
     say('auth/resource-metadata',
-      sameButSlash ? 'warn' : 'error',
-      `The protected resource metadata says resource "${out.resource}", not "${url}", the server it was fetched for. RFC 9728 §3.3: a client MUST NOT use metadata whose resource isn't identical to the one it asked about${sameButSlash ? ' (here only a trailing slash differs, which some clients forgive and others don\'t)' : ''}.`,
-      `Make "resource" exactly ${url}.`,
+      sameButSlash || parent ? 'warn' : 'error',
+      `The protected resource metadata (${out.foundBy === 'header' ? 'named by WWW-Authenticate' : `at the ${out.foundBy} URI`}) says resource "${out.resource}", not "${expected}"${out.foundBy === 'header' ? ', the URL the client called' : ', the identifier that URI is built from'}. RFC 9728 §3.3: a client MUST NOT use metadata whose resource isn't identical to it.${sameButSlash ? ' Only a trailing slash differs: the official MCP SDK client accepts it, a client that follows the RFC to the letter doesn\'t.' : parent ? ' It\'s a parent of that URL on the same origin: the official MCP SDK client accepts it, a client that follows the RFC to the letter doesn\'t.' : ''}`,
+      `Make "resource" exactly ${expected}.`,
     );
   }
   if (!servers.length) return out;

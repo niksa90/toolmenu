@@ -54,6 +54,9 @@
 - **`session/edit` only in a field the model doesn't read is a warning.** The same
   `version` hash, changing between two lists mid-session, was an error saying it
   invalidates the cached prompt. Like the variance rules, it now warns and names the field.
+- **A call refused with HTTP 401 or 403 is a credential failure**, whatever its words:
+  Google's hosted servers list tools to anyone and answer each call with a 401 and a
+  `WWW-Authenticate` for that tool. Those were `session/step-failed` errors.
 - **More setup failures read as setup failures:** "needs credentials" (botverse-mcp),
   "no browser found" and "the extension is not connected" (mcp-session-bridge), and "not a
   git repository" (diffci) were `session/step-failed` errors, and "needs an Entyrix API key

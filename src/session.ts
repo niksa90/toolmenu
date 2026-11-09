@@ -569,7 +569,11 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
             if (!handleErrors.some((e) => e.tool === step.tool)) handleErrors.push({ step: index, tool: step.tool, probe: step.probe, value: step.args[step.probe.param], message: record.note, code });
             record.note = `called with a made-up ${step.probe.kind}; it answered with a protocol error (${code}): ${clip(record.note, 120)}`;
           } else {
-            record.failure = classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
+            // A 401 or 403 on the call itself is the credentials, whatever the words: Google's
+            // hosted servers list tools to anyone and answer each call with 401 and a
+            // WWW-Authenticate for that tool.
+            const status = httpStatus(error);
+            record.failure = status === 401 || status === 403 ? 'auth' : classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
             // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
             const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
             if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);
