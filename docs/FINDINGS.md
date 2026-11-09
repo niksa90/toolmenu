@@ -675,6 +675,8 @@ every changed finding read by hand.
 
 ## F17. 1,090 servers new to the bench, every command on each
 
+*(Run again with every tool called, and with 2,109 hosted servers: F18.)*
+
 *Checked 2026-11-09 with `bench/scripts/batch-full.sh` on `corpus/registry-2026-11.tsv`:
 the first 1,600 npm stdio servers from the MCP registry, in a seeded random order, that need
 no credentials and weren't in an earlier corpus. 1,090 started and listed tools. Of the
@@ -737,3 +739,65 @@ below say where the two account for a pattern.
 No server crashed toolmenu after the fixes. Every server that didn't start got a message
 naming why: the usage text a command printed, "bun: No such file or directory", or the
 module it couldn't find.
+
+## F18. Every tool called, and 2,109 hosted servers, the big vendors' among them
+
+*Checked 2026-11-09; data in `bench/results/weekly/2026-11-09/`, the weekly run's
+baseline.* The stdio servers of F17 ran again with toolmenu `3b338ac`, now with a sealed
+pass. The hosted panel (`corpus/http-panel.tsv`) is 109 vendor endpoints plus a seeded
+2,000 of the registry's hosted servers, one per domain.
+
+**Every stdio tool, called.** `session --auto --call-everything` (new) calls every tool
+once, writes included, with the schema's own values or made-up ones (`toolmenu-test`,
+`1`), in a container with `--network none` and no credentials (`SEALED=1`). The sealed
+pass ran on 1,057 of the 1,089 servers; the other 32 wouldn't start without the network.
+15,566 of 16,518 tools were called (94.2%, against 6% with read-only calls alone). Each
+tool's first answer:
+
+| | Tools |
+|---|---|
+| A result | 3,066 (19.7%) |
+| A readable tool error to the made-up input: what the spec asks for | 9,040 (58.1%) |
+| A readable error because the sandbox has no network (1,322), no browser or app (878), no key (770) | 2,970 (19.1%) |
+| A protocol error or a crash | 288 (1.9%) |
+| Timed out (10 s) | 182 (1.2%) |
+
+With made-up input and no network, a failed call says how a tool meets such input, not
+that the server is broken, so those are info. What holds whatever the input keeps its
+level. Two servers' tools declare an `outputSchema` and answer without `structuredContent`
+(`session/output-schema`, new: a MUST since 2025-06-18; the official SDK client raises an
+error where the tool answered): `@domainkits/mcp` and `@mindjack/mcp`, 8 tools each.
+
+**The vendors' sign-in, checked without logging in** (`toolmenu auth check`, new). 79 of
+the 109 vendor endpoints answer 401:
+- 54 follow the 2025-11-25 OAuth discovery spec with no finding, and 11 with notes only.
+- 12 put a `resource` in their metadata that is a parent of the server's URL, or differs
+  by a trailing slash: Airtable, Visa, DigitalOcean, Vercel, Box, Semgrep, Stytch, Paddle,
+  New Relic, Railway, Ahrefs, Instatus. RFC 9728 says identical; the official SDK accepts
+  these, a client that follows the RFC to the letter doesn't. Warnings.
+- Stack Overflow's 401 names metadata that isn't there (`auth/discovery`).
+- Microsoft Sentinel's sign-in is Entra ID, whose metadata doesn't advertise PKCE.
+  Spec-following clients must check for it and refuse without it (`auth/pkce`).
+
+29 vendor endpoints list tools without a login. Google's 15 do so and answer every call
+with HTTP 401 and a per-tool `WWW-Authenticate`: a design, not a failure.
+
+**The hosted long tail.** Of the 2,000:
+- 1,091 list tools to anyone (14,886 tools), 659 use OAuth, 31 another credential, and 219
+  were unreachable.
+- 22 send a 2026-07-28 `tools/list` without `ttlMs` and `cacheScope`, which the SDK rejects.
+- 9 send results without `resultType`, and 4 break their own `outputSchema`.
+- 12 have sign-in discovery errors. Seven of those name a `resource` on another host;
+  `mcp-server.zomato.com` serves the authorization server's metadata where the protected
+  resource's belongs.
+
+**What toolmenu got wrong this time** (each fixed with a test):
+- **From this sandbox, github.com answers 403 to everything**, which first read as GitHub
+  serving no authorization server metadata. An unreadable document is unchecked now, never
+  missing.
+- **`auth check` was stricter than real clients.** It called a same-origin parent `resource`
+  an error. A 401 without OAuth hints, which may be an API-key server, was an error too.
+- **A call refused with HTTP 401** (Google) was read as the server failing.
+- **In the sealed pass,** a failed call or a "rate limit" offline was an error.
+- **An output that fails only `format`** is a warning: many validators skip format.
+
