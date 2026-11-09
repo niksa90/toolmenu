@@ -1,271 +1,1091 @@
-pkg	repo	included	protocol	tools	tokens	calls	answered	error	warn	info	review
-@akr1166org/rules-mcp@0.3.1	https://github.com/AKR1166/Rules-MCP	true	2025-11-25	19	2423	0	0	0	2	1	unchanged
-humanpages@1.4.6	https://github.com/human-pages-ai/humanpages	true	2025-11-25	40	8169	0	0	0	3	4	unchanged
-@matematicsolutions/mcp-nsa@1.4.0	https://github.com/matematicsolutions/mcp-nsa	true	2025-11-25	3	920	0	0	0	1	1	unchanged
-@pipeworx/mcp-wmata@0.2.1	https://github.com/pipeworx-io/mcp-wmata	true	2025-03-26	10	746	0	0	0	2	5	unchanged
-@philmingdao/anno@0.4.0	https://github.com/philmingdao/anno	true	2025-11-25	6	1285	2	2	0	0	3	unchanged
-@pipeworx/mcp-defillama@0.2.1	https://github.com/pipeworx-io/mcp-defillama	true	2025-03-26	9	1549	0	0	0	2	2	unchanged
-vectorise-mcp@0.2.0	https://github.com/JonathanWeerakkody/Vectorise_Me	true	2025-11-25	5	1217	0	0	0	1	1	unchanged
-toolforte-mcp@0.4.2		true	2025-11-25	14	2799	5	1	0	1	3	unchanged
-kairos-lang-mcp@1.1.0	https://github.com/azathothx/kairos-lang	true	2025-11-25	4	1826	0	0	0	1	1	unchanged
-@pipeworx/mcp-pubtator@0.2.1	https://github.com/pipeworx-io/mcp-pubtator	true	2025-03-26	5	1676	0	0	0	2	1	unchanged
-sanctionscreen-mcp@0.1.0		true	2025-11-25	4	933	0	0	0	1	1	unchanged
-fixgraph-mcp@1.0.2	https://github.com/jawdat6/fixgraph-mcp	true	2025-11-25	3	381	0	0	0	2	2	unchanged
-chron-mcp@0.1.7	https://github.com/nivaya/chron	true	2025-11-25	5	568	0	0	0	1	1	unchanged
-pipepost-mcp@0.9.0	https://github.com/MendleM/Pipepost	true	2025-11-25	29	3933	0	0	0	3	1	unchanged
-ai4l-library@0.1.12	https://github.com/forever-healthy/AI4L-library	true	2025-11-25	6	1611	0	0	0	3	1	unchanged
-@pipeworx/mcp-visualcrossing@0.2.1	https://github.com/pipeworx-io/mcp-visualcrossing	true	2025-03-26	3	778	0	0	0	3	3	safe
-@pipeworx/mcp-fracfocus@0.2.1	https://github.com/pipeworx-io/mcp-fracfocus	true	2025-03-26	3	908	0	0	0	2	2	unchanged
-@drop2run/mcp@1.4.0	https://github.com/Drop-to-run/drop2run-cli	true	2025-11-25	20	4699	0	0	0	1	3	unchanged
-@mrfentmen/isbn-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	3	257	0	0	0	1	1	unchanged
-@trazum/mcp@2.7.7	https://github.com/Davmunrey/Trazum	true	2025-11-25	12	3572	0	0	0	1	3	unchanged
-@pipeworx/mcp-opendata-swiss@0.2.1	https://github.com/pipeworx-io/mcp-opendata-swiss	true	2025-03-26	5	611	0	0	0	5	3	unchanged
-agent-passport-system-mcp@8.1.1	https://github.com/agent-passport-system/agent-passport-mcp	true	2026-07-28	154	25757	14	10	0	5	21	safe
-@dxpert/uns-tools@0.1.4	https://github.com/dxpert-ai/uns-tools	true	2025-11-25	3	1130	0	0	0	1	1	unchanged
-@pvpwire/mcp-server@1.0.2		true	2025-11-25	9	1526	0	0	0	1	2	unchanged
-@pipeworx/mcp-faa-aircraft-registry@0.2.1	https://github.com/pipeworx-io/mcp-faa-aircraft-registry	true	2025-03-26	1	261	0	0	0	2	1	unchanged
-pkg-health-mcp@0.2.0	https://github.com/orcsnren/pkg-health-mcp	true	2025-11-25	3	768	0	0	0	1	1	unchanged
-@pipeworx/mcp-dogceo@1.1.1	https://github.com/pipeworx-io/mcp-dogceo	true	2025-03-26	4	357	0	0	0	3	2	unchanged
-menhthien@1.0.2	https://github.com/truonglam1987/supertuvi	true	2025-11-25	3	211	0	0	0	1	1	unchanged
-@mrfentmen/basic-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2160	0	0	0	2	2	unchanged
-webcheck-mcp@0.1.3	https://github.com/yifanyifan897645/webcheck-mcp	true	2025-11-25	6	530	0	0	0	1	1	unchanged
-@mikusnuz/meta-mcp@2.2.2	https://github.com/mikusnuz/meta-mcp	true	2025-11-25	66	8882	0	0	0	2	7	unchanged
-@pubnub/mcp@2.3.2	https://github.com/pubnub/pubnub-mcp-server	true	2025-11-25	12	8611	0	0	0	3	4	unchanged
-@mrfentmen/sway-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-onehome-mcp@1.2.1	https://github.com/chrischall/onehome-mcp	true	2026-07-28	21	6221	4	4	0	0	4	safe
-@amcharts/amcharts5-mcp@1.9.4	https://github.com/amcharts/amcharts5-mcp	true	2025-11-25	12	2168	7	7	0	0	2	unchanged
-crazyseo@0.1.2	https://github.com/bolidee/crazyseo	true	2025-11-25	4	550	0	0	0	1	1	unchanged
-fileforge-mcp-server@0.2.2	https://github.com/mayank1307/fileforge	true	2025-11-25	26	10327	0	0	0	1	1	unchanged
-@pipeworx/mcp-world-news-feeds@0.2.1	https://github.com/pipeworx-io/mcp-world-news-feeds	true	2025-03-26	3	411	0	0	0	4	2	safe
-@pipeworx/mcp-sfda-drugs@0.2.1	https://github.com/pipeworx-io/mcp-sfda-drugs	true	2025-03-26	6	1437	0	0	0	3	1	unchanged
-@pipeworx/mcp-ietf-datatracker@0.2.1	https://github.com/pipeworx-io/mcp-ietf-datatracker	true	2025-03-26	6	512	0	0	0	4	1	unchanged
-mcp-google-contacts@1.1.2	https://github.com/A1-x-Tech/mcp-google-contacts	true	2025-11-25	25	9492	0	0	0	1	4	unchanged
-@captain_americka/tsiky-mcp@1.0.2		true	2025-11-25	22	7321	0	0	0	2	2	unchanged
-ror-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	5	593	0	0	0	1	2	unchanged
-@pipeworx/mcp-rfc-editor@0.2.1	https://github.com/pipeworx-io/mcp-rfc-editor	true	2025-03-26	6	286	0	0	1	4	3	safe
-nanocalcs-mcp@0.2.1		true	2025-11-25	24	9845	14	6	0	9	2	unchanged
-@mrfentmen/standard-ml-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-svix-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	26	3110	0	0	0	2	4	unchanged
-@runapi.ai/suno-mcp@0.4.2	https://github.com/runapi-ai/suno-mcp	true	2025-11-25	21	6100	0	0	0	2	6	unchanged
-tripwire-guard@0.4.2	https://github.com/KubaOpoczka/tripwire-guard	true	2025-11-25	1	174	0	0	0	1	1	unchanged
-@unlocalhost/unlocalhost@0.1.1	https://github.com/info-arnav/unlocalhost	true	2025-11-25	7	778	0	0	0	1	1	unchanged
-mcp-adr-analysis-server@2.14.19	https://github.com/tosin2013/mcp-adr-analysis-server	true	2025-11-25	63	15651	21	18	1	2	9	unchanged
-memegician-mcp@1.0.0	https://github.com/Notysoty/memegician-mcp	true	2025-11-25	4	449	4	3	0	1	2	unchanged
-mcp-sqlite-server@1.0.1	https://github.com/ofershap/mcp-server-sqlite	true	2025-11-25	5	470	0	0	0	1	1	unchanged
-inspectrum@0.2.3	https://github.com/yannmenec/inspectrum	true	2025-11-25	1	228	0	0	0	1	1	unchanged
-mcp-agent-trace-inspector@1.0.1	https://github.com/dbsectrainer/mcp-agent-trace-inspector	true	2025-11-25	13	1745	4	4	0	0	4	unchanged
-@starfetch-js/mcp@0.3.0	https://github.com/starfetch-js/starfetch	true	2025-11-25	12	2245	2	2	0	0	2	unchanged
-dingdawg-legal-agent@2.0.7	https://github.com/dingdawg/dingdawg-agent-1	true	2025-11-25	4	618	2	0	0	1	1	unchanged
-@mrfentmen/nasa-neo-mcp@1.0.2	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	2	252	0	0	0	2	2	unchanged
-mychart-mcp-server@1.0.0	https://github.com/kriskraw80/mychart-mcp-server	true	2025-11-25	8	1489	0	0	0	1	1	unchanged
-met-mcp@0.2.0	https://github.com/trondbjoroy/met-mcp	true	2025-11-25	8	1240	0	0	0	1	2	unchanged
-@mrfentmen/mql4-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2200	0	0	0	2	2	unchanged
-@pipeworx/mcp-pa-dmv@0.2.1	https://github.com/pipeworx-io/mcp-pa-dmv	true	2025-03-26	3	977	0	0	0	2	1	unchanged
-@cocaxcode/devflow-mcp@0.1.8	https://github.com/cocaxcode/devflow-mcp	true	2025-11-25	32	3401	0	0	0	2	3	unchanged
-@pipeworx/mcp-openchargemap@0.2.1	https://github.com/pipeworx-io/mcp-openchargemap	true	2025-03-26	2	606	0	0	0	3	1	unchanged
-@oscarmarin/mcp-devtools@1.0.1	https://github.com/marin1321/mcp-devtools	true	2025-11-25	15	1636	0	0	0	2	2	unchanged
-@pipeworx/mcp-open-sanctions@0.2.1	https://github.com/pipeworx-io/mcp-open-sanctions	true	2025-03-26	2	499	0	0	0	4	3	safe
-no-as-service@1.0.2	https://github.com/Koneisto/no-as-a-service	true	2025-11-25	2	135	0	0	0	1	1	unchanged
-@pipeworx/mcp-hilma@0.2.1	https://github.com/pipeworx-io/mcp-hilma	true	2025-03-26	3	1231	0	0	0	3	1	unchanged
-literature-clock-mcp@1.6.2	https://github.com/markusvankempen/literature-clock-mcp	true	2025-11-25	8	1207	7	7	0	0	2	unchanged
-wordstat-mcp-server@0.1.1	https://github.com/solaix/wordstat-mcp-server	true	2026-07-28	5	732	0	0	0	1	1	safe
-@immersive-media-technologies/aftereffects-mcp-imt@1.1.1	https://github.com/Immersive-Media-Technologies/aftereffects-mcp-imt	true	2025-11-25	13	3770	7	2	0	2	3	unchanged
-@nats-trail/mcp@0.6.1	https://github.com/solsolettidev/nats-trail	true	2025-11-25	28	3199	5	5	0	1	2	unchanged
-citadel-mcp@2.2.0	https://github.com/sustinbebustin/citadel-mcp	true	2025-11-25	1	4562	0	0	0	1	2	unchanged
-@mrfentmen/forth-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-@pipeworx/mcp-arcgis-sanjuannm@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-sanjuannm	true	2025-03-26	3	581	0	0	0	4	3	safe
-@mrfentmen/assembly-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2160	0	0	0	2	2	unchanged
-content-genie-mcp@2.9.4	https://github.com/MUSE-CODE-SPACE/content-genie-mcp	true	2025-11-25	17	2977	0	0	0	2	2	unchanged
-@pipeworx/mcp-econdata@1.1.1	https://github.com/pipeworx-io/mcp-econdata	true	2025-03-26	4	1025	0	0	0	3	2	unchanged
-@formatix-ai/mcp@0.1.1	https://github.com/FormatixAI/mcp-server	true	2025-11-25	5	851	0	0	0	1	1	unchanged
-@hovecapital/read-only-mysql-mcp-server@0.1.1	https://github.com/hovecapital/read-only-local-mysql-mcp-server	true	2025-11-25	3	188	0	0	0	1	1	unchanged
-devkit-for-strapi-mcp@0.2.4		true	2025-11-25	35	7099	0	0	0	2	2	unchanged
-@pipeworx/mcp-cbs-il@0.2.1	https://github.com/pipeworx-io/mcp-cbs-il	true	2025-03-26	4	815	0	0	0	3	3	safe
-@spideriq/mcp-mail@1.4.0	https://github.com/SpiderIQ/SpiderIQ	true	2025-11-25	58	6437	0	0	0	2	7	unchanged
-@shibbirweb/mcp-mysql-read-only@1.1.6	https://github.com/shibbirweb/mcp-mysql-read-only	true	2025-11-25	12	1103	0	0	0	1	2	unchanged
-@pipeworx/mcp-moldova-tenders@0.2.1	https://github.com/pipeworx-io/mcp-moldova-tenders	true	2025-03-26	3	693	0	0	0	2	1	unchanged
-edgeo-mcp@0.1.4	https://github.com/edgarcia-id/edgeo	true	2026-07-28	9	2560	2	2	0	0	2	safe
-corroborate-mcp@0.1.3	https://github.com/chefcohen/corroborate-mcp	true	2025-11-25	2	420	0	0	0	1	1	unchanged
-@h2-papers/mcp-server@0.1.0	https://github.com/h2-papers/h2-papers-mcp-server	true	2025-11-25	6	926	0	0	0	1	1	unchanged
-pdb-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	6	577	0	0	0	1	1	unchanged
-@pipeworx/mcp-avoindata-fi@0.2.1	https://github.com/pipeworx-io/mcp-avoindata-fi	true	2025-03-26	3	405	0	0	0	5	3	safe
-ai-agent-bank-mcp-server@1.0.2	https://github.com/WirterNow/ai-agent-bank-mcp-server	true	2025-03-26	43	5673	0	0	0	2	10	—
-@mrfentmen/reasonml-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-saascity-mcp@2.1.0	https://github.com/nyyhao/saascity-mcp	true	2025-11-25	23	3846	17	16	0	1	3	unchanged
-warp-agent-mcp@0.20.1	https://github.com/warpfreight/warp-agent-mcp	true	2025-11-25	33	10630	10	2	0	1	7	unchanged
-@rog0x/mcp-webhook-tools@1.0.2	https://github.com/rog0x/mcp-webhook-tools	true	2025-11-25	5	890	0	0	0	2	1	unchanged
-@pipeworx/mcp-findymail@0.2.1	https://github.com/pipeworx-io/mcp-findymail	true	2025-03-26	2	425	0	0	0	2	1	unchanged
-@pipeworx/mcp-federal-civil@0.2.1	https://github.com/pipeworx-io/mcp-federal-civil	true	2025-03-26	2	622	0	0	0	2	1	unchanged
-cad-compare-mcp@0.2.1		true	2025-11-25	7	2184	2	2	0	0	1	unchanged
-idmly-mcp@0.1.4	https://github.com/KellyKazi3/idmly-mcp	true	2025-11-25	2	469	0	0	0	1	1	unchanged
-nuttle-mcp@0.1.0	https://github.com/shiyue1250/nuttle	true	2025-11-25	1	38	0	0	0	1	1	unchanged
-@mcp-z/mcp-pdf@1.0.3	https://github.com/mcp-z/mcp-pdf	true	2025-11-25	3	4528	0	0	0	2	1	unchanged
-@attestwire/mcp@1.2.2		true	2026-07-28	14	4340	5	0	1	2	5	unchanged
-wield-mcp@0.1.4		true	2025-11-25	5	1073	0	0	0	1	1	unchanged
-@50heads/mcp@2026.1013.2	https://github.com/50heads/mcp	true	2026-07-28	9	56094	0	0	1	3	3	unchanged
-@xentropy/mcp@0.3.1	https://github.com/xentropyai/client	true	2025-11-25	10	1202	0	0	0	3	1	unchanged
-eight-sleep-mcp-unofficial@0.2.5	https://github.com/davidmosiah/eight-sleep-mcp	true	2025-11-25	26	3531	9	8	0	1	4	unchanged
-@pipeworx/mcp-mbta@0.2.1	https://github.com/pipeworx-io/mcp-mbta	true	2025-03-26	4	904	0	0	0	2	1	unchanged
-drawarch-mcp@0.2.0	https://github.com/Ajey95/drawarch-mcp	true	2026-07-28	11	7636	4	3	0	1	2	safe
-@pipeworx/mcp-packagist@0.2.1	https://github.com/pipeworx-io/mcp-packagist	true	2025-03-26	4	483	0	0	0	4	3	safe
-@commenteme/vtex-io-mcp@0.2.0	https://github.com/commentemeapp/vtex-io-mcp	true	2025-11-25	9	2024	0	0	0	2	2	unchanged
-@pipeworx/mcp-tatoeba@0.2.1	https://github.com/pipeworx-io/mcp-tatoeba	true	2025-03-26	4	314	0	0	0	5	3	safe
-@pipeworx/mcp-datos-ar@0.2.1	https://github.com/pipeworx-io/mcp-datos-ar	true	2025-03-26	2	690	0	0	0	5	1	safe
-@theupsider/lsp-mcp@0.1.6	https://github.com/theUpsider/lsp-mcp	true	2025-11-25	17	1926	0	0	0	2	2	unchanged
-brewers-almanack@0.1.0	https://github.com/gregario/brewers-almanack	true	2025-11-25	6	617	0	0	0	1	1	unchanged
-@pseolint/mcp@0.6.4	https://github.com/ouranos-labs/pseolint	true	2025-11-25	4	1475	2	2	0	0	2	unchanged
-@mikusnuz/npm-mcp@1.4.0	https://github.com/mikusnuz/npm-mcp	true	2025-11-25	42	4613	0	0	0	2	3	unchanged
-agent-knowledge@2.0.0	https://github.com/keshrath/agent-knowledge	true	2025-11-25	6	2982	0	0	0	1	1	unchanged
-@pipeworx/mcp-symmap@0.2.1	https://github.com/pipeworx-io/mcp-symmap	true	2025-03-26	7	1502	0	0	0	2	2	unchanged
-@pipeworx/mcp-wisconsin-code@0.2.1	https://github.com/pipeworx-io/mcp-wisconsin-code	true	2025-03-26	1	147	0	0	0	2	1	unchanged
-@pipeworx/mcp-pa-medical-exclusions@0.2.1	https://github.com/pipeworx-io/mcp-pa-medical-exclusions	true	2025-03-26	2	913	0	0	0	2	1	unchanged
-@mrfentmen/usgs-earthquake-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	1	102	0	0	0	1	1	unchanged
-failmodes-mcp@0.1.0	https://github.com/elyngved/failmodes-mcp	true	2025-11-25	4	354	0	0	0	2	1	unchanged
-@mmvv1638/404-directory-mcp@0.10.3	https://github.com/MM-sheng/404-directory	true	2025-11-25	16	3715	4	4	0	0	2	unchanged
-yaktool-pdf-mcp@0.7.0		true	2025-11-25	12	5222	0	0	0	1	1	unchanged
-figma-mcp-rs@0.1.0	https://github.com/jirayusueb/figma-mcp-rs	true	2026-07-28	84	13386	0	0	0	2	3	safe
-@pipeworx/mcp-segment@0.2.1	https://github.com/pipeworx-io/mcp-segment	true	2025-03-26	4	582	0	0	0	2	1	unchanged
-@mrfentmen/scilab-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2200	0	0	0	2	2	unchanged
-@pipeworx/mcp-india-tenders@0.2.1	https://github.com/pipeworx-io/mcp-india-tenders	true	2025-03-26	5	2507	0	0	0	2	1	unchanged
-@pipeworx/mcp-oneinfo-storage@0.2.1	https://github.com/pipeworx-io/mcp-oneinfo-storage	true	2025-03-26	2	1389	0	0	0	3	1	unchanged
-@intenttext/mcp-server@1.0.1	https://github.com/intenttext/intenttext-mcp	true	2025-11-25	9	1089	0	0	0	1	2	unchanged
-@pipeworx/mcp-gbif@1.1.1	https://github.com/pipeworx-io/mcp-gbif	true	2025-03-26	4	821	0	0	0	2	1	unchanged
-@slingshot-fyi/brand-kit@0.1.0	https://github.com/slingshot-fyi/brand-kit	true	2025-11-25	3	237	0	0	0	1	1	unchanged
-@pipeworx/mcp-us-news-feeds@0.2.1	https://github.com/pipeworx-io/mcp-us-news-feeds	true	2025-03-26	3	418	0	0	0	3	2	safe
-trustagent-mcp@0.1.2	https://github.com/MichalStachnik/trust-agent	true	2025-11-25	3	441	0	0	0	1	1	unchanged
-@mrfentmen/ooc-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-make-mcp-server@1.3.3	https://github.com/danishashko/make-mcp	true	2025-11-25	7	645	0	0	0	1	1	unchanged
-@once-agent/mcp@0.2.1	https://github.com/stringsofthemind-oss/once	true	2026-07-28	8	880	5	5	0	0	2	safe
-@ask-llm/codex-mcp@0.9.0	https://github.com/Lykhoyda/ask-llm	true	2025-11-25	4	1113	3	3	0	0	1	unchanged
-toolradar-mcp@2.4.0	https://github.com/Nadeus/toolradar-mcp	true	2025-11-25	11	1589	0	0	0	1	1	unchanged
-@devproxy/mcp@0.3.1	https://github.com/dev-proxy-tools/mcp	true	2025-11-25	3	205	0	0	0	1	1	unchanged
-@autostackup/marketing@0.1.7	https://github.com/Autostackup/autostackup	true	2025-11-25	3	970	0	0	0	1	1	unchanged
-@mrfentmen/clean-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2160	0	0	0	2	2	unchanged
-@msantagiulianab/x402-mcp-server@1.0.7	https://github.com/msantagiulianab/solana-enterprise-payment-gateway	true	2025-11-25	1	75	0	0	0	1	1	unchanged
-@mrfentmen/ghcn-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	3	514	0	0	0	1	2	unchanged
-@runapi.ai/qwen-image-mcp@0.2.1	https://github.com/runapi-ai/qwen-image-mcp	true	2025-11-25	6	1253	0	0	0	2	3	unchanged
-@agentutil/undo-mcp@1.0.0		true	2025-11-25	4	461	0	0	0	1	1	unchanged
-metamuse-mcp@0.1.2		true	2025-11-25	8	1075	0	0	0	1	2	unchanged
-@pipeworx/mcp-oig-corporate-integrity@0.2.1	https://github.com/pipeworx-io/mcp-oig-corporate-integrity	true	2025-03-26	3	836	0	0	0	2	1	unchanged
-@pipeworx/mcp-science-feeds@0.2.1	https://github.com/pipeworx-io/mcp-science-feeds	true	2025-03-26	3	407	0	0	0	3	3	safe
-@pasichdev/docket@3.1.0	https://github.com/pasichDev/docket	true	2025-11-25	16	3604	7	7	0	1	2	unchanged
-cert-atlas-mcp@1.3.0	https://github.com/hans6883/cert-atlas	true	2025-11-25	4	705	0	0	0	1	2	unchanged
-mcp-bbc-goodfood@1.2.0	https://github.com/smeet666/mcp-bbc-goodfood	true	2025-11-25	4	1313	0	0	0	2	1	unchanged
-@unclick/amber-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	true	2025-11-25	3	148	0	0	0	1	2	unchanged
-@pagerender/mcp@1.2.0	https://github.com/nmbrthirteen/pagerender-tools	true	2025-11-25	9	967	0	0	0	1	1	unchanged
-@zenrows/mcp@2.19.0	https://github.com/ZenRows/zenrows-mcp	true	2025-11-25	63	15831	2	0	0	1	4	unchanged
-@argosvix/mcp-server@1.1.2		true	2025-11-25	89	22903	0	0	0	3	5	unchanged
-merx-mcp@1.0.5	https://github.com/Hovsteder/merx-mcp	true	2024-11-05	54	4840	0	0	0	2	5	unchanged
-@mrfentmen/hex-pm-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	1	69	0	0	0	1	1	unchanged
-azure-vm-pricing-mcp@0.1.4	https://github.com/vdionisopoulos/azure-vm-pricing	true	2025-11-25	4	858	3	3	0	0	1	unchanged
-ofw-mcp@2.27.4	https://github.com/chrischall/ofw-mcp	true	2026-07-28	30	14884	0	0	0	2	4	safe
-gmail-tidy-mcp@0.5.1	https://github.com/imkath/gmail-tidy-mcp	true	2025-11-25	23	3371	0	0	0	1	5	unchanged
-@transita/mcp-server@0.2.0	https://github.com/snenenenenenene/transita-mcp-server	true	2025-11-25	15	4086	5	3	0	2	3	unchanged
-vreddie-mcp-server@1.0.1	https://github.com/vreddie2go/vreddie-platform	true	2025-11-25	5	590	0	0	0	1	2	unchanged
-@mbeato/apimesh-mcp-server@1.8.2	https://github.com/mbeato/conway	true	2025-11-25	76	7536	0	0	0	1	2	unchanged
-kitbag-mcp@1.1.2	https://github.com/syedtaj7/Kitbag-mcp	true	2025-11-25	51	4929	0	0	0	1	2	unchanged
-@unclick/omdb-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	true	2025-11-25	3	197	0	0	0	1	1	unchanged
-mcp-prowl@0.1.1	https://github.com/opcastil11/agentdir	true	2025-11-25	9	942	0	0	0	2	1	unchanged
-highwire-mcp@0.14.2	https://github.com/HigherMaestro/highwire	true	2025-11-25	30	5365	0	0	0	1	3	unchanged
-@manansiingh/figma-react-mcp-server@1.0.3	https://github.com/MananSingh2001/figma-react	true	2025-11-25	1	121	0	0	0	1	1	unchanged
-@pipeworx/mcp-ukri-gtr@0.2.1	https://github.com/pipeworx-io/mcp-ukri-gtr	true	2025-03-26	5	1210	0	0	0	2	1	unchanged
-@pipeworx/mcp-neso@0.2.1	https://github.com/pipeworx-io/mcp-neso	true	2025-03-26	4	814	0	0	0	3	1	unchanged
-@pipeworx/mcp-wiktionary@0.2.1	https://github.com/pipeworx-io/mcp-wiktionary	true	2025-03-26	5	394	0	0	0	4	1	safe
-@mintwarehq/mcp-server@0.1.3	https://github.com/MintwareDevelopers/Mintware-Beta	true	2025-11-25	11	1452	0	0	0	1	2	unchanged
-@webclaw/mcp@0.7.1	https://github.com/0xMassi/webclaw	true	2026-07-28	14	5830	0	0	0	1	1	safe
-@jarroba/mcp-logs@0.3.0	https://github.com/Invarato/jarroba-mcp	true	2026-07-28	12	3112	0	0	0	1	1	safe
-@sveltejs/mcp@0.1.30	https://github.com/sveltejs/ai-tools	true	2026-07-28	4	1186	2	2	0	0	2	safe
-@pipeworx/mcp-kokkai-diet@0.2.1	https://github.com/pipeworx-io/mcp-kokkai-diet	true	2025-03-26	3	1196	0	0	0	2	1	unchanged
-chinese-almanac-mcp@1.0.2	https://github.com/yonlandwu/chinese-almanac-mcp	true	2025-11-25	7	1182	0	0	0	1	2	unchanged
-@corlabsdev/mcp@0.1.7	https://github.com/kushshah12/cor-mcp	true	2025-11-25	11	2723	0	0	0	3	1	unchanged
-@pipeworx/mcp-sec@0.2.1	https://github.com/pipeworx-io/mcp-sec	true	2025-03-26	3	485	0	0	0	4	2	unchanged
-@seldonframe/mcp@1.59.2	https://github.com/seldonframe/seldonframe	true	2025-11-25	159	34991	0	0	4	2	4	safe
-@mrfentmen/thrift-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-@mrfentmen/mathematical-programming-system-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2200	0	0	0	2	2	unchanged
-specter-skills@0.11.1	https://github.com/dirtcubeinteractive/specter-skills	true	2025-11-25	19	2554	0	0	0	1	4	unchanged
-@br-ai-n/mcp-icon-visual@0.1.1	https://github.com/n0isy/brain-mcp-icon-visual	true	2025-06-18	3	590	0	0	0	1	1	unchanged
-@mrfentmen/rcl-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-x402-money-farm-mcp@1.0.1	https://github.com/Darkchild88/x402-money-farm-mcp	true	2025-11-25	6	866	0	0	0	1	1	unchanged
-@pipeworx/mcp-oklahoma-code@0.2.1	https://github.com/pipeworx-io/mcp-oklahoma-code	true	2025-03-26	3	629	0	0	0	2	1	unchanged
-bovedia@2.7.0	https://github.com/jmpdsevilla/BovedIA	true	2025-11-25	36	4913	0	0	0	2	2	unchanged
-@synchronity/mcp-server@0.5.21	https://github.com/themewireco/synchronity	true	2025-11-25	26	6638	0	0	0	1	6	unchanged
-@shashwatgtmalpha/craft-gtm-mcp@2.2.23	https://github.com/shashwatgtm/craft-gtm-mcp	true	2025-11-25	8	4399	0	0	0	1	1	unchanged
-@pipeworx/mcp-openei-urdb@0.2.1	https://github.com/pipeworx-io/mcp-openei-urdb	true	2025-03-26	3	898	0	0	0	2	2	unchanged
-@webability/mcp@1.10.1	https://github.com/snayyar00/webability-mcp	true	2025-11-25	20	6319	5	5	0	1	5	unchanged
-kleinanzeigen-mcp@0.1.0	https://github.com/taneron/willmehr	true	2025-11-25	5	975	0	0	0	1	1	unchanged
-pullpush-mcp@1.0.1	https://github.com/jacklenzotti/pullpush-mcp	true	2025-11-25	2	702	0	0	0	1	1	unchanged
-@ansvar/italian-law-mcp@1.1.1	https://github.com/Ansvar-Systems/italian-law-mcp	true	2025-11-25	13	2463	0	0	0	1	4	unchanged
-@agentboxd/mcp@0.3.0	https://github.com/agentboxd/agentboxd	true	2025-11-25	56	18269	15	0	0	3	8	unchanged
-swiadectwo-energetyczne24-mcp@1.2.0	https://github.com/brilbrothers/swiadectwo-energetyczne24-mcp	true	2025-11-25	11	4252	4	3	0	1	4	unchanged
-@mrfentmen/aleo-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-agent-firewall-mcp@1.3.0	https://github.com/mlawsonking/MCP	true	2025-11-25	5	650	0	0	0	1	1	unchanged
-@pipeworx/mcp-macau-stats@0.2.1	https://github.com/pipeworx-io/mcp-macau-stats	true	2025-03-26	6	841	0	0	0	3	1	unchanged
-@mrfentmen/open-meteo-marine-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	1	95	0	0	0	1	1	unchanged
-skylight-mcp@1.6.1	https://github.com/chrischall/skylight-mcp	true	2026-07-28	115	16857	0	0	0	3	3	safe
-robotstxt-ai-mcp@1.0.1	https://github.com/sharozdawa/robotstxt-ai	true	2025-11-25	5	548	0	0	0	1	2	unchanged
-@pipeworx/mcp-einpresswire@0.2.1	https://github.com/pipeworx-io/mcp-einpresswire	true	2025-03-26	3	430	0	0	0	2	1	unchanged
-adscapi@0.12.1	https://github.com/pooriaarab/adscapi	true	2024-11-05	4	254	0	0	0	1	1	unchanged
-mcp-retriever@0.0.24	https://github.com/keiranhaax/mcp-retriever	true	2025-06-18	1	283	0	0	0	1	1	unchanged
-capmonster-mcp@0.1.14	https://github.com/CapMonsterCloud/capmonster-mcp-captcha-solver	true	2025-11-25	8	2208	0	0	0	2	2	unchanged
-@mrfentmen/catfact-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	3	239	0	0	0	1	2	unchanged
-linkedin-profile-mcp@0.1.1	https://github.com/Ruthvik-Bandari/linkedin-profile-mcp	true	2025-11-25	6	1787	3	3	0	0	1	unchanged
-@pipeworx/mcp-stats-nz@0.2.1	https://github.com/pipeworx-io/mcp-stats-nz	true	2025-03-26	5	2164	0	0	0	4	1	unchanged
-open-transfer-times-mcp@0.3.0	https://github.com/joelynli0110/open-transfer-times	true	2025-11-25	4	1922	2	2	0	0	1	unchanged
-@seamless-engineering/datev-extf-mcp@0.1.0	https://github.com/seamless-engineering/datev-extf-mcp	true	2025-11-25	4	1583	4	2	0	1	2	unchanged
-@putervision/agent-reasoning-mcp@0.4.1	https://github.com/putervision/agent-reasoning-mcp	true	2024-11-05	15	3893	4	0	3	1	10	unchanged
-@buzzr/mcp@5.1.0	https://github.com/Buzzr-app/dfs-engine	true	2025-11-25	11	7888	0	0	0	1	4	unchanged
-@md-musaraf/sentinal-mcp@1.0.5	https://github.com/Musaraf-M/sentinal	true	2025-11-25	8	764	0	0	0	1	3	unchanged
-@pipeworx/mcp-citybikes@0.2.1	https://github.com/pipeworx-io/mcp-citybikes	true	2025-03-26	4	558	0	0	0	3	1	unchanged
-hn-hiring-mcp@0.1.0	https://github.com/Crayz129/hn-hiring-mcp	true	2025-11-25	4	660	0	0	0	2	2	unchanged
-blackwindow-weave-mcp@0.1.2	https://github.com/space-bacon/blackwindow-weave-mcp	true	2025-11-25	4	432	3	2	0	1	2	unchanged
-@mrfentmen/easycrypt-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-@mrfentmen/erlang-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-egovframe-scaffold-mcp@1.17.0	https://github.com/EricSeokgon/egovframe-scaffold-mcp	true	2025-11-25	43	24002	5	5	0	1	2	unchanged
-@mrfentmen/bison-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-@pipeworx/mcp-italy-tenders@0.2.1	https://github.com/pipeworx-io/mcp-italy-tenders	true	2025-03-26	2	760	0	0	0	2	1	unchanged
-@sqlike/mcp@0.2.3	https://github.com/orifisher2/sqlike	true	2026-07-28	2	997	0	0	0	1	1	safe
-@dpantani/tdmcp@0.13.2	https://github.com/Pantani/tdmcp	true	2025-11-25	508	211733	11	9	1	2	14	unchanged
-@pipeworx/mcp-nuget@0.2.0	https://github.com/pipeworx-io/mcp-nuget	true	2025-03-26	4	386	0	0	0	5	3	safe
-@markup-carve/carve-mcp@0.1.12	https://github.com/markup-carve/carve-mcp	true	2025-11-25	15	2971	0	0	0	2	2	unchanged
-phi-guard-mcp@0.2.0	https://github.com/Abidit/phi-guard-mcp	true	2025-11-25	2	253	0	0	0	1	1	unchanged
-git-for-me@0.1.3	https://github.com/bikemeardsley/git-for-me	true	2025-11-25	3	1386	0	0	0	1	1	unchanged
-@pipeworx/mcp-ip-australia@0.2.1	https://github.com/pipeworx-io/mcp-ip-australia	true	2025-03-26	5	481	0	0	0	2	2	unchanged
-@darkmatterhub/mcp-server@0.3.1	https://github.com/darkmatter-hub/mcp	true	2025-11-25	5	577	0	0	0	2	3	unchanged
-@mrfentmen/launchlibrary-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	6	473	0	0	0	2	2	unchanged
-@mrfentmen/renderscript-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	true	2025-11-25	20	2180	0	0	0	2	2	unchanged
-india-reg-mcp@1.0.1	https://github.com/Akhilgovind02/india-regulatory-mcp	true	2025-11-25	8	954	0	0	0	2	1	unchanged
-@black-duck/mcp-server@1.1.8	https://github.com/blackducksoftware/mcp-server	true	2025-11-25	2	689	0	0	0	1	2	unchanged
-@pipeworx/mcp-gdacs@0.2.1	https://github.com/pipeworx-io/mcp-gdacs	true	2025-03-26	4	406	0	0	0	2	4	unchanged
-mcp-docker-server@1.0.1	https://github.com/ofershap/mcp-server-docker	true	2025-11-25	10	715	0	0	0	3	1	unchanged
-finance-data-mcp@0.1.2	https://github.com/AdityaSBisht/finance-mcp	true	2025-11-25	10	2776	0	0	0	1	2	unchanged
-matrix-tsunagi-migration@0.4.0	https://github.com/mushitaro/matrix-tsunagi	true	2025-11-25	5	680	4	2	0	2	2	unchanged
-@agentgate-builder/solverdict@0.1.0		true	2025-11-25	1	246	0	0	0	1	1	unchanged
-@theyahia/voximplant-mcp@1.2.3	https://github.com/theYahia/voximplant-mcp	true	2025-11-25	13	1382	0	0	0	2	7	unchanged
-@crela/mcp@1.5.0		true	2025-11-25	17	6297	4	3	0	1	4	unchanged
-@pipeworx/mcp-mockdata@0.2.1	https://github.com/pipeworx-io/mcp-mockdata	true	2025-03-26	2	200	0	0	0	2	1	unchanged
-@perfonext/render-mcp@0.5.2	https://github.com/souvikdu/perfonext-render-mcp	true	2025-11-25	10	1557	0	0	0	1	2	unchanged
-test-coverage-mcp@1.1.0	https://github.com/goldbergyoni/test-coverage-mcp	true	2025-06-18	4	213	0	0	1	1	1	unchanged
-@pipeworx/mcp-reverb@0.2.1	https://github.com/pipeworx-io/mcp-reverb	true	2025-03-26	4	1022	0	0	0	2	1	unchanged
-hvtracker-mcp@0.4.0	https://github.com/YugantM/hvtracker-mcp	true	2025-11-25	8	678	0	0	0	1	2	unchanged
-@gjlmotea/blockhand-mcp@0.1.1	https://github.com/gjlmotea/blockhand-mcp	true	2025-11-25	44	20777	10	4	1	2	1	unchanged
-@pipeworx/mcp-phishtank@0.2.1	https://github.com/pipeworx-io/mcp-phishtank	true	2025-03-26	1	131	0	0	0	2	2	unchanged
-@mrfentmen/worms-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	false	2025-11-25	4	361	0	0	0	1	2	(not run)
-telekash-mcp-server@0.6.1	https://github.com/TeleKashOracle/mcp-server	false	2025-11-25	15	3248	0	0	0	2	2	(not run)
-rpgmaker-mv-mcp@5.21.0	https://github.com/DiegoLopez0208/RpgMakerMVUltimate-MCP	false	2025-11-25	18	15492	6	0	0	3	5	(not run)
-@pipeworx/mcp-census-trade@0.2.1	https://github.com/pipeworx-io/mcp-census-trade	false	2025-03-26	4	1251	0	0	0	3	2	(not run)
-@nor-data/nabolag-mcp@0.2.2	https://github.com/3121n/nor-data-nabolag-mcp	false	2025-11-25	3	830	0	0	0	1	1	(not run)
-@pipeworx/mcp-japan-law@0.2.1	https://github.com/pipeworx-io/mcp-japan-law	false	2025-03-26	3	884	0	0	0	2	1	(not run)
-@pipeworx/mcp-sports-game-odds@0.2.1	https://github.com/pipeworx-io/mcp-sports-game-odds	false	2025-03-26	2	431	0	0	0	2	2	(not run)
-@mrfentmen/genie-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	false	2025-11-25	20	2160	0	0	0	2	2	(not run)
-@pipeworx/mcp-microlink@0.2.1	https://github.com/pipeworx-io/mcp-microlink	false	2025-03-26	2	195	0	0	0	4	1	(not run)
-risk-calculation-mcp@1.0.0		false	2026-07-28	3	1616	4	3	0	1	1	(not run)
-adobe-mcp-indesign@2.5.0	https://github.com/zachshallbetter/adobe-mcp	false	2025-11-25	423	185107	21	3	0	2	4	(not run)
-skillselion-mcp@0.9.12	https://github.com/skillselion/skillselion-mcp	false	2025-11-25	4	1141	0	0	0	2	2	(not run)
-@wycord/nigeria-mcp-un-sdg@0.3.0	https://github.com/wycord/nigeria-mcp	false	2025-11-25	1	198	0	0	0	1	1	(not run)
-godot-forge@0.1.2	https://github.com/gregario/godot-forge	false	2025-11-25	8	1011	5	5	0	0	2	(not run)
-stockmatrix-mcp@0.5.0	https://github.com/MongLong0214/stock-ai-newsletter	false	2025-11-25	11	2384	0	0	0	1	2	(not run)
-@complyedge/mcp@0.2.4	https://github.com/ComplyEdge/complyedge	false	2025-11-25	3	302	4	4	0	0	1	(not run)
-klypix-mcp@1.112.1	https://github.com/dahshanlabs/klypix-mcp	false	2025-11-25	29	15478	2	2	0	2	3	(not run)
-@haymon-ai/dbmcp@0.17.0	https://github.com/haymon-ai/dbmcp	false	2026-07-28	8	5707	7	0	1	2	1	(not run)
-@unclick/openfoodfacts-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	false	2025-11-25	3	156	0	0	0	1	1	(not run)
-octocode-mcp@7.0.9	https://github.com/bgauryy/octocode-mcp	false	2025-06-18	5	5440	0	0	0	1	3	(not run)
+pkg	repo	protocol	tools	tokens	calls	answered	error	warn	info	review
+@akr1166org/rules-mcp@0.3.1	https://github.com/AKR1166/Rules-MCP	2025-11-25	19	2423	0	0	0	2	1	unchanged
+humanpages@1.4.6	https://github.com/human-pages-ai/humanpages	2025-11-25	40	8169	0	0	0	3	4	unchanged
+@matematicsolutions/mcp-nsa@1.4.0	https://github.com/matematicsolutions/mcp-nsa	2025-11-25	3	920	0	0	0	1	1	unchanged
+@pipeworx/mcp-wmata@0.2.1	https://github.com/pipeworx-io/mcp-wmata	2025-03-26	10	746	0	0	0	13	4	unchanged
+@philmingdao/anno@0.4.0	https://github.com/philmingdao/anno	2025-11-25	6	1285	2	2	0	0	3	unchanged
+@pipeworx/mcp-defillama@0.2.1	https://github.com/pipeworx-io/mcp-defillama	2025-03-26	9	1549	0	0	0	2	2	unchanged
+vectorise-mcp@0.2.0	https://github.com/JonathanWeerakkody/Vectorise_Me	2025-11-25	5	1217	0	0	0	1	1	unchanged
+toolforte-mcp@0.4.2		2025-11-25	14	2799	5	1	0	1	3	unchanged
+kairos-lang-mcp@1.1.0	https://github.com/azathothx/kairos-lang	2025-11-25	4	1826	0	0	0	1	1	unchanged
+@pipeworx/mcp-pubtator@0.2.1	https://github.com/pipeworx-io/mcp-pubtator	2025-03-26	5	1676	0	0	0	2	1	unchanged
+sanctionscreen-mcp@0.1.0		2025-11-25	4	933	0	0	0	1	1	unchanged
+fixgraph-mcp@1.0.2	https://github.com/jawdat6/fixgraph-mcp	2025-11-25	3	381	0	0	0	2	2	unchanged
+chron-mcp@0.1.7	https://github.com/nivaya/chron	2025-11-25	5	568	0	0	0	1	1	unchanged
+pipepost-mcp@0.9.0	https://github.com/MendleM/Pipepost	2025-11-25	29	3933	0	0	0	3	1	unchanged
+ai4l-library@0.1.12	https://github.com/forever-healthy/AI4L-library	2025-11-25	6	1611	0	0	0	3	1	unchanged
+@pipeworx/mcp-visualcrossing@0.2.1	https://github.com/pipeworx-io/mcp-visualcrossing	2025-03-26	3	778	0	0	0	3	1	safe
+@pipeworx/mcp-fracfocus@0.2.1	https://github.com/pipeworx-io/mcp-fracfocus	2025-03-26	3	908	0	0	0	2	2	unchanged
+@drop2run/mcp@1.4.0	https://github.com/Drop-to-run/drop2run-cli	2025-11-25	20	4699	0	0	0	1	3	unchanged
+@mrfentmen/isbn-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	257	0	0	0	1	1	unchanged
+@trazum/mcp@2.7.7	https://github.com/Davmunrey/Trazum	2025-11-25	12	3572	0	0	0	1	3	unchanged
+@pipeworx/mcp-opendata-swiss@0.2.1	https://github.com/pipeworx-io/mcp-opendata-swiss	2025-03-26	5	611	0	0	0	5	3	safe
+agent-passport-system-mcp@8.1.1	https://github.com/agent-passport-system/agent-passport-mcp	2026-07-28	154	25757	14	10	0	5	21	unchanged
+@dxpert/uns-tools@0.1.4	https://github.com/dxpert-ai/uns-tools	2025-11-25	3	1130	0	0	0	1	1	unchanged
+@pvpwire/mcp-server@1.0.2		2025-11-25	9	1526	0	0	0	1	2	unchanged
+@pipeworx/mcp-faa-aircraft-registry@0.2.1	https://github.com/pipeworx-io/mcp-faa-aircraft-registry	2025-03-26	1	261	0	0	0	2	1	unchanged
+pkg-health-mcp@0.2.0	https://github.com/orcsnren/pkg-health-mcp	2025-11-25	3	768	0	0	0	1	1	unchanged
+@pipeworx/mcp-dogceo@1.1.1	https://github.com/pipeworx-io/mcp-dogceo	2025-03-26	4	357	0	0	0	4	4	safe
+dreamd-mcp@1.3.0	https://github.com/botzrDev/dreamd	2025-11-25	2	651	0	0	0	1	1	unchanged
+menhthien@1.0.2	https://github.com/truonglam1987/supertuvi	2025-11-25	3	211	0	0	0	1	1	unchanged
+@mrfentmen/basic-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+webcheck-mcp@0.1.3	https://github.com/yifanyifan897645/webcheck-mcp	2025-11-25	6	530	0	0	0	1	1	unchanged
+@mikusnuz/meta-mcp@2.2.2	https://github.com/mikusnuz/meta-mcp	2025-11-25	66	8882	0	0	0	2	7	unchanged
+@pubnub/mcp@2.3.2	https://github.com/pubnub/pubnub-mcp-server	2025-11-25	12	8611	0	0	0	3	4	unchanged
+@mrfentmen/sway-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+onehome-mcp@1.2.1	https://github.com/chrischall/onehome-mcp	2026-07-28	21	6221	4	4	0	0	4	unchanged
+@amcharts/amcharts5-mcp@1.9.4	https://github.com/amcharts/amcharts5-mcp	2025-11-25	12	2168	7	7	0	0	2	unchanged
+crazyseo@0.1.2	https://github.com/bolidee/crazyseo	2025-11-25	4	550	0	0	0	1	1	unchanged
+fileforge-mcp-server@0.2.2	https://github.com/mayank1307/fileforge	2025-11-25	26	10327	0	0	0	1	1	unchanged
+@pipeworx/mcp-world-news-feeds@0.2.1	https://github.com/pipeworx-io/mcp-world-news-feeds	2025-03-26	3	411	0	0	0	4	3	safe
+@pipeworx/mcp-sfda-drugs@0.2.1	https://github.com/pipeworx-io/mcp-sfda-drugs	2025-03-26	6	1437	0	0	0	3	1	unchanged
+@pipeworx/mcp-ietf-datatracker@0.2.1	https://github.com/pipeworx-io/mcp-ietf-datatracker	2025-03-26	6	512	0	0	0	3	1	unchanged
+mcp-google-contacts@1.1.2	https://github.com/A1-x-Tech/mcp-google-contacts	2025-11-25	25	9492	0	0	0	1	4	unchanged
+@captain_americka/tsiky-mcp@1.0.2		2025-11-25	22	7321	0	0	0	2	2	unchanged
+ror-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	5	593	0	0	0	1	2	unchanged
+@pipeworx/mcp-rfc-editor@0.2.1	https://github.com/pipeworx-io/mcp-rfc-editor	2025-03-26	6	286	0	0	1	4	2	safe
+nanocalcs-mcp@0.2.1		2025-11-25	24	9845	14	6	0	9	2	unchanged
+@mrfentmen/standard-ml-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+svix-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	26	3110	0	0	0	2	4	unchanged
+@runapi.ai/suno-mcp@0.4.2	https://github.com/runapi-ai/suno-mcp	2025-11-25	21	6100	0	0	0	2	6	unchanged
+tripwire-guard@0.4.2	https://github.com/KubaOpoczka/tripwire-guard	2025-11-25	1	174	0	0	0	1	1	unchanged
+@unlocalhost/unlocalhost@0.1.1	https://github.com/info-arnav/unlocalhost	2025-11-25	7	778	0	0	0	1	1	unchanged
+mcp-adr-analysis-server@2.14.19	https://github.com/tosin2013/mcp-adr-analysis-server	2025-11-25	63	15651	21	18	1	1	9	unchanged
+memegician-mcp@1.0.0	https://github.com/Notysoty/memegician-mcp	2025-11-25	4	449	4	3	0	1	2	unchanged
+mcp-sqlite-server@1.0.1	https://github.com/ofershap/mcp-server-sqlite	2025-11-25	5	470	0	0	0	1	1	unchanged
+inspectrum@0.2.3	https://github.com/yannmenec/inspectrum	2025-11-25	1	228	0	0	0	1	1	unchanged
+mcp-agent-trace-inspector@1.0.1	https://github.com/dbsectrainer/mcp-agent-trace-inspector	2025-11-25	13	1745	4	4	0	0	4	unchanged
+@starfetch-js/mcp@0.3.0	https://github.com/starfetch-js/starfetch	2025-11-25	12	2245	2	2	0	0	2	unchanged
+dingdawg-legal-agent@2.0.7	https://github.com/dingdawg/dingdawg-agent-1	2025-11-25	4	618	2	0	0	1	1	unchanged
+@mrfentmen/nasa-neo-mcp@1.0.2	https://github.com/mrfentmen/awesome-servers	2025-11-25	2	252	0	0	0	2	2	unchanged
+mychart-mcp-server@1.0.0	https://github.com/kriskraw80/mychart-mcp-server	2025-11-25	8	1489	0	0	0	1	1	unchanged
+met-mcp@0.2.0	https://github.com/trondbjoroy/met-mcp	2025-11-25	8	1240	0	0	0	1	2	unchanged
+@mrfentmen/mql4-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2200	0	0	0	2	2	unchanged
+@pipeworx/mcp-pa-dmv@0.2.1	https://github.com/pipeworx-io/mcp-pa-dmv	2025-03-26	3	977	0	0	0	2	1	unchanged
+@cocaxcode/devflow-mcp@0.1.8	https://github.com/cocaxcode/devflow-mcp	2025-11-25	32	3401	0	0	0	2	3	unchanged
+@pipeworx/mcp-openchargemap@0.2.1	https://github.com/pipeworx-io/mcp-openchargemap	2025-03-26	2	606	0	0	0	5	2	safe
+@oscarmarin/mcp-devtools@1.0.1	https://github.com/marin1321/mcp-devtools	2025-11-25	15	1636	0	0	0	2	2	unchanged
+@pipeworx/mcp-open-sanctions@0.2.1	https://github.com/pipeworx-io/mcp-open-sanctions	2025-03-26	2	499	0	0	0	5	2	unchanged
+no-as-service@1.0.2	https://github.com/Koneisto/no-as-a-service	2025-11-25	2	135	0	0	0	1	1	unchanged
+@pipeworx/mcp-hilma@0.2.1	https://github.com/pipeworx-io/mcp-hilma	2025-03-26	3	1231	0	0	0	3	1	unchanged
+literature-clock-mcp@1.6.2	https://github.com/markusvankempen/literature-clock-mcp	2025-11-25	8	1207	7	7	0	0	2	unchanged
+wordstat-mcp-server@0.1.1	https://github.com/solaix/wordstat-mcp-server	2026-07-28	5	732	0	0	0	1	1	unchanged
+@immersive-media-technologies/aftereffects-mcp-imt@1.1.1	https://github.com/Immersive-Media-Technologies/aftereffects-mcp-imt	2025-11-25	13	3770	7	2	0	2	3	unchanged
+@nats-trail/mcp@0.6.1	https://github.com/solsolettidev/nats-trail	2025-11-25	28	3199	5	5	0	1	2	unchanged
+citadel-mcp@2.2.0	https://github.com/sustinbebustin/citadel-mcp	2025-11-25	1	4562	0	0	0	1	2	unchanged
+@mrfentmen/forth-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-arcgis-sanjuannm@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-sanjuannm	2025-03-26	3	581	0	0	0	4	4	safe
+@mrfentmen/assembly-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+content-genie-mcp@2.9.4	https://github.com/MUSE-CODE-SPACE/content-genie-mcp	2025-11-25	17	2977	0	0	0	2	2	unchanged
+@pipeworx/mcp-econdata@1.1.1	https://github.com/pipeworx-io/mcp-econdata	2025-03-26	4	1025	0	0	0	4	3	safe
+@formatix-ai/mcp@0.1.1	https://github.com/FormatixAI/mcp-server	2025-11-25	5	851	0	0	0	1	1	unchanged
+@hovecapital/read-only-mysql-mcp-server@0.1.1	https://github.com/hovecapital/read-only-local-mysql-mcp-server	2025-11-25	3	188	0	0	0	1	1	unchanged
+devkit-for-strapi-mcp@0.2.4		2025-11-25	35	7099	0	0	0	2	2	unchanged
+@pipeworx/mcp-cbs-il@0.2.1	https://github.com/pipeworx-io/mcp-cbs-il	2025-03-26	4	815	0	0	0	2	2	unchanged
+@spideriq/mcp-mail@1.4.0	https://github.com/SpiderIQ/SpiderIQ	2025-11-25	58	6437	0	0	0	2	7	unchanged
+@shibbirweb/mcp-mysql-read-only@1.1.6	https://github.com/shibbirweb/mcp-mysql-read-only	2025-11-25	12	1103	0	0	0	1	2	unchanged
+@pipeworx/mcp-moldova-tenders@0.2.1	https://github.com/pipeworx-io/mcp-moldova-tenders	2025-03-26	3	693	0	0	0	2	1	unchanged
+edgeo-mcp@0.1.4	https://github.com/edgarcia-id/edgeo	2026-07-28	9	2560	2	2	0	0	2	unchanged
+corroborate-mcp@0.1.3	https://github.com/chefcohen/corroborate-mcp	2025-11-25	2	420	0	0	0	1	1	unchanged
+@h2-papers/mcp-server@0.1.0	https://github.com/h2-papers/h2-papers-mcp-server	2025-11-25	6	926	0	0	0	1	1	unchanged
+pdb-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	6	577	0	0	0	1	1	unchanged
+@pipeworx/mcp-avoindata-fi@0.2.1	https://github.com/pipeworx-io/mcp-avoindata-fi	2025-03-26	3	405	0	0	0	5	3	safe
+ai-agent-bank-mcp-server@1.0.2	https://github.com/WirterNow/ai-agent-bank-mcp-server	2025-03-26	43	5673	0	0	0	2	9	no session
+@mrfentmen/reasonml-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+saascity-mcp@2.1.0	https://github.com/nyyhao/saascity-mcp	2025-11-25	23	3846	17	16	0	1	3	unchanged
+warp-agent-mcp@0.20.1	https://github.com/warpfreight/warp-agent-mcp	2025-11-25	33	10630	10	2	0	1	7	unchanged
+@rog0x/mcp-webhook-tools@1.0.2	https://github.com/rog0x/mcp-webhook-tools	2025-11-25	5	890	0	0	0	2	1	unchanged
+@pipeworx/mcp-findymail@0.2.1	https://github.com/pipeworx-io/mcp-findymail	2025-03-26	2	425	0	0	0	2	1	unchanged
+@pipeworx/mcp-federal-civil@0.2.1	https://github.com/pipeworx-io/mcp-federal-civil	2025-03-26	2	622	0	0	0	2	1	unchanged
+cad-compare-mcp@0.2.1		2025-11-25	7	2184	2	2	0	0	1	unchanged
+idmly-mcp@0.1.4	https://github.com/KellyKazi3/idmly-mcp	2025-11-25	2	469	0	0	0	1	1	unchanged
+nuttle-mcp@0.1.0	https://github.com/shiyue1250/nuttle	2025-11-25	1	38	0	0	0	1	1	unchanged
+@mcp-z/mcp-pdf@1.0.3	https://github.com/mcp-z/mcp-pdf	2025-11-25	3	4528	0	0	0	2	1	unchanged
+@attestwire/mcp@1.2.2		2026-07-28	14	4340	5	0	1	2	5	unchanged
+wield-mcp@0.1.4		2025-11-25	5	1073	0	0	0	1	1	unchanged
+@50heads/mcp@2026.1013.2	https://github.com/50heads/mcp	2026-07-28	9	56094	0	0	1	3	3	unchanged
+@xentropy/mcp@0.3.1	https://github.com/xentropyai/client	2025-11-25	10	1202	0	0	0	3	1	unchanged
+eight-sleep-mcp-unofficial@0.2.5	https://github.com/davidmosiah/eight-sleep-mcp	2025-11-25	26	3531	9	8	0	1	4	unchanged
+@pipeworx/mcp-mbta@0.2.1	https://github.com/pipeworx-io/mcp-mbta	2025-03-26	4	904	0	0	0	2	1	unchanged
+drawarch-mcp@0.2.0	https://github.com/Ajey95/drawarch-mcp	2026-07-28	11	7636	4	3	0	1	2	unchanged
+@pipeworx/mcp-packagist@0.2.1	https://github.com/pipeworx-io/mcp-packagist	2025-03-26	4	483	0	0	0	4	3	safe
+@commenteme/vtex-io-mcp@0.2.0	https://github.com/commentemeapp/vtex-io-mcp	2025-11-25	9	2024	0	0	0	2	2	unchanged
+@pipeworx/mcp-tatoeba@0.2.1	https://github.com/pipeworx-io/mcp-tatoeba	2025-03-26	4	314	0	0	0	5	3	safe
+@pipeworx/mcp-datos-ar@0.2.1	https://github.com/pipeworx-io/mcp-datos-ar	2025-03-26	2	690	0	0	0	5	3	safe
+@theupsider/lsp-mcp@0.1.6	https://github.com/theUpsider/lsp-mcp	2025-11-25	17	1926	0	0	0	2	2	unchanged
+brewers-almanack@0.1.0	https://github.com/gregario/brewers-almanack	2025-11-25	6	617	0	0	0	1	1	unchanged
+@pseolint/mcp@0.6.4	https://github.com/ouranos-labs/pseolint	2025-11-25	4	1475	2	2	0	0	2	unchanged
+@mikusnuz/npm-mcp@1.4.0	https://github.com/mikusnuz/npm-mcp	2025-11-25	42	4613	0	0	0	2	3	unchanged
+agent-knowledge@2.0.0	https://github.com/keshrath/agent-knowledge	2025-11-25	6	2982	0	0	0	1	1	unchanged
+@pipeworx/mcp-symmap@0.2.1	https://github.com/pipeworx-io/mcp-symmap	2025-03-26	7	1502	0	0	0	2	2	unchanged
+@pipeworx/mcp-wisconsin-code@0.2.1	https://github.com/pipeworx-io/mcp-wisconsin-code	2025-03-26	1	147	0	0	0	2	1	unchanged
+@pipeworx/mcp-pa-medical-exclusions@0.2.1	https://github.com/pipeworx-io/mcp-pa-medical-exclusions	2025-03-26	2	913	0	0	0	2	1	unchanged
+@mrfentmen/usgs-earthquake-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	1	102	0	0	0	1	1	unchanged
+failmodes-mcp@0.1.0	https://github.com/elyngved/failmodes-mcp	2025-11-25	4	354	0	0	0	2	1	unchanged
+@mmvv1638/404-directory-mcp@0.10.3	https://github.com/MM-sheng/404-directory	2025-11-25	16	3715	4	4	0	0	2	unchanged
+yaktool-pdf-mcp@0.7.0		2025-11-25	12	5222	0	0	0	1	1	unchanged
+figma-mcp-rs@0.1.0	https://github.com/jirayusueb/figma-mcp-rs	2026-07-28	84	13386	0	0	0	2	3	unchanged
+@pipeworx/mcp-segment@0.2.1	https://github.com/pipeworx-io/mcp-segment	2025-03-26	4	582	0	0	0	2	1	unchanged
+@mrfentmen/scilab-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2200	0	0	0	2	2	unchanged
+@pipeworx/mcp-india-tenders@0.2.1	https://github.com/pipeworx-io/mcp-india-tenders	2025-03-26	5	2507	0	0	0	2	1	unchanged
+@pipeworx/mcp-oneinfo-storage@0.2.1	https://github.com/pipeworx-io/mcp-oneinfo-storage	2025-03-26	2	1389	0	0	0	3	1	unchanged
+@intenttext/mcp-server@1.0.1	https://github.com/intenttext/intenttext-mcp	2025-11-25	9	1089	0	0	0	1	2	unchanged
+@pipeworx/mcp-gbif@1.1.1	https://github.com/pipeworx-io/mcp-gbif	2025-03-26	4	821	0	0	0	2	2	unchanged
+@slingshot-fyi/brand-kit@0.1.0	https://github.com/slingshot-fyi/brand-kit	2025-11-25	3	237	0	0	0	1	1	unchanged
+@pipeworx/mcp-us-news-feeds@0.2.1	https://github.com/pipeworx-io/mcp-us-news-feeds	2025-03-26	3	418	0	0	0	4	3	safe
+trustagent-mcp@0.1.2	https://github.com/MichalStachnik/trust-agent	2025-11-25	3	441	0	0	0	1	1	unchanged
+@mrfentmen/ooc-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+make-mcp-server@1.3.3	https://github.com/danishashko/make-mcp	2025-11-25	7	645	0	0	0	1	1	unchanged
+@once-agent/mcp@0.2.1	https://github.com/stringsofthemind-oss/once	2026-07-28	8	880	5	5	0	0	2	unchanged
+@ask-llm/codex-mcp@0.9.0	https://github.com/Lykhoyda/ask-llm	2025-11-25	4	1113	3	3	0	0	1	unchanged
+toolradar-mcp@2.4.0	https://github.com/Nadeus/toolradar-mcp	2025-11-25	11	1589	0	0	0	1	1	unchanged
+@devproxy/mcp@0.3.1	https://github.com/dev-proxy-tools/mcp	2025-11-25	3	205	0	0	0	1	1	unchanged
+@autostackup/marketing@0.1.7	https://github.com/Autostackup/autostackup	2025-11-25	3	970	0	0	0	1	1	unchanged
+@mrfentmen/clean-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@msantagiulianab/x402-mcp-server@1.0.7	https://github.com/msantagiulianab/solana-enterprise-payment-gateway	2025-11-25	1	75	0	0	0	1	1	unchanged
+@mrfentmen/ghcn-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	514	0	0	0	1	2	unchanged
+@runapi.ai/qwen-image-mcp@0.2.1	https://github.com/runapi-ai/qwen-image-mcp	2025-11-25	6	1253	0	0	0	2	3	unchanged
+@agentutil/undo-mcp@1.0.0		2025-11-25	4	461	0	0	0	1	1	unchanged
+metamuse-mcp@0.1.2		2025-11-25	8	1075	0	0	0	1	2	unchanged
+@pipeworx/mcp-oig-corporate-integrity@0.2.1	https://github.com/pipeworx-io/mcp-oig-corporate-integrity	2025-03-26	3	836	0	0	0	2	1	unchanged
+@pipeworx/mcp-science-feeds@0.2.1	https://github.com/pipeworx-io/mcp-science-feeds	2025-03-26	3	407	0	0	0	5	2	safe
+@pasichdev/docket@3.1.0	https://github.com/pasichDev/docket	2025-11-25	16	3604	7	7	0	1	2	unchanged
+cert-atlas-mcp@1.3.0	https://github.com/hans6883/cert-atlas	2025-11-25	4	705	0	0	0	1	2	unchanged
+mcp-bbc-goodfood@1.2.0	https://github.com/smeet666/mcp-bbc-goodfood	2025-11-25	4	1313	0	0	0	2	1	unchanged
+@unclick/amber-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	2025-11-25	3	148	0	0	0	1	2	unchanged
+@pagerender/mcp@1.2.0	https://github.com/nmbrthirteen/pagerender-tools	2025-11-25	9	967	0	0	0	1	1	unchanged
+@zenrows/mcp@2.19.0	https://github.com/ZenRows/zenrows-mcp	2025-11-25	63	15831	2	0	0	1	4	unchanged
+@argosvix/mcp-server@1.1.2		2025-11-25	89	22903	0	0	0	3	5	unchanged
+merx-mcp@1.0.5	https://github.com/Hovsteder/merx-mcp	2024-11-05	54	4840	0	0	0	2	5	unchanged
+@mrfentmen/hex-pm-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	1	69	0	0	0	1	1	unchanged
+azure-vm-pricing-mcp@0.1.4	https://github.com/vdionisopoulos/azure-vm-pricing	2025-11-25	4	858	3	3	0	0	1	unchanged
+ofw-mcp@2.27.4	https://github.com/chrischall/ofw-mcp	2026-07-28	30	14884	0	0	0	2	4	unchanged
+gmail-tidy-mcp@0.5.1	https://github.com/imkath/gmail-tidy-mcp	2025-11-25	23	3371	0	0	0	1	5	unchanged
+@transita/mcp-server@0.2.0	https://github.com/snenenenenenene/transita-mcp-server	2025-11-25	15	4086	5	3	0	2	3	unchanged
+vreddie-mcp-server@1.0.1	https://github.com/vreddie2go/vreddie-platform	2025-11-25	5	590	0	0	0	1	2	unchanged
+@mbeato/apimesh-mcp-server@1.8.2	https://github.com/mbeato/conway	2025-11-25	76	7536	0	0	0	1	2	unchanged
+kitbag-mcp@1.1.2	https://github.com/syedtaj7/Kitbag-mcp	2025-11-25	51	4929	0	0	0	1	2	unchanged
+@unclick/omdb-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	2025-11-25	3	197	0	0	0	1	1	unchanged
+mcp-prowl@0.1.1	https://github.com/opcastil11/agentdir	2025-11-25	9	942	0	0	0	2	1	unchanged
+highwire-mcp@0.14.2	https://github.com/HigherMaestro/highwire	2025-11-25	30	5365	0	0	0	1	3	unchanged
+@manansiingh/figma-react-mcp-server@1.0.3	https://github.com/MananSingh2001/figma-react	2025-11-25	1	121	0	0	0	1	1	unchanged
+@pipeworx/mcp-ukri-gtr@0.2.1	https://github.com/pipeworx-io/mcp-ukri-gtr	2025-03-26	5	1210	0	0	0	2	1	unchanged
+@pipeworx/mcp-neso@0.2.1	https://github.com/pipeworx-io/mcp-neso	2025-03-26	4	814	0	0	0	3	1	unchanged
+@pipeworx/mcp-wiktionary@0.2.1	https://github.com/pipeworx-io/mcp-wiktionary	2025-03-26	5	394	0	0	0	6	2	safe
+@mintwarehq/mcp-server@0.1.3	https://github.com/MintwareDevelopers/Mintware-Beta	2025-11-25	11	1452	0	0	0	1	2	unchanged
+@webclaw/mcp@0.7.1	https://github.com/0xMassi/webclaw	2026-07-28	14	5830	0	0	0	1	1	unchanged
+@jarroba/mcp-logs@0.3.0	https://github.com/Invarato/jarroba-mcp	2026-07-28	12	3112	0	0	0	1	1	unchanged
+@sveltejs/mcp@0.1.30	https://github.com/sveltejs/ai-tools	2026-07-28	4	1186	2	2	0	0	2	unchanged
+@pipeworx/mcp-kokkai-diet@0.2.1	https://github.com/pipeworx-io/mcp-kokkai-diet	2025-03-26	3	1196	0	0	0	2	1	unchanged
+chinese-almanac-mcp@1.0.2	https://github.com/yonlandwu/chinese-almanac-mcp	2025-11-25	7	1182	0	0	0	1	2	unchanged
+@corlabsdev/mcp@0.1.7	https://github.com/kushshah12/cor-mcp	2025-11-25	11	2723	0	0	0	3	1	unchanged
+@pipeworx/mcp-sec@0.2.1	https://github.com/pipeworx-io/mcp-sec	2025-03-26	3	485	0	0	0	3	1	safe
+@seldonframe/mcp@1.59.2	https://github.com/seldonframe/seldonframe	2025-11-25	159	34991	0	0	4	2	4	safe
+@mrfentmen/thrift-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@mrfentmen/mathematical-programming-system-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2200	0	0	0	2	2	unchanged
+specter-skills@0.11.1	https://github.com/dirtcubeinteractive/specter-skills	2025-11-25	19	2554	0	0	0	1	4	unchanged
+@br-ai-n/mcp-icon-visual@0.1.1	https://github.com/n0isy/brain-mcp-icon-visual	2025-06-18	3	590	0	0	0	1	1	unchanged
+@mrfentmen/rcl-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+x402-money-farm-mcp@1.0.1	https://github.com/Darkchild88/x402-money-farm-mcp	2025-11-25	6	866	0	0	0	1	1	unchanged
+@pipeworx/mcp-oklahoma-code@0.2.1	https://github.com/pipeworx-io/mcp-oklahoma-code	2025-03-26	3	629	0	0	0	2	1	unchanged
+bovedia@2.7.0	https://github.com/jmpdsevilla/BovedIA	2025-11-25	36	4913	0	0	0	2	2	unchanged
+@synchronity/mcp-server@0.5.21	https://github.com/themewireco/synchronity	2025-11-25	26	6638	0	0	0	1	6	unchanged
+@shashwatgtmalpha/craft-gtm-mcp@2.2.23	https://github.com/shashwatgtm/craft-gtm-mcp	2025-11-25	8	4399	0	0	0	1	1	unchanged
+@pipeworx/mcp-openei-urdb@0.2.1	https://github.com/pipeworx-io/mcp-openei-urdb	2025-03-26	3	898	0	0	0	2	2	unchanged
+@webability/mcp@1.10.1	https://github.com/snayyar00/webability-mcp	2025-11-25	20	6319	5	5	0	1	5	unchanged
+kleinanzeigen-mcp@0.1.0	https://github.com/taneron/willmehr	2025-11-25	5	975	0	0	0	1	1	unchanged
+pullpush-mcp@1.0.1	https://github.com/jacklenzotti/pullpush-mcp	2025-11-25	2	702	0	0	0	1	1	unchanged
+@ansvar/italian-law-mcp@1.1.1	https://github.com/Ansvar-Systems/italian-law-mcp	2025-11-25	13	2463	0	0	0	1	4	unchanged
+@agentboxd/mcp@0.3.0	https://github.com/agentboxd/agentboxd	2025-11-25	56	18269	15	0	0	3	8	unchanged
+swiadectwo-energetyczne24-mcp@1.2.0	https://github.com/brilbrothers/swiadectwo-energetyczne24-mcp	2025-11-25	11	4252	4	3	0	1	4	unchanged
+@mrfentmen/aleo-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+agent-firewall-mcp@1.3.0	https://github.com/mlawsonking/MCP	2025-11-25	5	650	0	0	0	1	1	unchanged
+@pipeworx/mcp-macau-stats@0.2.1	https://github.com/pipeworx-io/mcp-macau-stats	2025-03-26	6	841	0	0	0	3	1	unchanged
+@mrfentmen/open-meteo-marine-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	1	95	0	0	0	1	1	unchanged
+skylight-mcp@1.6.1	https://github.com/chrischall/skylight-mcp	2026-07-28	115	16857	0	0	0	3	3	unchanged
+robotstxt-ai-mcp@1.0.1	https://github.com/sharozdawa/robotstxt-ai	2025-11-25	5	548	0	0	0	1	2	unchanged
+@pipeworx/mcp-einpresswire@0.2.1	https://github.com/pipeworx-io/mcp-einpresswire	2025-03-26	3	430	0	0	0	2	1	unchanged
+adscapi@0.12.1	https://github.com/pooriaarab/adscapi	2024-11-05	4	254	0	0	0	1	1	unchanged
+mcp-retriever@0.0.24	https://github.com/keiranhaax/mcp-retriever	2025-06-18	1	283	0	0	0	1	1	unchanged
+capmonster-mcp@0.1.14	https://github.com/CapMonsterCloud/capmonster-mcp-captcha-solver	2025-11-25	8	2208	0	0	0	2	2	unchanged
+@mrfentmen/catfact-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	239	0	0	0	1	2	unchanged
+linkedin-profile-mcp@0.1.1	https://github.com/Ruthvik-Bandari/linkedin-profile-mcp	2025-11-25	6	1787	3	3	0	0	1	unchanged
+@pipeworx/mcp-stats-nz@0.2.1	https://github.com/pipeworx-io/mcp-stats-nz	2025-03-26	5	2164	0	0	0	5	1	unchanged
+open-transfer-times-mcp@0.3.0	https://github.com/joelynli0110/open-transfer-times	2025-11-25	4	1922	2	2	0	0	1	unchanged
+@seamless-engineering/datev-extf-mcp@0.1.0	https://github.com/seamless-engineering/datev-extf-mcp	2025-11-25	4	1583	4	2	0	1	2	unchanged
+@putervision/agent-reasoning-mcp@0.4.1	https://github.com/putervision/agent-reasoning-mcp	2024-11-05	15	3893	4	0	3	1	10	unchanged
+@buzzr/mcp@5.1.0	https://github.com/Buzzr-app/dfs-engine	2025-11-25	11	7888	0	0	0	1	4	unchanged
+@md-musaraf/sentinal-mcp@1.0.5	https://github.com/Musaraf-M/sentinal	2025-11-25	8	764	0	0	0	1	3	unchanged
+@pipeworx/mcp-citybikes@0.2.1	https://github.com/pipeworx-io/mcp-citybikes	2025-03-26	4	558	0	0	0	3	1	unchanged
+hn-hiring-mcp@0.1.0	https://github.com/Crayz129/hn-hiring-mcp	2025-11-25	4	660	0	0	0	2	2	unchanged
+blackwindow-weave-mcp@0.1.2	https://github.com/space-bacon/blackwindow-weave-mcp	2025-11-25	4	432	3	2	0	1	2	unchanged
+@mrfentmen/easycrypt-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@mrfentmen/erlang-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+egovframe-scaffold-mcp@1.17.0	https://github.com/EricSeokgon/egovframe-scaffold-mcp	2025-11-25	43	24002	5	5	0	1	2	unchanged
+@mrfentmen/bison-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-italy-tenders@0.2.1	https://github.com/pipeworx-io/mcp-italy-tenders	2025-03-26	2	760	0	0	0	2	1	unchanged
+@sqlike/mcp@0.2.3	https://github.com/orifisher2/sqlike	2026-07-28	2	997	0	0	0	1	1	unchanged
+@dpantani/tdmcp@0.13.2	https://github.com/Pantani/tdmcp	2025-11-25	508	211733	11	9	1	2	14	unchanged
+@pipeworx/mcp-nuget@0.2.0	https://github.com/pipeworx-io/mcp-nuget	2025-03-26	4	386	0	0	0	4	2	safe
+@markup-carve/carve-mcp@0.1.12	https://github.com/markup-carve/carve-mcp	2025-11-25	15	2971	0	0	0	2	2	unchanged
+phi-guard-mcp@0.2.0	https://github.com/Abidit/phi-guard-mcp	2025-11-25	2	253	0	0	0	1	1	unchanged
+git-for-me@0.1.3	https://github.com/bikemeardsley/git-for-me	2025-11-25	3	1386	0	0	0	1	1	unchanged
+@pipeworx/mcp-ip-australia@0.2.1	https://github.com/pipeworx-io/mcp-ip-australia	2025-03-26	5	481	0	0	0	2	1	unchanged
+@darkmatterhub/mcp-server@0.3.1	https://github.com/darkmatter-hub/mcp	2025-11-25	5	577	0	0	0	2	3	unchanged
+@mrfentmen/launchlibrary-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	6	473	0	0	0	2	2	unchanged
+@mrfentmen/renderscript-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+india-reg-mcp@1.0.1	https://github.com/Akhilgovind02/india-regulatory-mcp	2025-11-25	8	954	0	0	0	2	1	unchanged
+@black-duck/mcp-server@1.1.8	https://github.com/blackducksoftware/mcp-server	2025-11-25	2	689	0	0	0	1	2	unchanged
+@pipeworx/mcp-gdacs@0.2.1	https://github.com/pipeworx-io/mcp-gdacs	2025-03-26	4	406	0	0	0	4	4	safe
+mcp-docker-server@1.0.1	https://github.com/ofershap/mcp-server-docker	2025-11-25	10	715	0	0	0	3	1	unchanged
+finance-data-mcp@0.1.2	https://github.com/AdityaSBisht/finance-mcp	2025-11-25	10	2776	0	0	0	1	2	unchanged
+matrix-tsunagi-migration@0.4.0	https://github.com/mushitaro/matrix-tsunagi	2025-11-25	5	680	4	2	0	2	2	unchanged
+@agentgate-builder/solverdict@0.1.0		2025-11-25	1	246	0	0	0	1	1	unchanged
+@theyahia/voximplant-mcp@1.2.3	https://github.com/theYahia/voximplant-mcp	2025-11-25	13	1382	0	0	0	2	7	unchanged
+@crela/mcp@1.5.0		2025-11-25	17	6297	4	3	0	1	4	unchanged
+@pipeworx/mcp-mockdata@0.2.1	https://github.com/pipeworx-io/mcp-mockdata	2025-03-26	2	200	0	0	0	2	1	unchanged
+@perfonext/render-mcp@0.5.2	https://github.com/souvikdu/perfonext-render-mcp	2025-11-25	10	1557	0	0	0	1	2	unchanged
+test-coverage-mcp@1.1.0	https://github.com/goldbergyoni/test-coverage-mcp	2025-06-18	4	213	0	0	1	1	1	unchanged
+@pipeworx/mcp-reverb@0.2.1	https://github.com/pipeworx-io/mcp-reverb	2025-03-26	4	1022	0	0	0	2	1	unchanged
+hvtracker-mcp@0.4.0	https://github.com/YugantM/hvtracker-mcp	2025-11-25	8	678	0	0	0	1	2	unchanged
+@gjlmotea/blockhand-mcp@0.1.1	https://github.com/gjlmotea/blockhand-mcp	2025-11-25	44	20777	10	4	1	2	1	unchanged
+@pipeworx/mcp-phishtank@0.2.1	https://github.com/pipeworx-io/mcp-phishtank	2025-03-26	1	131	0	0	0	3	1	unchanged
+@mrfentmen/worms-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	4	361	0	0	0	1	2	unchanged
+telekash-mcp-server@0.6.1	https://github.com/TeleKashOracle/mcp-server	2025-11-25	15	3248	0	0	0	2	2	unchanged
+rpgmaker-mv-mcp@5.21.0	https://github.com/DiegoLopez0208/RpgMakerMVUltimate-MCP	2025-11-25	18	15492	6	0	0	3	5	unchanged
+@pipeworx/mcp-census-trade@0.2.1	https://github.com/pipeworx-io/mcp-census-trade	2025-03-26	4	1251	0	0	0	3	2	safe
+@nor-data/nabolag-mcp@0.2.2	https://github.com/3121n/nor-data-nabolag-mcp	2025-11-25	3	830	0	0	0	1	1	unchanged
+@pipeworx/mcp-japan-law@0.2.1	https://github.com/pipeworx-io/mcp-japan-law	2025-03-26	3	884	0	0	0	2	1	unchanged
+@pipeworx/mcp-sports-game-odds@0.2.1	https://github.com/pipeworx-io/mcp-sports-game-odds	2025-03-26	2	431	0	0	0	2	2	unchanged
+@mrfentmen/genie-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@pipeworx/mcp-microlink@0.2.1	https://github.com/pipeworx-io/mcp-microlink	2025-03-26	2	195	0	0	0	4	1	safe
+risk-calculation-mcp@1.0.0		2026-07-28	3	1616	4	3	0	1	1	unchanged
+adobe-mcp-indesign@2.5.0	https://github.com/zachshallbetter/adobe-mcp	2025-11-25	423	185107	21	3	0	2	4	unchanged
+skillselion-mcp@0.9.12	https://github.com/skillselion/skillselion-mcp	2025-11-25	4	1141	0	0	0	2	2	unchanged
+@wycord/nigeria-mcp-un-sdg@0.3.0	https://github.com/wycord/nigeria-mcp	2025-11-25	1	198	0	0	0	1	1	unchanged
+godot-forge@0.1.2	https://github.com/gregario/godot-forge	2025-11-25	8	1011	5	5	0	0	2	unchanged
+stockmatrix-mcp@0.5.0	https://github.com/MongLong0214/stock-ai-newsletter	2025-11-25	11	2384	0	0	0	1	2	unchanged
+@complyedge/mcp@0.2.4	https://github.com/ComplyEdge/complyedge	2025-11-25	3	302	4	4	0	0	1	unchanged
+klypix-mcp@1.112.1	https://github.com/dahshanlabs/klypix-mcp	2025-11-25	29	15478	2	2	0	2	3	unchanged
+@haymon-ai/dbmcp@0.17.0	https://github.com/haymon-ai/dbmcp	2026-07-28	8	5707	7	0	1	1	1	unchanged
+@unclick/openfoodfacts-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	2025-11-25	3	156	0	0	0	1	1	unchanged
+octocode-mcp@7.0.9	https://github.com/bgauryy/octocode-mcp	2025-06-18	5	5440	0	0	0	1	3	unchanged
+@mrfentmen/uiua-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+lingnao-mcp@1.4.2	https://github.com/genesis-plan/lingnao	2024-11-05	1	2738	0	0	0	1	1	unchanged
+mcp-server-markdown@1.0.1	https://github.com/ofershap/mcp-server-markdown	2025-11-25	6	561	0	0	0	1	1	unchanged
+@mrfentmen/zeek-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-nasa-gibs@0.2.1	https://github.com/pipeworx-io/mcp-nasa-gibs	2025-03-26	3	1067	0	0	0	2	1	unchanged
+@pipeworx/mcp-civic@0.2.1	https://github.com/pipeworx-io/mcp-civic	2025-03-26	4	911	0	0	0	2	2	unchanged
+@unclick/youtube-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	2025-11-25	6	517	0	0	0	1	2	unchanged
+skilldb@0.8.3	https://github.com/devchad-cmd/skilldb-sdk	2025-11-25	10	1419	0	0	0	3	1	unchanged
+sovereign-seo-analyzer-mcp@1.0.0	https://github.com/ryudi84/sovereign-mcp-servers	2025-11-25	5	430	0	0	0	1	1	unchanged
+rpgmaker-mz-mcp@1.4.0	https://github.com/Redseb/rpgmaker-mz-mcp	2025-11-25	128	41045	0	0	0	3	3	unchanged
+secret-design-mcp@0.6.0	https://github.com/yyeongjin/secret_mcp	2025-11-25	5	1137	0	0	0	1	1	unchanged
+@rog0x/mcp-task-tools@1.0.1	https://github.com/rog0x/mcp-task-tools	2025-11-25	5	1048	0	0	0	2	1	unchanged
+@mrfentmen/al-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@mrfentmen/ulid-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	248	0	0	0	1	1	unchanged
+@pipeworx/mcp-close-crm@0.2.1	https://github.com/pipeworx-io/mcp-close-crm	2025-03-26	6	1214	0	0	0	2	1	unchanged
+@pipeworx/mcp-json@0.2.1	https://github.com/pipeworx-io/mcp-json	2025-03-26	3	408	0	0	0	2	1	unchanged
+@buildtree/mcp@0.1.2	https://github.com/engineerdeep/buildtree-mcp	2026-07-28	12	1869	3	0	1	1	2	unchanged
+agentic-os-mcp@0.2.11		2025-11-25	7	1676	5	5	0	0	1	unchanged
+deliverkit-mcp@0.3.2	https://github.com/muzimu217/DeliverKit	2025-11-25	11	2180	0	0	0	1	1	unchanged
+scope-guard-mcp@0.1.3	https://github.com/mdfifty50-boop/scope-guard-mcp	2025-11-25	6	856	0	0	0	2	2	unchanged
+@pipeworx/mcp-unicode@0.2.1	https://github.com/pipeworx-io/mcp-unicode	2025-03-26	3	354	0	0	0	2	2	unchanged
+@pipeworx/mcp-pypi-stats@0.2.1	https://github.com/pipeworx-io/mcp-pypi-stats	2025-03-26	5	400	0	0	0	4	3	unchanged
+@infoinlet/mcp-knowledge-rag@0.1.0	https://github.com/infoinlet-marketplace/marketplace	2025-11-25	6	590	0	0	0	2	2	unchanged
+@mrfentmen/cweb-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-harris-county@0.2.1	https://github.com/pipeworx-io/mcp-harris-county	2025-03-26	4	946	0	0	0	2	1	unchanged
+@unclick/gdelt-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	2025-11-25	4	608	0	0	0	1	1	unchanged
+@pipeworx/mcp-creative-constraints@0.2.1	https://github.com/pipeworx-io/mcp-creative-constraints	2025-03-26	3	631	0	0	0	3	1	unchanged
+threadctx-mcp@0.5.0	https://github.com/threadctx-dev/threadctx-mcp	2025-11-25	2	249	0	0	0	1	1	unchanged
+@pipeworx/mcp-datafiniti@0.2.1	https://github.com/pipeworx-io/mcp-datafiniti	2025-03-26	3	902	0	0	0	2	1	unchanged
+@pipeworx/mcp-arcgis-lincolncountync@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-lincolncountync	2025-03-26	3	580	0	0	0	4	4	safe
+@sonpiaz/watch-cli-mcp@0.3.1	https://github.com/sonpiaz/watch-cli	2025-11-25	1	136	0	0	0	1	1	unchanged
+@synmerco/mcp-server@2.1.15	https://github.com/synmerco/synmerco	2025-11-25	38	5604	0	0	0	2	3	unchanged
+@pipeworx/mcp-chargebee@0.2.1	https://github.com/pipeworx-io/mcp-chargebee	2025-03-26	5	949	0	0	0	2	3	unchanged
+@pipeworx/mcp-ga-medical-exclusions@0.2.1	https://github.com/pipeworx-io/mcp-ga-medical-exclusions	2025-03-26	2	790	0	0	0	2	1	unchanged
+@tugcantopaloglu/godot-mcp@1.0.0	https://github.com/tugcantopaloglu/godot-mcp	2024-11-05	154	17188	0	0	0	3	2	unchanged
+@mrfentmen/hackernews-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	6	484	0	0	0	2	2	unchanged
+mcp-server-geodata-placefinder@2.0.0	https://github.com/fouomene/geodataplacefinder	2025-11-25	5	722	0	0	0	2	2	unchanged
+gage-mcp@0.7.0		2026-07-28	54	14906	0	0	0	3	4	unchanged
+golive-mcp@1.0.1	https://github.com/myanptl/golive-mcp	2025-11-25	5	841	0	0	0	1	1	unchanged
+@pipeworx/mcp-ai-feeds@0.2.1	https://github.com/pipeworx-io/mcp-ai-feeds	2025-03-26	3	414	0	0	0	4	3	safe
+@jobdatalake/mcp-server@1.0.14	https://github.com/echojobsio/jdl-mcp-server	2025-11-25	5	892	3	3	0	0	1	unchanged
+@pipeworx/mcp-gaming-feeds@0.2.1	https://github.com/pipeworx-io/mcp-gaming-feeds	2025-03-26	3	405	0	0	0	4	3	safe
+mcp-glue-code-generator@1.0.6	https://github.com/Maverick7/mcp-glue-code-generator	2025-11-25	1	153	0	0	0	1	1	unchanged
+@learningnodes/elen-mcp@0.3.1	https://github.com/LearningNodes/Elen	2025-11-25	12	1040	0	0	0	1	3	unchanged
+@pipeworx/mcp-ban-fr@0.2.1	https://github.com/pipeworx-io/mcp-ban-fr	2025-03-26	3	589	0	0	0	4	3	unchanged
+poltertab@1.12.0	https://github.com/abhinav162/poltertab	2025-11-25	28	6074	0	0	0	2	2	unchanged
+tinkercad-circuits-mcp@0.1.0	https://github.com/netchuu/tinkercad-circuits-mcp	2025-11-25	9	1570	5	1	0	2	1	unchanged
+@pipeworx/mcp-listen-notes@0.2.1	https://github.com/pipeworx-io/mcp-listen-notes	2025-03-26	7	791	0	0	0	5	4	safe
+socraticode@1.16.2	https://github.com/giancarloerra/socraticode	2025-11-25	26	3839	0	0	0	2	1	unchanged
+context-doctor@0.45.0	https://github.com/KushalP1/context-doctor	2025-11-25	6	1134	5	1	0	4	1	unchanged
+@mrfentmen/sourcepawn-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-trove@0.2.1	https://github.com/pipeworx-io/mcp-trove	2025-03-26	2	366	0	0	0	5	3	safe
+@unclick/untappd-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	2025-11-25	5	306	0	0	0	1	1	unchanged
+openclaw-control-mcp@0.8.3	https://github.com/smurfy92/openclaw-control-mcp	2025-11-25	143	28466	0	0	0	3	8	unchanged
+@pipeworx/mcp-twitch@0.2.1	https://github.com/pipeworx-io/mcp-twitch	2025-03-26	4	732	0	0	0	3	1	safe
+@three-ws/kol-mcp@0.1.2	https://github.com/nirholas/three.ws	2025-11-25	2	543	0	0	0	1	2	unchanged
+flowzap-mcp@2.2.1	https://github.com/flowzap-xyz/flowzap-mcp	2025-11-25	13	2353	3	3	0	1	1	unchanged
+@mrfentmen/il-assembly-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+e3d-pilot@0.2.0	https://github.com/spacepacket1/e3d-pilot	2025-06-18	17	2879	3	3	0	0	2	unchanged
+@pipeworx/mcp-microsoft-todo@0.2.1	https://github.com/pipeworx-io/mcp-microsoft-todo	2025-03-26	4	566	0	0	0	2	1	unchanged
+astral-mcp@0.2.0	https://github.com/davidmosiah/astral-mcp	2025-11-25	10	4100	6	6	0	0	1	unchanged
+earnrate@0.2.21	https://github.com/cwasley/earnrate	2026-07-28	14	14255	7	6	0	1	4	unchanged
+@pipeworx/mcp-regulations-gov@0.2.1	https://github.com/pipeworx-io/mcp-regulations-gov	2025-03-26	5	868	0	0	0	3	2	unchanged
+@misarseo/mcp@1.0.0	https://github.com/Misar-AI/misarseo-mcp	2025-11-25	180	46677	5	0	1	1	7	unchanged
+pim-mcp@0.2.0	https://github.com/da-the-dev/pim-mcp	2025-11-25	8	1940	4	0	0	3	2	unchanged
+thisispaper-mcp@1.0.1	https://github.com/zaxarovcom/thisispaper-mcp	2025-11-25	10	1133	0	0	0	2	2	unchanged
+obra-cto@0.3.0	https://github.com/lilycip/obra-cto	2025-11-25	5	1028	0	0	0	1	2	unchanged
+mnemon-mcp@1.0.1	https://github.com/nikitacometa/mnemon-mcp	2025-11-25	7	2084	0	0	0	3	1	unchanged
+botverse-mcp@1.5.1	https://github.com/MkTurner74/botverse-mcp	2025-11-25	18	5202	2	0	0	1	2	unchanged
+@entyrix/mcp@0.2.2	https://github.com/juliusgerman/entyrix-mcp	2026-07-28	13	4791	4	1	4	1	2	unchanged
+@pipeworx/mcp-n2yo@0.2.1	https://github.com/pipeworx-io/mcp-n2yo	2025-03-26	3	964	0	0	0	2	1	unchanged
+@pipeworx/mcp-asub-ax@0.2.1	https://github.com/pipeworx-io/mcp-asub-ax	2025-03-26	3	539	0	0	0	4	3	safe
+@digestseo/mcp-geo@0.3.30	https://github.com/AKzar1el/mcp-geo	2025-11-25	12	1994	2	2	0	0	2	unchanged
+@pipeworx/mcp-securitytrails@0.2.1	https://github.com/pipeworx-io/mcp-securitytrails	2025-03-26	4	668	0	0	0	2	1	unchanged
+aifp-mcp@1.5.8	https://github.com/wjabanjj/aifp-mcp	2025-11-25	33	4001	0	0	0	3	6	unchanged
+ai-scanner-mcp@1.0.3	https://github.com/Aakashbhardwaj27/ai-scanner-mcp	2025-11-25	3	500	0	0	0	1	1	unchanged
+@pipeworx/mcp-seo-serp@0.2.1	https://github.com/pipeworx-io/mcp-seo-serp	2025-03-26	1	268	0	0	0	2	1	unchanged
+@mrfentmen/dafny-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+mcp-mat@0.1.0	https://github.com/codelipenghui/mcp-mat	2025-11-25	6	605	0	0	0	1	2	unchanged
+@munhq/cloud-tools@0.2.0	https://github.com/munhq/cloud-tools	2025-06-18	7	5431	0	0	0	1	1	unchanged
+@mrfentmen/npi-registry-mcp@1.0.3	https://github.com/mrfentmen/awesome-servers	2025-11-25	5	654	0	0	0	1	1	unchanged
+@infoinlet/mcp-clickhouse@0.1.1	https://github.com/infoinlet-marketplace/marketplace	2025-11-25	5	230	0	0	0	1	1	unchanged
+@keenable/mcp@0.1.1	https://github.com/keenableai/keenable-mcp	2025-11-25	2	1220	0	0	0	1	4	unchanged
+pikes-peak-trip-planner-mcp@1.0.0		2025-11-25	5	1854	5	4	0	1	2	unchanged
+@professional-wiki/mediawiki-mcp-server@0.21.0	https://github.com/ProfessionalWiki/MediaWiki-MCP-Server	2026-07-28	31	9631	2	2	0	0	4	unchanged
+@pipeworx/mcp-finra-fixed-income@0.2.1	https://github.com/pipeworx-io/mcp-finra-fixed-income	2025-03-26	2	727	0	0	0	3	3	unchanged
+@pipeworx/mcp-luchtmeetnet@0.2.1	https://github.com/pipeworx-io/mcp-luchtmeetnet	2025-03-26	3	732	0	0	0	2	1	unchanged
+@infoinlet/mcp-kafka@0.1.1	https://github.com/infoinlet-marketplace/marketplace	2025-11-25	6	232	0	0	0	1	1	unchanged
+@pipeworx/mcp-scotcourts@0.2.1	https://github.com/pipeworx-io/mcp-scotcourts	2025-03-26	2	787	0	0	0	2	1	unchanged
+ifdb-mcp-server@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	5	778	0	0	0	1	1	unchanged
+@mrfentmen/objective-c-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+hilan-mcp@0.3.2	https://github.com/udah1/hilan-mcp	2025-11-25	11	1631	0	0	0	1	2	unchanged
+agentic-mentions@0.1.0	https://github.com/pooriaarab/agentic-mentions	2025-11-25	4	311	3	3	0	1	2	unchanged
+@marocain/mcp-server@0.1.9	https://github.com/Hei33enberg/marocain-mcp-server	2025-11-25	11	1772	0	0	0	2	2	unchanged
+@rog0x/mcp-api-tools@1.0.2	https://github.com/rog0x/mcp-api-tools	2025-11-25	5	806	0	0	0	1	1	unchanged
+@pipeworx/mcp-soilgrids@0.2.1	https://github.com/pipeworx-io/mcp-soilgrids	2025-03-26	3	594	0	0	0	2	1	unchanged
+vid2llm-mcp@0.3.0		2025-11-25	2	311	0	0	0	1	2	unchanged
+@pipeworx/mcp-rijksmuseum@0.2.1	https://github.com/pipeworx-io/mcp-rijksmuseum	2025-03-26	3	806	0	0	0	3	1	unchanged
+@pipeworx/mcp-ted-eu@0.2.1	https://github.com/pipeworx-io/mcp-ted-eu	2025-03-26	6	2532	0	0	0	3	1	unchanged
+finoptima@1.3.1	https://github.com/toutcreer/finoptima	2025-11-25	35	2930	0	0	0	2	2	unchanged
+@archform/mcp@0.2.2	https://github.com/himanshu-mamgain/archform	2026-07-28	3	675	0	0	0	1	1	unchanged
+@tradallo/reputation@0.3.3	https://github.com/tradallo/reputation	2025-11-25	5	1155	0	0	0	1	1	unchanged
+@mukundakatta/agentfit-mcp@0.1.0	https://github.com/MukundaKatta/agentfit-mcp	2025-11-25	3	540	0	0	0	1	1	unchanged
+vocabit-mcp@0.1.3	https://github.com/JohnBilousov/vocabit-mcp	2025-11-25	8	1686	0	0	0	1	3	unchanged
+@verbaly/mcp@0.81.0	https://github.com/AronSoto/verbaly	2025-11-25	9	1840	5	5	0	0	2	unchanged
+prinfer@3.4.0	https://github.com/clockblocker/prinfer	2026-07-28	6	1502	0	0	0	1	1	unchanged
+@pipeworx/mcp-mondo@0.2.1	https://github.com/pipeworx-io/mcp-mondo	2025-03-26	1	481	0	0	0	2	1	unchanged
+oorep-mcp@1.2.5	https://github.com/Dhi13man/oorep-mcp	2025-11-25	5	900	0	0	0	1	3	unchanged
+@ponzu_app/mcp@1.1.0	https://github.com/PonzuTech/ponzu_mcp	2025-03-26	17	2202	0	0	0	1	4	unchanged
+@pipeworx/mcp-unesco-uis@0.2.1	https://github.com/pipeworx-io/mcp-unesco-uis	2025-03-26	3	547	0	0	0	4	3	safe
+@pipeworx/mcp-data-newcaledonia@0.2.1	https://github.com/pipeworx-io/mcp-data-newcaledonia	2025-03-26	3	517	0	0	0	4	3	safe
+hledit-mcp@0.1.4	https://github.com/dabito/hledit-mcp	2025-11-25	1	369	0	0	0	1	1	unchanged
+@yawlabs/ssh-mcp@0.18.1	https://github.com/YawLabs/ssh-mcp	2025-11-25	21	5892	2	2	0	1	3	unchanged
+@praveenc/mcp-docs-server@0.1.0	https://github.com/praveenc/mcp-docs-server	2025-11-25	2	198	0	0	0	1	1	unchanged
+@mrfentmen/xproc-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@nexusforgetools/eu-finance@1.0.4	https://github.com/nexusforge-tools/mcp-eu-finance.git	2025-11-25	6	2323	0	0	0	1	1	unchanged
+@smartmemory/compose-mcp@0.7.2		2025-11-25	51	9095	0	0	0	3	11	unchanged
+@agentgate-builder/counterpartycheck@0.1.1		2025-11-25	1	308	0	0	0	1	1	unchanged
+@cleanor/mcp@0.6.1	https://github.com/cleanor-app/cleanor-mcp	2025-06-18	22	3767	7	7	0	0	2	unchanged
+@gently/mcp-server@0.1.22	https://github.com/gently-hq/knowledge-graph	2025-11-25	6	1380	0	0	0	1	1	unchanged
+@tradealmanac/mcp-server@2026.10.7		2025-11-25	15	1862	0	0	0	1	2	unchanged
+stellar-pulse-mcp@0.1.0	https://github.com/markankamaransheogarat-sys/stellar-pulse-mcp	2025-11-25	6	801	0	0	0	1	1	unchanged
+@runapi.ai/mcp@0.17.0	https://github.com/runapi-ai/mcp	2025-11-25	9	1107	0	0	0	2	1	unchanged
+scholar-sidekick-mcp@0.8.13	https://github.com/mlava/scholar-sidekick-mcp	2025-11-25	7	6074	0	0	0	2	2	unchanged
+academyinfo-mcp@0.4.0	https://github.com/yousunjung84-edu/academyinfo-mcp	2025-11-25	8	479	9	9	0	0	2	unchanged
+yaktool-labels-mcp@0.3.1		2025-11-25	3	1895	0	0	0	1	2	unchanged
+@pipeworx/mcp-arcgis-detroit@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-detroit	2025-03-26	3	609	0	0	0	3	3	safe
+tugra@0.1.4	https://github.com/dogrucanemek-alt/tugra	2026-07-28	4	714	0	0	0	1	1	unchanged
+@royreznik/oura-ring-mcp@1.0.0	https://github.com/royreznik/oura-ring-mcp	2025-11-25	14	4067	0	0	0	1	2	unchanged
+chromium-bridge@0.5.3	https://github.com/dashi96/chromium-bridge	2025-11-25	18	2923	0	0	0	2	2	unchanged
+mailbox-mcp@0.13.1	https://github.com/jgalea/mailbox-mcp	2025-11-25	49	6026	4	4	0	0	6	unchanged
+@nemesis-shield-autogon/mcp@0.2.7	https://github.com/eobi/nemesis_shield_sdks	2025-11-25	17	2988	3	3	0	0	5	unchanged
+weather-for-grown-ups@0.5.5	https://github.com/janhelcl/weather-for-grown-ups	2026-07-28	7	13677	0	0	0	1	1	unchanged
+scbee-mcp@0.2.2	https://github.com/HMAKT99/ScBee	2025-11-25	10	1548	0	0	0	2	1	unchanged
+@ismsdirectory/mcp-server@1.3.0		2025-11-25	5	1240	3	1	0	1	2	unchanged
+erabi-mcp@0.1.6	https://github.com/HMAKT99/Erabi	2025-11-25	8	899	0	0	0	1	5	unchanged
+mcp-postgres-server@0.3.1	https://github.com/antonorlov/mcp-postgres-server	2025-11-25	5	695	3	0	0	1	2	unchanged
+diagrams-mcp-server@0.11.0	https://github.com/mohammad-emad-dev/diagrams-mcp-server	2025-11-25	15	16048	6	5	0	1	2	unchanged
+auseklis@0.4.0	https://github.com/igmizo/auseklis	2025-11-25	12	4794	3	3	0	0	2	unchanged
+@hearthbyte/ensemble-mcp@1.0.0	https://github.com/MPfeifer33/ensemble-mcp	2025-11-25	10	4124	0	0	0	1	2	unchanged
+agent-security-mcp@0.1.3	https://github.com/mdfifty50-boop/agent-security-mcp	2025-11-25	8	1366	0	0	0	1	1	unchanged
+@nimblework/sk-cli@0.1.5		2025-11-25	9	815	0	0	0	2	1	unchanged
+prometiam-risk-mcp@0.4.57		2025-11-25	36	89538	6	6	0	3	4	unchanged
+@maraventano/map@1.0.2	https://github.com/maraventano/map	2025-11-25	23	1938	0	0	0	2	2	unchanged
+@lulzasaur9192/agent-infra-mcp@1.0.0	https://github.com/lulzasaur9192/agent-infra-mcp	2025-11-25	18	2312	0	0	0	3	2	unchanged
+@pipeworx/mcp-asrs-reports@0.2.1	https://github.com/pipeworx-io/mcp-asrs-reports	2025-03-26	3	702	0	0	0	2	1	unchanged
+mcp-server-github-gist@1.0.2	https://github.com/ofershap/mcp-server-github-gist	2025-11-25	8	680	0	0	0	2	1	unchanged
+arakice-nhl-mcp@0.1.1		2025-11-25	2	310	0	0	0	1	1	unchanged
+@infoinlet/mcp-workflow@0.1.1	https://github.com/infoinlet-marketplace/marketplace	2025-11-25	6	359	0	0	0	2	2	unchanged
+@dockndevai/mcp-ios@0.1.0	https://github.com/dockndevai/mcp-ios	2025-11-25	6	341	0	0	0	1	1	unchanged
+agentic-scout@0.1.0	https://github.com/pooriaarab/agentic-scout	2025-11-25	7	807	3	3	0	0	2	unchanged
+agentsafe-mcp-server@1.0.1	https://github.com/andyscott88/AgentSafe	2025-11-25	3	338	0	0	0	1	1	unchanged
+font-lab@1.0.0	https://github.com/jmg698/Font-Lab	2024-11-05	26	8373	0	0	0	1	3	unchanged
+@infoinlet/mcp-memory@0.1.1	https://github.com/infoinlet-marketplace/marketplace	2025-11-25	5	318	0	0	0	2	1	unchanged
+@archipelagodex/archipelago-x402-mcp@0.1.1		2025-11-25	3	345	2	2	0	0	1	unchanged
+@reworkdigital.io/rework-proof-mcp@1.2.1	https://github.com/reworkio/REWORK-Proof	2025-06-18	4	418	0	0	0	1	1	unchanged
+@mrfentmen/ioke-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+mexicoapi-mcp@0.2.1	https://github.com/Dagel4k/mexicoapi	2025-11-25	15	3162	3	2	0	1	2	unchanged
+usable-browser-agent@0.7.1	https://github.com/Savvy-Tech-Sphere/usable-browser-agent-free	2025-11-25	53	5888	0	0	0	3	3	unchanged
+x402-scan-audit@0.0.3	https://github.com/6mickswagger9/x402-scan-audit	2024-11-05	2	119	0	0	0	0	4	no session
+@pipeworx/mcp-arcgis-leecounty@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-leecounty	2025-03-26	3	593	0	0	0	4	4	safe
+@metataro/zumen-mcp@0.7.0	https://github.com/meta-taro/zumen	2025-11-25	15	4050	0	0	0	3	1	unchanged
+@paigy/mcp@0.40.42	https://github.com/paigy-ai/mcp	2025-11-25	10	7865	0	0	0	2	1	unchanged
+gia-mcp-server@0.4.4	https://github.com/knowledgepa3/gia-mcp-server	2025-11-25	57	12328	21	20	0	1	13	unchanged
+@mrfentmen/please-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@hellouchit/mcp-regulated-ai-compliance@0.2.3	https://github.com/uchit/mcp-regulated-ai-compliance	2025-11-25	6	2102	0	0	0	1	2	unchanged
+resume-optimizer@1.1.4		2025-11-25	6	892	0	0	0	1	1	unchanged
+aeron-wallet@0.4.0	https://github.com/aeronlabs/aeron-wallet	2025-11-25	7	553	0	0	0	3	1	unchanged
+finops-focus-mcp@0.2.0	https://github.com/aaronmsoto/finops-framework-mcp	2025-11-25	9	1506	6	6	0	0	1	unchanged
+@paretools/go@0.7.1	https://github.com/Dave-London/Pare	2025-11-25	10	1673	0	0	0	1	1	unchanged
+@agentgate-builder/pkgguard@0.1.1		2025-11-25	2	401	0	0	0	1	1	unchanged
+@darkhorseone/mcp-server-uk-parliament-now@1.0.1	https://github.com/DarkhorseOne/mcp-servers	2025-11-25	2	184	0	0	0	1	2	unchanged
+@mrfentmen/alloy-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@pipeworx/mcp-sec-nport@0.2.1	https://github.com/pipeworx-io/mcp-sec-nport	2025-03-26	4	862	0	0	0	2	1	unchanged
+swissyphus@1.0.1	https://github.com/cwellbournewood/swissyphus	2025-11-25	151	33180	0	0	0	2	3	unchanged
+dembrandt@0.39.2	https://github.com/dembrandt/dembrandt	2025-11-25	21	7508	0	0	0	2	4	unchanged
+ainative-zerodb-memory-mcp@1.2.12	https://github.com/AINative-Studio/ainative-zerodb-memory-mcp	2025-11-25	18	2575	0	0	0	3	7	unchanged
+@aryanbv/pdf-toolkit-mcp@0.3.1	https://github.com/AryanBV/pdf-toolkit-mcp	2025-11-25	22	4827	0	0	0	1	2	unchanged
+@abhishekmcp/github@0.2.0	https://github.com/Abhishekkumar2021/mcp-suite	2025-11-25	16	1364	0	0	0	1	2	unchanged
+@clipy/mcp@0.17.0	https://github.com/manovagyanik1/clipy-mcp	2025-11-25	34	10617	2	0	0	3	4	unchanged
+tdl-mcp@1.1.0	https://github.com/rixile9999/tdl-mcp	2025-11-25	5	859	0	0	0	1	2	unchanged
+@pipeworx/mcp-japan-corporate-number@0.2.1	https://github.com/pipeworx-io/mcp-japan-corporate-number	2025-03-26	2	539	0	0	0	2	1	unchanged
+uap-pulse@0.4.0	https://github.com/davidmosiah/uap-pulse	2025-11-25	9	997	9	9	0	1	1	unchanged
+one-search-mcp@1.2.4	https://github.com/yokingma/one-search-mcp	2025-11-25	4	982	0	0	0	1	1	unchanged
+@helloaigent-dev/publisher@0.1.1	https://github.com/helloaigent-dev/helloaigent-publisher	2025-11-25	9	1440	0	0	0	3	3	unchanged
+@pipeworx/mcp-data-bloomington@0.2.1	https://github.com/pipeworx-io/mcp-data-bloomington	2025-03-26	3	509	0	0	0	4	3	safe
+japan-ux-mcp@2.1.1	https://github.com/mrslbt/japan-ux-mcp	2025-11-25	11	2566	5	5	0	0	2	unchanged
+@pipeworx/mcp-arcgis-puyallup@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-puyallup	2025-03-26	3	628	0	0	0	3	3	safe
+@mrfentmen/zenscript-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-water-quality-portal@0.2.1	https://github.com/pipeworx-io/mcp-water-quality-portal	2025-03-26	4	1273	0	0	0	2	1	unchanged
+moretes-aws-architect-mcp@0.5.0	https://github.com/fernando-moretes/moretes-aws-architect-mcp	2025-11-25	48	10640	15	9	0	6	4	unchanged
+leavesheet-mcp@0.1.0	https://github.com/tresor4k/leavesheet-mcp	2025-11-25	3	2273	0	0	0	1	1	unchanged
+yaktool-compliance-mcp@0.4.0		2025-11-25	9	5369	0	0	0	1	2	unchanged
+@mrfentmen/bibtex-style-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2220	0	0	0	2	2	unchanged
+@mrfentmen/unstats-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	236	0	0	0	1	2	unchanged
+mcp-architector@1.11.1	https://github.com/theSharque/mcp-architect	2025-11-25	29	8918	0	0	0	3	3	unchanged
+ndjson-local-log-triage-mcp@0.2.0	https://github.com/vola-trebla/ndjson-local-log-triage-mcp	2025-11-25	4	833	0	0	0	1	3	unchanged
+license-compliance-mcp@1.0.2	https://github.com/bighippoman/license-compliance-mcp	2025-11-25	2	282	0	0	0	1	1	unchanged
+@globalchatadsapp/mcp-server@0.2.6	https://github.com/pumanitro/global-chat	2025-11-25	8	1113	0	0	0	1	1	unchanged
+@skillfm/llm-cost-optimizer-mcp@0.1.0	https://github.com/ericm1018/skillfm-llm-cost-optimizer-mcp	2025-11-25	46	8486	0	0	0	2	3	unchanged
+@pipeworx/mcp-businesswire@0.2.1	https://github.com/pipeworx-io/mcp-businesswire	2025-03-26	3	650	0	0	0	2	1	unchanged
+getdr-mcp@0.2.0	https://github.com/index-pages/getdr-mcp	2026-07-28	1	168	0	0	0	1	0	unchanged
+@ooples/token-optimizer-mcp@7.9.0	https://github.com/ooples/token-optimizer-mcp	2025-11-25	19	5703	3	1	0	3	4	unchanged
+@orgtp/mcp-server@0.1.2	https://github.com/david-steel/otp-mcp-server	2025-11-25	10	892	0	0	0	1	1	unchanged
+@automatelab/ai-seo-mcp@0.1.1	https://github.com/AutomateLab-tech/ai-seo	2025-11-25	13	1343	0	0	0	1	1	unchanged
+@pipeworx/mcp-packagephobia@0.2.1	https://github.com/pipeworx-io/mcp-packagephobia	2025-03-26	1	106	0	0	0	3	2	safe
+@pipeworx/mcp-mgnify@0.2.1	https://github.com/pipeworx-io/mcp-mgnify	2025-03-26	4	1019	0	0	0	2	1	unchanged
+zod-contract-mock-forge-mcp@0.2.0	https://github.com/vola-trebla/zod-contract-mock-forge-mcp	2025-11-25	10	1494	0	0	0	1	2	unchanged
+chinese-text-tools@1.0.3	https://github.com/Cail726/chinese-text-tools	2025-11-25	4	616	0	0	0	1	1	unchanged
+md-feedback@1.5.6	https://github.com/yeominux/md-feedback	2025-11-25	27	3747	0	0	0	2	4	unchanged
+@pipeworx/mcp-nbu-ua@0.2.1	https://github.com/pipeworx-io/mcp-nbu-ua	2025-03-26	5	892	0	0	0	2	2	unchanged
+@mrfentmen/hashid-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	267	0	0	0	1	1	unchanged
+@runapi.ai/gpt-image-mcp@0.2.1	https://github.com/runapi-ai/gpt-image-mcp	2025-11-25	5	798	0	0	0	2	2	unchanged
+@xavifabregat/spotify-mcp@0.1.2	https://github.com/XavierFabregat/spotify-mcp	2025-11-25	11	1286	4	0	0	2	1	unchanged
+@t3ratech/mcp-session-bridge@1.4.1	https://github.com/t3ratech/mcp-session-bridge	2024-11-05	22	3858	5	2	0	2	3	unchanged
+@the-staq/tradestaq-mcp@0.6.3	https://github.com/the-staq/tradestaq-mcp	2025-11-25	46	12483	4	0	1	2	7	unchanged
+@pipeworx/mcp-finnhub@0.2.1	https://github.com/pipeworx-io/mcp-finnhub	2025-03-26	7	1188	0	0	0	2	2	unchanged
+stylekit-mcp@0.5.0	https://github.com/AnxForever/stylekit	2026-07-28	10	3464	0	0	0	2	1	unchanged
+@pipeworx/mcp-arcgis-greenwood@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-greenwood	2025-03-26	3	593	0	0	0	4	4	safe
+@scopeblind/verify-mcp@0.1.3	https://github.com/scopeblind/ScopeBlindD2	2025-11-25	4	335	0	0	0	1	1	unchanged
+@pipeworx/mcp-gdc@0.2.1	https://github.com/pipeworx-io/mcp-gdc	2025-03-26	4	620	0	0	0	4	3	safe
+qingkuai-mcp-server@1.0.13	https://github.com/qingkuai-js/language-features	2025-11-25	6	1288	0	0	0	1	2	unchanged
+@pipeworx/mcp-deezer@0.2.1	https://github.com/pipeworx-io/mcp-deezer	2025-03-26	6	443	0	0	0	5	3	safe
+@angrydad67/fabric-mcp-server@1.0.0	https://github.com/mpzarde/fabric-mcp	2025-11-25	19	1143	0	0	0	2	2	unchanged
+@humanity4ai/mcp-servers@1.0.6	https://github.com/humanity4ai/project_human	2025-11-25	9	1427	0	0	0	1	2	unchanged
+@pipeworx/mcp-massachusetts-code@0.2.1	https://github.com/pipeworx-io/mcp-massachusetts-code	2025-03-26	1	180	0	0	0	2	1	unchanged
+@mrfentmen/inspire-hep-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	320	0	0	0	2	1	unchanged
+polymath-megablaster-mcp@3.1.0	https://github.com/headlessherm-creator/polymath-megablaster-mcp	2025-11-25	16	1598	0	0	0	2	2	unchanged
+mpp32-mcp-server@1.1.2	https://github.com/MPP32/MPP32	2025-11-25	3	859	0	0	0	1	2	unchanged
+@themelt/mcp-server@0.1.1	https://github.com/omer907/mcp-server	2025-11-25	3	1219	0	0	0	1	1	unchanged
+mcp-growi@0.2.0	https://github.com/Growi-DeFi/mcp-growi	2025-11-25	11	888	0	0	0	1	2	unchanged
+umd-mcp@0.0.1	https://github.com/Open-Sourcery-UMD/umd-mcp	2025-11-25	100	16799	0	0	0	2	3	unchanged
+minnimemory@1.4.2	https://github.com/MinniAI-com/minnimemory-plugin	2025-11-25	4	846	4	0	0	3	1	unchanged
+@pipeworx/mcp-phillips@0.2.1	https://github.com/pipeworx-io/mcp-phillips	2025-03-26	2	611	0	0	0	2	1	unchanged
+@pipeworx/mcp-police-shootings@0.2.1	https://github.com/pipeworx-io/mcp-police-shootings	2025-03-26	3	713	0	0	0	2	1	unchanged
+@mrfentmen/bible-api-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	242	0	0	0	1	1	unchanged
+@mrfentmen/cbioportal-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	4	411	0	0	0	1	1	unchanged
+@voidly/pay-mcp@0.7.4	https://github.com/voidly-ai/pay-mcp	2025-11-25	12	1406	0	0	0	1	5	unchanged
+real-browser-mcp@1.2.1	https://github.com/ofershap/real-browser-mcp	2025-11-25	18	1943	0	0	0	1	2	unchanged
+brainchain-mcp@0.9.0	https://github.com/usebrainchain/brainchain-mcp	2025-11-25	7	2191	0	0	0	1	2	unchanged
+joplin-mcp-server@2.3.3	https://github.com/jordanburke/joplin-mcp-server	2025-11-25	12	837	0	0	0	2	4	unchanged
+@yawlabs/fetch-mcp@0.8.6	https://github.com/YawLabs/fetch-mcp	2025-11-25	15	6274	0	0	0	1	3	unchanged
+provably-fair-mcp@1.0.4	https://github.com/promptcoinapp/provably-fair-mcp	2025-11-25	3	470	0	0	0	3	2	unchanged
+otp-mcp-server@0.5.3		2025-11-25	66	16831	0	0	0	3	9	unchanged
+agent-envelope-mcp@1.0.1	https://github.com/BlackBoxEngineering/agent-envelope-mcp	2025-11-25	4	515	0	0	0	1	2	unchanged
+@rog0x/mcp-perf-tools@1.0.2	https://github.com/rog0x/mcp-perf-tools	2025-11-25	5	817	0	0	0	1	1	unchanged
+@mrfentmen/pdf-generator-mcp@1.0.4	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	319	0	0	0	1	2	unchanged
+@ixo/asks-mcp@2.2.3	https://github.com/ixoworld/ixo-plugins	2025-11-25	46	19838	3	3	2	2	6	unchanged
+@pipeworx/mcp-china-pharma@0.3.1	https://github.com/pipeworx-io/mcp-china-pharma	2025-03-26	5	1367	0	0	0	3	1	unchanged
+@three-ws/marketplace-mcp@0.1.3	https://github.com/nirholas/three.ws	2025-11-25	5	782	0	0	0	2	2	unchanged
+a0nexus-bitcoin-mcp@0.1.4	https://github.com/A0Nexus-bit/a0nexus-bitcoin-mcp	2025-11-25	17	1270	0	0	0	1	2	unchanged
+@goflag/mcp@0.1.2	https://github.com/tancredesimonin/goflag	2025-11-25	4	811	2	2	0	1	1	unchanged
+@aibtc/mcp-server@1.17.0	https://github.com/aibtcdev/aibtc-mcp-server	2025-11-25	138	18338	0	0	0	2	5	unchanged
+@mrfentmen/lorcana-mcp@1.0.2	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	301	0	0	0	1	1	unchanged
+@agentrysh/mcp@0.1.0	https://github.com/fr33dr4g0n/agentry-public	2025-11-25	1	115	2	2	0	0	1	unchanged
+@unclick/restcountries-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	2025-11-25	6	261	0	0	0	1	2	unchanged
+@vlabsoft/easyeda-pro-mcp@1.0.2	https://github.com/VLab-Software/easyeda_mcp	2025-11-25	19	2245	19	2	0	1	3	unchanged
+mcp-rzd-tickets@0.1.2	https://github.com/ex3lite/mcp_rzd_tickets	2025-11-25	7	1832	4	2	0	2	4	unchanged
+@contentasoft/videorecompress-mcp@1.0.2	https://github.com/contentasoftware/mcp-launcher	2025-11-25	1	84	2	2	0	0	1	unchanged
+@agentkitai/agentgate-mcp@0.0.3	https://github.com/agentkitai/agentgate	2025-11-25	10	869	0	0	0	3	2	unchanged
+@pipeworx/mcp-bright-data@0.2.1	https://github.com/pipeworx-io/mcp-bright-data	2025-03-26	2	896	0	0	0	2	1	unchanged
+dependency-fitness-mcp@0.1.1	https://github.com/TweedBeetle/dependency-fitness-mcp	2025-11-25	2	361	0	0	0	1	1	unchanged
+comprabtc-mcp@0.1.1	https://github.com/csacanam/comprabtc	2025-11-25	5	707	0	0	0	2	1	unchanged
+tracklix-mcp@0.1.2	https://github.com/zhowe-designs/tracklix-mcp	2025-11-25	2	326	0	0	0	1	1	unchanged
+web-task-api@0.10.1	https://github.com/jojo-labs/web-task-api	2025-11-25	11	2127	6	6	0	0	1	unchanged
+@misarblog/mcp@5.1.8	https://github.com/Misar-AI/misarblog-mcp	2025-11-25	26	2932	0	0	0	2	3	unchanged
+@mrfentmen/bluespec-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+mcp-server-devutils@1.0.2	https://github.com/ofershap/mcp-server-devutils	2025-11-25	17	1260	0	0	0	1	2	unchanged
+targetly-mcp@0.1.4		2025-11-25	4	466	0	0	0	2	1	unchanged
+@skills-hub-ai/mcp@0.1.11	https://github.com/tinh2/skills-hub	2025-11-25	4	312	0	0	0	1	1	unchanged
+marklayer-mcp@0.6.1	https://github.com/thevrus/MarkLayer	2025-11-25	17	2764	0	0	0	3	1	unchanged
+thegoldbarometer-mcp@1.0.1	https://github.com/thegoldbarometer/mcp-server	2025-11-25	3	374	0	0	0	1	2	unchanged
+ppxc-leads-mcp@0.1.28		2025-11-25	17	3578	0	0	1	2	3	unchanged
+@shuji-bonji/s1000d-reader-mcp@0.8.0	https://github.com/shuji-bonji/s1000d-reader-mcp	2026-07-28	6	2459	0	0	0	1	1	unchanged
+@theyahia/yandex-metrika-mcp@2.1.1	https://github.com/theYahia/yandex-metrika-mcp	2025-11-25	15	2452	0	0	0	2	2	unchanged
+@khalidsaidi/a2abench-mcp@1.0.1	https://github.com/khalidsaidi/a2abench	2025-11-25	3	259	0	0	0	2	1	unchanged
+cverdict-mcp@0.1.3	https://github.com/markusweldon/cverdict	2026-07-28	6	1518	6	6	0	1	0	unchanged
+@pipeworx/mcp-property-records@0.2.1	https://github.com/pipeworx-io/mcp-property-records	2025-03-26	2	879	0	0	0	2	1	unchanged
+@conduitai-app/mcp-server@1.299.1	https://github.com/akbaraziz/conduitai-bolt	2025-11-25	14	2039	4	1	0	2	4	unchanged
+mizuki-mcp@0.1.2	https://github.com/open-covenant/covenant	2025-11-25	13	1594	0	0	0	2	5	unchanged
+@kansei-link/mcp-server@1.3.0	https://github.com/kansei-link/kansei-mcp-server	2025-11-25	3	2933	0	0	0	1	5	unchanged
+ghostbus@0.5.11	https://github.com/littlestjames82-sys/ghostbus	2024-11-05	29	1710	0	0	0	3	2	unchanged
+webhook-crash-lab-mcp@0.2.4	https://github.com/Krrishkumar125/webhook-crash-lab-mcp	2025-11-25	4	544	4	3	0	1	2	unchanged
+mcp-output-firewall@0.3.0	https://github.com/tangfei7777-cell/mcp-output-firewall	2026-07-28	4	1034	0	0	0	1	0	unchanged
+@pipeworx/mcp-pacer@0.2.1	https://github.com/pipeworx-io/mcp-pacer	2025-03-26	2	878	0	0	0	2	2	unchanged
+@pipeworx/mcp-giphy@0.2.1	https://github.com/pipeworx-io/mcp-giphy	2025-03-26	3	274	0	0	0	2	1	unchanged
+vibenetwork@0.1.2	https://github.com/pooriaarab/vibenetwork	2025-11-25	5	433	0	0	0	2	1	unchanged
+@pipeworx/mcp-medical-codes@0.2.1	https://github.com/pipeworx-io/mcp-medical-codes	2025-03-26	5	818	0	0	0	2	1	unchanged
+@pipeworx/mcp-mississippi-code@0.2.1	https://github.com/pipeworx-io/mcp-mississippi-code	2025-03-26	3	756	0	0	0	2	1	unchanged
+migrationpilot@1.6.4	https://github.com/mickelsamuel/migrationpilot	2025-11-25	7	835	0	0	0	1	1	unchanged
+mcp-drawthings@1.1.2	https://github.com/james-see/mcp-drawthings	2025-11-25	4	675	0	0	0	1	1	unchanged
+beacon-mcp@0.1.1	https://github.com/enrichgateagent-png/beacon-mcp	2025-11-25	3	297	0	0	0	1	1	unchanged
+@open-agreements/contract-templates-mcp@0.10.2	https://github.com/open-agreements/open-agreements	2025-11-25	8	1214	3	3	0	1	2	unchanged
+auxiliar-mcp@0.22.1	https://github.com/Tlalvarez/Auxiliar-ai	2025-11-25	1	117	0	0	0	1	1	unchanged
+pointmaxx-mcp@0.1.2	https://github.com/trypointmaxx/pointmaxx-mcp	2025-06-18	3	738	0	0	0	1	1	unchanged
+@upstash/redis-mcp@0.1.1	https://github.com/upstash/redis-mcp	2025-11-25	2	880	0	0	0	1	1	unchanged
+dates-le-mcp@2.5.0	https://github.com/nolindnaidoo/dates-le	2025-11-25	1	551	0	0	0	1	1	unchanged
+@mrfentmen/aspectj-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+chartforge-mcp@0.1.4	https://github.com/crawde/chartforge-mcp	2025-11-25	3	341	0	0	0	1	1	unchanged
+@pipeworx/mcp-sports-feeds@0.2.1	https://github.com/pipeworx-io/mcp-sports-feeds	2025-03-26	3	410	0	0	0	4	2	unchanged
+@runapi.ai/kling-mcp@0.4.1	https://github.com/runapi-ai/kling-mcp	2025-11-25	9	2969	0	0	0	2	3	unchanged
+@gera-services/mcp-geratools@1.0.1	https://github.com/geraservicesuk/globetura	2025-11-25	6	1141	0	0	0	1	1	unchanged
+deepviews-mcp@1.1.3	https://github.com/Rswcf/deepviews-mcp	2025-11-25	7	1170	0	0	0	1	1	unchanged
+@mrfentmen/z-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@pipeworx/mcp-politics-feeds@0.2.1	https://github.com/pipeworx-io/mcp-politics-feeds	2025-03-26	3	416	0	0	0	4	3	safe
+@pipeworx/mcp-doaj@0.2.1	https://github.com/pipeworx-io/mcp-doaj	2025-03-26	4	530	0	0	0	7	2	unchanged
+@mrfentmen/jwt-mcp@1.0.2	https://github.com/mrfentmen/awesome-servers	2025-11-25	2	178	0	0	0	1	1	unchanged
+@mindjack/mcp@1.4.5	https://github.com/freyotrisolana/mindjack-mcp	2025-11-25	26	3733	12	12	0	1	3	unchanged
+@shawnwollenberg/walletlens-mcp@0.1.2	https://github.com/shawnwollenberg/web3_portfolio	2025-11-25	6	676	0	0	0	1	1	unchanged
+home-renovation-free-tools@1.0.0	https://github.com/eater2/homerenovationfreetools	2025-11-25	3	448	0	0	0	2	1	unchanged
+@mrfentmen/hgnc-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	362	0	0	0	1	1	unchanged
+protocolprobe-mcp@0.1.1	https://github.com/protocolprobe/protocolprobe-tools	2025-11-25	4	719	0	0	0	1	2	unchanged
+@sylphx/lockdocs@0.7.5	https://github.com/SylphxAI/lockdocs	2026-07-28	3	759	2	2	1	0	0	unchanged
+@lightning-tools/mcp-server@0.3.3	https://github.com/donovanh/lightning-tools	2025-11-25	4	310	0	0	0	2	1	unchanged
+mcp-security-guard@0.9.1	https://github.com/petrovicistefan/mcp-security-guard	2025-11-25	17	3098	7	7	0	0	2	unchanged
+verify402-mcp@1.0.9	https://github.com/a32116150-ctrl/verify402	2025-11-25	1	1261	0	0	0	1	1	unchanged
+market-depth-lab-mcp-server@0.2.2	https://github.com/derkcc/market-depth-lab-mcp	2025-11-25	9	2246	2	2	0	0	2	unchanged
+@mrfentmen/graph-algorithms-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	394	0	0	0	1	1	unchanged
+comfyui-mcp@0.52.206	https://github.com/artokun/comfyui-mcp	2025-11-25	41	49854	0	0	0	3	3	unchanged
+@pipeworx/mcp-paypal@0.2.1	https://github.com/pipeworx-io/mcp-paypal	2025-03-26	5	997	0	0	0	4	4	safe
+@pipeworx/mcp-dwd-climate@0.2.1	https://github.com/pipeworx-io/mcp-dwd-climate	2025-03-26	3	593	0	0	0	2	2	unchanged
+@neural-ng/mcp-server@1.0.1	https://github.com/hasanaydin7/NeuralTech	2026-07-28	20	2481	8	5	0	3	2	unchanged
+cyberbrick-mcp@0.4.0	https://github.com/jarvisluk/cyberbrick-mcp	2025-11-25	41	6033	12	3	0	3	5	unchanged
+study-planner-mcp@0.1.9	https://github.com/AnonymousOnyx22/study-planner-mcp	2025-11-25	13	6940	4	4	0	0	2	unchanged
+@x-tkn/mcp@1.0.1		2025-11-25	3	674	0	0	0	1	2	unchanged
+@oryanomer/whoop-mcp@1.0.3	https://github.com/oryanomer1/whoop-mcp	2025-11-25	10	1726	0	0	0	1	1	unchanged
+@firfi/voila-mcp@0.3.0	https://github.com/dearlordylord/voila-sdk	2025-06-18	13	2816	0	0	0	1	9	unchanged
+@zyluo/remote-ssh-mcp@0.2.0	https://github.com/the-nine-nation/remote-ssh-mcp	2026-07-28	7	1005	3	3	0	1	2	unchanged
+@three-ws/onchain-agent-wallets@0.1.1	https://github.com/nirholas/onchain-agent-wallets	2025-11-25	14	3458	0	0	0	2	3	unchanged
+@mrfentmen/cypher-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-ror@0.2.1	https://github.com/pipeworx-io/mcp-ror	2025-03-26	3	380	0	0	0	4	3	safe
+cn-theories-mcp@0.1.0	https://github.com/grokkkkkk/cn-theories	2025-11-25	4	721	0	0	0	1	1	unchanged
+hlplanet-mcp@1.0.0	https://github.com/hlplanet/hlplanet-mcp	2025-11-25	7	1509	4	4	0	0	2	unchanged
+autorouter-mcp@0.3.1	https://github.com/Webb-Ventures/autorouter	2025-11-25	3	266	0	0	0	2	1	unchanged
+@mrfentmen/himalayas-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	1	114	0	0	0	1	1	unchanged
+agent-press-wire-mcp@0.3.0	https://github.com/dylancaponi/agent-press-wire-mcp	2025-11-25	3	2694	0	0	0	1	2	unchanged
+@pipeworx/mcp-ipquery@0.2.1	https://github.com/pipeworx-io/mcp-ipquery	2025-03-26	2	321	0	0	0	4	3	safe
+garmin-connect-personal-api-mcp@1.0.0	https://github.com/DynamicsNinja/connect-personal-api-js	2025-11-25	24	2824	0	0	0	1	2	unchanged
+@robthepcguy/rag-vault@1.5.3	https://github.com/RobThePCGuy/rag-vault	2025-11-25	9	1029	0	0	0	2	1	unchanged
+earth-2-elevation-mcp@0.1.1	https://github.com/gitcookman/Earth-2-elevation-mcp	2025-11-25	3	378	0	0	0	1	1	unchanged
+blockdex-mcp@0.1.0	https://github.com/kyisaiah47/openlookup	2025-11-25	1	237	0	0	0	1	1	unchanged
+@pipeworx/mcp-trade-compliance@0.2.1	https://github.com/pipeworx-io/mcp-trade-compliance	2025-03-26	4	1113	0	0	0	2	1	unchanged
+@agentfund/mcp@0.1.1	https://github.com/agentIgris/agentfund	2025-11-25	9	2658	0	0	0	2	2	unchanged
+linkmeta-mcp@1.2.0	https://github.com/softvoyagers/linkmeta-api	2025-11-25	2	187	0	0	0	1	1	unchanged
+picright-mcp@0.1.0	https://github.com/ChloePark85/picright-mcp	2025-11-25	9	1896	0	0	0	2	1	unchanged
+@openly-useful/project-status-mcp@1.2.1	https://github.com/Openly-Useful/project-status	2026-07-28	8	997	9	0	0	2	2	unchanged
+@mrfentmen/mojo-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@mrfentmen/research-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2024-11-05	3	130	0	0	0	1	1	unchanged
+orisha-data-mcp@0.1.1		2025-11-25	4	277	0	0	0	1	1	unchanged
+@pipeworx/mcp-lyrics-ovh@0.2.1	https://github.com/pipeworx-io/mcp-lyrics-ovh	2025-03-26	2	183	0	0	0	3	1	unchanged
+@parse-gl/mcp@1.0.0	https://github.com/Parsegl/parse	2025-06-18	37	10050	13	2	0	2	5	unchanged
+zxoar-mcp@0.2.2	https://github.com/lockwood-launch/lockwood-protocol	2025-11-25	13	2090	0	0	0	2	1	unchanged
+s3eidat-tools-mcp@0.1.0	https://github.com/s3eidat/s3eidat-tools-mcp	2026-07-28	162	71540	21	2	0	16	3	unchanged
+@mrfentmen/wollok-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@shuotao/revit-mcp-server@1.6.0	https://github.com/shuotao/REVIT_MCP_study	2025-11-25	167	35580	21	0	1	0	5	unchanged
+reputa-mcp@1.5.2		2025-11-25	11	753	0	0	0	1	1	unchanged
+@tethral/acr-mcp@2.14.0	https://github.com/Tethral-Inc/AgentRegistry	2025-11-25	7	2497	6	0	1	0	3	unchanged
+@pipeworx/mcp-traveltime@0.2.1	https://github.com/pipeworx-io/mcp-traveltime	2025-03-26	2	1186	0	0	0	2	1	unchanged
+gridwork-license@1.0.0	https://github.com/thegridwork/license	2025-11-25	4	381	0	0	0	1	1	unchanged
+propfirmdealfinder-mcp-server@1.0.4	https://github.com/chrisbusbin-pixel/propfirmdealfinder-mcp-server	2025-11-25	6	1848	5	5	0	0	1	unchanged
+@agent360/browser-mcp@1.31.0	https://github.com/Agent360dk/browser-mcp	2025-11-25	40	9583	0	0	0	2	2	unchanged
+@biocross/displaybuddy-mcp@3.3.0	https://github.com/biocross/displaybuddy-mcp	2025-11-25	9	874	0	0	0	3	1	unchanged
+context-awesome@0.1.1	https://github.com/bh-rat/context-awesome	2025-11-25	3	424	0	0	0	1	2	unchanged
+mcp-server-cloudflare-dns@1.0.2	https://github.com/ofershap/mcp-server-cloudflare	2025-11-25	13	1234	0	0	0	2	5	unchanged
+@rog0x/mcp-web-tools@1.0.1	https://github.com/rog0x/mcp-web-tools	2025-11-25	5	321	0	0	0	1	1	unchanged
+@licklider/nomue-mcp@0.2.0-rc.1	https://github.com/licklider-ai/nomue-mcp	2025-11-25	1	305	0	0	0	1	1	unchanged
+@leewinder/mcp-tcgdex@1.0.0	https://gitlab.com/lee.winder/tcgdex-mcp-server	2025-11-25	7	4521	0	0	0	2	2	unchanged
+@repo-prism/mcp-server@1.1.1	https://github.com/Shailesh200/prism	2025-11-25	41	6604	21	18	0	4	3	unchanged
+@pipeworx/mcp-south-carolina-code@0.2.1	https://github.com/pipeworx-io/mcp-south-carolina-code	2025-03-26	1	155	0	0	0	2	1	unchanged
+ayudas-es-mcp@0.8.0	https://github.com/plopez053/ayudas-es-mcp	2025-11-25	10	4249	0	0	0	2	2	unchanged
+@davidweb3-ctrl/mcp-git-enhanced@1.0.0	https://github.com/davidweb3-ctrl/mcp-git-enhanced	2025-11-25	5	680	0	0	0	1	1	unchanged
+petal-components-mcp@0.1.0	https://github.com/petalframework/petal-components-mcp	2025-11-25	2	182	0	0	0	1	1	unchanged
+google-health-mcp-unofficial@0.5.2	https://github.com/davidmosiah/google-health-mcp	2025-11-25	26	5392	14	12	0	1	3	unchanged
+actually-mcp-server@0.1.10	https://github.com/Sofiia7/actually	2025-11-25	2	426	0	0	0	1	2	unchanged
+@pipeworx/mcp-activecampaign@0.2.1	https://github.com/pipeworx-io/mcp-activecampaign	2025-03-26	6	990	0	0	0	4	1	safe
+@mandatefi/mcp@0.1.1	https://github.com/4FR4KO-POVELECKO/mandate	2025-11-25	3	133	0	0	0	1	1	unchanged
+fitfilesize-mcp@0.2.1	https://github.com/Gautamstar/fitfilesize	2025-11-25	2	683	0	0	0	1	1	unchanged
+downdetector-mcp@1.0.1	https://github.com/domdomegg/downdetector-mcp.git	2025-11-25	1	147	0	0	0	1	1	unchanged
+dingdawg-healthcare-agent@2.0.4	https://github.com/DingDawg-dev/dingdawg-healthcare-agent	2025-11-25	4	503	2	2	0	0	2	unchanged
+@exeris/ai-bridge@0.8.0	https://github.com/exeris-systems/exeris-ai-bridge	2025-11-25	31	3567	0	0	0	1	2	unchanged
+sexai-mcp@0.11.11	https://github.com/sxaidev/sxai-mcp	2025-11-25	18	3364	0	0	0	3	1	unchanged
+@pipeworx/mcp-patents@0.2.1	https://github.com/pipeworx-io/mcp-patents	2025-03-26	7	3841	0	0	0	2	2	unchanged
+rupa3d@1.6.2	https://github.com/tiranyx/rupa3d-core	2025-11-25	36	12694	8	2	0	4	3	unchanged
+@sirmacke/adsense-mcp@0.2.0	https://github.com/SirMacke/adsense-mcp	2025-11-25	26	3158	10	0	0	1	3	unchanged
+mcp-server-security-scanner@1.1.4		2025-11-25	5	2048	0	0	0	1	1	unchanged
+matchcv-mcp@0.1.1	https://github.com/18boys/matchcv-mcp	2025-11-25	6	983	0	0	0	1	1	unchanged
+decisionmatrix-mcp@1.0.2	https://github.com/inity13/decisionmatrix-mcp	2025-11-25	6	1152	0	0	0	2	1	unchanged
+@fonteum/mcp@0.2.2	https://github.com/Fonteum/mcp-server	2025-11-25	5	638	0	0	0	1	1	unchanged
+@pipeworx/mcp-met-no@0.2.1	https://github.com/pipeworx-io/mcp-met-no	2025-03-26	5	532	0	0	0	4	3	safe
+@arxo/mcp-picc@0.3.11	https://github.com/arxohq/arxo-unidroit-picc	2025-11-25	21	8156	11	5	0	6	4	unchanged
+@mrfentmen/interpro-mcp@1.0.2	https://github.com/mrfentmen/awesome-servers	2025-11-25	2	223	0	0	0	1	1	unchanged
+admob-mcp-server@0.2.0	https://github.com/ParkSangGwon/admob-mcp-server	2025-11-25	9	2267	6	0	0	1	2	unchanged
+@pipeworx/mcp-north-carolina-code@0.2.1	https://github.com/pipeworx-io/mcp-north-carolina-code	2025-03-26	2	311	0	0	0	2	1	unchanged
+@pipeworx/mcp-mhra-alerts@0.2.1	https://github.com/pipeworx-io/mcp-mhra-alerts	2025-03-26	3	991	0	0	0	2	2	unchanged
+@pipeworx/mcp-artic@0.2.1	https://github.com/pipeworx-io/mcp-artic	2025-03-26	4	356	0	0	0	5	3	safe
+@rog0x/mcp-network-tools@1.0.2	https://github.com/rog0x/mcp-network-tools	2025-11-25	5	530	0	0	0	1	1	unchanged
+@pipeworx/mcp-opendosm-my@0.2.1	https://github.com/pipeworx-io/mcp-opendosm-my	2025-03-26	3	875	0	0	0	3	1	unchanged
+@mrfentmen/wolfram-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2200	0	0	0	2	2	unchanged
+@littlebearapps/outlook-assistant@3.14.1	https://github.com/littlebearapps/outlook-assistant	2025-11-25	22	13360	2	0	1	1	10	unchanged
+@runhooks/mcp@0.1.12	https://github.com/runhooks/runhooks-mcp	2025-11-25	18	2252	0	0	0	3	2	unchanged
+@pipeworx/mcp-mastodon@0.2.1	https://github.com/pipeworx-io/mcp-mastodon	2025-03-26	4	382	0	0	0	5	2	safe
+dexe-mcp@0.37.1	https://github.com/edward-arinin-web-dev/dexe-mcp	2025-11-25	48	16482	5	5	0	0	8	unchanged
+@joomshaper/helix-mcp-server@1.1.0	https://github.com/JoomShaper/helix-ultimate	2025-11-25	9	1617	0	0	0	2	6	unchanged
+maxaeo-ai-visibility-mcp@0.4.0	https://github.com/maxaeo/maxaeo-ai-visibility-mcp	2025-11-25	3	843	0	0	0	1	2	unchanged
+@pipeworx/mcp-sec-ftd@0.2.1	https://github.com/pipeworx-io/mcp-sec-ftd	2025-03-26	3	522	0	0	0	2	1	unchanged
+@pipeworx/mcp-materials@0.2.1	https://github.com/pipeworx-io/mcp-materials	2025-03-26	2	694	0	0	0	2	1	unchanged
+framegrove@1.0.0	https://github.com/tech-bam/framegrove	2025-11-25	5	1547	3	3	0	0	1	unchanged
+@pipeworx/mcp-dilisense@0.2.1	https://github.com/pipeworx-io/mcp-dilisense	2025-03-26	3	669	0	0	0	2	1	unchanged
+lexilint-mcp@1.2.0	https://github.com/raunakkathuria/lexilint-mcp	2025-11-25	3	663	0	0	0	1	1	unchanged
+@pipeworx/mcp-ny-dmv@0.2.1	https://github.com/pipeworx-io/mcp-ny-dmv	2025-03-26	6	2706	0	0	0	2	1	unchanged
+@zumer/snapsurf@0.1.2	https://github.com/zumerlab/snapsurf	2025-11-25	15	4570	7	0	0	2	3	unchanged
+@mrfentmen/pvs-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@anyforge/mcp-server@3.17.0		2025-11-25	230	55915	21	0	0	3	23	unchanged
+panini-connector-mcp@0.1.3	https://github.com/prak16/PaniniOS	2025-11-25	6	1239	0	0	0	2	1	unchanged
+@pipeworx/mcp-sciencebase@0.2.1	https://github.com/pipeworx-io/mcp-sciencebase	2025-03-26	3	482	0	0	0	5	3	safe
+@budna-marketplace/mcp@0.8.2	https://github.com/budna-marketplace/mcp	2025-11-25	23	5207	0	0	0	1	3	unchanged
+@mrfentmen/glyph-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+homes-mcp@2.2.0	https://github.com/chrischall/homes-mcp	2026-07-28	21	7607	5	5	0	0	3	unchanged
+@pipeworx/mcp-rdap@0.2.1	https://github.com/pipeworx-io/mcp-rdap	2025-03-26	5	694	0	0	0	3	2	safe
+@ansvar/swedish-law-mcp@1.2.5	https://github.com/Ansvar-Systems/swedish-law-mcp	2025-11-25	18	2665	0	0	0	1	5	unchanged
+@buoy-gg/mcp@7.0.41	https://github.com/Buoy-gg/buoy	2025-11-25	60	13690	0	0	0	3	5	unchanged
+@darkhorseone/mcp-server-uk-parliament-questions-statements@1.0.1	https://github.com/DarkhorseOne/mcp-servers	2025-11-25	7	1792	0	0	0	2	4	unchanged
+stack-and-dns-mcp@1.0.1	https://github.com/Mewnah/stack-and-dns-mcp	2025-11-25	12	2839	3	3	0	0	4	unchanged
+aigroup-mdtoword-mcp@4.0.2	https://github.com/jackdark425/aigroup-mdtoword-mcp	2025-11-25	4	2801	0	0	0	2	1	unchanged
+vndb-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	4	422	0	0	0	2	1	unchanged
+xrocket-mcp@0.6.0	https://github.com/nakazanie-ton/myrocket	2026-07-28	10	1603	2	2	0	0	1	unchanged
+@mrfentmen/mint-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+public-holidays-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	7	643	0	0	0	1	2	unchanged
+hyre-mcp@2.2.0	https://github.com/cryptoeights/hyre-mcp	2025-11-25	17	1380	0	0	0	1	2	unchanged
+@pipeworx/mcp-osv@0.2.1	https://github.com/pipeworx-io/mcp-osv	2025-03-26	4	765	0	0	0	3	1	unchanged
+@voyageurworks/handoff-desk@1.2.3	https://github.com/voyageurworks/handoff-desk	2025-11-25	8	1162	0	0	0	3	1	unchanged
+botindex-mcp-server@2.2.0	https://github.com/Cyberweasel777/botindex-mcp-server	2025-11-25	4	389	0	0	0	1	1	unchanged
+thoughtproof-mcp@0.3.2	https://github.com/ThoughtProof/thoughtproof-mcp	2025-11-25	5	1465	0	0	0	1	2	unchanged
+@marcelo-ochoa/server-qnap@1.0.8	https://github.com/marcelo-ochoa/servers	2025-11-25	4	311	0	0	0	1	1	unchanged
+replicant-mcp@1.6.7	https://github.com/thecombatwombat/replicant-mcp	2025-11-25	14	1670	5	3	0	2	5	unchanged
+@infoinlet/mcp-stripe@0.1.1	https://github.com/infoinlet-marketplace/marketplace	2025-11-25	7	272	0	0	0	2	1	unchanged
+@pipeworx/mcp-noirlab-datalab@0.2.1	https://github.com/pipeworx-io/mcp-noirlab-datalab	2025-03-26	3	1047	0	0	0	2	1	unchanged
+@pressa/mcp@0.11.4	https://github.com/pressa-dev/mcp	2025-11-25	4	1649	0	0	0	1	1	unchanged
+@congressio/mcp@0.1.1	https://github.com/greg-rivtech/confhub	2025-11-25	21	7965	0	0	0	1	4	unchanged
+@yafldev/mcp@0.1.6	https://github.com/yafldev/mcp	2025-11-25	7	1292	0	0	0	3	1	unchanged
+@pipeworx/mcp-worldbank@0.2.1	https://github.com/pipeworx-io/mcp-worldbank	2025-03-26	7	1949	0	0	0	4	3	safe
+@mrfentmen/openrc-runscript-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2220	0	0	0	2	2	unchanged
+@pipeworx/mcp-il-medical-exclusions@0.2.1	https://github.com/pipeworx-io/mcp-il-medical-exclusions	2025-03-26	2	703	0	0	0	2	1	unchanged
+@pipeworx/mcp-smarty@0.2.1	https://github.com/pipeworx-io/mcp-smarty	2025-03-26	2	643	0	0	0	2	1	unchanged
+@mrfentmen/roc-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@pipeworx/mcp-dc-dmv@0.2.1	https://github.com/pipeworx-io/mcp-dc-dmv	2025-03-26	3	1058	0	0	0	2	1	unchanged
+wellness-cycle-coach@0.3.5	https://github.com/davidmosiah/wellness-cycle-coach	2025-11-25	17	2373	0	0	0	1	2	unchanged
+microsoft-outlook-mcp@1.0.1	https://github.com/0xka13b/microsoft-mcps	2025-11-25	14	1878	5	0	1	0	3	unchanged
+expo-launch-video@0.1.2	https://github.com/Rudrasamadhiya/expo-launch-video	2025-11-25	27	3436	0	0	0	2	3	unchanged
+@pipeworx/mcp-bls@0.3.1	https://github.com/pipeworx-io/mcp-bls	2025-03-26	6	1477	0	0	0	3	3	unchanged
+hiring-mender-mcp@0.1.0	https://github.com/headlessherm-creator/hiring-mender-mcp	2025-11-25	5	537	0	0	0	2	6	unchanged
+@pipeworx/mcp-rebrickable@0.2.1	https://github.com/pipeworx-io/mcp-rebrickable	2025-03-26	8	753	0	0	0	12	2	safe
+@alion-io/mcp@0.1.0		2025-11-25	33	12758	16	6	0	11	5	unchanged
+@pipeworx/mcp-kansas-code@0.2.1	https://github.com/pipeworx-io/mcp-kansas-code	2025-03-26	1	158	0	0	0	2	1	unchanged
+@seraviahealth/glp1search-mcp@2.0.1	https://github.com/Sndevore77/glp1search-mcp	2025-11-25	11	1535	0	0	0	1	2	unchanged
+@rightnow/forge-mcp-server@1.0.2	https://github.com/RightNow-AI/forge-mcp-server	2025-11-25	7	1398	0	0	0	2	2	unchanged
+rarefaction-lsp-mcp@0.4.3	https://github.com/ip2k/rarefaction	2025-11-25	3	1011	2	2	0	0	1	unchanged
+@pipeworx/mcp-dtcc-swaps@0.2.1	https://github.com/pipeworx-io/mcp-dtcc-swaps	2025-03-26	2	699	0	0	0	2	2	unchanged
+aiagentsbay-mcp@1.2.5	https://github.com/thomasjumper/agentbay	2025-11-25	9	839	5	5	0	0	3	unchanged
+@pipeworx/mcp-data-baltimore@0.2.1	https://github.com/pipeworx-io/mcp-data-baltimore	2025-03-26	3	670	0	0	0	2	1	unchanged
+@pipeworx/mcp-ncbi-eutils@0.2.1	https://github.com/pipeworx-io/mcp-ncbi-eutils	2025-03-26	8	1171	0	0	1	3	1	unchanged
+@matematicsolutions/mcp-eureka@0.2.0	https://github.com/matematicsolutions/mcp-eureka	2025-11-25	4	825	0	0	0	2	1	unchanged
+@pipeworx/mcp-wa-dmv@0.2.1	https://github.com/pipeworx-io/mcp-wa-dmv	2025-03-26	2	1093	0	0	0	2	2	unchanged
+@blockrun/mcp@0.55.7	https://github.com/BlockRunAI/blockrun-mcp	2025-11-25	19	14151	0	0	0	1	3	unchanged
+product-lock-mcp@0.1.1	https://github.com/nickjazz/product-lock-mcp	2025-11-25	5	769	0	0	0	2	1	unchanged
+@pipeworx/mcp-httpstatus@0.2.1	https://github.com/pipeworx-io/mcp-httpstatus	2025-03-26	2	172	0	0	0	2	1	unchanged
+@leafwright/mcp@0.2.4	https://github.com/Tactic-Systems/leafwright	2025-11-25	3	183	0	0	0	1	2	unchanged
+postking-mcp@1.1.7	https://github.com/bitsandtea/postking-mcp	2025-11-25	220	45258	0	0	0	3	11	unchanged
+@mrfentmen/fiscaldata-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	226	0	0	0	1	1	unchanged
+@pipeworx/mcp-sec-insider@0.2.1	https://github.com/pipeworx-io/mcp-sec-insider	2025-03-26	3	1624	0	0	0	2	2	unchanged
+@ironflowsh/mcp@0.17.0	https://github.com/ironflowsh/mcp	2025-11-25	54	10378	0	0	0	2	4	unchanged
+@agentgate-builder/tokenverdict@0.1.0		2025-11-25	1	237	0	0	0	1	1	unchanged
+@igniteui/mcp-server@15.9.0	https://github.com/IgniteUI/igniteui-cli	2025-11-25	7	3474	4	4	0	0	1	unchanged
+@wheelfor/mcp@1.0.1	https://github.com/wheelfor/mcp	2025-11-25	4	628	0	0	0	2	1	unchanged
+gambot-mcp@1.9.1	https://github.com/gambot-ai/gambot-mcp	2025-11-25	11	2905	0	0	0	1	2	unchanged
+@mrfentmen/firrtl-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+fiatdock-mcp@1.16.1	https://github.com/fiatdock/fiatdock	2025-11-25	49	19400	0	0	0	2	2	unchanged
+@intellmedia/basecoat-ui-mcp@1.8.0	https://github.com/zygiu-zygis/basecoat-ui-mcp	2025-11-25	33	12977	21	18	0	3	7	unchanged
+@oraclaw/mcp-server@1.5.1	https://github.com/Whatsonyourmind/oraclaw	2025-11-25	17	5417	0	0	0	1	1	unchanged
+olostep-mcp@1.0.20	https://github.com/olostep/olostep-mcp-server	2025-11-25	10	2437	0	0	0	2	2	unchanged
+@ask-llm/gemini-mcp@2.0.0	https://github.com/Lykhoyda/ask-llm	2025-11-25	5	777	3	3	0	0	1	unchanged
+shopify-multi-store-mcp-server@2.0.3	https://github.com/alex-brecher/shopify-multi-store	2025-11-25	29	10661	3	2	0	2	3	unchanged
+@pipeworx/mcp-codewars@0.2.1	https://github.com/pipeworx-io/mcp-codewars	2025-03-26	4	309	0	0	0	3	3	safe
+@mrfentmen/grammatical-framework-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2220	0	0	0	2	2	unchanged
+@firsthandapi/mcp-server@0.3.1	https://github.com/jjfisherdev/firsthandapi-mcp-server	2024-11-05	8	1498	0	0	0	2	1	unchanged
+toasttab-mcp@1.1.1	https://github.com/chrischall/toasttab-mcp	2026-07-28	9	2361	0	0	0	1	1	unchanged
+@lattis-dev/cli@0.4.0	https://github.com/wastedcode/lattis	2025-11-25	5	632	0	0	0	1	1	unchanged
+markdown-forge-mcp@1.0.3	https://github.com/ryudi84/sovereign-mcp-servers	2025-11-25	4	370	0	0	0	1	1	unchanged
+docx-forge-mcp@0.1.1	https://github.com/mdfifty50-boop/docx-forge-mcp	2025-11-25	9	1344	0	0	0	2	1	unchanged
+@ellul-estate/abutly-com-abutly-tools-mcp@1.0.0	https://github.com/joeetdev/venture-estate	2025-11-25	7	642	0	0	0	1	1	unchanged
+@pipeworx/mcp-paperswithcode@0.2.1	https://github.com/pipeworx-io/mcp-paperswithcode	2025-03-26	4	529	0	0	0	3	2	safe
+@nslookup-io/mcp-server@1.6.0	https://github.com/NsLookup-io/nslookup-mcp	2025-11-25	23	3761	0	0	0	1	1	unchanged
+convertisseur-ia-mcp@1.0.1	https://github.com/Walmes1/connecteurs-ia	2024-11-05	5	658	0	0	0	1	2	unchanged
+@pipeworx/mcp-flightaware@0.2.1	https://github.com/pipeworx-io/mcp-flightaware	2025-03-26	4	1173	0	0	0	3	1	unchanged
+@mrfentmen/genshi-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+driftwatch-mcp@0.1.2	https://github.com/dhughes6071/driftwatch	2025-11-25	2	426	0	0	0	1	1	unchanged
+@pipeworx/mcp-api-football@0.2.1	https://github.com/pipeworx-io/mcp-api-football	2025-03-26	9	1272	0	0	1	4	3	safe
+legitshow-mcp@0.1.0	https://github.com/commitshow/cli	2025-11-25	2	417	0	0	0	1	1	unchanged
+@pipeworx/mcp-fda-inspections@0.2.1	https://github.com/pipeworx-io/mcp-fda-inspections	2025-03-26	5	1668	0	0	0	2	1	unchanged
+@sriinnu/kosha-discovery@1.13.0	https://github.com/sriinnu/kosha-discovery	2025-06-18	8	1004	0	0	0	1	2	unchanged
+mcp-roadmapsh@0.2.0	https://github.com/aissablk1/mcp-roadmapsh	2025-11-25	16	1668	0	0	0	1	2	unchanged
+@pipeworx/mcp-fbi-crime@0.2.1	https://github.com/pipeworx-io/mcp-fbi-crime	2025-03-26	6	788	0	0	0	3	3	safe
+@mrfentmen/event-b-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-tavily@0.2.1	https://github.com/pipeworx-io/mcp-tavily	2025-03-26	3	790	0	0	0	4	2	safe
+drillflow-mcp@1.0.96	https://github.com/capydev42/drillflow-mcp	2025-11-25	3	454	0	0	0	2	1	unchanged
+omnarai-mcp@1.12.0	https://github.com/justjlee/omnarai-mcp	2025-11-25	13	4709	0	0	0	2	1	unchanged
+flarehq-mcp@0.2.1		2025-11-25	4	998	2	2	0	0	1	unchanged
+@pipeworx/mcp-epss@0.2.1	https://github.com/pipeworx-io/mcp-epss	2025-03-26	2	395	0	0	0	2	1	unchanged
+@runonflux/flux-cloud-mcp@0.2.8	https://github.com/RunOnFlux/flux-cloud-mcp	2025-11-25	15	4828	2	2	0	0	3	unchanged
+@mcpgrade/mcp@0.1.1	https://github.com/jeremyrx7/mcpgrade	2025-11-25	2	260	0	0	0	1	1	unchanged
+jd-intel-mcp@0.13.0	https://github.com/prPMDev/jd-intel	2025-11-25	3	3983	2	0	0	1	1	unchanged
+@pipeworx/mcp-adzuna@0.2.1	https://github.com/pipeworx-io/mcp-adzuna	2025-03-26	6	1081	0	0	0	9	1	safe
+@mrfentmen/ncbi-datasets-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	364	0	0	0	1	2	unchanged
+cloudscope-mcp@0.3.3	https://github.com/alexpota/cloudscope-mcp	2025-11-25	15	2526	2	2	0	0	2	unchanged
+@pipeworx/mcp-arcgis-sanbernardino@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-sanbernardino	2025-03-26	3	601	0	0	0	4	4	safe
+app-ionelul-mcp@0.12.0		2025-11-25	63	17341	9	4	0	4	2	unchanged
+ustaxrecords-mcp@0.1.0		2025-11-25	5	707	4	4	0	0	3	unchanged
+@pipeworx/mcp-data-cambridge@0.2.2	https://github.com/pipeworx-io/mcp-data-cambridge	2025-03-26	3	868	0	0	0	2	2	unchanged
+premiere-pro-mcp@1.30.0	https://github.com/leancoderkavy/premiere-pro-mcp	2026-07-28	445	488951	21	0	1	3	8	unchanged
+@pipeworx/mcp-roblox@0.3.1	https://github.com/pipeworx-io/mcp-roblox	2025-03-26	11	864	0	0	0	4	3	safe
+coverageunlocked-mcp@1.0.4	https://github.com/edgeedgehq/coverageunlocked-mcp	2025-11-25	5	945	0	0	0	1	1	unchanged
+@pipeworx/mcp-data-gov-in@0.2.2	https://github.com/pipeworx-io/mcp-data-gov-in	2025-03-26	2	736	0	0	0	4	1	safe
+@mrfentmen/llvm-ir-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-auto-dev@0.2.1	https://github.com/pipeworx-io/mcp-auto-dev	2025-03-26	3	791	0	0	0	2	1	unchanged
+@pipeworx/mcp-dataverse-harvard@0.2.1	https://github.com/pipeworx-io/mcp-dataverse-harvard	2025-03-26	4	520	0	0	0	5	3	safe
+syncbridge-mcp@0.1.1	https://github.com/rehmansherazi/syncbridge	2024-11-05	4	192	0	0	0	2	1	unchanged
+@mrfentmen/kaitai-struct-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2200	0	0	0	2	2	unchanged
+@pipeworx/mcp-france-dvf@0.2.1	https://github.com/pipeworx-io/mcp-france-dvf	2025-03-26	3	864	0	0	0	3	1	unchanged
+@pipeworx/mcp-arcgis-sarpycounty@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-sarpycounty	2025-03-26	3	590	0	0	0	4	3	safe
+@mrfentmen/jsonpath-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	272	0	0	0	1	1	unchanged
+@korala/mcp@0.9.0		2025-11-25	1	223	0	0	0	2	1	unchanged
+@dmzagent/skill-builder-mcp@1.0.1	https://github.com/praeceptor-thesis/skill-builder-landing	2025-11-25	5	2067	0	0	0	1	1	unchanged
+@pipeworx/mcp-openstates@0.2.1	https://github.com/pipeworx-io/mcp-openstates	2025-03-26	4	939	0	0	0	5	3	unchanged
+mcp-swiss@0.9.0	https://github.com/vikramgorla/mcp-swiss	2025-11-25	94	9110	0	0	0	1	3	unchanged
+indesign-nutria-mcp@1.6.1	https://github.com/nutriandrea/adobe-indesign-mcp	2025-11-25	197	30527	0	0	0	2	4	unchanged
+contract-ops-mcp@0.3.0	https://github.com/DrBaher/contract-ops-mcp	2025-11-25	50	4713	0	0	0	2	3	unchanged
+@thryx/portfolio-mcp-server@1.0.0	https://github.com/lordbasilaiassistant-sudo/thryx-portfolio-mcp	2025-11-25	14	1814	0	0	0	1	5	unchanged
+one-shot-ui@0.7.0	https://github.com/TN0123/one-shot-ui	2025-11-25	5	1150	0	0	0	1	1	unchanged
+@zktx.io/say-ur-intent@0.4.4	https://github.com/zktx-mcp/say-ur-intent	2025-11-25	46	5473	12	8	0	4	4	unchanged
+launch-library-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	6	545	0	0	0	2	2	unchanged
+@makerportal/mcp@0.1.1		2025-11-25	8	4015	0	0	0	1	2	unchanged
+@rsdoctor/mcp-server@0.1.2-beta.0	https://github.com/web-infra-dev/rsdoctor	2025-06-18	15	2416	0	0	0	1	3	unchanged
+tabler-mcp-server@1.0.1	https://github.com/MaFady/tabler-mcp-server	2025-11-25	12	1489	0	0	0	1	2	unchanged
+droidbar-mcp@0.1.1	https://github.com/topher66/droidbar-mcp	2024-11-05	5	374	0	0	0	1	3	unchanged
+clotr-guard@0.1.3	https://github.com/clotr-app/clotr	2026-07-28	3	278	3	3	0	0	1	unchanged
+@pipeworx/mcp-nominatim@0.2.1	https://github.com/pipeworx-io/mcp-nominatim	2025-03-26	3	385	0	0	0	5	3	safe
+mcp-server-serp-title-width@0.1.0	https://github.com/adsandcode/serp-title-width	2025-11-25	2	1103	0	0	0	1	2	unchanged
+ng-postcode-mcp@0.4.2	https://github.com/Adeniyikayodee/ng-postcode	2026-07-28	4	509	0	0	0	1	1	unchanged
+@rog0x/mcp-git-tools@1.0.1	https://github.com/rog0x/mcp-git-tools	2025-11-25	5	830	0	0	0	1	1	unchanged
+@pipeworx/mcp-geohash@0.2.1	https://github.com/pipeworx-io/mcp-geohash	2025-03-26	2	262	0	0	0	2	2	unchanged
+stablevoy-mcp@0.4.1	https://github.com/stablevoy/stablevoy-mcp	2025-11-25	10	2997	0	0	0	1	2	unchanged
+capacity-attest@0.7.0	https://github.com/holistis/tokenizen	2025-11-25	3	2774	0	0	0	1	5	unchanged
+@letoribo/mcp-graphql-enhanced@4.16.0	https://github.com/letoribo/mcp-graphql-enhanced	2025-11-25	2	528	0	0	0	1	1	unchanged
+@pipeworx/mcp-data-centrevaldeloire@0.2.1	https://github.com/pipeworx-io/mcp-data-centrevaldeloire	2025-03-26	3	521	0	0	0	7	2	safe
+@table-bro/mcp@1.2.0	https://github.com/table-bro/table-bro	2025-11-25	6	5744	5	4	0	1	1	unchanged
+@sendsoon/mcp@0.3.8	https://github.com/sendsoon/mcp	2025-11-25	3	460	0	0	0	2	1	unchanged
+instagit@0.1.5	https://github.com/InstalabsAI/instagit	2025-11-25	1	345	0	0	0	1	1	unchanged
+@pipeworx/mcp-leadmagic@0.2.1	https://github.com/pipeworx-io/mcp-leadmagic	2025-03-26	1	240	0	0	0	2	1	unchanged
+@mrfentmen/gdb-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-pjm@0.2.1	https://github.com/pipeworx-io/mcp-pjm	2025-03-26	4	981	0	0	0	2	2	unchanged
+@pipeworx/mcp-patent-maintenance-fees@0.2.1	https://github.com/pipeworx-io/mcp-patent-maintenance-fees	2025-03-26	2	637	0	0	0	2	2	unchanged
+@pipeworx/mcp-arcgis-peachtreecorners@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-peachtreecorners	2025-03-26	3	556	0	0	0	3	3	safe
+mindvalley-products-mcp@1.0.1	https://github.com/mazemax/mindvalley-products-mcp	2025-06-18	4	315	5	5	0	0	1	unchanged
+site-search-opener-mcp@1.1.1	https://github.com/albertalbs/site-search-opener-mcp	2025-11-25	7	1916	3	2	0	1	1	unchanged
+@braincloud/mcp-helper@6.0.0	https://github.com/getbraincloud/braincloud-mcp-helper	2025-11-25	4	2054	0	0	0	1	1	unchanged
+@pipeworx/mcp-arcgis-sacramento@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-sacramento	2025-03-26	3	616	0	0	0	4	4	safe
+kontra-mcp@0.1.2	https://github.com/bluwork/kontra-mcp	2025-11-25	1	183	0	0	0	1	1	unchanged
+housestyle-mcp@1.0.2	https://github.com/myanptl/housestyle-mcp	2025-11-25	6	871	0	0	0	1	1	unchanged
+@pipeworx/mcp-arcgis-peterborough@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-peterborough	2025-03-26	3	615	0	0	0	4	4	safe
+clawphunks-mcp@1.1.0	https://github.com/jefdiesel/clawphunks	2025-11-25	4	252	0	0	0	1	1	unchanged
+proxy-veil@1.5.4	https://github.com/Goldentrii/proxy-veil	2025-11-25	5	835	0	0	0	1	1	unchanged
+@pipeworx/mcp-medlineplus@0.2.1	https://github.com/pipeworx-io/mcp-medlineplus	2025-03-26	2	325	0	0	0	4	2	safe
+draw2agent@1.3.4	https://github.com/zero-abd/draw2agent	2025-11-25	1	159	0	0	0	1	1	unchanged
+@mrfentmen/apl-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+mcp-udacity-commit@1.2.2	https://github.com/qwertymuzaffar/mcp-udacity-commit	2025-11-25	3	377	0	0	0	1	1	unchanged
+@shuji-bonji/houki-nta-mcp@0.27.1	https://github.com/shuji-bonji/houki-nta-mcp	2026-07-28	14	4949	0	0	0	2	2	unchanged
+ship-mcp@0.2.1	https://github.com/colossal1598/ship-MCP	2025-11-25	2	135	0	0	0	1	1	unchanged
+@pipeworx/mcp-spdx-license@0.2.1	https://github.com/pipeworx-io/mcp-spdx-license	2025-03-26	4	293	0	0	0	5	3	safe
+@pipeworx/mcp-arcgis-lakecountyil@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-lakecountyil	2025-03-26	3	589	0	0	0	4	4	safe
+lingjing-classroom-mcp@1.0.2	https://github.com/genesis-plan/lingjing	2025-11-25	1	244	0	0	0	1	1	unchanged
+@pipeworx/mcp-law-commission@0.2.1	https://github.com/pipeworx-io/mcp-law-commission	2025-03-26	3	594	0	0	0	3	1	unchanged
+useqr-mcp@1.0.0	https://github.com/aaronte/useqr-mcp	2025-11-25	3	372	0	0	0	2	1	unchanged
+@pipeworx/mcp-data-nantes@0.2.1	https://github.com/pipeworx-io/mcp-data-nantes	2025-03-26	3	518	0	0	0	4	3	safe
+@pipeworx/mcp-arcgis-pittsburgh@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-pittsburgh	2025-03-26	3	610	0	0	0	4	4	safe
+@pipeworx/mcp-jungle-scout@0.3.1	https://github.com/pipeworx-io/mcp-jungle-scout	2025-03-26	3	867	0	0	0	2	1	unchanged
+@guardbee/mcp-document-scanner@0.4.1	https://github.com/GuardBee/guardbee-mcp	2026-07-28	3	468	0	0	0	1	1	unchanged
+@wycord/nigeria-mcp-health-facility@0.3.0	https://github.com/wycord/nigeria-mcp	2025-11-25	2	311	0	0	0	2	1	unchanged
+@gaiventures/pilotfish-mcp@0.1.21		2025-11-25	16	1854	0	0	0	1	3	unchanged
+@mrfentmen/beluga-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-nasa-firms@0.2.1	https://github.com/pipeworx-io/mcp-nasa-firms	2025-03-26	3	1110	0	0	0	2	2	unchanged
+llmxray@0.8.13	https://github.com/LogneBudo/llmxray	2025-11-25	7	2234	7	0	0	2	2	unchanged
+@pipeworx/mcp-textstats@0.2.1	https://github.com/pipeworx-io/mcp-textstats	2025-03-26	2	260	0	0	0	2	1	unchanged
+tubescout@0.1.1	https://github.com/not0lucky/tubescout	2025-11-25	6	889	0	0	0	1	1	unchanged
+@mrfentmen/ourairports-mcp@1.0.2	https://github.com/mrfentmen/awesome-servers	2025-11-25	6	633	0	0	0	1	1	unchanged
+chainward-mcp-server@0.2.3	https://github.com/saltxd/chainward	2025-11-25	9	1149	0	0	0	1	2	unchanged
+mmm-mcp-server@0.5.0	https://github.com/nhorie-canal/mmm_mcp	2025-11-25	14	4349	0	0	0	2	3	unchanged
+@dashiro/tacitus-mcp-server@0.1.3	https://github.com/ionasrobert/tacitus-mcp-server	2025-11-25	16	1540	0	0	0	2	2	unchanged
+@mrfentmen/smithy-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@ellul-estate/amortlane-com-amortlane-worksheets-mcp@1.0.0	https://github.com/joeetdev/venture-estate	2025-11-25	7	642	0	0	0	1	1	unchanged
+@pipeworx/mcp-arcgis-dukescounty@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-dukescounty	2025-03-26	3	615	0	0	0	4	4	safe
+@mrfentmen/joy-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+plonk-mcp@0.4.3	https://github.com/ostapondo/plonk	2025-11-25	22	7526	0	0	0	2	2	unchanged
+@mrfentmen/luau-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@agent-infra/mcp-server-browser@latest	https://github.com/bytedance/UI-TARS-desktop	2025-06-18	21	1580	0	0	0	2	1	unchanged
+pangolinfo-review-mining-mcp@0.1.2	https://github.com/Pangolin-spg/pangolinfo-review-mining-mcp	2025-11-25	5	1431	0	0	0	1	2	unchanged
+codex-octopus@1.0.1	https://github.com/xiaolai/codex-octopus	2025-11-25	2	463	0	0	0	1	1	unchanged
+@paretools/docker@0.8.0	https://github.com/Dave-London/Pare	2025-11-25	13	2369	0	0	0	1	2	unchanged
+@pipeworx/mcp-interpro@0.2.1	https://github.com/pipeworx-io/mcp-interpro	2025-03-26	3	453	0	0	0	2	1	unchanged
+nyuchi-docs-mcp@0.1.0	https://github.com/nyuchi/nyuchi-docs	2025-11-25	5	453	0	0	0	2	2	unchanged
+albert-heijn-mcp@1.9.1	https://github.com/olekpuchka/albert-heijn-mcp	2025-11-25	37	7152	21	0	1	1	3	unchanged
+@wraps.dev/mcp@0.11.1	https://github.com/wraps-team/wraps-js	2025-11-25	7	1845	4	0	0	1	3	unchanged
+@conformo/mcp-server@0.2.3	https://github.com/arsalmurad/conformo	2025-11-25	7	14468	4	0	0	2	1	unchanged
+mcp-bastion@1.5.0	https://github.com/Gowthaman90/mcp-bastion	2026-07-28	4	315	0	0	0	1	1	unchanged
+vocce-transcribe-mcp@1.1.0	https://github.com/cmoonagent/vocce-agent	2025-11-25	6	938	0	0	0	1	1	unchanged
+@pipeworx/mcp-xero@0.2.1	https://github.com/pipeworx-io/mcp-xero	2025-03-26	5	906	0	0	0	4	2	safe
+@pipeworx/mcp-hcup-inpatient-stats@0.2.1	https://github.com/pipeworx-io/mcp-hcup-inpatient-stats	2025-03-26	2	659	0	0	0	2	2	unchanged
+buyforme-mcp@1.0.2	https://github.com/arispay-inc/arispay-x402	2025-11-25	19	2447	0	0	0	2	4	unchanged
+@darkhorseone/mcp-server-uk-parliament-interests@1.0.1	https://github.com/DarkhorseOne/mcp-servers	2025-11-25	8	1270	0	0	0	2	2	unchanged
+@pipeworx/mcp-arcgis-abbotsford@0.2.1	https://github.com/pipeworx-io/mcp-arcgis-abbotsford	2025-03-26	3	620	0	0	0	4	4	safe
+ai-visibility-mcp@1.0.0	https://github.com/sharozdawa/ai-visibility	2025-11-25	6	699	0	0	0	1	2	unchanged
+@pipeworx/mcp-usitc-edis@0.2.1	https://github.com/pipeworx-io/mcp-usitc-edis	2025-03-26	3	586	0	0	0	6	1	safe
+@pipeworx/mcp-data-orlando@0.2.1	https://github.com/pipeworx-io/mcp-data-orlando	2025-03-26	3	503	0	0	0	4	3	safe
+smallprint-mcp@1.1.1	https://github.com/gostanos/smallprint-action	2025-11-25	4	2019	0	0	0	1	2	unchanged
+@three-ws/vanity-mcp@0.1.3	https://github.com/nirholas/three.ws	2025-11-25	8	1360	0	0	0	1	1	unchanged
+fdic-mcp-server@3.0.1		2026-07-28	29	10339	3	3	0	1	3	unchanged
+@pipeworx/mcp-bulgaria-beneficial-owners@0.2.1	https://github.com/pipeworx-io/mcp-bulgaria-beneficial-owners	2025-03-26	1	259	0	0	0	2	1	unchanged
+stock-sentinel-mcp@1.1.0	https://github.com/SheldonZhuang/StockSentinel	2025-11-25	8	1625	0	0	0	1	2	unchanged
+@mrfentmen/janet-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+ai-edit-studio@0.11.0	https://github.com/laaielichter/ai-edit-studio	2025-06-18	59	19730	5	4	0	2	3	unchanged
+mcp-astgl-knowledge@1.3.1	https://github.com/Jmeg8r/mcp-astgl-knowledge	2025-11-25	17	2263	0	0	0	2	2	unchanged
+solmachina-x402-mcp@1.4.0	https://github.com/imnotamob/solmachina-x402-mcp	2024-11-05	25	3633	0	0	0	1	2	unchanged
+@mrfentmen/mirc-script-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2200	0	0	0	2	2	unchanged
+@wycord/nigeria-mcp-trade-intel@0.5.0	https://github.com/wycord/nigeria-mcp	2025-11-25	2	457	0	0	0	1	1	unchanged
+oss-search@0.3.2	https://github.com/sblattj/oss-search	2026-07-28	7	1484	0	0	1	1	1	unchanged
+lawai-mcp-server@0.2.1	https://github.com/risk-ai/lawai-mcp-server	2025-11-25	7	1044	0	0	0	1	2	unchanged
+@pipeworx/mcp-42matters@0.2.1	https://github.com/pipeworx-io/mcp-42matters	2025-03-26	4	1472	0	0	0	2	2	unchanged
+@ellul-estate/batesio-com-batesio-document-management-tools-mcp@1.0.0	https://github.com/joeetdev/venture-estate	2025-11-25	7	635	0	0	0	1	1	unchanged
+@pipeworx/mcp-northern-mariana-code@0.2.1	https://github.com/pipeworx-io/mcp-northern-mariana-code	2025-03-26	2	459	0	0	0	2	1	unchanged
+tdai-memory-mcp@0.3.0	https://github.com/tinhien11/tdai-memory-mcp	2025-11-25	6	1319	0	0	0	2	2	unchanged
+@pipeworx/mcp-biosamples@0.2.1	https://github.com/pipeworx-io/mcp-biosamples	2025-03-26	2	319	0	0	0	2	1	unchanged
+@orygn/opa-mcp@0.9.1	https://github.com/OrygnsCode/opa-mcp-server	2025-11-25	52	20617	7	2	0	5	4	unchanged
+code-sentinel-mcp@0.2.6	https://github.com/salrad22/code-sentinel	2025-11-25	7	658	0	0	0	1	3	unchanged
+json-contracts@0.1.2	https://github.com/json-contracts/json-contracts	2025-11-25	8	663	0	0	0	1	2	unchanged
+figbridge-mcp@0.4.0	https://github.com/rudraptpsingh/figbridge	2025-11-25	51	8944	0	0	0	2	3	unchanged
+@mrfentmen/password-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	4	405	0	0	0	1	1	unchanged
+env-forge-mcp@1.0.3	https://github.com/ryudi84/sovereign-mcp-servers	2025-11-25	3	235	0	0	0	1	1	unchanged
+@pipeworx/mcp-ucdp@0.2.1	https://github.com/pipeworx-io/mcp-ucdp	2025-03-26	5	1471	0	0	0	3	3	unchanged
+@636865636b73756d/mcp-v1@1.0.1		2025-11-25	2	174	0	0	0	1	1	unchanged
+@mrfentmen/self-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@pipeworx/mcp-myhealthfinder@0.2.1	https://github.com/pipeworx-io/mcp-myhealthfinder	2025-03-26	4	611	0	0	0	2	1	unchanged
+@domainkits/mcp@2.1.3	https://github.com/ABTdomain/domainkits-mcp	2025-11-25	30	7923	16	13	0	3	4	unchanged
+@pipeworx/mcp-google-books@0.2.1	https://github.com/pipeworx-io/mcp-google-books	2025-03-26	4	672	0	0	1	5	3	safe
+@pipeworx/mcp-prozorro@0.2.1	https://github.com/pipeworx-io/mcp-prozorro	2025-03-26	6	2722	0	0	0	3	1	unchanged
+@pipeworx/mcp-marginalia@0.2.1	https://github.com/pipeworx-io/mcp-marginalia	2025-03-26	1	489	0	0	0	2	1	unchanged
+pkgxray@1.0.5	https://github.com/adamsjack711-ux/pkgxray	2025-11-25	4	1307	2	2	0	0	3	unchanged
+@guardbee/mcp-prompt-injection-scanner@0.2.2	https://github.com/GuardBee/guardbee-mcp	2025-11-25	4	476	0	0	0	1	1	unchanged
+@mrfentmen/fluent-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+mcp-server-sfmc@2.10.1	https://github.com/JoernBerkefeld/mcp-server-sfmc	2025-11-25	28	5121	0	0	0	2	2	unchanged
+@pipeworx/mcp-tcm-products@0.2.1	https://github.com/pipeworx-io/mcp-tcm-products	2025-03-26	2	587	0	0	0	2	1	unchanged
+@pipeworx/mcp-hagstofa-is@0.2.1	https://github.com/pipeworx-io/mcp-hagstofa-is	2025-03-26	3	444	0	0	0	4	3	safe
+mcp-magneto@0.1.0	https://github.com/Jucamhc/mcp-magneto	2025-11-25	18	2578	0	0	0	1	3	unchanged
+notion-arena-mcp@0.2.2	https://github.com/SynergyFlowLabs/notion-arena	2025-11-25	10	1259	0	0	0	1	2	unchanged
+@sensegrep/mcp@1.5.3	https://github.com/Stahldavid/sensegrep	2025-11-25	5	2218	0	0	0	1	1	unchanged
+claude-code-conversation-search-mcp@1.1.3	https://github.com/TonySimonovsky/claude-code-conversation-search-mcp	2025-11-25	8	458	0	0	0	1	2	unchanged
+sanctionwise@0.1.1	https://github.com/qinisolabs/sanctionwise	2025-11-25	2	340	0	0	0	2	1	unchanged
+painprep-mcp-server@0.1.2	https://github.com/Goingparabolic/painprep-mcp-server	2025-11-25	9	1375	2	2	0	0	3	unchanged
+@mrfentmen/rascript-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2200	0	0	0	2	2	unchanged
+apple-app-store-connect-mcp@0.5.0	https://github.com/devinwang/app-store-connect-mcp	2025-11-25	1316	325307	0	0	0	3	5	unchanged
+paris-compass-mcp@0.1.4	https://github.com/IvandeMurard/paris-compass	2025-11-25	6	2294	0	0	0	1	2	unchanged
+@mrfentmen/eff-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+math-svg-mcp@1.1.2	https://github.com/wspringer/math-svg-mcp	2025-11-25	2	566	0	0	0	1	1	unchanged
+icantmarket-mcp@0.1.0	https://github.com/spranab/icantmarket-mcp	2025-11-25	7	1289	0	0	0	3	1	unchanged
+crypto-analysis-human-mcp@1.6.1	https://github.com/MrCartographer/cartography	2025-11-25	7	1053	0	0	0	1	1	unchanged
+mcp-ticket-demo@1.9.0	https://github.com/markusvankempen/mcp-ticket-demo	2025-11-25	10	1789	6	6	0	0	2	unchanged
+@pipeworx/mcp-dol-m1@0.2.1	https://github.com/pipeworx-io/mcp-dol-m1	2025-03-26	2	739	0	0	0	2	1	unchanged
+@madhan-g-p/devdocs-mcp-server@1.0.0	https://github.com/madhan-g-p/DevDocs-MCP	2025-11-25	5	536	0	0	0	1	2	unchanged
+@braynexservices/nigeria-mcp-grid3-boundaries@0.1.1	https://github.com/Braynexservices/nigeria-mcp	2025-11-25	2	338	0	0	0	1	1	unchanged
+@tigerdata/tiger-skills-mcp-server@0.1.4	https://github.com/timescale/tiger-skills-mcp-server	2025-11-25	1	450	0	0	0	1	1	unchanged
+arcbounty-mcp@0.6.2	https://github.com/Sofiia7/ARC	2025-11-25	3	414	0	0	0	1	2	unchanged
+@spoolis/mcp@0.1.6		2025-11-25	32	11471	2	0	0	2	9	unchanged
+@cachly-dev/mcp-server@0.10.235	https://github.com/cachly-dev/cachly-mcp	2025-11-25	27	7308	0	0	0	3	4	unchanged
+mcp-server-scraper@1.0.1	https://github.com/ofershap/mcp-server-scraper	2025-11-25	5	466	0	0	0	1	1	unchanged
+@i4ctime/q-ring@0.19.0	https://github.com/I4cTime/q-ring	2025-11-25	46	16087	20	15	0	5	6	unchanged
+@mrfentmen/squirrel-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@takehub/mcp@1.1.2	https://github.com/mauurda/takehub	2025-11-25	26	3697	0	0	0	2	3	unchanged
+@pipeworx/mcp-cia-factbook@0.2.1	https://github.com/pipeworx-io/mcp-cia-factbook	2025-03-26	4	906	0	0	0	2	1	unchanged
+@diffci.com/diffci@0.3.38	https://github.com/DiffCI/core	2024-11-05	9	1069	4	0	0	1	3	unchanged
+@pipeworx/mcp-noaa-ncei@0.2.1	https://github.com/pipeworx-io/mcp-noaa-ncei	2025-03-26	3	851	0	0	0	2	1	unchanged
+password-forge-mcp@1.0.3	https://github.com/ryudi84/sovereign-mcp-servers	2025-11-25	3	358	0	0	0	1	1	unchanged
+anyapi-mcp@0.1.5	https://github.com/getanyapi-com/mcp	2025-11-25	10	2409	0	0	0	1	4	unchanged
+@chappibunny/repolens@1.16.2	https://github.com/CHAPIBUNNY/repolens	2025-11-25	6	663	6	6	0	0	1	unchanged
+agent-guards@0.3.0	https://github.com/mlawsonking/MCP	2025-11-25	31	6706	0	0	0	1	1	unchanged
+@mrfentmen/groovy-server-pages-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2220	0	0	0	2	2	unchanged
+revenue-mcp@0.1.2	https://github.com/warfare-hub/revenue-mcp	2025-11-25	5	229	0	0	0	1	2	unchanged
+hogswap-mcp@0.4.0	https://github.com/LiquiHog/hogswap-mcp	2025-11-25	12	2677	0	0	0	2	1	unchanged
+@pipeworx/mcp-openrouter@0.2.1	https://github.com/pipeworx-io/mcp-openrouter	2025-03-26	3	627	0	0	0	4	2	safe
+@yawlabs/lemonsqueezy-mcp@1.1.1	https://github.com/YawLabs/lemonsqueezy-mcp	2025-11-25	64	12940	0	0	0	2	3	unchanged
+@pipeworx/mcp-china-stocks@0.2.1	https://github.com/pipeworx-io/mcp-china-stocks	2025-03-26	17	6541	0	0	0	2	2	unchanged
+@super-log/mcp@0.4.1	https://github.com/saxonnicholls/super-log	2025-06-18	9	1713	0	0	0	1	1	unchanged
+@tensor-cad/mcp@0.1.21	https://github.com/Filip-Pajalic/TensorCAD	2026-07-28	19	6646	3	3	0	0	1	unchanged
+@claudeink/mcp-server@1.0.0	https://github.com/weekdmond/claudeink	2025-11-25	12	1750	0	0	0	4	1	unchanged
+amorphous-cli@0.1.3	https://github.com/djaxho/amorphous-plugin	2025-11-25	6	387	0	0	0	1	2	unchanged
+@mrfentmen/metar-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	262	0	0	0	1	1	unchanged
+ai-tomogotchi-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	8	384	0	0	0	2	1	unchanged
+@writerslogic/ai-agents-mcp@0.3.0	https://github.com/writerslogic/ai-agents-mcp	2025-11-25	15	7186	0	0	0	2	1	unchanged
+seo-geo-mcp-server@1.2.2	https://github.com/OrtaMarco/seo-geo-mcp-server	2026-07-28	17	6485	0	0	0	1	1	unchanged
+synap-mcp@0.1.1		2025-11-25	6	1015	0	0	0	1	1	unchanged
+@humanaway/mcp-server@0.2.2	https://github.com/seankim-android/humanaway-mcp-server	2025-11-25	7	687	0	0	0	2	4	unchanged
+einvoice-mcp@0.1.3	https://github.com/makririch/einvoice-mcp	2025-11-25	6	2614	0	0	0	2	1	unchanged
+@mrfentmen/ical-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	360	0	0	0	2	1	unchanged
+@optimalai/optibot-mcp@1.4.1		2025-11-25	22	1957	0	0	0	3	2	unchanged
+@unclick/deezer-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	2025-11-25	6	311	0	0	0	2	1	unchanged
+@mrfentmen/obis-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	299	0	0	0	1	2	unchanged
+@purplesquirrel/hedera-mcp@0.5.0	https://github.com/ExpertVagabond/hedera-mcp	2025-11-25	73	7656	0	0	0	2	11	unchanged
+talkback-mcp@0.1.3	https://github.com/jmedure/talkback-mcp	2025-11-25	10	1122	0	0	0	2	3	unchanged
+@pipeworx/mcp-health-canada-drugs@0.2.1	https://github.com/pipeworx-io/mcp-health-canada-drugs	2025-03-26	3	698	0	0	0	2	1	unchanged
+mcp-google-tagmanager@1.3.2	https://github.com/A1-x-Tech/mcp-google-tagmanager	2025-11-25	25	4992	0	0	0	1	2	unchanged
+ari-mcp@0.1.3	https://github.com/Antmanbuilds/ARI	2025-11-25	11	1289	0	0	0	1	3	unchanged
+paceva-garmin-mcp@0.1.0	https://github.com/OwenScheuer/paceva-garmin-mcp	2025-11-25	18	2567	0	0	0	1	2	unchanged
+@coldleads/mcp-server@1.0.2	https://github.com/anttka4cz/mcp-server-coldleads	2025-11-25	4	781	0	0	0	1	2	unchanged
+finance-mcp-server@1.0.1	https://github.com/cybeleri/finance-mcp-server	2025-11-25	15	1115	0	0	0	2	5	unchanged
+cabin-flights@0.1.1	https://github.com/yolo-maxi/cabin	2025-11-25	3	614	0	0	0	1	3	unchanged
+yad-agent-mcp@0.1.1	https://github.com/holistis/al-yad	2025-11-25	5	461	0	0	0	1	1	unchanged
+@weiseer/status-aggregator-mcp@0.1.2	https://github.com/weiseer/status-aggregator-mcp	2025-11-25	4	197	0	0	0	1	1	unchanged
+@mrfentmen/lua-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@pipeworx/mcp-austin-animal-services@0.2.1	https://github.com/pipeworx-io/mcp-austin-animal-services	2025-03-26	3	766	0	0	0	2	2	unchanged
+mcpfabric-mcp-server@0.9.0	https://github.com/denfry/mcpfabric	2025-11-25	101	14371	21	0	0	3	6	unchanged
+dineroenlamesa-mcp@1.0.0		2025-06-18	15	1711	9	9	0	0	3	unchanged
+lobster-mcp@1.1.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	16	1476	0	0	0	2	1	unchanged
+figme-mcp@1.1.1	https://github.com/ntson9p/figme-mcp	2025-11-25	12	3120	0	0	0	1	1	unchanged
+@pipeworx/mcp-data-providence@0.2.1	https://github.com/pipeworx-io/mcp-data-providence	2025-03-26	3	511	0	0	0	4	2	safe
+obelisk-mcp@0.2.0	https://github.com/zachhannum/obelisk	2025-11-25	4	1082	0	0	0	2	1	unchanged
+@quantustik/mcp-server@1.0.1	https://github.com/quantustik/mcp-server	2025-11-25	13	3741	0	0	0	1	3	unchanged
+container-registry-mcp@1.0.2	https://github.com/mrfentmen/awesome-servers	2025-11-25	6	619	0	0	0	1	2	unchanged
+gogcli-mcp-maps@4.11.1	https://github.com/chrischall/gogcli-mcp	2026-07-28	12	3814	4	0	1	1	2	unchanged
+optiq-mcp@0.1.0-beta.3	https://github.com/Baukaalm/optiq	2026-07-28	2	1666	0	0	0	1	2	unchanged
+@unclick/australiapost-mcp@0.1.0	https://github.com/malamutemayhem/unclick.git	2025-11-25	3	193	0	0	0	1	2	unchanged
+@pipeworx/mcp-api-ninjas@0.2.1	https://github.com/pipeworx-io/mcp-api-ninjas	2025-03-26	6	1373	0	0	0	3	1	unchanged
+@pipeworx/mcp-pypi@0.2.1	https://github.com/pipeworx-io/mcp-pypi	2025-03-26	4	480	0	0	0	5	2	safe
+@nodemint/projectmind@0.6.0	https://github.com/Nodemint-dev/projectmind	2025-11-25	7	1110	0	0	0	2	1	unchanged
+claude-desktop-bridge@1.0.0	https://github.com/KiMiGuel/Indepentest-CDB	2025-11-25	5	685	3	3	0	1	2	unchanged
+@mrfentmen/fruityvice-mcp@1.0.2	https://github.com/mrfentmen/awesome-servers	2025-11-25	3	317	0	0	0	1	1	unchanged
+@chrischall/iaqualink-mcp@0.3.1	https://github.com/chrischall/iaqualink-mcp	2026-07-28	19	6677	0	0	0	1	2	unchanged
+@pipeworx/mcp-wi-dmv@0.2.1	https://github.com/pipeworx-io/mcp-wi-dmv	2025-03-26	1	431	0	0	0	2	1	unchanged
+pqs-mcp-server@1.4.0	https://github.com/OnChainAIIntel/pqs-mcp-server	2025-11-25	2	825	0	0	0	1	2	unchanged
+@mrfentmen/crossref-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	6	641	0	0	0	1	1	unchanged
+@three-ws/metaplex-agent-mcp@0.2.1	https://github.com/nirholas/three.ws	2025-11-25	9	4972	0	0	0	1	4	unchanged
+@mrfentmen/hiveql-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@pipeworx/mcp-data-va@0.2.1	https://github.com/pipeworx-io/mcp-data-va	2025-03-26	3	510	0	0	0	4	3	safe
+debtfree-mcp-server@1.0.1	https://github.com/chrisbusbin-pixel/debtfree-mcp-server	2025-11-25	5	952	3	3	0	0	2	unchanged
+@mrfentmen/genero-4gl-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2240	0	0	0	2	2	unchanged
+@pipeworx/mcp-data-novascotia@0.2.1	https://github.com/pipeworx-io/mcp-data-novascotia	2025-03-26	3	522	0	0	0	4	2	safe
+llmverify@1.8.0	https://github.com/subodhkc/llmverify-npm	2025-11-25	6	1030	2	2	0	0	1	unchanged
+@pipeworx/mcp-uspto-ptab@0.2.1	https://github.com/pipeworx-io/mcp-uspto-ptab	2025-03-26	10	3022	0	0	0	2	1	unchanged
+@mrfentmen/scenic-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@dicepdf/mcp@0.1.0	https://github.com/ishan-maheshwari/free-pdf	2025-11-25	11	1334	0	0	0	2	1	unchanged
+@antonbabenko/deliberation-mcp@3.14.5		2024-11-05	20	8366	3	3	0	0	4	unchanged
+@pipeworx/mcp-openfoodfacts@0.2.1	https://github.com/pipeworx-io/mcp-openfoodfacts	2025-03-26	5	394	0	0	0	4	2	safe
+@pipeworx/mcp-kroger@0.2.1	https://github.com/pipeworx-io/mcp-kroger	2025-03-26	3	834	0	0	0	2	2	unchanged
+@pipeworx/mcp-civitai@0.2.1	https://github.com/pipeworx-io/mcp-civitai	2025-03-26	3	701	0	0	0	6	2	unchanged
+@mindstone/mcp-server-wise@0.1.1	https://github.com/mindstone/mcp-servers	2025-11-25	17	4090	0	0	0	1	2	unchanged
+colorblind-mcp@0.2.0	https://github.com/vince-gonzalez/opticquiz.com	2025-11-25	4	747	0	0	0	1	1	unchanged
+citable-mcp@0.6.3	https://github.com/zaialamm/Citable	2025-11-25	19	4004	0	0	0	1	3	unchanged
+@pipeworx/mcp-podatki-si@0.2.1	https://github.com/pipeworx-io/mcp-podatki-si	2025-03-26	3	443	0	0	0	8	2	safe
+@orderly.network/mcp-server@1.5.8	https://github.com/OrderlyNetwork/orderly-mcp	2025-11-25	9	2469	6	6	0	0	3	unchanged
+@mrfentmen/pact-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@spatialpack/mcp@0.1.0		2025-11-25	29	7137	0	0	0	1	3	unchanged
+@pipeworx/mcp-copernicus-dataspace@0.2.1	https://github.com/pipeworx-io/mcp-copernicus-dataspace	2025-03-26	3	924	0	0	0	3	1	unchanged
+internet-radio-mcp@1.0.4	https://github.com/AlonDrilich/internet-radio-mcp	2026-07-28	5	1231	0	0	0	2	1	unchanged
+@kinti/a11y-toolkit@5.26.0	https://github.com/kinti/a11y-toolkit	2025-11-25	35	11071	8	5	0	3	2	unchanged
+review-assist-mcp@1.1.0	https://github.com/uditk2/review-assist	2025-11-25	23	7234	4	4	0	0	4	unchanged
+lock-autopsy@0.2.0	https://github.com/DarkKitty-w/lock-autopsy	2025-11-25	1	225	0	0	0	1	1	unchanged
+snipaya-mcp@1.2.2	https://github.com/krzysztofsurdy/snipaya-mcp	2025-11-25	28	6458	6	0	0	2	3	unchanged
+@paystage/preflight@0.1.0	https://github.com/base-buzz/paystage	2025-11-25	1	73	0	0	0	1	1	unchanged
+@pipeworx/mcp-idigbio@0.2.1	https://github.com/pipeworx-io/mcp-idigbio	2025-03-26	3	650	0	0	0	3	1	unchanged
+@printr/mcp@0.4.1	https://github.com/PrintrFi/printr-mcp	2025-11-25	14	3843	0	0	0	3	1	unchanged
+@mrfentmen/module-management-system-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2200	0	0	0	2	2	unchanged
+@pipeworx/mcp-china-exchange-data@0.2.1	https://github.com/pipeworx-io/mcp-china-exchange-data	2025-03-26	4	1445	0	0	0	2	2	unchanged
+@appmonster/mcp-landed-cost@0.1.0	https://github.com/groove79/kmcp	2025-11-25	2	665	0	0	0	1	1	unchanged
+@pipeworx/mcp-inaturalist@0.2.1	https://github.com/pipeworx-io/mcp-inaturalist	2025-03-26	3	662	0	0	0	3	2	unchanged
+twitterapi-io-mcp@1.7.2	https://github.com/dorukardahan/twitterapi-io-mcp	2025-11-25	7	1211	0	0	0	1	2	unchanged
+whats-loaded-mcp@0.2.5	https://github.com/stcmain/whats-loaded-mcp	2025-11-25	5	426	0	0	0	1	1	unchanged
+@mrfentmen/noaa-space-weather-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	1	41	0	0	0	1	1	unchanged
+codex-delegate-mcp@2.8.0	https://github.com/andreilungeanu/codex-delegate-mcp	2025-11-25	3	738	2	2	0	0	5	unchanged
+@livevariant/mcp@0.1.5	https://github.com/livevariant/livevariant	2025-11-25	6	3152	3	0	0	1	1	unchanged
+@truepathpdf/mcp-server@0.3.0	https://github.com/JoyTruepath/truepath-pdf-mcp	2025-11-25	9	1781	0	0	0	1	1	unchanged
+@ask-llm/ollama-mcp@0.7.0	https://github.com/Lykhoyda/ask-llm	2025-11-25	3	472	3	3	0	0	2	unchanged
+@pipeworx/mcp-hsa-singapore@0.2.1	https://github.com/pipeworx-io/mcp-hsa-singapore	2025-03-26	4	991	0	0	0	2	1	unchanged
+@pipeworx/mcp-nist-beacon@0.2.1	https://github.com/pipeworx-io/mcp-nist-beacon	2025-03-26	5	292	0	0	0	2	2	unchanged
+@pipeworx/mcp-france-legi@0.2.1	https://github.com/pipeworx-io/mcp-france-legi	2025-03-26	4	1191	0	0	0	3	2	unchanged
+@pipeworx/mcp-edgar@0.4.2	https://github.com/pipeworx-io/mcp-edgar	2025-03-26	17	13692	0	0	0	2	3	unchanged
+@allratestoday/central-bank-mcp@0.3.2	https://github.com/AllRates-Today/central-bank-mcp	2025-11-25	6	1869	0	0	0	1	2	unchanged
+jsonloupe@1.9.2	https://github.com/priyanshuN/jsonloupe	2025-11-25	12	4018	6	0	0	3	4	unchanged
+superhighway-mcp@1.2.0	https://github.com/patwalls/superhighway-mcp	2025-11-25	5	607	0	0	0	1	1	unchanged
+@mrfentmen/ergoscript-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+vestige-mcp-server@4.2.0	https://github.com/samvallad33/vestige	2026-07-28	16	4700	4	4	0	2	13	unchanged
+ms-sharepoint-mcp@1.0.1	https://github.com/0xka13b/microsoft-mcps	2025-11-25	23	3170	4	0	1	0	4	unchanged
+@hermitsh/shrimp-mcp@1.0.7	https://github.com/hermitsh-ai/shrimp	2025-11-25	19	4059	2	2	0	0	3	unchanged
+databazaar-mcp@1.5.1	https://github.com/shagarwal/databazaar-mcp	2025-11-25	27	5021	6	4	0	2	8	unchanged
+mcp-stashbox@2.1.0	https://github.com/smeet666/mcp-stashbox	2025-11-25	10	4534	0	0	0	2	2	unchanged
+@pipeworx/mcp-fruityvice@1.1.1	https://github.com/pipeworx-io/mcp-fruityvice	2025-03-26	3	315	0	0	0	2	1	unchanged
+@cutoptim/mcp@0.1.0	https://github.com/cutoptim/engine-mcp	2025-11-25	10	16476	0	0	0	1	2	unchanged
+@pipeworx/mcp-datagov@0.2.1	https://github.com/pipeworx-io/mcp-datagov	2025-03-26	3	325	0	0	0	5	3	safe
+mcp-lrclib@2.1.0	https://github.com/smeet666/mcp-lrclib	2025-11-25	3	941	0	0	0	2	1	unchanged
+@rakshasar/xsignal@0.2.1	https://github.com/philpof102-svg/xsignal	2024-11-05	7	653	0	0	0	1	1	unchanged
+@helm-protocol/ttt-mcp@0.3.4	https://github.com/Helm-Protocol/openttt-mcp	2025-11-25	8	1525	0	0	0	1	2	unchanged
+@mrfentmen/shen-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2160	0	0	0	2	2	unchanged
+@codehabits/mcp@0.1.4	https://github.com/codehabits-dev/codehabits	2025-11-25	8	868	0	0	0	2	1	unchanged
+morphogen-mcp@0.2.0	https://github.com/beeswaxpat/morphogen-mcp	2025-11-25	6	1620	0	0	0	1	1	unchanged
+mcp-google-tasks@1.1.2	https://github.com/A1-x-Tech/mcp-google-tasks	2025-11-25	21	4856	0	0	0	1	4	unchanged
+@mrfentmen/tolk-mcp@1.0.0	https://github.com/mrfentmen/awesome-servers	2025-11-25	20	2180	0	0	0	2	2	unchanged
+@darkhorseone/mcp-server-uk-parliament-commonsvotes@1.0.1	https://github.com/DarkhorseOne/mcp-servers	2025-11-25	5	1229	0	0	0	1	1	unchanged
+@pipeworx/mcp-ilostat@0.2.1	https://github.com/pipeworx-io/mcp-ilostat	2025-03-26	3	862	0	0	0	7	2	safe
+thecocktaildb-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	6	476	0	0	0	2	1	unchanged
+@pipeworx/mcp-nsf-awards@0.2.1	https://github.com/pipeworx-io/mcp-nsf-awards	2025-03-26	2	412	0	0	0	2	1	unchanged
+evipedia-mcp@0.1.30	https://github.com/forever-healthy/evipedia-mcp	2025-11-25	8	1451	0	0	0	1	1	unchanged
+@aaronsb/slack-mcp@2.8.1	https://github.com/aaronsb/slack-mcp	2026-07-28	11	3297	0	0	0	0	3	no session
+deckbase-mcp-server@1.0.0	https://github.com/deckbase/deckbase-web	2024-11-05	35	3689	0	0	0	2	9	unchanged
+osm-notes-mcp@1.0.1	https://github.com/mrfentmen/awesome-servers	2025-11-25	6	629	0	0	0	2	1	unchanged

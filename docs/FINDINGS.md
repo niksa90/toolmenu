@@ -673,65 +673,67 @@ every changed finding read by hand.
   `x-mcp-header` is valid, its lists stable; the only `spec/` finding is the logging
   capability, which 2026-07-28 deprecates.
 
-## F17. 250 servers new to the bench, every command on each
+## F17. 1,090 servers new to the bench, every command on each
 
 *Checked 2026-11-09 with `bench/scripts/batch-full.sh` on `corpus/registry-2026-11.tsv`:
-npm stdio servers from the MCP registry that need no credentials and weren't in any
-earlier corpus, in a seeded random order. Of the first 400 tried, 270 started and listed
-tools (115 exited before `initialize`, mostly wanting an argument or an API key; 11
-didn't install; 4 had no command); these are the first 250.* Each got `snapshot` with
-`--lists prompts,resources --client claude-code --offline-check`, `session --auto
---union-out`, and `review` of the snapshot against the union menu. 55 of the 250 come
-from one publisher (`@pipeworx/*`), so its patterns are counted apart below.
+the first 1,600 npm stdio servers from the MCP registry, in a seeded random order, that need
+no credentials and weren't in an earlier corpus. 1,090 started and listed tools. Of the
+rest, 463 exited before `initialize` or listed nothing (mostly wanting an argument or an API
+key), 39 didn't install, and 8 had no command. Every server was checked by the same build
+(`acaa34c`); data in `bench/results/2026-11-09/`.* Each got `snapshot` with `--lists
+prompts,resources --client claude-code --offline-check`, `session --auto --union-out`, and
+`review` of the snapshot against the union menu.
+
+Two publishers dominate: `@pipeworx` with 242 servers from one code generator, and
+`@mrfentmen` with 110. The other 738 servers come from 690 publishers, and the counts
+below say where the two account for a pattern.
 
 | | |
 |---|---|
-| Protocols | 2025-11-25: 173 · 2025-03-26: 56 · 2026-07-28: 15 · 2025-06-18: 3 · 2024-11-05: 3 |
-| Menus | 3,859 tools, ~952K tokens; 6 tools at the median |
-| `session --auto` | called something on 43 servers (254 calls, 173 answered); on the rest no tool is marked `readOnlyHint`, so `session/nothing-called` |
-| `review` | 221 unchanged, 28 safe (the menu changed between the snapshot and the session: the `@pipeworx` version hash below), 1 without a union (the server hung on `tools/list`) |
+| Protocols | 2025-11-25: 754 · 2025-03-26: 244 · 2026-07-28: 55 · 2024-11-05: 19 · 2025-06-18: 18 |
+| Menus | 16,520 tools, ~4.3M tokens |
+| Runtime coverage | tools called on 189 servers (17%), an answer on 150 (14%); 659 of 1,156 calls answered. 898 servers mark no tool `readOnlyHint`, so `--auto` called nothing on them |
+| `review` | 1,000 unchanged, 87 safe (the snapshot and the session's union differ: the `@pipeworx` version hash), 3 without a session |
 
-**What toolmenu got wrong, fixed in this release.**
+**What toolmenu got wrong, fixed along the way** (each with a regression test):
 
-- **`diff` and `review` crashed on `"items": true`** (figma-mcp-rs 0.1.0): a boolean is a
-  valid JSON Schema, and `diff` read it as an object. A server with one failed the
-  Action's diff step. A fuzz test now runs every analysis on boolean, null, string,
-  number and array subschemas, which found three more crashes on `null` (the ID rules,
-  the token breakdown, union pairing in `diff`).
-- **A variance only in a field the model doesn't read was an error about prompt
-  caches.** Every `@pipeworx` tool carries a `version` hash that changes on every
-  `tools/list` (`v1.ef282cca` → `v1.bb26ead1`): `menu/nondeterministic` on 13 servers,
-  `menu/process-variance` on 15, "every conversation can miss the prompt cache". The
-  model reads names, descriptions and input schemas, so no cache is lost; the baseline
-  never matches, so every diff reports 10 changes. Now a warning that says that.
-- **`review` called a snapshot against its own session's union menu "safe", not
-  "unchanged",** twice over: `diff/lists-unread` (a note that prompts weren't compared)
-  counted as a change, and the union menu had no `ttlMs`, so `spec/cache-hints` read as
-  gone (14 servers). Both fixed.
-- **A missing API key read as the server failing.** "ADR Aggregator API key not
-  configured. Set ADR_AGGREGATOR_API_KEY…" was a `session/step-failed` error on
-  mcp-adr-analysis-server; it's a credential the run didn't have (`session/untested`).
+- **`diff` and `review` crashed on boolean subschemas** (`"items": true`, figma-mcp-rs), and
+  on `null` ones in three more places, `snapshot` among them (`f4479e4`).
+- **A change only in a field the model doesn't read was an error about prompt caches**:
+  `menu/nondeterministic`, the variance rules (`f4479e4`) and `session/edit` (`c021a3f`)
+  now warn, name the field and say what it costs (the baseline never matches).
+- **`review` said "safe" for a snapshot against its own session's union menu**: a "not
+  compared" note counted as a change (`ffd3622`), and the union menu lost `ttlMs`
+  (`077884a`).
+- **Setup failures read as the server failing**: "API key not configured" (`0a7a559`),
+  "needs credentials", "no browser found" (`c021a3f`), "not a git repository", "the extension
+  is not connected" (the commit after).
+- **`spec/schema` quoted only "Invalid result for tools/list: ["** of the SDK's rejection
+  (`a1b871e`); each problem is now a detail line.
 
 **What the servers get wrong.**
 
-- **Writes without annotations** (`write/unannotated`): 50 servers, none `@pipeworx`.
-- **Offline, a different menu** (`menu/network-dependent`): 49 servers, 40 of them
-  `@pipeworx`. Offline, `@pipeworx/mcp-wmata`'s 10 tools lose every annotation,
-  `readOnlyHint` included, and ~141 tokens of description: run without the network, a
-  client that auto-approves read-only tools asks for each, and `diff` reports 10
-  breaking `diff/safety-hint` changes against a baseline made online.
-- **Duplicate tool names** (`menu/duplicate-name`): one server lists four tools twice
-  (`register_partner_agency` at positions 117 and 151); Claude's API refuses the list.
-- **Results that fail the schema**: `inputSchema` without `"type"` (`spec/schema`, 2
-  servers), resource URIs that aren't URIs (`lists/schema`, 6), and a 2026-07-28 server
-  whose `tools/call` results have no `resultType` (`session/result-type`), which the
-  official SDK client rejects.
-- **Schemas that don't say what's required**: `@putervision/agent-reasoning-mcp`'s tools
-  fail without `project`, which their schemas leave optional (`session/step-failed`).
-- **`readOnlyHint: true` on tools named as writes** (`write/read-only-mismatch`): 4,
-  including 14 `create_…` tools on one server.
+- **Clients list none of the tools** (`spec/schema`, 7 servers): `inputSchema` without
+  `"type"` (test-coverage-mcp), an `outputSchema` whose type isn't `object` (4 `@pipeworx`
+  servers), and 2026-07-28 `tools/list` results without `ttlMs` and `cacheScope`
+  (@sylphx/lockdocs, oss-search). The official SDK client rejects each list.
+- **Duplicate tool names** (`menu/duplicate-name`): one server lists four tools twice; the
+  Claude API refuses the list.
+- **Other spec violations**: resource lists that fail the schema (`lists/schema`, 6 errors
+  on 29 servers with a finding: URI templates in `resources/list`, unencoded spaces, a scheme
+  starting with a digit, 2026 lists without cache hints); `tools/call` results with no
+  `resultType` on 2026-07-28 (2); MCP Apps tools marked app-only but listed to clients
+  without Apps (2), and a UI resource that doesn't exist (1); a malformed extension ID (1).
+- **Offline, a different menu** (`menu/network-dependent`, 187 servers, 159 of them from
+  the two big publishers): `@pipeworx` tools lose every annotation, `readOnlyHint`
+  included, without the network.
+- **A menu that changes per call or per process** (`menu/nondeterministic` 85,
+  `menu/process-variance` 104): almost all `@pipeworx`'s version hash, now a warning. Two
+  errors are model-visible: @ixo/asks-mcp's `plan` parameter is in one process's menu and
+  not another's.
+- **Writes without annotations** (`write/unannotated`, a heuristic): 223 servers, 147 of
+  them outside the two big publishers.
 
-No finding on the 250 crashed toolmenu after the fixes, and the 115 servers that didn't
-start each got a message naming why (the usage text a command printed, "bun: No such
-file or directory").
-
+No server crashed toolmenu after the fixes. Every server that didn't start got a message
+naming why: the usage text a command printed, "bun: No such file or directory", or the
+module it couldn't find.

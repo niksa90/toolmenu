@@ -39,8 +39,9 @@
 - **`session/edit` only in a field the model doesn't read is a warning.** The same
   `version` hash, changing between two lists mid-session, was an error saying it
   invalidates the cached prompt. Like the variance rules, it now warns and names the field.
-- **More setup failures read as setup failures:** "needs credentials" (botverse-mcp) and
-  "no browser found" (mcp-session-bridge) were `session/step-failed` errors.
+- **More setup failures read as setup failures:** "needs credentials" (botverse-mcp),
+  "no browser found" and "the extension is not connected" (mcp-session-bridge), and "not a
+  git repository" (diffci) were `session/step-failed` errors.
 - **"API key not configured" is a missing credential.** A tool that said so (mcp-adr-analysis-server)
   was a `session/step-failed` error, the server's fault; it's now counted with the other
   setup failures in `session/untested`.

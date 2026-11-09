@@ -79,3 +79,9 @@ test('"needs credentials" and "no browser found" are setup failures (botverse-mc
   assert.equal(classifyFailure('No browser found for standalone mode. Install Chrome/Chromium/Brave/Edge', { hadArguments: false }), 'environment');
   assert.equal(classifyFailure('This tool needs a project id', { hadArguments: false }), 'other');
 });
+
+test('"not a git repository" and "the extension is not connected" are this machine, not the server (bench 2026-11-09)', () => {
+  assert.equal(classifyFailure('could not resolve repository HEAD: fatal: not a git repository (or any parent up to mount point /)', { hadArguments: false }), 'environment');
+  assert.equal(classifyFailure('The T3rnel Browser extension is not connected — install it here: https://browser.t3ratech.co.zw/', { hadArguments: false }), 'environment');
+  assert.equal(classifyFailure('Request timed out', { hadArguments: false }), 'other');
+});
