@@ -260,7 +260,7 @@ export function overview(): string {
   const width = Math.max(...COMMANDS.map((c) => c.length)) + 3;
   return [
     `toolmenu ${VERSION}`,
-    "Lint your MCP server's tool menu for changes that confuse agents or break caches.",
+    "Test your MCP server the way agents and clients meet it: the menu, the calls, the results, the sign-in, every release.",
     '',
     'Usage: toolmenu <command> [options]',
     '',

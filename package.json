@@ -2,7 +2,7 @@
   "name": "toolmenu",
   "version": "0.26.0",
   "mcpName": "io.github.niksa90/toolmenu",
-  "description": "Lint your MCP server's tool menu for changes that confuse agents or break caches.",
+  "description": "Test your MCP server the way agents and clients meet it: the menu, the calls, the results, the sign-in, and every release after. No LLM involved.",
   "author": "Nikša Perović (https://niksa.me)",
   "main": "dist/index.js",
   "scripts": {
@@ -18,7 +18,9 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "linter",
+    "testing",
+    "interoperability",
+    "conformance",
     "agents",
     "prompt-caching",
     "cli",

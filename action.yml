@@ -1,5 +1,5 @@
 name: toolmenu
-description: Lint your MCP server's tool menu for changes that confuse agents or break caches.
+description: Test your MCP server the way agents and clients meet it, and catch breaking menu changes on every PR.
 author: niksa90
 branding:
   icon: list

@@ -5,7 +5,7 @@
 <h1 align="center">toolmenu</h1>
 
 <p align="center">
-  <b>Checks for MCP servers' tool lists: changes that confuse agents, break prompt caches or break clients, caught before your users hit them.</b>
+  <b>Tests your MCP server the way agents and clients meet it: the menu they read, the calls they make, the results and sign-in they get back, and every release after. Problems caught before your users hit them.</b>
 </p>
 
 <p align="center">
@@ -22,9 +22,17 @@
 </p>
 
 Your MCP server's tool list is the menu every agent reads before it does anything.
-toolmenu checks that menu the way clients and agents will meet it: across calls,
-connections, clients and releases. No LLM is involved, so the same inputs always give
-the same answer and it fits in CI.
+toolmenu starts there and follows the agent in. It **connects** as a client does (stdio
+or HTTP, every protocol version from 2024-11-05 to 2026-07-28), **reads** the menu,
+**calls** the tools (read-only by default; every tool, writes included, in a sealed
+sandbox with `--call-everything`), **checks** each result against the spec and the tool's
+own `outputSchema`, **walks** the OAuth discovery a client follows before it logs in, and
+**compares** the menu across steps, connections, processes, clients and releases.
+
+It isn't only a linter: a linter grades the text of one snapshot, and much of what
+breaks agents only shows when you call the server, reconnect, or ship the next version.
+No LLM is involved, so the same server gives the same answer on every run and it fits
+in CI. The same checks run [every week on ~3,200 public servers](#tested-on-real-servers).
 
 ```sh
 npx toolmenu snapshot -- node dist/server.js      # or: npx toolmenu snapshot https://example.com/mcp
@@ -86,6 +94,9 @@ findings on every run.
 | | |
 |---|---|
 | **A menu that changes mid-session** | `session` calls your tools and watches the list. A tool added mid-conversation can rewrite the whole cached prompt: one unlock cost 40–57K tokens of cache in my logs. |
+| **Every tool, called** | `session --auto` calls the tools marked read-only; `--call-everything` calls all of them, writes included, with made-up input in a container with no network and no credentials. A call that crashes, hangs or breaks the protocol is reported; a readable tool error is what the spec asks for. |
+| **Results clients reject** | Results are checked against the tool's `outputSchema` (a MUST since 2025-06-18) and, on 2026-07-28, for `resultType`, the way the official SDK client checks them before your agent ever sees the answer. |
+| **Sign-in, before logging in** | `auth check` walks OAuth discovery as a spec-following client does: the 401, protected resource metadata (RFC 9728), authorization server metadata (RFC 8414 or OpenID Connect), PKCE and registration. |
 | **Breaking releases** | `diff` compares two menus: removed tools, new required parameters, narrowed types, token growth. It also says whether your version bump is big enough. |
 | **The 2026-07-28 protocol** | The tool set must not vary per connection, and results need `resultType`. Elicitation, multi round-trip input and `server/discover` are checked too, as are the 2025 handshakes. |
 | **MCP Apps, Tasks, Server Cards** | It reads `ui://` resources as a host does and checks who may see each tool. It catches tasks sent to clients that can't poll them, and Server Cards that contradict the live server. |
@@ -131,6 +142,8 @@ same code ([bench/README.md](bench/README.md) has the commands):
 | Named servers run in a container: GitHub, Atlassian, Sentry, Notion, Supabase, Playwright, MongoDB… ([`bench/servers.txt`](bench/servers.txt)) | 22 | `snapshot`, `session --init`, `session` |
 | Hosted (Streamable HTTP) servers from the registry that need no headers, sampled with a fixed seed | 200 | `snapshot`, read-only `session --auto --max-calls 10` |
 | Hosted servers behind OAuth: Sentry, GitHub, Atlassian (F14) | 3 | `auth login`, then `snapshot` |
+| **Weekly:** stdio servers from the registry, npm and PyPI (F17, F18); each week rechecks up to 300 new releases and newly listed servers | 1,090 at baseline | `snapshot`, `session --auto`, and a sealed `--call-everything` pass: 15,550 of 16,518 tools called, every one of the rest accounted for |
+| **Weekly:** hosted servers, 109 vendor endpoints (GitHub, Google, Microsoft, Atlassian, Stripe…) and a seeded 2,000 of the registry's | 2,109 | `snapshot`, read-only `session --auto`, and `auth check` on each that answers 401 |
 
 What those runs found is in [docs/FINDINGS.md](https://github.com/niksa90/toolmenu/blob/main/docs/FINDINGS.md),
 including what toolmenu itself got wrong and how it was fixed. A few:
@@ -142,6 +155,15 @@ including what toolmenu itself got wrong and how it was fixed. A few:
 - **The official filesystem server has reported `0.2.0` for 19 releases**, so a
   server's self-reported version can't be used for semver checks (F5).
 - **Notion's server ships the same 9 unused `$defs` in all 24 tools**: 72% of its menu.
+- **12 of 1,090 stdio servers fail in the official SDK client today** (8 lose every tool,
+  4 lose answers), and 22 of 2,000 hosted ones send a 2026-07-28 tool list that client
+  rejects (F18).
+- **Microsoft Sentinel's sign-in can't pass a client that follows MCP 2025-11-25 to the
+  letter**: Entra ID supports PKCE but its OpenID Connect metadata doesn't say so, and the
+  spec tells clients to refuse (F18).
+
+The weekly run compares each week with the last: menus that changed, servers that fixed
+or gained a finding, and the trend ([bench/results/weekly](bench/results/weekly)).
 
 ## Start here
 
