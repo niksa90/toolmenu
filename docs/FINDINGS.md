@@ -815,7 +815,7 @@ with HTTP 401 and a per-tool `WWW-Authenticate`: a design, not a failure.
 
 ## F19. 98 servers the big vendors publish, every tool called
 
-*Checked 2026-11-09; data in `bench/results/vendors-2026-11-09/`.* Most vendors' hosted
+*Checked 2026-11-09; data in `bench/results/weekly/2026-11-09/vendors/`.* Most vendors' hosted
 endpoints (F18) show their tools only after a login. So this run used what they publish
 for agents to run locally: 62 npm packages, 22 PyPI packages and 14 container images
 (GitHub, AWS Labs, Microsoft, PayPal, Stripe, Atlassian, Notion, HashiCorp, Grafana,

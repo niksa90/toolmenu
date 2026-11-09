@@ -100,7 +100,7 @@ findings on every run.
 | **Breaking releases** | `diff` compares two menus: removed tools, new required parameters, narrowed types, token growth. It also says whether your version bump is big enough. |
 | **The 2026-07-28 protocol** | The tool set must not vary per connection, and results need `resultType`. Elicitation, multi round-trip input and `server/discover` are checked too, as are the 2025 handshakes. |
 | **MCP Apps, Tasks, Server Cards** | It reads `ui://` resources as a host does and checks who may see each tool. It catches tasks sent to clients that can't poll them, and Server Cards that contradict the live server. |
-| **Your client's view** | `--client claude-code \| claude-api-search \| openai` shows what each client loads, cuts, can find and refuses. |
+| **Your client's view** | `--client` with Claude Code, the Claude API, OpenAI, Codex, VS Code (Copilot Chat), Copilot cloud agent and code review, Gemini CLI, the Gemini API or Antigravity shows what each loads, cuts, can find, refuses, rewrites or leaves out, from each one's own docs. |
 | **What agents misread** | It flags vague `id`s, IDs no tool returns, instructions buried late in descriptions, and writes without annotations or marked read-only. |
 | **Words routing to the wrong tool** | `routes.yml` pins which tool each keyword must (and must not) reach, the way a keyword or BM25 tool search sees the menu. A description edit that lets `get_audit_trail` win "audit" fails the check, with no model and no eval budget. [More](#snapshot-rules) |
 | **Menus that drift** | It catches defaults built from the clock or a hash order, menus that differ per process, per connection or offline, and listings that depend on who asks. |
@@ -864,6 +864,22 @@ client doesn't document is left out, not guessed.
 | `claude-code` | tool names; full definitions for tools marked `_meta["anthropic/alwaysLoad"]` | reads a description up to 4,096 characters | 16,384 through search, 4,096 up front | Claude API's |
 | `claude-api-search` | nothing from tools you defer (keep the 3–5 used most loaded) | name, description, argument names and descriptions; 5 results by default | none documented | `^[a-zA-Z0-9_-]{1,128}$` |
 | `openai` | each deferred function's name and description (its schema loads on demand); a deferred MCP server shows only its own name and description | how many results, and which fields, isn't documented, so `search/findable` doesn't run | none documented | `^[a-zA-Z0-9_-]+$`, up to 128 |
+| `codex` | not documented | not documented | none documented | OpenAI's (it sends tools to the Responses API) |
+| `antigravity` | each tool's name; the agent reads a tool's schema before calling it, unless the user marks it `"eager"` | not a search: the agent reads the schema file | none documented | not documented |
+| `gemini-cli` | not documented | not documented | none documented | rewrites: characters outside letters, digits, `_ - . :` become `_`, names over 63 characters are cut in the middle |
+| `gemini-api` | not documented | not documented | none documented | letters, digits, `_ - . :`, up to 128 |
+
+Three more check what a client limits rather than what it loads:
+
+| `--client` | What it checks |
+|---|---|
+| `vscode` | VS Code (GitHub Copilot Chat) sends at most 128 tools a request: a server over it alone is `menu/client-limit` |
+| `copilot-cloud-agent` | uses MCP tools only, not prompts or resources (`menu/client-features`, with `--lists`) |
+| `copilot-code-review` | the same, and only tools marked `readOnlyHint: true`: the rest are listed |
+
+Not here, because their docs don't state it: Cursor's tool limit (forum posts say 40),
+Windsurf's (100 in older docs, not in the current page), ChatGPT's. A value comes in
+when the client documents it.
 
 The snapshot adds a line such as `as Claude Code: up front ~524 tokens · on demand ~344
 per tool a search loads (largest: update_contacts, ~2,093)`, and `--json` a `client`
@@ -907,7 +923,9 @@ toolmenu sees what the server sends. Plenty of agent failures happen elsewhere:
 --lists <kinds>     snapshot: also read and check prompts, resources (comma-separated);
                     saved in the menu file beside the tools
 --client <name>     snapshot: check the menu for one client, from its own docs:
-                    claude-code, claude-api-search or openai
+                    claude-code, claude-api-search, openai, codex, vscode,
+                    copilot-cloud-agent, copilot-code-review, gemini-cli,
+                    gemini-api or antigravity
 --as <name>:<cred>  snapshot: list the menu as this identity too, repeatable:
                     "reader:Authorization: Bearer …" (HTTP) or "admin:ROLE=admin"
                     (stdio). The first is the menu saved; the others are compared

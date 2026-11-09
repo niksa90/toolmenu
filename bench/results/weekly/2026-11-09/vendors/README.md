@@ -1,5 +1,7 @@
 # Vendor servers, 2026-11-09
 
+The weekly run's vendor baseline: from 2026-11-15, each week reruns these servers at their latest release (`bench/scripts/vendor-latest.py`) and `CHANGES.md` compares them with the week before.
+
 The servers big vendors publish themselves, run the way an agent's client meets them:
 the menu, a read-only session, and every tool called once.
 
@@ -26,6 +28,7 @@ the menu, a read-only session, and every tool called once.
   - `sealed_*` columns count how each call in the sealed pass came back.
 - **`findings.jsonl`:** every finding, every level, with the pass that made it. In the sealed pass, a failed call or an untested run is info, and a server that stops answering is a warning (`graded`).
 - **`status-*.txt`:** the runs' own status lines.
-- **`menus/`:** each menu file, for next run's `toolmenu review`.
+- **`menus/<id>.json`:** each menu file, for next week's `toolmenu review`.
+- **`image-digests.tsv`:** the exact image each container server ran.
 
 The hosted vendor endpoints (`bench/results/weekly/2026-11-09/http/`) are a different set: their menus are behind a login for 79 of 109. This set is the vendors' own code, run locally.

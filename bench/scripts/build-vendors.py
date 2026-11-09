@@ -2,9 +2,11 @@
 # packages and container images, each run through snapshot, session --auto and the sealed
 # pass that calls every tool (batch-full.sh, PY=1 batch-full.sh, batch-image.sh).
 # usage: python3 -I build-vendors.py <dataset dir> <list.tsv> <run dir> [<list.tsv> <run dir> ...]
-# Writes servers.tsv (one row per server, the ones that didn't list tools too, with why),
-# and findings.jsonl (every finding, every level, with the pass that made it).
-import collections, json, os, re, sys
+# Writes servers.tsv (one row per server, the ones that didn't list tools too, with why;
+# `id` is the list's first column, the same week to week whatever the version),
+# findings.jsonl (every finding, every level, with the pass that made it), menus/<id>.json
+# (next week's review compares against them), status files, and image-digests.tsv.
+import collections, json, os, re, shutil, subprocess, sys
 
 OUT, pairs = sys.argv[1], sys.argv[2:]
 KINDS = {'spec': ('spec/', 'lists/schema', 'apps/', 'session/result-type', 'session/output-schema'),
@@ -78,11 +80,14 @@ for lst, run in zip(pairs[::2], pairs[1::2]):
         sid, spec = cols[0], cols[1]
         d = os.path.join(run, sid)
         st = status.get(sid, 'not-run')
-        row = {'server': spec, 'via': 'image' if lst.endswith('images.tsv') else ('pypi' if 'pypi' in lst else 'npm'),
+        row = {'id': sid, 'server': spec, 'via': 'image' if lst.endswith('images.tsv') else ('pypi' if 'pypi' in lst else 'npm'),
                'status': st, 'protocol': '', 'tools': 0, 'tokens': 0, 'calls': 0, 'answered': 0,
                'sealed_called': 0, 'sealed_answered': 0, 'sealed_tool_error': 0, 'sealed_failed': 0, 'sealed_timeout': 0,
                'error': 0, 'warn': 0, 'info': 0, 'review': '', 'why': ''}
         snap = load(os.path.join(d, 'snapshot.json')) if st == 'ok' else None
+        if snap and os.path.exists(os.path.join(d, 'menu.json')):
+            os.makedirs(os.path.join(OUT, 'menus'), exist_ok=True)
+            shutil.copy(os.path.join(d, 'menu.json'), os.path.join(OUT, 'menus', sid + '.json'))
         if not snap:
             row['why'] = 'the package declares no console script (run as python -m?)' if st == 'no-bin' else why(d)
             servers.append(row)
@@ -109,6 +114,16 @@ for lst, run in zip(pairs[::2], pairs[1::2]):
         servers.append(row)
 
 os.makedirs(OUT, exist_ok=True)
+for lst, run in zip(pairs[::2], pairs[1::2]):
+    for name in ('status.txt', 'status-sealed.txt'):
+        if os.path.exists(os.path.join(run, name)):
+            shutil.copy(os.path.join(run, name), os.path.join(OUT, name.replace('.txt', f'-{os.path.basename(lst).removesuffix(".tsv")}.txt')))
+    if lst.endswith('images.tsv'):
+        with open(os.path.join(OUT, 'image-digests.tsv'), 'w') as h:
+            for line in open(lst):
+                image = line.split('\t')[1]
+                r = subprocess.run(['docker', 'image', 'inspect', '-f', '{{index .RepoDigests 0}}', image], capture_output=True, text=True)
+                h.write(f'{image}\t{r.stdout.strip()}\n')
 cols = list(servers[0])
 with open(os.path.join(OUT, 'servers.tsv'), 'w') as h:
     h.write('\t'.join(cols) + '\n')

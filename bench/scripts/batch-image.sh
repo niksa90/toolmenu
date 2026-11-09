@@ -3,8 +3,9 @@
 # Servers shipped as container images (GitHub's, Grafana's, HashiCorp's, Docker's mcp/*).
 # Each runs in its own container, started by toolmenu with `docker run -i --rm`, so its code
 # stays there: snapshot, session --auto and review, as full-one.sh; then the sealed pass with
-# --network none: every tool called once, writes included. Pull the images first.
-# Build first: npm run build.
+# --network none: every tool called once, writes included. Each image is pulled first
+# (outside toolmenu's timeout); PRUNE=1 removes it after its server, so a long list
+# (Docker's catalog, docker-catalog.py) fits on the disk. Build first: npm run build.
 set -uo pipefail
 T="$(cd "$(dirname "$0")/../.." && pwd)/dist/cli.js"
 out="$(mkdir -p "$2" && cd "$2" && pwd)"
@@ -12,6 +13,7 @@ one() {
   local id=$1 image=$2 env_kv=$4 args=$5 d="$out/$1"; mkdir -p "$d"; cd "$d" || return
   local e=(); for kv in $env_kv; do e+=(-e "$kv"); done
   local run=(docker run -i --rm --memory 2g "${e[@]}")
+  if ! timeout 900 docker pull -q "$image" > pull.txt 2>&1; then echo "pull-failed $id" >> "$out/status.txt"; return; fi
   timeout 300 node "$T" snapshot --json --timeout 60000 --lists prompts,resources --client claude-code --offline-check --out menu.json -- "${run[@]}" "$image" $args > snapshot.json 2> snapshot-err.txt
   local sc=$? tools
   tools=$(node -e 'try{const j=JSON.parse(require("fs").readFileSync("snapshot.json","utf8"));console.log(j.tools||0)}catch{console.log(0)}')
@@ -25,8 +27,9 @@ one() {
   else
     echo "no-menu $id snapshot=$sc" >> "$out/status.txt"
   fi
+  if [ "${PRUNE:-}" = 1 ]; then docker rmi -f "$image" > /dev/null 2>&1 || true; fi
 }
-export -f one; export T out
+export -f one; export T out PRUNE
 # Columns split by awk, not read (read would merge the empty repo column with the next),
 # one per line; xargs -d keeps the empty ones.
 awk -F'\t' '{ for (i = 1; i <= 5; i++) print $i }' "$1" | xargs -d '\n' -n 5 -P "${PARALLEL:-4}" bash -c 'one "$@"' _

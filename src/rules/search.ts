@@ -27,7 +27,7 @@ export const findable: Rule = {
     if (profile) {
       // A client that defers tools does it at any size; one whose search results
       // aren't documented (OpenAI's spec doesn't say how many) isn't ranked against a guess.
-      if (profile.defers.value === 'none' || tools.length < 2) return [];
+      if (!profile.defers || profile.defers.value === 'none' || tools.length < 2) return [];
       if (!profile.searchLimit && ctx.client !== 'claude-code') return [];
     } else if (tools.length < MIN_TOOLS || ((ctx.menu.totalTokens ?? 0) < MIN_TOKENS && tools.length < 30)) return [];
     const index = buildIndex(tools, { descriptionChars: profile?.searchReads?.value });

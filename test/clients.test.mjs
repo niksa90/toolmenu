@@ -136,3 +136,51 @@ test('--client and descriptionLimit: "toString" and "constructor" name no client
   assert.equal(limit.code, 2);
   assert.match(limit.stderr, /descriptionLimit must be a positive number or one of/);
 });
+
+// The clients added 2026-11-09, each value read from the client's own docs or source.
+const lintAs = (client, menu) => runRules(MENU_RULES, { menu, pages: [], capabilities: { tools: {} }, usedAuth: false, protocolVersion: '2026-07-28', era: 'modern', client });
+
+test('menu/client-limit: VS Code sends at most 128 tools a request; a server over it alone is a warning, at it is fine', () => {
+  const many = (n) => menuOf(Array.from({ length: n }, (_, i) => tool(`tool_${i}`)));
+  const over = lintAs('vscode', many(129)).filter((f) => f.rule === 'menu/client-limit');
+  assert.equal(over.length, 1);
+  assert.equal(over[0].severity, 'warn');
+  assert.match(over[0].message, /^129 tools, over the 128 VS Code \(GitHub Copilot Chat\) allows in one request/);
+  assert.match(over[0].detail.at(-1), /code\.visualstudio\.com\/docs\/agents\/run\/tools \(read 2026-11-09\)/);
+  assert.deepEqual(lintAs('vscode', many(128)).filter((f) => f.rule === 'menu/client-limit'), []);
+  assert.deepEqual(lintAs('claude-code', many(500)).filter((f) => f.rule === 'menu/client-limit'), [], 'no documented limit, no finding');
+});
+
+test('menu/client-features: Copilot cloud agent leaves prompts and resources out; code review also every tool not marked read-only', () => {
+  const m = menuOf([tool('get_a', [], { annotations: { readOnlyHint: true } }), tool('set_b')]);
+  m.prompts = [{ name: 'p' }];
+  m.resources = [{ uri: 'x://1' }, { uri: 'x://2' }];
+  const agent = lintAs('copilot-cloud-agent', m).filter((f) => f.rule === 'menu/client-features');
+  assert.equal(agent.length, 1);
+  assert.match(agent[0].message, /uses only MCP tools, not resources and prompts, so the server's 1 prompt and 2 resources aren't available there/);
+  const review = lintAs('copilot-code-review', m).filter((f) => f.rule === 'menu/client-features');
+  assert.equal(review.length, 2);
+  assert.match(review[1].message, /uses only tools marked readOnlyHint: true, and 1 tool of 2 isn't, so it isn't available there/);
+  assert.equal(review[1].detail[0], 'set_b');
+  assert.deepEqual(lintAs('copilot-cloud-agent', menuOf([tool('a')])).filter((f) => f.rule === 'menu/client-features'), [], 'tools only: nothing left out');
+});
+
+test('naming/client-name: Gemini CLI rewrites names (dots and colons are fine there, 63 characters), the Gemini API allows 128, Codex takes OpenAI\'s rule', () => {
+  const names = (client, ...ns) => lintAs(client, menuOf(ns.map((n) => tool(n)))).filter((f) => f.rule === 'naming/client-name');
+  assert.deepEqual(names('gemini-cli', 'files.read', 'ns:get'), [], 'dots and colons are kept');
+  const cli = names('gemini-cli', 'get user', 'x'.repeat(64));
+  assert.equal(cli.length, 1);
+  assert.match(cli[0].message, /Gemini CLI keeps as they are .* at most 63 characters\)\. It replaces other characters with underscores and cuts longer names in the middle, so its model sees a name that isn't the server's/);
+  assert.match(cli[0].detail.join('\n'), /get user: has a space, outside letters, digits, _, -, \. and :/);
+  assert.deepEqual(names('gemini-api', 'x'.repeat(100)), []);
+  assert.match(names('codex', 'files.read')[0].message, /OpenAI's Responses API, which Codex sends tools to/);
+});
+
+test('--client antigravity: tool names up front, a tool\'s schema when the agent reads it', () => {
+  const m = menuOf([tool('alpha', ['a', 'b', 'c'], { description: 'Alpha does a long thing. '.repeat(20) }), tool('beta')]);
+  const c = clientCost('antigravity', m);
+  assert.ok(c.upfront < m.totalTokens / 4, 'names only up front');
+  assert.deepEqual(c.loaded, []);
+  assert.match(c.basis, /Antigravity lists each MCP tool's name and loads a tool's schema when the agent reads it/);
+  assert.equal(clientCost('vscode', m), undefined, 'VS Code\'s docs don\'t say it defers: no figure');
+});
