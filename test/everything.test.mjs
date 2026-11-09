@@ -66,3 +66,13 @@ test('--call-everything is refused over HTTP: a hosted server\'s tools act on re
   assert.equal(r.code, 2);
   assert.match(r.stderr, /only runs a local stdio server/);
 });
+
+test('--call-everything: a failed call or an untested run is info, not an error (made-up values, no network)', async () => {
+  const { session, parseScenario } = await import('../dist/session.js');
+  const r = await session(
+    { kind: 'stdio', command: process.execPath, args: [join(FIXTURES, 'output-server.mjs')] },
+    parseScenario({ allow_writes: true, steps: ['list', { call: 'no_such_tool' }] }),
+    { timeoutMs: 30000, processes: 1, auto: { called: [], skipped: [], everything: true } },
+  );
+  for (const f of r.findings.filter((x) => x.rule === 'session/step-failed' || x.rule === 'session/untested')) assert.equal(f.severity, 'info', f.message);
+});

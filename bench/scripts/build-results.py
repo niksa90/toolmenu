@@ -8,7 +8,7 @@ KIND = {
     'menu/duplicate-name': 'client', 'naming/client-name': 'client', 'description/cut': 'client', 'description/buried': 'client',
     'menu/network-dependent': 'behaviour', 'menu/process-variance': 'behaviour', 'menu/nondeterministic': 'behaviour',
     'menu/connection-variance': 'behaviour', 'menu/capability-dependent': 'behaviour', 'session/known-variance': 'behaviour',
-    'session/step-failed': 'behaviour', 'session/tool-error': 'behaviour', 'session/server-unresponsive': 'behaviour',
+    'session/step-failed': 'behaviour', 'session/tool-error': 'behaviour', 'session/server-unresponsive': 'behaviour', 'session/output-schema': 'spec',
     'session/mid-insert': 'behaviour', 'session/append': 'behaviour', 'session/edit': 'behaviour', 'session/remove': 'behaviour',
     'session/reorder': 'behaviour', 'session/side-effect': 'behaviour', 'session/unannounced': 'behaviour',
     'session/error-not-flagged': 'behaviour', 'session/handle-error': 'behaviour', 'session/input-unanswered': 'behaviour',
@@ -58,19 +58,35 @@ for id, spec, repo in order:
         continue
     d = os.path.join(RUN, 'out', id)
     snap, sess, rev = load(f'{d}/snapshot.json'), load(f'{d}/session.json'), load(f'{d}/review.json')
+    # SEALED=1: every tool called once, in a container with no network (everything.json).
+    sealed = load(f'{d}/everything.json')
     if not snap:
         continue
     fs = [(regrade(f), 'snapshot') for f in snap['findings']] + [(regrade(f), 'session') for f in (sess['findings'] if sess else [])]
+    # The sealed pass: its own findings, except those the read-only session already made.
+    seen = {(f['rule'], f.get('tool')) for f, _ in fs}
+    # Made-up values, no network: a failed call or an untested run is info there (as the
+    # current toolmenu says it); what a result breaks whatever the input keeps its level.
+    def sealed_grade(f):
+        f = regrade(f)
+        if f['rule'] in ('session/step-failed', 'session/untested') and f['severity'] != 'info':
+            return {**f, 'severity': 'info', 'regraded': f.get('regraded') or 'sealed pass: made-up values, no network'}
+        return f
+    fs += [(sealed_grade(f), 'sealed') for f in (sealed['findings'] if sealed else []) if (f['rule'], f.get('tool')) not in seen]
     for f, cmd in fs:
         findings.append({'pkg': spec, 'command': cmd, 'rule': f['rule'], 'kind': KIND.get(f['rule'], 'other'), 'severity': f['severity'],
                          **({'confidence': f['confidence']} if f.get('confidence') else {}), **({'tool': f['tool']} if f.get('tool') else {}),
                          'message': f['message'], **({'detail': f['detail'][:5]} if f.get('detail') else {}), **({'regraded': f['regraded']} if f.get('regraded') else {})})
     steps = [x for x in (sess['steps'] if sess else []) if x['label'].startswith('call')]
+    # Per tool, in the sealed pass: what each call came back with.
+    sealed_steps = [x for x in (sealed['steps'] if sealed else []) if x['label'].startswith('call ')]
+    outcome = collections.Counter(('timeout' if 'timed out' in (x.get('note') or '').lower() else x.get('outcome') or 'failed') for x in sealed_steps)
     c = collections.Counter(f['severity'] for f, _ in fs)
     servers.append({'pkg': spec, 'repo': repo, 'publisher': publisher(spec), 'protocol': snap['server'].get('protocolVersion', '?'),
                     'tools': snap.get('tools', 0), 'tokens': snap.get('totalTokens', 0), 'calls': len(steps),
                     'answered': sum(x.get('outcome') == 'answered' for x in steps), 'error': c['error'], 'warn': c['warn'], 'info': c['info'],
-                    'review': rev['verdict'] if rev else ('no session' if not sess else '—')})
+                    'review': rev['verdict'] if rev else ('no session' if not sess else '—'),
+                    'sealed_called': len((sealed or {}).get('auto', {}).get('called', [])) if sealed else 0, 'sealed': dict(outcome) if sealed else None})
 
 # The two biggest publishers, reported apart.
 pubs = collections.Counter(s['publisher'] for s in servers)
@@ -78,7 +94,10 @@ pubs = collections.Counter(s['publisher'] for s in servers)
 big = {top, second}
 
 os.makedirs(DATASET, exist_ok=True)
-cols = ['pkg', 'repo', 'protocol', 'tools', 'tokens', 'calls', 'answered', 'error', 'warn', 'info', 'review']
+cols = ['pkg', 'repo', 'protocol', 'tools', 'tokens', 'calls', 'answered', 'error', 'warn', 'info', 'review', 'sealed_called', 'sealed_answered', 'sealed_tool_error', 'sealed_failed', 'sealed_timeout']
+for s_ in servers:
+    o = s_['sealed'] or {}
+    s_['sealed_answered'], s_['sealed_tool_error'], s_['sealed_failed'], s_['sealed_timeout'] = o.get('answered', 0), o.get('tool-error', 0), o.get('failed', 0) + o.get('needs-input', 0), o.get('timeout', 0)
 with open(os.path.join(DATASET, 'servers.tsv'), 'w') as h:
     h.write('\t'.join(cols) + '\n')
     for s in servers:
@@ -101,7 +120,9 @@ def agg(sel):
     return {'servers': len(S), 'publishers': len({s['publisher'] for s in S}), 'tools': sum(s['tools'] for s in S), 'tokens': sum(s['tokens'] for s in S),
             'withError': sum(1 for s in S if s['error']), 'real': sum(1 for s in S if real(s)), 'error': sev['error'], 'warn': sev['warn'], 'info': sev['info'],
             'calledServers': sum(1 for s in S if s['calls']), 'answeredServers': sum(1 for s in S if s['answered']),
-            'calls': sum(s['calls'] for s in S), 'answered': sum(s['answered'] for s in S), 'kinds': kinds}
+            'calls': sum(s['calls'] for s in S), 'answered': sum(s['answered'] for s in S), 'kinds': kinds,
+            'sealedServers': sum(1 for s in S if s['sealed'] is not None), 'sealedCalled': sum(s['sealed_called'] for s in S),
+            'sealedOutcomes': dict(sum((collections.Counter(s['sealed'] or {}) for s in S), collections.Counter()))}
 
 rules = collections.defaultdict(lambda: {'sev': collections.Counter(), 'servers': set(), 'top': set()})
 for f in findings:
@@ -119,7 +140,7 @@ page = {
     'reviews': dict(collections.Counter(s['review'] for s in servers)),
     'rules': sorted([{'rule': k, 'kind': KIND.get(k, 'other'), 'error': v['sev']['error'], 'warn': v['sev']['warn'], 'info': v['sev']['info'],
                       'servers': len(v['servers']), 'top': len(v['top'])} for k, v in rules.items()], key=lambda r: (-r['servers'], r['rule'])),
-    'servers': [{**{k: s[k] for k in ('pkg', 'repo', 'protocol', 'tools', 'tokens', 'calls', 'answered', 'error', 'warn', 'info', 'review')},
+    'servers': [{**{k: s[k] for k in ('pkg', 'repo', 'protocol', 'tools', 'tokens', 'calls', 'answered', 'error', 'warn', 'info', 'review', 'sealed_called', 'sealed')},
                  'findings': sorted([[f['rule'], f['severity'], f.get('tool', ''), f['message'][:400]] for f in by_pkg[s['pkg']]],
                                     key=lambda x: {'error': 0, 'warn': 1, 'info': 2}[x[1]])} for s in servers],
 }

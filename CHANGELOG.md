@@ -19,6 +19,9 @@
   A readable tool error in answer to made-up values is the right answer, so there it's
   info, not a `session/tool-error` warning. The bench's `SEALED=1` runs it in a container
   with no network (`bench/scripts/sealed-one.sh`).
+  A call that fails there, or a run where no call got through, is info too: made-up
+  values and no network say how a tool meets such input, not that the server is broken.
+  Results that break their own `outputSchema` or lack `resultType` keep their level.
 - **`toolmenu review <baseline.json> <new.json>`: should the new menu replace the
   baseline?** `diff`, plus the menu rules on both files: which findings the new menu
   adds, clears or changes (a summary that now names another tool is worse), and one

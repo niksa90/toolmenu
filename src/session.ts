@@ -748,7 +748,7 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
       final: { tools: current.tools.length, tokens: current.totalTokens },
       connectionCheck,
       steps,
-      findings: settle(mergeRepeats(raw), options),
+      findings: settle(mergeRepeats(options.auto?.everything ? raw.map(madeUpInput) : raw), options),
       ...(options.auto ? { auto: { ...options.auto, ...(leftOut.length ? { stopped: leftOut } : {}) } } : {}),
       // Marked: its order is the order tools were first seen (unlock order), so diff doesn't compare it.
       // With the starting list's cache hints (ttlMs, cacheScope), as snapshot's menu file has
@@ -1884,5 +1884,16 @@ function outputFindings(list: { step: number; tool: string; problem: string }[])
       fix: 'Return structuredContent that matches the outputSchema on every successful call, or drop the outputSchema from tools whose results vary.',
     },
   ];
+}
+
+/**
+ * --call-everything sends made-up values into a sandbox with no network, so a call
+ * that fails, or reaches no network, or none that got through, says how the tool met
+ * that input, not that the server is broken: info. What a result breaks whatever the
+ * input (its own outputSchema, resultType, an error not flagged as one) keeps its level.
+ */
+function madeUpInput(f: Raw): Raw {
+  if (f.rule !== 'session/step-failed' && f.rule !== 'session/untested') return f;
+  return { ...f, severity: 'info', message: `${f.message} (--call-everything: made-up values, no network)` };
 }
 
