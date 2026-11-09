@@ -90,3 +90,21 @@ What toolmenu reported on 2.1.0, each checked by hand:
 
 No finding on the reference server is a false one. A change that makes one appear there
 is wrong until shown otherwise.
+
+## Every week
+
+`bench/scripts/weekly.sh` runs the whole bench and writes `bench/results/weekly/<date>/`:
+
+- **Hosted servers** (`corpus/http-panel.tsv`): 109 vendor endpoints (the big companies'
+  servers the registry lists under their own domain, and well-known ones it doesn't),
+  then a seeded 2,000 from the registry's long tail, one per domain. Each gets
+  `auth check` (OAuth discovery, no login), `snapshot`, and a read-only `session --auto`
+  of at most 10 calls (`scripts/batch-http.sh`). The same panel every week, so a change
+  is the server's.
+- **stdio servers with a new release, and new ones** (at most 300), in containers, with
+  the sealed pass that calls every tool (`SEALED=1`). `results/weekly/stdio-versions.tsv`
+  records which version of each package was last checked.
+- **`CHANGES.md`** against the previous week (`scripts/compare-weeks.py`): servers that
+  went up, down or behind a login, menus that changed (and, for the vendors, `toolmenu
+  review` of last week's menu against this week's), findings that appeared or went away.
+
