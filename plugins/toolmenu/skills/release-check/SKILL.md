@@ -5,9 +5,10 @@ description: Before releasing, tagging or publishing an MCP server, check with t
 
 # Checking an MCP server release
 
-toolmenu compares the server's tool list now with the last release's, and reports
-what breaks clients (removed tools, new required parameters, narrowed types), what
-changes for agents, the token change per conversation, and the version bump it needs.
+toolmenu compares the server's tool list now with the last release's and gives one
+verdict: whether the new menu can replace the old one. Behind it: what breaks clients
+(removed tools, new required parameters, narrowed types), which findings the release
+adds or clears, the token change per conversation, and the version bump it needs.
 
 ## 1. Find the baseline
 
@@ -34,22 +35,29 @@ Say which baseline you used.
 1. Build the server as it is now.
 2. `snapshot_menu` with `save_as: "new-menu.json"` (see check-mcp-menu for `command`,
    `url`, `cwd` and credentials).
-3. `diff_menus` with `before` the baseline, `after: "new-menu.json"`, and `release`
-   set to `<last version>..<planned version>` when both are known (from the last tag
-   and `package.json`, `pyproject.toml`, `Cargo.toml`…). Without `release`, toolmenu
-   suggests the bump but can't check it.
-4. Delete `new-menu.json`.
+3. `review_baseline` with `baseline` the baseline, `candidate: "new-menu.json"`, and
+   `release` set to `<last version>..<planned version>` when both are known (from the
+   last tag and `package.json`, `pyproject.toml`, `Cargo.toml`…). Without `release`,
+   toolmenu suggests the bump but can't check it, and any breaking change is "don't
+   accept as is". If the tool isn't there (an older toolmenu), run
+   `npx -y toolmenu review --release <old>..<new> <baseline> new-menu.json`.
+4. For each change in full (every notice, the token change per tool), `diff_menus`
+   with the same files.
+5. Delete `new-menu.json`.
 
-Without the toolmenu MCP tools: `npx -y toolmenu snapshot --out new-menu.json -- <command>`
-and `npx -y toolmenu diff <baseline> new-menu.json --release <old>..<new>`.
+Without the toolmenu MCP tools: `npx -y toolmenu snapshot --out new-menu.json -- <command>`,
+then `npx -y toolmenu review --release <old>..<new> <baseline> new-menu.json` and
+`npx -y toolmenu diff <baseline> new-menu.json --release <old>..<new>`.
 
 ## 3. Report
 
-Lead with the verdict, then the evidence:
+Lead with toolmenu's verdict, in its words (`unchanged`, `safe`, breaking changes the
+bump allows, or "don't accept as is"), then the evidence:
 
 - **Blockers**: breaking changes when the planned bump is too small (a breaking change
   needs a major; in 0.x a minor), and any `error` finding. Say which bump it needs.
 - **Breaking changes** worth a release note even when the bump is right: list them.
+- **New or worse findings** in the new menu, and the ones it clears.
 - **Token change** per conversation ("adds ~1,240 tokens to every conversation").
 - What's only a notice (description edits, new optional parameters).
 

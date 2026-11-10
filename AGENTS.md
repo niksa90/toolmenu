@@ -28,7 +28,11 @@ findings on every run.
   v1.0 spec, with dated notes).
 - `docs/snapshot.md`, `session.md`, `diff.md`, `clients.md`, `usage.md`, `ci.md`,
   `github-action.md`: the reference, one page per command or area.
+- `src/mcp.ts`: `toolmenu mcp`, the tools an agent calls. Its own menu must pass
+  toolmenu with no finding but the dry-run hint; `docs/toolmenu-badge.json` is that run.
 - `plugins/toolmenu/`: the Claude Code plugin (skills, evals, the pinned release).
+- `.claude/agents/bench-finding-checker.md`: a read-only subagent that checks one bench
+  finding against the run's raw output.
 
 ## README and docs
 
@@ -88,6 +92,27 @@ findings on every run.
 - Scripts are read while they run: don't edit one that a batch is using.
 - Reports and issue drafts about other projects stay out of the repository; the datasets
   are the record.
+- In Claude Code, the `bench-finding-checker` subagent does the ruling-out for one
+  finding and answers "holds", "the run's" or "can't tell".
+
+## Releasing
+
+A release is one commit, then a `v*` tag; the tag publishes to npm (`release.yml`).
+
+1. `package.json` and `package-lock.json`: the version (`npm version <v> --no-git-tag-version`).
+2. `server.json`: `version`, and the package's `version`.
+3. `CHANGELOG.md`: Unreleased becomes the version.
+4. The Action pin `niksa90/toolmenu@v…` in `README.md`, `docs/github-action.md` and
+   `docs/ci.md`.
+5. `npm test`, then commit as `<version>: version, changelog, Action pins`.
+6. After npm has the release, in a second commit: `plugins/toolmenu/package.json` and
+   `.claude-plugin/plugin.json` to the same version, then
+   `npm install --package-lock-only --ignore-scripts` in `plugins/toolmenu`. The plugin
+   pins a published release, never one ahead of npm; a test checks.
+
+A change to `src/mcp.ts` that alters a tool's name, description or schema needs
+`node dist/cli.js snapshot --no-write --badge docs/toolmenu-badge.json -- node dist/cli.js mcp`,
+and the skills in `plugins/toolmenu/skills/` reread: they name the tools.
 
 ## Pull request descriptions
 

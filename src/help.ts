@@ -235,8 +235,8 @@ const HELP: Record<Command, CommandHelp> = {
     summary: 'serve toolmenu to an agent as an MCP server (stdio)',
     usage: ['toolmenu mcp'],
     about: [
-      'An MCP server over stdio, for the agent building your server: snapshot_menu, diff_menus,',
-      'check_session and explain_rule, each running the matching command. Relative paths and',
+      'An MCP server over stdio, for the agent building your server: snapshot_menu, check_session,',
+      'diff_menus, review_baseline, check_auth and explain_rule, each running the matching command. Relative paths and',
       'toolmenu.config.json resolve from the folder it runs in, or a tool call\'s cwd.',
       'Claude Code: claude mcp add toolmenu -- npx -y toolmenu mcp',
     ],

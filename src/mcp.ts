@@ -157,14 +157,14 @@ export function runCli(args: string[], cwd: string, options: RunOptions = {}): P
 type Text = { content: { type: 'text'; text: string }[]; isError?: boolean };
 
 /** A CLI run as a tool result. Findings are a report, not a failure: only exit 2 (couldn't run) is an error. */
-export function toResult(run: CliRun): Text {
+export function toResult(run: CliRun, exitOne = '\n\nExit 1: there are error-level findings.'): Text {
   const out = run.stdout.trim();
   if (run.code === 2) {
     const why = [run.stopped, run.stderr.trim()].filter(Boolean).join('\n\n') || out || 'toolmenu exited with code 2.';
     return { content: [{ type: 'text', text: why }], isError: true };
   }
   const notes = run.stderr.trim();
-  const tail = run.code === 1 ? '\n\nExit 1: there are error-level findings.' : '';
+  const tail = run.code === 1 ? exitOne : '';
   return { content: [{ type: 'text', text: `${out || 'No output.'}${tail}${notes ? `\n\nNotes:\n${notes}` : ''}` }] };
 }
 
@@ -276,11 +276,12 @@ export function build(baseCwd = process.cwd()): McpServer {
     { name: 'toolmenu', version: VERSION },
     {
       capabilities: { tools: {} },
-      // The same four tools for everyone, always: an hour, and shared caches may keep it.
+      // The same six tools for everyone, always: an hour, and shared caches may keep it.
       cacheHints: { 'tools/list': { ttlMs: 3_600_000, cacheScope: 'public' }, 'server/discover': { ttlMs: 3_600_000, cacheScope: 'public' } },
       instructions:
-        "toolmenu checks an MCP server's tool list (its menu) the way clients and agents meet it. " +
-        'After changing a server\'s tools: snapshot_menu for findings and token cost, diff_menus against the committed menu.json for breaking changes, check_session to see whether the menu changes mid-session. ' +
+        'toolmenu tests an MCP server the way clients and agents meet it: the tool list (its menu), the calls, the results, the sign-in, and the next release. ' +
+        'After changing a server\'s tools: snapshot_menu for findings and token cost, check_session to call its read-only tools and see whether results match their schemas and whether the menu changes mid-session, ' +
+        'diff_menus against the committed menu.json for breaking changes, and review_baseline before replacing that baseline. check_auth for an HTTP server that answers 401. ' +
         'Each finding ends with a → Next: step; explain_rule says what a rule checks.',
     },
   );
@@ -298,7 +299,7 @@ export function build(baseCwd = process.cwd()): McpServer {
     'snapshot_menu',
     {
       description:
-        "Check an MCP server's tool list: start or connect to it, list its tools, and report findings (what agents misread, what breaks clients or prompt caches) and the token cost. " +
+        "Check an MCP server's tool list as a client reads it: start or connect to it, list its tools, and report findings (what clients reject, what breaks prompt caches, what agents misread) and the token cost. " +
         'A command server is started by running command as given, so only pass a command you would run yourself. ' +
         'Writes the menu file only when save_as is given (the baseline for diff_menus): a new file inside cwd, or an existing menu file there.',
       inputSchema: {
@@ -353,7 +354,7 @@ export function build(baseCwd = process.cwd()): McpServer {
     'check_session',
     {
       description:
-        "Check whether an MCP server's menu changes while an agent works: call its tools marked readOnlyHint whose arguments the schema can fill, list the menu after each call, and report each change with the call that caused it. " +
+        "Call an MCP server's tools as an agent would and check what comes back: its tools marked readOnlyHint whose arguments the schema can fill are called, each result is checked against the tool's outputSchema, and the menu is listed after each call, with each change reported with the call that caused it. " +
         'Calls only read-only tools; never one marked openWorldHint unless open_world is set. A command server is started by running command as given, so only pass a command you would run yourself.',
       inputSchema: {
         ...serverShape,
@@ -370,6 +371,53 @@ export function build(baseCwd = process.cwd()): McpServer {
         ...(a.max_calls ? [`--max-calls=${a.max_calls}`] : []),
         ...(a.open_world ? ['--open-world'] : []),
       ]),
+  );
+
+  server.registerTool(
+    'review_baseline',
+    {
+      description:
+        'Say whether a new menu file should replace the baseline: one verdict (unchanged, safe, breaking-released, breaking, review), what breaks callers, and which findings the new menu adds, clears or makes worse. ' +
+        'Use it before overwriting a committed menu.json. Reads the two files only and starts no server.',
+      inputSchema: {
+        baseline: z.string().describe('The menu file to replace, e.g. the committed menu.json.'),
+        candidate: z.string().describe('The new menu file, e.g. new-menu.json from snapshot_menu save_as.'),
+        release: z.string().optional().describe('The release versions, so breaking changes pass when the bump allows them: "1.4.0..2.0.0".'),
+        cwd: serverShape.cwd,
+      },
+      annotations: { title: 'Review a new menu against the baseline', readOnlyHint: true, openWorldHint: false },
+    },
+    async (a, ctx) => {
+      const f = folder(baseCwd, a.cwd);
+      if ('error' in f) return failed(f.error);
+      const args = ['review', ...(a.release ? [`--release=${a.release}`] : []), absolute(f.dir, a.baseline), absolute(f.dir, a.candidate)];
+      const run = await runCli(args, f.dir, { signal: ctx.mcpReq.signal });
+      // Exit 1 here is the verdict (don't accept as is), which the report already leads with.
+      return toResult(run, "\n\nExit 1: the verdict is not to accept the new menu as it is.");
+    },
+  );
+
+  server.registerTool(
+    'check_auth',
+    {
+      description:
+        "Check an HTTP MCP server's OAuth discovery the way a client that follows the spec walks it, without logging in: the 401 and its WWW-Authenticate, the protected resource metadata, the authorization server's metadata, PKCE and registration. " +
+        'Use it when a server answers 401 or a client cannot sign in. Sends unauthenticated requests to the URL and to the metadata addresses it names; no credentials, no tokens.',
+      inputSchema: { url: z.string().describe('The Streamable HTTP endpoint: https://mcp.example.com/mcp.') },
+      annotations: { title: "Check a server's OAuth discovery", readOnlyHint: true, openWorldHint: true },
+    },
+    async (a, ctx) => {
+      // The check is of what a client sees before it has credentials, so the URL carries none.
+      let parsed: URL | undefined;
+      try {
+        parsed = new URL(a.url);
+      } catch {
+        // not a URL: said below
+      }
+      if (parsed?.protocol !== 'https:') return failed('url must be an https URL, such as https://mcp.example.com/mcp: OAuth discovery is checked over https.');
+      if (parsed.username || parsed.password) return failed('Drop the user:password@ part of the URL: the check is made without credentials.');
+      return toResult(await runCli(['auth', 'check', a.url], baseCwd, { signal: ctx.mcpReq.signal }));
+    },
   );
 
   server.registerTool(

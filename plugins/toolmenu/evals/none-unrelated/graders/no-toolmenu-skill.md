@@ -1,7 +1,7 @@
 ---
 type: tool_used
 tool: Skill
-input_match: (check-mcp-menu|release-check|setup-ci)
+input_match: (check-mcp-menu|check-mcp-auth|release-check|setup-ci)
 min: 0
 max: 0
 ---

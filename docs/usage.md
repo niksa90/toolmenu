@@ -56,7 +56,9 @@ Or just the server, in any client: `claude mcp add toolmenu -- npx -y toolmenu m
 |---|---|
 | `snapshot_menu` | `snapshot`: findings and token cost; writes the menu file only with `save_as` |
 | `diff_menus` | `diff`: breaking changes, the token change and the version bump between two menu files |
-| `check_session` | `session --auto`: calls the read-only tools and reports each menu change |
+| `check_session` | `session --auto`: calls the read-only tools, checks each result against its `outputSchema`, and reports each menu change |
+| `review_baseline` | `review`: should a new menu file replace the baseline? One verdict, and the findings it adds or clears |
+| `check_auth` | `auth check`: an HTTP server's OAuth discovery, walked without logging in |
 | `explain_rule` | `explain`: what a rule checks and how to change its level |
 
 Each tool runs the CLI in a child process and returns its text report, so options,

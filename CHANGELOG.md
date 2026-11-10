@@ -2,7 +2,24 @@
 
 ## Unreleased
 
+### New
+
+- **`toolmenu mcp` has two more tools.** `review_baseline` runs `review`: should a new
+  menu file replace the baseline, with one verdict (exit 1 there is the verdict, not a
+  failure). `check_auth` runs `auth check` on an `https` URL, without credentials; a
+  URL with a user or password in it is refused. `check_session`'s description says it
+  checks results against `outputSchema`, as it has since 0.27.0.
+- **The plugin runs toolmenu 0.27.0** (was 0.25.0), so it has 0.26.0's security fixes.
+  A fourth skill, `check-mcp-auth`, for a server that answers 401 or a client that
+  can't sign in. `release-check` reports `review`'s verdict, `check-mcp-menu` covers
+  results a client rejects and `--client`, and `setup-ci` mentions `gate: review`. Two
+  eval cases for the new skill.
+- `.claude/agents/bench-finding-checker.md`: a read-only subagent for this repository
+  that checks one bench finding against the run's raw output.
+
 ### Docs
+
+- `AGENTS.md`: the docs pages, what belongs in the README, the release steps.
 
 - README cut from 989 lines to about 250: what toolmenu catches with the server each was
   seen on, the commands in one table, and what the bench numbers do and don't say. The
