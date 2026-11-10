@@ -10,15 +10,16 @@
   answered `{"error": "Python class … not found."}` as content; the list itself was
   fine, so nothing said so. Three rules:
   - `lists/resource-unreadable` (warn): the read fails with an error that is the
-    server's, or succeeds with only an error for a body (marked unsure). info for an
-    empty `contents`.
+    server's, or succeeds with only an error for a body (marked unsure). Unsure too
+    when every read fails in the same unexplained words. info for an empty `contents`.
   - `lists/resource-read-schema` (error): a result that doesn't match the official
     schema of the negotiated version, or that the official SDK client refuses.
   - `lists/resource-unread` (info): what wasn't checked and why: credentials, a rate
-    limit, a timeout, an `InputRequiredResult`, `--max-reads`, the 120 s running out,
-    or every read failing in the same words with nothing read (one missing backend).
+    limit, a timeout, a backend the server says it lacks, an `InputRequiredResult`,
+    `--max-reads`, the 120 s running out.
   Templates and `http(s)://` URIs aren't read; a `ui://` resource a tool names stays
-  with `apps/resource`. `--max-reads <n>` reads n, spread over the sorted list. No
+  with `apps/resource`. `--max-reads <n>` reads n, spread over the sorted list, one
+  request each. No
   content is kept or quoted. The reads aren't in the menu file.
 
 ## 0.27.1

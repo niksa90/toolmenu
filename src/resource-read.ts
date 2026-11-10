@@ -24,7 +24,7 @@ const MIN_READ_MS = 10;
 const ERROR_KEYS = new Set(['error', 'message', 'code', 'status', 'detail', 'details', 'uri']);
 
 /** Why a resource wasn't checked: the run's doing, or by design. */
-export type UnreadReason = 'auth' | 'payment' | 'network' | 'client' | 'environment' | 'rate-limit' | 'timeout' | 'input-required' | 'budget' | 'bytes' | 'max-reads' | 'declared-size' | 'web' | 'gone' | 'same-failure';
+export type UnreadReason = 'auth' | 'payment' | 'network' | 'client' | 'environment' | 'rate-limit' | 'timeout' | 'input-required' | 'budget' | 'bytes' | 'max-reads' | 'declared-size' | 'web' | 'gone';
 
 export interface ResourceRead {
   uri: string;
@@ -45,6 +45,8 @@ export interface ResourceRead {
   missing?: string[];
   /** The SDK client refused a result the server did send. */
   clientError?: string;
+  /** Every read failed, all in these words: the server's handler, or one thing this run lacks. */
+  shared?: boolean;
   /** A failure's words without the URI, hashed: reads that failed for one cause share it. */
   cause?: string;
   /** The failure says the resource isn't there (its code, "not found", ENOENT). */
@@ -144,13 +146,13 @@ export async function readResources(connection: Connection, listed: Record<strin
     // A server that says "too many" isn't asked again: the rest go unread.
     if (read.unread === 'rate-limit') stopped = 'rate-limit';
   }
-  // Every read failed, all for one cause, and none of them for a missing resource: one
-  // thing stands between this run and all of them (no cluster, no endpoint, no project),
-  // which is the setup far more often than the server. Said as unread, with the words.
+  // Every read failed, all for one cause, and none of them for a missing resource: a read
+  // handler that fails for everything, or one thing this run lacks that the words don't
+  // name. toolmenu can't tell which, so the finding says both (unsure), and stays a warning.
   const failures = reads.filter((r) => !r.unread && (r.outcome === 'error' || r.errorBody));
   const readable = reads.some((r) => r.outcome === 'ok' && !r.errorBody);
   if (!readable && failures.length >= 2 && failures.every((r) => !r.saysMissing && r.cause === failures[0].cause)) {
-    for (const r of failures) r.unread = 'same-failure';
+    for (const r of failures) r.shared = true;
   }
   // An answer that came after its read gave up was never looked at: its body goes too.
   for (const late of connection.wire.since(mark, 'resources/read')) if (late.result) late.result = {};
@@ -170,7 +172,7 @@ async function readOne(connection: Connection, uri: string, timeout: number, val
   const mark = connection.wire.responses.length;
   const started = Date.now();
   let caught: unknown;
-  await quietExclusions(() => connection.client.readResource({ uri }, { timeout })).catch((e: unknown) => (caught = e));
+  await withoutFulfilment(connection, () => quietExclusions(() => connection.client.readResource({ uri }, { timeout }))).catch((e: unknown) => (caught = e));
   const ms = Date.now() - started;
   // What the server sent, not the SDK's reading of it: the SDK may refuse a result toolmenu still checks.
   // By URI: after a timeout, the answer to an earlier read can arrive during this one.
@@ -225,6 +227,24 @@ async function readOne(connection: Connection, uri: string, timeout: number, val
   }
 }
 
+/**
+ * One request per resource: the SDK client answers an InputRequiredResult itself and
+ * sends the read again, up to eight times, and toolmenu has no answer worth sending.
+ * With that off, the first InputRequiredResult ends the read. A client-wide setting the
+ * SDK doesn't expose per request; a test counts the requests, should its name change.
+ */
+async function withoutFulfilment<T>(connection: Connection, read: () => Promise<T>): Promise<T> {
+  const config = (connection.client as unknown as { _inputRequiredDriverConfig?: { autoFulfill?: boolean } })._inputRequiredDriverConfig;
+  if (!config) return read();
+  const before = config.autoFulfill;
+  config.autoFulfill = false;
+  try {
+    return await read();
+  } finally {
+    config.autoFulfill = before;
+  }
+}
+
 /** The reason a failure is the run's and not the server's, from its words and code; undefined when it's the server's. */
 function runs(text: string, code: number | undefined): UnreadReason | undefined {
   // The codes for "no such resource" (-32002 to 2025-11-25, -32602 from 2026-07-28): the
@@ -252,8 +272,12 @@ function runs(text: string, code: number | undefined): UnreadReason | undefined 
 const NETWORK_WORDS = /self-signed certificate|certificate verify failed|CERTIFICATE_VERIFY_FAILED|unable to (?:get|verify) [^.]{0,30}certificate|failure in name resolution|no such host|\bfetch failed\b|\btransport error\b|\bdial tcp\b|\bGet "https?:\/\/|connection (?:refused|reset|timed out)|network is unreachable/i;
 /** A credential in the wrong shape, which a dummy one is: "Access token is not in valid JWT format" (Mapbox). */
 const CREDENTIAL_WORDS = /\b(?:access |api |auth )?(?:token|key)\b[^.]{0,30}\b(?:not in (?:a )?valid|malformed|invalid format)\b/i;
-/** Nothing chosen to read from: "No currently active project." (Firebase). */
-const SETUP_WORDS = /\bno (?:currently )?(?:active|selected|default|current) (?:project|account|workspace|organi[sz]ation|cluster|context|profile)\b/i;
+/**
+ * Nothing to read from: "No currently active project." (Firebase), "Invalid kube-config file. No
+ * configuration found." (kubectl-mcp-server), "HTTP protocol is not allowed when skipTLSVerify is
+ * not set" (mcp-server-kubernetes with no cluster), "You must provide an endpoint" (Amazon Neptune).
+ */
+const SETUP_WORDS = /\bno (?:currently )?(?:active|selected|default|current) (?:project|account|workspace|organi[sz]ation|cluster|context|profile)\b|\binvalid kube-?config\b|\bskipTLSVerify\b|\bmust provide an? (?:endpoint|host|url|connection string)\b/i;
 /** The failure says the resource isn't there. */
 const MISSING = /\bnot found\b|\bENOENT\b|no such file|does(?:n't| not) exist/i;
 

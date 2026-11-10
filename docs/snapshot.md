@@ -81,11 +81,15 @@ The limits, and what they don't do:
 - `--max-reads <n>` reads n resources spread evenly over the sorted list (the first, the
   last and the ones between), not the first n.
 
-What counts as the server's: an error that says the resource is missing, or any error
-when other resources read. What counts as the run's (`lists/resource-unread`, info):
-credentials, the network, a rate limit, a timeout, and every read failing in the same
-words with nothing read, which is one missing backend far more often than a broken
-server. Rerun with the credentials and backend the resources need to check those.
+What counts as the run's (`lists/resource-unread`, info): credentials, the network, a
+rate limit, a timeout, and a backend the server says it lacks ("Invalid kube-config
+file", "No currently active project"). Any other error is the server's, and a warning.
+When every read fails in the same words and those words name no cause, the warning is
+marked unsure: it is a read handler broken for everything, or something the run lacks
+that the server didn't name, and toolmenu can't tell which.
+
+Each resource gets one request. `--max-reads 5` is five `resources/read` requests, plus
+one for each `ui://` resource the MCP Apps check reads.
 
 Content is checked in memory and never written anywhere: not to the menu file, not to
 any report. A finding names URIs and quotes the server's error message, never a body.

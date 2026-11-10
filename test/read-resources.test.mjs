@@ -132,32 +132,40 @@ test("lists/resource-unread: the network and a dummy credential in servers' own 
   assert.deepEqual(r.unread[0].detail, [
     "2: need a network this run couldn't reach (dns://d and tls://t)",
     '1: need credentials this run lacks (jwt://j)',
-    '1: need something this machine lacks (project://p)',
+    '1: need something this run lacks (a cluster, a project, an app) (project://p)',
   ]);
 });
 
-test('lists/resource-unread: every read failing the same way, with nothing read, is one cause and info; different failures stay warn', async () => {
-  const r = await read({ LIST: 'nocluster://a,nocluster://b,nocluster://c' });
+test("lists/resource-unread: a backend the run lacks, in servers' own words (from the bench), as an error or as a body", async () => {
+  const r = await read({ LIST: 'noendpoint://a,noendpoint://b,nokube://a,nokube://b' });
   assert.deepEqual(r.unreadable, []);
-  assert.equal(r.unread[0].severity, 'info');
-  assert.deepEqual(r.unread[0].detail, [
-    '3: all failed the same way and nothing was read: one cause for all of them, which is usually the setup (a backend or an account this run lacks) (nocluster://a, nocluster://b and nocluster://c): Error reading resource nocluster://a: You must provide an endpoint',
-  ]);
+  assert.deepEqual(r.unread[0].detail, ['4: need something this run lacks (a cluster, a project, an app) (noendpoint://a, noendpoint://b, nokube://a and 1 more)']);
   assert.equal(r.unread[0].fix, 'Rerun where the resources can answer (the backend, account or network they read from) to check them.');
-  // The same, as error-only bodies (kubectl-mcp-server with no cluster).
-  const bodies = await read({ LIST: 'softcluster://a,softcluster://b' });
-  assert.deepEqual(bodies.unreadable, []);
-  assert.match(bodies.unread[0].detail[0], /^2: all failed the same way and nothing was read/);
-  // One of them reads: the others are the server's again.
-  assert.equal((await read({ LIST: 'ok://a,nocluster://a,nocluster://b' })).unreadable[0].severity, 'warn');
-  // Each fails in its own words (glif 0.9.9), or says the resource is missing: the server's.
-  const own = await read({ LIST: 'scheme://glifrun,scheme://glifuser' });
-  assert.equal(own.unreadable.length, 1);
-  assert.match(own.unreadable[0].message, /^resources\/list names 2 resources that resources\/read fails on \(of 2 checked\)/);
-  assert.equal((await read({ LIST: 'missing://a,missing://b' })).unreadable[0].severity, 'warn');
-  assert.equal((await read({ LIST: 'soft://a,soft://b' })).unreadable[0].severity, 'warn');
-  // One resource alone can't show a pattern.
-  assert.equal((await read({ LIST: 'nocluster://a' })).unreadable[0].severity, 'warn');
+});
+
+test("lists/resource-unreadable: every read failing in the same unrecognised words stays a warning, unsure: the handler, or the run", async () => {
+  const r = await read({ LIST: 'allbroken://a,allbroken://b,allbroken://c' });
+  assert.deepEqual(r.unread, []);
+  assert.equal(r.unreadable.length, 1);
+  const [f] = r.unreadable;
+  assert.equal(f.severity, 'warn');
+  assert.equal(f.confidence, 'unsure');
+  assert.equal(f.message, "All 3 resources toolmenu checked fail resources/read the same way: Internal server error reading allbroken://a (-32603). Either the server can't read any resource it lists, or each needs something this run lacks (a backend, an account) and the words don't say so; toolmenu can't tell which.");
+  assert.deepEqual(f.detail, ['allbroken://a', 'allbroken://b', 'allbroken://c']);
+  assert.match(f.fix, /^If this run lacks what the resources read from, rerun where it's there\. Otherwise make resources\/read answer/);
+  // The same as bodies: the error-body finding, saying they all agree.
+  const bodies = await read({ LIST: 'softbroken://a,softbroken://b' });
+  assert.equal(bodies.unreadable.length, 1);
+  assert.equal(bodies.unreadable[0].confidence, 'unsure');
+  assert.match(bodies.unreadable[0].message, /as content\. All of them say the same thing, so it may be one thing this run lacks\. A guess from the shape/);
+  // One of them reads, or each fails in its own words (glif 0.9.9), or they say the
+  // resource is missing: the plain finding, not unsure.
+  for (const LIST of ['ok://a,allbroken://a,allbroken://b', 'scheme://glifrun,scheme://glifuser', 'missing://a,missing://b', 'allbroken://a']) {
+    const plain = await read({ LIST });
+    assert.equal(plain.unreadable.length, 1, LIST);
+    assert.equal(plain.unreadable[0].severity, 'warn', LIST);
+    assert.equal(plain.unreadable[0].confidence, undefined, LIST);
+  }
 });
 
 test('lists/resource-unread: a rate limit stops the reads; the rest are counted, not asked for', async () => {
@@ -188,6 +196,11 @@ test('lists/resource-unread: an InputRequiredResult, a web URL, a declared size,
     '1: the server asked for input first (InputRequiredResult) (input://i)',
   ]);
   assert.equal(r.unread[0].fix, 'Nothing to change on the server for this.');
+  // One request for the resource that asked for input: the SDK's own retries (eight) are off for the reads.
+  const dir = tempDir();
+  const seen = join(dir, 'reads.txt');
+  await read({ LIST: 'ok://a,input://i,ok://z', COUNT_FILE: seen });
+  assert.deepEqual(readFileSync(seen, 'utf8').trim().split('\n'), ['input://i', 'ok://a', 'ok://z']);
 });
 
 test('--max-reads: that many, spread over the sorted list, and the rest counted', async () => {

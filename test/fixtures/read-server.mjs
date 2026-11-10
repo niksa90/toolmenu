@@ -59,10 +59,14 @@ async function read(uri) {
       throw new Error('Access token is not in valid JWT format');
     case 'project':
       throw new Error('No currently active project.');
-    case 'nocluster': // every resource of a server with no backend: the same words, the URI aside
-      throw new Error(`Error reading resource ${uri}: You must provide an endpoint`);
-    case 'softcluster':
-      return text(uri, JSON.stringify({ error: 'Unable to connect to the cluster' }), 'application/json');
+    case 'noendpoint': // Amazon Neptune with no endpoint: the same words for every resource
+      throw new Error(`Error reading resource ${uri}: You must provide an endpoint to create a NeptuneServer`);
+    case 'nokube': // kubectl-mcp-server with no cluster, as a body
+      return text(uri, JSON.stringify({ error: 'Invalid kube-config file. No configuration found.' }), 'application/json');
+    case 'allbroken': // a read handler that fails for everything, in words that name no cause
+      throw new Error(`Internal server error reading ${uri}`);
+    case 'softbroken':
+      return text(uri, JSON.stringify({ error: 'Something went wrong' }), 'application/json');
     case 'scheme': // glif 0.9.9: each fails in its own words
       throw new Error(`Unsupported protocol: ${uri.split('/').pop()}:`);
     case 'auth':

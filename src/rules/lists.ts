@@ -139,7 +139,18 @@ export const resourceUnreadable: Rule = {
     // Those a finding can be about: a read the run couldn't make its own says nothing.
     const total = `${num(reads.filter((r) => !r.unread).length)} checked`;
 
-    const failed = reads.filter((r) => r.outcome === 'error' && !r.unread);
+    // Every read failed in the same words: the handler, or one thing the run lacks.
+    const shared = reads.filter((r) => r.outcome === 'error' && !r.unread && r.shared);
+    if (shared.length) {
+      findings.push({
+        confidence: 'unsure',
+        message: `All ${count(shared.length, 'resource')} toolmenu checked fail resources/read the same way: ${clip(shared[0].error || 'no message', 160)}${shared[0].code !== undefined ? ` (${shared[0].code})` : ''}. Either the server can't read any resource it lists, or each needs something this run lacks (a backend, an account) and the words don't say so; toolmenu can't tell which.`,
+        detail: listed(shared.map((r) => shown(r.uri))),
+        fix: `If this run lacks what the resources read from, rerun where it's there. Otherwise make resources/read answer the URIs resources/list returns.`,
+      });
+    }
+
+    const failed = reads.filter((r) => r.outcome === 'error' && !r.unread && !r.shared);
     if (failed.length) {
       const said = (r: (typeof failed)[number]) => `${clip(r.error || 'no message', 120)}${r.code !== undefined ? ` (${r.code})` : ''}`;
       const one = failed.length === 1;
@@ -158,7 +169,7 @@ export const resourceUnreadable: Rule = {
       const keys = [...new Set(bodies.flatMap((r) => r.errorBody!))].sort().join(', ');
       findings.push({
         confidence: 'unsure',
-        message: `${one ? `resources/read of ${shown(bodies[0].uri)} succeeds, but its content is` : `resources/read succeeds for ${count(bodies.length, 'listed resource')} (of ${total}) whose content is`} only a JSON object saying an error (keys: ${keys}). A client takes that for the resource and hands it to the user or the agent as content. A guess from the shape: toolmenu doesn't read meaning into content.`,
+        message: `${one ? `resources/read of ${shown(bodies[0].uri)} succeeds, but its content is` : `resources/read succeeds for ${count(bodies.length, 'listed resource')} (of ${total}) whose content is`} only a JSON object saying an error (keys: ${keys}). A client takes that for the resource and hands it to the user or the agent as content.${bodies.every((r) => r.shared) && bodies.length > 1 ? ' All of them say the same thing, so it may be one thing this run lacks.' : ''} A guess from the shape: toolmenu doesn't read meaning into content.`,
         ...(one ? {} : { detail: listed(bodies.map((r) => shown(r.uri))) }),
         fix: `If the read failed, answer with a JSON-RPC error (${missingCode} for a resource that doesn't exist) so a client can tell; if that object is the resource, turn this rule off for the server.`,
       });
@@ -221,7 +232,7 @@ const UNREAD_WORDS: Record<UnreadReason, string> = {
   payment: 'need payment',
   network: "need a network this run couldn't reach",
   client: "need a client capability toolmenu doesn't declare",
-  environment: 'need something this machine lacks',
+  environment: 'need something this run lacks (a cluster, a project, an app)',
   'rate-limit': 'the server refused for too many requests, so toolmenu stopped reading',
   timeout: "didn't answer in time",
   'input-required': 'the server asked for input first (InputRequiredResult)',
@@ -231,7 +242,6 @@ const UNREAD_WORDS: Record<UnreadReason, string> = {
   'declared-size': 'the listing declares a size too large to read',
   web: 'http(s) URLs, which a client fetches itself',
   gone: 'gone from the list by its second reading',
-  'same-failure': 'all failed the same way and nothing was read: one cause for all of them, which is usually the setup (a backend or an account this run lacks)',
 };
 
 export const resourceUnread: Rule = {
@@ -248,9 +258,7 @@ export const resourceUnread: Rule = {
     const unread = [...by.values()].reduce((n, u) => n + u.length, 0);
     if (!unread && !pass.truncated) return [];
     const checked = pass.reads.filter((r) => !r.unread).length;
-    // The one failure they share, in the server's words (an error-only body has none to quote).
-    const shared = pass.reads.find((r) => r.unread === 'same-failure' && r.error)?.error;
-    const detail = [...by].map(([reason, uris]) => `${num(uris.length)}: ${UNREAD_WORDS[reason]} (${names(uris.map(shown), 3)})${reason === 'same-failure' && shared ? `: ${clip(shared, 160)}` : ''}`);
+    const detail = [...by].map(([reason, uris]) => `${num(uris.length)}: ${UNREAD_WORDS[reason]} (${names(uris.map(shown), 3)})`);
     if (pass.truncated) detail.push('resources/list was cut at the page limit: resources past it were never listed, so never read');
     const credentials = by.has('auth');
     return [
@@ -261,7 +269,7 @@ export const resourceUnread: Rule = {
         detail,
         fix: credentials
           ? 'Rerun with the credentials the resources need (--header, --env) to check them.'
-          : by.has('same-failure') || by.has('environment') || by.has('network')
+          : by.has('environment') || by.has('network')
             ? 'Rerun where the resources can answer (the backend, account or network they read from) to check them.'
           : by.has('budget') || by.has('max-reads') || by.has('timeout') || by.has('rate-limit')
             ? 'Rerun against a server instance of your own, without --max-reads, to check the rest.'
