@@ -4,6 +4,6 @@
   "description": "The toolmenu version this plugin runs. Claude Code installs it from package-lock.json when the plugin is installed.",
   "license": "MIT",
   "dependencies": {
-    "toolmenu": "0.27.0"
+    "toolmenu": "0.27.1"
   }
 }

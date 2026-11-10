@@ -1,6 +1,6 @@
 {
   "name": "toolmenu",
-  "version": "0.27.0",
+  "version": "0.27.1",
   "description": "Test the MCP server you're building the way clients and agents meet it: the menu, the calls, the results, and breaking changes between releases. No LLM involved.",
   "author": {
     "name": "Nikša Perović",

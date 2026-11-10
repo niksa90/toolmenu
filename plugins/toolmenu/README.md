@@ -15,8 +15,8 @@ give the same answer.
 It adds:
 
 - **The toolmenu MCP server** (Node 22 or later), the toolmenu release the plugin
-  pins: `snapshot_menu`, `check_session`, `diff_menus` and `explain_rule`; releases
-  after 0.27.0 add `review_baseline` and `check_auth`. A plugin
+  pins: `snapshot_menu`, `check_session`, `diff_menus`, `review_baseline`,
+  `check_auth` and `explain_rule`. A plugin
   update moves it to a new release.
 - **Four skills**, each for one moment of work on an MCP server:
   - `check-mcp-menu`: after changing tools (names, descriptions, schemas,
