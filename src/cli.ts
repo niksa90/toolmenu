@@ -421,7 +421,7 @@ export async function main(given: string[]): Promise<number> {
 
   if (sub === 'session') {
     if (values.value || values['values-file'] || values['assume-read-only']) throw new UsageError('--value, --values-file and --assume-read-only go with --auto. In a scenario, write the values into the steps\' args, and list tools under assume_read_only.');
-    if (!values.scenario) throw new UsageError('session needs --scenario <file>. Run session --init for a starter, or see https://github.com/niksa90/toolmenu#session-the-menu-changing-while-the-agent-works for the format.');
+    if (!values.scenario) throw new UsageError('session needs --scenario <file>. Run session --init for a starter, or see https://github.com/niksa90/toolmenu/blob/main/docs/session.md for the format.');
     let scenario;
     try {
       scenario = await loadScenario(values.scenario);

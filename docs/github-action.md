@@ -1,8 +1,27 @@
 # The GitHub Action in detail
 
-The basic setup and the inputs are in the [README](../README.md#in-ci-one-pr-comment).
-This page covers what the basic setup doesn't: servers behind auth, servers that
-unlock tools, PRs that run without your secrets, and where the Action gets Node.
+The basic setup is in the [README](../README.md#in-ci-one-pr-comment). This page has the
+inputs and what the basic setup doesn't cover: servers behind auth, servers that unlock
+tools, PRs that run without your secrets, and where the Action gets Node. Code scanning,
+JUnit, the HTML report and the badge are in [ci.md](ci.md).
+
+## Inputs
+
+| Input | Default | |
+|---|---|---|
+| `command` or `url` | | How to start the server over stdio, or its Streamable HTTP endpoint |
+| `headers` | | HTTP headers for a `url` server, one `Name: value` per line. Use a secret for keys: `x-api-key: ${{ secrets.MCP_API_KEY }}` |
+| `env` | | Environment variables for a `command` server, one `KEY=value` per line |
+| `baseline` | `menu.json` | The committed snapshot to diff against |
+| `scenario` | | A scenario to run with `session`, or `auto` to build the steps from the menu |
+| `catalog` | `false` | `true` also diffs the operations behind a search tool (`snapshot --catalog`) |
+| `baseline-from` | `snapshot` | `session` diffs every tool the scenario saw (the union menu), for servers whose tools appear after an unlock |
+| `release` | `auto` | Release versions for the bump check. `auto` reads `package.json`, `pyproject.toml` or `Cargo.toml` on the base branch and the head, or compares the tag with the previous one on a tag push. Set `"1.4.0..1.5.0"` yourself, or `off` |
+| `fail-on` | `error` | Fail the job on findings at or above this level |
+| `gate` | `findings` | `review` passes or fails the job on the [review verdict](diff.md#accepting-a-new-baseline-review) instead of `diff`'s findings: a breaking change the release bump allows passes, new findings at `fail-on` fail ([more](#the-verdict-and-gate-review)) |
+| `comment` | `true` | Post and update the PR comment |
+| `sarif` | | A folder to also write the findings to as SARIF, for code scanning ([ci.md](ci.md)) |
+| `version` | the Action's own | toolmenu version from npm: by default the one matching the Action tag you pinned (`latest` for the newest). The Action installs toolmenu from npm, so it needs a published version |
 
 ## `command` or `url`
 

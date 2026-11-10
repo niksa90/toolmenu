@@ -1,0 +1,58 @@
+<!doctype html>
+<!-- The repository's social preview (GitHub: Settings > General > Social preview), 1280x640.
+     Render: open at a 1280x640 viewport and screenshot to docs/social-preview.png. -->
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1280px; height: 640px; overflow: hidden; background: #0f0d1a; color: #f3f0ff;
+    font-family: Inter, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; position: relative; }
+  body::before { content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(520px 320px at 82% 8%, rgba(110,86,207,.42), transparent 70%),
+      radial-gradient(420px 280px at 4% 100%, rgba(94,234,181,.13), transparent 70%),
+      linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px) 0 0 / 48px 48px,
+      linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px) 0 0 / 48px 48px; }
+  .l { position: absolute; left: 76px; top: 108px; width: 560px; }
+  .brand { display: flex; align-items: center; gap: 28px; }
+  .brand svg { width: 112px; height: 112px; border-radius: 26px; box-shadow: 0 0 60px rgba(110,86,207,.55); }
+  .brand span { font-size: 84px; font-weight: 800; letter-spacing: -3.5px; }
+  h1 { margin-top: 40px; font-size: 41px; line-height: 1.17; font-weight: 700; letter-spacing: -1.1px; }
+  h1 em { font-style: normal; color: #5EEAB5; }
+  p { margin-top: 20px; font-size: 23px; line-height: 1.4; color: #a9a3cf; }
+  .cmd { display: inline-block; margin-top: 30px; padding: 13px 20px; border-radius: 12px; background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.14); font: 500 21px "JetBrains Mono", ui-monospace, Menlo, monospace; }
+  .cmd b { color: #5EEAB5; font-weight: 500; margin-right: 6px; }
+  .t { position: absolute; left: 692px; top: 116px; width: 512px; border-radius: 16px; background: #0b0a12;
+    border: 1.5px solid #2a2740; box-shadow: 0 30px 80px rgba(0,0,0,.5); font: 16.5px/1.62 "JetBrains Mono", ui-monospace, Menlo, monospace; }
+  .bar { display: flex; align-items: center; gap: 9px; padding: 15px 18px; border-bottom: 1px solid #1f1c30; color: #7d7799; font-size: 14.5px; }
+  .bar i { width: 13px; height: 13px; border-radius: 50%; }
+  .bar span { margin-left: 16px; }
+  pre { padding: 20px 24px 22px; font: inherit; color: #c9c4e6; white-space: pre; }
+  .d { color: #7d7799; } .w { color: #fff; font-weight: 700; }
+  .e { color: #ff6b8b; font-weight: 700; } .y { color: #f5c542; font-weight: 700; } .g { color: #5EEAB5; }
+</style>
+<div class="l">
+  <div class="brand">
+    <svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" rx="232" fill="#6E56CF"/><rect x="150" y="480" width="140" height="64" rx="32" fill="#fff"/><rect x="250" y="296" width="190" height="432" rx="64" fill="#fff"/><rect x="400" y="340" width="420" height="68" rx="34" fill="#fff"/><rect x="400" y="478" width="320" height="68" rx="34" fill="#fff"/><rect x="400" y="616" width="190" height="68" rx="34" fill="#fff"/><polyline points="652,650 710,708 836,582" fill="none" stroke="#5EEAB5" stroke-width="68" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>toolmenu</span>
+  </div>
+  <h1>Test your MCP server<br><em>the way clients meet it.</em></h1>
+  <p>The menu, the calls, the results, the sign-in, and every release after. Deterministic: no LLM.</p>
+  <div class="cmd"><b>$</b> npx toolmenu snapshot</div>
+</div>
+<div class="t">
+  <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span>toolmenu session --scenario unlock.yml</span></div>
+<pre><span class="w">toolmenu session</span>  session-fixture <span class="d">1.0.0</span>
+<span class="d">  calls</span>  5 · 4 answered, 0 failed
+<span class="d">  menu </span>  5 → 8 tools · changed at steps 3–5
+
+<span class="e">ERROR</span>  session/mid-insert <span class="d">· step 3</span>
+       +2 tools inserted at position 1
+<span class="e">ERROR</span>  session/edit <span class="d">· step 5</span>
+       get_form: description changed
+<span class="y">WARN </span>  session/append <span class="d">· step 4</span>
+       +1 tool appended at the end
+
+<span class="g">→ Next:</span> list them from the start
+<span class="e">✗</span> 3 errors, 2 warnings</pre>
+</div>

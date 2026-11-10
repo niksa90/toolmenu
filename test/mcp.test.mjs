@@ -25,7 +25,7 @@ test('its own menu: no findings on either protocol, but the dry-run hint for the
     const r = await run(['snapshot', '--no-write', '--format', 'json', '--protocol', protocol, '--', process.execPath, CLI, 'mcp']);
     assert.equal(r.code, 0, r.stdout + r.stderr);
     const report = JSON.parse(r.stdout);
-    assert.equal(report.tools, 4);
+    assert.equal(report.tools, 6);
     // snapshot_menu and check_session run a command, so they're marked destructive; a dry
     // run of "start this server and list its tools" isn't a thing, so this info stays.
     assert.deepEqual(report.findings.map((f) => [f.rule, f.severity]), [['write/no-dry-run', 'info']], r.stdout);
@@ -53,6 +53,38 @@ test('diff_menus: two releases of the filesystem server, paths from cwd', async 
     assert.equal(r.isError, undefined, textOf(r));
     assert.match(textOf(r), /tools {4}12 → 14/);
     assert.match(textOf(r), /diff\/tool-added/);
+  });
+});
+
+test('review_baseline: the verdict on two releases of the filesystem server; exit 1 is the verdict, not a tool error', async () => {
+  await withServer(async (call) => {
+    const cwd = join(FIXTURES, 'menus');
+    const r = await call('review_baseline', { baseline: 'server-filesystem-2026.1.14.json', candidate: 'server-filesystem-2026.8.31.json', cwd });
+    assert.equal(r.isError, undefined, textOf(r));
+    assert.match(textOf(r), /verdict\s+✗ don't accept as is: 1 breaking change/);
+    assert.match(textOf(r), /diff\/safety-hint/);
+    assert.match(textOf(r), /Exit 1: the verdict is not to accept the new menu as it is\./);
+    const same = await call('review_baseline', { baseline: 'server-filesystem-2026.8.31.json', candidate: 'server-filesystem-2026.8.31.json', cwd });
+    assert.equal(same.isError, undefined, textOf(same));
+    assert.match(textOf(same), /verdict\s+✓ unchanged/);
+    assert.doesNotMatch(textOf(same), /Exit 1/);
+    const missing = await call('review_baseline', { baseline: 'no-such-menu.json', candidate: 'server-filesystem-2026.8.31.json', cwd });
+    assert.equal(missing.isError, true);
+  });
+});
+
+test('check_auth runs auth check on an https URL; credentials in the URL, another scheme or an option are refused', async () => {
+  await withServer(async (call) => {
+    // Nothing listens there: the report says so as a finding, which is a report, not a tool error.
+    const r = await call('check_auth', { url: 'https://127.0.0.1:9/mcp' });
+    assert.equal(r.isError, undefined, textOf(r));
+    assert.match(textOf(r), /toolmenu auth check {2}https:\/\/127\.0\.0\.1:9\/mcp/);
+    assert.match(textOf(r), /auth\/discovery/);
+    for (const url of ['https://user:pass@example.com/mcp', 'http://example.com/mcp', 'file:///etc/passwd', '--format=json']) {
+      const bad = await call('check_auth', { url });
+      assert.equal(bad.isError, true, url);
+      assert.doesNotMatch(textOf(bad), /user:pass@/);
+    }
   });
 });
 

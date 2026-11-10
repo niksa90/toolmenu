@@ -8,7 +8,8 @@ description: Add toolmenu to an MCP server's CI so every pull request gets a com
 `toolmenu init` sets it up in one command: it snapshots the server into `menu.json`
 (the baseline) and writes `.github/workflows/toolmenu.yml`, which runs the toolmenu
 GitHub Action on every pull request. The Action posts one comment that updates on
-each push: breaking changes, the token change, the version bump and findings.
+each push: a verdict first (can this menu replace the baseline as it is?), then
+breaking changes, the token change, the version bump and findings.
 
 ## 1. Find how the server starts
 
@@ -48,6 +49,9 @@ From init's output, tell the user:
   `localhost` URL, a local virtualenv), with its fix.
 - That the first pull request gets the comment; the baseline is updated by committing
   a new `menu.json` (`toolmenu snapshot`) when a change is intended.
+- By default the job fails on error-level findings. `gate: review` in the workflow's
+  `with:` fails it on the verdict instead, so a breaking change passes when the
+  release's version bump allows it. Offer it to a project that versions with semver.
 - Two options worth offering: a README badge (`npx -y toolmenu snapshot --badge
   toolmenu-badge.json -- <command>`, committed with `menu.json`; it prints the README
   line), and code scanning alerts (the Action's `sarif` input plus

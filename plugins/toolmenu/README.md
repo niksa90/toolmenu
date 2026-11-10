@@ -2,8 +2,8 @@
 
 # toolmenu for Claude Code
 
-Lets Claude check the MCP server you're building, the way clients and agents will meet
-its tool list: what agents misread, what breaks clients or prompt caches, and
+Lets Claude test the MCP server you're building the way clients and agents will meet
+it: the menu they read, the calls they make and the results they get back, and
 breaking changes between releases. No LLM is involved, so the same inputs always
 give the same answer.
 
@@ -15,13 +15,16 @@ give the same answer.
 It adds:
 
 - **The toolmenu MCP server** (Node 22 or later), the toolmenu release the plugin
-  pins: `snapshot_menu`, `diff_menus`, `check_session` and `explain_rule`. A plugin
+  pins: `snapshot_menu`, `check_session`, `diff_menus` and `explain_rule`; releases
+  after 0.27.0 add `review_baseline` and `check_auth`. A plugin
   update moves it to a new release.
-- **Three skills**, each for one moment of work on an MCP server:
+- **Four skills**, each for one moment of work on an MCP server:
   - `check-mcp-menu`: after changing tools (names, descriptions, schemas,
     annotations), or when an agent picks the wrong tool.
   - `release-check`: before tagging or publishing: what changed since the last
     release, what breaks clients, and the version bump it needs.
+  - `check-mcp-auth`: when an HTTP server answers 401 or a client can't sign in to it:
+    its OAuth discovery, walked without logging in.
   - `setup-ci`: adds toolmenu to CI with `toolmenu init`, so every pull request gets
     a comment.
 
@@ -39,7 +42,8 @@ folder, with no download at start.
   folder you give, or connect to the URL you give, as `toolmenu snapshot` does on the
   command line. Claude Code asks before each call unless you allow the tools.
 - **Calls:** `check_session` calls only the tools your server marks `readOnlyHint`,
-  with arguments its schemas allow. `snapshot_menu` and `diff_menus` call none.
+  with arguments its schemas allow. `check_auth` sends unauthenticated requests to
+  the URL you give and the metadata addresses it names. The others call none.
 - **Sends:** nothing to toolmenu or anyone else: no telemetry, no account. The only
   network traffic is to the server URL you give (and its sign-in server, if you
   signed in to it) and the npm install.
@@ -63,9 +67,9 @@ that account's usage (or API credits). Pick the size to fit, from this folder:
 
 | When | Command | Sessions |
 |---|---|---|
-| Editing a skill | `claude plugin eval . --scaffold --model haiku --runs 1 --ablation none` | 7 |
+| Editing a skill | `claude plugin eval . --scaffold --model haiku --runs 1 --ablation none` | 9 |
 | One case | `claude plugin eval . --case setup-ci --scaffold --model haiku --runs 1 --ablation none` | 1 |
-| Before a release | `claude plugin eval . --scaffold --model sonnet --runs 3 -j 4` | 42 |
+| Before a release | `claude plugin eval . --scaffold --model sonnet --runs 3 -j 4` | 54 |
 
 A run measures whether the model it runs on picks the skill up, so do the release
 pass on a model people use the plugin with (Sonnet, Opus), not only Haiku.
