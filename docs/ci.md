@@ -24,7 +24,7 @@ permissions:
   security-events: write          # to upload SARIF
 steps:
   # … checkout, build, as above
-  - uses: niksa90/toolmenu@v0.27.0
+  - uses: niksa90/toolmenu@v0.27.1
     with:
       command: node dist/server.js
       sarif: toolmenu-sarif
