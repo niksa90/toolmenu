@@ -136,7 +136,8 @@ export const resourceUnreadable: Rule = {
     const reads = ctx.resourceReads?.reads ?? [];
     const findings: RuleFinding[] = [];
     const missingCode = ctx.protocolVersion && ctx.protocolVersion >= '2026-07-28' ? '-32602' : '-32002';
-    const total = `${num(reads.length)} read`;
+    // Those a finding can be about: a read the run couldn't make its own says nothing.
+    const total = `${num(reads.filter((r) => !r.unread).length)} checked`;
 
     const failed = reads.filter((r) => r.outcome === 'error' && !r.unread);
     if (failed.length) {
@@ -193,7 +194,7 @@ export const resourceReadSchema: Rule = {
       const missing = [...new Set(invalid.flatMap((r) => r.missing ?? []))];
       const hints = missing.some((m) => m === 'ttlMs' || m === 'cacheScope');
       findings.push({
-        message: `The resources/read result ${one ? `for ${shown(invalid[0].uri)} doesn't` : `doesn't match for ${count(invalid.length, 'resource')} of ${num(reads.length)} read: they don't`} match the official ${ctx.protocolVersion} schema, so a strict client may refuse ${one ? 'it' : 'them'}.`,
+        message: `The resources/read result ${one ? `for ${shown(invalid[0].uri)} doesn't` : `doesn't match for ${count(invalid.length, 'resource')} of ${num(reads.filter((x) => !x.unread).length)} checked: they don't`} match the official ${ctx.protocolVersion} schema, so a strict client may refuse ${one ? 'it' : 'them'}.`,
         detail: listed(lines, 5).concat(one ? [] : [`e.g. ${shown(invalid[0].uri)}`]),
         fix: missing.length
           ? `Add ${missing.join(', ')} to the resources/read result${hints ? ` (${ctx.protocolVersion} requires cache hints on it, SEP-2549)` : ''}.`
@@ -206,7 +207,7 @@ export const resourceReadSchema: Rule = {
       const said = sdkIssues(refused[0].clientError!);
       const one = refused.length === 1;
       findings.push({
-        message: `The official MCP SDK client rejected the resources/read result ${one ? `for ${shown(refused[0].uri)}` : `for ${count(refused.length, 'resource')} of ${num(reads.length)} read`}, so clients built on it can't read ${one ? 'it' : 'them'}. The result does match the ${ctx.protocolVersion} schema; the SDK said: ${said.summary}`,
+        message: `The official MCP SDK client rejected the resources/read result ${one ? `for ${shown(refused[0].uri)}` : `for ${count(refused.length, 'resource')} of ${num(reads.filter((x) => !x.unread).length)} checked`}, so clients built on it can't read ${one ? 'it' : 'them'}. The result does match the ${ctx.protocolVersion} schema; the SDK said: ${said.summary}`,
         ...(said.detail.length || !one ? { detail: said.detail.concat(one ? [] : listed(refused.map((r) => shown(r.uri)))) } : {}),
         fix: 'Fix what the SDK names above, then read the resource with the official client to confirm.',
       });

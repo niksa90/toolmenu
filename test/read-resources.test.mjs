@@ -51,7 +51,7 @@ test('lists/resource-unreadable: several failures are one finding; ENOENT is the
   assert.equal(r.unreadable.length, 1);
   const [f] = r.unreadable;
   assert.equal(f.severity, 'warn');
-  assert.match(f.message, /^resources\/list names 3 resources that resources\/read fails on \(of 4 read\)\./);
+  assert.match(f.message, /^resources\/list names 3 resources that resources\/read fails on \(of 4 checked\)\./);
   assert.deepEqual(f.detail, [
     'broken://z: the index is corrupt (-32603)',
     "enoent://y: ENOENT: no such file or directory, open '/data/y.json' (-32603)",
@@ -70,7 +70,7 @@ test('lists/resource-unreadable: a read that succeeds with only an error for a b
   assert.match(f.fix, /^If the read failed, answer with a JSON-RPC error \(-32602 for a resource that doesn't exist\)/);
   assert.ok(!r.raw.includes(MARKER), 'the body is never quoted');
   const legacy = await read({ LIST: 'soft://a,soft://b', LEGACY: 1 });
-  assert.match(legacy.unreadable[0].message, /^resources\/read succeeds for 2 listed resources \(of 2 read\) whose content is only/);
+  assert.match(legacy.unreadable[0].message, /^resources\/read succeeds for 2 listed resources \(of 2 checked\) whose content is only/);
   assert.deepEqual(legacy.unreadable[0].detail, ['soft://a', 'soft://b']);
   assert.match(legacy.unreadable[0].fix, /\(-32002 for a resource/);
 });
@@ -87,7 +87,7 @@ test('lists/resource-read-schema: 2026-07-28 results without cache hints are one
   assert.equal(r.schema.length, 1);
   const [f] = r.schema;
   assert.equal(f.severity, 'error');
-  assert.match(f.message, /^The resources\/read result doesn't match for 3 resources of 3 read: they don't match the official 2026-07-28 schema, so a strict client may refuse them\.$/);
+  assert.match(f.message, /^The resources\/read result doesn't match for 3 resources of 3 checked: they don't match the official 2026-07-28 schema, so a strict client may refuse them\.$/);
   assert.deepEqual(f.detail, ["(result) must have required property 'cacheScope'", "(result) must have required property 'ttlMs'", 'e.g. ok://a']);
   assert.equal(f.fix, 'Add cacheScope, ttlMs to the resources/read result (2026-07-28 requires cache hints on it, SEP-2549).');
   assert.deepEqual(r.unreadable, []);
@@ -153,7 +153,7 @@ test('lists/resource-unread: every read failing the same way, with nothing read,
   // Each fails in its own words (glif 0.9.9), or says the resource is missing: the server's.
   const own = await read({ LIST: 'scheme://glifrun,scheme://glifuser' });
   assert.equal(own.unreadable.length, 1);
-  assert.match(own.unreadable[0].message, /^resources\/list names 2 resources that resources\/read fails on \(of 2 read\)/);
+  assert.match(own.unreadable[0].message, /^resources\/list names 2 resources that resources\/read fails on \(of 2 checked\)/);
   assert.equal((await read({ LIST: 'missing://a,missing://b' })).unreadable[0].severity, 'warn');
   assert.equal((await read({ LIST: 'soft://a,soft://b' })).unreadable[0].severity, 'warn');
   // One resource alone can't show a pattern.
