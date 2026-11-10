@@ -45,7 +45,7 @@ function appOnlyNote(a: { tools: number; tokens: number } | undefined): string {
   return a ? ` · ${a.tools} not shown to the agent (MCP Apps visibility without "model", ~${a.tokens.toLocaleString('en-US')} tokens)` : '';
 }
 
-export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, outPath?: string, cost?: ClientCost, notOffered: string[] = []): string {
+export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, outPath?: string, cost?: ClientCost, notOffered: string[] = [], resourcesRead?: { read: number; listed: number; byApps?: number }): string {
   const view = agentMenu(menu);
   if (format === 'json') {
     return JSON.stringify(
@@ -62,6 +62,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
         ...(menu.resources ? { resources: menu.resources.length } : {}),
         ...(menu.resourceTemplates ? { resourceTemplates: menu.resourceTemplates.length } : {}),
         ...(notOffered.length ? { notOffered } : {}),
+        ...(resourcesRead ? { resourcesRead } : {}),
         written: outPath ?? null,
         counts: counts(findings),
         findings,
@@ -95,6 +96,7 @@ export function formatSnapshot(menu: Menu, findings: Finding[], format: Format, 
   // Lists asked for that the server doesn't offer: said once, not a finding.
   const caps = [...new Set(notOffered.map((k) => (k === 'prompts' ? 'prompts' : 'resources')))];
   if (others || caps.length) lines.push(`  ${[others ? `also listed: ${others}` : '', caps.length ? `no ${caps.join(' or ')} offered (not declared)` : ''].filter(Boolean).join(' · ')}`);
+  if (resourcesRead) lines.push(`  resources/read: ${resourcesRead.read.toLocaleString('en-US')} of ${plural(resourcesRead.listed, 'listed resource')} read${resourcesRead.byApps ? ` (${resourcesRead.byApps.toLocaleString('en-US')} more by the MCP Apps check)` : ''}`);
   if (outPath) lines.push(`  wrote ${outPath}`);
   lines.push('');
   const where = breakdownLines(breakdown(view.shown), view.shown.tools.length);

@@ -117,6 +117,9 @@ the CLI's job.
                     1 opens no second one, session's scope check included
 --lists <kinds>     snapshot: also read and check prompts, resources (comma-separated);
                     saved in the menu file beside the tools
+--read-resources    snapshot, with --lists resources: read each listed resource and
+                    report the ones a client gets nothing usable from
+--max-reads <n>     with --read-resources: at most n reads, spread over the list
 --client <name>     snapshot: check the menu for one client, from its own docs:
                     claude-code, claude-api-search, openai, codex, vscode,
                     copilot-cloud-agent, copilot-code-review, gemini-cli,

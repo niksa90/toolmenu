@@ -7,7 +7,7 @@ import { clientFeatures, clientLimit, clientName } from './clients.js';
 import { invalidCredential } from './auth.js';
 import { networkDependent } from './network.js';
 import { capabilityDependent } from './capabilities.js';
-import { listSchema, listVariance } from './lists.js';
+import { listSchema, listVariance, resourceReadSchema, resourceUnread, resourceUnreadable } from './lists.js';
 import { handleLifetime } from './handles.js';
 import { authVariance, cacheScopePublic } from './identities.js';
 import { route, sharedWord, vagueId } from './naming.js';
@@ -60,6 +60,9 @@ export const MENU_RULES: Rule[] = [
   capabilityDependent,
   listVariance,
   listSchema,
+  resourceUnreadable,
+  resourceReadSchema,
+  resourceUnread,
   cacheScopePublic,
   serverInfo,
   extensionId,

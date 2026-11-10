@@ -184,6 +184,14 @@ export async function main(given: string[]): Promise<number> {
   const lists = values.lists !== undefined ? values.lists.split(',').map((w) => w.trim()).filter(Boolean) : config.lists;
   const badList = (lists ?? []).find((w) => !(LIST_WORDS as readonly string[]).includes(w));
   if (badList) throw new UsageError(`--lists takes ${LIST_WORDS.join(', ')}, comma-separated; not "${badList}"`);
+  if ((values['read-resources'] || values['max-reads'] !== undefined) && sub !== 'snapshot') throw new UsageError('--read-resources and --max-reads go with snapshot.');
+  const readResources = sub === 'snapshot' && (values['read-resources'] ?? config.readResources ?? false);
+  if (readResources && !(lists ?? []).includes('resources')) {
+    throw new UsageError(`${values['read-resources'] ? '--read-resources' : 'readResources (in the config)'} reads what resources/list names, so it needs that list.\n  → Next: add --lists resources (or "lists": ["resources"] in the config).`);
+  }
+  if (values['max-reads'] !== undefined && !readResources) throw new UsageError('--max-reads goes with --read-resources.');
+  const maxReads = values['max-reads'] !== undefined ? Number(values['max-reads']) : config.maxReads;
+  if (maxReads !== undefined && !(Number.isInteger(maxReads) && maxReads >= 1)) throw new UsageError('--max-reads must be a whole number, 1 or more');
   if (values.client !== undefined && sub !== 'snapshot') throw new UsageError('--client goes with snapshot.');
   if (values.client !== undefined && !Object.hasOwn(CLIENTS, values.client)) throw new UsageError(`--client must be one of ${CLIENT_NAMES.join(', ')}`);
   if (values['offline-check'] && sub !== 'snapshot') throw new UsageError('--offline-check goes with snapshot.');
@@ -447,12 +455,12 @@ export async function main(given: string[]): Promise<number> {
   const client = values.client ?? config.client;
   const offlineCheck = values['offline-check'] ?? config.offlineCheck;
   if (values['offline-check'] && target.kind !== 'stdio') throw new UsageError("--offline-check goes with a stdio server: an HTTP server's network isn't this machine's to cut.");
-  const { menu, findings, cost, notOffered } = await snapshot(target, { offlineCheck: offlineCheck && target.kind === 'stdio', routes, timeoutMs, processes, identities, client, lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const { menu, findings, cost, notOffered, resourcesRead } = await snapshot(target, { readResources, maxReads, offlineCheck: offlineCheck && target.kind === 'stdio', routes, timeoutMs, processes, identities, client, lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');
 
-  await emit(formatSnapshot(menu, findings, format, outPath, cost, notOffered), findings, 'snapshot', outPath, () => snapshotHtml(menu, findings, { transport: target.kind, cost, notOffered, outPath }));
+  await emit(formatSnapshot(menu, findings, format, outPath, cost, notOffered, resourcesRead), findings, 'snapshot', outPath, () => snapshotHtml(menu, findings, { transport: target.kind, cost, notOffered, outPath }));
   if (values.badge !== undefined) {
     await writeFile(values.badge, JSON.stringify(badge(menu, findings), null, 2) + '\n');
     // stderr: stdout stays the report (or the JSON/SARIF a script parses).

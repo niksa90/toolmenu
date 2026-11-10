@@ -48,6 +48,8 @@ export interface RuleContext {
   serverUrl?: string;
   /** snapshot: what resources/read gave for each ui:// resource the tools name (MCP Apps). */
   appResources?: import('../apps.js').AppResource[];
+  /** snapshot --read-resources: what resources/read gave for the listed resources (lists/resource-* rules). */
+  resourceReads?: import('../resource-read.js').ResourceReads;
   /**
    * Set by runRules from the `ignore` setting. Rules that sum many tools up in
    * one finding use it to leave ignored tools out of the summary; findings about
