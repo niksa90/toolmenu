@@ -73,6 +73,6 @@
     <text x="76.1" y="129" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" fill="#5EEAB5">diff · review</text>
   </g>
   <path d="M740 214V221H160V227m-4 -5l4 5l4 -5" fill="none" stroke="#6e7681" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4"/>
-  <text x="24" y="412" font-size="13" fill="#9da7b3">No LLM anywhere: the same server gives the same findings on every run. Reports as text, a PR comment, SARIF, JUnit or HTML.</text>
+  <text x="24" y="412" font-size="13" fill="#9da7b3">No LLM anywhere: the same answers from a server give the same findings. Reports as text, a PR comment, SARIF, JUnit or HTML.</text>
   </g>
 </svg>

@@ -37,8 +37,8 @@ tool's own schemas and each client's documented limits:
 
 ![What a client does with an MCP server, and what toolmenu checks at each step: sign-in, the connection, the menu, tool calls, the menu during a conversation, and the next release](https://raw.githubusercontent.com/niksa90/toolmenu/main/docs/overview.svg)
 
-No LLM is involved, so the same server gives the same findings on every run and it fits
-in CI. It doesn't tell you whether an agent picks the right tool; that takes evals with a
+No LLM is involved, so the same answers from a server give the same findings, and it
+fits in CI. It doesn't tell you whether an agent picks the right tool; that takes evals with a
 model ([what it can't catch](#what-it-cant-catch)).
 
 ```sh
@@ -108,8 +108,8 @@ How much to trust a finding depends on what it rests on, and the rule id's prefi
 
 A finding marked **`· unsure`**, in any family, rests on names and words rather than on
 something toolmenu saw happen (above: "looks like it unlocks tools"). It says what was
-seen, not what it means. No LLM is involved anywhere: the same server gives the same
-findings on every run.
+seen, not what it means. No LLM is involved anywhere: the same answers from a server
+give the same findings.
 
 ## In CI: one PR comment
 
@@ -197,10 +197,10 @@ which compares each week with the last:
 
 | Panel | Servers | What ran |
 |---|---|---|
-| Registry stdio servers (npm), pinned versions | 1,089 | `snapshot`, `session --auto`, and every tool called in a container with no network and no credentials: 15,550 of 16,518 tools |
+| Registry stdio servers (npm), pinned versions | 1,089 | `snapshot`, `session --auto`, and a pass that calls every tool in a container with no network and no credentials: 15,550 of 16,518 tools called |
 | Docker's MCP catalog, at the digests it pins | 237 | The same: 4,117 of 4,237 tools called (41 servers didn't list tools) |
 | Servers vendors publish to run locally (GitHub, AWS Labs, Microsoft, PayPal, Stripe, Notion, HashiCorp, Grafana…) | 98 | The same, with dummy credentials: 2,213 of 2,292 tools called (20 didn't list tools) |
-| Hosted servers: 109 vendor endpoints and a seeded 2,000 from the registry | 2,109 | `snapshot`, a read-only `session --auto` of at most 10 calls, `auth check` on each that answers 401 |
+| Hosted servers: 109 vendor endpoints and a seeded 2,000 from the registry | 2,109 | `snapshot`, a read-only `session --auto` of at most 10 calls, `auth check` on each that answers 401 (79 of the vendors' 109; 29 list tools without a login, 1 didn't answer) |
 
 Read those numbers for what they are. Most servers pass most checks: about 1 in 90 of
 the registry's stdio servers fails in the official SDK client. A sealed container with

@@ -8,8 +8,8 @@ imports this file; other agents read it directly.
 toolmenu tests MCP servers the way agents and clients meet them: it connects, lists
 the menu, calls tools, checks results against the spec and the tool's own schemas,
 walks OAuth discovery, and compares menus across calls, processes, clients and
-releases. It's deterministic: no LLM anywhere, so the same server gives the same
-findings on every run.
+releases. It's deterministic: no LLM anywhere, so the same answers from a server
+give the same findings.
 
 ## Where things are
 

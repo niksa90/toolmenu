@@ -675,7 +675,7 @@ every changed finding read by hand.
 
 ## F17. 1,090 servers new to the bench, every command on each
 
-*(Run again with every tool called, and with 2,109 hosted servers: F18.)*
+*(Run again with a pass that calls every tool, and with 2,109 hosted servers: F18.)*
 
 *Checked 2026-11-09 with `bench/scripts/batch-full.sh` on `corpus/registry-2026-11.tsv`:
 the first 1,600 npm stdio servers from the MCP registry, in a seeded random order, that need
@@ -740,7 +740,7 @@ No server crashed toolmenu after the fixes. Every server that didn't start got a
 naming why: the usage text a command printed, "bun: No such file or directory", or the
 module it couldn't find.
 
-## F18. Every tool called, and 2,109 hosted servers, the big vendors' among them
+## F18. 15,550 of 16,518 stdio tools called, and 2,109 hosted servers, the big vendors' among them
 
 *Checked 2026-11-09; data in `bench/results/weekly/2026-11-09/`, the weekly run's
 baseline.* The stdio servers of F17 ran again with toolmenu `3b338ac`, now with a sealed
@@ -791,7 +791,8 @@ the 109 vendor endpoints answer 401:
   won't log in, though PKCE would work (`auth/pkce`; the finding now says so).
 
 29 vendor endpoints list tools without a login. Google's 15 do so and answer every call
-with HTTP 401 and a per-tool `WWW-Authenticate`: a design, not a failure.
+with HTTP 401 and a per-tool `WWW-Authenticate`: a design, not a failure. The one left of
+the 109, Dodo Payments' `mcp.dodopayments.com`, didn't answer in this run.
 
 **The hosted long tail.** Of the 2,000:
 - 1,091 list tools to anyone (14,886 tools), 659 use OAuth, 31 another credential, and 219
@@ -814,7 +815,7 @@ with HTTP 401 and a per-tool `WWW-Authenticate`: a design, not a failure.
 - **An output that fails only `format`** is a warning: many validators skip format.
 
 
-## F19. 98 servers the big vendors publish, every tool called
+## F19. 98 servers the big vendors publish: 2,213 of 2,292 tools called
 
 *Checked 2026-11-09; data in `bench/results/weekly/2026-11-09/vendors/`.* Most vendors' hosted
 endpoints (F18) show their tools only after a login. So this run used what they publish
@@ -824,7 +825,7 @@ Salesforce and others). Each ran with dummy credentials through `snapshot`, a re
 `session --auto`, and the sealed `--call-everything` pass (no network).
 
 **Coverage.**
-- 78 of the 98 listed tools, 2,292 in all; 2,213 were called in the sealed pass.
+- 78 of the 98 servers listed tools, 2,292 in all; 2,213 (97%) were called in the sealed pass.
 - By first answer: 571 gave a result, 1,185 a tool error (most of them the API refusing the dummy key, or no network), 293 failed and 164 timed out.
 - Not called: 78, from six servers that won't start without the network (Supabase, Firebase, Apify, Svelte, AWS API, Qdrant), and 1 that Netlify lists only online.
 - 20 didn't list tools at all, each with the server's own reason in `servers.tsv`.
@@ -848,7 +849,7 @@ Salesforce and others). Each ran with dummy credentials through `snapshot`, a re
 - Python servers were started with a dependency's console script (`idna`, `keyring`). Now only the package's own counts.
 - .NET single-file servers (Azure) need a writable `HOME`.
 
-## F20. Docker's MCP catalog, 237 servers, every tool called
+## F20. Docker's MCP catalog, 237 servers: 4,117 of 4,237 tools called
 
 *Checked 2026-11-09; data in `bench/results/weekly/2026-11-09/docker/`.* Docker's MCP
 catalog (`desktop.docker.com/mcp/catalog/v3/catalog.yaml`) is what the Docker MCP Toolkit
@@ -858,9 +859,9 @@ declared setting, through `snapshot`, a read-only `session --auto`, and the seal
 `--call-everything` pass (no network).
 
 **Coverage.**
-- 196 listed tools, 4,237 in all. By protocol: 2025-11-25 on 89, 2024-11-05 on 54,
+- 196 of the 237 servers listed tools, 4,237 in all. By protocol: 2025-11-25 on 89, 2024-11-05 on 54,
   2025-06-18 on 37, 2025-03-26 on 13, 2026-07-28 on 3.
-- 4,117 tools called in the sealed pass. By first answer: 1,288 a result, 2,299 a tool
+- 4,117 tools (97%) called in the sealed pass. By first answer: 1,288 a result, 2,299 a tool
   error (mostly the service behind it refusing a dummy key, or no network), 523 failed and
   7 timed out. Not called: 102 planned in sessions that stopped first, and SonarQube's 18
   (its Java backend takes longer than the 10 s the pass allows to start offline).
