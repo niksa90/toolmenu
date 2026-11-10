@@ -2,8 +2,8 @@
 
 # toolmenu for Claude Code
 
-Lets Claude check the MCP server you're building, the way clients and agents will meet
-its tool list: what agents misread, what breaks clients or prompt caches, and
+Lets Claude test the MCP server you're building the way clients and agents will meet
+it: the menu they read, the calls they make and the results they get back, and
 breaking changes between releases. No LLM is involved, so the same inputs always
 give the same answer.
 

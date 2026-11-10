@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Docs
+
+- README cut from 989 lines to about 250: what toolmenu catches with the server each was
+  seen on, the commands in one table, and what the bench numbers do and don't say. The
+  reference moved to `docs/`: `snapshot.md`, `session.md`, `diff.md`, `clients.md`,
+  `usage.md`, `ci.md`; the Action's inputs are in `docs/github-action.md`.
+- New pictures: what a client does and what toolmenu checks at each step
+  (`docs/overview.svg`), `review` as markdown and the HTML report. The terminal demo
+  prints line by line (`scripts/render-demo.mjs`).
+- The registry, plugin and marketplace descriptions say what toolmenu does now: tests a
+  server as clients meet it, not only its tool list.
+- `bench/README.md`: the weekly stdio pass rechecks up to 1,000 servers, as `weekly.sh` does.
+
 ## 0.27.0
 
 ### New

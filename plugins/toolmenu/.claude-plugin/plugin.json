@@ -1,7 +1,7 @@
 {
   "name": "toolmenu",
   "version": "0.25.0",
-  "description": "Check the MCP server you're building: what agents misread, what breaks clients or prompt caches, and breaking changes between releases. No LLM involved.",
+  "description": "Test the MCP server you're building the way clients and agents meet it: the menu, the calls, the results, and breaking changes between releases. No LLM involved.",
   "author": {
     "name": "Nikša Perović",
     "url": "https://niksa.me"

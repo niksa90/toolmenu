@@ -5,13 +5,13 @@
     "url": "https://niksa.me"
   },
   "metadata": {
-    "description": "Checks for MCP servers' tool lists, for the agent building the server."
+    "description": "Tests for MCP servers, for the agent building one."
   },
   "plugins": [
     {
       "name": "toolmenu",
       "source": "./plugins/toolmenu",
-      "description": "Check the MCP server you're building: what agents misread, what breaks clients or prompt caches, and breaking changes between releases. No LLM involved.",
+      "description": "Test the MCP server you're building the way clients and agents meet it: the menu, the calls, the results, and breaking changes between releases. No LLM involved.",
       "category": "development"
     }
   ]

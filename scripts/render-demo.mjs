@@ -1,5 +1,5 @@
-// Renders real toolmenu output, in the colours the CLI prints in a terminal, as an SVG
-// for the README. Usage: npm run build && node scripts/render-demo.mjs > docs/demo.svg
+// Renders real toolmenu output, in the colours the CLI prints in a terminal, as an
+// animated SVG for the README. Usage: npm run build && node scripts/render-demo.mjs > docs/demo.svg
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -93,9 +93,22 @@ const pad = 20;
 const top = 44;
 const w = Math.ceil(width * 7.8) + pad * 2;
 const h = top + rows.length * lh + pad;
-const text = rows.map((row, i) => `<text x="${pad}" y="${top + i * lh}" xml:space="preserve">${spans(row)}</text>`).join('\n  ');
+// Each row appears in turn, as the run would print it, then the whole report holds
+// until the loop starts again. A row is visible by default: where animations don't run
+// (or the reader asked for less motion), the picture is the finished report.
+const loop = 26; // seconds
+const first = 1.2;
+const each = 0.16;
+const pct = (seconds) => ((seconds / loop) * 100).toFixed(2);
+const keyframes = rows
+  .map((_, i) => (i === 0 ? '' : `@keyframes r${i}{0%,${pct(first + i * each)}%{opacity:0}${pct(first + i * each + 0.12)}%,97%{opacity:1}100%{opacity:0}}`))
+  .join('');
+const text = rows
+  .map((row, i) => `<text x="${pad}" y="${top + i * lh}" xml:space="preserve"${i ? ` style="animation:r${i} ${loop}s linear infinite"` : ''}>${spans(row)}</text>`)
+  .join('\n  ');
 
 process.stdout.write(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="toolmenu session output (excerpt): a summary of the findings, tools inserted mid-list pinned to the step that caused it, and the next step to fix each">
+  <style>${keyframes}@media (prefers-reduced-motion:reduce){text{animation:none!important}}</style>
   <rect width="${w}" height="${h}" rx="10" fill="#0d1117"/>
   <circle cx="22" cy="18" r="6" fill="#ff5f57"/><circle cx="42" cy="18" r="6" fill="#febc2e"/><circle cx="62" cy="18" r="6" fill="#28c840"/>
   <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">

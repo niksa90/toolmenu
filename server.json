@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.niksa90/toolmenu",
   "title": "toolmenu",
-  "description": "Checks MCP tool lists: what agents misread, what breaks clients or caches, breaking changes",
+  "description": "Tests MCP servers as clients meet them: menu, calls, results, sign-in, releases. No LLM.",
   "repository": {
     "url": "https://github.com/niksa90/toolmenu",
     "source": "github"

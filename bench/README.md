@@ -101,7 +101,7 @@ is wrong until shown otherwise.
   `auth check` (OAuth discovery, no login), `snapshot`, and a read-only `session --auto`
   of at most 10 calls (`scripts/batch-http.sh`). The same panel every week, so a change
   is the server's.
-- **stdio servers with a new release, and new ones** (at most 300), in containers, with
+- **stdio servers with a new release, and new ones** (at most 1,000), in containers, with
   the sealed pass that calls every tool (`SEALED=1`). `results/weekly/stdio-versions.tsv`
   records which version of each package was last checked.
 - **`CHANGES.md`** against the previous week (`scripts/compare-weeks.py`): servers that
