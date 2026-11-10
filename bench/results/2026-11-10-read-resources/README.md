@@ -4,7 +4,7 @@ Every server in the committed 2026-11-09 menus (`../weekly/2026-11-09/`) that li
 least one resource, plus `@dpantani/tdmcp@0.13.2`, the server the check was written for
 (FINDINGS F21).
 
-- **Run with:** toolmenu at commit `2c41bab`, the same build for every server:
+- **Run with:** toolmenu at commit `392d180`, the same build for every server:
   `snapshot --lists resources --read-resources --processes 1 --timeout 30000`.
 - **The servers:** 36 container images (33 from Docker's MCP catalog, 3 vendors'), 13 npm
   packages (12 vendors' and tdmcp), 4 hosted.
@@ -20,5 +20,5 @@ least one resource, plus `@dpantani/tdmcp@0.13.2`, the server the check was writ
   network).
 - **`findings.jsonl`:** every `lists/resource-*` finding, one per line.
 
-A first run of the same servers, on the build before `6eb3cb2`, is what that commit
-answers: it warned about servers whose reads failed for the run's reasons.
+Earlier runs of the same servers, on the builds before `6eb3cb2` and `392d180`, are what
+those commits answer: they warned about servers whose reads failed for the run's reasons.

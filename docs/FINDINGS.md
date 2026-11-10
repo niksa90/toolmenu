@@ -911,7 +911,7 @@ switches and numbers now get values of their kind, and the servers they broke ra
 ## F21. Reading the resources servers list: 53 servers
 
 *Checked 2026-11-10 with `snapshot --lists resources --read-resources`, at commit
-`2c41bab`; data in `bench/results/2026-11-10-read-resources/`.* The servers are the 52 in
+`392d180`; data in `bench/results/2026-11-10-read-resources/`.* The servers are the 52 in
 the 2026-11-09 menus that list at least one resource (33 images from Docker's catalog, 3
 vendor images, 12 vendor npm packages, 4 hosted) and `@dpantani/tdmcp@0.13.2`. The local
 ones ran in containers with dummy credentials, once with no network and once with one;
@@ -947,7 +947,7 @@ The images are pinned by digest in `servers.tsv`; whether each is still its cata
 current one isn't shown here. The three firebase resources are `ui://` ones no tool
 names, so `apps/resource` never read them.
 
-**What toolmenu got wrong, fixed along the way** (`6eb3cb2`, each with a test). The first
+**What toolmenu got wrong, fixed along the way** (`6eb3cb2` unless said, each with a test). The first
 run warned about servers whose reads failed for the run's reasons:
 
 - **The network, in words the classifier didn't know:** "self-signed certificate in
@@ -956,11 +956,17 @@ run warned about servers whose reads failed for the run's reasons:
 - **A dummy credential refused for its shape** ("Access token is not in valid JWT
   format", Mapbox) and **nothing chosen to read from** ("No currently active project.",
   Firebase).
-- **One cause for every resource.** `mcp-server-kubernetes` without a cluster fails all
-  five reads in the same words; Amazon Neptune without an endpoint, both; kubectl-mcp-server
-  answers seven of its eight with the same error body. When two or more reads fail alike, none says
-  the resource is missing and nothing reads, they are now `lists/resource-unread` (info)
-  with the server's words. 19 resources on 4 servers in this run.
+- **A missing backend, named by the server.** `mcp-server-kubernetes` without a cluster
+  fails all five reads with "HTTP protocol is not allowed when skipTLSVerify is not set";
+  Amazon Neptune without an endpoint fails both; kubectl-mcp-server answers seven of its
+  eight with "Invalid kube-config file" as a body. Those words are now the run's
+  (`lists/resource-unread`): 19 resources on 4 servers here (`392d180`).
+- **Every read failing alike isn't proof of that.** For a while any set of reads that all
+  failed in the same words was info. A read handler broken for every URI looks the same,
+  so words toolmenu doesn't recognise now stay a warning, marked unsure, saying it is the
+  handler or something the run lacks (`392d180`). No server in this run is in that case.
+- **One resource, eight requests.** A read answered with `InputRequiredResult` was resent
+  by the SDK client up to eight times. Each resource now gets one request (`392d180`).
 
 **What this doesn't show.** 53 servers, picked because they list resources, with dummy
 credentials: 42 resources without a network went unread for credentials, the network or a
