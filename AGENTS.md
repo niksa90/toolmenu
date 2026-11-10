@@ -26,6 +26,23 @@ findings on every run.
 - `bench/`: corpora, scripts and committed results of runs against real servers.
 - `docs/RULES.md` (every rule), `docs/PROTOCOLS.md` (generated), `docs/SPEC.md` (frozen
   v1.0 spec, with dated notes).
+- `docs/snapshot.md`, `session.md`, `diff.md`, `clients.md`, `usage.md`, `ci.md`,
+  `github-action.md`: the reference, one page per command or area.
+- `plugins/toolmenu/`: the Claude Code plugin (skills, evals, the pinned release).
+
+## README and docs
+
+- The README is the pitch: what toolmenu catches, one finding, CI, the commands in a
+  table, the bench in a paragraph. A new flag, rule or option goes in its `docs/` page,
+  and gets a README line only if it changes what toolmenu is for.
+- A number in the README comes from `docs/FINDINGS.md` or a committed dataset, and says
+  what it doesn't show.
+- Pictures are made from real output: `node scripts/render-demo.mjs > docs/demo.svg` for
+  the terminal demo; `scripts/social-preview.html` at 1280x640 for
+  `docs/social-preview.png`. README images use `raw.githubusercontent.com/.../main/`
+  URLs so they show on npm.
+- The Action's version pin (`niksa90/toolmenu@v…`) is in `README.md`,
+  `docs/github-action.md` and `docs/ci.md`.
 
 ## Commands
 
