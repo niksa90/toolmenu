@@ -50,6 +50,21 @@ async function read(uri) {
       return { contents: [{ uri: `${uri}/a.txt`, text: 'a' }, { uri: `${uri}/b.txt`, mimeType: 'text/markdown', text: 'b' }], ...hints };
     case 'enc': // the URI comes back percent-encoded, as URL.href gives it
       return text(encodeURI(uri), 'encoded');
+    // The bench's words for a run that couldn't get out, or had a dummy credential.
+    case 'tls':
+      throw new Error('self-signed certificate in certificate chain');
+    case 'dns':
+      throw new Error('[Errno -3] Temporary failure in name resolution');
+    case 'jwt':
+      throw new Error('Access token is not in valid JWT format');
+    case 'project':
+      throw new Error('No currently active project.');
+    case 'nocluster': // every resource of a server with no backend: the same words, the URI aside
+      throw new Error(`Error reading resource ${uri}: You must provide an endpoint`);
+    case 'softcluster':
+      return text(uri, JSON.stringify({ error: 'Unable to connect to the cluster' }), 'application/json');
+    case 'scheme': // glif 0.9.9: each fails in its own words
+      throw new Error(`Unsupported protocol: ${uri.split('/').pop()}:`);
     case 'auth':
       throw new Error('401 Unauthorized');
     case 'rate':

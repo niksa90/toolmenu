@@ -126,6 +126,40 @@ test("lists/resource-unread: failures that are the run's (credentials, in an err
   assert.equal(f.fix, 'Rerun with the credentials the resources need (--header, --env) to check them.');
 });
 
+test("lists/resource-unread: the network and a dummy credential in servers' own words (from the bench)", async () => {
+  const r = await read({ LIST: 'ok://a,tls://t,dns://d,jwt://j,project://p' });
+  assert.deepEqual(r.unreadable, []);
+  assert.deepEqual(r.unread[0].detail, [
+    "2: need a network this run couldn't reach (dns://d and tls://t)",
+    '1: need credentials this run lacks (jwt://j)',
+    '1: need something this machine lacks (project://p)',
+  ]);
+});
+
+test('lists/resource-unread: every read failing the same way, with nothing read, is one cause and info; different failures stay warn', async () => {
+  const r = await read({ LIST: 'nocluster://a,nocluster://b,nocluster://c' });
+  assert.deepEqual(r.unreadable, []);
+  assert.equal(r.unread[0].severity, 'info');
+  assert.deepEqual(r.unread[0].detail, [
+    '3: all failed the same way and nothing was read: one cause for all of them, which is usually the setup (a backend or an account this run lacks) (nocluster://a, nocluster://b and nocluster://c): Error reading resource nocluster://a: You must provide an endpoint',
+  ]);
+  assert.equal(r.unread[0].fix, 'Rerun where the resources can answer (the backend, account or network they read from) to check them.');
+  // The same, as error-only bodies (kubectl-mcp-server with no cluster).
+  const bodies = await read({ LIST: 'softcluster://a,softcluster://b' });
+  assert.deepEqual(bodies.unreadable, []);
+  assert.match(bodies.unread[0].detail[0], /^2: all failed the same way and nothing was read/);
+  // One of them reads: the others are the server's again.
+  assert.equal((await read({ LIST: 'ok://a,nocluster://a,nocluster://b' })).unreadable[0].severity, 'warn');
+  // Each fails in its own words (glif 0.9.9), or says the resource is missing: the server's.
+  const own = await read({ LIST: 'scheme://glifrun,scheme://glifuser' });
+  assert.equal(own.unreadable.length, 1);
+  assert.match(own.unreadable[0].message, /^resources\/list names 2 resources that resources\/read fails on \(of 2 read\)/);
+  assert.equal((await read({ LIST: 'missing://a,missing://b' })).unreadable[0].severity, 'warn');
+  assert.equal((await read({ LIST: 'soft://a,soft://b' })).unreadable[0].severity, 'warn');
+  // One resource alone can't show a pattern.
+  assert.equal((await read({ LIST: 'nocluster://a' })).unreadable[0].severity, 'warn');
+});
+
 test('lists/resource-unread: a rate limit stops the reads; the rest are counted, not asked for', async () => {
   const dir = tempDir();
   const seen = join(dir, 'reads.txt');

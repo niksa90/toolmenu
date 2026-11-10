@@ -6,6 +6,7 @@
  * counts, types and error text only, and each response's body is dropped from the wire
  * log once it's been looked at. The rules are in rules/lists.ts.
  */
+import { createHash } from 'node:crypto';
 import { quietExclusions, type Connection } from './connect.js';
 import { classifyFailure, httpStatus, RATE_LIMITED, tooMany, type FailureClass } from './failures.js';
 import { resultValidator } from './rules/spec.js';
@@ -23,7 +24,7 @@ const MIN_READ_MS = 10;
 const ERROR_KEYS = new Set(['error', 'message', 'code', 'status', 'detail', 'details', 'uri']);
 
 /** Why a resource wasn't checked: the run's doing, or by design. */
-export type UnreadReason = 'auth' | 'payment' | 'network' | 'client' | 'environment' | 'rate-limit' | 'timeout' | 'input-required' | 'budget' | 'bytes' | 'max-reads' | 'declared-size' | 'web' | 'gone';
+export type UnreadReason = 'auth' | 'payment' | 'network' | 'client' | 'environment' | 'rate-limit' | 'timeout' | 'input-required' | 'budget' | 'bytes' | 'max-reads' | 'declared-size' | 'web' | 'gone' | 'same-failure';
 
 export interface ResourceRead {
   uri: string;
@@ -44,6 +45,10 @@ export interface ResourceRead {
   missing?: string[];
   /** The SDK client refused a result the server did send. */
   clientError?: string;
+  /** A failure's words without the URI, hashed: reads that failed for one cause share it. */
+  cause?: string;
+  /** The failure says the resource isn't there (its code, "not found", ENOENT). */
+  saysMissing?: boolean;
   /** Characters of text and blob received. */
   size?: number;
   ms: number;
@@ -139,6 +144,14 @@ export async function readResources(connection: Connection, listed: Record<strin
     // A server that says "too many" isn't asked again: the rest go unread.
     if (read.unread === 'rate-limit') stopped = 'rate-limit';
   }
+  // Every read failed, all for one cause, and none of them for a missing resource: one
+  // thing stands between this run and all of them (no cluster, no endpoint, no project),
+  // which is the setup far more often than the server. Said as unread, with the words.
+  const failures = reads.filter((r) => !r.unread && (r.outcome === 'error' || r.errorBody));
+  const readable = reads.some((r) => r.outcome === 'ok' && !r.errorBody);
+  if (!readable && failures.length >= 2 && failures.every((r) => !r.saysMissing && r.cause === failures[0].cause)) {
+    for (const r of failures) r.unread = 'same-failure';
+  }
   // An answer that came after its read gave up was never looked at: its body goes too.
   for (const late of connection.wire.since(mark, 'resources/read')) if (late.result) late.result = {};
   return {
@@ -184,7 +197,7 @@ async function readOne(connection: Connection, uri: string, timeout: number, val
         uri,
         outcome: 'ok',
         items: contents.length,
-        ...(body ? { errorBody: body.keys } : {}),
+        ...(body ? { errorBody: body.keys, cause: causeOf(body.text, uri), ...(MISSING.test(body.text) ? { saysMissing: true } : {}) } : {}),
         ...(bodyUnread ? { unread: bodyUnread } : {}),
         ...schemaOf(validate, result),
         ...(clientError ? { clientError } : {}),
@@ -196,7 +209,8 @@ async function readOne(connection: Connection, uri: string, timeout: number, val
       const message = String(answer.error.message ?? '').split('\n')[0].trim();
       const code = typeof answer.error.code === 'number' ? answer.error.code : undefined;
       const unread = runs(message, code);
-      return { uri, outcome: 'error', error: message, ...(code !== undefined ? { code } : {}), ...(unread ? { unread } : {}), ms };
+      const saysMissing = code === -32002 || code === -32602 || MISSING.test(message);
+      return { uri, outcome: 'error', error: message, ...(code !== undefined ? { code } : {}), ...(unread ? { unread } : {}), cause: causeOf(message, uri), ...(saysMissing ? { saysMissing } : {}), ms };
     }
     // No answer: the transport refused the request (HTTP 401, 429…), or it timed out.
     const said = firstLine(caught ?? 'no resources/read response');
@@ -217,12 +231,37 @@ function runs(text: string, code: number | undefined): UnreadReason | undefined 
   // server's answer about a resource it listed, whatever else the words mention.
   if (code === -32002 || code === -32602) return undefined;
   if (RATE_LIMITED.test(text)) return 'rate-limit';
+  if (NETWORK_WORDS.test(text)) return 'network';
+  if (CREDENTIAL_WORDS.test(text)) return 'auth';
+  if (SETUP_WORDS.test(text)) return 'environment';
   const failure: FailureClass = classifyFailure(text, { code });
   if (failure === 'auth' || failure === 'payment' || failure === 'network' || failure === 'client') return failure;
   // Something this machine lacks (a browser, an app). A missing file is not that: for a
   // listed resource, ENOENT is the server naming a file it doesn't have.
   if (failure === 'environment' && !/\bENOENT\b/.test(text)) return 'environment';
   return undefined;
+}
+
+/**
+ * A read that couldn't get out, in the words servers use (the bench, 2026-11): "self-signed
+ * certificate in certificate chain" (Lara, Shodan behind a proxy), "[SSL:
+ * CERTIFICATE_VERIFY_FAILED]" and "[Errno -3] Temporary failure in name resolution"
+ * (StackHawk), "API error: fetch failed" (Glif), "Transport error (GET https://…)"
+ * (effect-mcp), `Get "https://…": dial tcp` (Terraform).
+ */
+const NETWORK_WORDS = /self-signed certificate|certificate verify failed|CERTIFICATE_VERIFY_FAILED|unable to (?:get|verify) [^.]{0,30}certificate|failure in name resolution|no such host|\bfetch failed\b|\btransport error\b|\bdial tcp\b|\bGet "https?:\/\/|connection (?:refused|reset|timed out)|network is unreachable/i;
+/** A credential in the wrong shape, which a dummy one is: "Access token is not in valid JWT format" (Mapbox). */
+const CREDENTIAL_WORDS = /\b(?:access |api |auth )?(?:token|key)\b[^.]{0,30}\b(?:not in (?:a )?valid|malformed|invalid format)\b/i;
+/** Nothing chosen to read from: "No currently active project." (Firebase). */
+const SETUP_WORDS = /\bno (?:currently )?(?:active|selected|default|current) (?:project|account|workspace|organi[sz]ation|cluster|context|profile)\b/i;
+/** The failure says the resource isn't there. */
+const MISSING = /\bnot found\b|\bENOENT\b|no such file|does(?:n't| not) exist/i;
+
+/** A failure's words with the URI taken out, hashed: the same for every resource one cause stops. */
+function causeOf(text: string, uri: string): string {
+  let words = text;
+  for (const form of new Set([uri, encodeURI(uri), uri.toLowerCase()])) words = words.split(form).join('<uri>');
+  return createHash('sha1').update(words.replace(/\s+/g, ' ').trim().toLowerCase()).digest('hex').slice(0, 12);
 }
 
 /** A body that is only an error: each item text, a JSON object of ERROR_KEYS with `error` among them. */

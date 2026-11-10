@@ -230,6 +230,7 @@ const UNREAD_WORDS: Record<UnreadReason, string> = {
   'declared-size': 'the listing declares a size too large to read',
   web: 'http(s) URLs, which a client fetches itself',
   gone: 'gone from the list by its second reading',
+  'same-failure': 'all failed the same way and nothing was read: one cause for all of them, which is usually the setup (a backend or an account this run lacks)',
 };
 
 export const resourceUnread: Rule = {
@@ -246,7 +247,9 @@ export const resourceUnread: Rule = {
     const unread = [...by.values()].reduce((n, u) => n + u.length, 0);
     if (!unread && !pass.truncated) return [];
     const checked = pass.reads.filter((r) => !r.unread).length;
-    const detail = [...by].map(([reason, uris]) => `${num(uris.length)}: ${UNREAD_WORDS[reason]} (${names(uris.map(shown), 3)})`);
+    // The one failure they share, in the server's words (an error-only body has none to quote).
+    const shared = pass.reads.find((r) => r.unread === 'same-failure' && r.error)?.error;
+    const detail = [...by].map(([reason, uris]) => `${num(uris.length)}: ${UNREAD_WORDS[reason]} (${names(uris.map(shown), 3)})${reason === 'same-failure' && shared ? `: ${clip(shared, 160)}` : ''}`);
     if (pass.truncated) detail.push('resources/list was cut at the page limit: resources past it were never listed, so never read');
     const credentials = by.has('auth');
     return [
@@ -257,6 +260,8 @@ export const resourceUnread: Rule = {
         detail,
         fix: credentials
           ? 'Rerun with the credentials the resources need (--header, --env) to check them.'
+          : by.has('same-failure') || by.has('environment') || by.has('network')
+            ? 'Rerun where the resources can answer (the backend, account or network they read from) to check them.'
           : by.has('budget') || by.has('max-reads') || by.has('timeout') || by.has('rate-limit')
             ? 'Rerun against a server instance of your own, without --max-reads, to check the rest.'
             : 'Nothing to change on the server for this.',

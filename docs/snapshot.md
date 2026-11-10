@@ -81,6 +81,12 @@ The limits, and what they don't do:
 - `--max-reads <n>` reads n resources spread evenly over the sorted list (the first, the
   last and the ones between), not the first n.
 
+What counts as the server's: an error that says the resource is missing, or any error
+when other resources read. What counts as the run's (`lists/resource-unread`, info):
+credentials, the network, a rate limit, a timeout, and every read failing in the same
+words with nothing read, which is one missing backend far more often than a broken
+server. Rerun with the credentials and backend the resources need to check those.
+
 Content is checked in memory and never written anywhere: not to the menu file, not to
 any report. A finding names URIs and quotes the server's error message, never a body.
 The results aren't in the menu file, so `diff` and `review` don't compare them.
