@@ -907,3 +907,63 @@ declared setting, through `snapshot`, a read-only `session --auto`, and the seal
 by the setting's name, and the patterns were loose. `NEO4J_DATABASE` matched "BASE" and got a
 URL, `*_TRANSPORT` matched "PORT", a region got `toolmenu`. Ports, transports, regions,
 switches and numbers now get values of their kind, and the servers they broke ran again.
+
+## F21. Reading the resources servers list: 53 servers
+
+*Checked 2026-11-10 with `snapshot --lists resources --read-resources`, at commit
+`2c41bab`; data in `bench/results/2026-11-10-read-resources/`.* The servers are the 52 in
+the 2026-11-09 menus that list at least one resource (33 images from Docker's catalog, 3
+vendor images, 12 vendor npm packages, 4 hosted) and `@dpantani/tdmcp@0.13.2`. The local
+ones ran in containers with dummy credentials, once with no network and once with one;
+the hosted ones got five reads each (`--max-reads 5`).
+
+**Where it started.** tdmcp 0.13.2 lists 342 resources. toolmenu flagged the spaces in
+five URIs (`lists/schema`). The same five couldn't be read either: the lookup wanted
+`Error DAT.json` and the file is `Error_DAT.json`. The read doesn't fail, though. It
+succeeds, with `{"error": "Python class \"Error DAT\" not found."}` as the content, so a
+check for failed reads finds nothing. `lists/resource-unreadable` looks for a body that
+is only an error object (marked unsure), and on 0.13.2 names those five of 342 and none
+of the other 337.
+
+**Coverage.** Without a network, 46 of the 49 local servers started; they list 526
+resources and 502 reads were sent. The rest were left to the MCP Apps check (`ui://`
+resources a tool names) or are `https://` URLs a client fetches itself. No
+`resources/read` result failed its protocol version's schema.
+
+**What the servers get wrong.** Six servers list 13 resources a client can't read. Each
+was checked against the run's raw output (the same with and without a network); for
+tdmcp, firebase-tools and npm-sentinel, against the package or image itself.
+
+| Server | Listed, not readable | Why |
+|---|---|---|
+| `@dpantani/tdmcp@0.13.2` | 5 of 342 | the read answers with an error object for a body |
+| `firebase-tools@15.35.0` | 3 of 13 (`ui://core/…/mcp-app.html`) | the HTML files aren't in the published tarball |
+| `mcp/next-devtools-mcp` | 1 of 16 | `ENOENT`: the file isn't in the image |
+| `mcp/npm-sentinel` (1.7.9) | 1 of 2 (`doc://server/readme`) | the handler reads `/app/README.md`; the image has none |
+| `mcp/glif` (0.9.9) | 2 of 3 | "Unsupported protocol: glifrun:": the server refuses its own mixed-case schemes |
+| `mcp/hyperspell` | 1 of 1 | `'Hyperspell' object has no attribute 'collections'` |
+
+The images are pinned by digest in `servers.tsv`; whether each is still its catalog's
+current one isn't shown here. The three firebase resources are `ui://` ones no tool
+names, so `apps/resource` never read them.
+
+**What toolmenu got wrong, fixed along the way** (`6eb3cb2`, each with a test). The first
+run warned about servers whose reads failed for the run's reasons:
+
+- **The network, in words the classifier didn't know:** "self-signed certificate in
+  certificate chain", "CERTIFICATE_VERIFY_FAILED", "Temporary failure in name
+  resolution", "fetch failed", "Transport error (GET https://…)", Go's `Get "https://…"`.
+- **A dummy credential refused for its shape** ("Access token is not in valid JWT
+  format", Mapbox) and **nothing chosen to read from** ("No currently active project.",
+  Firebase).
+- **One cause for every resource.** `mcp-server-kubernetes` without a cluster fails all
+  five reads in the same words; Amazon Neptune without an endpoint, both; kubectl-mcp-server
+  answers seven of its eight with the same error body. When two or more reads fail alike, none says
+  the resource is missing and nothing reads, they are now `lists/resource-unread` (info)
+  with the server's words. 19 resources on 4 servers in this run.
+
+**What this doesn't show.** 53 servers, picked because they list resources, with dummy
+credentials: 42 resources without a network went unread for credentials, the network or a
+missing backend, and nothing here says they read with real ones. The two large hosted
+lists (205 and 158 resources) had five reads each. The error-body check fired on one
+server; one is not enough to say how often it guesses wrong.
