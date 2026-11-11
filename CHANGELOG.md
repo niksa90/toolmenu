@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Fixes
+
+- **`apps/resource` no longer calls a failed read the server's when it was the run's.**
+  `mcp/teamwork` with a dummy key answered "not authenticated", and a hosted server that
+  lists its tools without credentials answered "missing authorization header"; both were
+  warnings that the resource "MUST exist". A read that fails for credentials, the network,
+  a rate limit or time is now info saying so, with the same classifier as
+  `--read-resources`. In the committed bench data, 3 of the 9 failed reads behind
+  `apps/resource` findings move; the other 6 stay warnings.
+
 ### New
 
 - **`snapshot --read-resources`** (with `--lists resources`, or `readResources` in the

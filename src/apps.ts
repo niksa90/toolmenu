@@ -78,6 +78,10 @@ export interface AppResource {
   tools: string[];
   /** resources/read failed: the error's first line. */
   error?: string;
+  /** The JSON-RPC error code it failed with, when there was one. */
+  code?: number;
+  /** It wasn't read: the reads together ran out of time. */
+  notRead?: boolean;
   /** Each content item's mimeType, in order ("" when absent). */
   mimeTypes?: string[];
   /** Some content item for this URI carries text or a blob. */
@@ -109,7 +113,7 @@ export async function readAppResources(connection: Connection, tools: MenuTool[]
     const left = deadline - Date.now();
     // A read given a few milliseconds can only time out: past the deadline in all but name.
     if (left < MIN_READ_MS) {
-      out[i] = { uri, tools: names, error: `not read: the reads took longer than ${Math.round((2 * timeoutMs) / 1000)} s in all` };
+      out[i] = { uri, tools: names, notRead: true, error: `not read: the reads took longer than ${Math.round((2 * timeoutMs) / 1000)} s in all` };
       return;
     }
     try {
@@ -123,7 +127,8 @@ export async function readAppResources(connection: Connection, tools: MenuTool[]
         otherUris: contents.flatMap((c) => (typeof c.uri === 'string' && c.uri !== uri ? [c.uri] : [])),
       };
     } catch (error) {
-      out[i] = { uri, tools: names, error: (error instanceof Error ? error.message : String(error)).split('\n')[0].trim() };
+      const code = (error as { code?: unknown } | null)?.code;
+      out[i] = { uri, tools: names, error: (error instanceof Error ? error.message : String(error)).split('\n')[0].trim(), ...(typeof code === 'number' ? { code } : {}) };
     }
   };
   let next = 0;

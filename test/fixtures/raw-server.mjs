@@ -134,7 +134,14 @@ createInterface({ input: process.stdin }).on('line', (line) => {
     send({ id: msg.id, result: { protocolVersion: '2025-11-25', capabilities: caps, serverInfo: { name: `raw-${fixture}`, version: '0.0.1' } } });
   } else if (msg.method === 'resources/read' && fixture.startsWith('apps')) {
     const r = UI_RESOURCES[msg.params?.uri];
-    send(r ? { id: msg.id, result: { contents: [{ uri: msg.params.uri, ...r }] } } : { id: msg.id, error: { code: -32002, message: `Resource not found: ${msg.params?.uri}` } });
+    // UI_READ=auth|header|slow: the UI reads fail for the run's reasons, as teamwork's did with
+    // a dummy key ("not authenticated") and a hosted server's without one ("missing
+    // authorization header"); slow never answers.
+    if (process.env.UI_READ === 'auth' && r) send({ id: msg.id, error: { code: -32603, message: 'not authenticated' } });
+    else if (process.env.UI_READ === 'header' && r) send({ id: msg.id, error: { code: -32000, message: 'missing authorization header' } });
+    else if (process.env.UI_READ === 'slow' && r) {
+      // never answered
+    } else send(r ? { id: msg.id, result: { contents: [{ uri: msg.params.uri, ...r }] } } : { id: msg.id, error: { code: -32002, message: `Resource not found: ${msg.params?.uri}` } });
   } else if (msg.method === 'resources/list' && fixture.startsWith('apps')) {
     send({ id: msg.id, result: { resources: [] } });
   } else if (msg.method === 'tools/list') {

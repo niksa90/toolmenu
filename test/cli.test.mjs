@@ -431,6 +431,33 @@ test('apps/*: UI resources read as a host would, visibility, the deprecated key,
 });
 
 // ext-server-card: the card SHOULD NOT contradict the live server's version and protocol versions.
+
+test("apps/resource: a UI read that failed for the run's reasons is info, not the server's", async () => {
+  const raw = join(FIXTURES, 'raw-server.mjs');
+  const snap = async (args, ...env) => JSON.parse((await run(['snapshot', '--json', '--no-write', ...args, ...env.flatMap((e) => ['--env', e]), '--', process.execPath, raw])).stdout);
+  const apps = (r) => r.findings.filter((f) => f.rule === 'apps/resource');
+
+  // A dummy key (teamwork's "not authenticated"): the chart's and table's reads are info; the missing map stays the server's.
+  const auth = apps(await snap([], 'FIXTURE=apps', 'UI_READ=auth'));
+  assert.equal(auth.length, 2);
+  const [info] = auth.filter((f) => f.severity === 'info');
+  assert.equal(info.message, "6 tools name MCP Apps UIs that toolmenu couldn't read here (credentials: not authenticated), so they weren't checked: a setup problem, not the server's.");
+  assert.equal(info.detail.length, 6);
+  assert.ok(info.detail.includes('show_table: ui://fx/table: credentials (not authenticated)'), info.detail.join('\n'));
+  assert.equal(info.fix, 'Rerun with the credentials the server needs (--header, --env) to check the UI.');
+  const [warn] = auth.filter((f) => f.severity === 'warn');
+  assert.ok(warn.detail.some((d) => d.startsWith('show_map: resources/read of ui://fx/missing failed (Resource not found')), 'a missing resource is still the server\'s');
+  assert.deepEqual(warn.detail, ['show_map: resources/read of ui://fx/missing failed (Resource not found: ui://fx/missing): the spec says the resource MUST exist on the server', "show_web: https://example.com/view isn't a ui:// URI, which MCP Apps require"]);
+
+  // None sent (a hosted server that lists without one, then wants one to read).
+  const header = apps(await snap([], 'FIXTURE=apps', 'UI_READ=header')).find((f) => f.severity === 'info');
+  assert.match(header.message, /\(credentials: (?:MCP error -32000: )?missing authorization header\)/);
+
+  // No answer in time, and the reads' time running out.
+  const slow = apps(await snap(['--timeout', '500'], 'FIXTURE=apps', 'UI_READ=slow')).find((f) => f.severity === 'info');
+  assert.match(slow.message, /couldn't read here \((?:no answer in time|the reads ran out of time): /);
+  assert.equal(slow.fix, 'Rerun where the server can answer (the network, the backend it reads from, more --timeout) to check the UI.');
+});
 test('spec/server-card: a card at <url>/server-card that contradicts the live server; a matching one and no card are quiet', async () => {
   const card = (over) => ({ $schema: 'https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json', name: 'io.example/raw', description: 'A test server.', version: '0.0.1', ...over });
   const cases = [

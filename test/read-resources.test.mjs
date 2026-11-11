@@ -127,11 +127,11 @@ test("lists/resource-unread: failures that are the run's (credentials, in an err
 });
 
 test("lists/resource-unread: the network and a dummy credential in servers' own words (from the bench)", async () => {
-  const r = await read({ LIST: 'ok://a,tls://t,dns://d,jwt://j,project://p' });
+  const r = await read({ LIST: 'ok://a,tls://t,dns://d,jwt://j,noheader://h,project://p' });
   assert.deepEqual(r.unreadable, []);
   assert.deepEqual(r.unread[0].detail, [
     "2: need a network this run couldn't reach (dns://d and tls://t)",
-    '1: need credentials this run lacks (jwt://j)',
+    '2: need credentials this run lacks (jwt://j and noheader://h)',
     '1: need something this run lacks (a cluster, a project, an app) (project://p)',
   ]);
 });

@@ -57,6 +57,8 @@ async function read(uri) {
       throw new Error('[Errno -3] Temporary failure in name resolution');
     case 'jwt':
       throw new Error('Access token is not in valid JWT format');
+    case 'noheader':
+      throw new Error('missing authorization header');
     case 'project':
       throw new Error('No currently active project.');
     case 'noendpoint': // Amazon Neptune with no endpoint: the same words for every resource
