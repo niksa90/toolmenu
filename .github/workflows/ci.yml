@@ -46,7 +46,8 @@ jobs:
       - run: npm run build
       - run: node --test --test-reporter=spec test/mcp.test.mjs
 
-  # Dogfood: the Action from this checkout, on its own fixture server.
+  # Dogfood: the Action from this checkout, on its own fixture server, then on toolmenu
+  # mcp (the PR comment: one per PR, so only the second run posts it).
   action:
     runs-on: ubuntu-latest
     permissions:
@@ -69,6 +70,13 @@ jobs:
           command: node test/fixtures/sdk-server.mjs
           baseline: examples/menu.json
           release: 'off'   # package.json is toolmenu's version, not the fixture server's
+          comment: 'false'
+      - uses: ./
+        with:
+          cli: node dist/cli.js
+          command: node dist/cli.js mcp
+          baseline: docs/toolmenu-menu.json
+          release: 'off'   # the version is bumped at release, not in each PR
 
   # The Action on a job whose Node is older than 22: toolmenu gets its own Node 22,
   # and the server and the job's later steps keep Node 20.

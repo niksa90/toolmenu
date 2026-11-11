@@ -1,0 +1,275 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "toolmenu",
+    "version": "0.28.0",
+    "protocolVersion": "2026-07-28",
+    "era": "modern",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-11T10:27:35.404Z",
+  "tools": [
+    {
+      "name": "snapshot_menu",
+      "description": "Check an MCP server's tool list as a client reads it: start or connect to it, list its tools, and report findings (what clients reject, what breaks prompt caches, what agents misread) and the token cost. A command server is started by running command as given, so only pass a command you would run yourself. Writes the menu file only when save_as is given (the baseline for diff_menus): a new file inside cwd, or an existing menu file there.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "command": {
+            "description": "The command that starts a stdio server, one word per item: [\"node\", \"dist/server.js\"]. Give this or url.",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "url": {
+            "description": "A Streamable HTTP endpoint: https://example.com/mcp. Give this or command.",
+            "type": "string"
+          },
+          "headers": {
+            "description": "HTTP headers for a url server: {\"Authorization\": \"Bearer ...\"}.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "env": {
+            "description": "Environment variables for a command server. It gets a minimal environment plus these.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "cwd": {
+            "description": "Folder to run from: where the server starts, toolmenu.config.json is read and relative paths resolve. Default: where toolmenu mcp runs.",
+            "type": "string"
+          },
+          "save_as": {
+            "description": "Write the menu here (menu.json for a baseline), relative to cwd and inside it: a new file, or a menu file to replace. Default: not written.",
+            "type": "string"
+          },
+          "client": {
+            "description": "Also check the menu as this client loads it: what it cuts, finds and refuses.",
+            "type": "string",
+            "enum": [
+              "claude-code",
+              "claude-api-search",
+              "openai",
+              "codex",
+              "vscode",
+              "copilot-cloud-agent",
+              "copilot-code-review",
+              "gemini-cli",
+              "gemini-api",
+              "antigravity"
+            ]
+          },
+          "catalog": {
+            "description": "Also read the operations behind a search tool or command routers.",
+            "type": "boolean"
+          }
+        }
+      },
+      "annotations": {
+        "title": "Snapshot a server menu",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 461
+    },
+    {
+      "name": "diff_menus",
+      "description": "Compare two menu files (from snapshot_menu save_as, or toolmenu snapshot): breaking changes for clients, the token change per conversation, and the version bump it needs. Reads files only.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "before": {
+            "type": "string",
+            "description": "The older menu file, e.g. the committed menu.json."
+          },
+          "after": {
+            "type": "string",
+            "description": "The newer menu file."
+          },
+          "release": {
+            "description": "The release versions to check the bump against: \"1.4.0..1.5.0\".",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Folder to run from: where the server starts, toolmenu.config.json is read and relative paths resolve. Default: where toolmenu mcp runs.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "before",
+          "after"
+        ]
+      },
+      "annotations": {
+        "title": "Diff two menus",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 187
+    },
+    {
+      "name": "check_session",
+      "description": "Call an MCP server's tools as an agent would and check what comes back: its tools marked readOnlyHint whose arguments the schema can fill are called, each result is checked against the tool's outputSchema, and the menu is listed after each call, with each change reported with the call that caused it. Calls only read-only tools; never one marked openWorldHint unless open_world is set. A command server is started by running command as given, so only pass a command you would run yourself.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "command": {
+            "description": "The command that starts a stdio server, one word per item: [\"node\", \"dist/server.js\"]. Give this or url.",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "url": {
+            "description": "A Streamable HTTP endpoint: https://example.com/mcp. Give this or command.",
+            "type": "string"
+          },
+          "headers": {
+            "description": "HTTP headers for a url server: {\"Authorization\": \"Bearer ...\"}.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "env": {
+            "description": "Environment variables for a command server. It gets a minimal environment plus these.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "cwd": {
+            "description": "Folder to run from: where the server starts, toolmenu.config.json is read and relative paths resolve. Default: where toolmenu mcp runs.",
+            "type": "string"
+          },
+          "max_calls": {
+            "description": "At most this many calls (default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "open_world": {
+            "description": "Also call read-only tools marked openWorldHint (web search, fetch): they may cost API credits.",
+            "type": "boolean"
+          }
+        }
+      },
+      "annotations": {
+        "title": "Run a session against a server",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "tokens": 394
+    },
+    {
+      "name": "review_baseline",
+      "description": "Say whether a new menu file should replace the baseline: one verdict (unchanged, safe, breaking-released, breaking, review), what breaks callers, and which findings the new menu adds, clears or makes worse. Use it before overwriting a committed menu.json. Reads the two files only and starts no server.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "baseline": {
+            "type": "string",
+            "description": "The menu file to replace, e.g. the committed menu.json."
+          },
+          "candidate": {
+            "type": "string",
+            "description": "The new menu file, e.g. new-menu.json from snapshot_menu save_as."
+          },
+          "release": {
+            "description": "The release versions, so breaking changes pass when the bump allows them: \"1.4.0..2.0.0\".",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Folder to run from: where the server starts, toolmenu.config.json is read and relative paths resolve. Default: where toolmenu mcp runs.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseline",
+          "candidate"
+        ]
+      },
+      "annotations": {
+        "title": "Review a new menu against the baseline",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 231
+    },
+    {
+      "name": "check_auth",
+      "description": "Check an HTTP MCP server's OAuth discovery the way a client that follows the spec walks it, without logging in: the 401 and its WWW-Authenticate, the protected resource metadata, the authorization server's metadata, PKCE and registration. Use it when a server answers 401 or a client cannot sign in. Sends unauthenticated requests to the URL and to the metadata addresses it names; no credentials, no tokens.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The Streamable HTTP endpoint: https://mcp.example.com/mcp."
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "annotations": {
+        "title": "Check a server's OAuth discovery",
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "tokens": 149
+    },
+    {
+      "name": "explain_rule",
+      "description": "Explain a toolmenu rule by the name a finding gives (naming/vague-id): what it checks, its default level and how to change it. Without rule, lists every rule.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "rule": {
+            "description": "The rule, as a finding names it: naming/vague-id, or just vague-id.",
+            "type": "string"
+          }
+        }
+      },
+      "annotations": {
+        "title": "Explain a rule",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 101
+    }
+  ],
+  "totalTokens": 1523,
+  "listMeta": {
+    "ttlMs": 3600000,
+    "cacheScope": "public"
+  }
+}

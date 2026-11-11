@@ -32,6 +32,13 @@
   request each. No
   content is kept or quoted. The reads aren't in the menu file.
 
+### Repository
+
+- **The PR comment is toolmenu's own server.** CI runs the Action on `toolmenu mcp`
+  (6 tools) against the new `docs/toolmenu-menu.json`; the run on the three-tool fixture
+  still tests the Action, without a comment. A test fails when the committed menu file or
+  badge no longer match the server.
+
 ## 0.27.1
 
 ### New

@@ -33,6 +33,19 @@ test('its own menu: no findings on either protocol, but the dry-run hint for the
   }
 });
 
+test('the committed menu file and badge are this build\'s: CI diffs PRs against them', async () => {
+  // Out of date, a PR that changes a tool's name, description or schema gets a diff of
+  // someone else's change in its comment. Regenerate with the command in AGENTS.md.
+  const dir = tempDir();
+  const r = await run(['snapshot', '--out', join(dir, 'menu.json'), '--badge', join(dir, 'badge.json'), '--', process.execPath, CLI, 'mcp']);
+  assert.equal(r.code, 0, r.stdout + r.stderr);
+  const d = await run(['diff', '--json', join(ROOT, 'docs/toolmenu-menu.json'), join(dir, 'menu.json')]);
+  const diff = JSON.parse(d.stdout);
+  assert.deepEqual(diff.findings, [], 'docs/toolmenu-menu.json differs from toolmenu mcp: rerun the snapshot in AGENTS.md');
+  assert.deepEqual(Object.values(diff.classes).map((c) => c.changes), [0, 0, 0]);
+  assert.equal(JSON.parse(readFileSync(join(dir, 'badge.json'), 'utf8')).message, JSON.parse(readFileSync(join(ROOT, 'docs/toolmenu-badge.json'), 'utf8')).message);
+});
+
 test('snapshot_menu checks a stdio server and writes the menu only when asked', async () => {
   const cwd = tempDir();
   await withServer(async (call) => {
