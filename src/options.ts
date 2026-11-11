@@ -24,6 +24,8 @@ export const CLI_OPTIONS = {
   as: { type: 'string', multiple: true },
   client: { type: 'string' },
   lists: { type: 'string' },
+  'read-resources': { type: 'boolean' },
+  'max-reads': { type: 'string' },
   timeout: { type: 'string' },
   protocol: { type: 'string' },
   elicitation: { type: 'string' },

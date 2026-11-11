@@ -50,7 +50,7 @@ export interface ReviewOptions extends DiffOptions, RuleSettings {
 
 // Rules that read the wire (the raw tools/list pages, the handshake), which a menu
 // file doesn't hold: run on a file they'd say the same about both menus, or nothing true.
-const WIRE_ONLY = new Set(['spec/schema', 'spec/discover']);
+const WIRE_ONLY = new Set(['spec/schema', 'spec/discover', 'lists/resource-unreadable', 'lists/resource-read-schema', 'lists/resource-unread']);
 // diff findings that say what it couldn't compare, not what changed.
 const NOT_COMPARED = new Set(['diff/lists-unread', 'diff/catalog-queries']);
 

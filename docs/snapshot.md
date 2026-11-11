@@ -33,6 +33,9 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `spec/deprecated`, `spec/cache-hints` | info | 2026-07-28: deprecated features still advertised; `ttlMs: 0`, or `cacheScope: "public"` on a server that took credentials |
 | `lists/variance` | warn | With `--lists`: `prompts/list`, `resources/list` or `resources/templates/list` differs between two calls, or from a second process or connection (2026-07-28: lists no longer vary per connection) |
 | `lists/schema` | error | With `--lists`: a list result that doesn't match the official schema (2026-07-28 requires `ttlMs` and `cacheScope` on each), or a declared list that fails to answer (warn; info for Method not found, or a setup failure such as missing credentials) |
+| `lists/resource-unreadable` | warn | With `--read-resources`: a resource `resources/list` names that `resources/read` fails on, or answers with only an error for a body (unsure). info for an empty `contents` |
+| `lists/resource-read-schema` | error | With `--read-resources`: a `resources/read` result that doesn't match the official schema of the negotiated version, or one the official SDK client refuses |
+| `lists/resource-unread` | info | With `--read-resources`: the listed resources that weren't checked, and why (credentials, a rate limit, a timeout, `--max-reads`, the time running out) |
 | `naming/client-name` | warn | With `--client`: tool names the client's API refuses: `^[a-zA-Z0-9_-]{1,128}$` for the Claude API, `^[a-zA-Z0-9_-]+$` up to 128 for OpenAI's functions. MCP allows names such as `files.read` that neither takes as they are |
 | `menu/auth-variance` | info | With `--as` (or `identities` in the config): the tool set differs by identity, what each adds, lacks or defines differently against the first, and its tokens. Allowed by the spec; a baseline of one identity's menu doesn't cover the others. An identity that can't be listed is said here too |
 | `spec/cache-scope-public` | warn | 2026-07-28, with `--as`: the tool set differs by identity, and `tools/list` says `cacheScope: "public"`, which lets shared caches serve one caller's list to another |
@@ -44,6 +47,58 @@ The full list, `diff` and `session` rules included, is [docs/RULES.md](RULES.md)
 
 The naming and ID rules are heuristics, tuned on real servers (FINDINGS F7 and
 F10) and a private 115-tool one. They're the extras; the change checks are the point.
+
+## Reading resources: `--read-resources`
+
+```sh
+toolmenu snapshot --lists resources --read-resources -- node dist/server.js
+```
+
+`--lists resources` checks the list. `--read-resources` also sends `resources/read` for
+each resource the list names, the request a client makes when a user or an agent picks
+one, and reports the ones that come back with an error or with nothing usable. A
+resource can be listed correctly and still not be readable: `@dpantani/tdmcp` 0.13.2
+listed five resources whose read answered `{"error": "Python class … not found."}` as
+the content.
+
+What is read:
+
+- every concrete resource in `resources/list`, once per URI, in URI order, one at a time;
+- not resource templates (a read needs an argument toolmenu would have to make up);
+- not `http://` or `https://` URIs (the spec has the client fetch those itself);
+- not a `ui://` resource a tool names: the MCP Apps check has read it already
+  (`apps/resource`). Other `ui://` resources are read here.
+
+The limits, and what they don't do:
+
+- Each read gets `--timeout`. All the reads together get 120 s; what's left unread is
+  counted in `lists/resource-unread`.
+- A rate-limit answer stops the reads. The list reads wait and retry; these don't.
+- Once 64 MB of content has arrived, no further read starts. That is checked between
+  reads: `resources/read` has no way to ask for part of a resource, so one large
+  response arrives whole. A resource whose listing declares a `size` over 16 MB isn't
+  read at all.
+- `--max-reads <n>` reads n resources spread evenly over the sorted list (the first, the
+  last and the ones between), not the first n.
+
+What counts as the run's (`lists/resource-unread`, info): credentials, the network, a
+rate limit, a timeout, and a backend the server says it lacks ("Invalid kube-config
+file", "No currently active project"). Any other error is the server's, and a warning.
+When every read fails in the same words and those words name no cause, the warning is
+marked unsure: it is a read handler broken for everything, or something the run lacks
+that the server didn't name, and toolmenu can't tell which.
+
+Each resource gets one request. `--max-reads 5` is five `resources/read` requests, plus
+one for each `ui://` resource the MCP Apps check reads.
+
+Content is checked in memory and never written anywhere: not to the menu file, not to
+any report. A finding names URIs and quotes the server's error message, never a body.
+The results aren't in the menu file, so `diff` and `review` don't compare them.
+
+A read is not a tool call, but it is a request for every resource the server lists.
+Against a hosted server you don't run, `--max-reads` keeps that to a few.
+
+In the config: `"lists": ["resources"], "readResources": true`, and `"maxReads": 20`.
 
 ## Where the tokens go
 

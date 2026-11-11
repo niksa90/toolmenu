@@ -1,7 +1,8 @@
 import { LIST_INFO, listChanges, type ListKind, type ListRead } from '../lists.js';
 import { classifyFailure, SETUP_FAILURES } from '../failures.js';
-import { count, type Rule, type RuleFinding } from './rule.js';
-import { resultValidator } from './spec.js';
+import type { UnreadReason } from '../resource-read.js';
+import { clip, count, names, num, type Rule, type RuleFinding } from './rule.js';
+import { resultValidator, sdkIssues } from './spec.js';
 
 /*
  * snapshot --lists: prompts/list, resources/list and resources/templates/list,
@@ -109,5 +110,171 @@ export const listSchema: Rule = {
       });
     }
     return findings;
+  },
+};
+
+/*
+ * snapshot --read-resources: resources/read on each listed resource (resource-read.ts).
+ * A failure that is the server's is lists/resource-unreadable; a result a client would
+ * refuse is lists/resource-read-schema; everything the run didn't or couldn't check is
+ * lists/resource-unread, so a clean result is never read as covering more than it did.
+ */
+
+/** URIs as detail lines, the first `max` and a count of the rest. */
+function listed(lines: string[], max = 8): string[] {
+  return lines.slice(0, max).concat(lines.length > max ? [`…and ${num(lines.length - max)} more`] : []);
+}
+
+/** A URI in a message: a server's text, on one line and not endless. */
+const shown = (uri: string) => clip(uri, 160);
+
+export const resourceUnreadable: Rule = {
+  id: 'lists/resource-unreadable',
+  severity: 'warn',
+  summary: 'Every resource resources/list names can be read with resources/read (snapshot --read-resources)',
+  run(ctx) {
+    const reads = ctx.resourceReads?.reads ?? [];
+    const findings: RuleFinding[] = [];
+    const missingCode = ctx.protocolVersion && ctx.protocolVersion >= '2026-07-28' ? '-32602' : '-32002';
+    // Those a finding can be about: a read the run couldn't make its own says nothing.
+    const total = `${num(reads.filter((r) => !r.unread).length)} checked`;
+
+    // Every read failed in the same words: the handler, or one thing the run lacks.
+    const shared = reads.filter((r) => r.outcome === 'error' && !r.unread && r.shared);
+    if (shared.length) {
+      findings.push({
+        confidence: 'unsure',
+        message: `All ${count(shared.length, 'resource')} toolmenu checked fail resources/read the same way: ${clip(shared[0].error || 'no message', 160)}${shared[0].code !== undefined ? ` (${shared[0].code})` : ''}. Either the server can't read any resource it lists, or each needs something this run lacks (a backend, an account) and the words don't say so; toolmenu can't tell which.`,
+        detail: listed(shared.map((r) => shown(r.uri))),
+        fix: `If this run lacks what the resources read from, rerun where it's there. Otherwise make resources/read answer the URIs resources/list returns.`,
+      });
+    }
+
+    const failed = reads.filter((r) => r.outcome === 'error' && !r.unread && !r.shared);
+    if (failed.length) {
+      const said = (r: (typeof failed)[number]) => `${clip(r.error || 'no message', 120)}${r.code !== undefined ? ` (${r.code})` : ''}`;
+      const one = failed.length === 1;
+      findings.push({
+        message: one
+          ? `resources/list names ${shown(failed[0].uri)}, but resources/read of it failed: ${said(failed[0])}. A client that offers the list gets an error when this one is picked.`
+          : `resources/list names ${count(failed.length, 'resource')} that resources/read fails on (of ${total}). A client that offers the list gets an error when one of them is picked.`,
+        ...(one ? {} : { detail: listed(failed.map((r) => `${shown(r.uri)}: ${said(r)}`)) }),
+        fix: `Make resources/read answer every URI resources/list returns, or leave the ones it can't serve out of the list.`,
+      });
+    }
+
+    const bodies = reads.filter((r) => r.outcome === 'ok' && r.errorBody && !r.unread);
+    if (bodies.length) {
+      const one = bodies.length === 1;
+      const keys = [...new Set(bodies.flatMap((r) => r.errorBody!))].sort().join(', ');
+      findings.push({
+        confidence: 'unsure',
+        message: `${one ? `resources/read of ${shown(bodies[0].uri)} succeeds, but its content is` : `resources/read succeeds for ${count(bodies.length, 'listed resource')} (of ${total}) whose content is`} only a JSON object saying an error (keys: ${keys}). A client takes that for the resource and hands it to the user or the agent as content.${bodies.every((r) => r.shared) && bodies.length > 1 ? ' All of them say the same thing, so it may be one thing this run lacks.' : ''} A guess from the shape: toolmenu doesn't read meaning into content.`,
+        ...(one ? {} : { detail: listed(bodies.map((r) => shown(r.uri))) }),
+        fix: `If the read failed, answer with a JSON-RPC error (${missingCode} for a resource that doesn't exist) so a client can tell; if that object is the resource, turn this rule off for the server.`,
+      });
+    }
+
+    const empty = reads.filter((r) => r.outcome === 'ok' && r.items === 0);
+    if (empty.length) {
+      const one = empty.length === 1;
+      findings.push({
+        severity: 'info',
+        message: `${one ? `resources/read of ${shown(empty[0].uri)} returns` : `resources/read returns, for ${count(empty.length, 'listed resource')} (of ${total}),`} an empty contents array. A client can't tell a resource with nothing in it from one that isn't there.`,
+        ...(one ? {} : { detail: listed(empty.map((r) => shown(r.uri))) }),
+        fix: `Return one item with empty text for an empty resource, and a JSON-RPC error (${missingCode}) for one that doesn't exist.`,
+      });
+    }
+    return findings;
+  },
+};
+
+export const resourceReadSchema: Rule = {
+  id: 'lists/resource-read-schema',
+  severity: 'error',
+  summary: 'resources/read results match the official schema for the negotiated protocol version (snapshot --read-resources)',
+  run(ctx) {
+    if (!ctx.protocolVersion || !ctx.resourceReads?.schemaChecked) return [];
+    const reads = ctx.resourceReads.reads;
+    const findings: RuleFinding[] = [];
+    const invalid = reads.filter((r) => r.schemaErrors?.length);
+    if (invalid.length) {
+      // Positions in a contents array differ per resource; the rule broken doesn't.
+      const one = invalid.length === 1;
+      const lines = [...new Set(invalid.flatMap((r) => r.schemaErrors!.map((l) => (one ? l : l.replace(/\/contents\/\d+/g, '/contents/N')))))];
+      const missing = [...new Set(invalid.flatMap((r) => r.missing ?? []))];
+      const hints = missing.some((m) => m === 'ttlMs' || m === 'cacheScope');
+      findings.push({
+        message: `The resources/read result ${one ? `for ${shown(invalid[0].uri)} doesn't` : `doesn't match for ${count(invalid.length, 'resource')} of ${num(reads.filter((x) => !x.unread).length)} checked: they don't`} match the official ${ctx.protocolVersion} schema, so a strict client may refuse ${one ? 'it' : 'them'}.`,
+        detail: listed(lines, 5).concat(one ? [] : [`e.g. ${shown(invalid[0].uri)}`]),
+        fix: missing.length
+          ? `Add ${missing.join(', ')} to the resources/read result${hints ? ` (${ctx.protocolVersion} requires cache hints on it, SEP-2549)` : ''}.`
+          : `Fix ${lines[0]?.split(' ')[0] || 'the result'} first (${lines[0]?.split(' ').slice(1).join(' ') || 'see above'}), then rerun.`,
+      });
+    }
+    // The server's result is what the schema asks for, and the official client still refused it.
+    const refused = reads.filter((r) => r.outcome === 'ok' && r.clientError && !r.schemaErrors?.length);
+    if (refused.length) {
+      const said = sdkIssues(refused[0].clientError!);
+      const one = refused.length === 1;
+      findings.push({
+        message: `The official MCP SDK client rejected the resources/read result ${one ? `for ${shown(refused[0].uri)}` : `for ${count(refused.length, 'resource')} of ${num(reads.filter((x) => !x.unread).length)} checked`}, so clients built on it can't read ${one ? 'it' : 'them'}. The result does match the ${ctx.protocolVersion} schema; the SDK said: ${said.summary}`,
+        ...(said.detail.length || !one ? { detail: said.detail.concat(one ? [] : listed(refused.map((r) => shown(r.uri)))) } : {}),
+        fix: 'Fix what the SDK names above, then read the resource with the official client to confirm.',
+      });
+    }
+    return findings;
+  },
+};
+
+const UNREAD_WORDS: Record<UnreadReason, string> = {
+  auth: 'need credentials this run lacks',
+  payment: 'need payment',
+  network: "need a network this run couldn't reach",
+  client: "need a client capability toolmenu doesn't declare",
+  environment: 'need something this run lacks (a cluster, a project, an app)',
+  'rate-limit': 'the server refused for too many requests, so toolmenu stopped reading',
+  timeout: "didn't answer in time",
+  'input-required': 'the server asked for input first (InputRequiredResult)',
+  budget: 'the time for the reads ran out',
+  bytes: 'enough content had arrived already',
+  'max-reads': 'over --max-reads',
+  'declared-size': 'the listing declares a size too large to read',
+  web: 'http(s) URLs, which a client fetches itself',
+  gone: 'gone from the list by its second reading',
+};
+
+export const resourceUnread: Rule = {
+  id: 'lists/resource-unread',
+  severity: 'info',
+  summary: 'Says which listed resources snapshot --read-resources did not check, and why',
+  run(ctx) {
+    const pass = ctx.resourceReads;
+    if (!pass) return [];
+    const by = new Map<UnreadReason, string[]>();
+    const add = (reason: UnreadReason, uris: string[]) => by.set(reason, [...(by.get(reason) ?? []), ...uris]);
+    for (const r of pass.reads) if (r.unread) add(r.unread, [r.uri]);
+    for (const s of pass.skipped) add(s.reason, s.uris);
+    const unread = [...by.values()].reduce((n, u) => n + u.length, 0);
+    if (!unread && !pass.truncated) return [];
+    const checked = pass.reads.filter((r) => !r.unread).length;
+    const detail = [...by].map(([reason, uris]) => `${num(uris.length)}: ${UNREAD_WORDS[reason]} (${names(uris.map(shown), 3)})`);
+    if (pass.truncated) detail.push('resources/list was cut at the page limit: resources past it were never listed, so never read');
+    const credentials = by.has('auth');
+    return [
+      {
+        message: unread
+          ? `resources/read wasn't checked for ${num(unread)} of ${count(pass.listed, 'listed resource')} (${num(checked)} checked), so no finding about them doesn't mean they can be read.`
+          : `resources/read was checked for the ${count(pass.listed, 'resource')} toolmenu listed; resources/list has more pages than it read.`,
+        detail,
+        fix: credentials
+          ? 'Rerun with the credentials the resources need (--header, --env) to check them.'
+          : by.has('environment') || by.has('network')
+            ? 'Rerun where the resources can answer (the backend, account or network they read from) to check them.'
+          : by.has('budget') || by.has('max-reads') || by.has('timeout') || by.has('rate-limit')
+            ? 'Rerun against a server instance of your own, without --max-reads, to check the rest.'
+            : 'Nothing to change on the server for this.',
+      },
+    ];
   },
 };

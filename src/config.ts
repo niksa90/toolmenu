@@ -32,6 +32,10 @@ export interface Config {
   identities?: Record<string, { headers?: Record<string, string>; env?: Record<string, string> }>;
   /** snapshot: which lists to read besides tools: ["prompts", "resources"]. --lists wins. */
   lists?: string[];
+  /** snapshot: also read each listed resource (needs "resources" in lists). --read-resources turns it on too. */
+  readResources?: boolean;
+  /** snapshot: with readResources, read at most this many. --max-reads wins. */
+  maxReads?: number;
   /** snapshot: the client to check the menu for (claude-code, claude-api-search, openai). --client wins. */
   client?: string;
   /** snapshot (stdio): also list the menu with the network cut off. --offline-check turns it on too. */
@@ -80,6 +84,8 @@ export async function loadConfig(path?: string): Promise<Config> {
   if (config.lists !== undefined && !(Array.isArray(config.lists) && config.lists.every((l) => (LIST_WORDS as readonly string[]).includes(l)))) {
     throw new Error(`${file}: lists must be a list of ${LIST_WORDS.join(', ')}`);
   }
+  if (config.readResources !== undefined && typeof config.readResources !== 'boolean') throw new Error(`${file}: readResources must be true or false`);
+  if (config.maxReads !== undefined && !(Number.isInteger(config.maxReads) && config.maxReads >= 1)) throw new Error(`${file}: maxReads must be a whole number, 1 or more`);
   if (config.offlineCheck !== undefined && typeof config.offlineCheck !== 'boolean') throw new Error(`${file}: offlineCheck must be true or false`);
   if (config.client !== undefined && !(typeof config.client === 'string' && Object.hasOwn(CLIENTS, config.client))) {
     throw new Error(`${file}: client must be one of ${Object.keys(CLIENTS).join(', ')}`);

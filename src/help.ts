@@ -28,6 +28,8 @@ const OPTIONS: Record<string, [string, string[]]> = {
   protocol: ['--protocol <auto|legacy|modern>', ['which handshake to make (default: auto)', 'legacy: the 2025 handshake only; modern: 2026-07-28 only, an error if the server lacks it']],
   as: ['--as <name>[:<credential>]', ['list the menu as this identity too, repeatable: a header ("reader:Authorization:', 'Bearer ...") or env var ("admin:ROLE=admin") on top of --header/--env. The first', 'is the main one (its menu is saved); the others are compared with it']],
   lists: ['--lists <kinds>', ['which lists to read and check, comma-separated: tools (always),', 'prompts, resources (resources/list and resources/templates/list).', 'Saved in the menu file beside the tools']],
+  'read-resources': ['--read-resources', ['with --lists resources: read each listed resource (resources/read) and report', 'the ones a client gets nothing usable from. Templates are not read; no', 'content is kept. On a hosted server this fetches every resource it lists']],
+  'max-reads': ['--max-reads <n>', ['with --read-resources, read at most n resources, spread over the list', '(default: all of them, within 120 s)']],
   client: ['--client <name>', ['check the menu for one client, from its own docs: claude-code (tools deferred,', 'its description cut and search), claude-api-search (Claude API tool search),', 'openai (Responses API tool_search), codex, antigravity (lazy tools), gemini-cli', '(renames), gemini-api, vscode (128 tools a request), copilot-cloud-agent and', 'copilot-code-review (tools only; review: read-only tools only)']],
   'no-auth': ['--no-auth', ["don't use a stored OAuth login (toolmenu auth login) for this server"]],
   timeout: ['--timeout <ms>', ['per-request timeout (default: 30000)']],
@@ -107,7 +109,7 @@ const HELP: Record<Command, CommandHelp> = {
       'reports what in the menu confuses agents or breaks prompt caches.',
       SERVER_NOTE,
     ],
-    own: ['out', 'no-write', 'routes', 'catalog', 'as', 'client', 'lists', 'offline-check', 'sarif', 'sarif-menu', 'junit', 'html', 'badge'],
+    own: ['out', 'no-write', 'routes', 'catalog', 'as', 'client', 'lists', 'read-resources', 'max-reads', 'offline-check', 'sarif', 'sarif-menu', 'junit', 'html', 'badge'],
     shared: ['config', 'format', 'json', 'fail-on', 'header', 'env', 'no-auth', 'protocol', 'timeout', 'processes'],
     examples: [
       'toolmenu snapshot -- npx -y @modelcontextprotocol/server-memory',

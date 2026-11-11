@@ -69,6 +69,8 @@ export interface WireResponse {
   method: string;
   result?: Record<string, unknown>;
   error?: { code: number; message: string };
+  /** The `uri` the request named (resources/read): which read an answer is to, when one comes late. */
+  uri?: string;
 }
 
 /** Every response the server sent, matched to the request method, as it came off the wire. */
@@ -76,13 +78,14 @@ export class WireLog {
   readonly responses: WireResponse[] = [];
   /** Methods of notifications the server sent, in order. */
   readonly notifications: string[] = [];
-  private pending = new Map<string | number, string>();
+  private pending = new Map<string | number, { method: string; uri?: string }>();
 
   tap(transport: Transport): void {
     const send = transport.send.bind(transport);
     transport.send = (message, options) => {
       if ('method' in message && 'id' in message && message.id !== undefined) {
-        this.pending.set(message.id, message.method);
+        const uri = (message.params as { uri?: unknown } | undefined)?.uri;
+        this.pending.set(message.id, { method: message.method, ...(typeof uri === 'string' ? { uri } : {}) });
       }
       return send(message, options);
     };
@@ -92,11 +95,12 @@ export class WireLog {
         this.notifications.push(message.method);
       }
       if (!('method' in message) && 'id' in message && message.id !== undefined) {
-        const method = this.pending.get(message.id);
-        if (method) {
+        const sent = this.pending.get(message.id);
+        if (sent) {
           this.pending.delete(message.id);
           this.responses.push({
-            method,
+            method: sent.method,
+            ...(sent.uri !== undefined ? { uri: sent.uri } : {}),
             ...('result' in message ? { result: message.result as Record<string, unknown> } : {}),
             ...('error' in message ? { error: message.error as WireResponse['error'] } : {}),
           });

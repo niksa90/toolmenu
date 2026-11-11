@@ -5,6 +5,7 @@ import { buildMenu } from './menu.js';
 import { asIdentity, connectPatiently, isContainerWrapper, MAIN_SEED, PROBE_SEED, probeMenu, probeSameEra, probeVariance, seeded, type Identity } from './probe.js';
 import { kindsToRead, readList, type ListKind } from './lists.js';
 import { agentMenu, readAppResources, resourceUriOf, type AppResource } from './apps.js';
+import { readResources, type ResourceReads } from './resource-read.js';
 import { readServerCard, type CardRead } from './card.js';
 import type { ListsContext } from './rules/lists.js';
 import type { IdentityMenu } from './rules/identities.js';
@@ -40,6 +41,10 @@ export interface SnapshotOptions extends RuleSettings {
   identities?: Identity[];
   /** --lists: which lists besides tools to read and check (prompts, resources). */
   lists?: string[];
+  /** --read-resources: resources/read on each resource resources/list names (needs resources in lists). */
+  readResources?: boolean;
+  /** --max-reads: at most this many reads, spread over the list. */
+  maxReads?: number;
   /** --client: check the menu for this client (src/clients.ts): its description cut, its search, its name format. */
   client?: string;
   /** --offline-check (stdio): list the menu once more with the network cut off (menu/network-dependent). */
@@ -55,7 +60,12 @@ export interface SnapshotResult {
   cost?: ClientCost;
   /** --lists: lists asked for that the server declares no capability for, so weren't read. */
   notOffered?: ListKind[];
+  /** --read-resources: how many listed resources were read, of how many listed. */
+  resourcesRead?: { read: number; listed: number; byApps?: number };
 }
+
+/** The rules about --read-resources: with all of them off, nothing is read. */
+const READ_RULES = ['lists/resource-unreadable', 'lists/resource-read-schema', 'lists/resource-unread'];
 
 /** Establish the menu: connect, list the tools twice, run the menu rules. */
 export async function snapshot(given: Target, options: SnapshotOptions = {}): Promise<SnapshotResult> {
@@ -74,6 +84,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   const reads: ListsContext['read'] = [];
   let undeclared: ListKind[] = [];
   let appResources: AppResource[] | undefined;
+  let resourceReads: ResourceReads | undefined;
   try {
     first = await patiently(() => listTools(connection, options), { error: tooMany });
     const second = await patiently(() => listTools(connection, options), { error: tooMany });
@@ -99,6 +110,20 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     // it (apps/resource). A read, not a tool call.
     if (options.rules?.['apps/resource'] !== 'off' && menu.tools.some((t) => resourceUriOf(t)?.startsWith('ui://'))) {
       appResources = await readAppResources(connection, menu.tools, options.timeoutMs);
+    }
+    // --read-resources: each listed resource, read as a client does when one is picked.
+    // Only when the list was read, and some rule would say something about the reads.
+    const resources = reads.find((r) => r.kind === 'resources');
+    if (options.readResources && resources && !resources.first.error && READ_RULES.some((id) => options.rules?.[id] !== 'off')) {
+      resourceReads = await readResources(connection, resources.first.items, {
+        timeoutMs: options.timeoutMs,
+        maxReads: options.maxReads,
+        // A ui:// resource the Apps pass has a record for is apps/resource's, whatever it got.
+        appUris: (appResources ?? []).map((r) => r.uri),
+        second: resources.second && !resources.second.error ? resources.second.items : undefined,
+        protocolVersion: connection.protocolVersion,
+        truncated: resources.first.truncated,
+      });
     }
     if (options.catalog) {
       menu.catalog = await readCatalog(connection, menu.tools, { ...(typeof options.catalog === 'object' ? options.catalog : {}), timeoutMs: options.timeoutMs });
@@ -204,6 +229,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       ...(offline ? { offline } : {}),
       ...(plain ? { plain } : {}),
       ...(appResources ? { appResources } : {}),
+      ...(resourceReads ? { resourceReads } : {}),
       ...(card ? { serverCard: card } : {}),
       ...(target.kind === 'http' ? { serverUrl: new URL(target.url).origin + new URL(target.url).pathname } : {}),
       ...(connection.era === 'legacy' && eras.has('modern') ? { laterModern: true } : {}),
@@ -224,7 +250,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   }
   // What the agent pays: app-only tools aren't in its list.
   const cost = options.client ? clientCost(options.client, agentMenu(menu).shown) : undefined;
-  return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}), ...(undeclared.length ? { notOffered: undeclared } : {}) };
+  return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}), ...(undeclared.length ? { notOffered: undeclared } : {}), ...(resourceReads ? { resourcesRead: { read: resourceReads.reads.length, listed: resourceReads.listed, ...(resourceReads.byApps ? { byApps: resourceReads.byApps } : {}) } } : {}) };
 }
 
 /**
