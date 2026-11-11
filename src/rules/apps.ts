@@ -1,5 +1,7 @@
 import { APPS_MIME_TYPE } from '../connect.js';
 import { isAppOnly, isAppsMimeType, LEGACY_URI_KEY, uiMeta, type AppResource } from '../apps.js';
+import { runs, type UnreadReason } from '../resource-read.js';
+import { tooMany } from '../failures.js';
 import { clip, count, kept, names, type Rule, type RuleFinding } from './rule.js';
 
 /*
@@ -19,6 +21,8 @@ export const appsResource: Rule = {
   summary: "The UI a tool names (MCP Apps _meta.ui.resourceUri) is a ui:// resource the server serves as an app",
   run(ctx) {
     const problems: { tool: string; why: string }[] = [];
+    // Reads that failed for the run's reasons: said, but not as the server's.
+    const unread: { tool: string; uri: string; reason: UnreadReason; error: string }[] = [];
     const read = new Map((ctx.appResources ?? []).map((r) => [r.uri, r]));
     for (const tool of kept(ctx.menu.tools, ctx)) {
       const ui = uiMeta(tool);
@@ -37,13 +41,32 @@ export const appsResource: Rule = {
       }
       const r = read.get(uri);
       if (!r) continue; // not read (over the limit, or the run read none)
+      const reason = r.error ? runsReason(r) : undefined;
+      if (reason) {
+        unread.push({ tool: tool.name, uri, reason, error: r.error! });
+        continue;
+      }
       const why = resourceProblem(r);
       if (why) problems.push({ tool: tool.name, why });
     }
-    if (!problems.length) return [];
+    const findings: RuleFinding[] = [];
+    if (unread.length) {
+      const tools = [...new Set(unread.map((u) => u.tool))];
+      const one = tools.length === 1;
+      const credentials = unread.some((u) => u.reason === 'auth' || u.reason === 'payment');
+      findings.push({
+        severity: 'info',
+        ...(one ? { tool: tools[0] } : {}),
+        message: `${one ? `${tools[0]} names an MCP Apps UI` : `${count(tools.length, 'tool')} name MCP Apps UIs`} that toolmenu couldn't read here (${UNREAD[unread[0].reason]}: ${clip(unread[0].error, 120)}), so ${one ? "it wasn't" : "they weren't"} checked: a setup problem, not the server's.`,
+        ...(unread.length > 1 ? { detail: unread.map((u) => `${u.tool}: ${u.uri}: ${UNREAD[u.reason]} (${clip(u.error, 120)})`) } : {}),
+        fix: credentials ? 'Rerun with the credentials the server needs (--header, --env) to check the UI.' : 'Rerun where the server can answer (the network, the backend it reads from, more --timeout) to check the UI.',
+      });
+    }
+    if (!problems.length) return findings;
     const tools = [...new Set(problems.map((p) => p.tool))];
     const one = tools.length === 1;
     return [
+      ...findings,
       {
         ...(one ? { tool: tools[0] } : {}),
         message: `${one ? `${tools[0]} names` : `${count(tools.length, 'tool')} name`} an MCP Apps UI that a host can't render: ${one ? problems[0].why : names(tools, 6)}. ${FALLBACK}`,
@@ -53,6 +76,31 @@ export const appsResource: Rule = {
     ];
   },
 };
+
+const UNREAD: Record<UnreadReason, string> = {
+  auth: 'credentials',
+  payment: 'payment',
+  network: 'the network',
+  client: "a client capability toolmenu doesn't declare",
+  environment: 'something this run lacks',
+  'rate-limit': 'a rate limit',
+  timeout: 'no answer in time',
+  'input-required': 'the server asked for input',
+  budget: 'the reads ran out of time',
+  bytes: 'enough content already',
+  'max-reads': '--max-reads',
+  'declared-size': 'its declared size',
+  web: 'an http(s) URL',
+  gone: 'gone from the list',
+};
+
+/** Why a failed read is the run's (credentials, the network, time), or undefined when it's the server's. */
+function runsReason(r: AppResource): UnreadReason | undefined {
+  if (r.notRead) return 'budget';
+  if (tooMany(r.error)) return 'rate-limit';
+  if (r.code === undefined && /timed out|timeout/i.test(r.error ?? '')) return 'timeout';
+  return runs(r.error ?? '', r.code);
+}
 
 function resourceProblem(r: AppResource): string | undefined {
   if (r.error) return `resources/read of ${r.uri} failed (${clip(r.error, 120)}): the spec says the resource MUST exist on the server`;

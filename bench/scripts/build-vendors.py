@@ -9,18 +9,24 @@
 import collections, json, os, re, shutil, subprocess, sys
 
 OUT, pairs = sys.argv[1], sys.argv[2:]
-KINDS = {'spec': ('spec/', 'lists/schema', 'apps/', 'session/result-type', 'session/output-schema'),
+KINDS = {'spec': ('spec/', 'lists/schema', 'lists/resource-read-schema', 'apps/', 'session/result-type', 'session/output-schema'),
          'client': ('menu/duplicate-name', 'naming/client-name', 'description/cut', 'description/buried'),
          'run': ('spec/discover', 'spec/deprecated', 'session/nothing-called', 'session/untested', 'session/rate-limited',
-                 'session/scope-unchecked', 'session/assumed-read-only', 'session/refused')}
-BEHAVIOUR = ('menu/', 'session/', 'lists/variance', 'auth/', 'catalog/')
+                 'session/scope-unchecked', 'session/assumed-read-only', 'session/refused', 'lists/resource-unread')}
+BEHAVIOUR = ('menu/', 'session/', 'lists/variance', 'lists/resource-unreadable', 'auth/', 'catalog/')
+
+
+def matches(rule, names):
+    # An entry ending in / is a family of rules; any other is one rule, matched whole
+    # (lists/resource-unread is not lists/resource-unreadable).
+    return any(rule.startswith(n) if n.endswith('/') else rule == n for n in names)
 
 
 def kind(rule):
-    for k, pre in KINDS.items():
-        if rule.startswith(pre):
+    for k, names in KINDS.items():
+        if matches(rule, names):
             return k
-    return 'behaviour' if rule.startswith(BEHAVIOUR) else 'heuristic'
+    return 'behaviour' if matches(rule, BEHAVIOUR) else 'heuristic'
 
 
 def load(path):

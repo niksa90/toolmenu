@@ -4,9 +4,9 @@ import json, sys, os, collections
 
 RUN, DATASET, PAGE = sys.argv[1:4]
 KIND = {
-    'spec/schema': 'spec', 'lists/schema': 'spec', 'apps/app-only-listed': 'spec', 'apps/resource': 'spec', 'apps/visibility': 'spec', 'apps/legacy-key': 'spec', 'spec/extension-id': 'spec', 'session/result-type': 'spec',
+    'spec/schema': 'spec', 'lists/schema': 'spec', 'lists/resource-read-schema': 'spec', 'apps/app-only-listed': 'spec', 'apps/resource': 'spec', 'apps/visibility': 'spec', 'apps/legacy-key': 'spec', 'spec/extension-id': 'spec', 'session/result-type': 'spec',
     'menu/duplicate-name': 'client', 'naming/client-name': 'client', 'description/cut': 'client', 'description/buried': 'client',
-    'menu/network-dependent': 'behaviour', 'menu/process-variance': 'behaviour', 'menu/nondeterministic': 'behaviour',
+    'lists/resource-unreadable': 'behaviour', 'menu/network-dependent': 'behaviour', 'menu/process-variance': 'behaviour', 'menu/nondeterministic': 'behaviour',
     'menu/connection-variance': 'behaviour', 'menu/capability-dependent': 'behaviour', 'session/known-variance': 'behaviour',
     'session/step-failed': 'behaviour', 'session/tool-error': 'behaviour', 'session/server-unresponsive': 'behaviour', 'session/output-schema': 'spec',
     'session/mid-insert': 'behaviour', 'session/append': 'behaviour', 'session/edit': 'behaviour', 'session/remove': 'behaviour',
@@ -18,6 +18,7 @@ KIND = {
     'session/unlock-coverage': 'heuristic',
     'spec/discover': 'run', 'session/nothing-called': 'run', 'session/untested': 'run', 'session/rate-limited': 'run',
     'session/scope-unchecked': 'run', 'session/assumed-read-only': 'run', 'session/refused': 'run', 'spec/deprecated': 'run',
+    'lists/resource-unread': 'run',
 }
 import re
 # The run used toolmenu acaa34c. Rules changed after it (c021a3f) are applied here,

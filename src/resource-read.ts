@@ -246,7 +246,7 @@ async function withoutFulfilment<T>(connection: Connection, read: () => Promise<
 }
 
 /** The reason a failure is the run's and not the server's, from its words and code; undefined when it's the server's. */
-function runs(text: string, code: number | undefined): UnreadReason | undefined {
+export function runs(text: string, code: number | undefined): UnreadReason | undefined {
   // The codes for "no such resource" (-32002 to 2025-11-25, -32602 from 2026-07-28): the
   // server's answer about a resource it listed, whatever else the words mention.
   if (code === -32002 || code === -32602) return undefined;
@@ -270,8 +270,12 @@ function runs(text: string, code: number | undefined): UnreadReason | undefined 
  * (effect-mcp), `Get "https://…": dial tcp` (Terraform).
  */
 const NETWORK_WORDS = /self-signed certificate|certificate verify failed|CERTIFICATE_VERIFY_FAILED|unable to (?:get|verify) [^.]{0,30}certificate|failure in name resolution|no such host|\bfetch failed\b|\btransport error\b|\bdial tcp\b|\bGet "https?:\/\/|connection (?:refused|reset|timed out)|network is unreachable/i;
-/** A credential in the wrong shape, which a dummy one is: "Access token is not in valid JWT format" (Mapbox). */
-const CREDENTIAL_WORDS = /\b(?:access |api |auth )?(?:token|key)\b[^.]{0,30}\b(?:not in (?:a )?valid|malformed|invalid format)\b/i;
+/**
+ * A credential in the wrong shape, which a dummy one is: "Access token is not in valid JWT
+ * format" (Mapbox); or none sent: "missing authorization header" (a hosted server that lists
+ * its tools without one, then wants one to read a resource).
+ */
+const CREDENTIAL_WORDS = /\bmissing (?:an? |the )?(?:authorization|auth|bearer) (?:header|token)\b|\b(?:access |api |auth )?(?:token|key)\b[^.]{0,30}\b(?:not in (?:a )?valid|malformed|invalid format)\b/i;
 /**
  * Nothing to read from: "No currently active project." (Firebase), "Invalid kube-config file. No
  * configuration found." (kubectl-mcp-server), "HTTP protocol is not allowed when skipTLSVerify is
