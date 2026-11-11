@@ -29,15 +29,22 @@
     `--max-reads`, the 120 s running out.
   Templates and `http(s)://` URIs aren't read; a `ui://` resource a tool names stays
   with `apps/resource`. `--max-reads <n>` reads n, spread over the sorted list, one
-  request each. No
-  content is kept or quoted. The reads aren't in the menu file.
+  request each. No content is kept or quoted, and the reads aren't in the menu file.
+  FINDINGS F21 has the bench run: 53 servers, 6 of them listing 13 resources a client
+  can't read.
 
 ### Repository
 
-- **The PR comment is toolmenu's own server.** CI runs the Action on `toolmenu mcp`
+- **The PR comment checks toolmenu's own server.** CI runs the Action on `toolmenu mcp`
   (6 tools) against the new `docs/toolmenu-menu.json`; the run on the three-tool fixture
   still tests the Action, without a comment. A test fails when the committed menu file or
   badge no longer match the server.
+- **The weekly bench reads resources:** `--read-resources` on stdio servers and images,
+  `--max-reads 5` on hosted ones, and snapshot's outer timeout from 300 to 420 s.
+  `build-vendors.py` filed `lists/resource-unreadable` under `lists/resource-unread`'s
+  kind (it matched rule names as prefixes); an entry without a trailing `/` now matches
+  one rule whole.
+- `docs/github-action.md`: three examples still pinned `v0.16.1`.
 
 ## 0.27.1
 

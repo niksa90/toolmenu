@@ -256,7 +256,7 @@ export function runs(text: string, code: number | undefined): UnreadReason | und
   if (SETUP_WORDS.test(text)) return 'environment';
   const failure: FailureClass = classifyFailure(text, { code });
   if (failure === 'auth' || failure === 'payment' || failure === 'network' || failure === 'client') return failure;
-  // Something this machine lacks (a browser, an app). A missing file is not that: for a
+  // Something this run lacks (a browser, an app, a cluster). A missing file is not that: for a
   // listed resource, ENOENT is the server naming a file it doesn't have.
   if (failure === 'environment' && !/\bENOENT\b/.test(text)) return 'environment';
   return undefined;
