@@ -74,6 +74,7 @@ Pinned: **2.1.0** (2026-10-28, protocol 2026-07-28).
 npm install --prefix /tmp/everything @modelcontextprotocol/server-everything@2.1.0
 E=/tmp/everything/node_modules/.bin/mcp-server-everything
 node dist/cli.js snapshot --no-write --lists prompts,resources -- $E
+node dist/cli.js snapshot --no-write --lists prompts,resources --read-resources -- $E
 node dist/cli.js session --auto -- $E
 # Its elicitation and sampling demos are marked readOnlyHint: false, so --auto
 # never calls them; this scenario does, with allow_writes.
@@ -85,6 +86,7 @@ What toolmenu reported on 2.1.0, each checked by hand:
 | Run | Result |
 |---|---|
 | `snapshot --lists` | 22 tools, 4 prompts, 7 resources, 3 resource templates. `spec/deprecated` for the logging capability (deprecated by SEP-2577). `get-header-params`' `x-mcp-header` is valid: no finding. Lists stable and matching the schema. Info only: shared words, an `elicitationId` no tool returns, "Deprecated" notes past character 280 |
+| `snapshot --lists --read-resources` | All 7 resources read (one request each), sealed: no `lists/resource-*` finding. The rest as above |
 | `session --auto` | 12 calls, all answered except `get-roots-list`, which returns `-32021` for the roots capability the request doesn't declare: counted as a client gap (`session/untested`), not the server's |
 | `session --scenario` | Form, multi-step and URL elicitation each declined once, then answered (the multi-step one with a tool error saying the user declined: the right answer, no finding). Sampling, roots and the async demo's `extensions` capability each `-32021` |
 
