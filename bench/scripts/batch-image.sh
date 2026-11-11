@@ -14,7 +14,7 @@ one() {
   local e=(); for kv in $env_kv; do e+=(-e "$kv"); done
   local run=(docker run -i --rm --memory 2g "${e[@]}")
   if ! timeout 900 docker pull -q "$image" > pull.txt 2>&1; then echo "pull-failed $id" >> "$out/status.txt"; return; fi
-  timeout 300 node "$T" snapshot --json --timeout 60000 --lists prompts,resources --client claude-code --offline-check --out menu.json -- "${run[@]}" "$image" $args > snapshot.json 2> snapshot-err.txt
+  timeout 420 node "$T" snapshot --json --timeout 60000 --lists prompts,resources --read-resources --client claude-code --offline-check --out menu.json -- "${run[@]}" "$image" $args > snapshot.json 2> snapshot-err.txt
   local sc=$? tools
   tools=$(node -e 'try{const j=JSON.parse(require("fs").readFileSync("snapshot.json","utf8"));console.log(j.tools||0)}catch{console.log(0)}')
   if [ "$sc" -le 1 ] && [ "$tools" -gt 0 ]; then

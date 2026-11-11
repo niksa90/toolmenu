@@ -1,7 +1,8 @@
 #!/bin/bash
 # usage: bench/scripts/batch-full.sh <list.tsv: id<TAB>pkg@ver[<TAB>repo[<TAB>KEY=v KEY2=v[<TAB>args]]]> <outdir>
 # Every server on the list, in node:22 containers (third-party code stays in them): install,
-# snapshot (--lists prompts,resources --client claude-code --offline-check), and when it
+# snapshot (--lists prompts,resources --read-resources --client claude-code --offline-check;
+# the reads take up to 120 s more, so snapshot gets 420 s), and when it
 # listed tools, session --auto --union-out and review of the snapshot against the union.
 # SEALED=1 adds a second pass per chunk in a container with no network at all: every tool
 # called once, writes included (session --auto --call-everything, sealed-one.sh).

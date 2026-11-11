@@ -2,7 +2,8 @@
 # usage: bench/scripts/batch-http.sh <list: name<TAB>url> <outdir>
 # Hosted (Streamable HTTP) servers: nothing runs here but toolmenu, so no container.
 # Per server: auth check (OAuth discovery, no login); then, if it lists tools without
-# credentials, snapshot (--lists prompts,resources --client claude-code), session --auto
+# credentials, snapshot (--lists prompts,resources --read-resources --max-reads 5: five
+# resources/read at most, a few reads as hosted servers get; --client claude-code), session --auto
 # (read-only tools only, at most 10 calls: these are someone's production systems) and
 # review of the snapshot against the session's union menu. Logins stored with
 # `toolmenu auth login` are used when LOGINS=1; otherwise --no-auth.
@@ -16,7 +17,7 @@ one() {
   name=$1; url=$2; d="$OUT/$(printf '%s' "${url#https://}" | tr -c 'A-Za-z0-9._-' '_')"; mkdir -p "$d"; cd "$d" || return
   printf '%s\n' "$url" > url.txt; printf '%s\n' "$name" > name.txt
   timeout 120 node "$T" auth check --json "$url" > auth.json 2> auth-err.txt
-  timeout 300 node "$T" snapshot --json --timeout 30000 --lists prompts,resources --client claude-code $AUTH_FLAG --out menu.json "$url" > snapshot.json 2> snapshot-err.txt
+  timeout 420 node "$T" snapshot --json --timeout 30000 --lists prompts,resources --read-resources --max-reads 5 --client claude-code $AUTH_FLAG --out menu.json "$url" > snapshot.json 2> snapshot-err.txt
   sc=$?
   tools=$(node -e 'try{console.log(JSON.parse(require("fs").readFileSync("snapshot.json","utf8")).tools||0)}catch{console.log(0)}')
   if [ "$sc" -le 1 ] && [ "$tools" -gt 0 ]; then
