@@ -29,7 +29,9 @@ findings on every run.
 - `docs/snapshot.md`, `session.md`, `diff.md`, `clients.md`, `usage.md`, `ci.md`,
   `github-action.md`: the reference, one page per command or area.
 - `src/mcp.ts`: `toolmenu mcp`, the tools an agent calls. Its own menu must pass
-  toolmenu with no finding but the dry-run hint; `docs/toolmenu-badge.json` is that run.
+  toolmenu with no finding but the dry-run hint; `docs/toolmenu-menu.json` and
+  `docs/toolmenu-badge.json` are that run. CI runs the Action on it against that menu file,
+  and that run is the PR comment.
 - `plugins/toolmenu/`: the Claude Code plugin (skills, evals, the pinned release).
 - `.claude/agents/bench-finding-checker.md`: a read-only subagent that checks one bench
   finding against the run's raw output.
@@ -111,7 +113,8 @@ A release is one commit, then a `v*` tag; the tag publishes to npm (`release.yml
    pins a published release, never one ahead of npm; a test checks.
 
 A change to `src/mcp.ts` that alters a tool's name, description or schema needs
-`node dist/cli.js snapshot --no-write --badge docs/toolmenu-badge.json -- node dist/cli.js mcp`,
+`node dist/cli.js snapshot --out docs/toolmenu-menu.json --badge docs/toolmenu-badge.json -- node dist/cli.js mcp`
+(a test fails until it's run),
 and the skills in `plugins/toolmenu/skills/` reread: they name the tools.
 
 ## Pull request descriptions
