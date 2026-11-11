@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **The plugin runs toolmenu 0.28.0** (was 0.27.0): its tools' `apps/resource` findings
+  no longer call a read that failed for credentials or the network the server's.
+
 ## 0.28.0
 
 ### Fixes
