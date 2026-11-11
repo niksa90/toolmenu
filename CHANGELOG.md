@@ -44,7 +44,8 @@
   `build-vendors.py` filed `lists/resource-unreadable` under `lists/resource-unread`'s
   kind (it matched rule names as prefixes); an entry without a trailing `/` now matches
   one rule whole.
-- `docs/github-action.md`: three examples still pinned `v0.16.1`.
+- Every Action pin in the docs is `v0.28.0`, including three examples in
+  `docs/github-action.md` that were still on `v0.16.1`.
 
 ## 0.27.1
 
