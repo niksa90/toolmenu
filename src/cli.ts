@@ -505,7 +505,13 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
   if (port !== undefined && !(Number.isInteger(port) && port > 0 && port < 65536)) throw new UsageError('--port must be a port number');
   if (values['client-secret'] && !values['client-id']) throw new UsageError('--client-secret goes with --client-id');
   const result = await login(url, { port, scope: values.scope, clientId: values['client-id'], clientSecret: values['client-secret'], noBrowser: values['no-browser'] });
-  process.stdout.write(`Logged in to ${plain(result.name ?? url)} (${url}): it lists ${result.tools} tool${result.tools === 1 ? '' : 's'} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`);
+  const count = `${result.tools} tool${result.tools === 1 ? '' : 's'}`;
+  process.stdout.write(
+    result.authenticated
+      ? `Logged in to ${plain(result.name ?? url)} (${url}): it lists ${count} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`
+      : `No login made for ${plain(result.name ?? url)} (${url}): it listed ${count} without asking for credentials, so nothing was stored.\n` +
+          `→ Next: A server like this usually asks for a login only when a tool is called. If session reports session/untested, pass a token with --header "Authorization: Bearer <token>", or use --client-id and --client-secret with a client registered with the provider.\n`,
+  );
   return 0;
 }
 

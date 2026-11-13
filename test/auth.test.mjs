@@ -341,3 +341,24 @@ test('auth login: a login address that is not https is never opened or printed',
     }
   }
 });
+
+test('auth login: a server that never asks for credentials is not a login, and nothing is stored', async () => {
+  const dir = isolated();
+  const { start: open } = await import('./fixtures/http-server.mjs');
+  const server = await open();
+  try {
+    const result = await login(server.url, { port: port() });
+    assert.equal(result.authenticated, false);
+    assert.equal(result.tools > 0, true);
+    assert.equal(hasLogin(server.url), false);
+    assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith('.json')), []);
+    const cli = await run(['auth', 'login', server.url, '--port', String(port())]);
+    assert.equal(cli.code, 0);
+    assert.match(cli.stdout, /^No login made for .*without asking for credentials, so nothing was stored\./);
+    assert.doesNotMatch(cli.stdout, /Logged in/);
+    assert.match(cli.stdout, /→ Next: .*--header "Authorization: Bearer <token>".*--client-id/);
+    assert.match((await run(['auth', 'list'])).stdout, /No logins stored/);
+  } finally {
+    await server.close();
+  }
+});
