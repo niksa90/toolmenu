@@ -1,0 +1,1458 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "hummingbot-mcp",
+    "version": "1.26.0",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-15T07:03:27.638Z",
+  "tools": [
+    {
+      "name": "setup_connector",
+      "description": "Setup or delete an exchange connector for an account with credentials using progressive disclosure.\n\n    This tool guides you through the entire process of connecting an exchange with a four-step flow:\n    1. No parameters → List available exchanges\n    2. Connector only → Show required credential fields\n    3. Connector + credentials, no account → Select account from available accounts\n    4. All parameters → Connect the exchange (with override confirmation if needed)\n\n    Delete flow (action=\"delete\"):\n    1. action=\"delete\" only → List all accounts and their configured connectors\n    2. action=\"delete\" + connector → Show which accounts have this connector configured\n    3. action=\"delete\" + connector + account → Delete the credential\n\n    Args:\n        action: Action to perform. 'setup' (default) to add/update credentials, 'delete' to remove credentials.\n        connector: Exchange connector name (e.g., 'binance', 'binance_perpetual'). Leave empty to list available connectors.\n        credentials: Credentials object with required fields for the connector. Leave empty to see required fields first.\n        account: Account name to add credentials to. If not provided, prompts for account selection.\n        confirm_override: Explicit confirmation to override existing connector. Required when connector already exists.\n    ",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "enum": [
+                  "setup",
+                  "delete"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Action"
+          },
+          "connector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Connector"
+          },
+          "credentials": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Credentials"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Account"
+          },
+          "confirm_override": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Confirm Override"
+          }
+        },
+        "title": "setup_connectorArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "setup_connectorOutput",
+        "type": "object"
+      },
+      "tokens": 438
+    },
+    {
+      "name": "configure_server",
+      "description": "Configure the active Hummingbot API server connection.\n\n    This tool manages a single API server connection:\n    1. No parameters → Show the current server configuration\n    2. Any parameters → Update the server config and reconnect\n\n    Only the provided parameters are changed; omitted ones keep their current values.\n\n    Args:\n        name: Server label (e.g., 'macmini', 'production')\n        host: API host (e.g., 'localhost', 'host.docker.internal', '72.212.424.42')\n        port: API port (e.g., 8000)\n        username: API username\n        password: API password\n    ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "host": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Host"
+          },
+          "port": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Port"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Username"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Password"
+          }
+        },
+        "title": "configure_serverArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "configure_serverOutput",
+        "type": "object"
+      },
+      "tokens": 290
+    },
+    {
+      "name": "get_portfolio_overview",
+      "description": "Get a unified portfolio overview with balances, perpetual positions, LP positions, and active orders.\n\n    This tool provides a comprehensive view of your entire portfolio by fetching data from multiple sources\n    in parallel. By default, it returns all four types of data, but you can filter to only include\n    specific sections.\n\n    Data Sources (fetched in parallel using asyncio.gather):\n    1. Token Balances - Holdings across all connected CEX/DEX exchanges\n    2. Perpetual Positions - Open perpetual futures positions from CEX\n    3. LP Positions (CLMM) - Real-time concentrated liquidity positions from blockchain DEXs\n       - Queries database to find all pools user has interacted with\n       - Calls get_positions() for each pool to fetch real-time blockchain data\n       - Includes real-time fees and token amounts\n    4. Active Orders - Currently open orders across all exchanges\n\n    NOTE: This only shows ACTIVE/OPEN positions. For historical data, use search_history() instead.\n\n    Args:\n        account_names: List of account names to filter by (optional). If empty, returns all accounts.\n        connector_names: List of connector names to filter by (optional). If empty, returns all connectors.\n        include_balances: Include token balances in the overview (default: True)\n        include_perp_positions: Include perpetual positions in the overview (default: True)\n        include_lp_positions: Include LP (CLMM) positions in the overview (default: True)\n        include_active_orders: Include active (open) orders in the overview (default: True)\n        as_distribution: Show token balances as distribution percentages (default: False)\n        refresh: If True, refresh balances from exchanges before returning. If False, return cached state (default: True)\n    ",
+      "inputSchema": {
+        "properties": {
+          "account_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Account Names"
+          },
+          "connector_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Connector Names"
+          },
+          "include_balances": {
+            "default": true,
+            "title": "Include Balances",
+            "type": "boolean"
+          },
+          "include_perp_positions": {
+            "default": true,
+            "title": "Include Perp Positions",
+            "type": "boolean"
+          },
+          "include_lp_positions": {
+            "default": true,
+            "title": "Include Lp Positions",
+            "type": "boolean"
+          },
+          "include_active_orders": {
+            "default": true,
+            "title": "Include Active Orders",
+            "type": "boolean"
+          },
+          "as_distribution": {
+            "default": false,
+            "title": "As Distribution",
+            "type": "boolean"
+          },
+          "refresh": {
+            "default": true,
+            "title": "Refresh",
+            "type": "boolean"
+          }
+        },
+        "title": "get_portfolio_overviewArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_portfolio_overviewOutput",
+        "type": "object"
+      },
+      "tokens": 589
+    },
+    {
+      "name": "set_account_position_mode_and_leverage",
+      "description": "Set position mode and leverage for an account on a specific exchange. If position mode is not specified, will only\n    set the leverage. If leverage is not specified, will only set the position mode.\n\n    Args:\n        account_name: Account name (default: master_account)\n        connector_name: Exchange connector name (e.g., 'binance_perpetual')\n        trading_pair: Trading pair (e.g., ETH-USD) only required for setting leverage\n        position_mode: Position mode ('HEDGE' or 'ONE-WAY')\n        leverage: Leverage to set (optional, required for HEDGE mode)\n    ",
+      "inputSchema": {
+        "properties": {
+          "account_name": {
+            "title": "Account Name",
+            "type": "string"
+          },
+          "connector_name": {
+            "title": "Connector Name",
+            "type": "string"
+          },
+          "trading_pair": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Trading Pair"
+          },
+          "position_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Position Mode"
+          },
+          "leverage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Leverage"
+          }
+        },
+        "required": [
+          "account_name",
+          "connector_name"
+        ],
+        "title": "set_account_position_mode_and_leverageArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "set_account_position_mode_and_leverageOutput",
+        "type": "object"
+      },
+      "tokens": 284
+    },
+    {
+      "name": "search_history",
+      "description": "Search historical data from the backend database.\n\n    This tool is for historical analysis, reporting, and tax purposes.\n    For real-time current state, use get_portfolio_overview() instead.\n\n    Data Types:\n    - orders: Historical order data (filled, cancelled, failed)\n    - perp_positions: Perpetual positions (both open and closed)\n    - clmm_positions: CLMM LP positions (both open and closed)\n\n    Common Filters (apply to all data types):\n        account_names: Filter by account names (optional)\n        connector_names: Filter by connector names (optional)\n        trading_pairs: Filter by trading pairs (optional)\n        status: Filter by status (optional, e.g., 'OPEN', 'CLOSED', 'FILLED', 'CANCELED')\n        start_time: Start timestamp in seconds (optional)\n        end_time: End timestamp in seconds (optional)\n        limit: Maximum number of results (default: 50, max: 1000)\n        offset: Pagination offset (default: 0)\n\n    CLMM-Specific Filters:\n        network: Network filter for CLMM positions (optional)\n        wallet_address: Wallet address filter for CLMM positions (optional)\n        position_addresses: Specific position addresses for CLMM (optional)\n\n    Examples:\n    - Search filled orders: search_history(\"orders\", status=\"FILLED\", limit=100)\n    - Search closed perp positions: search_history(\"perp_positions\", status=\"CLOSED\")\n    - Search all CLMM positions: search_history(\"clmm_positions\", limit=100)\n    ",
+      "inputSchema": {
+        "properties": {
+          "data_type": {
+            "enum": [
+              "orders",
+              "perp_positions",
+              "clmm_positions"
+            ],
+            "title": "Data Type",
+            "type": "string"
+          },
+          "account_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Account Names"
+          },
+          "connector_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Connector Names"
+          },
+          "trading_pairs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Trading Pairs"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "start_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start Time"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "End Time"
+          },
+          "limit": {
+            "default": 50,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "network": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Network"
+          },
+          "wallet_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Wallet Address"
+          },
+          "position_addresses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Position Addresses"
+          }
+        },
+        "required": [
+          "data_type"
+        ],
+        "title": "search_historyArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "search_historyOutput",
+        "type": "object"
+      },
+      "tokens": 696
+    },
+    {
+      "name": "get_market_data",
+      "description": "Get market data: prices, candles, funding rates, or order book data.\n\n    Data Types:\n    - prices: Get latest prices for multiple trading pairs\n    - candles: Get OHLCV candle data for a trading pair\n    - funding_rate: Get perpetual funding rate (connector must have _perpetual)\n    - order_book: Get order book snapshot or queries\n\n    Args:\n        data_type: Type of market data to retrieve ('prices', 'candles', 'funding_rate', 'order_book')\n        connector_name: Exchange connector name (e.g., 'binance', 'binance_perpetual')\n        trading_pairs: List of trading pairs (required for 'prices', e.g., ['BTC-USDT', 'ETH-USD'])\n        trading_pair: Single trading pair (required for 'candles', 'funding_rate', 'order_book')\n        interval: Candle interval for 'candles' (default: '1h'). Options: '1m', '5m', '15m', '30m', '1h', '4h', '1d'.\n        days: Number of days of historical data for 'candles' (default: 30).\n        query_type: Order book query type for 'order_book' (default: 'snapshot'). Options: 'snapshot',\n            'volume_for_price', 'price_for_volume', 'quote_volume_for_price', 'price_for_quote_volume'.\n        query_value: Value for order book queries (required if query_type is not 'snapshot').\n        is_buy: Side for order book queries (default: True for buy side).\n    ",
+      "inputSchema": {
+        "properties": {
+          "data_type": {
+            "enum": [
+              "prices",
+              "candles",
+              "funding_rate",
+              "order_book"
+            ],
+            "title": "Data Type",
+            "type": "string"
+          },
+          "connector_name": {
+            "title": "Connector Name",
+            "type": "string"
+          },
+          "trading_pairs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Trading Pairs"
+          },
+          "trading_pair": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Trading Pair"
+          },
+          "interval": {
+            "default": "1h",
+            "title": "Interval",
+            "type": "string"
+          },
+          "days": {
+            "default": 30,
+            "title": "Days",
+            "type": "integer"
+          },
+          "query_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "snapshot",
+                  "volume_for_price",
+                  "price_for_volume",
+                  "quote_volume_for_price",
+                  "price_for_quote_volume"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query Type"
+          },
+          "query_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query Value"
+          },
+          "is_buy": {
+            "default": true,
+            "title": "Is Buy",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "data_type",
+          "connector_name"
+        ],
+        "title": "get_market_dataArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "get_market_dataOutput",
+        "type": "object"
+      },
+      "tokens": 614
+    },
+    {
+      "name": "manage_controllers",
+      "description": "\n    Manage controller templates and saved configurations (design-time).\n\n    Works with reusable strategy definitions and parameter sets for future deployments.\n    Does NOT affect running bots. To modify a live bot's config, use manage_bots with action='update_config'.\n\n    ⚠️ NOTE: For most trading strategies (grid, DCA, position trading), use manage_executors() instead.\n    Only use controllers when the user EXPLICITLY asks for \"controllers\", \"bots\", or needs advanced\n    multi-strategy bot deployments with centralized risk management.\n\n    Exploration flow:\n    1. action=\"list\" → List all controllers and their configs\n    2. action=\"list\" + controller_type → List controllers of that type with config counts\n    3. action=\"describe\" + controller_name → Show config parameters template + list existing configs\n    4. action=\"describe\" + config_name → Show specific config values + its controller's parameters\n    5. action=\"describe\" + include_code=True → Also include the full controller source code\n\n    Modification flow:\n    6. action=\"upsert\" + target=\"controller\" → Create/update a controller template\n    7. action=\"upsert\" + target=\"config\" → Create/update a saved controller config\n    8. action=\"delete\" + target=\"controller\" → Delete a controller template\n    9. action=\"delete\" + target=\"config\" → Delete a controller config\n\n    Common Enum Values for Controller Configs:\n\n    Position Mode (position_mode):\n    - \"HEDGE\" - Allows holding both long and short positions simultaneously\n    - \"ONEWAY\" - Allows only one direction position at a time\n\n    Trade Side (side):\n    - 1 or \"BUY\" - For long/buy positions\n    - 2 or \"SELL\" - For short/sell positions\n    - Note: Numeric values are required for controller configs\n\n    Order Type (order_type, open_order_type, take_profit_order_type, etc.):\n    - 1 or \"MARKET\" - Market order\n    - 2 or \"LIMIT\" - Limit order\n    - 3 or \"LIMIT_MAKER\" - Limit maker order (post-only)\n    - Note: Numeric values are required for controller configs\n\n    Args:\n        action: \"list\", \"describe\", \"upsert\" (create/update), or \"delete\"\n        target: \"controller\" (template) or \"config\" (instance). Required for upsert/delete.\n        controller_type: Type of controller (e.g., 'directional_trading', 'market_making', 'generic').\n        controller_name: Name of the controller to describe or modify.\n        controller_code: Code for controller (required for controller upsert).\n        config_name: Name of the config to describe or modify.\n        config_data: Configuration data (required for config upsert). Must include 'controller_type' and 'controller_name'.\n        confirm_override: Required True if overwriting existing items.\n        include_code: If True, include full controller source code in describe output. Default False.\n    ",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "enum": [
+              "list",
+              "describe",
+              "upsert",
+              "delete"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "enum": [
+                  "controller",
+                  "config"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Target"
+          },
+          "controller_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "directional_trading",
+                  "market_making",
+                  "generic"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Controller Type"
+          },
+          "controller_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Controller Name"
+          },
+          "controller_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Controller Code"
+          },
+          "config_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Config Name"
+          },
+          "config_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Config Data"
+          },
+          "confirm_override": {
+            "default": false,
+            "title": "Confirm Override",
+            "type": "boolean"
+          },
+          "include_code": {
+            "default": false,
+            "title": "Include Code",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "manage_controllersArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "manage_controllersOutput",
+        "type": "object"
+      },
+      "tokens": 942
+    },
+    {
+      "name": "manage_bots",
+      "description": "Manage controller-based bots: deploy, monitor, get logs, control execution, and modify runtime configs.\n\n    ⚠️ NOTE: For most trading strategies (grid, DCA, position trading), use manage_executors() instead.\n    Only use bots when the user EXPLICITLY asks for \"bot\" deployment or needs advanced features like\n    multi-strategy bots with centralized risk management.\n\n    Actions:\n    - deploy: Deploy a new bot with controller configurations (requires bot_name + controllers_config)\n    - status: Get status of all active bots (no additional params needed)\n    - logs: Get detailed logs for a specific bot (requires bot_name)\n    - stop_bot: Stop and archive a bot forever (requires bot_name)\n    - stop_controllers: Stop specific controllers in a bot (requires bot_name + controller_names)\n    - start_controllers: Start/resume specific controllers (requires bot_name + controller_names)\n    - get_config: View current configs of a running bot (requires bot_name)\n    - update_config: Modify config of a controller INSIDE a running bot in real-time (requires bot_name + config_name + config_data)\n\n    Args:\n        action: Action to perform on bots.\n        bot_name: Name of the bot (required for deploy, logs, stop_bot, stop/start_controllers, get_config, update_config).\n        controllers_config: List of controller config names (required for deploy).\n        account_name: Account name for deployment (default: master_account).\n        max_global_drawdown_quote: Maximum global drawdown in quote currency (deploy only).\n        max_controller_drawdown_quote: Maximum per-controller drawdown in quote currency (deploy only).\n        image: Docker image for deployment (default: \"hummingbot/hummingbot:latest\").\n        log_type: Type of logs to retrieve for 'logs' action ('error', 'general', 'all').\n        limit: Maximum log entries for 'logs' action (default: 50, max: 1000).\n        search_term: Search term to filter logs by message content (logs only).\n        controller_names: List of controller names (required for stop/start_controllers).\n        config_name: Name of the config to update (required for update_config).\n        config_data: New configuration data (required for update_config). Must include 'controller_type' and 'controller_name'.\n        confirm_override: Required True if overwriting existing config in a running bot (update_config only).\n    ",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "enum": [
+              "deploy",
+              "status",
+              "logs",
+              "stop_bot",
+              "stop_controllers",
+              "start_controllers",
+              "get_config",
+              "update_config"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "bot_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Bot Name"
+          },
+          "controllers_config": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Controllers Config"
+          },
+          "account_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "master_account",
+            "title": "Account Name"
+          },
+          "max_global_drawdown_quote": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Max Global Drawdown Quote"
+          },
+          "max_controller_drawdown_quote": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Max Controller Drawdown Quote"
+          },
+          "image": {
+            "default": "hummingbot/hummingbot:latest",
+            "title": "Image",
+            "type": "string"
+          },
+          "log_type": {
+            "default": "all",
+            "enum": [
+              "error",
+              "general",
+              "all"
+            ],
+            "title": "Log Type",
+            "type": "string"
+          },
+          "limit": {
+            "default": 50,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "search_term": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Search Term"
+          },
+          "controller_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Controller Names"
+          },
+          "config_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Config Name"
+          },
+          "config_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Config Data"
+          },
+          "confirm_override": {
+            "default": false,
+            "title": "Confirm Override",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "manage_botsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "manage_botsOutput",
+        "type": "object"
+      },
+      "tokens": 947
+    },
+    {
+      "name": "manage_executors",
+      "description": "Manage trading executors: create, search, stop, and configure preferences.\n\n    This is the DEFAULT tool for ALL trading operations. Use progressive disclosure to get\n    the full guide and config schema for any executor type before creating.\n\n    Executor Types (pass executor_type with no action to see full guide + schema):\n    - order_executor: Buy/sell orders (MARKET, LIMIT, LIMIT_MAKER, LIMIT_CHASER)\n    - position_executor: Directional positions with SL/TP management\n    - grid_executor: Grid trading for range-bound markets\n    - dca_executor: Dollar-cost averaging with scheduled levels\n    - lp_executor: CLMM LP positions on Meteora/Raydium (use explore_dex_pools first)\n\n    Actions:\n    - (none) + executor_type → Show full guide, config schema, and saved defaults\n    - create + executor_config → Create executor (merged with saved defaults)\n    - search → List/filter executors (add executor_id for detail)\n    - stop + executor_id → Stop executor (with keep_position option)\n    - get_logs + executor_id → Get logs (active executors only)\n    - get_preferences / save_preferences / reset_preferences → Manage saved defaults\n    - positions_summary → View all positions (add connector_name + trading_pair to filter)\n    - clear_position + connector_name + trading_pair → Clear externally-closed position\n\n    Args:\n        action: Action to perform. Leave empty to see executor types or config schema.\n        executor_type: Type of executor. Provide alone to see its full guide and config schema.\n        executor_config: Configuration for creating an executor. Required for 'create' action.\n        executor_id: Executor ID for 'search' (detail), 'stop', or 'get_logs' actions.\n        log_level: Filter logs by level - 'ERROR', 'WARNING', 'INFO', 'DEBUG' (for get_logs).\n        account_names: Filter by account names (for search).\n        connector_names: Filter by connector names (for search).\n        trading_pairs: Filter by trading pairs (for search).\n        executor_types: Filter by executor types (for search).\n        status: Filter by status - 'RUNNING', 'TERMINATED' (for search).\n        cursor: Pagination cursor for search results.\n        limit: Maximum results to return (default: 50, max: 1000).\n        keep_position: When stopping, keep the position open instead of closing it (default: False).\n        save_as_default: Save executor_config as default for this executor_type (default: False).\n        preferences_content: Complete markdown content for the preferences file. Required for 'save_preferences'.\n        account_name: Account name for creating executors (default: 'master_account').\n        connector_name: Connector name for position filtering or clearing.\n        trading_pair: Trading pair for position filtering or clearing.\n    ",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "enum": [
+                  "create",
+                  "search",
+                  "stop",
+                  "get_logs",
+                  "get_preferences",
+                  "save_preferences",
+                  "reset_preferences",
+                  "positions_summary",
+                  "clear_position"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Action"
+          },
+          "executor_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Executor Type"
+          },
+          "executor_config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Executor Config"
+          },
+          "executor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Executor Id"
+          },
+          "log_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Log Level"
+          },
+          "account_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Account Names"
+          },
+          "connector_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Connector Names"
+          },
+          "trading_pairs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Trading Pairs"
+          },
+          "executor_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Executor Types"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cursor"
+          },
+          "limit": {
+            "default": 50,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "keep_position": {
+            "default": false,
+            "title": "Keep Position",
+            "type": "boolean"
+          },
+          "save_as_default": {
+            "default": false,
+            "title": "Save As Default",
+            "type": "boolean"
+          },
+          "preferences_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Preferences Content"
+          },
+          "account_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Account Name"
+          },
+          "connector_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Connector Name"
+          },
+          "trading_pair": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Trading Pair"
+          }
+        },
+        "title": "manage_executorsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "manage_executorsOutput",
+        "type": "object"
+      },
+      "tokens": 1147
+    },
+    {
+      "name": "explore_dex_pools",
+      "description": "Explore DeFi CLMM pools — discover pools, compare yields, and get pool details.\n\n    Supports CLMM DEX connectors (Meteora, Raydium, Uniswap V3) for concentrated liquidity.\n\n    - list_pools: Browse available CLMM pools with filtering and sorting\n    - get_pool_info: Get detailed information about a specific pool (requires network + pool_address)\n\n    To manage LP positions, use `manage_executors` with `lp_executor` type.\n    To check on-chain positions, use `get_portfolio_overview` with `include_lp_positions=True`.\n\n    Args:\n        action: Action to perform on CLMM pools.\n        connector: CLMM connector name (e.g., 'meteora', 'raydium', 'uniswap'). Required.\n        network: Network ID in 'chain-network' format (e.g., 'solana-mainnet-beta'). Required for get_pool_info.\n        pool_address: Pool contract address (required for get_pool_info).\n        page: Page number for list_pools (default: 0).\n        limit: Results per page for list_pools (default: 50, max: 100).\n        search_term: Search term to filter pools by token symbols (e.g., 'SOL', 'USDC').\n        sort_key: Sort by field for list_pools (volume, tvl, feetvlratio, etc.).\n        order_by: Sort order for list_pools ('asc' or 'desc').\n        include_unknown: Include pools with unverified tokens (default: True).\n        detailed: Return detailed table with more columns for list_pools (default: False).\n    ",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "enum": [
+              "list_pools",
+              "get_pool_info"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "connector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Connector"
+          },
+          "network": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Network"
+          },
+          "pool_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pool Address"
+          },
+          "page": {
+            "default": 0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "search_term": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Search Term"
+          },
+          "sort_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "volume",
+            "title": "Sort Key"
+          },
+          "order_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "desc",
+            "title": "Order By"
+          },
+          "include_unknown": {
+            "default": true,
+            "title": "Include Unknown",
+            "type": "boolean"
+          },
+          "detailed": {
+            "default": false,
+            "title": "Detailed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "explore_dex_poolsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "explore_dex_poolsOutput",
+        "type": "object"
+      },
+      "tokens": 635
+    },
+    {
+      "name": "explore_geckoterminal",
+      "description": "Explore DEX market data from GeckoTerminal (free, no API key needed).\n\n    Progressive discovery flow:\n    1. action=\"networks\" → List all supported networks (solana, eth, bsc, ...)\n    2. action=\"dexes\" + network → List DEXes on a network\n    3. action=\"trending_pools\" (+ network) → Trending pools globally or per network\n    4. action=\"top_pools\" + network (+ dex_id) → Top pools by volume on a network/dex\n    5. action=\"new_pools\" (+ network) → Recently created pools\n    6. action=\"pool_detail\" + network + pool_address → Detailed info for one pool\n    7. action=\"multi_pools\" + network + pool_addresses → Compare multiple pools\n    8. action=\"token_pools\" + network + token_address → Top pools for a token\n    9. action=\"token_info\" + network + token_address → Token details (price, mcap, fdv)\n    10. action=\"ohlcv\" + network + pool_address → OHLCV candle data\n    11. action=\"trades\" + network + pool_address → Recent trades\n\n    Args:\n        action: The data to retrieve.\n        network: Network ID (e.g., 'solana', 'eth', 'bsc'). Required for most actions.\n        dex_id: DEX ID filter for top_pools (e.g., 'raydium', 'uniswap_v3').\n        pool_address: Pool contract address (for pool_detail, ohlcv, trades).\n        pool_addresses: List of pool addresses (for multi_pools).\n        token_address: Token contract address (for token_pools, token_info).\n        timeframe: OHLCV interval (default: '1h'). Options: 1m, 5m, 15m, 1h, 4h, 12h, 1d.\n        before_timestamp: Fetch OHLCV candles before this unix timestamp (pagination).\n        currency: OHLCV price currency, 'usd' or 'token' (default: 'usd').\n        token: Which token's price for OHLCV, 'base' or 'quote' (default: 'base').\n        limit: Max OHLCV candles to return (default: 1000).\n        trade_volume_filter: Min trade volume in USD to filter trades (optional).\n    ",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "enum": [
+              "networks",
+              "dexes",
+              "trending_pools",
+              "top_pools",
+              "new_pools",
+              "pool_detail",
+              "multi_pools",
+              "token_pools",
+              "token_info",
+              "ohlcv",
+              "trades"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "network": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Network"
+          },
+          "dex_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dex Id"
+          },
+          "pool_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pool Address"
+          },
+          "pool_addresses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pool Addresses"
+          },
+          "token_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Token Address"
+          },
+          "timeframe": {
+            "default": "1h",
+            "title": "Timeframe",
+            "type": "string"
+          },
+          "before_timestamp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Before Timestamp"
+          },
+          "currency": {
+            "default": "usd",
+            "title": "Currency",
+            "type": "string"
+          },
+          "token": {
+            "default": "base",
+            "title": "Token",
+            "type": "string"
+          },
+          "limit": {
+            "default": 1000,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "trade_volume_filter": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Trade Volume Filter"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "explore_geckoterminalArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "explore_geckoterminalOutput",
+        "type": "object"
+      },
+      "tokens": 880
+    }
+  ],
+  "totalTokens": 7462,
+  "prompts": [],
+  "resources": [],
+  "resourceTemplates": []
+}

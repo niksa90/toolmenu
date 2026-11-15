@@ -1,0 +1,1920 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "Kafka Schema Registry Unified MCP Server",
+    "version": "4.1.3",
+    "protocolVersion": "2026-07-28",
+    "era": "modern",
+    "extensions": {
+      "io.modelcontextprotocol/ui": {},
+      "io.modelcontextprotocol/tasks": {}
+    }
+  },
+  "capturedAt": "2026-11-15T07:04:22.180Z",
+  "tools": [
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List available multi-step workflows",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "name": "list_workflows",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "title": "List Workflows",
+      "tokens": 32
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get detailed information about a workflow definition",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_id"
+        ]
+      },
+      "name": "describe_workflow",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "title": "Describe Workflow",
+      "tokens": 45
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Start the Schema Evolution Assistant workflow. This guided workflow helps you safely evolve schemas by analyzing changes, suggesting strategies, and coordinating consumer updates.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "current_schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "proposed_schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "strategy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "guided_schema_evolution",
+      "title": "Guided Schema Evolution",
+      "tokens": 131
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Respond to MCP ping requests with pong.\n\nThis tool implements the standard MCP ping/pong protocol for server health checking.\nMCP proxies and clients use this to verify that the server is alive and responding.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "name": "ping",
+      "title": "Ping",
+      "tokens": 67
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Compare two Schema Registry instances and show differences.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_registry": {
+            "type": "string"
+          },
+          "target_registry": {
+            "type": "string"
+          },
+          "include_contexts": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_configs": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "source_registry",
+          "target_registry"
+        ]
+      },
+      "name": "compare_registries",
+      "title": "Compare Registries",
+      "tokens": 83
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Compare contexts across two registries.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_registry": {
+            "type": "string"
+          },
+          "target_registry": {
+            "type": "string"
+          },
+          "source_context": {
+            "type": "string"
+          },
+          "target_context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "source_registry",
+          "target_registry",
+          "source_context"
+        ]
+      },
+      "name": "compare_contexts_across_registries",
+      "title": "Compare Contexts Across Registries",
+      "tokens": 92
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Find schemas that exist in source registry but not in target registry.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_registry": {
+            "type": "string"
+          },
+          "target_registry": {
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "source_registry",
+          "target_registry"
+        ]
+      },
+      "name": "find_missing_schemas",
+      "title": "Find Missing Schemas",
+      "tokens": 82
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List all available MCP resources and their usage patterns.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "name": "list_available_resources",
+      "title": "List Available Resources",
+      "tokens": 36
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Suggest the appropriate resource to use instead of a removed tool.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "tool_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_name"
+        ]
+      },
+      "name": "suggest_resource_for_tool",
+      "title": "Suggest Resource For Tool",
+      "tokens": 50
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Generate resource URI templates for your specific configuration.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registry_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "generate_resource_templates",
+      "title": "Generate Resource Templates",
+      "tokens": 91
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List all configured Schema Registry instances.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'registry://names' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "name": "list_registries",
+      "title": "List Registries",
+      "tokens": 61
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get detailed information about a specific registry.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'registry://info/{name}' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "get_registry_info",
+      "title": "Get Registry Info",
+      "tokens": 80
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Test connection to a specific registry.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'registry://status/{name}' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "test_registry_connection",
+      "title": "Test Registry Connection",
+      "tokens": 79
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Test connections to all configured registries.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'registry://status' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "name": "test_all_registries",
+      "title": "Test All Registries",
+      "tokens": 63
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List all subjects, optionally filtered by context.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'registry://{name}/subjects' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "list_subjects",
+      "title": "List Subjects",
+      "tokens": 101
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get a specific version of a schema.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'schema://{name}/{context}/{subject}' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "version": {
+            "default": "latest",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "subject"
+        ]
+      },
+      "name": "get_schema",
+      "title": "Get Schema",
+      "tokens": 124
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get all versions of a schema for a subject.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'schema://{name}/{context}/{subject}/versions' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "subject"
+        ]
+      },
+      "name": "get_schema_versions",
+      "title": "Get Schema Versions",
+      "tokens": 118
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get a schema by its globally unique ID.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schema_id": {
+            "type": "integer",
+            "description": "The globally unique schema ID"
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional registry name (ignored in single-registry mode)"
+          }
+        },
+        "required": [
+          "schema_id"
+        ]
+      },
+      "name": "get_schema_by_id",
+      "title": "Get Schema By Id",
+      "tokens": 89
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get subjects and versions associated with a schema ID.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schema_id": {
+            "type": "integer",
+            "description": "The globally unique schema ID"
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional registry name (ignored in single-registry mode)"
+          }
+        },
+        "required": [
+          "schema_id"
+        ]
+      },
+      "name": "get_subjects_by_schema_id",
+      "title": "Get Subjects By Schema Id",
+      "tokens": 92
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get global configuration settings.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'registry://{name}/config' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "get_global_config",
+      "title": "Get Global Config",
+      "tokens": 97
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get the current mode of the Schema Registry.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'registry://mode' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "get_mode",
+      "title": "Get Mode",
+      "tokens": 97
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List all available schema contexts.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'registry://{name}/contexts' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "list_contexts",
+      "title": "List Contexts",
+      "tokens": 79
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get configuration settings for a specific subject.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'subject://{name}/{context}/{subject}/config' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "subject"
+        ]
+      },
+      "name": "get_subject_config",
+      "title": "Get Subject Config",
+      "tokens": 116
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get the operational mode for a specific subject.\n\nNOTE: This tool is maintained for backward compatibility.\nConsider using the 'subject://{name}/{context}/{subject}/mode' resource instead for better performance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "subject"
+        ]
+      },
+      "name": "get_subject_mode",
+      "title": "Get Subject Mode",
+      "tokens": 117
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Check if a schema is compatible with the latest version.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "schema_definition": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "schema_type": {
+            "default": "AVRO",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "subject",
+          "schema_definition"
+        ]
+      },
+      "name": "check_compatibility",
+      "title": "Check Compatibility",
+      "tokens": 115
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Interactive compatibility checking with elicitation for resolution options.\n\nWhen compatibility issues are found, this tool will elicit resolution\npreferences from the user.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "schema_definition": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "schema_type": {
+            "default": "AVRO",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "subject",
+          "schema_definition"
+        ]
+      },
+      "name": "check_compatibility_interactive",
+      "title": "Check Compatibility Interactive",
+      "tokens": 136
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Export a single schema in the specified format.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "version": {
+            "default": "latest",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "format": {
+            "default": "json",
+            "type": "string"
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "subject"
+        ]
+      },
+      "name": "export_schema",
+      "title": "Export Schema",
+      "tokens": 104
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Export all versions of a subject.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "include_metadata": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_config": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_versions": {
+            "default": "all",
+            "type": "string"
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "subject"
+        ]
+      },
+      "name": "export_subject",
+      "title": "Export Subject",
+      "tokens": 116
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Export all subjects within a context.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "type": "string"
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "include_metadata": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_config": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_versions": {
+            "default": "all",
+            "type": "string"
+          }
+        },
+        "required": [
+          "context"
+        ]
+      },
+      "name": "export_context",
+      "title": "Export Context",
+      "tokens": 96
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Export all contexts and schemas from a registry.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "include_metadata": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_config": {
+            "default": true,
+            "type": "boolean"
+          },
+          "include_versions": {
+            "default": "all",
+            "type": "string"
+          }
+        }
+      },
+      "name": "export_global",
+      "title": "Export Global",
+      "tokens": 86
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Interactive global export with elicitation for export preferences.\n\nWhen export preferences are not specified, this tool will elicit\nthe required configuration from the user.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "include_metadata": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "include_config": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "include_versions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "compression": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "output_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "schemas_per_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "export_global_interactive",
+      "title": "Export Global Interactive",
+      "tokens": 216
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Count the number of contexts in a registry.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "count_contexts",
+      "title": "Count Contexts",
+      "tokens": 52
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Count the number of schemas in a context or registry.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        }
+      },
+      "name": "count_schemas",
+      "title": "Count Schemas",
+      "tokens": 73
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Count the number of versions for a specific schema.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "subject"
+        ]
+      },
+      "name": "count_schema_versions",
+      "title": "Count Schema Versions",
+      "tokens": 84
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get comprehensive statistics about a registry.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "include_context_details": {
+            "default": true,
+            "type": "boolean"
+          }
+        }
+      },
+      "name": "get_registry_statistics",
+      "title": "Get Registry Statistics",
+      "tokens": 62
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get MCP 2026-07-28 specification compliance status and configuration details.\n\nReturns information about JSON-RPC batching status, protocol version, header validation, and migration guidance.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "name": "get_mcp_compliance_status",
+      "title": "Get Mcp Compliance Status",
+      "tokens": 66
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get the current default registry.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "name": "get_default_registry",
+      "title": "Get Default Registry",
+      "tokens": 32
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Get information about OAuth scopes and permissions.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "name": "get_oauth_scopes_info",
+      "title": "Get Oauth Scopes Info",
+      "tokens": 37
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Test OAuth discovery endpoints to ensure proper MCP client compatibility.\n\nValidates:\n- /.well-known/oauth-authorization-server\n- /.well-known/oauth-protected-resource\n- /.well-known/jwks.json",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "server_url": {
+            "default": "http://localhost:8000",
+            "type": "string",
+            "description": "Base URL of the MCP server (default: http://localhost:8000)"
+          }
+        }
+      },
+      "name": "test_oauth_discovery_endpoints",
+      "title": "Test Oauth Discovery Endpoints",
+      "tokens": 107
+    }
+  ],
+  "totalTokens": 3404,
+  "listMeta": {
+    "ttlMs": 60000,
+    "cacheScope": "private"
+  },
+  "prompts": [
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "arguments": [],
+      "description": "Getting started with Schema Registry operations",
+      "name": "schema-getting-started"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "arguments": [],
+      "description": "Guide for exporting schemas and documentation",
+      "name": "schema-export"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "arguments": [],
+      "description": "Guide for schema compatibility and evolution",
+      "name": "schema-compatibility"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "arguments": [],
+      "description": "Troubleshooting guide for common issues",
+      "name": "troubleshooting"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "arguments": [],
+      "description": "Get a quick reference card of most common commands.",
+      "name": "quick-reference"
+    }
+  ],
+  "resources": [
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get list of all configured registry names.",
+      "mimeType": "application/json",
+      "name": "registry_names_resource",
+      "uri": "registry://names"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get detailed server configuration and capabilities.",
+      "mimeType": "application/json",
+      "name": "registry_info_resource",
+      "uri": "registry://info"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get connection status for all registries.",
+      "mimeType": "application/json",
+      "name": "registry_status_resource",
+      "uri": "registry://status"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get operational mode for all registries.",
+      "mimeType": "application/json",
+      "name": "registry_mode_resource",
+      "uri": "registry://mode"
+    }
+  ],
+  "resourceTemplates": [
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get detailed information about a specific registry.",
+      "mimeType": "application/json",
+      "name": "registry_info_specific_resource",
+      "uriTemplate": "registry://info/{name}"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get connection status for a specific registry.",
+      "mimeType": "application/json",
+      "name": "registry_status_specific_resource",
+      "uriTemplate": "registry://status/{name}"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get operational mode for a specific registry.",
+      "mimeType": "application/json",
+      "name": "registry_mode_specific_resource",
+      "uriTemplate": "registry://mode/{name}"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get all subjects for a specific registry, optionally filtered by context.",
+      "mimeType": "application/json",
+      "name": "registry_subjects_resource",
+      "uriTemplate": "registry://{name}/subjects"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get all subjects in a named context for a specific registry.",
+      "mimeType": "application/json",
+      "name": "registry_context_subjects_resource",
+      "uriTemplate": "registry://{name}/contexts/{context}/subjects"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get all contexts for a specific registry.",
+      "mimeType": "application/json",
+      "name": "registry_contexts_resource",
+      "uriTemplate": "registry://{name}/contexts"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get global configuration for a specific registry, optionally filtered by context.",
+      "mimeType": "application/json",
+      "name": "registry_config_resource",
+      "uriTemplate": "registry://{name}/config"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get schema content for a specific subject in a specific context and registry.",
+      "mimeType": "application/json",
+      "name": "schema_content_resource",
+      "uriTemplate": "schema://{name}/{context}/{subject}"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get schema content for a specific subject in the default context of a registry.",
+      "mimeType": "application/json",
+      "name": "schema_content_default_context_resource",
+      "uriTemplate": "schema://{name}/{subject}"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get all versions of a schema for a specific subject in a specific context and registry.",
+      "mimeType": "application/json",
+      "name": "schema_versions_resource",
+      "uriTemplate": "schema://{name}/{context}/{subject}/versions"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get all versions of a schema for a specific subject in the default context of a registry.",
+      "mimeType": "application/json",
+      "name": "schema_versions_default_context_resource",
+      "uriTemplate": "schema://{name}/{subject}/versions"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get configuration settings for a specific subject with explicit context.",
+      "mimeType": "application/json",
+      "name": "subject_config_resource",
+      "uriTemplate": "subject://{name}/{context}/{subject}/config"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get configuration settings for a specific subject in the default context.",
+      "mimeType": "application/json",
+      "name": "subject_config_default_context_resource",
+      "uriTemplate": "subject://{name}/{subject}/config"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get the mode for a specific subject with explicit context.",
+      "mimeType": "application/json",
+      "name": "subject_mode_resource",
+      "uriTemplate": "subject://{name}/{context}/{subject}/mode"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Get the mode for a specific subject in the default context.",
+      "mimeType": "application/json",
+      "name": "subject_mode_default_context_resource",
+      "uriTemplate": "subject://{name}/{subject}/mode"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "List persisted migration records (none are persisted by this server).",
+      "mimeType": "application/json",
+      "name": "migrations_collection_resource",
+      "uriTemplate": "registry://{name}/migrations"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "description": "Describe how background tasks are exposed.",
+      "mimeType": "application/json",
+      "name": "tasks_collection_resource",
+      "uriTemplate": "registry://{name}/tasks"
+    }
+  ]
+}

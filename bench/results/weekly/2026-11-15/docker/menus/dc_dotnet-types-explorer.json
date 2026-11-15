@@ -1,0 +1,190 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "DotNet Projects Types Explorer MCP Server",
+    "version": "1.1.1.0",
+    "protocolVersion": "2025-06-18",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-15T07:02:07.343Z",
+  "tools": [
+    {
+      "name": "NuGetPackageVersions",
+      "description": "Retrieves version history and dependency information for a specific NuGet package.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "packageId": {
+            "description": "The package ID to get versions for",
+            "type": "string"
+          },
+          "includePrerelease": {
+            "description": "Include prerelease versions in results",
+            "type": "boolean",
+            "default": false
+          },
+          "fullTextFiltersWithWildCardSupport": {
+            "description": "Full text filters with wildcard support",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": null
+          },
+          "pageNumber": {
+            "description": "Page number (1-based)",
+            "type": "integer",
+            "default": 1
+          }
+        },
+        "required": [
+          "packageId"
+        ]
+      },
+      "tokens": 131
+    },
+    {
+      "name": "ReferencedAssembliesExplorer",
+      "description": "Retrieves referenced assemblies based on filters and pagination (doesn't extract data from referenced projects. Notice that the project must be built before scanning.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectFileAbsolutePath": {
+            "description": "The absolute path to the project file (.csproj)",
+            "type": "string"
+          },
+          "fullTextFiltersWithWildCardSupport": {
+            "description": "Full text filters with wildcard support (e.g., 'System.*', '*Json*')",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": null
+          },
+          "pageNumber": {
+            "description": "Page number (1-based)",
+            "type": "integer",
+            "default": 1
+          }
+        },
+        "required": [
+          "projectFileAbsolutePath"
+        ]
+      },
+      "tokens": 144
+    },
+    {
+      "name": "NuGetPackageSearch",
+      "description": "Searches for NuGet packages on nuget.org with support for filtering and pagination.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchQuery": {
+            "description": "The search query to find packages",
+            "type": "string"
+          },
+          "includePrerelease": {
+            "description": "Include prerelease versions in search results",
+            "type": "boolean",
+            "default": false
+          },
+          "fullTextFiltersWithWildCardSupport": {
+            "description": "Full text filters with wildcard support",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": null
+          },
+          "pageNumber": {
+            "description": "Page number (1-based)",
+            "type": "integer",
+            "default": 1
+          }
+        },
+        "required": [
+          "searchQuery"
+        ]
+      },
+      "tokens": 134
+    },
+    {
+      "name": "NamespacesExplorer",
+      "description": "Retrieves namespaces from specified assemblies supporting filters and pagination (doesn't extract data from referenced projects. Notice that the project must be built before scanning.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectFileAbsolutePath": {
+            "description": "The absolute path to the project file (.csproj)",
+            "type": "string"
+          },
+          "assemblyNames": {
+            "description": "The assembly names to filter by (without exe/dll extension). If empty, all assemblies are considered",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": null
+          },
+          "fullTextFiltersWithWildCardSupport": {
+            "description": "Full text filters with wildcard support (e.g., 'System.*', '*Json*')",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": null
+          },
+          "pageNumber": {
+            "description": "Page number (1-based)",
+            "type": "integer",
+            "default": 1
+          }
+        },
+        "required": [
+          "projectFileAbsolutePath"
+        ]
+      },
+      "tokens": 184
+    },
+    {
+      "name": "NamespaceTypes",
+      "description": "Retrieves types from specified namespaces supporting filters and pagination.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectFileAbsolutePath": {
+            "description": "The absolute path to the project file (.csproj)",
+            "type": "string"
+          },
+          "namespaces": {
+            "description": "The namespaces to filter by. If empty, all namespaces are considered",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": null
+          },
+          "fullTextFiltersWithWildCardSupport": {
+            "description": "Full text filters with wildcard support (e.g., '*Controller', 'Service*')",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": null
+          },
+          "pageNumber": {
+            "description": "Page number (1-based)",
+            "type": "integer",
+            "default": 1
+          }
+        },
+        "required": [
+          "projectFileAbsolutePath"
+        ]
+      },
+      "tokens": 158
+    }
+  ],
+  "totalTokens": 751
+}
