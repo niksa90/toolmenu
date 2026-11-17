@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.28.1
+
 ### Fixes
 
 - **A `server/discover` refused with 401 or 403 is no longer read as a login wall.**
