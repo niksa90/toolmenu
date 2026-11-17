@@ -229,6 +229,28 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
       await stderrEnded(stdioStderr, trace.exit ? STDERR_AFTER_EXIT_MS : 1000);
     }
     await endSession(client, transport);
+    // A 401 or 403 to server/discover alone isn't the server's last word: Dreamwork
+    // 1.10.0 answers it with a 401 while its 2025 handshake serves a guest menu. With
+    // the handshake left to toolmenu, and no stored login (a refused one is reported as
+    // such), try the 2025 one before calling it a login wall. A server that wants
+    // credentials refuses that too; one that fails it any other way (a 2026-only
+    // server) is reported with the first refusal, which is the one that explains it.
+    const discover = trace.http.get('server/discover')?.status;
+    if (
+      target.kind === 'http' &&
+      !oauth &&
+      (!target.protocol || target.protocol === 'auto') &&
+      (discover === 401 || discover === 403) &&
+      !trace.sent.some((s) => s.method === 'initialize')
+    ) {
+      const refused = explain(error, trace, context);
+      try {
+        return await connect({ ...target, protocol: 'legacy' }, options);
+      } catch (retry) {
+        const status = (retry as { status?: unknown }).status;
+        throw status === 401 || status === 403 ? retry : refused;
+      }
+    }
     throw explain(error, trace, context);
   }
   const wire = new WireLog();

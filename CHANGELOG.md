@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.28.1
+
+### Fixes
+
+- **A `server/discover` refused with 401 or 403 is no longer read as a login wall.**
+  Dreamwork 1.10.0 answers `server/discover` with a 401 and serves a 74-tool guest menu
+  over the 2025 handshake; `snapshot` stopped at "wants credentials". toolmenu now tries
+  the 2025 `initialize` first and reports credentials only when that is refused too.
+  `--protocol modern` still uses the 2026-07-28 handshake alone.
+- **`auth login` says so when the server never asked for a login**, and stores nothing,
+  instead of "Logged in" with no token behind it.
+
+### Repository
+
 - **The plugin runs toolmenu 0.28.0** (was 0.27.0): its tools' `apps/resource` findings
   no longer call a read that failed for credentials or the network the server's.
 
