@@ -9,7 +9,10 @@ import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 
 // card: a Server Card served at /mcp/server-card (with cardType as its Content-Type).
-export async function start({ scope = 'local', vary = false, onePerClient = false, card, cardType = 'application/mcp-server-card+json' } = {}) {
+// discoverStatus: answer server/discover with this HTTP status (401: like Dreamwork, whose
+// 2025 handshake serves a guest menu while server/discover asks for credentials).
+// requireAuth: every POST without an Authorization header gets a 401.
+export async function start({ scope = 'local', vary = false, onePerClient = false, card, cardType = 'application/mcp-server-card+json', discoverStatus, requireAuth = false } = {}) {
   const sessions = new Map();
   const byClient = new Map();
   const global = { unlocked: false };
@@ -45,6 +48,15 @@ export async function start({ scope = 'local', vary = false, onePerClient = fals
     for await (const c of req) chunks.push(c);
     const msg = JSON.parse(Buffer.concat(chunks).toString());
     if (msg.method === 'server/discover') discovers++;
+    const unauthorized = { 'content-type': 'application/json', 'www-authenticate': 'Bearer realm="fixture"' };
+    if (requireAuth && !req.headers.authorization) {
+      res.writeHead(401, unauthorized).end(JSON.stringify({ error: 'unauthorized' }));
+      return;
+    }
+    if (msg.method === 'server/discover' && discoverStatus) {
+      res.writeHead(discoverStatus, unauthorized).end(JSON.stringify({ error: 'unauthorized' }));
+      return;
+    }
     const headers = { 'content-type': 'application/json' };
     let session = sessions.get(req.headers['mcp-session-id']);
     if (msg.method === 'initialize') {

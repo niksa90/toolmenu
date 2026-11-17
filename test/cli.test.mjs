@@ -523,3 +523,43 @@ test('a toolmenu.config.json that isn\'t JSON: where it broke, never what it hol
   assert.match(r.stderr, /toolmenu\.config\.json isn't valid JSON/);
   assert.doesNotMatch(r.stderr, /S3CRET|registry/);
 });
+
+test('cli: a server/discover refused with 401 falls back to the 2025 handshake, and a server that refuses both wants credentials', async () => {
+  // Dreamwork 1.10.0: server/discover gets a 401, initialize serves a guest menu.
+  const guest = await startRaw({ discoverStatus: 401 });
+  try {
+    const r = await run(['snapshot', guest.url, '--processes', '1']);
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /protocol 2025-11-25 · 3 tools/);
+    assert.doesNotMatch(r.stderr, /wants credentials/);
+    assert.equal(guest.discovers(), 1);
+  } finally {
+    await guest.close();
+  }
+  const forbidden = await startRaw({ discoverStatus: 403 });
+  try {
+    const r = await run(['snapshot', forbidden.url, '--processes', '1']);
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /protocol 2025-11-25 · 3 tools/);
+  } finally {
+    await forbidden.close();
+  }
+  // Asked for its own handshake, toolmenu doesn't swap it.
+  const pinned = await startRaw({ discoverStatus: 401 });
+  try {
+    const r = await run(['snapshot', pinned.url, '--processes', '1', '--protocol', 'modern']);
+    assert.notEqual(r.code, 0);
+  } finally {
+    await pinned.close();
+  }
+  const walled = await startRaw({ requireAuth: true });
+  try {
+    const r = await run(['snapshot', walled.url, '--processes', '1']);
+    assert.equal(r.code, 2, r.stdout);
+    assert.match(r.stderr, /wants credentials: initialize got HTTP 401 Unauthorized\./);
+    assert.match(r.stderr, /→ Next: If the server uses OAuth, log in once with: toolmenu auth login /);
+    assert.equal(walled.discovers(), 1);
+  } finally {
+    await walled.close();
+  }
+});
