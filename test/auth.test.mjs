@@ -356,7 +356,7 @@ test('auth login: a server that never asks for credentials is not a login, and n
     assert.equal(cli.code, 0);
     assert.match(cli.stdout, /^No login made for .*without asking for credentials, so nothing was stored\./);
     assert.doesNotMatch(cli.stdout, /Logged in/);
-    assert.match(cli.stdout, /→ Next: .*--header "Authorization: Bearer <token>".*--client-id/);
+    assert.match(cli.stdout, /→ Next: .*--header "Authorization: Bearer <token>"\.\n$/);
     assert.match((await run(['auth', 'list'])).stdout, /No logins stored/);
   } finally {
     await server.close();

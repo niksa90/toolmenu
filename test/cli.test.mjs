@@ -552,6 +552,16 @@ test('cli: a server/discover refused with 401 falls back to the 2025 handshake, 
   } finally {
     await pinned.close();
   }
+  // A 2026-only server behind a login: the 2025 retry fails for another reason, so the
+  // 401 that explains it is what's reported.
+  const modernOnly = await startRaw({ discoverStatus: 401, initializeStatus: 400 });
+  try {
+    const r = await run(['snapshot', modernOnly.url, '--processes', '1']);
+    assert.equal(r.code, 2, r.stdout);
+    assert.match(r.stderr, /wants credentials: server\/discover got HTTP 401 Unauthorized\./);
+  } finally {
+    await modernOnly.close();
+  }
   const walled = await startRaw({ requireAuth: true });
   try {
     const r = await run(['snapshot', walled.url, '--processes', '1']);

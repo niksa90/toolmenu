@@ -344,6 +344,8 @@ function printForPaste(port: number): (url: URL) => void {
  */
 export async function login(serverUrl: string, options: LoginOptions = {}): Promise<{ name?: string; tools: number; authenticated: boolean }> {
   const port = options.port ?? DEFAULT_PORT;
+  // What was stored before this login (a registered client, a rejected token) is kept.
+  const stored = hasLogin(serverUrl);
   const callback = await listenForCallback(port, options.timeoutMs ?? 300_000);
   try {
     const provider = new StoredOAuthProvider(serverUrl, {
@@ -400,8 +402,9 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
     }
     // A server that never asked for credentials leaves nothing to log in with: the
     // file the discovery step wrote holds no token, so drop it rather than list a login.
+    // A file from before this login stays: it may hold a registered client.
     const authenticated = Boolean(await provider.tokens());
-    if (!authenticated) await logout(serverUrl);
+    if (!authenticated && !stored) await logout(serverUrl);
     return { ...(await check(serverUrl)), authenticated };
   } catch (error) {
     // GitHub's hosted server, for one: no dynamic registration, so toolmenu can't

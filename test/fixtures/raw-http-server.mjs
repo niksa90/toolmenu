@@ -12,7 +12,8 @@ import { randomUUID } from 'node:crypto';
 // discoverStatus: answer server/discover with this HTTP status (401: like Dreamwork, whose
 // 2025 handshake serves a guest menu while server/discover asks for credentials).
 // requireAuth: every POST without an Authorization header gets a 401.
-export async function start({ scope = 'local', vary = false, onePerClient = false, card, cardType = 'application/mcp-server-card+json', discoverStatus, requireAuth = false } = {}) {
+// initializeStatus: answer initialize with this HTTP status (400: a server on 2026-07-28 only).
+export async function start({ scope = 'local', vary = false, onePerClient = false, card, cardType = 'application/mcp-server-card+json', discoverStatus, requireAuth = false, initializeStatus } = {}) {
   const sessions = new Map();
   const byClient = new Map();
   const global = { unlocked: false };
@@ -51,6 +52,10 @@ export async function start({ scope = 'local', vary = false, onePerClient = fals
     const unauthorized = { 'content-type': 'application/json', 'www-authenticate': 'Bearer realm="fixture"' };
     if (requireAuth && !req.headers.authorization) {
       res.writeHead(401, unauthorized).end(JSON.stringify({ error: 'unauthorized' }));
+      return;
+    }
+    if (msg.method === 'initialize' && initializeStatus) {
+      res.writeHead(initializeStatus, { 'content-type': 'application/json' }).end(JSON.stringify({ error: 'unsupported protocol version' }));
       return;
     }
     if (msg.method === 'server/discover' && discoverStatus) {

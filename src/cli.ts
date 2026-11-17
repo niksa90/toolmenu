@@ -510,7 +510,7 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
     result.authenticated
       ? `Logged in to ${plain(result.name ?? url)} (${url}): it lists ${count} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`
       : `No login made for ${plain(result.name ?? url)} (${url}): it listed ${count} without asking for credentials, so nothing was stored.\n` +
-          `→ Next: A server like this usually asks for a login only when a tool is called. If session reports session/untested, pass a token with --header "Authorization: Bearer <token>", or use --client-id and --client-secret with a client registered with the provider.\n`,
+          `→ Next: A server like this usually asks for a login only when a tool is called. If session reports session/untested, pass a token with --header "Authorization: Bearer <token>".\n`,
   );
   return 0;
 }
