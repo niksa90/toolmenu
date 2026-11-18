@@ -335,6 +335,10 @@ Keyword matching only in v1: deterministic, free and reproducible in CI.
 
 **Spec** (not observed failures: protocol requirements, kept minimal)
 
+> **Note, 2026-11-18 (after the freeze).** `description/late-instruction` is retired:
+> 280 was one private client's cut, and no client documents it. `description/buried`
+> checks the documented cuts, or the `descriptionLimit` a user sets.
+
 | id | sev | check |
 |---|---|---|
 | `spec/x-mcp-header` | error / warn | `since: 2026-07-28`. An `x-mcp-header` annotation the spec doesn't allow (SEP-2243): empty; not an RFC 9110 token; the same header twice ignoring case; on a parameter that isn't `string`, `integer` or `boolean`, or has no single `type`; anywhere but a parameter reached through `properties` alone. Streamable HTTP clients **MUST** leave such a tool out of `tools/list`, and the official SDK client does, with only a console warning. Error on an HTTP server, warn on stdio (clients there MAY ignore the annotation). A `number` parameter counts too: the SDK client drops those tools since 2.4. Every broken annotation in a tool is listed (the SDK stops at the first). Checked against the SDK client's behaviour in the tests |

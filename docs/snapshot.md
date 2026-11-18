@@ -21,7 +21,6 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `naming/route` | error | A `routes.yml` expectation broke: a keyword now matches the wrong tool at least as well as the right one |
 | `description/buried` | warn | Instructions to the agent ("use X instead", "don't retry", "never guess one") past the point where your client cuts descriptions: in Claude Code 16,384 characters for a tool loaded through tool search (its default) and 4,096 for one that loads up front, or your `descriptionLimit`. From a real failure: a client cut at 280 characters, and the line that decided routing was at 1,222 |
 | `description/cut` | info | Descriptions longer than the client sends, with nothing that reads as an instruction past the cut, as one summary that shows where each one is cut. The model gets a prefix that can read as complete |
-| `description/late-instruction` | info | With the default cut: instructions after character 280, which a client that cuts descriptions short would hide, as one summary. Set `descriptionLimit` and `description/buried` checks your real cut instead. (Before 0.13 this was part of `description/cut`; that id's setting still applies.) |
 | `naming/vague-id` | warn | Parameters called just `id` that don't say *which* thing, as one summary with a suggested name |
 | `ids/authored` | info | An ID the agent must supply that no tool appears to return, so the agent may invent it, one finding per kind of ID (heuristic: IDs from a URL or another tool's text output look the same) |
 | `ids/handle-lifetime` | info | 2026-07-28: a tool that creates a handle another tool takes back (`start_session` → `session_id`) doesn't say how long it lasts (heuristic) |
@@ -163,7 +162,7 @@ Claude Code with tool search off) or
 `"amazon-q"` (10,024, reported in
 [makenotion/notion-mcp-server#145](https://github.com/makenotion/notion-mcp-server/issues/145)).
 Clients that send descriptions in full don't need a setting beyond that. If your own
-client cuts shorter, as mine did at 280, set its number. `fullDescriptions` lists the
+client cuts shorter, set its number. `fullDescriptions` lists the
 tools it sends uncut, so the description rules skip them.
 
 ## Every server you use: `scan`

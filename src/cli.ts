@@ -38,6 +38,7 @@ import { CLI_OPTIONS } from './options.js';
 import { editDistance } from './words.js';
 import { formatScan, ListError, loadList, scan, scanExit, type AllowEnv } from './scan.js';
 import { explain, findRule, formatExplained, listRules, ruleDocs } from './rule-docs.js';
+import { RETIRED_RULES } from './rules/index.js';
 import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type Command } from './help.js';
 
 class UsageError extends Error {}
@@ -591,6 +592,11 @@ function explainCommand(rest: string[], command: string[] | undefined, format: F
   if (rest.length > 1) throw new UsageError(`explain takes one rule at a time; got ${rest.length}.`);
   if (!rest.length) {
     process.stdout.write(format === 'json' ? `${JSON.stringify(Object.keys(ruleDocs()))}\n` : listRules());
+    return 0;
+  }
+  const retired = rest[0].trim().toLowerCase();
+  if (Object.hasOwn(RETIRED_RULES, retired)) {
+    process.stdout.write(format === 'json' ? `${JSON.stringify({ id: retired, retired: RETIRED_RULES[retired] })}\n` : `${retired}: ${RETIRED_RULES[retired]}\n`);
     return 0;
   }
   const found = findRule(rest[0]);

@@ -67,3 +67,13 @@ test('explain: an unknown rule names the closest; no rule lists them all', async
   assert.equal(server.code, 2);
   assert.match(server.stderr, /not a server/);
 });
+
+test('explain: a retired rule says it was retired and why, in text and JSON', async () => {
+  const text = await run(['explain', 'description/late-instruction']);
+  assert.equal(text.code, 0, text.stderr);
+  assert.match(text.stdout, /^description\/late-instruction: retired after 0\.28\.1: .*no client documents.*descriptionLimit/);
+  const json = await run(['explain', 'description/late-instruction', '--json']);
+  assert.equal(json.code, 0, json.stderr);
+  assert.equal(JSON.parse(json.stdout).id, 'description/late-instruction');
+  assert.match(JSON.parse(json.stdout).retired, /^retired after 0\.28\.1/);
+});

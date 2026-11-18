@@ -1,7 +1,6 @@
 {
  "snapshot": {
   "firecrawl-mcp-3.26.0.json": [
-   "info description/late-instruction",
    "info search/findable firecrawl_scrape",
    "info write/no-dry-run",
    "warn naming/vague-id"
@@ -34,7 +33,6 @@
    "info write/no-dry-run"
   ],
   "supabase__mcp-server-supabase-0.13.0.json": [
-   "info description/late-instruction get_publishable_keys",
    "info naming/shared-word",
    "info write/no-dry-run",
    "warn naming/vague-id"

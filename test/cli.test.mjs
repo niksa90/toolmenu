@@ -131,6 +131,15 @@ test('config file changes severities', async () => {
   assert.match(r.stdout, /ERROR  naming\/vague-id/);
 });
 
+test('a config that names a retired rule loads, and says the setting changes nothing', async () => {
+  const cwd = tempDir();
+  writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ rules: { 'description/late-instruction': 'error' } }));
+  const r = await run(['snapshot', '--no-write', ...raw('smells')], { cwd });
+  assert.notEqual(r.code, 2, r.stderr);
+  assert.match(r.stderr, /rules\["description\/late-instruction"\] changes nothing: retired after 0\.28\.1/);
+  assert.doesNotMatch(r.stdout, /late-instruction/);
+});
+
 test('github format prints workflow annotations', async () => {
   const r = await run(['snapshot', '--no-write', '--format', 'github', ...raw('shuffle')]);
   assert.match(r.stdout, /^::error title=toolmenu menu\/nondeterministic::/m);
