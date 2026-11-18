@@ -6,9 +6,10 @@
 
 - **`description/late-instruction` is retired.** It flagged instructions past
   character 280, a cut that no client documents: the number came from one private
-  client. Documented cuts are 16,384 and 4,096 (Claude Code) and 10,024 (Amazon Q CLI),
-  and `description/buried` checks those, or your own `descriptionLimit`. A config that
-  still names the rule is accepted and changes nothing.
+  client. Claude Code documents 16,384 and 4,096; `description/buried` checks those,
+  the `amazon-q` preset's 10,024 (reported, not documented), or your own
+  `descriptionLimit`. A config that still names the rule loads, with a line saying it
+  changes nothing; `toolmenu explain description/late-instruction` says why it went.
 
 ## 0.28.1
 

@@ -331,8 +331,13 @@ Keyword matching only in v1: deterministic, free and reproducible in CI.
 |---|---|---|
 | `description/buried` | warn | A sentence that reads as an instruction to the agent sits past the point where the client cuts descriptions, so the model never sees it. Read from the words, so marked unsure |
 | `description/cut` | info | Descriptions longer than the client sends, with where the cut falls. Nothing past it reads as an instruction, so it's a check, not a bug |
+| `description/late-instruction` | info | Only with the default cut: an instruction past 280 characters, where one real client cut, but inside the default cut. Split out of `description/cut` in 0.13; a setting for `description/cut` still applies to it unless it's set itself (`RULE_ALIASES`) |
 
 **Spec** (not observed failures: protocol requirements, kept minimal)
+
+> **Note, 2026-11-18 (after the freeze).** `description/late-instruction` is retired:
+> 280 was one private client's cut, and no client documents it. `description/buried`
+> checks the documented cuts, or the `descriptionLimit` a user sets.
 
 | id | sev | check |
 |---|---|---|
