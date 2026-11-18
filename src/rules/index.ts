@@ -1,6 +1,6 @@
 import type { Finding, Severity } from '../types.js';
 import { SEVERITY_RANK } from '../types.js';
-import { buried, cut, lateInstruction } from './description.js';
+import { buried, cut } from './description.js';
 import { connectionVariance, hostSpecific, nondeterministic, processVariance } from './determinism.js';
 import { authoredIds } from './ids.js';
 import { clientFeatures, clientLimit, clientName } from './clients.js';
@@ -43,7 +43,6 @@ export const MENU_RULES: Rule[] = [
   handleLifetime,
   buried,
   cut,
-  lateInstruction,
   noDryRun,
   unannotated,
   readOnlyMismatch,
@@ -75,11 +74,11 @@ export const MENU_RULES: Rule[] = [
 ];
 
 /**
- * Rules split out of an older one. A setting for the old id still applies to the
- * new one unless the new id is set itself: before 0.13, description/cut held
- * the late-instruction hint too, and `"description/cut": "off"` turned both off.
+ * Rules split out of an older one: a setting for the old id still applies to the new
+ * one unless the new id is set itself. None now: description/late-instruction, split
+ * out of description/cut in 0.13, was retired after 0.28.1.
  */
-export const RULE_ALIASES: Record<string, string> = { 'description/late-instruction': 'description/cut' };
+export const RULE_ALIASES: Record<string, string> = {};
 
 export interface RuleSettings {
   /** Per-rule severity override, or 'off'. */
