@@ -11,6 +11,11 @@
   `descriptionLimit`. A config that still names the rule loads, with a line saying it
   changes nothing; `toolmenu explain description/late-instruction` says why it went.
 
+### Repository
+
+- **The plugin runs toolmenu 0.28.1** (was 0.28.0): `snapshot` lists a server that
+  refuses `server/discover` but serves a menu over the 2025 handshake.
+
 ## 0.28.1
 
 ### Fixes
