@@ -150,6 +150,9 @@ An optional `toolmenu.config.json`:
 }
 ```
 
+`rules` sets a rule's severity, or `off`. An id that isn't a rule (a typo, a rule that
+was retired) changes nothing; toolmenu says so on stderr, with the closest ids, and runs.
+
 `offlineCheck` turns on `--offline-check` for every `snapshot` of a stdio server.
 
 `descriptionLimit` is where your client cuts tool descriptions: a number, or a client

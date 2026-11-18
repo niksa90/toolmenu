@@ -140,6 +140,16 @@ test('a config that names a retired rule loads, and says the setting changes not
   assert.doesNotMatch(r.stdout, /late-instruction/);
 });
 
+test('a config that names a rule that does not exist loads, says so and names the closest', async () => {
+  const cwd = tempDir();
+  writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ rules: { 'naming/vauge-id': 'error', 'naming/vague-id': 'error' } }));
+  const r = await run(['snapshot', '--no-write', ...raw('smells')], { cwd });
+  assert.equal(r.code, 1, r.stderr);
+  assert.match(r.stderr, /rules\["naming\/vauge-id"\] isn't a rule, so it changes nothing\. Did you mean naming\/vague-id\?/);
+  assert.doesNotMatch(r.stderr, /rules\["naming\/vague-id"\]/);
+  assert.match(r.stdout, /ERROR  naming\/vague-id/);
+});
+
 test('github format prints workflow annotations', async () => {
   const r = await run(['snapshot', '--no-write', '--format', 'github', ...raw('shuffle')]);
   assert.match(r.stdout, /^::error title=toolmenu menu\/nondeterministic::/m);

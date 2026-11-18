@@ -11,6 +11,10 @@
   `descriptionLimit`. A config that still names the rule loads, with a line saying it
   changes nothing; `toolmenu explain description/late-instruction` says why it went.
 
+- **A config rule id that isn't a rule is no longer ignored in silence.**
+  `"naming/vauge-id": "error"` used to change nothing without a word, so a CI gate on
+  it wasn't one. toolmenu now says so on stderr, with the closest ids, and runs.
+
 ### Repository
 
 - **The plugin runs toolmenu 0.28.1** (was 0.28.0): `snapshot` lists a server that
