@@ -625,3 +625,42 @@ test('instructions/unknown-name: quiet on what is listed, templates with operato
   const none = await run(['snapshot', '--no-write', '--json', ...raw('smells')]);
   assert.deepEqual(JSON.parse(none.stdout).findings.filter((f) => f.rule === 'instructions/unknown-name'), []);
 });
+
+test('spec/discover-refused: server/discover refused while the 2025 handshake serves the menu, checked against the SDK client', async () => {
+  const { Client, StreamableHTTPClientTransport } = await import('@modelcontextprotocol/client');
+  for (const status of [401, 403]) {
+    const server = await startRaw({ discoverStatus: status });
+    try {
+      // the official SDK client stops there when it tries 2026-07-28 first (versionNegotiation auto);
+      // on its default (legacy) it never sends server/discover and connects
+      const auto = new Client({ name: 'probe', version: '0' }, { versionNegotiation: { mode: 'auto' } });
+      await assert.rejects(auto.connect(new StreamableHTTPClientTransport(new URL(server.url))), new RegExp(`Version negotiation failed: the server (requires authorization|denied access) \\(HTTP ${status}\\)`));
+      const legacy = new Client({ name: 'probe', version: '0' });
+      await legacy.connect(new StreamableHTTPClientTransport(new URL(server.url)));
+      await legacy.close();
+      const r = await run(['snapshot', '--no-write', '--json', server.url, '--processes', '1']);
+      assert.equal(r.code, 0, r.stderr);
+      const findings = JSON.parse(r.stdout).findings;
+      const refused = findings.find((f) => f.rule === 'spec/discover-refused');
+      assert.equal(refused.severity, 'warn');
+      assert.match(refused.message, new RegExp(`^server/discover got HTTP ${status} while the 2025 handshake \\(initialize\\) served the menu without credentials\\.`));
+      assert.match(refused.message, /official TypeScript SDK client \(2\.4\) with versionNegotiation auto fails/);
+      assert.match(refused.message, /Its default \(legacy\) never asks/);
+      assert.match(refused.fix, /^Answer server\/discover as initialize is answered: without credentials/);
+      // said once: not spec/discover's 2025 note as well
+      assert.equal(findings.some((f) => f.rule === 'spec/discover'), false);
+    } finally {
+      await server.close();
+    }
+  }
+  // a 2025 server that answers server/discover as 2025 servers do, or a run on 2025 alone: quiet
+  const plain = await startRaw();
+  try {
+    for (const args of [[], ['--protocol', 'legacy']]) {
+      const findings = JSON.parse((await run(['snapshot', '--no-write', '--json', plain.url, '--processes', '1', ...args])).stdout).findings;
+      assert.equal(findings.some((f) => f.rule === 'spec/discover-refused'), false);
+    }
+  } finally {
+    await plain.close();
+  }
+});

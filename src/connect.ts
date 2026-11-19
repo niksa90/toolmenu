@@ -128,6 +128,8 @@ export interface Connection {
   era?: Era;
   server: { name?: string; version?: string };
   capabilities: Record<string, unknown>;
+  /** server/discover got this HTTP status (401 or 403) and the 2025 handshake served the menu (spec/discover-refused). */
+  discoverRefused?: number;
   /** The handshake's instructions, which clients may add to the model's context. */
   instructions?: string;
   /** True when the request carried credentials (an Authorization-style header). */
@@ -247,7 +249,9 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     ) {
       const refused = explain(error, trace, context);
       try {
-        return await connect({ ...target, protocol: 'legacy' }, options);
+        const fallback = await connect({ ...target, protocol: 'legacy' }, options);
+        fallback.discoverRefused = discover;
+        return fallback;
       } catch (retry) {
         const status = (retry as { status?: unknown }).status;
         throw status === 401 || status === 403 ? retry : refused;

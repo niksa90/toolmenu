@@ -13,6 +13,11 @@
   missing (old names, a login, a token, an API key) are left out. On 1,078 hosted
   servers listed without credentials, 16 get it, from 52 before those filters.
 
+- **`spec/discover-refused`** (warn): `server/discover` refused with 401 or 403 while the
+  2025 handshake serves the menu. 0.28.1 falls back past it; this says so to the server's
+  author, since a client that tries 2026-07-28 first stops there (the official SDK client
+  with `versionNegotiation: auto`). Dreamwork 1.10.0 and 3 of 733 hosted servers that
+  needed a login on 2026-11-09 do this.
 - **`diff/server-version-stale`** (info, with `--release`): the server reported the
   same `serverInfo.version` in both releases, so whatever tracks it by that version
   sees no change. `serbia-prices-mcp` 0.1.5 reports FastMCP's own 4.2.1.

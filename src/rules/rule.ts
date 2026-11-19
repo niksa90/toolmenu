@@ -20,6 +20,8 @@ export interface RuleContext {
   probes?: import('./determinism.js').Probe[];
   /** The stdio command is a container wrapper (docker run …): env vars may not reach the server. */
   wrapper?: boolean;
+  /** server/discover was refused with this HTTP status while the 2025 handshake worked (spec/discover-refused). */
+  discoverRefused?: number;
   /** The handshake's instructions (instructions/unknown-name). */
   instructions?: string;
   /** serverInfo as the handshake sent it, when there was one (snapshot): spec/server-info. */

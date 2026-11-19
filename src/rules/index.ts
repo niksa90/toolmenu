@@ -12,7 +12,7 @@ import { listSchema, listVariance, resourceReadSchema, resourceUnread, resourceU
 import { handleLifetime } from './handles.js';
 import { authVariance, cacheScopePublic } from './identities.js';
 import { route, sharedWord, vagueId } from './naming.js';
-import { cacheHints, deprecated, discover, duplicateName, extensionId, schema, serverInfo, taskRequired, toolName, toolsCapability } from './spec.js';
+import { cacheHints, deprecated, discover, discoverRefused, duplicateName, extensionId, schema, serverInfo, taskRequired, toolName, toolsCapability } from './spec.js';
 import { noDryRun, readOnlyMismatch, unannotated } from './write.js';
 import { gated } from './gated.js';
 import { xMcpHeader } from './headers.js';
@@ -52,6 +52,7 @@ export const MENU_RULES: Rule[] = [
   schemaRef,
   toolsCapability,
   discover,
+  discoverRefused,
   deprecated,
   cacheHints,
   authVariance,

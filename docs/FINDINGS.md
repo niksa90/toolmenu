@@ -1021,6 +1021,10 @@ tools without a login on 2026-11-09, 5 list now. Three (`api.getopservo.com`,
 `patlas.dev`, `clearlist.me`) refuse `server/discover` with 401 and serve their menu over
 the 2025 handshake, as Dreamwork does: 0.28.0 stopped at the 401. The other two answer
 `server/discover` with 400, which 0.28.0 already handled; they opened up between the runs.
+`spec/discover-refused` reports those three and Dreamwork. On the 1,078 open servers it
+fires on none: 15 of them answer a hand-written `server/discover` with 401 or 403, but
+none stops the SDK client the same way (it falls back on its own, or completes the
+2026-07-28 handshake), so toolmenu never needs its own fallback there.
 
 **What this doesn't show.** Listing without credentials: for most of the 16, a login may
 add the tools, and the finding says so. Whether a client gives the agent the instructions
