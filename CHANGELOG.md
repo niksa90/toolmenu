@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Repository
+
+- **The plugin runs toolmenu 0.29.0** (was 0.28.1): its snapshots report
+  `instructions/unknown-name` and `spec/discover-refused`, and no longer
+  `description/late-instruction`.
+
 ## 0.29.0
 
 ### New
