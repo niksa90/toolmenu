@@ -5,13 +5,13 @@
  * "log past time workout"). Ranked the way each client's search ranks (search.ts,
  * ownNamePlaces), over the tools of every server the scan listed.
  */
-import { profileOf } from './clients.js';
-import type { Routes } from './routes.js';
-import { agentMenu } from './apps.js';
-import { MIN_TOKENS, MIN_TOOLS, ownNamePlaces } from './rules/search.js';
-import { buildIndex, placeIn, placeOf, SEARCH_LIMIT } from './search.js';
-import type { ScanRow } from './scan.js';
-import { SEVERITY_RANK, type Finding, type MenuTool, type Severity } from './types.js';
+import { profileOf } from '../clients.js';
+import type { Routes } from '../routes.js';
+import { agentMenu } from '../apps.js';
+import { MIN_TOKENS, MIN_TOOLS, ownNamePlaces } from './search.js';
+import { buildIndex, placeIn, placeOf, SEARCH_LIMIT } from '../search.js';
+import type { ScanRow } from '../scan.js';
+import { SEVERITY_RANK, type Finding, type MenuTool, type Severity } from '../types.js';
 
 export const OUTRANKED = 'search/outranked';
 
@@ -43,18 +43,20 @@ export function crossServerFindings(rows: ScanRow[], clients: string[], routes: 
   if (servers.length < 2) return;
   const ignore = (settings.ignore ?? []).map(glob);
   const ignored = (tool: string) => ignore.some((re) => re.test(tool));
-  // Each pooled tool keeps its server and its own name apart: server names can hold "/"
-  // (@modelcontextprotocol/server-github), and tool names spaces.
+  // Each pooled tool keeps its own name and text, so ranking it among other servers' tools
+  // searches what its own server's ranking searched; an id tells it apart (server and tool
+  // names can both hold "/"). Codex's search adds the server's name (serverName), once.
   const pooled: MenuTool[] = [];
   const where = new Map<string, { server: string; tool: string }>();
   for (const { row, tools } of servers) {
     for (const t of tools) {
-      const name = `${row.name}/${t.name}`;
-      pooled.push({ ...t, name, serverName: row.name });
-      where.set(name, { server: row.name, tool: t.name });
+      const id = `#${pooled.length}`;
+      pooled.push({ ...t, id, serverName: row.name });
+      where.set(id, { server: row.name, tool: t.name });
     }
   }
-  const others = (ahead: string[], server: string) => ahead.filter((a) => where.get(a)?.server !== server);
+  const shown = (id: string) => `${where.get(id)!.server}/${where.get(id)!.tool}`;
+  const others = (ahead: string[], server: string) => ahead.filter((a) => where.get(a)?.server !== server).map(shown);
   // No --client: Claude's search, as search/findable ranks without one, and only for a pool
   // a client would defer (10+ tools and 10K+ tokens, or 30+). Clients given: those toolmenu
   // can rank, or none (OpenAI's search isn't documented, so it isn't guessed at).
@@ -84,7 +86,8 @@ export function crossServerFindings(rows: ScanRow[], clients: string[], routes: 
       const lost: { tool: string; line: string }[] = [];
       for (const p of alone.places) {
         if (p.place === undefined || p.place > limit) continue; // search/findable's, on its own
-        const together = placeOf(index, p.query, `${row.name}/${p.tool}`);
+        const id = [...where].find(([, w]) => w.server === row.name && w.tool === p.tool)![0];
+        const together = placeOf(index, p.query, id, limit);
         if (together.place !== undefined && together.place <= limit) continue;
         const ahead = others(together.ahead, row.name);
         if (!ahead.length) continue;
@@ -111,14 +114,16 @@ export function crossServerFindings(rows: ScanRow[], clients: string[], routes: 
       const ranked = index.rank(keyword);
       for (const want of expectation.must_match ?? []) {
         // "server/tool" names one tool; a bare name, that tool on every server that has it.
-        const names = pooled.filter((t) => t.name === want || where.get(t.name)!.tool === want).map((t) => t.name);
-        for (const name of names) {
-          const { server, tool } = where.get(name)!;
+        const ids = [...where].filter(([id, w]) => shown(id) === want || w.tool === want).map(([id]) => id);
+        for (const id of ids) {
+          const { server, tool } = where.get(id)!;
+          const name = shown(id);
           const row = servers.find((s) => s.row.name === server)!.row;
           if (ignored(tool)) continue;
-          const { place, ahead } = placeIn(ranked, name);
+          const { place, ahead: aheadIds } = placeIn(ranked, id, limit);
+          const ahead = aheadIds.map(shown);
           if (place !== undefined && place <= limit) continue;
-          const theirs = others(ahead, server);
+          const theirs = others(aheadIds, server);
           say(
             {
               tool,

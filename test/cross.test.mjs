@@ -83,3 +83,11 @@ test('search/outranked: a server name with "/", a route only its own tools outra
   assert.deepEqual(outranked(await run(['scan', '--format', 'json', '--client', 'openai', list], { cwd: quiet })), []);
   assert.deepEqual(outranked(await run(['scan', '--format', 'json', list], { cwd: quiet })), [], '9 small tools: under the size a client defers');
 });
+
+test('search/outranked: a server whose name matches the query doesn\'t lift its tools in Claude\'s search', async () => {
+  // workout-log's tools say nothing about workouts: only its name does, and Claude's search doesn't read it
+  const dir = tempDir();
+  const plain = ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => t(`get_${x}`, `Get thing ${x}.`));
+  const r = await run(['scan', '--format', 'json', '--client', 'claude-api-search', config(dir, [['aimyear', aimyear], ['workout-log', plain]])], { cwd: dir });
+  assert.deepEqual(outranked(r), []);
+});

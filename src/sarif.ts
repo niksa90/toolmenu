@@ -67,8 +67,9 @@ export function toolsOf(f: Finding): string[] {
  * findings on that tool it is (one rule can find two things about one tool). Not the
  * message: it carries counts that change between runs.
  */
-function fingerprint(rule: string, tool: string | undefined, nth: number): string {
-  return createHash('sha256').update(`${rule}\u0000${tool ?? ''}\u0000${nth}`).digest('hex').slice(0, 32);
+function fingerprint(rule: string, tool: string | undefined, nth: number, client?: string): string {
+  // A finding with no client hashes as it always has, so existing alerts keep their identity.
+  return createHash('sha256').update(`${rule}\u0000${tool ?? ''}\u0000${nth}${client ? `\u0000${client}` : ''}`).digest('hex').slice(0, 32);
 }
 
 export function toSarif(findings: Finding[], options: SarifOptions): string {
@@ -93,7 +94,7 @@ export function toSarif(findings: Finding[], options: SarifOptions): string {
     const tools = toolsOf(f);
     // One result per tool, so each alert sits on its own tool's line.
     return (tools.length ? tools : [undefined]).map((tool) => {
-      const key = `${f.rule}\u0000${tool ?? ''}`;
+      const key = `${f.rule}\u0000${tool ?? ''}\u0000${f.client ?? ''}`;
       const nth = seen.get(key) ?? 0;
       seen.set(key, nth + 1);
       const text = [f.message, ...(f.detail ?? []), ...(f.fix ? [`→ Next: ${f.fix}`] : [])].join('\n');
@@ -103,8 +104,8 @@ export function toSarif(findings: Finding[], options: SarifOptions): string {
         level: LEVEL[f.severity],
         message: { text: f.confidence === 'unsure' ? `${text}\n(unsure: a heuristic, from names and words)` : text },
         ...(artifact ? { locations: [{ physicalLocation: { artifactLocation: artifact, region: { startLine: (tool && lines.get(tool)) || 1 } } }] } : {}),
-        partialFingerprints: { 'toolmenuFinding/v1': fingerprint(f.rule, tool, nth) },
-        properties: { ...(tool ? { tool } : {}), ...(f.step !== undefined ? { step: f.step } : {}), ...(f.confidence ? { confidence: f.confidence } : {}) },
+        partialFingerprints: { 'toolmenuFinding/v1': fingerprint(f.rule, tool, nth, f.client) },
+        properties: { ...(tool ? { tool } : {}), ...(f.client ? { client: f.client } : {}), ...(f.step !== undefined ? { step: f.step } : {}), ...(f.confidence ? { confidence: f.confidence } : {}) },
       };
     });
   });

@@ -76,7 +76,8 @@ export function buildIndex(tools: MenuTool[], options: { descriptionChars?: numb
     const tf = new Map<string, number>();
     const text = searchText(t, options.descriptionChars, options.fields);
     for (const w of text) tf.set(w, (tf.get(w) ?? 0) + 1);
-    return { name: t.name, tf, length: text.length };
+    // A pooled tool (scan, across servers) is ranked by its own name and text, and told apart by its id.
+    return { name: typeof t.id === 'string' ? t.id : t.name, tf, length: text.length };
   });
   const avg = docs.reduce((n, d) => n + d.length, 0) / Math.max(docs.length, 1);
   const df = new Map<string, number>();
@@ -109,14 +110,15 @@ export function buildIndex(tools: MenuTool[], options: { descriptionChars?: numb
  * (only tools that score strictly higher are ahead of it), so a miss is never a
  * coin flip. Undefined when the query matches nothing in the tool.
  */
-export function placeOf(index: SearchIndex, query: string, tool: string): { place?: number; ahead: string[] } {
-  return placeIn(index.rank(query), tool);
+export function placeOf(index: SearchIndex, query: string, tool: string, limit = SEARCH_LIMIT): { place?: number; ahead: string[] } {
+  return placeIn(index.rank(query), tool, limit);
 }
 
 /** placeOf on a ranking already made: one ranking per query, however many tools are looked up in it. */
-export function placeIn(ranked: { tool: string; score: number }[], tool: string): { place?: number; ahead: string[] } {
+export function placeIn(ranked: { tool: string; score: number }[], tool: string, limit = SEARCH_LIMIT): { place?: number; ahead: string[] } {
   const mine = ranked.find((r) => r.tool === tool);
-  if (!mine) return { ahead: ranked.slice(0, SEARCH_LIMIT).map((r) => r.tool) };
+  // Not returned at all: what the client's search returns instead (its own result count).
+  if (!mine) return { ahead: ranked.slice(0, limit).map((r) => r.tool) };
   const ahead = ranked.filter((r) => r.score > mine.score + 1e-9).map((r) => r.tool);
   return { place: ahead.length + 1, ahead };
 }

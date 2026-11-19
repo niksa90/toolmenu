@@ -51,7 +51,7 @@ export function ownNamePlaces(
     const own = words_.filter((w) => !shared.has(w));
     const query = (own.some((w) => !VERBS.has(w)) ? own : words_).join(' ');
     if (!query || !words_.some((w) => !VERBS.has(w))) continue;
-    places.push({ tool: t.name, query, ...placeOf(index, query, t.name) });
+    places.push({ tool: t.name, query, ...placeOf(index, query, t.name, limit) });
   }
   return { limit, read, index, places };
 }

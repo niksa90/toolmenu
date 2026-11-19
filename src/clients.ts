@@ -267,7 +267,8 @@ export function clientCost(name: string, menu: Menu): ClientCost | undefined {
 export function clientList(value: string | string[] | undefined): string[] {
   if (value === undefined) return [];
   if (!Array.isArray(value) && typeof value !== 'string') throw new Error('client must be a name, several separated by commas, or a list of them');
-  const names = [...new Set((Array.isArray(value) ? value : value.split(',')).map((c) => (typeof c === 'string' ? c.trim() : '')).filter(Boolean))];
+  if (Array.isArray(value) && !value.every((c) => typeof c === 'string')) throw new Error('client must be a name, several separated by commas, or a list of names');
+  const names = [...new Set((Array.isArray(value) ? value : value.split(',')).map((c) => c.trim()).filter(Boolean))];
   if (!names.length) throw new Error(`client is empty: give one of ${CLIENT_NAMES.join(', ')}`);
   const unknown = names.find((c) => !Object.hasOwn(CLIENTS, c));
   if (unknown) throw new Error(`client must be one of ${CLIENT_NAMES.join(', ')}, or several separated by commas (not "${unknown}")`);

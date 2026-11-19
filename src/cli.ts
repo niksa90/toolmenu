@@ -20,7 +20,7 @@ import { patiently, tooMany } from './failures.js';
 import { buildMenu } from './menu.js';
 import { existsSync } from 'node:fs';
 import { loadRoutes } from './routes.js';
-import { crossServerFindings } from './cross.js';
+import { crossServerFindings } from './rules/index.js';
 import { snapshot } from './snapshot.js';
 import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded, type Identity } from './probe.js';
 import { autoScenario, loadValuesFile, parseAssumeReadOnly, parseValueFlag, scenarioYaml, type GivenValue } from './auto.js';

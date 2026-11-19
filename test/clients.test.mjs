@@ -238,6 +238,11 @@ test('--client a,b: each client\'s own findings, labelled; repeats left out; the
   const bad = await snap(['--client', 'codex,cursor']);
   assert.equal(bad.code, 2);
   assert.match(bad.stderr, /--client must be one of .*or several separated by commas \(not "cursor"\)/);
+  const notName = tempDir();
+  writeFileSync(join(notName, 'toolmenu.config.json'), JSON.stringify({ client: ['codex', 5] }));
+  const badConfig = await run(['snapshot', '--no-write', '--', process.execPath, server], { cwd: notName });
+  assert.equal(badConfig.code, 2);
+  assert.match(badConfig.stderr, /client must be a name, several separated by commas, or a list of names/);
   const empty = await snap(['--client', ',']);
   assert.equal(empty.code, 2);
   assert.match(empty.stderr, /--client is empty/);
@@ -246,4 +251,41 @@ test('--client a,b: each client\'s own findings, labelled; repeats left out; the
   writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ client: 'claude-api-search, codex,' }));
   const viaConfig = JSON.parse((await run(['snapshot', '--no-write', '--json', '--', process.execPath, server], { cwd: dir })).stdout);
   assert.equal(viaConfig.findings.filter((f) => f.rule === 'naming/client-name').length, 2);
+});
+
+test('search/client-difference through the CLI: snapshot --client claude-api-search,codex on a fixture server', async () => {
+  const obj = { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] };
+  const tools = [
+    { name: 'get_report', description: 'Gets the weekly summary.', inputSchema: obj },
+    ...['alpha', 'beta', 'gamma', 'delta', 'omega', 'sigma'].map((w) => ({ name: `get_report_${w}`, description: `Gets the ${w} report: report, report, report.`, inputSchema: obj })),
+  ];
+  const fixture = ['--env', `MENU=${JSON.stringify(tools)}`, '--', process.execPath, join(FIXTURES, 'menu-server.mjs')];
+  const r = await run(['snapshot', '--no-write', '--json', '--client', 'claude-api-search,codex', ...fixture]);
+  assert.equal(r.code, 0, r.stderr);
+  const out = JSON.parse(r.stdout);
+  const diff = out.findings.filter((f) => f.rule === 'search/client-difference');
+  assert.equal(diff.length, 1);
+  assert.equal(diff[0].severity, 'info');
+  assert.equal(diff[0].tool, 'get_report');
+  assert.match(diff[0].detail[0], /Claude's tool search \(Claude API\): 7th \(top 5: missed\) · Codex: 7th \(top 8: found\)/);
+  assert.match(diff[0].fix, /^Put the words of each tool's name early in its own description/);
+  // search/findable: Claude's finding, labelled; none for Codex, whose 8 reach it
+  assert.deepEqual(out.findings.filter((f) => f.rule === 'search/findable').map((f) => f.client), ['claude-api-search']);
+  const text = await run(['snapshot', '--no-write', '--client', 'claude-api-search,codex', ...fixture]);
+  assert.match(text.stdout, /INFO   search\/client-difference · unsure/);
+  assert.match(text.stdout, /→ Next: Put the words of each tool's name early/);
+  // one client: quiet
+  const one = JSON.parse((await run(['snapshot', '--no-write', '--json', '--client', 'codex', ...fixture])).stdout);
+  assert.deepEqual(one.findings.filter((f) => f.rule === 'search/client-difference'), []);
+});
+
+test('--client a,b in SARIF and JUnit: the same rule and tool for two clients are two results, told apart by client', async () => {
+  const sarif = JSON.parse((await snap(['--format', 'sarif', '--client', 'claude-api-search,codex'])).stdout);
+  // naming/client-name here is about two tools, so it's one result per client, with no single tool
+  const named = sarif.runs[0].results.filter((r) => r.ruleId === 'naming/client-name');
+  assert.deepEqual(named.map((r) => r.properties.client).sort(), ['claude-api-search', 'codex']);
+  assert.notEqual(named[0].partialFingerprints['toolmenuFinding/v1'], named[1].partialFingerprints['toolmenuFinding/v1']);
+  const junit = (await snap(['--format', 'junit', '--client', 'claude-api-search,codex'])).stdout;
+  assert.match(junit, /naming\/client-name" name="\(menu\) \(claude-api-search\)"/);
+  assert.match(junit, /naming\/client-name" name="\(menu\) \(codex\)"/);
 });
