@@ -21,11 +21,26 @@ const STOP = new Set([
 const K1 = 1.2;
 const B = 0.75;
 
-/** The words a search sees in a tool: its name, description, and every argument's name and description. */
-export function searchText(tool: MenuTool, descriptionChars?: number): string[] {
+/**
+ * Which parts of a tool a client's search reads. `claude`: name, description, every
+ * argument's name and description (Claude's tool search docs). `codex`: name, title,
+ * description and the top-level argument names, without their descriptions (Codex's
+ * build_mcp_search_text; the server's name and description go into every tool's text
+ * too, which changes no ranking within one server's menu).
+ */
+export type SearchFields = 'claude' | 'codex';
+
+/** The words a search sees in a tool. */
+export function searchText(tool: MenuTool, descriptionChars?: number, fields: SearchFields = 'claude'): string[] {
   // A client whose search reads only the start of a description (Claude Code: the first 4,096 characters).
   const description = tool.description ?? '';
   const parts: string[] = [tool.name, descriptionChars !== undefined ? description.slice(0, descriptionChars) : description];
+  if (fields === 'codex') {
+    if (typeof tool.title === 'string') parts.push(tool.title);
+    const props = (tool.inputSchema as { properties?: Record<string, unknown> } | undefined)?.properties;
+    parts.push(...Object.keys(props ?? {}));
+    return terms(parts.join(' '));
+  }
   const walk = (schema: unknown, depth: number) => {
     if (!schema || typeof schema !== 'object' || depth > 6) return;
     const s = schema as { properties?: Record<string, unknown>; items?: unknown; description?: unknown };
@@ -53,10 +68,10 @@ export interface SearchIndex {
   rank(query: string): { tool: string; score: number }[];
 }
 
-export function buildIndex(tools: MenuTool[], options: { descriptionChars?: number } = {}): SearchIndex {
+export function buildIndex(tools: MenuTool[], options: { descriptionChars?: number; fields?: SearchFields } = {}): SearchIndex {
   const docs = tools.map((t) => {
     const tf = new Map<string, number>();
-    const text = searchText(t, options.descriptionChars);
+    const text = searchText(t, options.descriptionChars, options.fields);
     for (const w of text) tf.set(w, (tf.get(w) ?? 0) + 1);
     return { name: t.name, tf, length: text.length };
   });

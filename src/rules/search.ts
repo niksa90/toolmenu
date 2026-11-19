@@ -30,7 +30,12 @@ export const findable: Rule = {
       if (!profile.defers || profile.defers.value === 'none' || tools.length < 2) return [];
       if (!profile.searchLimit && ctx.client !== 'claude-code') return [];
     } else if (tools.length < MIN_TOOLS || ((ctx.menu.totalTokens ?? 0) < MIN_TOKENS && tools.length < 30)) return [];
-    const index = buildIndex(tools, { descriptionChars: profile?.searchReads?.value });
+    // The client's own result count and fields where its docs or source give them (Codex: 8, no
+    // argument descriptions); Claude's otherwise.
+    const limit = profile?.searchLimit?.value ?? SEARCH_LIMIT;
+    const codex = ctx.client === 'codex';
+    const index = buildIndex(tools, { descriptionChars: profile?.searchReads?.value, fields: codex ? 'codex' : 'claude' });
+    const read = codex ? 'name, title, description and argument names' : 'name, description, argument names and descriptions';
     const findings: RuleFinding[] = [];
 
     // The words of a name that say something: not a prefix most tools share (firecrawl_, API-).
@@ -44,14 +49,14 @@ export const findable: Rule = {
       const query = (own.some((w) => !VERBS.has(w)) ? own : all).join(' ');
       if (!query || !all.some((w) => !VERBS.has(w))) continue;
       const { place, ahead } = placeOf(index, query, t.name);
-      if (place === undefined || place > SEARCH_LIMIT) missed.push({ tool: t.name, query, place, ahead });
+      if (place === undefined || place > limit) missed.push({ tool: t.name, query, place, ahead });
     }
     if (missed.length) {
       const first = missed[0];
       findings.push({
         ...(missed.length === 1 ? { tool: first.tool } : {}),
         confidence: 'unsure',
-        message: `${count(missed.length, 'tool')} of ${num(tools.length)} ${missed.length === 1 ? "doesn't" : "don't"} come up in the top ${SEARCH_LIMIT} when searched for by ${missed.length === 1 ? 'its' : 'their'} own name. Clients that defer a menu this size let the model search it, and a search returns ${SEARCH_LIMIT} tools unless the model asks for more, so an agent looking for ${missed.length === 1 ? 'it' : 'them'} can be shown other tools instead. Ranked the way a BM25 tool search ranks them (name, description, argument names and descriptions${profile?.searchReads ? `, the description up to character ${num(profile.searchReads.value)}, all ${profile.label}'s search reads` : ''}); a client's own search can rank a little differently.`,
+        message: `${count(missed.length, 'tool')} of ${num(tools.length)} ${missed.length === 1 ? "doesn't" : "don't"} come up in the top ${limit} when searched for by ${missed.length === 1 ? 'its' : 'their'} own name. Clients that defer a menu this size let the model search it, and a search returns ${limit} tools unless the model asks for more, so an agent looking for ${missed.length === 1 ? 'it' : 'them'} can be shown other tools instead. Ranked the way a BM25 tool search ranks them (${read}${profile?.searchReads ? `, the description up to character ${num(profile.searchReads.value)}, all ${profile.label}'s search reads` : ''}); a client's own search can rank a little differently.`,
         detail: missed.slice(0, 12).map(
           (m) =>
             `${m.tool}: “${m.query}” puts it ${m.place === undefined ? 'nowhere' : `at ${m.place}`}, behind ${names(m.ahead.slice(0, 4), 4)}${m.ahead.length > 4 ? ` and ${num(m.ahead.length - 4)} more` : ''}`,
@@ -66,13 +71,13 @@ export const findable: Rule = {
       const ranked = present.length ? index.rank(keyword) : [];
       const lost = present
         .map((n) => ({ n, ...placeIn(ranked, n) }))
-        .filter((r) => r.place === undefined || r.place > SEARCH_LIMIT);
+        .filter((r) => r.place === undefined || r.place > limit);
       for (const r of lost) {
         findings.push({
           tool: r.n,
           severity: 'warn',
           confidence: 'unsure',
-          message: `routes.yml says “${keyword}” should reach ${r.n}, but a tool search for “${keyword}” ${r.place === undefined ? "doesn't return it at all" : `puts it at ${r.place}`}, past the ${SEARCH_LIMIT} a search returns by default. A client that defers tools may never show it.`,
+          message: `routes.yml says “${keyword}” should reach ${r.n}, but a tool search for “${keyword}” ${r.place === undefined ? "doesn't return it at all" : `puts it at ${r.place}`}, past the ${limit} a search returns by default. A client that defers tools may never show it.`,
           detail: [`ahead of it: ${names(r.ahead.slice(0, 5), 5)}`, `${r.n}: ${clip(tools.find((t) => t.name === r.n)?.description ?? '', 120)}`],
           fix: `Put the words of “${keyword}” in ${r.n}'s name or the start of its description, or take them out of the tools ahead of it.`,
         });

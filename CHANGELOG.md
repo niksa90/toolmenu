@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### New
+
+- **`--client codex` ranks tools for `search/findable`.** Codex's source (commit
+  `3869f39`, read 2026-11-19) defers every MCP tool when the model supports tool search,
+  ranks them with BM25 over the name, `title`, description and top-level argument names
+  (not their descriptions), and returns 8 by default. `search/findable` now uses each
+  client's own result count, 5 for Claude, 8 for Codex, and Codex's fields for Codex.
+
 ### Repository
 
 - **The plugin runs toolmenu 0.29.0** (was 0.28.1): its snapshots report

@@ -89,6 +89,23 @@ test('search/findable: runs at any size for a client that defers; not for a clie
   assert.equal(lint('openai').length, 0);
 });
 
+test('search/findable for Codex: its 8 results, not Claude\'s 5, and its fields in the message (Codex source, 3869f39)', () => {
+  // "get report", get_report's own name, puts it behind every get_report_<word>: 7th with six of them, 10th with nine.
+  const menu = (others) => [
+    tool('get_report', [], { description: 'Gets the weekly summary.' }),
+    ...['alpha', 'beta', 'gamma', 'delta', 'omega', 'sigma', 'kappa', 'lambda', 'theta'].slice(0, others).map((w) => tool(`get_report_${w}`, [], { description: `Gets the ${w} report: report, report, report.` })),
+  ];
+  const lint = (tools, client) => runRules(MENU_RULES, { menu: menuOf(tools), pages: [], capabilities: { tools: {} }, usedAuth: false, protocolVersion: '2026-07-28', era: 'modern', client }).filter((f) => f.rule === 'search/findable');
+  assert.equal(lint(menu(6), 'claude-api-search').length, 1, '7th: past Claude\'s 5');
+  assert.deepEqual(lint(menu(6), 'codex'), [], '7th: inside Codex\'s 8');
+  const codex = lint(menu(9), 'codex');
+  assert.equal(codex.length, 1, '10th: past Codex\'s 8');
+  assert.match(codex[0].message, /doesn't come up in the top 8 when searched for by its own name/);
+  assert.match(codex[0].message, /a search returns 8 tools unless the model asks for more/);
+  assert.match(codex[0].message, /\(name, title, description and argument names\)/);
+  assert.match(codex[0].detail[0], /^get_report: “get report” puts it at 10/);
+});
+
 test('--client: the description cut follows the profile; a client with no documented cut isn\'t held to Claude Code\'s', async () => {
   const long = `${'Lists the records. '.repeat(900)}Never guess a record ID.`; // past 16,384
   const tools = [tool('get_record', ['record_id'], { description: long })];

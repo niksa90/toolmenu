@@ -1,8 +1,9 @@
 # Checking for one client (`--client`)
 
 What an agent sees depends on its client. `snapshot --client <name>` (or `"client"` in the
-config) checks the menu against what that client's own docs say, and every value
-toolmenu uses names its source and the date it was read (`src/clients.ts`). What a
+config) checks the menu against what that client's own docs say (or its source, where it
+publishes it: Codex), and every value toolmenu uses names its source and the date it was
+read (`src/clients.ts`). What a
 client doesn't document is left out, not guessed.
 
 | `--client` | Up front | Search | Description cut | Names |
@@ -10,7 +11,7 @@ client doesn't document is left out, not guessed.
 | `claude-code` | tool names; full definitions for tools marked `_meta["anthropic/alwaysLoad"]` | reads a description up to 4,096 characters | 16,384 through search, 4,096 up front | Claude API's |
 | `claude-api-search` | nothing from tools you defer (keep the 3–5 used most loaded) | name, description, argument names and descriptions; 5 results by default | none documented | `^[a-zA-Z0-9_-]{1,128}$` |
 | `openai` | each deferred function's name and description (its schema loads on demand); a deferred MCP server shows only its own name and description | how many results, and which fields, isn't documented, so `search/findable` doesn't run | none documented | `^[a-zA-Z0-9_-]+$`, up to 128 |
-| `codex` | not documented | not documented | none documented | OpenAI's (it sends tools to the Responses API) |
+| `codex` | every MCP tool is deferred when the model supports tool search (from Codex's source, `3869f39`) | BM25 over name, `title`, description, top-level argument names (no argument descriptions) and the server's name and description; 8 results by default | none documented | OpenAI's (it sends tools to the Responses API) |
 | `antigravity` | each tool's name; the agent reads a tool's schema before calling it, unless the user marks it `"eager"` | not a search: the agent reads the schema file | none documented | not documented |
 | `gemini-cli` | not documented | not documented | none documented | rewrites: characters outside letters, digits, `_ - . :` become `_`, names over 63 characters are cut in the middle |
 | `gemini-api` | not documented | not documented | none documented | letters, digits, `_ - . :`, up to 128 |
