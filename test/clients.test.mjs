@@ -201,3 +201,45 @@ test('--client antigravity: tool names up front, a tool\'s schema when the agent
   assert.match(c.basis, /Antigravity lists each MCP tool's name and loads a tool's schema when the agent reads it/);
   assert.equal(clientCost('vscode', m), undefined, 'VS Code\'s docs don\'t say it defers: no figure');
 });
+
+test('search/client-difference: a tool Codex\'s 8 find and Claude\'s 5 miss, said once, only with two ranking clients', () => {
+  const tools = [
+    tool('get_report', [], { description: 'Gets the weekly summary.' }),
+    ...['alpha', 'beta', 'gamma', 'delta', 'omega', 'sigma'].map((w) => tool(`get_report_${w}`, [], { description: `Gets the ${w} report: report, report, report.` })),
+  ];
+  const lint = (clients) => runRules(MENU_RULES, { menu: menuOf(tools), pages: [], capabilities: { tools: {} }, usedAuth: false, protocolVersion: '2026-07-28', era: 'modern', client: clients[0], clients }).filter((f) => f.rule === 'search/client-difference');
+  const both = lint(['claude-api-search', 'codex']);
+  assert.equal(both.length, 1);
+  assert.equal(both[0].tool, 'get_report');
+  assert.equal(both[0].severity, 'info');
+  assert.equal(both[0].confidence, 'unsure');
+  assert.match(both[0].message, /^1 tool is found by its own name in one client's tool search and missed in another's/);
+  assert.match(both[0].message, /Claude's tool search \(Claude API\): top 5, Codex: top 8/);
+  assert.match(both[0].detail[0], /^get_report \(“get report”\): Claude's tool search \(Claude API\): 7th \(top 5: missed\) · Codex: 7th \(top 8: found\)$/);
+  assert.match(both[0].fix, /argument descriptions/);
+  // one client, or a client toolmenu can't rank (OpenAI's search isn't documented): nothing to compare
+  assert.deepEqual(lint(['codex']), []);
+  assert.deepEqual(lint(['codex', 'openai']), []);
+});
+
+test('--client a,b: each client\'s own findings, labelled; repeats left out; the config takes a list too', async () => {
+  const out = await json(['--client', 'claude-api-search,codex']);
+  const names = out.findings.filter((f) => f.rule === 'naming/client-name');
+  assert.deepEqual(names.map((f) => f.client), ['claude-api-search', 'codex']);
+  assert.match(names[0].message, /^For Claude's tool search \(Claude API\): /);
+  assert.match(names[1].message, /^For Codex: .*OpenAI's Responses API, which Codex sends tools to/);
+  // a rule that doesn't depend on the client is said once, unlabelled
+  assert.equal(out.findings.filter((f) => f.rule === 'spec/tool-name').length, 1);
+  assert.equal(out.findings.find((f) => f.rule === 'spec/tool-name').client, undefined);
+  // the same client twice is one client
+  const once = await json(['--client', 'codex,codex']);
+  assert.equal(once.findings.filter((f) => f.rule === 'naming/client-name').length, 1);
+  assert.doesNotMatch(once.findings.find((f) => f.rule === 'naming/client-name').message, /^For /);
+  const bad = await snap(['--client', 'codex,cursor']);
+  assert.equal(bad.code, 2);
+  assert.match(bad.stderr, /--client must be one of .*or several separated by commas/);
+  const dir = tempDir();
+  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ client: ['claude-api-search', 'codex'] }));
+  const viaConfig = JSON.parse((await run(['snapshot', '--no-write', '--json', '--', process.execPath, server], { cwd: dir })).stdout);
+  assert.equal(viaConfig.findings.filter((f) => f.rule === 'naming/client-name').length, 2);
+});

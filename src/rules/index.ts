@@ -17,7 +17,7 @@ import { noDryRun, readOnlyMismatch, unannotated } from './write.js';
 import { gated } from './gated.js';
 import { xMcpHeader } from './headers.js';
 import { schemaRef } from './refs.js';
-import { findable } from './search.js';
+import { clientDifference, findable } from './search.js';
 import { appsAppOnlyListed, appsLegacyKey, appsResource, appsVisibility } from './apps.js';
 import { agentMenu } from '../apps.js';
 import { serverCard } from './card.js';
@@ -40,6 +40,7 @@ export const MENU_RULES: Rule[] = [
   clientLimit,
   clientFeatures,
   findable,
+  clientDifference,
   authoredIds,
   handleLifetime,
   buried,

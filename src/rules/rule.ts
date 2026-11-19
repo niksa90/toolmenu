@@ -42,6 +42,8 @@ export interface RuleContext {
   plain?: import('./capabilities.js').PlainMenu;
   /** --client: the client profile the menu is checked for (src/clients.ts). */
   client?: string;
+  /** --client a,b: every client the run checks for, the first being `client` (search/client-difference). */
+  clients?: string[];
   /** Where clients are assumed to cut tool descriptions (description/buried). */
   descriptionLimit?: number | string;
   /** Tools (names or globs) the client sends uncut, so description/buried skips them. */

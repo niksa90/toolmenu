@@ -32,6 +32,18 @@ request after 60 s, startup and `tools/list` included). Not here, because their 
 don't state it: Cursor's tool limit (forum posts say 40), Windsurf's (100 in older docs,
 not in the current page), ChatGPT's. A value comes in when the client documents it.
 
+## Several clients at once
+
+`--client claude-api-search,codex` (or `"client": ["claude-api-search", "codex"]` in the
+config) checks for each. The first is the main one: its description cut and its cost line.
+The rules that depend on the client (`search/findable`, `naming/client-name`,
+`menu/client-limit`, `menu/client-features`, `description/buried`, `description/cut`) run
+for each, and their findings start "For Codex: …" (and carry `client` in `--json`); one
+that says the same for two clients is said once. With two or more clients whose search
+toolmenu can rank, `search/client-difference` lists the tools one finds by their own name
+and another misses: Sentry 0.49.0's `find_organizations` is 23rd for "find organizations"
+in Claude's search (top 5) and 7th in Codex's (top 8).
+
 The snapshot adds a line such as `as Claude Code: up front ~524 tokens · on demand ~344
 per tool a search loads (largest: update_contacts, ~2,093)`, and `--json` a `client`
 object. With a client that defers tools, `search/findable` runs at any menu size.

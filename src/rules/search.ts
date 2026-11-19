@@ -1,5 +1,6 @@
 import { profileOf } from '../clients.js';
-import { buildIndex, placeIn, placeOf, SEARCH_LIMIT } from '../search.js';
+import { buildIndex, placeIn, placeOf, SEARCH_LIMIT, type SearchIndex } from '../search.js';
+import type { MenuTool } from '../types.js';
 import { commonWords, VERBS, words } from '../words.js';
 import { clip, count, kept, names, num, type Rule, type RuleFinding } from './rule.js';
 
@@ -16,6 +17,45 @@ import { clip, count, kept, names, num, type Rule, type RuleFinding } from './ru
 const MIN_TOOLS = 10;
 const MIN_TOKENS = 10_000;
 
+/** Where each tool lands when searched for by the words of its own name, the way a client's search ranks. */
+export interface OwnNamePlace {
+  tool: string;
+  query: string;
+  place?: number;
+  ahead: string[];
+}
+
+/**
+ * Each tool searched for by its own name, ranked the way a client's search ranks: its
+ * own result count and fields where its docs or source give them (Codex: 8, no argument
+ * descriptions), Claude's otherwise.
+ */
+export function ownNamePlaces(
+  checked: MenuTool[],
+  all: MenuTool[],
+  client: string | undefined,
+  descriptionChars?: number,
+): { limit: number; read: string; index: SearchIndex; places: OwnNamePlace[] } {
+  const profile = profileOf(client);
+  const limit = profile?.searchLimit?.value ?? SEARCH_LIMIT;
+  const codex = client === 'codex';
+  const index = buildIndex(all, { descriptionChars, fields: codex ? 'codex' : 'claude' });
+  const read = codex ? 'name, title, description and argument names' : 'name, description, argument names and descriptions';
+  // The words of a name that say something: not a prefix most tools share (firecrawl_, API-).
+  const shared = commonWords(all.map((t) => t.name));
+  const places: OwnNamePlace[] = [];
+  for (const t of checked) {
+    // A bare verb ("create" from ads_create) isn't how an agent searches: then the
+    // prefix stays, since it's the object the tool acts on.
+    const words_ = words(t.name);
+    const own = words_.filter((w) => !shared.has(w));
+    const query = (own.some((w) => !VERBS.has(w)) ? own : words_).join(' ');
+    if (!query || !words_.some((w) => !VERBS.has(w))) continue;
+    places.push({ tool: t.name, query, ...placeOf(index, query, t.name) });
+  }
+  return { limit, read, index, places };
+}
+
 export const findable: Rule = {
   id: 'search/findable',
   scope: 'agent',
@@ -30,27 +70,9 @@ export const findable: Rule = {
       if (!profile.defers || profile.defers.value === 'none' || tools.length < 2) return [];
       if (!profile.searchLimit && ctx.client !== 'claude-code') return [];
     } else if (tools.length < MIN_TOOLS || ((ctx.menu.totalTokens ?? 0) < MIN_TOKENS && tools.length < 30)) return [];
-    // The client's own result count and fields where its docs or source give them (Codex: 8, no
-    // argument descriptions); Claude's otherwise.
-    const limit = profile?.searchLimit?.value ?? SEARCH_LIMIT;
-    const codex = ctx.client === 'codex';
-    const index = buildIndex(tools, { descriptionChars: profile?.searchReads?.value, fields: codex ? 'codex' : 'claude' });
-    const read = codex ? 'name, title, description and argument names' : 'name, description, argument names and descriptions';
+    const { limit, read, index, places } = ownNamePlaces(kept(tools, ctx), tools, ctx.client, profile?.searchReads?.value);
+    const missed = places.filter((p) => p.place === undefined || p.place > limit);
     const findings: RuleFinding[] = [];
-
-    // The words of a name that say something: not a prefix most tools share (firecrawl_, API-).
-    const shared = commonWords(tools.map((t) => t.name));
-    const missed: { tool: string; query: string; place?: number; ahead: string[] }[] = [];
-    for (const t of kept(tools, ctx)) {
-      // A bare verb ("create" from ads_create) isn't how an agent searches: then the
-      // prefix stays, since it's the object the tool acts on.
-      const all = words(t.name);
-      const own = all.filter((w) => !shared.has(w));
-      const query = (own.some((w) => !VERBS.has(w)) ? own : all).join(' ');
-      if (!query || !all.some((w) => !VERBS.has(w))) continue;
-      const { place, ahead } = placeOf(index, query, t.name);
-      if (place === undefined || place > limit) missed.push({ tool: t.name, query, place, ahead });
-    }
     if (missed.length) {
       const first = missed[0];
       findings.push({
@@ -86,3 +108,53 @@ export const findable: Rule = {
     return findings;
   },
 };
+
+/** A client whose search toolmenu can rank: it defers tools, and its result count is known. */
+function ranks(client: string): boolean {
+  const profile = profileOf(client);
+  return Boolean(profile?.defers && profile.defers.value !== 'none' && (profile.searchLimit || client === 'claude-code'));
+}
+
+export const clientDifference: Rule = {
+  id: 'search/client-difference',
+  scope: 'agent',
+  severity: 'info',
+  summary: "A tool one client's search finds by its own name and another's misses",
+  run(ctx) {
+    const clients = (ctx.clients ?? []).filter(ranks);
+    if (clients.length < 2 || ctx.menu.tools.length < 2) return [];
+    const tools = ctx.menu.tools;
+    const runs = clients.map((client) => {
+      const { limit, places } = ownNamePlaces(kept(tools, ctx), tools, client, profileOf(client)?.searchReads?.value);
+      return { client, label: profileOf(client)!.label, limit, at: new Map(places.map((p) => [p.tool, p])) };
+    });
+    const differ: { tool: string; query: string; line: string }[] = [];
+    for (const [tool, first] of runs[0].at) {
+      const verdicts = runs.map((r) => {
+        const p = r.at.get(tool);
+        const found = p?.place !== undefined && p.place <= r.limit;
+        return { r, place: p?.place, found };
+      });
+      if (verdicts.every((v) => v.found) || verdicts.every((v) => !v.found)) continue;
+      const line = verdicts.map((v) => `${v.r.label}: ${v.place === undefined ? 'not returned' : `${v.place}${ordinal(v.place)}`} (top ${v.r.limit}: ${v.found ? 'found' : 'missed'})`).join(' · ');
+      differ.push({ tool, query: first.query, line });
+    }
+    if (!differ.length) return [];
+    const one = differ.length === 1;
+    return [
+      {
+        ...(one ? { tool: differ[0].tool } : {}),
+        confidence: 'unsure',
+        message: `${count(differ.length, 'tool')} ${one ? 'is' : 'are'} found by ${one ? 'its' : 'their'} own name in one client's tool search and missed in another's: the clients read different parts of a tool and return a different number of results (${runs.map((r) => `${r.label}: top ${r.limit}`).join(', ')}). An agent in the client that misses ${one ? 'it' : 'them'} can be shown other tools instead.`,
+        detail: differ.slice(0, 12).map((d) => `${d.tool} (“${d.query}”): ${d.line}`).concat(differ.length > 12 ? [`and ${num(differ.length - 12)} more`] : []),
+        fix: "Put the words of each tool's name early in its own description, so every client's search ranks it first: a search that reads argument descriptions (Claude's) can be outranked by words many tools share in their arguments.",
+      },
+    ];
+  },
+};
+
+function ordinal(n: number): string {
+  const t = n % 100;
+  if (t >= 11 && t <= 13) return 'th';
+  return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
+}

@@ -38,8 +38,8 @@ export interface Config {
   readResources?: boolean;
   /** snapshot: with readResources, read at most this many. --max-reads wins. */
   maxReads?: number;
-  /** snapshot: the client to check the menu for (claude-code, claude-api-search, openai). --client wins. */
-  client?: string;
+  /** snapshot: the client or clients to check the menu for (claude-code, codex, …): a name, "a,b", or a list. --client wins. */
+  client?: string | string[];
   /** snapshot (stdio): also list the menu with the network cut off. --offline-check turns it on too. */
   offlineCheck?: boolean;
   /** Server processes (stdio) or connections (HTTP) to compare, the main one included (default 2). */
@@ -97,8 +97,11 @@ export async function loadConfig(path?: string): Promise<Config> {
   if (config.readResources !== undefined && typeof config.readResources !== 'boolean') throw new Error(`${file}: readResources must be true or false`);
   if (config.maxReads !== undefined && !(Number.isInteger(config.maxReads) && config.maxReads >= 1)) throw new Error(`${file}: maxReads must be a whole number, 1 or more`);
   if (config.offlineCheck !== undefined && typeof config.offlineCheck !== 'boolean') throw new Error(`${file}: offlineCheck must be true or false`);
-  if (config.client !== undefined && !(typeof config.client === 'string' && Object.hasOwn(CLIENTS, config.client))) {
-    throw new Error(`${file}: client must be one of ${Object.keys(CLIENTS).join(', ')}`);
+  if (config.client !== undefined) {
+    const names = typeof config.client === 'string' ? config.client.split(',').map((c) => c.trim()) : config.client;
+    if (!Array.isArray(names) || !names.length || !names.every((c) => typeof c === 'string' && Object.hasOwn(CLIENTS, c))) {
+      throw new Error(`${file}: client must be one of ${Object.keys(CLIENTS).join(', ')}, several separated by commas, or a list of them`);
+    }
   }
   if (config.identities !== undefined) {
     const strings = (v: unknown) => v === undefined || (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every((x) => typeof x === 'string'));

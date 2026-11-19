@@ -4,6 +4,13 @@
 
 ### New
 
+- **`--client a,b` checks for several clients in one run** (also `scan --client`, and a list
+  in the config). The client-specific rules run for each, labelled "For Codex: …"; the
+  first client is the main one.
+- **`search/client-difference`** (info): with two or more clients toolmenu can rank, the
+  tools one client's search finds by their own name and another's misses. Sentry 0.49.0's
+  `find_organizations` is 23rd in Claude's search and 7th in Codex's: missed in one,
+  found in the other.
 - **`--client codex` ranks tools for `search/findable`.** Codex's source (commit
   `3869f39`, read 2026-11-19) defers every MCP tool when the model supports tool search,
   ranks them with BM25 over the name, `title`, description and top-level argument names

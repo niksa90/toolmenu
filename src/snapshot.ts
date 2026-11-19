@@ -15,11 +15,12 @@ import { listingsDiffer, type PlainMenu } from './rules/capabilities.js';
 import type { Target as AnyTarget } from './connect.js';
 import { isCredentialHeader } from './explain.js';
 import { httpStatus } from './failures.js';
-import { clientCost, type ClientCost } from './clients.js';
+import { clientCost, profileOf, type ClientCost } from './clients.js';
 import { MENU_RULES, runRules, type RuleSettings } from './rules/index.js';
 import { catalogFindings, readCatalog, type CatalogOptions } from './catalog.js';
 import type { Routes } from './routes.js';
 import { SEVERITY_RANK, type Finding, type Menu } from './types.js';
+import type { RuleContext } from './rules/rule.js';
 import { shellWord } from './init.js';
 
 export interface SnapshotOptions extends RuleSettings {
@@ -47,6 +48,8 @@ export interface SnapshotOptions extends RuleSettings {
   maxReads?: number;
   /** --client: check the menu for this client (src/clients.ts): its description cut, its search, its name format. */
   client?: string;
+  /** --client a,b: every client to check for, `client` first. The others get the client-specific rules, labelled. */
+  clients?: string[];
   /** --offline-check (stdio): list the menu once more with the network cut off (menu/network-dependent). */
   offlineCheck?: boolean;
 }
@@ -202,9 +205,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
     }
   }
 
-  const findings = runRules(
-    MENU_RULES,
-    {
+  const ruleContext: RuleContext = {
       menu,
       secondList,
       pages: first.pages,
@@ -218,6 +219,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       // give no cut (Claude's API, OpenAI) isn't checked against Claude Code's.
       descriptionLimit: options.descriptionLimit ?? (options.client === undefined ? undefined : options.client === 'claude-code' ? 'claude-code' : Number.POSITIVE_INFINITY),
       client: options.client,
+      ...(options.clients ? { clients: options.clients } : {}),
       fullDescriptions: options.fullDescriptions,
       transport: target.kind,
       probes,
@@ -236,9 +238,8 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       ...(target.kind === 'http' ? { serverUrl: new URL(target.url).origin + new URL(target.url).pathname } : {}),
       ...(connection.era === 'legacy' && eras.has('modern') ? { laterModern: true } : {}),
       ...(reads.length || undeclared.length ? { lists: { read: reads, undeclared } } : {}),
-    },
-    options,
-  );
+  };
+  const findings = forClients(runRules(MENU_RULES, ruleContext, options), ruleContext, options);
   // What --catalog called and what it got, under the same settings as the rules
   // (rules: { "catalog/read": "off" }, ignore).
   if (menu.catalog) {
@@ -260,6 +261,33 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
  * same scheme: Bearer stays Bearer, Basic gets a made-up user and password, an API-key
  * header a made-up key. A stored login (OAuth) becomes an invalid Bearer token.
  */
+/** The rules whose findings depend on the client: run once more for each further --client. */
+const CLIENT_RULES = new Set(['search/findable', 'naming/client-name', 'menu/client-limit', 'menu/client-features', 'description/buried', 'description/cut']);
+
+/**
+ * --client a,b: the first client's findings are the run's; each other client gets the
+ * client-specific rules again, with its own cut, search and name format. A client's
+ * finding says which client it's for; one that repeats the first client's word for word
+ * is left out.
+ */
+function forClients(findings: Finding[], ctx: RuleContext, options: SnapshotOptions): Finding[] {
+  const clients = options.clients ?? [];
+  if (clients.length < 2) return findings;
+  const label = (c: string) => profileOf(c)?.label ?? c;
+  const tag = (f: Finding, c: string): Finding => ({ ...f, client: c, message: `For ${label(c)}: ${f.message}` });
+  const seen = new Set(findings.filter((f) => CLIENT_RULES.has(f.rule)).map((f) => `${f.rule}\0${f.tool ?? ''}\0${f.message}`));
+  const out = findings.map((f) => (CLIENT_RULES.has(f.rule) ? tag(f, clients[0]) : f));
+  for (const c of clients.slice(1)) {
+    const more = runRules(
+      MENU_RULES.filter((r) => CLIENT_RULES.has(r.id)),
+      { ...ctx, client: c, descriptionLimit: options.descriptionLimit ?? (c === 'claude-code' ? 'claude-code' : Number.POSITIVE_INFINITY) },
+      options,
+    );
+    for (const f of more) if (!seen.has(`${f.rule}\0${f.tool ?? ''}\0${f.message}`)) out.push(tag(f, c));
+  }
+  return out.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
+}
+
 export function withInvalidCredential(target: Extract<Target, { kind: 'http' }>): Extract<Target, { kind: 'http' }> {
   const headers: Record<string, string> = {};
   let replaced = false;
