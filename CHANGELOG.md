@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.29.0
+
 ### New
 
 - **`instructions/unknown-name`** (warn): the server's `instructions` name a tool the
