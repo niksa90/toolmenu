@@ -103,7 +103,8 @@ const gen = (inputSchema, description = 'Generate.') => menu([{ name: 'gen', des
 test('a $ref refactor that accepts the same input is one notice with its token change, not a widened type', () => {
   const after = referenced();
   delete after.properties.footer.description;
-  const d = diffMenus(gen(inlined()), gen(after), { release: { before: '1.0.0', after: '1.0.1' } });
+  // the after-menu reports its release, so diff/server-version-stale stays out of it
+  const d = diffMenus(gen(inlined()), menu(gen(after).tools, '1.0.1'), { release: { before: '1.0.0', after: '1.0.1' } });
   assert.deepEqual(rules(d), ['diff/schema-equivalent:gen']);
   assert.match(d.findings[0].message, /accepts the same input: ~\d+ tokens fewer/);
   assert.equal(d.suggestedBump, 'patch');
