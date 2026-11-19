@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### New
+
+- **`instructions/unknown-name`** (warn): the server's `instructions` name a tool the
+  menu doesn't list, or, with `--lists resources`, a resource URI no listed resource or
+  template matches. Dreamwork 1.10.0's instructions told the agent to call
+  `submit_feedback` while its menu didn't have it (it was added a day later, under the
+  same version). Tool names are read from the words, so the finding is marked unsure;
+  fields, values, subcommands, prompts and names in a sentence that says why they're
+  missing (old names, a login, a token) are left out. On 1,073 hosted servers listed
+  without credentials, 15 get it, from 52 before those filters.
+
+- **`diff/server-version-stale`** (info, with `--release`): the server reported the
+  same `serverInfo.version` in both releases, so whatever tracks it by that version
+  sees no change. `serbia-prices-mcp` 0.1.5 reports FastMCP's own 4.2.1.
+
 ### Changes
 
 - **`description/late-instruction` is retired.** It flagged instructions past
@@ -14,6 +29,11 @@
 - **A config rule id that isn't a rule is no longer ignored in silence.**
   `"naming/vauge-id": "error"` used to change nothing without a word, so a CI gate on
   it wasn't one. toolmenu now says so on stderr, with the closest ids, and runs.
+
+- **`auth login` says when the server didn't ask for the login.** A token stored
+  earlier, sent to a server that never challenged, read as "Logged in" with nothing
+  else; it now adds how many tools the server lists without a login, and the commands
+  to compare or log out.
 
 ### Repository
 

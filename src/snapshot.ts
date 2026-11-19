@@ -223,6 +223,7 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
       probes,
       wrapper: isContainerWrapper(target),
       serverInfo: connection.server,
+      ...(connection.instructions ? { instructions: connection.instructions } : {}),
       server: serverArgs(target),
       identities,
       ...(invalid ? { invalidCredential: invalid } : {}),

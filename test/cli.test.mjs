@@ -592,3 +592,36 @@ test('cli: a server/discover refused with 401 falls back to the 2025 handshake, 
     await walled.close();
   }
 });
+
+test('instructions/unknown-name: the instructions name a tool and a resource the server does not list', async () => {
+  const missing = ['--env', 'FIXTURE=instructions', '--env', 'INSTRUCTIONS=missing', '--', process.execPath, join(FIXTURES, 'raw-server.mjs')];
+  const r = await run(['snapshot', '--no-write', '--json', '--lists', 'resources', ...missing]);
+  const found = JSON.parse(r.stdout).findings.filter((f) => f.rule === 'instructions/unknown-name');
+  assert.equal(found.length, 1, r.stderr);
+  assert.equal(found[0].severity, 'warn');
+  assert.equal(found[0].confidence, 'unsure');
+  assert.match(found[0].message, /^The server's instructions name 1 tool the menu doesn't list \(submit_feedback\), and 1 resource no listed resource or template matches \(acme:\/\/changelog\)\./);
+  // listed without credentials, so the finding says a login may add them
+  assert.match(found[0].message, /listed without credentials/);
+  assert.deepEqual(found[0].detail.map((d) => d.split(':')[0]), ['submit_feedback', 'acme']);
+  assert.match(found[0].detail[0], /“Call submit_feedback when a tool fails, and read acme:\/\/changelog for news\.”/);
+  assert.match(found[0].fix, /^Name only what the server lists/);
+  // get_story (namespaced as acme_get_story) and sort_order (a parameter) aren't named as missing
+  assert.doesNotMatch(found[0].message, /get_story|sort_order/);
+  // without the resource lists, only the tool is checked
+  const toolsOnly = JSON.parse((await run(['snapshot', '--no-write', '--json', ...missing])).stdout).findings.find((f) => f.rule === 'instructions/unknown-name');
+  assert.match(toolsOnly.message, /name 1 tool the menu doesn't list \(submit_feedback\)\. /);
+  // the text output: severity, message and the next step
+  const text = await run(['snapshot', '--no-write', '--lists', 'resources', ...missing]);
+  assert.match(text.stdout, /WARN   instructions\/unknown-name · unsure/);
+  assert.match(text.stdout, /→ Next: Name only what the server lists/);
+});
+
+test('instructions/unknown-name: quiet when the instructions name only what is listed, a template URI, or nothing', async () => {
+  const fine = ['--env', 'FIXTURE=instructions', '--', process.execPath, join(FIXTURES, 'raw-server.mjs')];
+  const r = await run(['snapshot', '--no-write', '--json', '--lists', 'resources', ...fine]);
+  assert.deepEqual(JSON.parse(r.stdout).findings.filter((f) => f.rule === 'instructions/unknown-name'), [], r.stderr);
+  // no instructions at all
+  const none = await run(['snapshot', '--no-write', '--json', ...raw('smells')]);
+  assert.deepEqual(JSON.parse(none.stdout).findings.filter((f) => f.rule === 'instructions/unknown-name'), []);
+});

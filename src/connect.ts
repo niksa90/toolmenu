@@ -128,6 +128,8 @@ export interface Connection {
   era?: Era;
   server: { name?: string; version?: string };
   capabilities: Record<string, unknown>;
+  /** The handshake's instructions, which clients may add to the model's context. */
+  instructions?: string;
   /** True when the request carried credentials (an Authorization-style header). */
   usedAuth: boolean;
   stderr: () => string;
@@ -266,6 +268,7 @@ export async function connect(target: Target, options: ConnectOptions = {}): Pro
     era: eraOf(protocolVersion),
     server: { name: server.name, version: server.version },
     capabilities: (client.getServerCapabilities() ?? {}) as Record<string, unknown>,
+    instructions: client.getInstructions(),
     usedAuth:
       target.kind === 'http' &&
       (oauth || Object.keys(target.headers ?? {}).some(isCredentialHeader)),

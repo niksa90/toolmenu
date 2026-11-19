@@ -70,6 +70,12 @@ const MENUS = {
     { name: 'show_chart', description: 'Show the chart.', inputSchema: obj({}), annotations: { readOnlyHint: true }, ...ui('ui://fx/chart', { visibility: ['model', 'app'] }), ...{ _meta: { ui: { resourceUri: 'ui://fx/chart', visibility: ['model', 'app'] }, 'ui/resourceUri': 'ui://fx/chart' } } },
     ...(apps ? [{ name: 'update_chart_data', description: 'Called by the chart view.', inputSchema: obj({ series: str }), ...ui('ui://fx/chart', { visibility: ['app'] }) }] : []),
   ],
+  // The handshake's instructions name tools and resources; INSTRUCTIONS picks which
+  // (missing: a tool and a resource the server doesn't list; fine: only what it lists).
+  instructions: () => [
+    { name: 'search_stories', description: 'Search stories.', inputSchema: obj({ query: str, sort_order: str }), annotations: { readOnlyHint: true } },
+    { name: 'acme_get_story', description: 'Get one story.', inputSchema: obj({ slug: str }), annotations: { readOnlyHint: true } },
+  ],
   clean: () => [{ name: 'ping_service', description: 'Check the service is up.', inputSchema: obj({}), annotations: { readOnlyHint: true } }],
   // Search and execute, like Sentry (catalog: standard tool definitions) and
   // Atlassian (catalog-inputs: an `inputs` list). CATALOG_VERSION=2 makes a
@@ -130,8 +136,19 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   if (msg.method === 'initialize') {
     elicits = !!msg.params?.capabilities?.elicitation;
     apps = (msg.params?.capabilities?.extensions?.['io.modelcontextprotocol/ui']?.mimeTypes ?? []).includes(APP_MIME);
-    const caps = process.env.NO_TOOLS_CAPABILITY ? {} : { tools: {}, ...(fixture.startsWith('apps') ? { resources: {} } : {}) };
-    send({ id: msg.id, result: { protocolVersion: '2025-11-25', capabilities: caps, serverInfo: { name: `raw-${fixture}`, version: '0.0.1' } } });
+    const caps = process.env.NO_TOOLS_CAPABILITY ? {} : { tools: {}, ...(fixture.startsWith('apps') || fixture === 'instructions' ? { resources: {} } : {}) };
+    const instructions = fixture !== 'instructions' ? undefined
+      : process.env.INSTRUCTIONS === 'missing'
+        ? 'Read acme://guide first. Use search_stories, then get_story (the slug from sort_order is not a tool). Call submit_feedback when a tool fails, and read acme://changelog for news.'
+        : 'Read acme://guide first. Use search_stories, then get_story, and read one story at acme://story/{slug}, e.g. acme://story/hello, or browse acme://blog/<slug>. Set sort_order to newest. ' +
+          // the bench's noise, each of which must stay quiet: a field, a value, a subcommand, a sentence that explains, old names
+          'Each result carries open_url and is_estimated. Pass action=update_budget, or stop_loss: 2. Run `search_stories list_all` for everything. ' +
+          'Account tools (get_my_visits, mark_visited) are available only with a token. Older tool names (find_best_price) still work.';
+    send({ id: msg.id, result: { protocolVersion: '2025-11-25', capabilities: caps, serverInfo: { name: `raw-${fixture}`, version: '0.0.1' }, ...(instructions ? { instructions } : {}) } });
+  } else if (fixture === 'instructions' && msg.method === 'resources/list') {
+    send({ id: msg.id, result: { resources: [{ uri: 'acme://guide', name: 'guide' }] } });
+  } else if (fixture === 'instructions' && msg.method === 'resources/templates/list') {
+    send({ id: msg.id, result: { resourceTemplates: [{ uriTemplate: 'acme://story/{slug}', name: 'story' }] } });
   } else if (msg.method === 'resources/read' && fixture.startsWith('apps')) {
     const r = UI_RESOURCES[msg.params?.uri];
     // UI_READ=auth|header|slow: the UI reads fail for the run's reasons, as teamwork's did with

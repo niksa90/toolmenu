@@ -20,6 +20,8 @@ export interface RuleContext {
   probes?: import('./determinism.js').Probe[];
   /** The stdio command is a container wrapper (docker run …): env vars may not reach the server. */
   wrapper?: boolean;
+  /** The handshake's instructions (instructions/unknown-name). */
+  instructions?: string;
   /** serverInfo as the handshake sent it, when there was one (snapshot): spec/server-info. */
   serverInfo?: { name?: string; version?: string };
   /** How this run reached the server, as the command line ends: `-- node server.js` or the URL. For next steps. */

@@ -1,6 +1,7 @@
 import type { Finding, Severity } from '../types.js';
 import { SEVERITY_RANK } from '../types.js';
 import { buried, cut } from './description.js';
+import { unknownName } from './instructions.js';
 import { connectionVariance, hostSpecific, nondeterministic, processVariance } from './determinism.js';
 import { authoredIds } from './ids.js';
 import { clientFeatures, clientLimit, clientName } from './clients.js';
@@ -71,6 +72,7 @@ export const MENU_RULES: Rule[] = [
   appsLegacyKey,
   appsVisibility,
   appsAppOnlyListed,
+  unknownName,
 ];
 
 /**
