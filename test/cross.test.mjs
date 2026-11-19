@@ -22,7 +22,7 @@ const outranked = (r) => JSON.parse(r.stdout).servers.flatMap((s) => s.findings.
 
 test('search/outranked: a tool found when its server is alone, pushed out by other servers\' tools', async () => {
   const dir = tempDir();
-  const r = await run(['scan', '--format', 'json', config(dir, [['aimyear', aimyear], ['fitlog', fitlog], ['notes', notes]])], { cwd: dir });
+  const r = await run(['scan', '--format', 'json', '--client', 'claude-api-search', config(dir, [['aimyear', aimyear], ['fitlog', fitlog], ['notes', notes]])], { cwd: dir });
   assert.equal(r.code, 0, r.stderr);
   const found = outranked(r);
   assert.equal(found.length, 1);
@@ -46,9 +46,40 @@ test('search/outranked: routes.yml across servers, per client; quiet with one se
   assert.match(found[0].message, /^For Claude's tool search \(Claude API\): routes\.yml says “log past time workout” should reach aimyear\/log_workout, but with every server in this list loaded \(9 tools from 2 servers\), Claude's tool search \(Claude API\) puts it at 7, past the 5 a search returns/);
   assert.match(found[0].detail[0], /^ahead of it: fitlog\/workout_log_a/);
   // one server: nothing to be outranked by
-  const alone = await run(['scan', '--format', 'json', config(tempDir(), [['aimyear', aimyear]])], { cwd: dir });
+  const alone = await run(['scan', '--format', 'json', '--client', 'claude-api-search', config(tempDir(), [['aimyear', aimyear]])], { cwd: dir });
   assert.deepEqual(outranked(alone), []);
   // and the rule can be turned off
   writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ rules: { 'search/outranked': 'off' } }));
-  assert.deepEqual(outranked(await run(['scan', '--format', 'json', '--routes', 'routes.yml', list], { cwd: dir })), []);
+  assert.deepEqual(outranked(await run(['scan', '--format', 'json', '--client', 'claude-api-search', '--routes', 'routes.yml', list], { cwd: dir })), []);
+});
+
+test('search/outranked: a server name with "/", a route only its own tools outrank, app-only tools, an unrankable client, the size gate', async () => {
+  const dir = tempDir();
+  // a scoped package name as the server name: the tool is still log_workout, and ignore globs match it
+  const scoped = config(dir, [['@acme/aimyear', aimyear], ['fitlog', fitlog]]);
+  const r = outranked(await run(['scan', '--format', 'json', '--client', 'claude-api-search', scoped], { cwd: dir }));
+  assert.equal(r.length, 1);
+  assert.equal(r[0].server, '@acme/aimyear');
+  assert.equal(r[0].tool, 'log_workout');
+  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ ignore: ['log_*'] }));
+  assert.deepEqual(outranked(await run(['scan', '--format', 'json', '--client', 'claude-api-search', scoped], { cwd: dir })), []);
+
+  // a route whose tool only its own server's tools push out: reported, saying so
+  const own = tempDir();
+  const crowded = [t('get_report', 'Gets the summary.'), ...['a', 'b', 'c', 'd', 'e', 'f'].map((x) => t(`report_log_${x}`, `Report log ${x}: report, report.`))];
+  writeFileSync(join(own, 'routes.yml'), '"report":\n  must_match: [reports/get_report]\n');
+  const routed = outranked(await run(['scan', '--format', 'json', '--client', 'claude-api-search', '--routes', 'routes.yml', config(own, [['reports', crowded], ['notes', notes]])], { cwd: own }));
+  assert.equal(routed.length, 1);
+  assert.match(routed[0].message, /reports's own tools rank ahead\.$/);
+
+  // app-only tools (MCP Apps, visibility without "model") aren't in the agent's search
+  const hidden = tempDir();
+  const appOnly = fitlog.map((x) => ({ ...x, _meta: { ui: { resourceUri: 'ui://fit/view', visibility: ['app'] } } }));
+  assert.deepEqual(outranked(await run(['scan', '--format', 'json', '--client', 'claude-api-search', config(hidden, [['aimyear', aimyear], ['fitlog', appOnly], ['notes', notes]])], { cwd: hidden })), []);
+
+  // a client toolmenu can't rank, and no client with a small pool: nothing
+  const quiet = tempDir();
+  const list = config(quiet, [['aimyear', aimyear], ['fitlog', fitlog]]);
+  assert.deepEqual(outranked(await run(['scan', '--format', 'json', '--client', 'openai', list], { cwd: quiet })), []);
+  assert.deepEqual(outranked(await run(['scan', '--format', 'json', list], { cwd: quiet })), [], '9 small tools: under the size a client defers');
 });

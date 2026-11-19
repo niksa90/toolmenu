@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { CLIENTS } from './clients.js';
+import { clientList, CLIENTS } from './clients.js';
 import { LIST_WORDS } from './lists.js';
 import { CLIENT_LIMITS } from './rules/description.js';
 import { RETIRED_RULES } from './rules/index.js';
@@ -98,9 +98,10 @@ export async function loadConfig(path?: string): Promise<Config> {
   if (config.maxReads !== undefined && !(Number.isInteger(config.maxReads) && config.maxReads >= 1)) throw new Error(`${file}: maxReads must be a whole number, 1 or more`);
   if (config.offlineCheck !== undefined && typeof config.offlineCheck !== 'boolean') throw new Error(`${file}: offlineCheck must be true or false`);
   if (config.client !== undefined) {
-    const names = typeof config.client === 'string' ? config.client.split(',').map((c) => c.trim()) : config.client;
-    if (!Array.isArray(names) || !names.length || !names.every((c) => typeof c === 'string' && Object.hasOwn(CLIENTS, c))) {
-      throw new Error(`${file}: client must be one of ${Object.keys(CLIENTS).join(', ')}, several separated by commas, or a list of them`);
+    try {
+      clientList(config.client);
+    } catch (error) {
+      throw new Error(`${file}: ${(error as Error).message}`);
     }
   }
   if (config.identities !== undefined) {

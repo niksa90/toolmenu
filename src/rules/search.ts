@@ -14,8 +14,8 @@ import { clip, count, kept, names, num, type Rule, type RuleFinding } from './ru
  * Only for menus a client would defer: the tool search docs suggest it from 10
  * tools or 10K tokens of definitions.
  */
-const MIN_TOOLS = 10;
-const MIN_TOKENS = 10_000;
+export const MIN_TOOLS = 10;
+export const MIN_TOKENS = 10_000;
 
 /** Where each tool lands when searched for by the words of its own name, the way a client's search ranks. */
 export interface OwnNamePlace {

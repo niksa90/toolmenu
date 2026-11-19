@@ -7,7 +7,8 @@
  */
 import { profileOf } from './clients.js';
 import type { Routes } from './routes.js';
-import { ownNamePlaces } from './rules/search.js';
+import { agentMenu } from './apps.js';
+import { MIN_TOKENS, MIN_TOOLS, ownNamePlaces } from './rules/search.js';
 import { buildIndex, placeIn, placeOf, SEARCH_LIMIT } from './search.js';
 import type { ScanRow } from './scan.js';
 import { SEVERITY_RANK, type Finding, type MenuTool, type Severity } from './types.js';
@@ -34,14 +35,38 @@ function glob(g: string): RegExp {
 export function crossServerFindings(rows: ScanRow[], clients: string[], routes: Routes | undefined, settings: Settings = {}): void {
   const configured = settings.rules?.[OUTRANKED];
   if (configured === 'off') return;
-  const servers = rows.filter((r) => r.menu && r.menu.tools.length);
+  // What the agent sees: an MCP Apps host keeps app-only tools out of its list (agentMenu).
+  const servers = rows
+    .filter((r) => r.menu && r.menu.tools.length)
+    .map((row) => ({ row, tools: agentMenu(row.menu!).shown.tools }))
+    .filter((s) => s.tools.length);
   if (servers.length < 2) return;
   const ignore = (settings.ignore ?? []).map(glob);
   const ignored = (tool: string) => ignore.some((re) => re.test(tool));
-  const pooled: MenuTool[] = servers.flatMap((r) => r.menu!.tools.map((t) => ({ ...t, name: `${r.name}/${t.name}`, serverName: r.name })));
-  const owner = new Map(pooled.map((t) => [t.name, t.serverName as string]));
-  const others = (ahead: string[], server: string) => ahead.filter((a) => owner.get(a) !== server);
-  const targets = clients.filter(rankable).length ? clients.filter(rankable) : [undefined];
+  // Each pooled tool keeps its server and its own name apart: server names can hold "/"
+  // (@modelcontextprotocol/server-github), and tool names spaces.
+  const pooled: MenuTool[] = [];
+  const where = new Map<string, { server: string; tool: string }>();
+  for (const { row, tools } of servers) {
+    for (const t of tools) {
+      const name = `${row.name}/${t.name}`;
+      pooled.push({ ...t, name, serverName: row.name });
+      where.set(name, { server: row.name, tool: t.name });
+    }
+  }
+  const others = (ahead: string[], server: string) => ahead.filter((a) => where.get(a)?.server !== server);
+  // No --client: Claude's search, as search/findable ranks without one, and only for a pool
+  // a client would defer (10+ tools and 10K+ tokens, or 30+). Clients given: those toolmenu
+  // can rank, or none (OpenAI's search isn't documented, so it isn't guessed at).
+  let targets: (string | undefined)[];
+  if (clients.length) {
+    targets = clients.filter(rankable);
+    if (!targets.length) return;
+  } else {
+    const tokens = pooled.reduce((n, t) => n + (t.tokens ?? 0), 0);
+    if (pooled.length < MIN_TOOLS || (tokens < MIN_TOKENS && pooled.length < 30)) return;
+    targets = [undefined];
+  }
   const total = `${pooled.length} tools from ${servers.length} servers`;
 
   for (const client of targets) {
@@ -54,27 +79,26 @@ export function crossServerFindings(rows: ScanRow[], clients: string[], routes: 
       row.findings.push({ rule: 'search/outranked', ...f, severity: configured ?? f.severity, ...(client && targets.length > 1 ? { client, message: `For ${label}: ${f.message}` } : {}) });
 
     // Each tool by its own name: found when its server is alone, missed with the others.
-    for (const row of servers) {
-      const tools = row.menu!.tools.filter((t) => !ignored(t.name));
-      const alone = ownNamePlaces(tools, row.menu!.tools, client, reads);
-      const lost: string[] = [];
+    for (const { row, tools: shown } of servers) {
+      const alone = ownNamePlaces(shown.filter((t) => !ignored(t.name)), shown, client, reads);
+      const lost: { tool: string; line: string }[] = [];
       for (const p of alone.places) {
         if (p.place === undefined || p.place > limit) continue; // search/findable's, on its own
         const together = placeOf(index, p.query, `${row.name}/${p.tool}`);
         if (together.place !== undefined && together.place <= limit) continue;
         const ahead = others(together.ahead, row.name);
         if (!ahead.length) continue;
-        lost.push(`${p.tool} (“${p.query}”): ${p.place} on its own, ${together.place ?? 'not returned'} with the others, behind ${ahead.slice(0, 4).join(', ')}${ahead.length > 4 ? ` and ${ahead.length - 4} more` : ''}`);
+        lost.push({ tool: p.tool, line: `${p.tool} (“${p.query}”): ${p.place} on its own, ${together.place ?? 'not returned'} with the others, behind ${ahead.slice(0, 4).join(', ')}${ahead.length > 4 ? ` and ${ahead.length - 4} more` : ''}` });
       }
       if (lost.length) {
         const one = lost.length === 1;
         say(
           {
-            ...(one ? { tool: lost[0].split(' ')[0] } : {}),
+            ...(one ? { tool: lost[0].tool } : {}),
             severity: 'info',
             confidence: 'unsure',
             message: `${one ? '1 tool' : `${lost.length} tools`} of ${row.name} ${one ? 'comes' : 'come'} up in the top ${limit} for ${one ? 'its' : 'their'} own name on ${row.name}'s own, and ${one ? 'drops' : 'drop'} out when it's loaded with the other servers in this list (${total}): their tools rank ahead in ${label}. An agent with all of them loaded can be shown the other servers' tools instead.`,
-            detail: lost.slice(0, 12).concat(lost.length > 12 ? [`and ${lost.length - 12} more`] : []),
+            detail: lost.slice(0, 12).map((l) => l.line).concat(lost.length > 12 ? [`and ${lost.length - 12} more`] : []),
             fix: `Give each of these tools a word the other servers' tools lack, early in its description: the product's name ("${row.name}") or the object it acts on, so a search for it ranks it above theirs.`,
           },
           row,
@@ -86,22 +110,23 @@ export function crossServerFindings(rows: ScanRow[], clients: string[], routes: 
     for (const [keyword, expectation] of Object.entries(routes ?? {})) {
       const ranked = index.rank(keyword);
       for (const want of expectation.must_match ?? []) {
-        const names = want.includes('/') ? [want] : pooled.filter((t) => t.name.endsWith(`/${want}`)).map((t) => t.name);
+        // "server/tool" names one tool; a bare name, that tool on every server that has it.
+        const names = pooled.filter((t) => t.name === want || where.get(t.name)!.tool === want).map((t) => t.name);
         for (const name of names) {
-          const row = servers.find((r) => r.name === owner.get(name));
-          if (!row || ignored(name.slice(name.indexOf('/') + 1))) continue;
+          const { server, tool } = where.get(name)!;
+          const row = servers.find((s) => s.row.name === server)!.row;
+          if (ignored(tool)) continue;
           const { place, ahead } = placeIn(ranked, name);
           if (place !== undefined && place <= limit) continue;
-          const theirs = others(ahead, row.name);
-          if (!theirs.length) continue; // only its own server's tools ahead: search/findable's routes check
+          const theirs = others(ahead, server);
           say(
             {
-              tool: name.slice(name.indexOf('/') + 1),
+              tool,
               severity: 'warn',
               confidence: 'unsure',
-              message: `routes.yml says “${keyword}” should reach ${name}, but with every server in this list loaded (${total}), ${label} ${place === undefined ? "doesn't return it at all" : `puts it at ${place}`}, past the ${limit} a search returns: other servers' tools rank ahead.`,
-              detail: [`ahead of it: ${theirs.slice(0, 6).join(', ')}${theirs.length > 6 ? ` and ${theirs.length - 6} more` : ''}`],
-              fix: `Put the words of “${keyword}” in ${name.slice(name.indexOf('/') + 1)}'s name or the start of its description, with a word the tools ahead of it lack (the product's name).`,
+              message: `routes.yml says “${keyword}” should reach ${name}, but with every server in this list loaded (${total}), ${label} ${place === undefined ? "doesn't return it at all" : `puts it at ${place}`}, past the ${limit} a search returns${theirs.length ? ": other servers' tools rank ahead" : `: ${server}'s own tools rank ahead`}.`,
+              detail: [`ahead of it: ${ahead.slice(0, 6).join(', ')}${ahead.length > 6 ? ` and ${ahead.length - 6} more` : ''}`],
+              fix: `Put the words of “${keyword}” in ${tool}'s name or the start of its description, with a word the tools ahead of it lack (the product's name).`,
             },
             row,
           );
@@ -109,5 +134,5 @@ export function crossServerFindings(rows: ScanRow[], clients: string[], routes: 
       }
     }
   }
-  for (const r of servers) r.findings.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
+  for (const { row: r } of servers) r.findings.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
 }

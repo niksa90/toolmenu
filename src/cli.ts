@@ -3,7 +3,7 @@ import { colourFor, colourise, colouriseError } from './colour.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { CLIENT_NAMES, CLIENTS } from './clients.js';
+import { CLIENT_NAMES, CLIENTS, clientList } from './clients.js';
 import { LIST_WORDS } from './lists.js';
 import { loadConfig, type Config } from './config.js';
 import { ELICITATIONS, PROTOCOLS, type Elicitation, type Protocol, type Target } from './connect.js';
@@ -195,7 +195,7 @@ export async function main(given: string[]): Promise<number> {
   const maxReads = values['max-reads'] !== undefined ? Number(values['max-reads']) : config.maxReads;
   if (maxReads !== undefined && !(Number.isInteger(maxReads) && maxReads >= 1)) throw new UsageError('--max-reads must be a whole number, 1 or more');
   if (values.client !== undefined && sub !== 'snapshot' && sub !== 'scan') throw new UsageError('--client goes with snapshot or scan.');
-  if (values.client !== undefined && !clientList(values.client).every((c) => Object.hasOwn(CLIENTS, c))) throw new UsageError(`--client must be one of ${CLIENT_NAMES.join(', ')}, or several separated by commas`);
+  if (values.client !== undefined) clients(values.client);
   if (values['offline-check'] && sub !== 'snapshot') throw new UsageError('--offline-check goes with snapshot.');
   if (values.as !== undefined && sub !== 'snapshot') throw new UsageError('--as goes with snapshot: it lists the menu once per identity.');
   if (values.elicitation !== undefined && sub !== 'session') throw new UsageError('--elicitation goes with session: only session calls tools.');
@@ -227,7 +227,10 @@ export async function main(given: string[]): Promise<number> {
     });
     const outDir = values['out-dir'];
     if (outDir) await mkdir(outDir, { recursive: true });
-    const scanClients = clientList(values.client ?? config.client);
+    const scanClients = clients(values.client ?? config.client);
+    // Loaded before the servers start: a bad routes file shouldn't cost a whole scan.
+    const scanRoutesPath = values.routes ?? config.routes;
+    const scanRoutes = scanRoutesPath ? await loadRoutes(scanRoutesPath) : undefined;
     const tty = process.stderr.isTTY;
     const rows = await scan(withProtocol, {
       timeoutMs,
@@ -247,8 +250,7 @@ export async function main(given: string[]): Promise<number> {
     });
     if (tty) writeUnguarded(process.stderr, '\r\x1b[K');
     // Across servers: every listed server's tools in one search, per client (cross.ts).
-    const scanRoutesPath = values.routes ?? config.routes;
-    crossServerFindings(rows, scanClients, scanRoutesPath ? await loadRoutes(scanRoutesPath) : undefined, { rules: config.rules, ignore: config.ignore });
+    crossServerFindings(rows, scanClients, scanRoutes, { rules: config.rules, ignore: config.ignore });
     if (outDir) for (const r of rows) if (r.menu) await writeFile(join(outDir, `${r.name.replace(/[^\w.@-]+/g, '_')}.json`), JSON.stringify(r.menu, null, 2) + '\n');
     writeUnguarded(process.stdout, show(formatScan(rows, format, rest[0])) + '\n');
     return scanExit(rows, failOn);
@@ -460,11 +462,11 @@ export async function main(given: string[]): Promise<number> {
   const routes = routesPath ? await loadRoutes(routesPath) : undefined;
 
   // --client a,b: the first is the main one (its cut, its cost); the rest are checked too, their findings labelled.
-  const clients = clientList(values.client ?? config.client);
-  const client = clients[0];
+  const checkFor = clients(values.client ?? config.client);
+  const client = checkFor[0];
   const offlineCheck = values['offline-check'] ?? config.offlineCheck;
   if (values['offline-check'] && target.kind !== 'stdio') throw new UsageError("--offline-check goes with a stdio server: an HTTP server's network isn't this machine's to cut.");
-  const { menu, findings, cost, notOffered, resourcesRead } = await snapshot(target, { readResources, maxReads, offlineCheck: offlineCheck && target.kind === 'stdio', routes, timeoutMs, processes, identities, client, ...(clients.length > 1 ? { clients } : {}), lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
+  const { menu, findings, cost, notOffered, resourcesRead } = await snapshot(target, { readResources, maxReads, offlineCheck: offlineCheck && target.kind === 'stdio', routes, timeoutMs, processes, identities, client, ...(checkFor.length > 1 ? { clients: checkFor } : {}), lists, catalog: values.catalog ? (config.catalog ?? true) : undefined, rules: config.rules, ignore: config.ignore, descriptionLimit: config.descriptionLimit, fullDescriptions: config.fullDescriptions });
 
   const outPath = values['no-write'] ? undefined : values.out ?? 'menu.json';
   if (outPath) await writeFile(outPath, JSON.stringify(menu, null, 2) + '\n');
@@ -478,11 +480,13 @@ export async function main(given: string[]): Promise<number> {
   return findings.some((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) ? 1 : 0;
 }
 
-/** --client or the config's client: "a,b", a list, or nothing; duplicates dropped, order kept. */
-function clientList(value: string | string[] | undefined): string[] {
-  if (value === undefined) return [];
-  const names = (Array.isArray(value) ? value : value.split(',')).map((c) => c.trim()).filter(Boolean);
-  return [...new Set(names)];
+/** clientList, its errors as usage errors. */
+function clients(value: string | string[] | undefined): string[] {
+  try {
+    return clientList(value);
+  } catch (error) {
+    throw new UsageError(`--${(error as Error).message}`);
+  }
 }
 
 function parseTarget(positionals: string[], command: string[] | undefined, headers: string[], env: string[], noAuth: boolean | undefined, prefix: string, protocol: Protocol): Target {

@@ -256,11 +256,6 @@ export async function snapshot(given: Target, options: SnapshotOptions = {}): Pr
   return { menu, findings, ...(identities ? { identities } : {}), ...(cost ? { cost } : {}), ...(undeclared.length ? { notOffered: undeclared } : {}), ...(resourceReads ? { resourcesRead: { read: resourceReads.reads.length, listed: resourceReads.listed, ...(resourceReads.byApps ? { byApps: resourceReads.byApps } : {}) } } : {}) };
 }
 
-/**
- * The target with every credential it carries swapped for one that can't be valid,
- * same scheme: Bearer stays Bearer, Basic gets a made-up user and password, an API-key
- * header a made-up key. A stored login (OAuth) becomes an invalid Bearer token.
- */
 /** The rules whose findings depend on the client: run once more for each further --client. */
 const CLIENT_RULES = new Set(['search/findable', 'naming/client-name', 'menu/client-limit', 'menu/client-features', 'description/buried', 'description/cut']);
 
@@ -283,11 +278,21 @@ function forClients(findings: Finding[], ctx: RuleContext, options: SnapshotOpti
       { ...ctx, client: c, descriptionLimit: options.descriptionLimit ?? (c === 'claude-code' ? 'claude-code' : Number.POSITIVE_INFINITY) },
       options,
     );
-    for (const f of more) if (!seen.has(`${f.rule}\0${f.tool ?? ''}\0${f.message}`)) out.push(tag(f, c));
+    for (const f of more) {
+      const key = `${f.rule}\0${f.tool ?? ''}\0${f.message}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(tag(f, c));
+    }
   }
   return out.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
 }
 
+/**
+ * The target with every credential it carries swapped for one that can't be valid,
+ * same scheme: Bearer stays Bearer, Basic gets a made-up user and password, an API-key
+ * header a made-up key. A stored login (OAuth) becomes an invalid Bearer token.
+ */
 export function withInvalidCredential(target: Extract<Target, { kind: 'http' }>): Extract<Target, { kind: 'http' }> {
   const headers: Record<string, string> = {};
   let replaced = false;

@@ -237,9 +237,13 @@ test('--client a,b: each client\'s own findings, labelled; repeats left out; the
   assert.doesNotMatch(once.findings.find((f) => f.rule === 'naming/client-name').message, /^For /);
   const bad = await snap(['--client', 'codex,cursor']);
   assert.equal(bad.code, 2);
-  assert.match(bad.stderr, /--client must be one of .*or several separated by commas/);
+  assert.match(bad.stderr, /--client must be one of .*or several separated by commas \(not "cursor"\)/);
+  const empty = await snap(['--client', ',']);
+  assert.equal(empty.code, 2);
+  assert.match(empty.stderr, /--client is empty/);
   const dir = tempDir();
-  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ client: ['claude-api-search', 'codex'] }));
+  // the config reads a list the way --client does: trimmed, a trailing comma fine
+  writeFileSync(join(dir, 'toolmenu.config.json'), JSON.stringify({ client: 'claude-api-search, codex,' }));
   const viaConfig = JSON.parse((await run(['snapshot', '--no-write', '--json', '--', process.execPath, server], { cwd: dir })).stdout);
   assert.equal(viaConfig.findings.filter((f) => f.rule === 'naming/client-name').length, 2);
 });
