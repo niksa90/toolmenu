@@ -839,3 +839,18 @@ test('a menu file that isn\'t JSON: where it broke, never what the file holds', 
   assert.match(r.stderr, /isn't valid JSON/);
   assert.doesNotMatch(r.stderr, /root:x|bin\/bash/);
 });
+
+test('cli: diff/server-version-stale through diff --release: severity, message and next step; quiet without --release', async () => {
+  const dir = tempDir();
+  // serbia-prices-mcp 0.1.5 reports FastMCP's 4.2.1 as its version
+  writeFileSync(join(dir, 'old.json'), JSON.stringify(menu([tool('a', ['x'])], '4.2.1')));
+  writeFileSync(join(dir, 'new.json'), JSON.stringify(menu([tool('a', ['x'])], '4.2.1')));
+  const r = await run(['diff', '--release', '0.1.4..0.1.5', 'old.json', 'new.json'], { cwd: dir });
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /INFO   diff\/server-version-stale/);
+  assert.match(r.stdout, /The server reported version 4\.2\.1 in both releases \(0\.1\.4 → 0\.1\.5\)/);
+  assert.match(r.stdout, /→ Next: Report the release version in serverInfo\.version/);
+  const json = JSON.parse((await run(['diff', '--json', '--release', '0.1.4..0.1.5', 'old.json', 'new.json'], { cwd: dir })).stdout);
+  assert.equal(json.findings.find((f) => f.rule === 'diff/server-version-stale').severity, 'info');
+  assert.doesNotMatch((await run(['diff', 'old.json', 'new.json'], { cwd: dir })).stdout, /server-version-stale/);
+});

@@ -104,12 +104,12 @@ means for semver: breaking → major, minor → minor, notice → no bump.
 | `diff/schema-dialect` | info (notice) | Only the declared `$schema` dialect changed. One finding for the menu |
 | `diff/schema-equivalent` | info (notice) | The schema was restructured or respelled (`$ref`, `$defs`, key order) but accepts the same input: bytes and tokens changed, nothing else |
 | `diff/schema-other` | info (notice) | The input schema changed in keywords toolmenu doesn't classify, a schema that's empty or invalid, or one too large to expand through its `$ref`s. Review it by hand |
+| `diff/server-version-stale` | info | With `--release`: the server reported the same `serverInfo.version` in both releases, so it isn't the release version, and anything that tracks the server by it sees no change (the filesystem server said `0.2.0` for 19 releases, FINDINGS F5) |
 | `diff/token-budget` | error | The new menu is over `tokenBudget` from the config. Every conversation that loads it pays that before its first message |
 | `diff/tool-added` | info (minor) | A new tool. It costs tokens in every conversation that loads the menu (see the token change) |
 | `diff/tool-removed` | error (breaking) | A tool in the old menu isn't in the new one. Agents and saved workflows that call it get an error |
 | `diff/tool-renamed` | error (breaking) | One tool removed and one added with a near-identical schema: reported as a rename, still breaking for anything that calls the old name |
 | `diff/type-widened` | info (minor) | A parameter's type now accepts more (`integer` → `number`, a type added to a union) |
-| `diff/server-version-stale` | info | With `--release`: the server reported the same `serverInfo.version` in both releases, so it isn't the release version, and anything that tracks the server by it sees no change (the filesystem server said `0.2.0` for 19 releases, FINDINGS F5) |
 | `diff/version-backwards` | warn | The release version went backwards, so the bump can't be checked |
 | `diff/version-bump` | warn | `--release old..new` (or `--server-version-is-release`): the bump is smaller than the changes need, a breaking change released as a minor or patch |
 | `diff/x-mcp-header` | info (notice) | 2026-07-28: a parameter mirrored into an `Mcp-Param-*` HTTP header was added, removed or renamed. Callers don't change; proxies and WAFs that route on the header do |

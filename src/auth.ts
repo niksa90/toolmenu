@@ -428,7 +428,6 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
   }
 }
 
-/** Connect with the stored login and list tools: the login works. */
 /** How many tools the server lists with no credentials at all, or undefined if it wants them. */
 async function anonymousTools(serverUrl: string): Promise<number | undefined> {
   const { connect, listTools } = await import('./connect.js');
@@ -444,6 +443,7 @@ async function anonymousTools(serverUrl: string): Promise<number | undefined> {
   }
 }
 
+/** Connect with the stored login and list tools: the login works. */
 async function check(serverUrl: string): Promise<{ name?: string; tools: number }> {
   const client = new Client({ name: 'toolmenu', version: VERSION });
   const transport = new StreamableHTTPClientTransport(new URL(serverUrl), { authProvider: new StoredOAuthProvider(serverUrl) });

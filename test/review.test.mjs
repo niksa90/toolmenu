@@ -152,6 +152,7 @@ test('diff/server-version-stale: one reported version across two releases is sai
   // without release versions there's nothing to say a release happened
   assert.ok(!diffMenus(before, after).findings.some((f) => f.rule === 'diff/server-version-stale'));
   // a server that reports the release, or a version that moved, is quiet
-  assert.ok(!diffMenus(menu([], '0.1.5'), menu([], '0.1.5'), { release: { before: '0.1.5', after: '0.1.5' } }).findings.some((f) => f.rule === 'diff/server-version-stale'));
+  // a server that reports its release: both menus say 0.1.5, and the new release is 0.1.5
+  assert.ok(!diffMenus(menu([], '0.1.5'), menu([], '0.1.5'), { release: { before: '0.1.4', after: '0.1.5' } }).findings.some((f) => f.rule === 'diff/server-version-stale'));
   assert.ok(!diffMenus(menu([], '0.1.4'), menu([], '0.1.5'), { release: { before: '0.1.4', after: '0.1.5' } }).findings.some((f) => f.rule === 'diff/server-version-stale'));
 });
