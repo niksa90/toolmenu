@@ -144,7 +144,8 @@ createInterface({ input: process.stdin }).on('line', (line) => {
           // the bench's noise, each of which must stay quiet: a field, a value, a subcommand, a sentence that explains, old names
           'Each result carries open_url and is_estimated. Pass action=update_budget, or stop_loss: 2. Run `search_stories list_all` for everything. ' +
           'Account tools (get_my_visits, mark_visited) are available only with a token. Older tool names (find_best_price) still work. ' +
-          'Start with **acme://guide**. Browse acme://files/docs/a.md or acme://search?q=x, and use the search_prompt prompt.';
+          'Start with **acme://guide**. Browse acme://files/docs/a.md or acme://search?q=x, and use the search_prompt prompt. ' +
+          'With an API key (Authorization: Bearer ak_live_...), vault tools work: call get_vault first. A free account at https://acme.test/account adds list_vaults. Read discovery.list for get_budget.packs.';
     send({ id: msg.id, result: { protocolVersion: '2025-11-25', capabilities: caps, serverInfo: { name: `raw-${fixture}`, version: '0.0.1' }, ...(instructions ? { instructions } : {}) } });
   } else if (fixture === 'instructions' && msg.method === 'resources/list') {
     send({ id: msg.id, result: { resources: [{ uri: 'acme://guide', name: 'guide' }] } });

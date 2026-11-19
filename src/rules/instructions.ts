@@ -13,13 +13,15 @@ const FIELD_ENDS = new Set('url urls link links id ids at on only with here firs
  * a token, an account, an unlock, a private mode). The rule's own fix, already done. A
  * word like "token" alone isn't one: it has to sit near what makes it a condition.
  */
-const CONDITION = String.raw`(?:tokens?|account|log ?in|sign ?in|logged in|signed in|authenticat\w*|credentials?|scope)`;
+const CONDITION = String.raw`(?:tokens?|(?:api )?keys?|account|log ?in|sign ?in|logged in|signed in|authenticat\w*|credentials?|scope)`;
 const AVAILABILITY = String.raw`(?:only|available|unlock\w*|adds?|requires?|needs?|after|once|with an?)`;
+/** Up to 120 characters within one sentence: a full stop inside a URL or rs_live_... doesn't end it. */
+const GAP = String.raw`(?:[^.;]|\.(?!\s|$)){0,120}?`;
 const EXPLAINED = [
   /\b(?:old(?:er)? (?:tool )?names|formerly|renamed|deprecated|private mode|unlock\w*)\b/i,
   /\bwhen (?:the )?tools are available\b/i,
-  new RegExp(String.raw`\b${AVAILABILITY}\b[^.;]{0,100}?\b${CONDITION}\b`, 'i'),
-  new RegExp(String.raw`\b${CONDITION}\b[^.;]{0,100}?\b(?:unlock\w*|adds?|only)\b`, 'i'),
+  new RegExp(String.raw`\b${AVAILABILITY}\b${GAP}\b${CONDITION}\b`, 'i'),
+  new RegExp(String.raw`\b${CONDITION}\b${GAP}\b(?:unlock\w*|adds?|only)\b`, 'i'),
 ];
 
 interface Mention {
@@ -101,7 +103,7 @@ export const unknownName: Rule = {
     const toolPattern = tools.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
     const afterTool = toolPattern ? new RegExp(String.raw`(?:^|[^\w])(?:${toolPattern})\s+$`) : undefined;
     const counts = ({ before, after, sentence }: Mention) =>
-      !/[=]\s*["'`]?$/.test(before) && !/^\s*[:=]\s*(?:["'`\d-]|true\b|false\b|null\b)/.test(after) && !afterTool?.test(before) && !EXPLAINED.some((re) => re.test(sentence));
+      !/[=]\s*["'`]?$/.test(before) && !/^\.\w/.test(after) && !/^\s*[:=]\s*(?:["'`\d-]|true\b|false\b|null\b)/.test(after) && !afterTool?.test(before) && !EXPLAINED.some((re) => re.test(sentence));
 
     // snake_case words that read as a tool name, not in the menu: not a field in any
     // schema, and not the end of a namespaced tool name (search_stories for worklore_search_stories).

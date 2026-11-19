@@ -10,8 +10,8 @@
   `submit_feedback` while its menu didn't have it (it was added a day later, under the
   same version). Tool names are read from the words, so the finding is marked unsure;
   fields, values, subcommands, prompts and names in a sentence that says why they're
-  missing (old names, a login, a token) are left out. On 1,073 hosted servers listed
-  without credentials, 15 get it, from 52 before those filters.
+  missing (old names, a login, a token, an API key) are left out. On 1,078 hosted
+  servers listed without credentials, 16 get it, from 52 before those filters.
 
 - **`diff/server-version-stale`** (info, with `--release`): the server reported the
   same `serverInfo.version` in both releases, so whatever tracks it by that version
