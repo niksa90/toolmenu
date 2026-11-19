@@ -1,6 +1,7 @@
 import type { Finding, Severity } from '../types.js';
 import { SEVERITY_RANK } from '../types.js';
 import { buried, cut } from './description.js';
+import { unknownName } from './instructions.js';
 import { connectionVariance, hostSpecific, nondeterministic, processVariance } from './determinism.js';
 import { authoredIds } from './ids.js';
 import { clientFeatures, clientLimit, clientName } from './clients.js';
@@ -11,7 +12,7 @@ import { listSchema, listVariance, resourceReadSchema, resourceUnread, resourceU
 import { handleLifetime } from './handles.js';
 import { authVariance, cacheScopePublic } from './identities.js';
 import { route, sharedWord, vagueId } from './naming.js';
-import { cacheHints, deprecated, discover, duplicateName, extensionId, schema, serverInfo, taskRequired, toolName, toolsCapability } from './spec.js';
+import { cacheHints, deprecated, discover, discoverRefused, duplicateName, extensionId, schema, serverInfo, taskRequired, toolName, toolsCapability } from './spec.js';
 import { noDryRun, readOnlyMismatch, unannotated } from './write.js';
 import { gated } from './gated.js';
 import { xMcpHeader } from './headers.js';
@@ -51,6 +52,7 @@ export const MENU_RULES: Rule[] = [
   schemaRef,
   toolsCapability,
   discover,
+  discoverRefused,
   deprecated,
   cacheHints,
   authVariance,
@@ -71,6 +73,7 @@ export const MENU_RULES: Rule[] = [
   appsLegacyKey,
   appsVisibility,
   appsAppOnlyListed,
+  unknownName,
 ];
 
 /**

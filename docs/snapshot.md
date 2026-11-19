@@ -12,6 +12,7 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 
 | Rule | Default | Catches |
 |---|---|---|
+| `instructions/unknown-name` | warn | The handshake's `instructions` name a tool the menu doesn't list, or, with `--lists resources`, a resource URI in the server's own scheme that no listed resource or template matches. An agent that follows the instructions asks for something the server didn't offer. A tool name is a snake_case word that starts with a verb, isn't a parameter, a listed prompt, the end of a namespaced tool name or a field (`open_url`, `read_only`), isn't written as a value (`action=update_budget`, `stop_loss: 2`) or a subcommand of a listed tool, and sits in no sentence that says why it's missing (old names, a login, a token, an account, an unlock): marked unsure. Seen on Dreamwork 1.10.0 (`submit_feedback`, a day before its menu had it) and on 16 of 1,078 hosted servers listed without credentials (2026-11-19) |
 | `menu/nondeterministic` | error | Two identical `tools/list` calls returning different menus (order, descriptions, schemas, annotations), with the value that differs |
 | `menu/process-variance` | error | A second server process, started the same way, serves a different menu, so every restart misses the cache. Seen on mcp-atlassian: a default built from a Python set, in a new order every start (FINDINGS F12). toolmenu runs the main process with `PYTHONHASHSEED=0`, so a Python server's saved menu is reproducible, and the second with another seed. `--processes 1` turns it off |
 | `menu/connection-variance` | error (warn on 2025 protocols) | The same over HTTP: a second connection with the same credentials gets a different menu. Retried once before reporting |
@@ -29,6 +30,7 @@ server, or from the spec itself. If a rule can't point to one, it doesn't ship.
 | `write/read-only-mismatch` | warn | A tool marked `readOnlyHint: true` whose name says it writes (`create_my_account`): clients act on the hint, and `--auto` doesn't call it on the hint alone (heuristic) |
 | `write/no-dry-run` | info | Destructive tools with no dry-run parameter or preview tool, as one summary |
 | `spec/discover` | info | The server only speaks the 2025 protocol, so 2026-07-28 rules are skipped |
+| `spec/discover-refused` | warn | HTTP. `server/discover` got 401 or 403 while the 2025 handshake (`initialize`) served the menu with the same credentials, or none. A client that tries 2026-07-28 first stops there and treats the server as needing a login: the official TypeScript SDK client (2.4) with `versionNegotiation: auto` fails with "Version negotiation failed"; its default (legacy) never asks. toolmenu falls back to 2025 and checks that; `spec/discover` isn't said as well. Seen on Dreamwork 1.10.0 and 3 of 733 hosted servers that needed a login on 2026-11-09 (FINDINGS F22). Checked against the SDK client's behaviour in the tests |
 | `spec/deprecated`, `spec/cache-hints` | info | 2026-07-28: deprecated features still advertised; `ttlMs: 0`, or `cacheScope: "public"` on a server that took credentials |
 | `lists/variance` | warn | With `--lists`: `prompts/list`, `resources/list` or `resources/templates/list` differs between two calls, or from a second process or connection (2026-07-28: lists no longer vary per connection) |
 | `lists/schema` | error | With `--lists`: a list result that doesn't match the official schema (2026-07-28 requires `ttlMs` and `cacheScope` on each), or a declared list that fails to answer (warn; info for Method not found, or a setup failure such as missing credentials) |
@@ -149,6 +151,9 @@ An optional `toolmenu.config.json`:
   "offlineCheck": true
 }
 ```
+
+`rules` sets a rule's severity, or `off`. An id that isn't a rule (a typo, a rule that
+was retired) changes nothing; toolmenu says so on stderr, with the closest ids, and runs.
 
 `offlineCheck` turns on `--offline-check` for every `snapshot` of a stdio server.
 

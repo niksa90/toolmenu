@@ -509,7 +509,10 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
   const count = `${result.tools} tool${result.tools === 1 ? '' : 's'}`;
   process.stdout.write(
     result.authenticated
-      ? `Logged in to ${plain(result.name ?? url)} (${url}): it lists ${count} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`
+      ? `Logged in to ${plain(result.name ?? url)} (${url}): it lists ${count} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n` +
+        (result.withoutLogin !== undefined
+          ? `The server didn't ask for this login: it used the token stored earlier, and it lists ${result.withoutLogin} tool${result.withoutLogin === 1 ? '' : 's'} without one too.\n→ Next: If the menus should differ, compare them: toolmenu snapshot ${url} --no-auth. If they shouldn't, toolmenu auth logout ${url}.\n`
+          : '')
       : `No login made for ${plain(result.name ?? url)} (${url}): it listed ${count} without asking for credentials, so nothing was stored.\n` +
           `→ Next: A server like this usually asks for a login only when a tool is called. If session reports session/untested, pass a token with --header "Authorization: Bearer <token>".\n`,
   );

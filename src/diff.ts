@@ -82,6 +82,8 @@ export const DIFF_RULES: Record<string, DiffRule> = {
   'diff/param-renamed': { severity: 'warn' },
   'diff/version-bump': { severity: 'warn' },
   'diff/version-backwards': { severity: 'warn' },
+  // --release given: the server reported the same serverInfo.version in both releases.
+  'diff/server-version-stale': { severity: 'info' },
   'diff/token-budget': { severity: 'error' },
   // Operations behind a search tool (snapshot --catalog). A search returns its top
   // matches, so one not found this time may be ranked out, not removed: a notice,
@@ -342,6 +344,18 @@ export function diffMenus(before: Menu, after: Menu, options: DiffOptions = {}):
       rule: 'diff/version-backwards',
       message: `The ${release.source === 'server' ? 'server-reported' : 'release'} version went backwards (${release.before} → ${release.after}), so the bump can't be checked.`,
       fix: release.source === 'server' ? 'Pass the release versions with --release old..new.' : 'Pass --release as old..new, the older release first.',
+    });
+  }
+  // The server reported one version across two releases (the filesystem server said
+  // 0.2.0 for 19, F5; serbia-prices-mcp reports FastMCP's own 4.2.1): anything that
+  // tracks the server by serverInfo.version sees no change. Only with release versions,
+  // which say a release happened.
+  const reported = before.server.version;
+  if (options.release && options.release.before !== options.release.after && reported && reported === after.server.version && reported !== options.release.after) {
+    versionRaw.push({
+      rule: 'diff/server-version-stale',
+      message: `The server reported version ${reported} in both releases (${options.release.before} → ${options.release.after}), so serverInfo.version isn't the release version: a client, registry or log that tracks the server by it sees no change.`,
+      fix: "Report the release version in serverInfo.version (the package's own version, not the SDK's or the framework's default).",
     });
   }
   const required = release && actualBump ? requiredBump(suggestedBump, release.before) : undefined;

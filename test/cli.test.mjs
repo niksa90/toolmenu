@@ -140,6 +140,16 @@ test('a config that names a retired rule loads, and says the setting changes not
   assert.doesNotMatch(r.stdout, /late-instruction/);
 });
 
+test('a config that names a rule that does not exist loads, says so and names the closest', async () => {
+  const cwd = tempDir();
+  writeFileSync(join(cwd, 'toolmenu.config.json'), JSON.stringify({ rules: { 'naming/vauge-id': 'error', 'naming/vague-id': 'error' } }));
+  const r = await run(['snapshot', '--no-write', ...raw('smells')], { cwd });
+  assert.equal(r.code, 1, r.stderr);
+  assert.match(r.stderr, /rules\["naming\/vauge-id"\] isn't a rule, so it changes nothing\. Did you mean naming\/vague-id\?/);
+  assert.doesNotMatch(r.stderr, /rules\["naming\/vague-id"\]/);
+  assert.match(r.stdout, /ERROR  naming\/vague-id/);
+});
+
 test('github format prints workflow annotations', async () => {
   const r = await run(['snapshot', '--no-write', '--format', 'github', ...raw('shuffle')]);
   assert.match(r.stdout, /^::error title=toolmenu menu\/nondeterministic::/m);
@@ -580,5 +590,77 @@ test('cli: a server/discover refused with 401 falls back to the 2025 handshake, 
     assert.equal(walled.discovers(), 1);
   } finally {
     await walled.close();
+  }
+});
+
+test('instructions/unknown-name: the instructions name tools and a resource the server does not list', async () => {
+  const missing = ['--env', 'FIXTURE=instructions', '--env', 'INSTRUCTIONS=missing', '--', process.execPath, join(FIXTURES, 'raw-server.mjs')];
+  const r = await run(['snapshot', '--no-write', '--json', '--lists', 'resources,prompts', ...missing]);
+  const found = JSON.parse(r.stdout).findings.filter((f) => f.rule === 'instructions/unknown-name');
+  assert.equal(found.length, 1, r.stderr);
+  assert.equal(found[0].severity, 'warn');
+  assert.equal(found[0].confidence, 'unsure');
+  // "token usage" in the sentence is no reason the tool is missing, so submit_feedback still counts
+  assert.match(found[0].message, /^The server's instructions name 2 tools the menu doesn't list \(submit_feedback, send_digest\), and 1 resource no listed resource or template matches \(acme:\/\/changelog\)\./);
+  assert.match(found[0].message, /listed without credentials/);
+  assert.doesNotMatch(found[0].message, /weren't listed/, 'prompts were listed');
+  assert.deepEqual(found[0].detail.map((d) => d.split(':')[0]), ['submit_feedback', 'send_digest', 'acme']);
+  // the quote is the mention that counted: not "mode=send_digest", but "Call send_digest weekly."
+  assert.match(found[0].detail[1], /^send_digest: “Call send_digest weekly\.”$/);
+  assert.match(found[0].fix, /^Name only what the server lists/);
+  assert.doesNotMatch(found[0].message, /get_story|sort_order/);
+  // without the resource lists, only the tools are checked; prompts declared and not read are said
+  const toolsOnly = JSON.parse((await run(['snapshot', '--no-write', '--json', ...missing])).stdout).findings.find((f) => f.rule === 'instructions/unknown-name');
+  assert.match(toolsOnly.message, /name 2 tools the menu doesn't list \(submit_feedback, send_digest\)\. /);
+  assert.match(toolsOnly.message, /The server declares prompts and they weren't listed, so one of these may be a prompt: list them with --lists prompts\./);
+  const text = await run(['snapshot', '--no-write', '--lists', 'resources,prompts', ...missing]);
+  assert.match(text.stdout, /WARN   instructions\/unknown-name · unsure/);
+  assert.match(text.stdout, /→ Next: Name only what the server lists/);
+});
+
+test('instructions/unknown-name: quiet on what is listed, templates with operators, bold URIs, placeholders, fields, values, subcommands, explained names, listed prompts, or no instructions', async () => {
+  const fine = ['--env', 'FIXTURE=instructions', '--', process.execPath, join(FIXTURES, 'raw-server.mjs')];
+  const r = await run(['snapshot', '--no-write', '--json', '--lists', 'resources,prompts', ...fine]);
+  assert.deepEqual(JSON.parse(r.stdout).findings.filter((f) => f.rule === 'instructions/unknown-name'), [], r.stderr);
+  const none = await run(['snapshot', '--no-write', '--json', ...raw('smells')]);
+  assert.deepEqual(JSON.parse(none.stdout).findings.filter((f) => f.rule === 'instructions/unknown-name'), []);
+});
+
+test('spec/discover-refused: server/discover refused while the 2025 handshake serves the menu, checked against the SDK client', async () => {
+  const { Client, StreamableHTTPClientTransport } = await import('@modelcontextprotocol/client');
+  for (const status of [401, 403]) {
+    const server = await startRaw({ discoverStatus: status });
+    try {
+      // the official SDK client stops there when it tries 2026-07-28 first (versionNegotiation auto);
+      // on its default (legacy) it never sends server/discover and connects
+      const auto = new Client({ name: 'probe', version: '0' }, { versionNegotiation: { mode: 'auto' } });
+      await assert.rejects(auto.connect(new StreamableHTTPClientTransport(new URL(server.url))), new RegExp(`Version negotiation failed: the server (requires authorization|denied access) \\(HTTP ${status}\\)`));
+      const legacy = new Client({ name: 'probe', version: '0' });
+      await legacy.connect(new StreamableHTTPClientTransport(new URL(server.url)));
+      await legacy.close();
+      const r = await run(['snapshot', '--no-write', '--json', server.url, '--processes', '1']);
+      assert.equal(r.code, 0, r.stderr);
+      const findings = JSON.parse(r.stdout).findings;
+      const refused = findings.find((f) => f.rule === 'spec/discover-refused');
+      assert.equal(refused.severity, 'warn');
+      assert.match(refused.message, new RegExp(`^server/discover got HTTP ${status} while the 2025 handshake \\(initialize\\) served the menu without credentials\\.`));
+      assert.match(refused.message, /official TypeScript SDK client \(2\.4\) with versionNegotiation auto fails/);
+      assert.match(refused.message, /Its default \(legacy\) never asks/);
+      assert.match(refused.fix, /^Answer server\/discover as initialize is answered: without credentials/);
+      // said once: not spec/discover's 2025 note as well
+      assert.equal(findings.some((f) => f.rule === 'spec/discover'), false);
+    } finally {
+      await server.close();
+    }
+  }
+  // a 2025 server that answers server/discover as 2025 servers do, or a run on 2025 alone: quiet
+  const plain = await startRaw();
+  try {
+    for (const args of [[], ['--protocol', 'legacy']]) {
+      const findings = JSON.parse((await run(['snapshot', '--no-write', '--json', plain.url, '--processes', '1', ...args])).stdout).findings;
+      assert.equal(findings.some((f) => f.rule === 'spec/discover-refused'), false);
+    }
+  } finally {
+    await plain.close();
   }
 });

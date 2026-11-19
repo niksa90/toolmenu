@@ -4,6 +4,7 @@ import { CLIENTS } from './clients.js';
 import { LIST_WORDS } from './lists.js';
 import { CLIENT_LIMITS } from './rules/description.js';
 import { RETIRED_RULES } from './rules/index.js';
+import { findRule, ruleDocs } from './rule-docs.js';
 import type { Severity } from './types.js';
 import { jsonErrorAt } from './menu.js';
 
@@ -72,6 +73,13 @@ export async function loadConfig(path?: string): Promise<Config> {
       throw new Error(`${file}: rules["${id}"] must be error, warn, info or off`);
     }
     if (Object.hasOwn(RETIRED_RULES, id)) process.stderr.write(`toolmenu: ${file}: rules["${id}"] changes nothing: ${RETIRED_RULES[id]}\n`);
+    else if (!Object.hasOwn(ruleDocs(), id)) {
+      // A typo is ignored like any key nothing reads, so a rule turned up to error in CI
+      // isn't: say so, with the closest ids, and carry on.
+      const found = findRule(id);
+      const near = 'near' in found ? found.near : [found.id];
+      process.stderr.write(`toolmenu: ${file}: rules["${id}"] isn't a rule, so it changes nothing.${near.length ? ` Did you mean ${near.join(', ')}?` : ''} toolmenu explain lists every rule.\n`);
+    }
   }
   if (config.protocol !== undefined && !['auto', 'legacy', 'modern'].includes(config.protocol)) {
     throw new Error(`${file}: protocol must be auto, legacy or modern`);

@@ -973,3 +973,60 @@ credentials: 42 resources without a network went unread for credentials, the net
 missing backend, and nothing here says they read with real ones. The two large hosted
 lists (205 and 158 resources) had five reads each. The error-body check fired on one
 server; one is not enough to say how often it guesses wrong.
+
+## F22. Instructions that name what the server doesn't list: 1,078 hosted servers
+
+*Checked 2026-11-19 with `snapshot --lists resources`, listing only, no credentials; the
+rule at commit `08547c2`; data in `bench/results/2026-11-19-instructions/`.* The servers
+are the 1,120 hosted ones marked `open` on 2026-11-09 (F18); 1,078 listed tools this time.
+
+**Where it started.** Dreamwork 1.10.0's instructions told the agent: "call
+submit_feedback once for each distinct problem". Its 74-tool menu had no such tool. A day
+later the menu had 75 tools, `submit_feedback` among them, and the server still said
+1.10.0. A client that gives the agent the instructions sends it, in between, to a tool
+that isn't there.
+
+**What the rule reads.** A snake_case word that starts with a verb, isn't a parameter, a
+listed prompt or a field (`open_url`, `execute_budget.packs`), isn't written as a value
+(`action=update_budget`), and sits in no sentence that says why the tool is missing. And,
+with `--lists resources`, a URI in the server's own scheme that no listed resource or
+template matches.
+
+**What it found.** 16 servers, each read:
+
+- Tools the instructions send the agent to, missing from the open menu, with nothing in
+  the sentence about a login: `lahend.ee` ("then `fetch` or `get_ruling` by the returned
+  id"; the menu has `fetch` and no `get_ruling`), `mcp.coworkingview.com`
+  (`get_best_coworking`), `pageaudit.online` (`create_tab`; the menu has `run_tab`),
+  `itutoronline.com` (`get_tutoring`), `fordeal.ai` (`check_feed`).
+- Whole workflows named in the instructions and missing from the menu, likely behind a
+  login the instructions don't mention: `api.compteam.io` (6 tools), `api.subagent.fr`
+  (10), `api2.globalfinreg.com` (9), and the account flows of
+  `mcp.ravenmcp.ai`, `keyboardia.dev`, `roundwatch-api.onrender.com`, `trimtabist.com`,
+  `www.ia-qa.com`, `benchmark.useimagine.ai`, `agent-data-tools.revmesh2074.workers.dev`.
+- One that is the rule's: `mcp.varg.ai/how-to` names `publish_skill`, a tool on the same
+  vendor's other server ("on the varg MCP"). Tool names are marked unsure for this reason.
+
+**What the first version got wrong.** Before it left out fields, values, subcommands,
+prompts and explained names, it fired on 52 servers. The 36 it no longer fires on were
+output fields (`chart_url`, `price_per_gpu_hr`), settings written as values
+(`duty=cube_nothing`, `stop_loss: 2`), JSON pasted into the instructions, prompt names,
+subcommands (`participate submit_position`), a gateway (`execute_tool(tool_name=…)`),
+lists of "older tool names", and sentences such as "available only with an agent token"
+(travel-tracker) or "(private mode only)" (DeepWiki), which already say what the rule's
+fix asks for.
+
+**The 0.28.1 fallback, on the same corpus.** Of the 733 hosted servers that listed no
+tools without a login on 2026-11-09, 5 list now. Three (`api.getopservo.com`,
+`patlas.dev`, `clearlist.me`) refuse `server/discover` with 401 and serve their menu over
+the 2025 handshake, as Dreamwork does: 0.28.0 stopped at the 401. The other two answer
+`server/discover` with 400, which 0.28.0 already handled; they opened up between the runs.
+`spec/discover-refused` reports those three and Dreamwork. On the 1,078 open servers it
+fires on none: 15 of them answer a hand-written `server/discover` with 401 or 403, but
+none stops the SDK client the same way (it falls back on its own, or completes the
+2026-07-28 handshake), so toolmenu never needs its own fallback there.
+
+**What this doesn't show.** Listing without credentials: for most of the 16, a login may
+add the tools, and the finding says so. Whether a client gives the agent the instructions
+at all differs by client. The rule reads words, so a server that names tools in prose
+the filters don't expect can be missed or misread.
