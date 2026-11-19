@@ -362,3 +362,22 @@ test('auth login: a server that never asks for credentials is not a login, and n
     await server.close();
   }
 });
+
+test('auth login: a token stored earlier, sent to a server that never asks for one, is said to be unasked for', async () => {
+  isolated();
+  const { start: open } = await import('./fixtures/http-server.mjs');
+  const server = await open();
+  try {
+    await new StoredOAuthProvider(server.url).saveTokens({ access_token: 'stored-earlier', token_type: 'Bearer' });
+    const result = await login(server.url, { port: port() });
+    assert.equal(result.authenticated, true);
+    assert.equal(result.withoutLogin, result.tools);
+    const cli = await run(['auth', 'login', server.url, '--port', String(port())]);
+    assert.equal(cli.code, 0, cli.stderr);
+    assert.match(cli.stdout, /^Logged in to /);
+    assert.match(cli.stdout, /The server didn't ask for this login: it used the token stored earlier, and it lists \d+ tools? without one too\./);
+    assert.match(cli.stdout, /→ Next: If the menus should differ, compare them: toolmenu snapshot .* --no-auth\. If they shouldn't, toolmenu auth logout /);
+  } finally {
+    await server.close();
+  }
+});
