@@ -37,6 +37,9 @@ export function searchText(tool: MenuTool, descriptionChars?: number, fields: Se
   const parts: string[] = [tool.name, descriptionChars !== undefined ? description.slice(0, descriptionChars) : description];
   if (fields === 'codex') {
     if (typeof tool.title === 'string') parts.push(tool.title);
+    // Codex puts the server's name into every tool's text: in one server's menu it changes no
+    // ranking; across servers (scan) it does, so a pooled tool carries it.
+    if (typeof tool.serverName === 'string') parts.push(tool.serverName);
     const props = (tool.inputSchema as { properties?: Record<string, unknown> } | undefined)?.properties;
     parts.push(...Object.keys(props ?? {}));
     return terms(parts.join(' '));

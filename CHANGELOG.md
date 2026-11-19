@@ -4,6 +4,11 @@
 
 ### New
 
+- **`scan` ranks across servers (`search/outranked`).** An agent with several servers
+  loaded searches all their tools at once, so a tool its own server ranks in the top
+  results can drop out. With Atlassian, GitHub, Sentry and Azure DevOps together, 8 tools
+  do in Claude's search (GitHub's `list_issues`: 4th alone, 23rd with the others), none in
+  Codex's. `scan --routes` checks your phrases across servers; `scan --client` ranks per client.
 - **`--client a,b` checks for several clients in one run** (also `scan --client`, and a list
   in the config). The client-specific rules run for each, labelled "For Codex: …"; the
   first client is the main one.

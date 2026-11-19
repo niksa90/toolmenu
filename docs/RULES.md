@@ -164,3 +164,11 @@ means for semver: breaking → major, minor → minor, notice → no bump.
 | `auth/pkce` | error | The authorization server's metadata doesn't list `S256` in `code_challenge_methods_supported`. Clients **MUST** verify PKCE support from it and refuse to go on without it |
 | `auth/registration` | info | No registration endpoint and no Client ID Metadata Documents: every client needs an app registered ahead of time |
 
+
+## scan
+
+`toolmenu scan <config>`: every server in a client config, each checked as `snapshot` checks it, and then all of them together: an agent with several servers loaded searches all their tools at once. Ranked per `--client` (Claude's search, the default, and Codex's, whose text carries each tool's server name), over the tools of every server the scan listed.
+
+| Rule | Default | What it checks |
+|---|---|---|
+| `search/outranked` | info | A tool its own server's menu ranks in the client's top results for its own name (5 for Claude, 8 for Codex) that drops out when the other servers in the list are loaded too: their tools rank ahead of it. Only tools pushed out by other servers' tools, not by their own server's (that is `search/findable`). With `--routes`, a warning for a `routes.yml` phrase whose tool (`server/tool`, or a bare tool name) other servers' tools push past the top results. Seen on real menus: with Atlassian, GitHub, Sentry and Azure DevOps loaded, GitHub's `list_issues` goes from 4th to 23rd for "list issues" in Claude's search. Marked unsure, as `search/findable` |

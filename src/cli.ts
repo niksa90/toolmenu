@@ -20,6 +20,7 @@ import { patiently, tooMany } from './failures.js';
 import { buildMenu } from './menu.js';
 import { existsSync } from 'node:fs';
 import { loadRoutes } from './routes.js';
+import { crossServerFindings } from './cross.js';
 import { snapshot } from './snapshot.js';
 import { connectPatiently, MAIN_SEED, probeMenu, refusedForTooMany, seeded, type Identity } from './probe.js';
 import { autoScenario, loadValuesFile, parseAssumeReadOnly, parseValueFlag, scenarioYaml, type GivenValue } from './auto.js';
@@ -245,6 +246,9 @@ export async function main(given: string[]): Promise<number> {
       },
     });
     if (tty) writeUnguarded(process.stderr, '\r\x1b[K');
+    // Across servers: every listed server's tools in one search, per client (cross.ts).
+    const scanRoutesPath = values.routes ?? config.routes;
+    crossServerFindings(rows, scanClients, scanRoutesPath ? await loadRoutes(scanRoutesPath) : undefined, { rules: config.rules, ignore: config.ignore });
     if (outDir) for (const r of rows) if (r.menu) await writeFile(join(outDir, `${r.name.replace(/[^\w.@-]+/g, '_')}.json`), JSON.stringify(r.menu, null, 2) + '\n');
     writeUnguarded(process.stdout, show(formatScan(rows, format, rest[0])) + '\n');
     return scanExit(rows, failOn);
