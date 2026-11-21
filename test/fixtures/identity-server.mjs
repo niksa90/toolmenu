@@ -4,6 +4,7 @@
 //   ROLE=admin             also delete_item, and get_item says more
 //   ROLE=banned            exits before answering: an identity that can't be listed
 // SCOPE=private sends cacheScope "private" (default "public"). LEGACY=1 serves only 2025.
+import { pathToFileURL } from 'node:url';
 import { Server } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
 
@@ -32,7 +33,7 @@ export function build() {
   return server;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (process.env.LEGACY) await build().connect(new StdioServerTransport());
   else serveStdio(build);
 }
