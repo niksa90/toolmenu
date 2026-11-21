@@ -1,0 +1,106 @@
+{
+ "id": "v1_ChdIV2pfYXREM05jLXR1TVlQNDVXd3NBaxIXSFdqX2F0RDNOYy10dU1ZUDQ1V3dzQWs",
+ "status": "requires_action",
+ "usage": {
+  "total_tokens": 2498,
+  "total_input_tokens": 993,
+  "input_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 993
+   }
+  ],
+  "total_cached_tokens": 0,
+  "total_output_tokens": 77,
+  "output_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 77
+   }
+  ],
+  "total_tool_use_tokens": 1234,
+  "tool_use_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 1234
+   }
+  ],
+  "total_thought_tokens": 194,
+  "initial_input_tokens": 993
+ },
+ "created": "2026-11-19T21:20:41Z",
+ "updated": "2026-11-19T21:20:41Z",
+ "service_tier": "standard",
+ "steps": [
+  {
+   "id": "call_17175845332464366513",
+   "signature": "EoMECoAECAIS+wMBaRR9EyuxkOfLgqFM7gdVWG1uZvOjB+AyySb1K3xFIPZAb/d5iwWAPvRHAssGJ1DMOXbgQwWV2rVKzbN3sCcWykaNcMlJCTFWM5YkQyhadK9VQzUmrVw7xv84jKaYowtZLmxq7QXvAMn9BVEj2lb9Ce84c1o96FDTo9+U0y9uueK6XiGHL+3WmqV70mo78SDsqEwGoNaner0uutqrguNi+wIE9RJ/iqVeEbyOMZTL6HKLVqVeg46bkNhmR46l6Ut3fKuxVlzMdgp7itxDUFg6KgMZUEuDEUglgJ+yWjrSDB7KDzb3e+58eM+pDjNQ+Dgy5JT6KmeY7AqUd+YyKLlTnW19Qv3QX3XYVXn/v9UgnJfOSWJhNj2mazuszVSLRP8rTcv7EIoYBBI+5n1W/Zft0N8pi1DAi+uLLufr4u+SX2BwC9jLzCcniconyWt46nLbpYKmWnXEHdD5lQjteiu2Si8cX5xKjdzb6z5RJX+dI9DA/k0uxsb9jQzTkybQ/xHaoHSDv5Ml2kPhZBYNs3kQhvKr73k3DU6fq7ANB57lSqtcyK1PgVTZKHJPLcrxsKOvXlyNGqDy8bLC0qh+P4oWcy1CrIBZq4x5SUbx4H3zbZgxSZm8sdvzR5sYd2nk+NwyvXZucTZD5jGw5To2TVyDcBundwLoxWW8OYY=",
+   "type": "tool_search_call",
+   "arguments": {
+    "function_names": [
+     "export_customer",
+     "export_data"
+    ]
+   }
+  },
+  {
+   "call_id": "call_17175845332464366513",
+   "signature": "CAIS8QUBaRR9E+f/G7BFZNpIfRjIBUYUU4gNPb10LJUaVQjrwO+QvRy94NHKPQJvv6AXY2BlF2kUFVndQ1aK43VQBOyzJlR/S0Umngd45UnYbOVZoJjBQYIFQ+2s9Uhz3YgtDmXGrpY6tA9H4csNDg1WYTEEHPBxHdGSvVTWEJ7HkbRkbzfQm7cLdOl0e2SBJg5qTXQQ37wvJK6/GNm6nUet9Ikvt9j4ehp3ZEHYyOuvGPQK6QYfMuRObOZFTU1q65xgLGzYkMCm24b2IZ+6E+uQUOlnlNA97d0JQMXnVjtW99mQ+X5v7Wm+KepBvmUDmtx5gTPwcVI/mosm0ep9peqxdoq17nbKrCDjQBkSjGGRNUrIITIBK6E++YlbstL21ZThkTFuG7qy3rREtl0awts+iGVl7KioZhpOymOvtnhlwHxeOdB0qo/Y0F5uj9n2FRqSrM/rpKXplfaAv7Aa1BIMynschls9APRfjDwznibJ13vfa0aSAgEeFeifOwjyfYg+afklC4Bk6xzBZojL9pxCKi9P7+M0/WLyk1toTUyN/ojTghIJWY8PFFSt9nA5BgyQR6jQsLW0fGtvfXgNk0DyCTzbRJ2TWqk02XP9/P7ELoqS6TMxVHTCAT+Io0Topdu63BfeR8Ec/KYnZI8o3dMjEvRPwQ2KnKoCMrk5U38wO2xRqBW5fOD/slADKlXr4gkJ38ExZHifzISk55EqNwikVyY/DmzbPH1otf9di0T5k7yl6hiCke2AltSI3eWxnVVT/vWUYcF0R7K7f1sBh6Ph9TMcHPCBTamzy35qso1WnZlMe2OocobgMjNVaKlEZFX2092V1dMqLt7iuo3L9GUwKY3qZdPWLO1JQoj+Dwg1FRctWOyzcibsAAItF8StX3VkGrhWBsefpPzgvUXwwUKfzYV3n2/FYKw+QvBcjvO1FcQEDL60CVIOsOTo0jQ0Xl4VPW7DvMWvFk+kmV5UsTcnK7X5OHCtmlsbnphI+7pxm7qEsxI=",
+   "type": "tool_search_result",
+   "result": [
+    {
+     "name": "default_api:export_customer",
+     "description": "Export customer for a customer ID.",
+     "parameters": {
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    },
+    {
+     "name": "default_api:export_data",
+     "description": "Export account data for a customer ID.",
+     "parameters": {
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       },
+       "format": {
+        "description": "Output format, for example a quokkalith archive.",
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id",
+       "format"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "signature": "EuoECucEAWkUfRMU/Ben9iiWMGs5q2ZSF65GUS2qhM6YxbCYnK9F+RPIt6jGEnJEFZyNr/CfPqdPXyfO7Xlg9fmvymYv+os5y5eixzKdGoo5NqhjmN+BHdiJkzhgmds7RI4SJ+V7nfz9Hg0tLNQsvrxutaVQU28g2xXVdSfmXZJYai4UdDDNexvtJgeOzsZvpHuoLhtOeGDCZGmH7I/B4OZj9CWJCqNZhdXEUQKv8HlT7eTHlHRziQkefsiyZD0h0SXKU4oPlZjWKASxxig6fidjd/8yZAct9L3S1rPOIerrjLmWnlyU22j8B3bHHo1O2iQEjLFz43mIABmt/lKLrolsFvoMo2wYYez/vt8xqC+MTx6AWwOke4zzEwjXfjEa2HFQt6LutuZuw0y3LutsBfagoGoYOful9voxvqeWWKVPK18eWhF+R1pMouyr9hIAVx2VBzhRSk4oM32Ub7Xbie5jUZr+cinPItrGTc7W5sadOFpH1WBxz9r3+XX8tStotn0excZqF/MkThMNnS4H2PKsHQ7MiWNHc3R8S0fxJp4/V1FVS3e2SeIQvmWWxlWcqY+PBc7Cs25//M0wUPqjepAszEYprtNV3WfaFVCqRdMGZ1q0Vd44wteqFyMqlfOijn44dHab3s41WQQvP61HZHwlr4YdECt6CIUB7FbIsIRiKdxnFpCB8ehWzDAxgltQH/NlOGeYr6uT/zXdIRaU3NfMPKVwpZaNgVBtwKfXMpw8jVIgBnfT1KnB7VyQIfWdkuJTkFHALYPKhcYQmW8dueYn1wuSZLnmx6qsK6XrEDFHu1TFvCattgdgtUKE",
+   "type": "thought"
+  },
+  {
+   "id": "call_302933465088413023",
+   "type": "function_call",
+   "name": "export_data",
+   "arguments": {
+    "customer_id": "CUST-12345",
+    "format": "quokkalith archive"
+   }
+  }
+ ],
+ "object": "interaction",
+ "model": "gemini-4-hydrogen"
+}

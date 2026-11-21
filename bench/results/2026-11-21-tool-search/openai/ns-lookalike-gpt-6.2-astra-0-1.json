@@ -1,0 +1,475 @@
+{
+ "id": "resp_07ab409509731616006aff66c6154887d2ba7c4d65c20bbf8f",
+ "object": "response",
+ "created_at": 1795122886,
+ "status": "completed",
+ "access_programs": {
+  "cyber": "standard"
+ },
+ "background": false,
+ "billing": {
+  "payer": "openai"
+ },
+ "completed_at": 1795122888,
+ "error": null,
+ "frequency_penalty": 0.0,
+ "image": {
+  "context_compression": "disabled"
+ },
+ "incomplete_details": null,
+ "input_transformations": [],
+ "instructions": null,
+ "max_output_tokens": null,
+ "max_tool_calls": null,
+ "model": "gpt-6.2-astra",
+ "moderation": null,
+ "output": [
+  {
+   "id": "tsc_07ab409509731616006aff66c7488887d29b85817b867351cd",
+   "type": "tool_search_call",
+   "status": "completed",
+   "arguments": {
+    "paths": [
+     "tracker",
+     "tracker_v2"
+    ]
+   },
+   "call_id": null,
+   "execution": "server"
+  },
+  {
+   "id": "tso_07ab409509731616006aff66c78e0087d29a33d504049005c0",
+   "type": "tool_search_output",
+   "status": "completed",
+   "call_id": null,
+   "execution": "server",
+   "tools": [
+    {
+     "type": "namespace",
+     "description": "Issue tracker tools.",
+     "name": "tracker",
+     "tools": [
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Get one tracker issue by its ID.",
+       "name": "get_issue",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Search tracker issues.",
+       "name": "search_issues",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Create a tracker issue.",
+       "name": "create_issue",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Comment on a tracker issue.",
+       "name": "add_comment",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      }
+     ]
+    },
+    {
+     "type": "namespace",
+     "description": "Issue tracker tools.",
+     "name": "tracker_v2",
+     "tools": [
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Get one tracker issue by its ID.",
+       "name": "get_issue",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Search tracker issues.",
+       "name": "search_issues",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Create a tracker issue.",
+       "name": "create_issue",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Comment on a tracker issue.",
+       "name": "add_comment",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fc_07ab409509731616006aff66c88c6087d297df93443e45e86c",
+   "type": "function_call",
+   "status": "completed",
+   "arguments": "{\"id\":\"42\"}",
+   "call_id": "call_A0EYly1uJIqNCa0jivmU0Its",
+   "name": "get_issue",
+   "namespace": "tracker"
+  }
+ ],
+ "parallel_tool_calls": false,
+ "presence_penalty": 0.0,
+ "previous_response_id": null,
+ "prompt_cache_key": null,
+ "prompt_cache_retention": "24h",
+ "reasoning": {
+  "context": "all_turns",
+  "effort": "medium",
+  "mode": "standard",
+  "summary": null
+ },
+ "safety_identifier": null,
+ "service_tier": "default",
+ "store": true,
+ "temperature": 1.0,
+ "text": {
+  "format": {
+   "type": "text"
+  },
+  "verbosity": "medium"
+ },
+ "tool_choice": "auto",
+ "tool_usage": {
+  "image_gen": {
+   "input_tokens": 0,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 0
+   },
+   "output_tokens": 0,
+   "output_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 0
+   },
+   "total_tokens": 0
+  },
+  "web_search": {
+   "num_requests": 0
+  }
+ },
+ "tools": [
+  {
+   "type": "tool_search",
+   "description": null,
+   "parameters": null
+  },
+  {
+   "type": "namespace",
+   "description": "Issue tracker tools.",
+   "name": "tracker",
+   "tools": [
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get one tracker issue by its ID.",
+     "name": "get_issue",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Search tracker issues.",
+     "name": "search_issues",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Create a tracker issue.",
+     "name": "create_issue",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Comment on a tracker issue.",
+     "name": "add_comment",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    }
+   ]
+  },
+  {
+   "type": "namespace",
+   "description": "Issue tracker tools.",
+   "name": "tracker_v2",
+   "tools": [
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get one tracker issue by its ID.",
+     "name": "get_issue",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Search tracker issues.",
+     "name": "search_issues",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Create a tracker issue.",
+     "name": "create_issue",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Comment on a tracker issue.",
+     "name": "add_comment",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    }
+   ]
+  }
+ ],
+ "top_logprobs": 0,
+ "top_p": 1.0,
+ "truncation": "disabled",
+ "usage": {
+  "input_tokens": 822,
+  "input_tokens_details": {
+   "cache_write_tokens": 0,
+   "cache_write_tokens_details": {
+    "ttl_12h_tokens": 0,
+    "ttl_30m_tokens": 0
+   },
+   "cached_tokens": 0
+  },
+  "output_tokens": 41,
+  "output_tokens_details": {
+   "reasoning_tokens": 23
+  },
+  "total_tokens": 863
+ },
+ "user": null,
+ "metadata": {}
+}

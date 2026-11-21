@@ -2,12 +2,12 @@
   "toolmenu": 1,
   "server": {
     "name": "toolmenu",
-    "version": "0.28.0",
+    "version": "0.29.0",
     "protocolVersion": "2026-07-28",
     "era": "modern",
     "extensions": {}
   },
-  "capturedAt": "2026-11-11T10:27:35.404Z",
+  "capturedAt": "2026-11-21T06:48:20.724Z",
   "tools": [
     {
       "name": "snapshot_menu",
@@ -57,19 +57,42 @@
             "type": "string"
           },
           "client": {
-            "description": "Also check the menu as this client loads it: what it cuts, finds and refuses.",
-            "type": "string",
-            "enum": [
-              "claude-code",
-              "claude-api-search",
-              "openai",
-              "codex",
-              "vscode",
-              "copilot-cloud-agent",
-              "copilot-code-review",
-              "gemini-cli",
-              "gemini-api",
-              "antigravity"
+            "description": "Also check the menu as this client loads it: what it cuts, finds and refuses. Several ([\"claude-api-search\", \"codex\"]) compare them: a tool one client's search finds and another's misses.",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "claude-code",
+                  "claude-api-search",
+                  "openai",
+                  "codex",
+                  "vscode",
+                  "copilot-cloud-agent",
+                  "copilot-code-review",
+                  "gemini-cli",
+                  "gemini-api",
+                  "antigravity"
+                ]
+              },
+              {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "claude-code",
+                    "claude-api-search",
+                    "openai",
+                    "codex",
+                    "vscode",
+                    "copilot-cloud-agent",
+                    "copilot-code-review",
+                    "gemini-cli",
+                    "gemini-api",
+                    "antigravity"
+                  ]
+                }
+              }
             ]
           },
           "catalog": {
@@ -85,7 +108,7 @@
         "idempotentHint": false,
         "openWorldHint": true
       },
-      "tokens": 461
+      "tokens": 552
     },
     {
       "name": "diff_menus",
@@ -267,7 +290,7 @@
       "tokens": 101
     }
   ],
-  "totalTokens": 1523,
+  "totalTokens": 1614,
   "listMeta": {
     "ttlMs": 3600000,
     "cacheScope": "public"

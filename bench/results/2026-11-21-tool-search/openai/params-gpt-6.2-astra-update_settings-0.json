@@ -1,0 +1,480 @@
+{
+ "id": "resp_05a7faf21b1f54d7006aff6663818887d290e16b64622ea825",
+ "object": "response",
+ "created_at": 1795122787,
+ "status": "completed",
+ "access_programs": {
+  "cyber": "standard"
+ },
+ "background": false,
+ "billing": {
+  "payer": "openai"
+ },
+ "completed_at": 1795122790,
+ "error": null,
+ "frequency_penalty": 0.0,
+ "image": {
+  "context_compression": "disabled"
+ },
+ "incomplete_details": null,
+ "input_transformations": [],
+ "instructions": null,
+ "max_output_tokens": null,
+ "max_tool_calls": null,
+ "model": "gpt-6.2-astra",
+ "moderation": null,
+ "output": [
+  {
+   "id": "tsc_05a7faf21b1f54d7006aff6664ff0887d292092cc91dc4ff0b",
+   "type": "tool_search_call",
+   "status": "completed",
+   "arguments": {
+    "paths": [
+     "crm"
+    ],
+    "query": "update_settings"
+   },
+   "call_id": null,
+   "execution": "server"
+  },
+  {
+   "id": "tso_05a7faf21b1f54d7006aff66653cbc87d294d37d4e3e4ae20f",
+   "type": "tool_search_output",
+   "status": "completed",
+   "call_id": null,
+   "execution": "server",
+   "tools": [
+    {
+     "type": "namespace",
+     "description": "CRM tools for customer accounts.",
+     "name": "crm",
+     "tools": [
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Update account settings for a customer ID.",
+       "name": "update_settings",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         },
+         "zephyrine_mode": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id",
+         "zephyrine_mode"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "msg_05a7faf21b1f54d7006aff66662ea887d2b8b24429cf89bb9f",
+   "type": "message",
+   "status": "completed",
+   "content": [
+    {
+     "type": "output_text",
+     "annotations": [],
+     "logprobs": [],
+     "text": ""
+    }
+   ],
+   "phase": "final_answer",
+   "role": "assistant"
+  }
+ ],
+ "parallel_tool_calls": false,
+ "presence_penalty": 0.0,
+ "previous_response_id": null,
+ "prompt_cache_key": null,
+ "prompt_cache_retention": "24h",
+ "reasoning": {
+  "context": "all_turns",
+  "effort": "medium",
+  "mode": "standard",
+  "summary": null
+ },
+ "safety_identifier": null,
+ "service_tier": "default",
+ "store": true,
+ "temperature": 1.0,
+ "text": {
+  "format": {
+   "type": "text"
+  },
+  "verbosity": "medium"
+ },
+ "tool_choice": "auto",
+ "tool_usage": {
+  "image_gen": {
+   "input_tokens": 0,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 0
+   },
+   "output_tokens": 0,
+   "output_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 0
+   },
+   "total_tokens": 0
+  },
+  "web_search": {
+   "num_requests": 0
+  }
+ },
+ "tools": [
+  {
+   "type": "tool_search",
+   "description": null,
+   "parameters": null
+  },
+  {
+   "type": "namespace",
+   "description": "CRM tools for customer accounts.",
+   "name": "crm",
+   "tools": [
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Fetch a customer profile by customer ID.",
+     "name": "get_customer_profile",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List open orders for a customer ID.",
+     "name": "list_open_orders",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Update account settings for a customer ID.",
+     "name": "update_settings",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       },
+       "zephyrine_mode": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id",
+       "zephyrine_mode"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Export account data for a customer ID.",
+     "name": "export_data",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       },
+       "format": {
+        "type": "string",
+        "description": "Output format, for example a quokkalith archive."
+       }
+      },
+      "required": [
+       "customer_id",
+       "format"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Archive the account into the marmotide vault.",
+     "name": "archive_account",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Does nothing number 0 for a customer ID.",
+     "name": "noop_0",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Does nothing number 1 for a customer ID.",
+     "name": "noop_1",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Does nothing number 2 for a customer ID.",
+     "name": "noop_2",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Does nothing number 3 for a customer ID.",
+     "name": "noop_3",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Does nothing number 4 for a customer ID.",
+     "name": "noop_4",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Does nothing number 5 for a customer ID.",
+     "name": "noop_5",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Does nothing number 6 for a customer ID.",
+     "name": "noop_6",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Does nothing number 7 for a customer ID.",
+     "name": "noop_7",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Does nothing number 8 for a customer ID.",
+     "name": "noop_8",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Does nothing number 9 for a customer ID.",
+     "name": "noop_9",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    }
+   ]
+  }
+ ],
+ "top_logprobs": 0,
+ "top_p": 1.0,
+ "truncation": "disabled",
+ "usage": {
+  "input_tokens": 604,
+  "input_tokens_details": {
+   "cache_write_tokens": 0,
+   "cache_write_tokens_details": {
+    "ttl_12h_tokens": 0,
+    "ttl_30m_tokens": 0
+   },
+   "cached_tokens": 0
+  },
+  "output_tokens": 28,
+  "output_tokens_details": {
+   "reasoning_tokens": 24
+  },
+  "total_tokens": 632
+ },
+ "user": null,
+ "metadata": {}
+}

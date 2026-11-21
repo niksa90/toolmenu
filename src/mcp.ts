@@ -305,7 +305,10 @@ export function build(baseCwd = process.cwd()): McpServer {
       inputSchema: {
         ...serverShape,
         save_as: z.string().optional().describe('Write the menu here (menu.json for a baseline), relative to cwd and inside it: a new file, or a menu file to replace. Default: not written.'),
-        client: z.enum(CLIENT_NAMES as [string, ...string[]]).optional().describe('Also check the menu as this client loads it: what it cuts, finds and refuses.'),
+        client: z
+          .union([z.enum(CLIENT_NAMES as [string, ...string[]]), z.array(z.enum(CLIENT_NAMES as [string, ...string[]])).min(1)])
+          .optional()
+          .describe('Also check the menu as this client loads it: what it cuts, finds and refuses. Several (["claude-api-search", "codex"]) compare them: a tool one client\'s search finds and another\'s misses.'),
         catalog: z.boolean().optional().describe('Also read the operations behind a search tool or command routers.'),
       },
       // It runs an arbitrary command: destructive as far as a client deciding what to approve can know.
@@ -323,7 +326,7 @@ export function build(baseCwd = process.cwd()): McpServer {
         'snapshot',
         ...s.before,
         out,
-        ...(a.client ? [`--client=${a.client}`] : []),
+        ...(a.client ? [`--client=${[a.client].flat().join(',')}`] : []),
         ...(a.catalog ? ['--catalog'] : []),
       ]);
     },

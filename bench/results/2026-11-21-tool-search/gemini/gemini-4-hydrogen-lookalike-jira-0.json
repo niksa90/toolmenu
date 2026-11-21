@@ -1,0 +1,83 @@
+{
+ "id": "v1_ChZmbWpfYW80YzE0dkswd19fOU1hUUJ3EhZmbWpfYW80YzE0dkswd19fOU1hUUJ3",
+ "status": "requires_action",
+ "usage": {
+  "total_tokens": 844,
+  "total_input_tokens": 314,
+  "input_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 314
+   }
+  ],
+  "total_cached_tokens": 0,
+  "total_output_tokens": 57,
+  "output_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 57
+   }
+  ],
+  "total_tool_use_tokens": 430,
+  "tool_use_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 430
+   }
+  ],
+  "total_thought_tokens": 43,
+  "initial_input_tokens": 314
+ },
+ "created": "2026-11-19T21:22:11Z",
+ "updated": "2026-11-19T21:22:11Z",
+ "service_tier": "standard",
+ "steps": [
+  {
+   "id": "call_5081877441549936322",
+   "signature": "EtMCCtACCAISywIBaRR9E6c7qj73czYogrpj07fMceWAsAPoXr8z5nnOrUtK1mneScSUOa8Ybr3uvjnx02Y7ovFu79wsgJSnfJ1FClGAPrJ34/d5itLPBq+zGXfXsgrUuAolE5tcNFIxuXNYGNBiBmVO1HeHuAX5/tbRmeElKWuHPZUCMvPKktJwwmVnjjsLsDsmKzyqhQD1IpBM//ohhLpRdMV9N91qkiuOcBpc3UEHZM+eUSSWvy+hOd4IxepT1WS7iPFA1Oz9h3vDvRsokTNbTxN1XQXvBRbt1g2vNTAskZcJdVoAQptqZbSyz//woNN1SHpQFPz51p6Cy070EnqUsVmnYYPD2uF7tsuxQaGu3sciL643CB8yQGmtZphOWZloQ0za5S9OkjV9zo6WcUsqFjwyH7rRghBOqrK44VOpfTMwb59F0VZYww77PCunH45Tfhhz",
+   "type": "tool_search_call",
+   "arguments": {
+    "function_names": [
+     "jira_get_issue"
+    ]
+   }
+  },
+  {
+   "call_id": "call_5081877441549936322",
+   "signature": "CAISiQMBaRR9E3x542BPOIDjr1bX5SHmT8Zs3DUkCnvX50M2OTlE3CcmFkv0xzOmjyI2hE+xeS8h5oprVn7NLppyMGjQECsoW6G7+LWgq4bfYf2xGuc5wa9Rlb3lOjdmUuQOd6inzJGq3xJy+gaKsCKR1caEHXNApuMowHBH1U+D7PI5LGOMJR6eZoV1QpXxZnpsrSAmW9/RW28aHXSLnKDWUasEjCabpIxjo3WS/302ABxrTN0fv4jkLvxpFCKwiiEblZ8tP2bfBgjNDekmn+WrypT9qWUKPLSRYZJM6Lnu5xU2dq9UDgQvAZ1RZTOANqlQ9DbPPUQaj/b+zyQMyAC+NTvpJRYoV+6Q2uTmw/RdDy9LLtCwi62g80xTOLwOIyvVYfRdF3BVJwReiOOR5rJkgqssIDWsKyoO+3vnwDg7dkljeGsEX5WYAvFD4ladCE0NFbjUiNGWoau2Vj+PyKKZH5s+uLsrUMxo9yj6shPyEKWpEn4uDoPyiI7Go/Bp90oTWbS39fPKbPE0+aw=",
+   "type": "tool_search_result",
+   "result": [
+    {
+     "name": "default_api:jira_get_issue",
+     "description": "Get one Jira issue by its ID.",
+     "parameters": {
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "signature": "ErwBCrkBAWkUfRMQLyligMY/pHU42SubjF71crSHWG97RcTv4V5mVPFVMeIst6ywKZ9QFl6l/rWkBVXKUicGauvoOleIn96LjYDFJhhS+16JF/ii2DTbwL90cp6KnqBrzOBiB0guM3tgI5kxxerxE2jjTxbSIMXgaKgnOhBfYW0CN4VB+uYG8Mxi0xStI54t5HzJq95KjTmH/JH6fGpCBFotsRK5c2fvozHI4Xp/YJj9Y765xPeXLFRz248jED0=",
+   "type": "thought"
+  },
+  {
+   "id": "call_12576323496246226706",
+   "type": "function_call",
+   "name": "jira_get_issue",
+   "arguments": {
+    "id": "PROJ-42"
+   }
+  }
+ ],
+ "object": "interaction",
+ "model": "gemini-4-hydrogen"
+}

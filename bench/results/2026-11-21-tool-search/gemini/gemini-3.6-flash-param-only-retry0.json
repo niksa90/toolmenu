@@ -1,0 +1,100 @@
+{
+ "id": "v1_ChcwR2pfYXVYM0M5Nnd5dE1QMjh6UHlRSRIXMEdqX2F1WDNDOTZ3eXRNUDI4elB5UUk",
+ "status": "requires_action",
+ "usage": {
+  "total_tokens": 2390,
+  "total_input_tokens": 976,
+  "input_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 976
+   }
+  ],
+  "total_cached_tokens": 0,
+  "total_output_tokens": 67,
+  "total_tool_use_tokens": 1122,
+  "tool_use_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 1122
+   }
+  ],
+  "total_thought_tokens": 225,
+  "initial_input_tokens": 976
+ },
+ "created": "2026-11-19T21:23:56Z",
+ "updated": "2026-11-19T21:23:56Z",
+ "service_tier": "standard",
+ "steps": [
+  {
+   "id": "call_13724796850633109490",
+   "signature": "EukECuYECAIS4QQBaRR9EwngTwdIBs9IYrJjvSpFyWIR9WETNx7zbVzh7rwNiEUBAU2IKcjWkGXOlUw69lXLpUclfA7dgJ6BY2hF+yuoN9u4HRR+nb3sudaEo5pz0wHA793P/zLUfVyNByhWq1mfw4BoJU0dRbLZd73WRe2TfPE0yyxdxSq8jeYyoJLAUQSuixLd8GT/w8Se5TzCOrNCHKRKuvXH9TRuQ6DC4M744AFj2lVyIGjPMGLnvm4J1VWT8Swao7ddTaXI4gZYbnpOAERAuAxigOx651lGu8Ox72lFm083dbYdnAuAvomDZwhRkjE4tSQDgxsl+imJ38080uyJOWcTximU4r2kfJOaxdmjhGon5QFlAGPcj9m3xFqyoNLT7EMuH38EXdXlDbtGvoa/84QiSG3w8S6+NSsLPz0rizMlxMUIr57hTgK14w1n4h01+mGzXM8DnzTAU4I5h5mSDRJYi+i2JH73Adkpw4w78DE9HAdxn8bp9Mkine1ZeUtkQ0aqu5rANQDwVVkFqnu8Fb4ZbFkmInR1OkuXJBqsSLHqiEmNQSAOnZ5fS3GDX3kREQHtwo4X7sf/+bfQNmoeqKguXumiklnE89J6xr9u1l+rfO21BqMSLN1SOye+fRdrtKyntYfh6wxKhAtthzMZ8Q4miAlFu2y1EGs1/fGoa5toddQHL0DbxVgPoLVrfC7GRXod+qYCyunNsojMWvjNftPmq6TIQuUFDbBNEsFHLvyVbsP7tkROmPOhTlpb6MR3M5rTr1UZe4fVObixRajB5UTkn4A6e8F6woaqy0bKARWbYY9zFdlv5NM=",
+   "type": "tool_search_call",
+   "arguments": {
+    "function_names": [
+     "export_customer",
+     "export_data"
+    ]
+   }
+  },
+  {
+   "call_id": "call_13724796850633109490",
+   "signature": "CAIS8QUBaRR9E2aa/DHgkhvyrQbbeDEkAfyEKtC0FzzxR+hUviPFxlo1RlcFBABcPcej/AUHmbwCzglvrxR1irlF2ncx1EpieMKogpyWhntWaaNTHZcLs2n90oZHfbMgWPp42KrPQGELQAgpulNODxDw/F2CplK+jINEciXHfaiWi4LY7WqeqGAFRv+FstTB+Dqrv960X4cWOaTBXEeWmW0VLtxelyUOXzhM/omWBqe8+WSb9gDHjrO6GfacmWIHdB7ty3ZN2nSVc5MMZE62GmXdGbLNVBADPRVY23F/s7MhQwQ7KGxdE0VAAWFNgUVJ9H4eNPsvWgSBrg43Rn4d9+8fBAszEPj8oiuKA3XuwQPj+XjWbaY7e0nvi87+hQqnc+tXjSGIVjktHlHxYqESyf5ia/CLSg/IlHaKWvcdUybXrwXarUWpOvpi6I7TvMggBxfiNAaAolkYgWsCMn+Xy1A/Bdo5kV2pPGE/6u/vLRdstmXU7CoviYTM51Q+V6BDpHBE4/NOvWUS5JQTOWNFeiu+9cQt6wpkFbQm2L6LZ5fURKfVjY5mRixOeodbQY4HEFXpsa5JBzlFSXxot/Bny0G6KmwEuhilj9dhaR365LQazqhfdPB8bnhpN2Zec33ArZzpeoMVu7oRDZiAGDs7iZXrTr4cnYLikxkiVKF04UKHZAxqa5rJWvonlxVbL0X/GK0uS6KEDURZ/bjYDswsICUI5DddoD5Vxp5ROrGaH/s4u6ioEmEWlDgO4ad7u5B04v6nzVEdzCReGRzEZSsQqNw5xRutvZ9PyGc4YOsb2OG5mMxA21Dq+JoXWVq63HgIUomJ+9w/heG2AUXWht/k0m1kazMW08yEr91o6jDBM4f+o9bEvaVccE3al5/SHI5dhr57kwW5mAEqK9LHHMPBRcBCE1DrABogHYU+KFxIdpWDM8ROZeVby6D8u+SIMDg9OI49B58Q8AVcLbzxeiGl5u7ny7jUzsh68w7DnF45OK9PydSYpeQ=",
+   "type": "tool_search_result",
+   "result": [
+    {
+     "name": "default_api:export_customer",
+     "description": "Export customer for a customer ID.",
+     "parameters": {
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    },
+    {
+     "name": "default_api:export_data",
+     "description": "Export account data for a customer ID.",
+     "parameters": {
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       },
+       "format": {
+        "description": "Output format, for example a quokkalith archive.",
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id",
+       "format"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "signature": "Et4ECtsEAWkUfROr2posZKM4yR2xJVYqMR3NHvj1zGE+afdYfIIuNGCKZGYztUl2AvcYWjHejeoNKWD8qevo+IWUClgUvFGJyROI4J33NZ5XNk2vci2VzjP887XIeRPrnWnSdI6s0p7nXcjcLuU7L2LXYBjFyCMRmw1SgzOHtETRnI3VUI/rHUnACRitWkQvFNp4W6uMZTngVY+5kjLwXg0/6fd6VwPchX/9lI0oIbsZQVlMiB+bwWCjg08H1kAi9xqj08nA84Kxc0HCTaHzCQ3EgVzbT1xX9iVwIs5rFs8B1kvulxMTxw4I5oNHUo1ZwCJTvOfvgFJPLy1wEoSJmyFe7gvaT8ripg6zxaDo79DclSWuIc2fnGs4UWWZvUwDwvzHSs9aMr/vRiaNNZsUN6NpIHh+Oc46uVM/IEnvtlJpABF58mIE9IcjkExI6n//Gbz6L/91NScivUAMBC5BDF9AAx7W1XffafTeTnrOfpURnGfWbjW7+v6j5pnct6/cvuS1qgg8B+JIJnzFnuKiM7VsMVOxn4FiOItj8hvoFQo69BPqtWx24T/0GL6R5iEdAtCcnJeoRcIpC5HOYCvz8UiQQafjXuq60dhWgF/5kKH3JTUJnRihEgx7su1+2rmF5414a1rqfpC22O/Ovva617PVoMTZnag7GEiRWk4/C9R5HWIouqRFi0NWbb35Puhz5u4FOGooHo/v12JHgXmIWwANAZUaYSL+y0h0o9uCm0MCOSpcJilEnq6onYRjM6LjFmcNqwilrjhfMhTwDc1f9ezQRnN9hpDTZFdY3S7/aWrG",
+   "type": "thought"
+  },
+  {
+   "id": "call_12570043921054291796",
+   "type": "function_call",
+   "name": "export_data",
+   "arguments": {
+    "customer_id": "CUST-12345",
+    "format": "quokkalith archive"
+   }
+  }
+ ],
+ "object": "interaction",
+ "model": "gemini-3.6-flash"
+}
