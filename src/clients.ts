@@ -58,6 +58,12 @@ const CLAUDE_TOOL_SEARCH = 'https://platform.claude.com/docs/en/agents-and-tools
 const CLAUDE_DEFINE_TOOLS = 'https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools';
 const OPENAI_SPEC = 'https://github.com/openai/openai-openapi (openapi.yaml: FunctionToolParam, NamespaceToolParam, MCPTool)';
 const OPENAI_TOOL_SEARCH = 'https://developers.openai.com/api/docs/guides/tools-tool-search';
+// Codex's own source, at the commit read: what it defers, what its tool_search indexes, how many it returns.
+const CODEX_AT = 'https://github.com/openai/codex/blob/3869f39';
+const CODEX_EXPOSURE = `${CODEX_AT}/codex-rs/core/src/mcp_tool_exposure.rs (append_mcp_tools)`;
+const CODEX_SEARCH_TEXT = `${CODEX_AT}/codex-rs/core/src/tools/handlers/mcp.rs (build_mcp_search_text)`;
+const CODEX_LIMIT = `${CODEX_AT}/codex-rs/tools/src/tool_discovery.rs (TOOL_SEARCH_DEFAULT_LIMIT)`;
+const READ_3 = '2026-11-19';
 const READ = '2026-11-02';
 const VSCODE_TOOLS = 'https://code.visualstudio.com/docs/agents/run/tools';
 const COPILOT_CLOUD = 'https://docs.github.com/en/copilot/concepts/agents/cloud-agent/mcp-and-cloud-agent';
@@ -112,6 +118,15 @@ export const CLIENTS: Record<string, ClientProfile> = {
   },
   codex: {
     label: 'Codex',
+    // "let exposure = if search_tool_enabled { ToolExposure::Deferred } else { ToolExposure::Direct }", for every
+    // MCP tool, regular servers and apps alike; search_tool_enabled is the model's supports_search_tool.
+    defers: { value: 'all', source: CODEX_EXPOSURE, read: READ_3 },
+    // BM25 ("Searches over apps/connectors tool metadata with BM25") over the tool's name (three spellings), the
+    // server's name, the tool's title and description, the connector name, the server's description, plugin
+    // display names and the top-level argument names: no argument descriptions.
+    searchFields: { value: ['name', 'title', 'description', 'argument names', "the server's name and description"], source: CODEX_SEARCH_TEXT, read: READ_3 },
+    // pub const TOOL_SEARCH_DEFAULT_LIMIT: usize = 8;
+    searchLimit: { value: 8, source: CODEX_LIMIT, read: READ_3 },
     // Codex sends tools to OpenAI's Responses API: FunctionToolParam.name, ^[a-zA-Z0-9_-]+$, maxLength 128.
     // Its MCP docs don't say whether it defers tools or what it does with a name outside that.
     namePattern: { value: { ...openaiName, api: "OpenAI's Responses API, which Codex sends tools to" }, source: OPENAI_SPEC, read: READ_2 },
@@ -243,4 +258,19 @@ export function clientCost(name: string, menu: Menu): ClientCost | undefined {
     ...(largest ? { largest: { tool: largest.name, tokens: largest.tokens } } : {}),
     basis,
   };
+}
+
+/**
+ * --client or the config's client: "a,b", a list, or nothing. Names trimmed, duplicates
+ * dropped, order kept. An empty list ("", ",") is an error, as an unknown name is.
+ */
+export function clientList(value: string | string[] | undefined): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) && typeof value !== 'string') throw new Error('client must be a name, several separated by commas, or a list of them');
+  if (Array.isArray(value) && !value.every((c) => typeof c === 'string')) throw new Error('client must be a name, several separated by commas, or a list of names');
+  const names = [...new Set((Array.isArray(value) ? value : value.split(',')).map((c) => c.trim()).filter(Boolean))];
+  if (!names.length) throw new Error(`client is empty: give one of ${CLIENT_NAMES.join(', ')}`);
+  const unknown = names.find((c) => !Object.hasOwn(CLIENTS, c));
+  if (unknown) throw new Error(`client must be one of ${CLIENT_NAMES.join(', ')}, or several separated by commas (not "${unknown}")`);
+  return names;
 }

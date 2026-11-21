@@ -1,8 +1,9 @@
 # Checking for one client (`--client`)
 
 What an agent sees depends on its client. `snapshot --client <name>` (or `"client"` in the
-config) checks the menu against what that client's own docs say, and every value
-toolmenu uses names its source and the date it was read (`src/clients.ts`). What a
+config) checks the menu against what that client's own docs say (or its source, where it
+publishes it: Codex), and every value toolmenu uses names its source and the date it was
+read (`src/clients.ts`). What a
 client doesn't document is left out, not guessed.
 
 | `--client` | Up front | Search | Description cut | Names |
@@ -10,7 +11,7 @@ client doesn't document is left out, not guessed.
 | `claude-code` | tool names; full definitions for tools marked `_meta["anthropic/alwaysLoad"]` | reads a description up to 4,096 characters | 16,384 through search, 4,096 up front | Claude API's |
 | `claude-api-search` | nothing from tools you defer (keep the 3–5 used most loaded) | name, description, argument names and descriptions; 5 results by default | none documented | `^[a-zA-Z0-9_-]{1,128}$` |
 | `openai` | each deferred function's name and description (its schema loads on demand); a deferred MCP server shows only its own name and description | how many results, and which fields, isn't documented, so `search/findable` doesn't run | none documented | `^[a-zA-Z0-9_-]+$`, up to 128 |
-| `codex` | not documented | not documented | none documented | OpenAI's (it sends tools to the Responses API) |
+| `codex` | every MCP tool is deferred when the model supports tool search (from Codex's source, `3869f39`) | BM25 over name, `title`, description, top-level argument names (no argument descriptions) and the server's name and description; 8 results by default | none documented | OpenAI's (it sends tools to the Responses API) |
 | `antigravity` | each tool's name; the agent reads a tool's schema before calling it, unless the user marks it `"eager"` | not a search: the agent reads the schema file | none documented | not documented |
 | `gemini-cli` | not documented | not documented | none documented | rewrites: characters outside letters, digits, `_ - . :` become `_`, names over 63 characters are cut in the middle |
 | `gemini-api` | not documented | not documented | none documented | letters, digits, `_ - . :`, up to 128 |
@@ -30,6 +31,18 @@ limit; JetBrains AI Assistant and Junie document none either (Junie CLI times ou
 request after 60 s, startup and `tools/list` included). Not here, because their docs
 don't state it: Cursor's tool limit (forum posts say 40), Windsurf's (100 in older docs,
 not in the current page), ChatGPT's. A value comes in when the client documents it.
+
+## Several clients at once
+
+`--client claude-api-search,codex` (or `"client": ["claude-api-search", "codex"]` in the
+config) checks for each. The first is the main one: its description cut and its cost line.
+The rules that depend on the client (`search/findable`, `naming/client-name`,
+`menu/client-limit`, `menu/client-features`, `description/buried`, `description/cut`) run
+for each, and their findings start "For Codex: …" (and carry `client` in `--json`); one
+that says the same for two clients is said once. With two or more clients whose search
+toolmenu can rank, `search/client-difference` lists the tools one finds by their own name
+and another misses: Sentry 0.49.0's `find_organizations` is 23rd for "find organizations"
+in Claude's search (top 5) and 7th in Codex's (top 8).
 
 The snapshot adds a line such as `as Claude Code: up front ~524 tokens · on demand ~344
 per tool a search loads (largest: update_contacts, ~2,093)`, and `--json` a `client`

@@ -1,0 +1,17 @@
+server	version	menu_file	tools	missed_claude_top5	missed_codex_top8	differing_tools
+Postman	2.15.0	vendors/menus/_postman_postman-mcp-server.json	42	4	0	createCollection "create collection" claude=7 codex=1; getAllSpecs "get all specs" claude=7 codex=6; getCollection "get collection" claude=6 codex=5; getCollections "get collections" claude=9 codex=7
+Sentry	0.49.0	vendors/menus/_sentry_mcp-server.json	73	2	0	find_organizations "find organizations" claude=23 codex=7; find_projects "find projects" claude=9 codex=6
+Atlassian	2.14.5	docker/menus/dc_atlassian.json	80	2	1	confluence_get_page "confluence get page" claude=7 codex=7
+Azure DevOps	2.11.0	vendors/menus/_azure-devops_mcp.json	44	1	0	work "work" claude=13 codex=6
+Firecrawl	3.36.0	docker/menus/dc_firecrawl.json	28	1	0	firecrawl_scrape "firecrawl scrape" claude=6 codex=4
+GitHub (official)	v2.1.0	docker/menus/dc_github-official.json	47	0	0	
+Notion	1.0.0	docker/menus/dc_notion.json	24	0	0	
+Stripe	0.4.0	docker/menus/dc_stripe.json	22	0	0	
+Grafana	(devel)	docker/menus/dc_grafana.json	65	0	0	
+Slack	1.0.0	docker/menus/dc_slack.json	8	0	0	
+Supabase	0.16.1	vendors/menus/_supabase_mcp-server-supabase.json	36	0	0	
+HubSpot	0.4.0	vendors/menus/_hubspot_mcp-server.json	21	0	0	
+Azure	4.0.0-beta.6	vendors/menus/_azure_mcp.json	73	0	0	
+PayPal	1.11.0	vendors/menus/_paypal_mcp.json	28	0	0	
+Salesforce	0.30.15	vendors/menus/_salesforce_mcp.json	74	0	0	
+Playwright	1.65.0-alpha-2026-10-30	vendors/menus/_playwright_mcp.json	25	0	0	

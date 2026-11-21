@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### New
+
+- **`scan` ranks across servers (`search/outranked`).** An agent with several servers
+  loaded searches all their tools at once, so a tool its own server ranks in the top
+  results can drop out. With Atlassian, GitHub, Sentry and Azure DevOps together, 8 tools
+  do in Claude's search (GitHub's `list_issues`: 4th alone, 23rd with the others), none in
+  Codex's. `scan --routes` checks your phrases across servers; `scan --client` ranks per client.
+- **`--client a,b` checks for several clients in one run** (also `scan --client`, and a list
+  in the config). The client-specific rules run for each, labelled "For Codex: …"; the
+  first client is the main one.
+- **`search/client-difference`** (info): with two or more clients toolmenu can rank, the
+  tools one client's search finds by their own name and another's misses. Sentry 0.49.0's
+  `find_organizations` is 23rd in Claude's search and 7th in Codex's: missed in one,
+  found in the other.
+- **`--client codex` ranks tools for `search/findable`.** Codex's source (commit
+  `3869f39`, read 2026-11-19) defers every MCP tool when the model supports tool search,
+  ranks them with BM25 over the name, `title`, description and top-level argument names
+  (not their descriptions), and returns 8 by default. `search/findable` now uses each
+  client's own result count, 5 for Claude, 8 for Codex, and Codex's fields for Codex.
+
+### Repository
+
+- **The plugin runs toolmenu 0.29.0** (was 0.28.1): its snapshots report
+  `instructions/unknown-name` and `spec/discover-refused`, and no longer
+  `description/late-instruction`.
+
 ## 0.29.0
 
 ### New

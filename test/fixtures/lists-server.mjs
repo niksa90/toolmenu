@@ -13,6 +13,7 @@
 //   PAGED=1       resources/list never stops paging (a cursor on every page): read up to the cap
 //   UNSUPPORTED=1 resources/templates/list answers -32600 "Method not supported" (seen on a hosted server)
 //   NO_KEY=1      resources/list fails for want of credentials: a setup problem, not the server's
+import { pathToFileURL } from 'node:url';
 import { ProtocolError, Server } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
 
@@ -67,7 +68,7 @@ function rewrite(line) {
   return JSON.stringify(message);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const write = process.stdout.write.bind(process.stdout);
   process.stdout.write = (chunk, ...rest) => write(String(chunk).split('\n').map((l) => (l.trim() ? rewrite(l) : l)).join('\n'), ...rest);
   if (process.env.LEGACY) await build().connect(new StdioServerTransport());

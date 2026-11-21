@@ -1,0 +1,77 @@
+{
+ "id": "v1_ChdfR2pfYXV6SkQ5Nkx5dE1QNTZLajRBWRIXX0dqX2F1ekpEOTZMeXRNUDU2S2o0QVk",
+ "status": "requires_action",
+ "usage": {
+  "total_tokens": 996,
+  "total_input_tokens": 271,
+  "input_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 271
+   }
+  ],
+  "total_cached_tokens": 0,
+  "total_output_tokens": 47,
+  "total_tool_use_tokens": 476,
+  "tool_use_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 476
+   }
+  ],
+  "total_thought_tokens": 202,
+  "initial_input_tokens": 271
+ },
+ "created": "2026-11-19T21:24:35Z",
+ "updated": "2026-11-19T21:24:35Z",
+ "service_tier": "standard",
+ "steps": [
+  {
+   "id": "call_4603493805049213093",
+   "signature": "EuoGCucGCAIS4gYBaRR9E1C+EBs/g0BRVd6sskDDvLFVK/ySq/j4wE+tYOACVJwKkkfPEZWLL5/AdSJMX3zO0G76nBj5e24ApxIaELEPw2sjOaOco7jCk/bkr7Ts1ysjqfoYKKmRnPNA53BAJSGRQqsvPy6PPhSzhBEdSG+U65WhPmXmmVlTFV9ZcBFKcvd/wYxjeJRZOfM8DfEC6eL/uDonw7qj9yNAADduR5qhjJHG7MRAArLADTZCkxpBn8lGvxEefuPgmp7g3k1mE0U/T5GAWA7aE/L8g6EWNKyPUzaXtQpytaw9joyrfOMhxzYNAoDzcwZZ6ILHlhdsKHK+dQcNEkvuDnAJgmEty1qvv3rNi7tWcv8qiUrq70HE6BSllf6twRcpdOUuEjbwDy8ziiNcl5XbacQKRWGicqseeFocuvNWqRljUtI1hevWdPPqVxPU1S65bEWzX/crUx6xJ1o+Prv5FNVbLMK/y/LKSaWJFVkkoxOaOKup23Jth2aUd/sTBkdqH+ZVyCgzgNgfUsEpgTc0n24lN5Bm0j3Kk2RM4y0dB4HQGr0EkXfZhzGzwZl0L4EpvT2rjao+e7iRnWCwJn2LTHoabNtd3vPTmgI/lWsazcRjHA9HKyJDHL3G5RS6C+w+EMSoP/G72pEPr5gdLDA1vLX+DAJmuHjxOJQ0oqYombPptsh21fse1fyk+CIIOXzNJE17ZgE/XLg5dMeKfwSYsdBq66hK7MLIytVLfGRzXHpw4pWrxcXJWt93nmFpb904y64PZYRpJQ/FdrSP7hwSndsNPJI22KDvNnhUYy9NRUigyar3I8q277fYinFKF5C7JYLwC1ouSOqnDhZF0l7PWT7iEABn0qP847uLClCs+xEx9vOWANpkfRidXauJV9hY9+WHmjdS/1UwY3g2jMjR0xis4Jw9acRptNkoSDHQU0NXb5whk8L2n2hwtPp5kXcwfqu1j90LhkSyD27vUX5i/kn0zOE8FxldqfUKpczdFcidvX+641Aa3QTvSUQV8lg+rfdbtSJe9KufyZI3UYQuUaJp5Q7eLC6JktpGITOOdafBfV1ZpmkUmnwg4Je/KOnutceT0uOnoT8L6MMwaMEbve8y+HmYvGQmf8yJWIlr2y7/hwap+8P0PB71YNdLyUHNSXw0T2dTKw==",
+   "type": "tool_search_call",
+   "arguments": {
+    "function_names": [
+     "jira_get_issue"
+    ]
+   }
+  },
+  {
+   "call_id": "call_4603493805049213093",
+   "signature": "CAISiQMBaRR9E+r9/LmLlLw+XOSwhUbWO+9nKC/3hkjSuSZNZtqg966UZ2maIFKJkBBbPlsuWyoa2dym3fwq5td90FGqtggyPzgw+xoN1kt+HqFf3lRtNyHaHzpBeWEtT+QLHoiHInRg343Cu7rIzkv1b6mWzCWxmmglfUUcwjWS6hCtWNIwG0IJpHSlrqZD3PwXPie3u9N7VLU7lV54jFJlYp6bDFpepPHqE6syruOM5pvoAnD7pKJHRQOpKakaXsmREXm3B0dgQ5KEmCZfM0eWNyv7Q8X7EivZ6/m35E8SKLUwmajkcUh4h56/xnjwZ/kg/j7xmCX+l6bvLei7rtygW/HWTYSNL5l6h7uAzp6YJ16ii4CPgT57GT/R3e25A5gt/dVXmKhZCnzOp5WbSPcuspU6owTEe66ladOns2sNrWVXvV8iBPwq0zbMAG+iHpQ2bN4tSh4WkIZ9sdUbCK1o22Swqwtjj1QOlm9UMuYyJqqJujuHOTzZxFbthNNc57DPW3IDMVbf8xINGvI=",
+   "type": "tool_search_result",
+   "result": [
+    {
+     "name": "default_api:jira_get_issue",
+     "description": "Get one Jira issue by its ID.",
+     "parameters": {
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "signature": "EsABCr0BAWkUfRMjvrI4gE8+QRAbVbaMtRyJh012PVsxJUpbujWGePNjxcpnGQ9AAFZmCXnR1m2qhoggR20ijiwPdzn6YjoCV65fqhzD3T2BeoKkP4d3x3THVSZuDWlNWLuFvQtSErtZE7jSVa+noxoN6C9e17+zT1ekRMILK69LWC/wfOLK5damw+4jitad6Ktlj7H8367lrqkC8eXgurSDx4Sgl6IjrN8eTNX7MqsgbCs91o6GB6MGknCo9ycmzuwn",
+   "type": "thought"
+  },
+  {
+   "id": "call_977881747974490622",
+   "type": "function_call",
+   "name": "jira_get_issue",
+   "arguments": {
+    "id": "PROJ-42"
+   }
+  }
+ ],
+ "object": "interaction",
+ "model": "gemini-3.6-flash"
+}

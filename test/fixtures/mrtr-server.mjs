@@ -2,6 +2,7 @@
 // input by returning `input_required`, one tool per behaviour. All read-only, so
 // session --auto calls them. plain_tool asks for nothing: the control.
 // Serves 2026-07-28 via serveStdio, or only the 2025 protocol when LEGACY=1.
+import { pathToFileURL } from 'node:url';
 import { McpServer, inputRequired, inputResponse } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
 import * as z from 'zod';
@@ -153,7 +154,7 @@ function rewrite(line) {
   return JSON.stringify(message);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const write = process.stdout.write.bind(process.stdout);
   process.stdout.write = (chunk, ...rest) => write(String(chunk).split('\n').map((l) => (l.trim() ? rewrite(l) : l)).join('\n'), ...rest);
   if (process.env.LEGACY) await build().connect(new StdioServerTransport());

@@ -1,0 +1,98 @@
+[
+ {
+  "model": "gpt-5.4",
+  "run": 0,
+  "call_args": {
+   "paths": [
+    "crm"
+   ],
+   "query": "order"
+  },
+  "execution": "server",
+  "loaded": {
+   "crm": 4
+  },
+  "called": "list_open_orders crm",
+  "usage_in": 669
+ },
+ {
+  "model": "gpt-5.4",
+  "run": 1,
+  "call_args": {
+   "paths": [
+    "crm"
+   ],
+   "query": "order"
+  },
+  "execution": "server",
+  "loaded": {
+   "crm": 4
+  },
+  "called": "list_open_orders crm",
+  "usage_in": 669
+ },
+ {
+  "model": "gpt-5.4",
+  "run": 2,
+  "call_args": {
+   "paths": [
+    "crm"
+   ],
+   "query": "order"
+  },
+  "execution": "server",
+  "loaded": {
+   "crm": 4
+  },
+  "called": "list_open_orders crm",
+  "usage_in": 669
+ },
+ {
+  "model": "gpt-6.2-astra",
+  "run": 0,
+  "call_args": {
+   "paths": [
+    "crm"
+   ],
+   "query": "list open orders customer"
+  },
+  "execution": "server",
+  "loaded": {
+   "crm": 8
+  },
+  "called": "list_open_orders crm",
+  "usage_in": 840
+ },
+ {
+  "model": "gpt-6.2-astra",
+  "run": 1,
+  "call_args": {
+   "paths": [
+    "crm"
+   ],
+   "query": "list open orders for customer"
+  },
+  "execution": "server",
+  "loaded": {
+   "crm": 8
+  },
+  "called": "list_open_orders crm",
+  "usage_in": 841
+ },
+ {
+  "model": "gpt-6.2-astra",
+  "run": 2,
+  "call_args": {
+   "paths": [
+    "crm"
+   ],
+   "query": "list open orders customer"
+  },
+  "execution": "server",
+  "loaded": {
+   "crm": 8
+  },
+  "called": "list_open_orders crm",
+  "usage_in": 840
+ }
+]

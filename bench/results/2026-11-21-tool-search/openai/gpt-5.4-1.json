@@ -1,0 +1,1026 @@
+{
+ "id": "resp_04f72f705d6a1fde006aff6007445887d2bc59158b9517a02e",
+ "object": "response",
+ "created_at": 1795121159,
+ "status": "completed",
+ "access_programs": null,
+ "background": false,
+ "billing": {
+  "payer": "openai"
+ },
+ "completed_at": 1795121160,
+ "error": null,
+ "frequency_penalty": 0.0,
+ "image": {
+  "context_compression": "disabled"
+ },
+ "incomplete_details": null,
+ "input_transformations": [],
+ "instructions": null,
+ "max_output_tokens": null,
+ "max_tool_calls": null,
+ "model": "gpt-5.4-2026-03-05",
+ "moderation": null,
+ "output": [
+  {
+   "id": "tsc_04f72f705d6a1fde006aff6008313087d285272f47c93249f3",
+   "type": "tool_search_call",
+   "status": "completed",
+   "arguments": {
+    "paths": [
+     "crm"
+    ],
+    "query": "order"
+   },
+   "call_id": null,
+   "execution": "server"
+  },
+  {
+   "id": "tso_04f72f705d6a1fde006aff60086c4087d281988eb599f7634d",
+   "type": "tool_search_output",
+   "status": "completed",
+   "call_id": null,
+   "execution": "server",
+   "tools": [
+    {
+     "type": "namespace",
+     "description": "CRM tools for customer lookup and order management.",
+     "name": "crm",
+     "tools": [
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "List open orders for a customer ID.",
+       "name": "list_open_orders",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Get order for a customer ID.",
+       "name": "get_order",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Cancel order for a customer ID.",
+       "name": "cancel_order",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Refund order for a customer ID.",
+       "name": "refund_order",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fc_04f72f705d6a1fde006aff6008b6d487d2983ad077963f6a52",
+   "type": "function_call",
+   "status": "completed",
+   "arguments": "{\"customer_id\":\"CUST-12345\"}",
+   "call_id": "call_k4nqwZWOuzVO7E9vvJ8Wx93K",
+   "name": "list_open_orders",
+   "namespace": "crm"
+  }
+ ],
+ "parallel_tool_calls": false,
+ "presence_penalty": 0.0,
+ "previous_response_id": null,
+ "prompt_cache_key": null,
+ "prompt_cache_retention": "24h",
+ "reasoning": {
+  "context": "current_turn",
+  "effort": "none",
+  "mode": "standard",
+  "summary": null
+ },
+ "safety_identifier": null,
+ "service_tier": "default",
+ "store": true,
+ "temperature": 1.0,
+ "text": {
+  "format": {
+   "type": "text"
+  },
+  "verbosity": "medium"
+ },
+ "tool_choice": "auto",
+ "tool_usage": {
+  "image_gen": {
+   "input_tokens": 0,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 0
+   },
+   "output_tokens": 0,
+   "output_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 0
+   },
+   "total_tokens": 0
+  },
+  "web_search": {
+   "num_requests": 0
+  }
+ },
+ "tools": [
+  {
+   "type": "tool_search",
+   "description": null,
+   "parameters": null
+  },
+  {
+   "type": "namespace",
+   "description": "CRM tools for customer lookup and order management.",
+   "name": "crm",
+   "tools": [
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List open orders for a customer ID.",
+     "name": "list_open_orders",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get customer profile for a customer ID.",
+     "name": "get_customer_profile",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Update customer email for a customer ID.",
+     "name": "update_customer_email",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List customer notes for a customer ID.",
+     "name": "list_customer_notes",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Add customer note for a customer ID.",
+     "name": "add_customer_note",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get order for a customer ID.",
+     "name": "get_order",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Cancel order for a customer ID.",
+     "name": "cancel_order",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Refund order for a customer ID.",
+     "name": "refund_order",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List shipments for a customer ID.",
+     "name": "list_shipments",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Track shipment for a customer ID.",
+     "name": "track_shipment",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List invoices for customer for a customer ID.",
+     "name": "list_invoices_for_customer",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get loyalty points for a customer ID.",
+     "name": "get_loyalty_points",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Add loyalty points for a customer ID.",
+     "name": "add_loyalty_points",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List support tickets for a customer ID.",
+     "name": "list_support_tickets",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Open support ticket for a customer ID.",
+     "name": "open_support_ticket",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Close support ticket for a customer ID.",
+     "name": "close_support_ticket",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List addresses for a customer ID.",
+     "name": "list_addresses",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Add address for a customer ID.",
+     "name": "add_address",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Delete address for a customer ID.",
+     "name": "delete_address",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List payment methods for a customer ID.",
+     "name": "list_payment_methods",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get lifetime value for a customer ID.",
+     "name": "get_lifetime_value",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Merge customers for a customer ID.",
+     "name": "merge_customers",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Tag customer for a customer ID.",
+     "name": "tag_customer",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Untag customer for a customer ID.",
+     "name": "untag_customer",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List segments for a customer ID.",
+     "name": "list_segments",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Export customer for a customer ID.",
+     "name": "export_customer",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List returns for a customer ID.",
+     "name": "list_returns",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Create return for a customer ID.",
+     "name": "create_return",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get cart for a customer ID.",
+     "name": "get_cart",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Clear cart for a customer ID.",
+     "name": "clear_cart",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    }
+   ]
+  },
+  {
+   "type": "namespace",
+   "description": "Billing tools for invoices, charges and plans.",
+   "name": "billing",
+   "tools": [
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Create invoice for a customer ID.",
+     "name": "create_invoice",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Void invoice for a customer ID.",
+     "name": "void_invoice",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List invoices for a customer ID.",
+     "name": "list_invoices",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get invoice for a customer ID.",
+     "name": "get_invoice",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Charge card for a customer ID.",
+     "name": "charge_card",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Issue credit for a customer ID.",
+     "name": "issue_credit",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List credits for a customer ID.",
+     "name": "list_credits",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get balance for a customer ID.",
+     "name": "get_balance",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "List plans for a customer ID.",
+     "name": "list_plans",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Change plan for a customer ID.",
+     "name": "change_plan",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    }
+   ]
+  }
+ ],
+ "top_logprobs": 0,
+ "top_p": 0.98,
+ "truncation": "disabled",
+ "usage": {
+  "input_tokens": 669,
+  "input_tokens_details": {
+   "cache_write_tokens": 0,
+   "cache_write_tokens_details": {
+    "ttl_12h_tokens": 0,
+    "ttl_30m_tokens": 0
+   },
+   "cached_tokens": 0
+  },
+  "output_tokens": 47,
+  "output_tokens_details": {
+   "reasoning_tokens": 23
+  },
+  "total_tokens": 716
+ },
+ "user": null,
+ "metadata": {}
+}

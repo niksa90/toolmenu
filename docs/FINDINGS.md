@@ -1030,3 +1030,64 @@ none stops the SDK client the same way (it falls back on its own, or completes t
 add the tools, and the finding says so. Whether a client gives the agent the instructions
 at all differs by client. The rule reads words, so a server that names tools in prose
 the filters don't expect can be missed or misread.
+
+## F23. The same tool, different clients: who finds it
+
+*Checked 2026-11-19 to 21; data in `bench/results/2026-11-21-tool-search/`.* Clients that
+defer MCP tools behind a search don't search the same way, and toolmenu now ranks per client
+(`--client codex` from Codex's source, `search/client-difference`, `search/outranked` in
+`scan`). This is what that shows on real menus, and what two vendors' hosted searches do.
+
+**One server, two clients.** Each tool of 16 well-known servers (the 2026-11-09 menus),
+searched for by its own name: Claude's search (top 5, reads argument descriptions) and
+Codex's (top 8, doesn't). 11 servers lose no tool in either. Five lose some in Claude's and
+fewer or none in Codex's:
+
+| Server | Tools | Missed, Claude | Missed, Codex | Example |
+|---|---|---|---|---|
+| Postman 2.15.0 | 42 | 4 | 0 | "create collection": `createCollection` 7th / 1st |
+| Sentry 0.49.0 | 73 | 2 | 0 | "find organizations": `find_organizations` 23rd / 7th |
+| Atlassian 2.14.5 | 80 | 2 | 1 | "get issue": `jira_get_issue` 16th / 11th |
+| Azure DevOps 2.11.0 | 44 | 1 | 0 | "work": `work` 13th / 6th |
+| Firecrawl 3.36.0 | 28 | 1 | 0 | "firecrawl scrape": `firecrawl_scrape` 6th / 4th |
+
+Most of the gap is argument descriptions: "organization" and "project" in many tools'
+arguments bury the tool named for them in a search that reads them.
+
+**Several servers together.** Atlassian, GitHub, Sentry and Azure DevOps pooled (244
+tools): 8 tools their own server ranks in Claude's top 5 drop out of it with the others
+loaded. GitHub's `list_issues` is 4th for "list issues" alone and 23rd together, behind
+Jira's issue tools; Jira's `jira_add_comment` goes from 3rd to 8th behind GitHub's and Azure
+DevOps' comment tools. None drop out of Codex's top 8. Notion, Supabase, Stripe, Slack and
+HubSpot pooled: one, Notion's `API-get-users`, 3rd alone and 13th behind Slack's user tools.
+
+**OpenAI's hosted `tool_search` (Responses API), measured.** The docs don't say how it
+matches or how many tools it returns. With 40 made-up deferred functions in two namespaces:
+- The model's call names a namespace and, optionally, a query: `{"paths": ["crm"], "query": "order"}`.
+  For a small namespace it sent no query and loaded every tool in it.
+- **Keyword, not meaning:** "purchases" found none of four order tools, on either model.
+- **Name and description only:** a word only in a parameter's name or description found
+  nothing; the same kind of word in the description found the tool.
+- **The models differ.** gpt-5.4 matches the whole query as one phrase ("account settings"
+  finds "Update account settings"; "settings account" doesn't) and returns every match (30
+  of 30 for "customer"). gpt-6.2-astra matches words in any order and returns at most 8,
+  name matches first.
+
+**Gemini's Tool Retrieval (Interactions API, preview), measured.** The model names the exact
+tools it wants (`function_names`); nothing is searched on Google's side. "List open orders"
+loaded exactly `list_open_orders`; "what has this customer purchased that hasn't shipped"
+loaded the order and shipment tools, though no tool says "purchase"; a word only in a
+parameter's description didn't stop it picking the right tool from its description.
+
+**Look-alike tools.** Jira and GitHub tools both named `get_issue`, request "Get issue 42":
+gpt-5.4 called Jira's every run, gpt-6.2-astra GitHub's every run, gemini-4-hydrogen both.
+None asked which was meant. "Get Jira issue PROJ-42" reached Jira on every model. Two
+namespaces with the same description (`tracker`, `tracker_v2`): gpt-5.4 picked one in one
+run and the other in the next.
+
+**What this doesn't show.** toolmenu's rankings follow each client's documented or
+source-read fields and result counts; the clients' tokenizers and BM25 settings aren't
+published, so a place can be off by one or two. The vendor measurements are two runs per
+case on made-up tools, on the models named, on 19 November: they can change with any model
+release. gemini-3.6-flash with the vague look-alike request wasn't measured (capacity errors).
+Which client a user's agent runs, and whether it searches at all, decides which of these applies.

@@ -10,6 +10,7 @@
 //   FAIL_LIST=1    resources/list fails
 //   SIZE=uri       the listing declares 20 MB for this one
 //   COUNT_FILE=p   every resources/read appends its URI to this file
+import { pathToFileURL } from 'node:url';
 import { appendFileSync } from 'node:fs';
 import { ProtocolError, Server, inputRequired } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
@@ -131,7 +132,7 @@ function rewrite(line) {
   return JSON.stringify(message);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const write = process.stdout.write.bind(process.stdout);
   process.stdout.write = (chunk, ...rest) => write(String(chunk).split('\n').map((l) => (l.trim() ? rewrite(l) : l)).join('\n'), ...rest);
   if (process.env.LEGACY) await build().connect(new StdioServerTransport());

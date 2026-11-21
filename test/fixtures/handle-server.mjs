@@ -17,6 +17,7 @@
 // --create-handles: start_session, create_cart and open_basket are called first. BROKEN=1 breaks the
 //   round trip: session_status refuses even the session start_session made, and create_cart
 //   returns no cart id.
+import { pathToFileURL } from 'node:url';
 import { McpServer, fromJsonSchema } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
 
@@ -75,7 +76,7 @@ function rewrite(line) {
   return JSON.stringify({ jsonrpc: '2.0', id: message.id, error: { code: -32602, message: said.replace('PROTOCOL-ERROR ', '') } });
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const write = process.stdout.write.bind(process.stdout);
   process.stdout.write = (chunk, ...rest) => write(String(chunk).split('\n').map((l) => (l.trim() ? rewrite(l) : l)).join('\n'), ...rest);
   if (process.env.LEGACY) await build().connect(new StdioServerTransport());

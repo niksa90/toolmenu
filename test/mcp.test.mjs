@@ -369,3 +369,19 @@ test('TOOLMENU_ARGS holds only options and their values: no "--", no stray word,
   const ok = await run(['explain'], { env: { TOOLMENU_ARGS: JSON.stringify(['--format', 'json']) } });
   assert.equal(ok.code, 0, ok.stderr);
 });
+
+test('snapshot_menu takes one client or several; several are compared', async () => {
+  const cwd = tempDir();
+  await withServer(async (call) => {
+    const command = [process.execPath, join(FIXTURES, 'client-server.mjs')];
+    const one = await call('snapshot_menu', { command, cwd, client: 'codex' });
+    assert.equal(one.isError, undefined, textOf(one));
+    assert.doesNotMatch(textOf(one), /For Codex:/, 'one client: no labels');
+    const several = await call('snapshot_menu', { command, cwd, client: ['claude-api-search', 'codex'] });
+    assert.equal(several.isError, undefined, textOf(several));
+    assert.match(textOf(several), /For Claude's tool search \(Claude API\): /);
+    assert.match(textOf(several), /For Codex: /);
+    const bad = await call('snapshot_menu', { command, cwd, client: [] });
+    assert.equal(bad.isError, true);
+  });
+});

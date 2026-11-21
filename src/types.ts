@@ -8,6 +8,8 @@ export interface Finding {
   message: string;
   /** Tool the finding is about, when there is one. */
   tool?: string;
+  /** snapshot --client a,b: the client a client-specific finding is for. */
+  client?: string;
   /** Extra lines shown under the message. */
   detail?: string[];
   /** For `session`: the scenario step that caused it (0 = before the first step). */

@@ -190,6 +190,14 @@ findings, like this:
   linear           –      –   not checked: LINEAR_API_KEY is not set (the config refers to it)
 ```
 
+With two or more servers listed, `scan` also ranks every server's tools together, the way
+an agent with all of them loaded searches them (`search/outranked`): a tool its own server
+ranks in the top results for its own name that other servers' tools push out. With
+Atlassian, GitHub, Sentry and Azure DevOps, GitHub's `list_issues` goes from 4th to 23rd for
+"list issues" in Claude's search. `--client claude-api-search,codex` ranks for each;
+`--routes routes.yml` checks your phrases across all of them (`must_match: [aimyear/log_workout]`,
+or a bare tool name).
+
 `scan` starts every command the list names, so scan only lists you'd run yourself (not
 a `.mcp.json` from a repository you haven't read). A config's `${VAR}` is filled only
 from the variables you name with `--allow-env` (comma-separated, or `'*'` for all): the

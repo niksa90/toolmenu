@@ -1,0 +1,108 @@
+{
+ "id": "v1_ChdVbWpfYXJqa0I1ZkR4ZElQa2JHMTZBTRIXVW1qX2FyamtCNWZEeGRJUGtiRzE2QU0",
+ "status": "requires_action",
+ "usage": {
+  "total_tokens": 1378,
+  "total_input_tokens": 311,
+  "input_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 311
+   }
+  ],
+  "total_cached_tokens": 0,
+  "total_output_tokens": 88,
+  "output_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 88
+   }
+  ],
+  "total_tool_use_tokens": 570,
+  "tool_use_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 570
+   }
+  ],
+  "total_thought_tokens": 409,
+  "initial_input_tokens": 311
+ },
+ "created": "2026-11-19T21:22:04Z",
+ "updated": "2026-11-19T21:22:04Z",
+ "service_tier": "standard",
+ "steps": [
+  {
+   "id": "call_11539428480547994950",
+   "signature": "EqkFCqYFCAISoQUBaRR9E6JzVqdt3izuCFfkGJfwi0rfncddQCfiaDOaPFsaa5grYoQiylQp+SIdV3rzRRYgf+eUwH5/zsaju1XgwZagKuFyuP9aYqQyt2Amei63T5wRohZORJkj2MgLG0ojBrerF++W/ktKX34gnv+tpKOTpsvx7/FT5QNpO2JPagQVpoa9xAXYUMiD9fIq5YJYPizGRcRWsVyOXF2K6NbXHaoq5BHSEnsUxOGYpVVnOIu9efSv3ZrYnUBfRzoUwA5nn8tOWlZcAh6TktgCPiXddhTQPAWchQhw0KQuysUFfYTk0VSL3oGLxiYr4ypeVO05wbWVhuQLE88FTFujFrnitt0WwiHJS2jIQTfduqiIwAgyiKyNK2vzQYL/WxO1N+2rNjtzSJdRub33d2dzgEsqHcknD7t77XiG3bb4ZBsCBGW/+S43CjywLDw0I8M2Ilqd3L3sp3sim3OjLNI1L+sQavoODeK7B2QA9/1UnnfCWkdRkZOKQgA/YnaKwDn36mE2CevzlRo512opwzQM8ZzemPM4ScKTZn4qINl3MomwM+26F1sY5JMazZSRLqicVtVrweGeYAgPLQT4CBVwP4/xb3uI9Y9p2eEhrJaMV/09pcw7QhgaC+6iujDLVnsCJS12o8QChEEtXl0p1f//nhkUa1WtKr2ILYqTD++txDd/z/Nqilp8I9JLz3ORBCQYwd/9Xg0Psj6T873blePzUuwUXwmr9r3w9w0TsucJqeWO3UEcMhadp7E1Yzpg4LP1aUnsVRgeYc6g0scdeQ0+K/LLTu8px/upjbSYIki47uzepjD4r9kbeAmXcK0mA6Dq7S5ph6rR3fn4NuIN3Tguj89XnHaclILQ7d6fDAJ8IMEm1H3WhMNJzvHjcknW5b4PI+zP",
+   "type": "tool_search_call",
+   "arguments": {
+    "function_names": [
+     "github_get_issue",
+     "jira_get_issue"
+    ]
+   }
+  },
+  {
+   "call_id": "call_11539428480547994950",
+   "signature": "CAIS0gQBaRR9E2jLdBaFU2AaUG/I8yN09zUO+dUJrGjYNHiCLdQQpT+bmRqE6ldLsgpyfYE1zjwdNL7Eye82sQdAmRTWucfeouGiM+GWevbem9PoPGrsqLh45peF9OZxr7B35U95zEo6fc8sYKe3+cFcwkM6YgxrdyEANAd4SM4vGDCC3PvcvDt2H5NxWz7qJTMoDxyOSAmqwoi2z6UJOu3PROGboSqbAeTBfWP24ObZONpzNDibQBJT1OSVT8BZbjQR0+l8fqL5BYqc4yViQzDKH/nyZ774E/aqYGxhC1ylZYhqLhcbZQqw9loHx2zYkmQGVI/RDCXYATRBL2Q8oxQzv0eThG+T+esaa00F+eV+YzDQqy8q7SLl/0dQUzuKEQuQnFWC5pG6Z5mInVikTOVxBIZI1L1czzVVcWx5ZmRBodsLUe5LkYcJn0hb9U3pTl533pBWHkWP5yzTnuj3zaCLe+PPkAqbOkZKqHo4fKPNxdkNPmXNxSoa7baIaKN/lJRJ6qYiBcFoaKSgi0/9aI4JrxZPlJyxROib7Tglt3CHYX2tk680bhfK0YAQaCDZ6j6m+rRm6Oj6K3cubmRGN/aH16+jWhyelmwyWAhQiweYn0EP4+oqiQBf4zmBMOVhZcgVL0qRxnHt7k1JmC4wmYt1bFX2VWiEHqsAJvj5+Alx8JsH8cx/wDlW0jZuv3Ke+vQQBIQSrSrVI0yicB2MO1T4Ltlg8xBcAuoPYHLD00qVr3SxzkmdlSE8b75V+wKGmPcOaoCNURZ4WwvExtxJfGjHEXQXLLk=",
+   "type": "tool_search_result",
+   "result": [
+    {
+     "name": "default_api:github_get_issue",
+     "description": "Get one GitHub issue by its ID.",
+     "parameters": {
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    },
+    {
+     "name": "default_api:jira_get_issue",
+     "description": "Get one Jira issue by its ID.",
+     "parameters": {
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "signature": "EpEKCo4KAWkUfRPRAv1JIy9aZ+L/IZbcqiTBdRQ9c5SNIdvtORXHw3QUb8YGVwIayBuDKvgXIPDrN/uISWDEMCGIbd0WcxREDFB7W6r11Y+cNI3NRrW5tCjyyHULLtPlXz8+w5UhVxoomn0zjOKI9jE4q40G+yAPGythfbizuiiX54kKebsr+88zdEir5SzrQCwammLrCJkTxKyEkZlbdJ/S9AvztqRj6kpvRzEvm8rt0d7aSZ8Oo7U5h0lUVQPJppEGM++8Tc6yxxeRtzSIXxtviLsdL/KMFf6jOTT/VYivY34/sV1wWMqfUOUeZwFCdHPJ/D5N5oTGpnh8F+zpgSj0ZP7liRoAUzu3bKnTJXXTkvHocr2ozEoHMnpyPOZpDEq6+zijBZQxU1wBzIUarHz44OPNEn4WmpzMXZGS7JDXuCTCSRKIfGkk8YEbWdXG2KwgJlQlNuRsEzOXK8U3+aWQi8231QAWL25rvMT/1qMc2EeuHzpCLwlfK3TMCEp61zuZnmMszeru0H8eudAYYQ+p9839R9WLIg7QpEQaELm27VY28PdK8+Hp4PIBLLUrEO32mZu+V0Fq2ec7KGbna3gqdCs2tNWcUiaWFHFeZ/z4yQSOVAA88wxNmiwepZLslmVI59hc/n5jP1tyZSmWg13Nm/lNIV5VWYeEU8dvTjWdp4HH7Joh+NO79S4GrDj3ZjhmgWGQJIelj83OYvonNFUostBNYxi1Uv2NKn3zI+yLy88Cz3cFApa1T6r77ascWpCRUT8aL2pbKuO7JF62RTTj6ayqvcTivUzJ4RZmf4TWPHW69G52Ix7VHi46dkovozrQZ1jH6RE0zhvQhih1Ip4vZdemGREDndoRzDkA6xhgk/GssR6k05OUcGMlL0X5/l4HbneOYWbU7b7bW35zOkCiRYYTYrIacpilpDpsLkdbbt2bCrNssFKDr6isj55yAG1RcdwQCTVv31MnAqMxSgSAjIJomvPHhSMDAvjJB2auXVYPiU82Afgn5yLmnL6LEA+O0PC7S/DUjnAsS+ZZqNdVF8nDOEDmtHB2q+6abe5kErDd30WOuGWLoE7bI9NhJK4dIpO/mRSQ6Ind91MwmZD2Ctq5MvLAqtvaOgBRYy/BbNYwMrkt5RH0hh7FbrL2V4YDem04CwhvhUHVSgFetVMZjXuNYbgGIXaLmrQlXq6RoA4xlzGugPweS0QC+0NnT8VT6LzZ16XSOfUKLecdRs/9DkV3bsmGHMZrtzsUzVN8nbQ6jnXG4izH77JRSg4+bCgdCdeXsx71SA2PJ/gFYw/yYzBPAQlfs4Do/MFCtxwPykSF4zYf1eYBgcVkO7NSMHtqcjQ4S5aZRIMxXXbUDO5qJ0HZH0FmtkrScTOlagnjFVM29tO0gyKbpfFlXCYApvxOMRA+hQWag+u9oJ/GuyePCeSe5i9AKcBl8w5YejOXkA8WBR1GTbICSLCUfyLTjfVriV/VOo8C1oX9mjmKVri/CSM/BYHtGNIpjj+3GM//fYjARwv9V6xyEggJlXiGlmFuBaf7IZaYYAsmOBn/KcdPaYsNbCSqw+/e6Z6wom6Rb1J0EAdgUeD7U+rh/nv5YQyPCcQYWFOzMGiu+Qgo20SobmH3o3zpmJV33j/zbXD+TmxgkvsNH+D/qy2nrJ1NKiez/5AAod7KHuEtqNP9ABWj17B8khzKYLTVgFXsVUV8Qiulwqfw/TH+7PaaSvlUeWTUBg==",
+   "type": "thought"
+  },
+  {
+   "id": "call_11539428480547995567",
+   "type": "function_call",
+   "name": "github_get_issue",
+   "arguments": {
+    "id": "42"
+   }
+  },
+  {
+   "id": "call_11539428480547995070",
+   "type": "function_call",
+   "name": "jira_get_issue",
+   "arguments": {
+    "id": "42"
+   }
+  }
+ ],
+ "object": "interaction",
+ "model": "gemini-4-hydrogen"
+}
