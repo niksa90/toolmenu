@@ -27,6 +27,7 @@ that sent the requests (`*.py`; the API keys were injected by a proxy or read fr
 environment and appear nowhere here). Tools are made up (a `crm` namespace of 30 deferred
 functions and a `billing` one of 10; look-alike `jira`/`github` namespaces), so nothing
 here depends on a real server. Models: gpt-5.4 and gpt-6.2-astra; gemini-3.6-flash and
-gemini-4-hydrogen. Two runs per case unless a file name says `retry`; some
-gemini-3.6-flash runs failed with Google's "high demand" error and were retried once
-(those error responses are kept).
+gemini-4-hydrogen. Two runs per case unless a file name says `retry`, except two OpenAI
+scripts: `run.py` ("order") ran three, and `params2.py` ("zephyrine_mode", "update
+settings") one per model. Some gemini-3.6-flash runs failed with Google's "high demand"
+error and were retried once (those error responses are kept).

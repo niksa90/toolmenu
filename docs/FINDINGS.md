@@ -1054,12 +1054,13 @@ fewer or none in Codex's:
 Most of the gap is argument descriptions: "organization" and "project" in many tools'
 arguments bury the tool named for them in a search that reads them.
 
-**Several servers together.** Atlassian, GitHub, Sentry and Azure DevOps pooled (244
-tools): 8 tools their own server ranks in Claude's top 5 drop out of it with the others
-loaded. GitHub's `list_issues` is 4th for "list issues" alone and 23rd together, behind
-Jira's issue tools; Jira's `jira_add_comment` goes from 3rd to 8th behind GitHub's and Azure
-DevOps' comment tools. None drop out of Codex's top 8. Notion, Supabase, Stripe, Slack and
-HubSpot pooled: one, Notion's `API-get-users`, 3rd alone and 13th behind Slack's user tools.
+**Several servers together.** Atlassian, GitHub, Sentry and Azure DevOps pooled (the four
+menus hold 244 tools; the scan reported 243): 8 tools their own server ranks in Claude's
+top 5 drop out of it with the others loaded. GitHub's `list_issues` is 4th for "list
+issues" alone and 23rd together, behind Jira's issue tools; Jira's `jira_add_comment` goes
+from 3rd to 8th behind GitHub's and Azure DevOps' comment tools. None drop out of Codex's
+top 8. Notion, Supabase, Stripe, Slack and HubSpot pooled: one, Notion's `API-get-users`,
+3rd alone and 13th behind Slack's user tools.
 
 **OpenAI's hosted `tool_search` (Responses API), measured.** The docs don't say how it
 matches or how many tools it returns. With 40 made-up deferred functions in two namespaces:
@@ -1087,7 +1088,9 @@ run and the other in the next.
 
 **What this doesn't show.** toolmenu's rankings follow each client's documented or
 source-read fields and result counts; the clients' tokenizers and BM25 settings aren't
-published, so a place can be off by one or two. The vendor measurements are two runs per
-case on made-up tools, on the models named, on 19 November: they can change with any model
-release. gemini-3.6-flash with the vague look-alike request wasn't measured (capacity errors).
-Which client a user's agent runs, and whether it searches at all, decides which of these applies.
+published, so a place can be off by one or two. The vendor measurements are on made-up
+tools, mostly two runs per case (OpenAI's "order" case had three; "update settings" and
+"zephyrine_mode" had one per model), on the models named, on 19 November: they can change
+with any model release. gemini-3.6-flash with the vague look-alike request wasn't measured
+(capacity errors). Which client a user's agent runs, and whether it searches at all,
+decides which of these applies.
