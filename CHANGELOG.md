@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.30.0
+
 ### New
 
 - **`scan` ranks across servers (`search/outranked`).** An agent with several servers
