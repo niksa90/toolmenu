@@ -72,7 +72,8 @@ a minor bump, new features a patch, and under 0.1.0 anything goes.
 `diff/version-backwards` warns when the version goes down. Calendar versions and prereleases aren't judged. The version in the snapshot is what the
 server reports (`serverInfo.version`), which is often not the release: the filesystem
 server has said `0.2.0` for 19 releases (FINDINGS F5). It's shown, and only checked
-with `--server-version-is-release`. `diff` also enforces an optional `tokenBudget`
+with `--server-version-is-release`. With `--release`, `diff/server-version-stale` (info) says
+when the server reported the same version in both releases. `diff` also enforces an optional `tokenBudget`
 (`diff/token-budget`). Order changes are only a notice here: between releases, prompt caches rebuild. Order
 matters *within* a session.
 

@@ -426,8 +426,7 @@ test('description limits: Claude Code by default, presets, or your number', () =
   // with tool search off, every tool is cut at 4,096
   assert.match(run([tool('get_record', ['record_id'], { description: text(5000) })], { descriptionLimit: 'claude-code-upfront' }).find((f) => f.rule === 'description/buried').message, /past character 4,096/);
   // before 16,384 but past 280: fine unless you say your client cuts at 280
-  // (one summary for the length, one hint for the instruction a shorter cut would hide)
-  assert.deepEqual(run([tool('get_record', ['record_id'], { description: text(500) })]).map((f) => f.rule), ['description/cut', 'description/late-instruction']);
+  assert.deepEqual(run([tool('get_record', ['record_id'], { description: text(500) })]).map((f) => f.rule), ['description/cut']);
   assert.match(run([tool('get_record', ['record_id'], { description: text(500) })], { descriptionLimit: 280 })[0].message, /past character 280, where your client cuts the description/);
   // Amazon Q sends up to 10,024
   assert.match(run([tool('get_record', ['record_id'], { description: text(10_100) })], { descriptionLimit: 'amazon-q' }).find((f) => f.rule === 'description/buried').message, /past character 10,024, where Amazon Q CLI cuts the description/);
@@ -471,24 +470,14 @@ test('naming/route: a tool missing from a server that changes its menu is info, 
   assert.equal(fixed[0].severity, 'error');
 });
 
-test('description/late-instruction: with the default cut, instructions a shorter client cut would hide get one hint', () => {
+test('description/late-instruction is retired: no client documents a cut at 280, so an instruction there says nothing', () => {
   const pad = 'Returns the record with every field it has. '.repeat(10); // 450 characters, under Claude Code's cut
   const tools = [tool('get_record', ['record_id'], { description: `${pad}Never guess a record ID.` }), tool('get_other', [], { description: 'Short.' })];
-  const hint = lint(tools).filter((f) => f.rule === 'description/late-instruction');
-  assert.equal(hint.length, 1);
-  assert.equal(hint[0].tool, 'get_record');
-  assert.equal(hint[0].confidence, 'unsure');
-  assert.match(hint[0].message, /^The get_record description gives the agent instructions after character 280.*Claude Code sends 16,384 characters/);
-  assert.deepEqual(hint[0].detail, ['get_record: char 440: “Never guess a record ID.”']);
-  assert.match(hint[0].fix, /set descriptionLimit/);
-  assert.deepEqual(lint(tools).filter((f) => f.rule === 'description/cut'), [], 'no longer a description/cut finding');
-  // once the cut is set, the hint goes and buried decides
+  assert.deepEqual(lint(tools).filter((f) => f.rule.startsWith('description/')), []);
+  // a config that still names the old id changes nothing and isn't an error
+  assert.deepEqual(lint(tools, {}, { rules: { 'description/late-instruction': 'warn' } }).filter((f) => f.rule.startsWith('description/')), []);
+  // a client that does cut at 280, said with descriptionLimit, gets description/buried
   assert.deepEqual(lint(tools, { descriptionLimit: 280 }).filter((f) => f.rule.startsWith('description/')).map((f) => f.rule), ['description/buried']);
-  assert.deepEqual(lint(tools, { descriptionLimit: 'claude-code' }).filter((f) => f.rule === 'description/late-instruction'), []);
-  // the old id still turns it off, unless the new one is set itself
-  assert.deepEqual(lint(tools, {}, { rules: { 'description/cut': 'off' } }).filter((f) => f.rule.startsWith('description/')), []);
-  assert.equal(lint(tools, {}, { rules: { 'description/cut': 'warn' } }).find((f) => f.rule === 'description/late-instruction').severity, 'warn');
-  assert.equal(lint(tools, {}, { rules: { 'description/cut': 'off', 'description/late-instruction': 'info' } }).filter((f) => f.rule === 'description/late-instruction').length, 1);
 });
 
 test('ids/authored: abbreviations, lone qualifiers, URL provenance, one finding per kind (FINDINGS F12)', () => {
@@ -593,7 +582,7 @@ test('certainty: guesses from words are marked unsure, observed facts are not', 
   const found = lint(tools, { secondList: second, listMeta: { ttlMs: 0 }, protocolVersion: '2026-07-28', era: 'modern' });
   const unsure = [...new Set(found.filter((f) => f.confidence === 'unsure').map((f) => f.rule))].sort();
   const sure = [...new Set(found.filter((f) => !f.confidence).map((f) => f.rule))].sort();
-  assert.deepEqual(unsure, ['description/buried', 'description/late-instruction', 'ids/authored', 'naming/shared-word', 'naming/vague-id', 'write/no-dry-run', 'write/unannotated'].filter((r) => unsure.includes(r)));
+  assert.deepEqual(unsure, ['description/buried', 'ids/authored', 'naming/shared-word', 'naming/vague-id', 'write/no-dry-run', 'write/unannotated'].filter((r) => unsure.includes(r)));
   for (const rule of ['naming/vague-id', 'naming/shared-word', 'ids/authored', 'write/unannotated']) assert.ok(unsure.includes(rule), rule);
   for (const rule of ['menu/nondeterministic', 'menu/duplicate-name', 'spec/cache-hints']) assert.ok(sure.includes(rule), rule);
   // and every finding gives a next step
@@ -658,16 +647,6 @@ test('menu/process-variance: a second cause behind the same tool is reported, no
   assert.match(f.fix, /^Sort the items of jira_search\.fields\.default when building the menu/);
   assert.ok(f.detail.some((l) => /fields\.default/.test(l)), f.detail.join('\n'));
   assert.equal(found.find((x) => x.rule === 'menu/nondeterministic').fix.startsWith('Build jira_search.end_date.default'), true);
-});
-
-test('description/late-instruction: an instruction that starts before 280 and runs past it is said to run past it', () => {
-  const pad = 'Returns the record with every field it has. '.repeat(6); // 264 characters
-  // "Never guess" starts at 275 and ends at 286: across the cut.
-  const tools = [tool('get_record', ['record_id'], { description: `${pad}Note this: Never guess a record ID.` })];
-  const hint = lint(tools).find((f) => f.rule === 'description/late-instruction');
-  assert.match(hint.message, /^The get_record description gives the agent instructions that run past character 280/);
-  assert.equal(hint.detail.length, 1);
-  assert.match(hint.detail[0], /^get_record: char 275 \(runs past 280\): “.*Never guess a record ID\.”$/);
 });
 
 const unlock = () =>
@@ -750,16 +729,6 @@ test('naming/shared-word: a word in every tool name is the server\'s subject, no
   assert.deepEqual(words([tool('ask_wiki_question'), tool('read_wiki_contents'), tool('read_wiki_structure')]), []);
   // one tool without it: still compared
   assert.deepEqual(words([tool('ask_wiki_question'), tool('read_wiki_contents'), tool('search_repos')]), ['wiki']);
-});
-
-test('description/late-instruction: a mix of instructions past and across the cut is said as both', () => {
-  const pad = 'Returns the record with every field it has. '.repeat(6); // 264 characters
-  const tools = [
-    tool('get_record', ['record_id'], { description: `${pad}Note this: Never guess a record ID.` }), // across: starts at 275
-    tool('get_other', ['other_id'], { description: `${'Returns the other thing with every field. '.repeat(10)}Never guess an other ID.` }), // after: 420
-  ];
-  const hint = lint(tools).find((f) => f.rule === 'description/late-instruction');
-  assert.match(hint.message, /^2 descriptions give the agent instructions after character 280 or running past it/);
 });
 
 test('naming/shared-word: a word that opens several tool names is a namespace, not a shared noun', () => {

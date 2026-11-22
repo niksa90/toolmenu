@@ -141,3 +141,18 @@ test('review 2c: nullable arrays keep their item checks; a widened type still re
   const widened = diffMenus(p({ type: 'string' }), p({ type: ['string', 'null'], maxLength: 5 }));
   assert.deepEqual(widened.findings.map((f) => f.rule).sort(), ['diff/schema-other', 'diff/type-widened']);
 });
+
+test('diff/server-version-stale: one reported version across two releases is said, only with --release', () => {
+  const before = menu([tool('a', ['x'])], '4.2.1');
+  const after = menu([tool('a', ['x'])], '4.2.1');
+  const stale = diffMenus(before, after, { release: { before: '0.1.4', after: '0.1.5' } }).findings.find((f) => f.rule === 'diff/server-version-stale');
+  assert.equal(stale.severity, 'info');
+  assert.match(stale.message, /^The server reported version 4\.2\.1 in both releases \(0\.1\.4 → 0\.1\.5\), so serverInfo\.version isn't the release version/);
+  assert.match(stale.fix, /^Report the release version/);
+  // without release versions there's nothing to say a release happened
+  assert.ok(!diffMenus(before, after).findings.some((f) => f.rule === 'diff/server-version-stale'));
+  // a server that reports the release, or a version that moved, is quiet
+  // a server that reports its release: both menus say 0.1.5, and the new release is 0.1.5
+  assert.ok(!diffMenus(menu([], '0.1.5'), menu([], '0.1.5'), { release: { before: '0.1.4', after: '0.1.5' } }).findings.some((f) => f.rule === 'diff/server-version-stale'));
+  assert.ok(!diffMenus(menu([], '0.1.4'), menu([], '0.1.5'), { release: { before: '0.1.4', after: '0.1.5' } }).findings.some((f) => f.rule === 'diff/server-version-stale'));
+});

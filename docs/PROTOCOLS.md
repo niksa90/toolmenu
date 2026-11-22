@@ -11,11 +11,11 @@ exactly the one in the row.
 
 | Protocol | Handshake | `tools/list` against its schema | Mid-session change, pinned to its step | A change only this session sees | `snapshot` rules that apply |
 |---|---|---|---|---|---|
-| 2024-11-05 | `initialize` | ✓ | ✓ `session/mid-insert` (error), `list_changed` received | allowed: no finding | 41 of 47 |
-| 2025-03-26 | `initialize` | ✓ | ✓ `session/mid-insert` (error), `list_changed` received | allowed: no finding | 41 of 47 |
-| 2025-06-18 | `initialize` | ✓ | ✓ `session/mid-insert` (error), `list_changed` received | allowed: no finding | 41 of 47 |
-| 2025-11-25 | `initialize` | ✓ | ✓ `session/mid-insert` (error), `list_changed` received | allowed: no finding | 41 of 47 |
-| 2026-07-28 | `server/discover` | ✓ | ✓ `session/mid-insert` (error), `list_changed` received | `session/side-effect` (warn) | 47 of 47 |
+| 2024-11-05 | `initialize` | ✓ | ✓ `session/mid-insert` (error), `list_changed` received | allowed: no finding | 42 of 48 |
+| 2025-03-26 | `initialize` | ✓ | ✓ `session/mid-insert` (error), `list_changed` received | allowed: no finding | 42 of 48 |
+| 2025-06-18 | `initialize` | ✓ | ✓ `session/mid-insert` (error), `list_changed` received | allowed: no finding | 42 of 48 |
+| 2025-11-25 | `initialize` | ✓ | ✓ `session/mid-insert` (error), `list_changed` received | allowed: no finding | 42 of 48 |
+| 2026-07-28 | `server/discover` | ✓ | ✓ `session/mid-insert` (error), `list_changed` received | `session/side-effect` (warn) | 48 of 48 |
 
 - **Handshake**: the request toolmenu connected with, and the server answering that version.
 - **`tools/list` against its schema**: `spec/schema` passes a valid result and reports an

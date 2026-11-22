@@ -179,6 +179,8 @@ export const discover: Rule = {
   summary: 'Reports when the server only speaks the 2025-era protocol',
   run(ctx) {
     if (ctx.era !== 'legacy') return [];
+    // A refused server/discover is spec/discover-refused's, said once there.
+    if (ctx.discoverRefused) return [];
     // A later process got 2026-07-28: this one's server/discover probe went unanswered in
     // time, and the SDK falls back to 2025 then (stdio). The server does speak 2026-07-28.
     if (ctx.laterModern) {
@@ -193,6 +195,23 @@ export const discover: Rule = {
       {
         message: `The server answered with protocol ${ctx.protocolVersion} and no working server/discover, so it isn't on 2026-07-28 yet. Rules for 2026-07-28 were skipped.`,
         fix: 'Nothing to do on 2025; when the server moves to 2026-07-28, implement server/discover and rerun for the 2026 checks.',
+      },
+    ];
+  },
+};
+
+export const discoverRefused: Rule = {
+  id: 'spec/discover-refused',
+  severity: 'warn',
+  summary: 'server/discover refused with 401 or 403 while the 2025 handshake serves the menu',
+  run(ctx) {
+    const status = ctx.discoverRefused;
+    if (!status) return [];
+    const without = ctx.usedAuth ? 'with the same credentials' : 'without credentials';
+    return [
+      {
+        message: `server/discover got HTTP ${status} while the 2025 handshake (initialize) served the menu ${without}. A client that tries 2026-07-28 first stops at the ${status} and treats the server as one that ${status === 401 ? 'needs a login' : 'refuses access'}: the official TypeScript SDK client (2.4) with versionNegotiation auto fails with "Version negotiation failed: the server ${status === 401 ? 'requires authorization' : 'denied access'} (HTTP ${status})". Its default (legacy) never asks, so this bites as clients move to 2026-07-28. toolmenu fell back to 2025 and checked that.`,
+        fix: `Answer server/discover as initialize is answered: ${ctx.usedAuth ? 'with the same credentials' : 'without credentials, since the menu is open'}. A server that doesn't speak 2026-07-28 yet can answer it with the JSON-RPC error a 2025 server sends (method not found), which clients read as "use 2025".`,
       },
     ];
   },

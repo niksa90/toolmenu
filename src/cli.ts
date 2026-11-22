@@ -38,6 +38,7 @@ import { CLI_OPTIONS } from './options.js';
 import { editDistance } from './words.js';
 import { formatScan, ListError, loadList, scan, scanExit, type AllowEnv } from './scan.js';
 import { explain, findRule, formatExplained, listRules, ruleDocs } from './rule-docs.js';
+import { RETIRED_RULES } from './rules/index.js';
 import { commandHelp, commandOptions, isCommand, overview, unknownCommand, type Command } from './help.js';
 
 class UsageError extends Error {}
@@ -505,7 +506,16 @@ async function authCommand(args: string[], values: { port?: string; scope?: stri
   if (port !== undefined && !(Number.isInteger(port) && port > 0 && port < 65536)) throw new UsageError('--port must be a port number');
   if (values['client-secret'] && !values['client-id']) throw new UsageError('--client-secret goes with --client-id');
   const result = await login(url, { port, scope: values.scope, clientId: values['client-id'], clientSecret: values['client-secret'], noBrowser: values['no-browser'] });
-  process.stdout.write(`Logged in to ${plain(result.name ?? url)} (${url}): it lists ${result.tools} tool${result.tools === 1 ? '' : 's'} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n`);
+  const count = `${result.tools} tool${result.tools === 1 ? '' : 's'}`;
+  process.stdout.write(
+    result.authenticated
+      ? `Logged in to ${plain(result.name ?? url)} (${url}): it lists ${count} with this login.\nsnapshot and session use it from now on (--no-auth to skip it); stored in ${authDir()}.\n` +
+        (result.withoutLogin !== undefined
+          ? `The server didn't ask for this login: it used the token stored earlier, and it lists ${result.withoutLogin} tool${result.withoutLogin === 1 ? '' : 's'} without one too.\n→ Next: If the menus should differ, compare them: toolmenu snapshot ${url} --no-auth. If they shouldn't, toolmenu auth logout ${url}.\n`
+          : '')
+      : `No login made for ${plain(result.name ?? url)} (${url}): it listed ${count} without asking for credentials, so nothing was stored.\n` +
+          `→ Next: A server like this usually asks for a login only when a tool is called. If session reports session/untested, pass a token with --header "Authorization: Bearer <token>".\n`,
+  );
   return 0;
 }
 
@@ -585,6 +595,11 @@ function explainCommand(rest: string[], command: string[] | undefined, format: F
   if (rest.length > 1) throw new UsageError(`explain takes one rule at a time; got ${rest.length}.`);
   if (!rest.length) {
     process.stdout.write(format === 'json' ? `${JSON.stringify(Object.keys(ruleDocs()))}\n` : listRules());
+    return 0;
+  }
+  const retired = rest[0].trim().toLowerCase();
+  if (Object.hasOwn(RETIRED_RULES, retired)) {
+    process.stdout.write(format === 'json' ? `${JSON.stringify({ id: retired, retired: RETIRED_RULES[retired] })}\n` : `${retired}: ${RETIRED_RULES[retired]}\n`);
     return 0;
   }
   const found = findRule(rest[0]);

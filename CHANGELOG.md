@@ -2,6 +2,65 @@
 
 ## Unreleased
 
+## 0.29.0
+
+### New
+
+- **`instructions/unknown-name`** (warn): the server's `instructions` name a tool the
+  menu doesn't list, or, with `--lists resources`, a resource URI no listed resource or
+  template matches. Dreamwork 1.10.0's instructions told the agent to call
+  `submit_feedback` while its menu didn't have it (it was added a day later, under the
+  same version). Tool names are read from the words, so the finding is marked unsure;
+  fields, values, subcommands, prompts and names in a sentence that says why they're
+  missing (old names, a login, a token, an API key) are left out. On 1,078 hosted
+  servers listed without credentials, 16 get it, from 52 before those filters.
+
+- **`spec/discover-refused`** (warn): `server/discover` refused with 401 or 403 while the
+  2025 handshake serves the menu. 0.28.1 falls back past it; this says so to the server's
+  author, since a client that tries 2026-07-28 first stops there (the official SDK client
+  with `versionNegotiation: auto`). Dreamwork 1.10.0 and 3 of 733 hosted servers that
+  needed a login on 2026-11-09 do this.
+- **`diff/server-version-stale`** (info, with `--release`): the server reported the
+  same `serverInfo.version` in both releases, so whatever tracks it by that version
+  sees no change. `serbia-prices-mcp` 0.1.5 reports FastMCP's own 4.2.1.
+
+### Changes
+
+- **`description/late-instruction` is retired.** It flagged instructions past
+  character 280, a cut that no client documents: the number came from one private
+  client. Claude Code documents 16,384 and 4,096; `description/buried` checks those,
+  the `amazon-q` preset's 10,024 (reported, not documented), or your own
+  `descriptionLimit`. A config that still names the rule loads, with a line saying it
+  changes nothing; `toolmenu explain description/late-instruction` says why it went.
+
+- **A config rule id that isn't a rule is no longer ignored in silence.**
+  `"naming/vauge-id": "error"` used to change nothing without a word, so a CI gate on
+  it wasn't one. toolmenu now says so on stderr, with the closest ids, and runs.
+
+- **`auth login` says when the server didn't ask for the login.** A token stored
+  earlier, sent to a server that never challenged, read as "Logged in" with nothing
+  else; it now adds how many tools the server lists without a login, and the commands
+  to compare or log out.
+
+### Repository
+
+- **The plugin runs toolmenu 0.28.1** (was 0.28.0): `snapshot` lists a server that
+  refuses `server/discover` but serves a menu over the 2025 handshake.
+
+## 0.28.1
+
+### Fixes
+
+- **A `server/discover` refused with 401 or 403 is no longer read as a login wall.**
+  Dreamwork 1.10.0 answers `server/discover` with a 401 and serves a 74-tool guest menu
+  over the 2025 handshake; `snapshot` stopped at "wants credentials". toolmenu now tries
+  the 2025 `initialize` first and reports credentials only when that is refused too.
+  `--protocol modern` still uses the 2026-07-28 handshake alone.
+- **`auth login` says so when the server never asked for a login**, and stores nothing,
+  instead of "Logged in" with no token behind it.
+
+### Repository
+
 - **The plugin runs toolmenu 0.28.0** (was 0.27.0): its tools' `apps/resource` findings
   no longer call a read that failed for credentials or the network the server's.
 

@@ -342,8 +342,10 @@ function printForPaste(port: number): (url: URL) => void {
  * exchange the code (PKCE, issuer check: the SDK's), then connect once with the new
  * token to confirm it works. Returns the server's name and tool count.
  */
-export async function login(serverUrl: string, options: LoginOptions = {}): Promise<{ name?: string; tools: number }> {
+export async function login(serverUrl: string, options: LoginOptions = {}): Promise<{ name?: string; tools: number; authenticated: boolean; withoutLogin?: number }> {
   const port = options.port ?? DEFAULT_PORT;
+  // What was stored before this login (a registered client, a rejected token) is kept.
+  const stored = hasLogin(serverUrl);
   const callback = await listenForCallback(port, options.timeoutMs ?? 300_000);
   try {
     const provider = new StoredOAuthProvider(serverUrl, {
@@ -378,12 +380,15 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
     await provider.invalidateCredentials('discovery');
     const transport = new StreamableHTTPClientTransport(new URL(serverUrl), { authProvider: provider });
     const client = new Client({ name: 'toolmenu', version: VERSION });
+    // Whether the server asked for credentials during this login (a 401 to answer).
+    let challenged = false;
     try {
       await client.connect(transport);
       // Already logged in with a valid (or refreshed) token.
       await endSession(client, transport);
     } catch (error) {
       if (!(error instanceof UnauthorizedError)) throw error;
+      challenged = true;
       const params = options.noBrowser ? await Promise.race([callback.params, pasted()]).finally(() => reading.abort()) : await callback.params;
       if (params.get('error')) {
         const described = params.get('error_description');
@@ -398,7 +403,15 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
       await transport.finishAuth(params);
       await endSession(client, transport);
     }
-    return await check(serverUrl);
+    // A server that never asked for credentials leaves nothing to log in with: the
+    // file the discovery step wrote holds no token, so drop it rather than list a login.
+    // A file from before this login stays: it may hold a registered client.
+    const authenticated = Boolean(await provider.tokens());
+    if (!authenticated && !stored) await logout(serverUrl);
+    // A token from an earlier login, sent to a server that never asked for one this time:
+    // it may not need it at all. List once without it, so the message can say so.
+    const withoutLogin = authenticated && !challenged ? await anonymousTools(serverUrl) : undefined;
+    return { ...(await check(serverUrl)), authenticated, ...(withoutLogin !== undefined ? { withoutLogin } : {}) };
   } catch (error) {
     // GitHub's hosted server, for one: no dynamic registration, so toolmenu can't
     // register itself. Say what works instead.
@@ -412,6 +425,21 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
     throw error;
   } finally {
     callback.close();
+  }
+}
+
+/** How many tools the server lists with no credentials at all, or undefined if it wants them. */
+async function anonymousTools(serverUrl: string): Promise<number | undefined> {
+  const { connect, listTools } = await import('./connect.js');
+  try {
+    const connection = await connect({ kind: 'http', url: serverUrl, noAuth: true });
+    try {
+      return (await listTools(connection)).tools.length;
+    } finally {
+      await connection.close();
+    }
+  } catch {
+    return undefined;
   }
 }
 

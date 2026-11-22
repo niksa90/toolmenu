@@ -1,6 +1,7 @@
 import type { Finding, Severity } from '../types.js';
 import { SEVERITY_RANK } from '../types.js';
-import { buried, cut, lateInstruction } from './description.js';
+import { buried, cut } from './description.js';
+import { unknownName } from './instructions.js';
 import { connectionVariance, hostSpecific, nondeterministic, processVariance } from './determinism.js';
 import { authoredIds } from './ids.js';
 import { clientFeatures, clientLimit, clientName } from './clients.js';
@@ -11,7 +12,7 @@ import { listSchema, listVariance, resourceReadSchema, resourceUnread, resourceU
 import { handleLifetime } from './handles.js';
 import { authVariance, cacheScopePublic } from './identities.js';
 import { route, sharedWord, vagueId } from './naming.js';
-import { cacheHints, deprecated, discover, duplicateName, extensionId, schema, serverInfo, taskRequired, toolName, toolsCapability } from './spec.js';
+import { cacheHints, deprecated, discover, discoverRefused, duplicateName, extensionId, schema, serverInfo, taskRequired, toolName, toolsCapability } from './spec.js';
 import { noDryRun, readOnlyMismatch, unannotated } from './write.js';
 import { gated } from './gated.js';
 import { xMcpHeader } from './headers.js';
@@ -43,7 +44,6 @@ export const MENU_RULES: Rule[] = [
   handleLifetime,
   buried,
   cut,
-  lateInstruction,
   noDryRun,
   unannotated,
   readOnlyMismatch,
@@ -52,6 +52,7 @@ export const MENU_RULES: Rule[] = [
   schemaRef,
   toolsCapability,
   discover,
+  discoverRefused,
   deprecated,
   cacheHints,
   authVariance,
@@ -72,14 +73,17 @@ export const MENU_RULES: Rule[] = [
   appsLegacyKey,
   appsVisibility,
   appsAppOnlyListed,
+  unknownName,
 ];
 
 /**
- * Rules split out of an older one. A setting for the old id still applies to the
- * new one unless the new id is set itself: before 0.13, description/cut held
- * the late-instruction hint too, and `"description/cut": "off"` turned both off.
+ * Rules that no longer exist, and why. A config may still name one: it changes nothing,
+ * and loading the config says so. `explain` says the same.
  */
-export const RULE_ALIASES: Record<string, string> = { 'description/late-instruction': 'description/cut' };
+export const RETIRED_RULES: Record<string, string> = {
+  'description/late-instruction':
+    "retired after 0.28.1: it checked a cut at 280 characters, which no client documents. If your client cuts descriptions, set descriptionLimit to its cut and description/buried checks against it.",
+};
 
 export interface RuleSettings {
   /** Per-rule severity override, or 'off'. */
@@ -95,7 +99,7 @@ export function runRules(rules: Rule[], ctx: RuleContext, settings: RuleSettings
   // The menu as an MCP Apps host shows it to the agent: app-only tools left out.
   const shown = agentMenu(ctx.menu).shown;
   for (const rule of rules) {
-    const configured = settings.rules?.[rule.id] ?? (RULE_ALIASES[rule.id] ? settings.rules?.[RULE_ALIASES[rule.id]] : undefined);
+    const configured = settings.rules?.[rule.id];
     if (configured === 'off') continue;
     if (rule.since && (!ctx.protocolVersion || ctx.protocolVersion < rule.since)) continue;
     for (const f of rule.run({ ...ctx, ...(rule.scope === 'agent' ? { menu: shown } : {}), isIgnored })) {
