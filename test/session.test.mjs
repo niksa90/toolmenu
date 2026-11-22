@@ -1056,3 +1056,56 @@ test('session/edit only in a field the model does not read is a warning that say
   assert.deepEqual(loud.map((f) => f.severity), ['error']);
   assert.match(loud[0].message, /Invalidates the cached prompt/);
 });
+
+// aliasbakery (2026-11-22 weekly bench): `about` answered at step 2, and at step 11 the
+// connection dropped before any answer. That's the network's, not the server's error.
+const twoFormCalls = () => {
+  const file = join(tempDir(), 'forms.scenario.json');
+  writeFileSync(file, JSON.stringify({ steps: [{ call: 'get_form', args: { form_id: 'f_1' } }, { call: 'get_form', args: { form_id: 'f_1' } }] }));
+  return file;
+};
+
+test('session, http: a call whose connection drops is the network, not a step-failed error', async () => {
+  const server = await startRawHttp({ dropCalls: 1 });
+  try {
+    const r = await run(['session', '--scenario', twoFormCalls(), '--json', server.url]);
+    const findings = JSON.parse(r.stdout).findings;
+    assert.ok(!findings.some((f) => f.rule === 'session/step-failed'), JSON.stringify(findings));
+    const untested = findings.find((f) => f.rule === 'session/untested');
+    assert.equal(untested.severity, 'warn');
+    assert.equal(untested.confidence, 'unsure');
+    assert.match(untested.message, /^1 of 2 tool calls failed before reaching the tool: 1 on the network\./);
+    assert.match(untested.detail[0], /^network: steps 2 \(“fetch failed”\)/);
+    assert.match(untested.fix, /^If the connection to the server dropped \(fetch failed, a reset\), rerun/);
+    const text = await run(['session', '--scenario', twoFormCalls(), server.url]);
+    assert.match(text.stdout, /→ Next: If the connection to the server dropped/);
+  } finally {
+    await server.close();
+  }
+});
+
+test('session, http: a connection that drops on every call says so, at error', async () => {
+  const server = await startRawHttp({ dropCalls: 0 });
+  try {
+    const findings = JSON.parse((await run(['session', '--scenario', twoFormCalls(), '--json', server.url])).stdout).findings;
+    assert.ok(!findings.some((f) => f.rule === 'session/step-failed'));
+    const untested = findings.find((f) => f.rule === 'session/untested');
+    assert.equal(untested.severity, 'error');
+    assert.match(untested.message, /^All 2 tool calls failed before reaching the tool: 2 on the network\./);
+  } finally {
+    await server.close();
+  }
+});
+
+test('session, http: a tool that answers "fetch failed" as its own error is still the tool\'s', async () => {
+  const server = await startRawHttp({ upstreamFails: true });
+  try {
+    const findings = JSON.parse((await run(['session', '--scenario', twoFormCalls(), '--json', server.url])).stdout).findings;
+    assert.ok(!findings.some((f) => f.rule === 'session/untested'), JSON.stringify(findings));
+    const e = findings.find((f) => f.rule === 'session/tool-error');
+    assert.equal(e.severity, 'warn');
+    assert.match(e.message, /get_form returned an error, the same one each time: “fetch failed”/);
+  } finally {
+    await server.close();
+  }
+});

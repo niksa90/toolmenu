@@ -13,7 +13,12 @@ import { randomUUID } from 'node:crypto';
 // 2025 handshake serves a guest menu while server/discover asks for credentials).
 // requireAuth: every POST without an Authorization header gets a 401.
 // initializeStatus: answer initialize with this HTTP status (400: a server on 2026-07-28 only).
-export async function start({ scope = 'local', vary = false, onePerClient = false, card, cardType = 'application/mcp-server-card+json', discoverStatus, requireAuth = false, initializeStatus } = {}) {
+// dropCalls: a call to get_form closes the connection without an answer, after this many
+// have been answered (0: every call drops), so the client's fetch throws "fetch failed".
+// upstreamFails: get_form answers with isError and "fetch failed", the words of a tool
+// whose own request to its API failed.
+export async function start({ scope = 'local', vary = false, onePerClient = false, card, cardType = 'application/mcp-server-card+json', discoverStatus, requireAuth = false, initializeStatus, dropCalls, upstreamFails = false } = {}) {
+  let formCalls = 0;
   const sessions = new Map();
   const byClient = new Map();
   const global = { unlocked: false };
@@ -93,6 +98,14 @@ export async function start({ scope = 'local', vary = false, onePerClient = fals
       if (scope === 'global') global.unlocked = true;
       else session.unlocked = true;
       body = { result: { content: [{ type: 'text', text: 'unlocked' }] } };
+    } else if (msg.method === 'tools/call' && msg.params?.name === 'get_form') {
+      if (dropCalls !== undefined && formCalls++ >= dropCalls) {
+        req.socket.destroy();
+        return;
+      }
+      body = upstreamFails
+        ? { result: { isError: true, content: [{ type: 'text', text: 'fetch failed' }] } }
+        : { result: { content: [{ type: 'text', text: '{"form_id":"f_1"}' }] } };
     } else {
       body = { error: { code: -32601, message: 'Method not found' } };
     }

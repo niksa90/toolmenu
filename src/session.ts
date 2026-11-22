@@ -6,7 +6,7 @@ import { AfterInputError, callWithInput, MAX_CONTINUATIONS, MAX_ROUNDS, type Inp
 import { buildMenu, toolDefinition } from './menu.js';
 import { connectPatiently, isContainerWrapper, MAIN_SEED, probeMenu, probeSameEra, probeVariance, seeded } from './probe.js';
 import { outsideModel, varianceFinding } from './rules/determinism.js';
-import { classifyFailure, errorWords, structuredError, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
+import { classifyFailure, connectionLost, errorWords, structuredError, FAILURE_LABELS, httpStatus, patiently, RATE_LIMIT_WAITS_MS, quotedSentence, RATE_LIMITED, serverWords, SETUP_FAILURES, setupFailureAdvice, tooMany, waitedFor, whyNot, type FailureClass } from './failures.js';
 import type { Era, Finding, Menu, MenuTool, Severity } from './types.js';
 import { SEVERITY_RANK } from './types.js';
 import { leadingJson } from './catalog.js';
@@ -571,9 +571,10 @@ export async function session(target: Target, scenario: Scenario, options: Sessi
           } else {
             // A 401 or 403 on the call itself is the credentials, whatever the words: Google's
             // hosted servers list tools to anyone and answer each call with 401 and a
-            // WWW-Authenticate for that tool.
+            // WWW-Authenticate for that tool. A call that got no answer at all (the
+            // connection dropped: "fetch failed") is the network's, not the server's error.
             const status = httpStatus(error);
-            record.failure = status === 401 || status === 403 ? 'auth' : classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
+            record.failure = status === 401 || status === 403 ? 'auth' : connectionLost(error) ? 'network' : classifyFailure(record.note, { code: typeof code === 'number' ? code : undefined, hadArguments: Object.keys(step.args).length > 0 });
             // The SDK's own request timeout: toolmenu stopped waiting, the server didn't refuse anything.
             const timedOutMs = code === 'REQUEST_TIMEOUT' ? timeoutMs : undefined;
             if (!SETUP_FAILURES.has(record.failure)) fail('session/step-failed', 'error', index, step, record.note, record.failure, timedOutMs);

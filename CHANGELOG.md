@@ -28,6 +28,15 @@
   `instructions/unknown-name` and `spec/discover-refused`, and no longer
   `description/late-instruction`.
 
+### Fixed
+
+- **A call whose connection drops is the network's, not a `session/step-failed` error.**
+  When toolmenu's own request gets no answer (Node's fetch throws "fetch failed": a reset,
+  the other side closed), the call counts under `session/untested` as "on the network",
+  with a next step to rerun. On the 2026-11-22 weekly bench, aliasbakery's `about` answered
+  at step 2 and dropped at step 11, and the finding called it the server's error. A tool
+  that answers "fetch failed" as its own error stays a `session/tool-error`.
+
 ## 0.29.0
 
 ### New
