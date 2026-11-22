@@ -1,16 +1,21 @@
-123skills-mcp	1.1.0	2026-11-15
-3dassets-mcp	1.0.0	2026-11-15
-@3dpacking/mcp-server	0.3.0	2026-11-15
+123skills-mcp	1.1.0	
+3dassets-mcp	1.0.0	
+@1ly/mcp-server	0.1.7	2026-11-22
+@21e14/mcp-server	1.0.1	2026-11-22
+@3dpacking/mcp-server	0.3.0	
 @50heads/mcp	2026.1013.2	
 @636865636b73756d/mcp-v1	1.0.1	
-@a1-x-tech/mcp-google-sheets	1.1.2	2026-11-15
-@aaronsb/salesforce-cloud-mcp	0.8.2	2026-11-15
+@a1-x-tech/mcp-google-calendar	1.2.0	2026-11-22
+@a1-x-tech/mcp-google-sheets	1.1.2	
+@a11ychk/mcp	0.2.5	2026-11-22
+@aaronsb/salesforce-cloud-mcp	0.8.2	
 @aaronsb/slack-mcp	2.8.1	
-@aarwitz/tapp	0.35.5	
+@aarwitz/tapp	0.35.8	2026-11-22
 @abhishekmcp/github	0.2.0	
-@acuris-geo/mcp-server	0.1.1	2026-11-15
+@acertijosapps/electron-viewer	1.1.0	2026-11-22
+@acuris-geo/mcp-server	0.1.1	
 @aernoud/facetimemcp	0.1.1	
-@aernoud/remindersmcp	0.2.0	2026-11-15
+@aernoud/remindersmcp	0.2.0	
 @agenium/mcp-server	0.1.5	
 @agent-idx/client	0.4.5	
 @agent-infra/mcp-server-browser	latest	
@@ -22,8 +27,9 @@
 @agentgate-builder/solverdict	0.1.0	
 @agentgate-builder/tokenverdict	0.1.0	
 @agentkitai/agentgate-mcp	0.0.3	
-@agentmetal/mcp	0.3.5	2026-11-15
-@agentradar/mcp	0.1.3	2026-11-15
+@agentmetal/mcp	0.3.5	
+@agentpromocode/mcp	0.2.1	2026-11-22
+@agentradar/mcp	0.1.3	
 @agentrysh/mcp	0.1.0	
 @agentsgot/agent-kit	1.0.4	
 @agentutil/undo-mcp	1.0.0	
@@ -31,40 +37,53 @@
 @agentutility/mcp-locale	0.8.7	
 @agentutility/mcp-matchpoint	0.1.4	
 @agentutility/mcp-mediakit	0.11.9	
-@agentutility/mcp-model-router	0.1.1	2026-11-15
+@agentutility/mcp-model-router	0.1.1	
 @agentutility/mcp-web-probe	0.32.1	
 @ahmaddioxide/mcp-image-resolver	0.2.0	
-@ai-capabilities-suite/mcp-debugger-server	1.1.8	2026-11-15
+@ai-capabilities-suite/mcp-debugger-server	1.1.8	
+@ai-capabilities-suite/mcp-screenshot	1.0.3	2026-11-22
 @ai-hub-open/yandex-direct-mcp	0.5.0	
-@ai-watercolor-generator/mcp	0.1.0	2026-11-15
+@ai-watercolor-generator/mcp	0.1.0	
 @aibtc/mcp-server	1.17.0	
-@aiganak/llm-cost-mcp	2026.11.5	2026-11-15
+@aicommander/mcp	1.6.5	2026-11-22
+@aiganak/llm-cost-mcp	2026.11.5	
+@aimino/fast-html-mcp-server	0.1.2	2026-11-22
 @ainative/browser-mcp	1.1.2	
-@ainative/gtm-mcp	0.4.2	2026-11-15
+@ainative/gtm-mcp	0.4.2	
 @ainecto/mcp	0.13.1	
-@aio-geo/mcp-server	0.3.7	2026-11-15
-@aiwerk/mcp-server-vault	0.2.1	2026-11-15
+@aio-geo/mcp-server	0.3.7	
+@aiwerk/mcp-server-vault	0.2.1	
+@akoskomuves/appstoreconnect-mcp	1.0.1	2026-11-22
 @akr1166org/rules-mcp	0.3.1	
-@akutishevsky/lunchmoney-mcp	4.0.1	2026-11-15
-@alchm/mcp-server	1.6.0	2026-11-15
-@algovoi/mcp-server	1.1.3	2026-11-15
+@akutishevsky/lunchmoney-mcp	4.0.1	
+@alchm/mcp-server	1.6.0	
+@algorismus/elementor-ultra-mcp	1.0.1	2026-11-22
+@algovoi/mcp-server	1.1.3	
 @alion-io/mcp	0.1.0	
+@allourthings/mcp-server	2.1.0	2026-11-22
 @allratestoday/central-bank-mcp	0.3.2	
-@almostjacked/fitness-tools-mcp	0.3.4	2026-11-15
-@aloth/cred1	2026.11.10	2026-11-15
-@alpacacloud/mcp	1.4.2	2026-11-15
-@altronis/sgdata-mcp	0.5.2	2026-11-15
+@almostjacked/fitness-tools-mcp	0.3.4	
+@aloth/cred1	2026.11.10	
+@alpacacloud/mcp	1.4.2	
+@altronis/sgdata-mcp	0.5.2	
+@alvincrave/gtasks-mcp	0.2.0	2026-11-22
+@alxpark/propresenter-mcp	1.0.1	2026-11-22
 @amcharts/amcharts5-mcp	1.9.4	
+@andezdev/tokenlite-mysql-mcp	5.0.0	2026-11-22
 @angrydad67/fabric-mcp-server	1.0.0	
-@ansvar/cambodian-law-mcp	1.0.0	2026-11-15
-@ansvar/cameroonian-law-mcp	1.0.0	2026-11-15
-@ansvar/czech-law-mcp	1.0.1	2026-11-15
+@ansvar/austrian-law-mcp	1.0.3	2026-11-22
+@ansvar/belgian-law-mcp	1.0.0	2026-11-22
+@ansvar/cambodian-law-mcp	1.0.0	
+@ansvar/cameroonian-law-mcp	1.0.0	
+@ansvar/czech-law-mcp	1.0.1	
 @ansvar/dominican-law-mcp	1.0.0	
+@ansvar/french-law-mcp	1.1.2	2026-11-22
 @ansvar/ghana-law-mcp	1.1.2	
+@ansvar/icelandic-law-mcp	1.0.1	2026-11-22
 @ansvar/india-law-mcp	1.1.1	
 @ansvar/italian-law-mcp	1.1.1	
 @ansvar/jamaican-law-mcp	1.0.1	
-@ansvar/lithuanian-law-mcp	1.0.1	2026-11-15
+@ansvar/lithuanian-law-mcp	1.0.1	
 @ansvar/luxembourg-law-mcp	1.0.3	
 @ansvar/paraguayan-law-mcp	1.0.0	
 @ansvar/peruvian-law-mcp	1.0.0	
@@ -76,672 +95,993 @@
 @ansvar/uae-law-mcp	1.1.2	
 @ansvar/ugandan-law-mcp	1.0.0	
 @ansvar/uk-law-mcp	1.0.2	
-@anthony-maio/cartograph	1.3.0	2026-11-15
+@anthony-maio/cartograph	1.3.0	
 @antonbabenko/deliberation-mcp	3.14.5	
 @antonytm/mcp-all	0.1.20	
 @anyforge/mcp-server	3.17.0	
-@anyproto/anytype-mcp	1.0.7	2026-11-15
-@apideck/mcp	0.1.13	2026-11-15
-@appfigures/cli	4.0.0	2026-11-15
-@applistinglab/mcp	0.1.1	2026-11-15
-@applitools/mcp	0.10.4	2026-11-15
+@anyproto/anytype-mcp	1.0.7	
+@apideck/mcp	0.1.13	
+@apireno/domshell	2.0.11	2026-11-22
+@appcraft-io/mcp-server	0.1.2	2026-11-22
+@appfigures/cli	4.0.0	
+@applistinglab/mcp	0.1.1	
+@applitools/mcp	0.10.4	
 @appmonster/mcp-landed-cost	0.1.0	
-@arcangel.ai/mcp	0.2.0	2026-11-15
+@appmonster/mcp-naver-commerce	0.3.0	2026-11-22
+@appmonster/mcp-world-calendar	0.1.0	2026-11-22
+@arcangel.ai/mcp	0.2.0	
 @archform/mcp	0.2.2	
 @archipelagodex/archipelago-x402-mcp	0.1.1	
 @argosvix/mcp-server	1.1.2	
 @artymclabin/gmail-mcp	1.2.4	
-@arxo/mcp-charter	0.1.8	2026-11-15
+@arxo/mcp-charter	0.1.8	
 @arxo/mcp-picc	0.3.11	
 @aryanbv/pdf-toolkit-mcp	0.3.1	
-@asjackson/androidbuild-mcp	0.1.1	2026-11-15
-@ask-llm/claude-mcp	0.2.0	2026-11-15
+@ascentws/sytecheck-mcp	0.1.4	2026-11-22
+@asjackson/androidbuild-mcp	0.1.1	
+@ask-llm/antigravity-mcp	0.8.1	2026-11-22
+@ask-llm/claude-mcp	0.2.0	
 @ask-llm/codex-mcp	0.9.0	
 @ask-llm/gemini-mcp	2.0.0	
 @ask-llm/ollama-mcp	0.7.0	
 @astralchemist/matchstick	0.1.0-alpha.4	
-@astudioplus/tempera-mcp	0.4.29	2026-11-15
-@atomicmail/mcp-modelcontextprotocol	0.3.33	2026-11-15
+@astramindapp/mcp-server	0.29.2	2026-11-22
+@astroway/mcp	1.6.2	2026-11-22
+@astudioplus/tempera-mcp	0.4.29	
+@athenode/cli	0.10.7	2026-11-22
+@atomicmail/mcp-modelcontextprotocol	0.3.33	
 @attestwire/mcp	1.2.2	
-@attrove/mcp	0.6.0	2026-11-15
+@attrove/mcp	0.6.0	
+@audiolabtools/mcp-server	0.5.5	2026-11-22
 @authproof/mcp-server	0.3.0	
+@autolane/courier-mcp	0.1.1	2026-11-22
 @automatelab/ai-seo-mcp	0.1.1	
-@automatelab/n8n-mcp	0.3.0	2026-11-15
+@automatelab/n8n-mcp	0.3.0	
 @autostackup/marketing	0.1.7	
-@autostackup/sales	0.1.6	2026-11-15
+@autostackup/sales	0.1.6	
+@av-leschinskiy/moodle-mcp	0.2.1	2026-11-22
+@avclabs.ai/media-mcp	0.2.0	2026-11-22
 @awareness.market/local	0.21.1	
-@axint/compiler	0.6.0	2026-11-15
-@azure/mcp	3.0.0-beta.48	2026-11-15
+@axint/compiler	0.6.0	
+@azure/mcp	3.0.0-beta.48	
 @azure/mcp-template	0.0.12-alpha.5932986	
-@basementuniverse/jsonpad-mcp	0.1.0	2026-11-15
-@bekirdag/pigeonpost	0.7.21	2026-11-15
-@benchboss/mcp-client	0.3.1	2026-11-15
-@binaryandthread/mcp	0.4.7	2026-11-15
+@barissozudogru/release-intel-mcp	0.7.2	2026-11-22
+@basementuniverse/jsonpad-mcp	0.1.0	
+@bayway/janusmcp	0.6.2	2026-11-22
+@beacio/mcp	1.0.1	2026-11-22
+@bekirdag/pigeonpost	0.7.21	
+@benchboss/mcp-client	0.3.1	
+@bilig/workpaper	1.1.0	2026-11-22
+@billnobill/trello-mcp-server	1.1.0	2026-11-22
+@binaryandthread/mcp	0.4.7	
 @biocross/displaybuddy-mcp	3.3.0	
-@bitcompare/mcp-server	1.2.0	2026-11-15
+@bitcompare/mcp-server	1.2.0	
+@bitpal/mcp	0.1.5	2026-11-22
 @black-duck/mcp-server	1.1.8	
 @blockrun/mcp	0.55.7	
-@blogautomation/mcp-server	1.0.1	2026-11-15
-@bolthub/mcp	0.7.2	2026-11-15
-@borgresearch/odin-mcp	0.3.3	2026-11-15
-@bounded-systems/bounded-tools-mcp	0.1.0	2026-11-15
+@blogautomation/mcp-server	1.0.1	
+@bolthub/mcp	0.7.2	
+@borgresearch/odin-mcp	0.3.3	
+@bouncelayer/mcp	1.0.2	2026-11-22
+@bounded-systems/bounded-tools-mcp	0.1.0	
+@box-kite/mcp	2.4.1	2026-11-22
 @bpmnkit/cli	1.5.0	
 @br-ai-n/mcp-icon-visual	0.1.1	
 @braincloud/mcp-helper	6.0.0	
 @braynexservices/nigeria-mcp-grid3-boundaries	0.1.1	
-@budna-marketplace/mcp	0.8.2	
+@budna-marketplace/mcp	0.9.0	2026-11-22
 @buildtree/mcp	0.1.2	
+@bullrundata/market-intelligence	0.1.2	2026-11-22
 @buoy-gg/mcp	7.0.41	
-@burtthecoder/mcp-virustotal	1.0.17	2026-11-15
+@burtthecoder/mcp-virustotal	1.0.17	
 @buzzr/mcp	5.1.0	
 @cachly-dev/mcp-server	0.10.235	
-@callmarcus/securityscorecard-mcp	2.0.0	2026-11-15
+@callmarcus/securityscorecard-mcp	2.0.0	
+@capawesome/capacitor-mcp	0.0.1	2026-11-22
 @captain_americka/tsiky-mcp	1.0.2	
 @cenogram/mcp-server	0.6.0	
-@certnode/mcp-server	1.2.2	2026-11-15
-@cesteral/cm360-mcp	1.3.0	2026-11-15
-@cesteral/gads-mcp	1.4.0	2026-11-15
-@cesteral/msads-mcp	1.3.0	2026-11-15
+@certnode/mcp-server	1.2.2	
+@cesteral/cm360-mcp	1.3.0	
+@cesteral/gads-mcp	1.4.0	
+@cesteral/msads-mcp	1.3.0	
 @chandra14/facet-check	0.1.0	
-@chanmeng666/archlang-mcp	0.2.44	2026-11-15
+@chanmeng666/archlang-mcp	0.2.44	
 @chappibunny/repolens	1.16.2	
-@chieflab/mcp-server	0.1.0	2026-11-15
+@chieflab/mcp-server	0.1.0	
 @chiway/contextweaver	1.5.4	
+@chrischall/housecallpro-mcp	1.3.0	2026-11-22
 @chrischall/iaqualink-mcp	0.3.1	
-@chrischall/therapyportal-mcp	0.5.0	2026-11-15
+@chrischall/myatriumhealth-mcp	1.5.1	2026-11-22
+@chrischall/therapyportal-mcp	0.5.0	
 @cirdanops/cli	0.9.0	
-@cite42/mcp	0.11.0	2026-11-15
-@claritypropertyinvestmentsorg/property-mcp	0.1.1	2026-11-15
+@cite42/mcp	0.11.0	
+@claritypropertyinvestmentsorg/property-mcp	0.1.1	
 @claudeink/mcp-server	1.0.0	
-@clean-tools/mcp	0.1.1	2026-11-15
+@clawcall/mcp	0.1.0	2026-11-22
+@clean-tools/mcp	0.1.1	
 @cleanor/mcp	0.6.1	
-@clipy/mcp	0.17.0	
-@cloakedagent/sdk	0.2.0	2026-11-15
-@cloudinary/environment-config-mcp	0.6.4	2026-11-15
-@cmssy/mcp-server	0.144.1	2026-11-15
+@clipy/mcp	0.18.0	2026-11-22
+@cloakedagent/sdk	0.2.0	
+@cloudinary/analysis-mcp	0.5.3	2026-11-22
+@cloudinary/environment-config-mcp	0.6.4	
+@cmssy/mcp-server	0.144.1	
 @cocaxcode/devflow-mcp	0.1.8	
 @codehabits/mcp	0.1.4	
-@codespar/mcp-bind-erp	0.2.2	2026-11-15
-@codespar/mcp-itau	0.2.0-alpha.3	2026-11-15
-@codespar/mcp-khipu	0.2.0-alpha.3	2026-11-15
-@codespar/mcp-matera	0.2.0-alpha.4	2026-11-15
-@codespar/mcp-moonpay	0.2.2	2026-11-15
-@codespar/mcp-onfido	0.2.2	2026-11-15
-@codespar/mcp-pagar-me	0.2.2	2026-11-15
-@codespar/mcp-skydropx	0.2.2	2026-11-15
-@codespar/mcp-stripe	0.2.2	2026-11-15
-@codespar/mcp-tienda-nube	0.2.2	2026-11-15
-@codespar/mcp-transak	0.2.0-alpha.3	2026-11-15
-@codespar/mcp-wise	0.1.2	2026-11-15
+@codespar/mcp-amazon	0.2.0-alpha.3	2026-11-22
+@codespar/mcp-bind-erp	0.2.2	
+@codespar/mcp-btg	0.1.0-alpha.3	2026-11-22
+@codespar/mcp-colppy	0.2.0-alpha.3	2026-11-22
+@codespar/mcp-conekta	0.2.2	2026-11-22
+@codespar/mcp-itau	0.2.0-alpha.3	
+@codespar/mcp-khipu	0.2.0-alpha.3	
+@codespar/mcp-konduto	0.2.0-alpha.3	2026-11-22
+@codespar/mcp-matera	0.2.0-alpha.4	
+@codespar/mcp-mercado-bitcoin	0.2.2	2026-11-22
+@codespar/mcp-midaz	0.1.0	2026-11-22
+@codespar/mcp-moonpay	0.2.2	
+@codespar/mcp-onfido	0.2.2	
+@codespar/mcp-pagar-me	0.2.2	
+@codespar/mcp-pluggy	0.1.2	2026-11-22
+@codespar/mcp-skydropx	0.2.2	
+@codespar/mcp-stripe	0.2.2	
+@codespar/mcp-stripe-acp	0.1.4	2026-11-22
+@codespar/mcp-tienda-nube	0.2.2	
+@codespar/mcp-transak	0.2.0-alpha.3	
+@codespar/mcp-wise	0.1.2	
+@codespar/mcp-wompi	0.2.2	2026-11-22
+@coherenceos/mcp-server	0.2.3	2026-11-22
 @coldleads/mcp-server	1.0.2	
 @commenteme/vtex-io-mcp	0.2.0	
-@comparedge/price-watch-mcp	1.0.0	2026-11-15
+@comparedge/price-watch-mcp	1.0.0	
 @complyedge/mcp	0.2.4	
 @conduitai-app/mcp-server	1.299.1	
-@conformo/mcp-server	0.2.5	2026-11-15
+@conformo/mcp-server	0.2.5	
 @congressio/mcp	0.1.1	
-@connorbritain/mssql-mcp-server	0.4.5	2026-11-15
-@conorbronsdon/op3-mcp	0.2.0	2026-11-15
-@contentasoft/cad-converter-mcp	1.0.2	2026-11-15
-@contentasoft/contenta-converter-mcp	1.0.2	2026-11-15
+@connorbritain/mssql-mcp-server	0.4.5	
+@conorbronsdon/op3-mcp	0.2.0	
+@contentasoft/cad-converter-mcp	1.0.2	
+@contentasoft/contenta-converter-mcp	1.0.2	
 @contentasoft/videorecompress-mcp	1.0.2	
-@contentrain/mcp	3.12.3	2026-11-15
-@contextlayer/mcp	0.0.3	2026-11-15
-@coolicons/mcp	5.4.0	2026-11-15
-@coppica/persuasion-mcp	1.0.7	2026-11-15
+@contentrain/mcp	3.12.3	
+@contextlayer/mcp	0.0.3	
+@coolicons/mcp	5.4.0	
+@copperline/rendex-mcp	1.8.2	2026-11-22
+@coppica/persuasion-mcp	1.0.7	
 @corlabsdev/mcp	0.1.7	
+@corpussanctum/atlas-mcp	0.1.1	2026-11-22
+@cosmicjs/mcp	1.7.1	2026-11-22
+@coyasong/youtube-mcp-server	2.0.0	2026-11-22
 @crabeye-ai/crabeye-mcp-bridge	1.3.0	
+@craftsamo/git-tools	0.5.0	2026-11-22
 @crela/mcp	1.5.0	
-@crewone/mcp-server	0.2.0	2026-11-15
+@crewone/mcp-server	0.2.0	
 @cryptoapis-io/mcp-x402-accept	0.1.1	
-@currencyfreaks/mcp	1.0.1	2026-11-15
+@cubiczan/agent-conductor	0.1.0	2026-11-22
+@currencyfreaks/mcp	1.0.1	
 @cutoptim/mcp	0.1.0	
 @cyanheads/arxiv-mcp-server	1.8.2	
-@cyanheads/brapi-mcp-server	0.11.0	2026-11-15
+@cyanheads/aviation-weather-mcp-server	0.7.2	2026-11-22
+@cyanheads/bls-labor-mcp-server	0.8.0	2026-11-22
+@cyanheads/brapi-mcp-server	0.11.0	
 @cyanheads/cern-inspire-mcp-server	0.2.0	
+@cyanheads/chembl-mcp-server	0.6.0	2026-11-22
+@cyanheads/clipboard-mcp-server	0.3.1	2026-11-22
 @cyanheads/cpsc-recalls-mcp-server	0.3.1	
 @cyanheads/cyanheads-mcp-server	0.5.0	
-@cyanheads/datamuse-mcp-server	0.2.0	2026-11-15
+@cyanheads/datamuse-mcp-server	0.2.0	
 @cyanheads/ensembl-mcp-server	0.7.1	
 @cyanheads/evals-mcp-server	0.1.6	
 @cyanheads/faa-aircraft-registry-mcp-server	0.1.12	
-@cyanheads/first-epss-mcp-server	0.2.0	2026-11-15
+@cyanheads/faa-traffic-delays-mcp-server	0.3.1	2026-11-22
+@cyanheads/fbi-crime-mcp-server	0.5.0	2026-11-22
+@cyanheads/first-epss-mcp-server	0.2.0	
 @cyanheads/gbif-biodiversity-mcp-server	0.8.0	
 @cyanheads/grantsgov-mcp-server	0.2.0	
-@cyanheads/iana-registries-mcp-server	0.3.0	2026-11-15
+@cyanheads/iana-registries-mcp-server	0.3.0	
+@cyanheads/ilostat-mcp-server	0.4.0	2026-11-22
 @cyanheads/inaturalist-mcp-server	0.3.2	
-@cyanheads/interpro-mcp-server	0.2.0	2026-11-15
-@cyanheads/met-museum-mcp-server	0.10.1	2026-11-15
-@cyanheads/noaa-cdo-mcp-server	0.1.15	2026-11-15
-@cyanheads/nonprofit-explorer-mcp-server	0.3.0	
-@cyanheads/onebusaway-mcp-server	0.4.0	2026-11-15
+@cyanheads/interpro-mcp-server	0.2.0	
+@cyanheads/macos-mcp-server	0.5.0	2026-11-22
+@cyanheads/met-museum-mcp-server	0.10.1	
+@cyanheads/noaa-cdo-mcp-server	0.1.15	
+@cyanheads/nonprofit-explorer-mcp-server	0.4.0	2026-11-22
+@cyanheads/onebusaway-mcp-server	0.4.0	
 @cyanheads/open-meteo-mcp-server	0.5.0	
-@cyanheads/openstates-mcp-server	0.4.0	2026-11-15
-@cyanheads/ourairports-mcp-server	0.3.0	2026-11-15
+@cyanheads/openalex-mcp-server	0.11.2	2026-11-22
+@cyanheads/openfda-mcp-server	0.10.0	2026-11-22
+@cyanheads/openstates-mcp-server	0.4.0	
+@cyanheads/ourairports-mcp-server	0.3.0	
 @cyanheads/paleobiology-mcp-server	0.5.0	
-@cyanheads/sports-mcp-server	0.6.0	2026-11-15
+@cyanheads/sanctions-screening-mcp-server	0.7.0	2026-11-22
+@cyanheads/sports-mcp-server	0.6.0	
+@cyanheads/treasury-fiscaldata-mcp-server	0.5.0	2026-11-22
 @cyanheads/tvmaze-mcp-server	0.3.0	
+@cyanheads/un-comtrade-mcp-server	0.5.0	2026-11-22
+@cyanheads/unhcr-refugees-mcp-server	0.3.0	2026-11-22
 @cyanheads/usaspending-mcp-server	0.7.1	
-@cyanheads/wikidata-mcp-server	0.3.0	2026-11-15
-@cynicalsally/cli	0.7.0	2026-11-15
-@cyuanxv/datafinder-mcp	0.2.5	2026-11-15
+@cyanheads/who-gho-mcp-server	0.4.1	2026-11-22
+@cyanheads/wikidata-mcp-server	0.3.0	
+@cyanmycelium/mcp-broker	1.12.0	2026-11-22
+@cynicalsally/cli	0.7.0	
+@cyphos-guard/mcp	0.1.0	2026-11-22
+@cyuanxv/datafinder-mcp	0.2.5	
 @czagents/isir	0.2.3	
 @czagents/sanctions	0.1.4	
 @darkhorseone/mcp-server-uk-parliament-commonsvotes	1.0.1	
 @darkhorseone/mcp-server-uk-parliament-interests	1.0.1	
 @darkhorseone/mcp-server-uk-parliament-now	1.0.1	
-@darkhorseone/mcp-server-uk-parliament-oralquestionsandmotions	1.0.1	2026-11-15
+@darkhorseone/mcp-server-uk-parliament-oralquestionsandmotions	1.0.1	
 @darkhorseone/mcp-server-uk-parliament-questions-statements	1.0.1	
-@darkhorseone/mcp-server-uk-parliament-statutoryinstruments	1.0.1	2026-11-15
+@darkhorseone/mcp-server-uk-parliament-statutoryinstruments	1.0.1	
 @darkmatterhub/mcp-server	0.3.1	
 @dashiro/tacitus-mcp-server	0.1.3	
 @davesheffer/hunch	1.38.1	
 @davidweb3-ctrl/mcp-git-enhanced	1.0.0	
-@decodo/mcp-server	1.7.0	2026-11-15
-@deepnets/mcp-server	0.3.0	2026-11-15
-@delorenj/mcp-server-trello	1.8.1	2026-11-15
-@devkind/starshipit-mcp	1.3.0	2026-11-15
+@dbhawk/mcp	0.4.2	2026-11-22
+@debridge-finance/debridge-mcp	0.1.5	2026-11-22
+@decodo/mcp-server	1.7.0	
+@deepnets/mcp-server	0.3.0	
+@deepwhale-cn/mcp-dsh-plugins	0.1.2	2026-11-22
+@delorenj/mcp-server-trello	1.8.1	
+@demiliani/d365bc-admin-mcp	2.0.1	2026-11-22
+@devkind/starshipit-mcp	1.3.0	
 @devproxy/mcp	0.3.1	
 @devwithmj/quickbooks-mcp	0.1.6	
+@diagrams-so/mcp	1.4.7	2026-11-22
 @dicepdf/mcp	0.1.0	
 @diffci.com/diffci	0.3.38	
 @digestseo/mcp-geo	0.3.30	
 @dinesh-nalla-se/chrome-devtools-mcp	0.10.2	
-@dir-ai/voyager	1.4.0	2026-11-15
+@dinesh-nalla-se/playwright-mcp	0.0.47	2026-11-22
+@dir-ai/voyager	1.4.0	
+@disane-dev/weishaupt-wem-mcp-server	0.2.0	2026-11-22
 @dishui/motion-mcp	1.0.1	
 @dmzagent/skill-builder-mcp	1.0.1	
-@dnsdoctor/mcp	1.21.1	2026-11-15
-@dockndevai/mcp-azure	0.3.0	2026-11-15
+@dnsdoctor/mcp	1.21.1	
+@dockndevai/mcp-azure	0.3.0	
+@dockndevai/mcp-azure-devops	0.3.3	2026-11-22
 @dockndevai/mcp-ios	0.1.0	
-@dockndevai/mcp-keycloak	0.3.3	2026-11-15
-@docmill/mcp-server	0.1.2	2026-11-15
+@dockndevai/mcp-keycloak	0.3.3	
+@docmill/mcp-server	0.1.2	
+@doconda/mcp	0.7.0	2026-11-22
+@docsagent/docsagent	5.0.1	2026-11-22
+@documentero/mcp	0.1.2	2026-11-22
+@docweave/mcp	0.2.0	2026-11-22
 @domainkits/mcp	2.1.3	
 @dominion525/familiar-mcp	0.1.2	
-@doomscrollr/mcp-server	1.1.2	2026-11-15
+@doomscrollr/mcp-server	1.1.2	
 @dpantani/tdmcp	0.13.2	
+@drantoniou/uploadcheck-mcp	0.1.1	2026-11-22
 @droidagentkit/launcher	0.3.2-alpha	
 @drop2run/mcp	1.4.0	
 @dsbissett/office-addin-mcp	0.8.0	
 @dudko.dev/baton-mcp	0.2.0	
-@dustinhansen/plex-mcp	0.10.0	2026-11-15
+@duongkhuong/mcp-redmine	1.1.3	2026-11-22
+@dustinhansen/plex-mcp	0.10.0	
+@dxpert/mcp	0.2.1	2026-11-22
 @dxpert/uns-tools	0.1.4	
-@dylantirandaz/tailscale-compute-mcp	0.1.0-beta.3	2026-11-15
-@dynm.link/cli	0.3.2	2026-11-15
+@dylantirandaz/tailscale-compute-mcp	0.1.0-beta.3	
+@dynm.link/cli	0.3.2	
+@easyi18n.com/cli	1.3.0	2026-11-22
 @easylabs/mcp-server	0.5.0	
-@eat-pray-ai/yutu	0.11.0	2026-11-15
-@echothread/mcp	0.1.0	2026-11-15
+@eat-pray-ai/yutu	0.11.1	2026-11-22
+@echosaw/mcp-server	2.2.0	2026-11-22
+@echothread/mcp	0.1.0	
 @ecocitizenz/ecz-id-mcp-verifier	0.9.0	
 @edgecasehuman/droidsight	1.0.0	
-@edicodes/lifeos-mcp	2.0.0	2026-11-15
-@edks/mcp	0.6.1	2026-11-15
-@eigenart/agentshield-mcp	0.1.3	2026-11-15
+@edicodes/lifeos-mcp	2.0.0	
+@edks/mcp	0.6.1	
+@eigenart/agentshield-mcp	0.1.3	
 @eilodon/calm-mcp	0.8.0	
+@electron-stagewright/core	0.10.0	2026-11-22
+@elisym/elisym-mcp	0.8.9	2026-11-22
 @ellul-estate/abutly-com-abutly-tools-mcp	1.0.0	
 @ellul-estate/amortlane-com-amortlane-worksheets-mcp	1.0.0	
+@ellul-estate/attestroom-com-attestroom-tools-mcp	1.0.0	2026-11-22
 @ellul-estate/batesio-com-batesio-document-management-tools-mcp	1.0.0	
-@ellul-estate/clientvo-com-clientvo-tools-mcp	1.0.0	2026-11-15
+@ellul-estate/clientvo-com-clientvo-tools-mcp	1.0.0	
 @ellul-estate/diningco-co-uk-shop-mcp	1.0.0	
-@emergent-wisdom/meaning-model-mcp	0.19.0	2026-11-15
+@emergent-wisdom/meaning-model-mcp	0.19.0	
+@energio/holded-mcp	1.5.1	2026-11-22
 @entyrix/mcp	0.2.2	
-@erikirby/brand-monitor	1.0.0	2026-11-15
+@erikirby/brand-monitor	1.0.0	
+@erikirby/domain-intel	1.0.0	2026-11-22
 @erikirby/web-network-tools	1.0.0	
 @error-path/opendrs	0.5.0	
-@evidinvest/mcp-server	1.2.2	2026-11-15
+@ethersflow/mcp-server	0.3.3	2026-11-22
+@evidinvest/mcp-server	1.2.2	
 @exeris/ai-bridge	0.8.0	
-@externalsoftware/recount-mcp	1.0.0	2026-11-15
-@eztexting/mcp-server	1.0.4	2026-11-15
-@fabioov/moodle-mcp	0.1.1	2026-11-15
-@fablenator/tiled-mcp	1.0.3	2026-11-15
-@faviovazquez/showtime-mcp	0.4.6	2026-11-15
-@file-kiwi/filekiwi-mcp-server	1.0.10	2026-11-15
-@filearchitect/blankfiles-mcp	1.0.1	2026-11-15
+@externalsoftware/recount-mcp	1.0.0	
+@extremely-agency/mcp	0.1.1	2026-11-22
+@eztexting/mcp-server	1.0.4	
+@f3d1/llmkit-mcp-server	0.4.10	2026-11-22
+@fabioov/moodle-mcp	0.1.1	
+@fablenator/tiled-mcp	1.0.3	
+@facultiai/mcp-server	1.0.7	2026-11-22
+@fascia-run/mcp-server	0.1.1	2026-11-22
+@faviovazquez/showtime-mcp	0.4.6	
+@file-kiwi/filekiwi-mcp-server	1.0.10	
+@filearchitect/blankfiles-mcp	1.0.1	
+@filooapp/mcp-server	0.2.0	2026-11-22
 @firfi/voila-mcp	0.3.0	
-@first-ch/tools-mcp	0.56.0	2026-11-15
+@first-ch/tools-mcp	0.56.0	
 @firsthandapi/mcp-server	0.3.1	
-@flarelink/mcp	0.1.2	2026-11-15
-@flarewatch/mcp	0.1.5	2026-11-15
-@flightradar24/fr24api-mcp	1.0.1	2026-11-15
-@focusgts/aep-mcp-server	0.11.1	2026-11-15
+@flarelink/mcp	0.1.2	
+@flarewatch/mcp	0.1.5	
+@flightradar24/fr24api-mcp	1.0.1	
+@florianbruniaux/dep-scope	0.4.2	2026-11-22
+@focusgts/aep-mcp-server	0.11.1	
 @fonteum/mcp	0.2.2	
-@foreverworks/mcp-home-assistant	0.1.2	2026-11-15
-@forgemeshlabs/aso-audit-mcp	0.4.6	2026-11-15
+@foreverworks/mcp-eas	0.1.3	2026-11-22
+@foreverworks/mcp-home-assistant	0.1.2	
+@forgemeshlabs/aso-audit-mcp	0.4.6	
 @forgespace/branding-mcp	0.56.0	
 @formatix-ai/mcp	0.1.1	
-@forwardemail/mcp-server	1.0.7	2026-11-15
+@formfeed/mcp	0.3.29	2026-11-22
+@forwardemail/mcp-server	1.0.7	
 @frame-relay/cli	0.1.0-beta.0	
-@freevectoricons/mcp	0.3.0-beta.3	2026-11-15
-@fusionauth/mcp-api	0.1.14	2026-11-15
+@freevectoricons/mcp	0.3.0-beta.3	
+@fusionauth/mcp-api	0.1.14	
 @gaiventures/pilotfish-mcp	0.1.21	
+@galaxy-stack/nebula-mcp	1.0.2	2026-11-22
 @gently/mcp-server	0.1.22	
+@gera-services/mcp-gera-mind	0.1.1	2026-11-22
+@gera-services/mcp-gera-persona	0.1.1	2026-11-22
 @gera-services/mcp-gera-prime	0.1.1	
-@gera-services/mcp-gera-verify	1.2.1	2026-11-15
+@gera-services/mcp-gera-verify	1.2.1	
 @gera-services/mcp-gera-voice	0.1.1	
+@gera-services/mcp-geraguard	0.1.1	2026-11-22
+@gera-services/mcp-gerarent	0.1.1	2026-11-22
+@gera-services/mcp-gerasure	0.1.1	2026-11-22
 @gera-services/mcp-geratools	1.0.1	
-@getcadcraft/mcp	0.9.1	2026-11-15
-@getmcpads/bing-ads-mcp-server	1.0.2	2026-11-15
-@getmcpads/x-ads-mcp-server	1.1.2	2026-11-15
-@giftcardshop/mcp	0.1.1	2026-11-15
+@gessa/mcp-server	1.0.0	2026-11-22
+@getcadcraft/mcp	0.9.1	
+@getholdings/mcp	0.2.0	2026-11-22
+@getmcpads/bing-ads-mcp-server	1.0.2	
+@getmcpads/google-ads-mcp-server	2.1.2	2026-11-22
+@getmcpads/x-ads-mcp-server	1.1.2	
+@ghostfacemodz/android-use	0.2.0	2026-11-22
+@giftcardshop/mcp	0.1.1	
+@gildara/mcp-server	0.8.0	2026-11-22
 @gjlmotea/blockhand-mcp	0.1.1	
+@gloamtrade/mcp	0.10.1	2026-11-22
 @globalchatadsapp/mcp-server	0.2.6	
-@globestudio/mcp	0.2.5	2026-11-15
-@gmpsignal/mcp-server	1.3.0	2026-11-15
+@globestudio/mcp	0.2.5	
+@gmpsignal/mcp-server	1.3.0	
 @goflag/mcp	0.1.2	
-@gogogadgetbytes/planka-mcp	1.0.0	2026-11-15
-@gonetone/mcp-server-taiwan-weather	0.1.4	2026-11-15
-@goreleaser/mcp	0.6.0	2026-11-15
+@gogogadgetbytes/planka-mcp	1.0.0	
+@gonetone/mcp-server-taiwan-weather	0.1.4	
+@goreleaser/mcp	0.6.0	
+@governmyai/mcp-server	0.1.4	2026-11-22
+@gridinsoft/mcp-inspector	1.1.1	2026-11-22
 @grulex/grpc-invoke-mcp	0.1.5	
-@gsep/mcp	1.0.2	2026-11-15
+@gsep/mcp	1.0.2	
 @gstcranes/mcp-server	0.1.1	
+@guardbee/mcp-a2a-auditor	0.1.1	2026-11-22
 @guardbee/mcp-document-scanner	0.4.1	
+@guardbee/mcp-llm-redteam	0.1.1	2026-11-22
 @guardbee/mcp-prompt-injection-scanner	0.2.2	
-@guardbee/mcp-reverse-shield	0.8.0	2026-11-15
-@guardbee/mcp-rug-pull-detector	0.2.1	2026-11-15
-@guardbee/mcp-ssl-inspector	0.2.3	2026-11-15
+@guardbee/mcp-reverse-shield	0.8.0	
+@guardbee/mcp-rug-pull-detector	0.2.1	
+@guardbee/mcp-ssl-inspector	0.2.3	
+@guardbee/mcp-threat-rules	0.5.1	2026-11-22
+@guardbee/mcp-vector-store-scanner	0.1.1	2026-11-22
+@guykorol_jfrog/jfrog-dummy-mcp	1.0.0	2026-11-22
 @h2-papers/mcp-server	0.1.0	
-@hakimelek/monarchmoney	0.3.1	2026-11-15
+@hakimelek/monarchmoney	0.3.1	
 @hamzaamin221/get-joke-mcp	0.1.1	
-@hasdata/booking-mcp	1.0.8	2026-11-15
+@handset/mcp	0.1.1	2026-11-22
+@hanoak/pixabay-mcp-server	1.0.0	2026-11-22
+@harie/mcp	0.9.1	2026-11-22
+@harrybin/visuals-mcp	1.6.0	2026-11-22
+@harusame64/desktop-touch-mcp	2.4.3	2026-11-22
+@hasdata/booking-mcp	1.0.8	
+@hasdata/yelp-mcp	1.0.2	2026-11-22
 @haymon-ai/dbmcp	0.17.0	
-@hayodev/crystallize-mcp	0.2.0	2026-11-15
+@hayodev/crystallize-mcp	0.2.0	
 @hearthbyte/ensemble-mcp	1.0.0	
 @helloaigent-dev/publisher	0.1.1	
 @hellouchit/mcp-regulated-ai-compliance	0.2.3	
 @helm-protocol/ttt-mcp	0.3.4	
-@helmdeck/mcp-bridge	0.29.10	2026-11-15
+@helmdeck/mcp-bridge	0.29.10	
 @hermitsh/shrimp-mcp	1.0.7	
-@high5ventures/apple-reminders-mcp	1.1.0	
-@hiveforge/hivemind-mcp	3.6.3	2026-11-15
-@hol-org/hashnet-mcp	1.0.24	2026-11-15
-@houtini/seo-crawler-mcp	2.0.1	2026-11-15
+@high5ventures/apple-reminders-mcp	1.2.1	2026-11-22
+@hiveforge/hivemind-mcp	3.6.3	
+@hol-org/hashnet-mcp	1.0.24	
+@homespunapps/mcp	1.6.98	2026-11-22
+@houst-com/front-mcp	1.0.1	2026-11-22
+@houtini/amazon-creators-mcp	0.4.3	2026-11-22
+@houtini/seo-crawler-mcp	2.0.1	
 @hovecapital/read-only-mysql-mcp-server	0.1.1	
 @hoya25/nctr-mcp-server	1.0.1	
 @humanaway/mcp-server	0.2.2	
 @humanity4ai/mcp-servers	1.0.6	
 @hwip/mcp-server	0.1.7	
+@hypelens/hypelens-agent-rail	0.1.16	2026-11-22
 @i4ctime/q-ring	0.19.0	
-@ibrahimkhaled19/backgen	1.14.0	2026-11-15
-@identitate-md/mcp	1.0.7	2026-11-15
+@ibrahimkhaled19/backgen	1.14.0	
+@identitate-md/mcp	1.0.7	
 @igniteui/mcp-server	15.9.0	
-@imjaineel-dev/sn-mcp-server	2.2.22	2026-11-15
+@imba_wallet/agent-mcp	0.1.4	2026-11-22
+@imjaineel-dev/sn-mcp-server	2.2.22	
 @immersive-media-technologies/aftereffects-mcp-imt	1.1.1	
-@indigoprotocol/indigo-mcp	0.4.2	2026-11-15
+@immit/mcp	0.1.2	2026-11-22
+@indiamcp/razorpay-mcp	0.1.0	2026-11-22
+@indigoprotocol/indigo-mcp	0.4.2	
 @inferensys/contextful	0.1.0	
+@influensea/mcp	0.1.0	2026-11-22
 @infoinlet/mcp-clickhouse	0.1.1	
-@infoinlet/mcp-github	0.1.1	2026-11-15
+@infoinlet/mcp-data	0.1.1	2026-11-22
+@infoinlet/mcp-fetch	0.1.1	2026-11-22
+@infoinlet/mcp-github	0.1.1	
+@infoinlet/mcp-jp-doc-intel	0.1.0	2026-11-22
 @infoinlet/mcp-kafka	0.1.1	
 @infoinlet/mcp-knowledge-rag	0.1.0	
 @infoinlet/mcp-memory	0.1.1	
-@infoinlet/mcp-qdrant	0.1.1	2026-11-15
+@infoinlet/mcp-qdrant	0.1.1	
+@infoinlet/mcp-redis	0.1.1	2026-11-22
+@infoinlet/mcp-social	0.1.1	2026-11-22
 @infoinlet/mcp-stripe	0.1.1	
 @infoinlet/mcp-workflow	0.1.1	
-@inkrelay/mcp	0.1.1	2026-11-15
-@insightsentry/mcp	1.4.60	2026-11-15
+@inkrelay/mcp	0.1.1	
+@insightsentry/mcp	1.4.60	
+@intelagent/mcp-file-processor	0.1.1	2026-11-22
 @intellmedia/basecoat-ui-mcp	1.8.0	
+@intencion/mcp	0.1.1	2026-11-22
 @intenttext/mcp-server	1.0.1	
+@invapi/mcp-server	1.0.5	2026-11-22
+@ioserviceslabs/searchio-mcp	0.1.1	2026-11-22
 @ironflowsh/mcp	0.17.0	
 @ismsdirectory/mcp-server	1.3.0	
 @ixo/asks-mcp	2.2.3	
-@j0hanz/superfetch	1.0.2	2026-11-15
+@j0hanz/superfetch	1.0.2	
 @jarroba/mcp-logs	0.3.0	
-@jayjex/pdfcheck-mcp	0.1.1	2026-11-15
+@jayjex/pdfcheck-mcp	0.1.1	
+@jigyasudham/veto	3.11.0	2026-11-22
+@jikida/mcp	0.3.6	2026-11-22
+@jimothy-snicket/gemini-image-mcp	0.6.2	2026-11-22
+@jmrp.io/gitlab-mcp-server	3.7.0	2026-11-22
 @jobdatalake/mcp-server	1.0.14	
+@joberhr/jober-mcp	0.6.1	2026-11-22
+@jonathanhefner/hello-mcp-registry	0.1.1	2026-11-22
 @joomshaper/helix-mcp-server	1.1.0	
-@jperelli/graylog-mcp	1.3.0	2026-11-15
-@juscribe/mcp	0.2.9	2026-11-15
+@jovie/cli	26.11.4	2026-11-22
+@jperelli/graylog-mcp	1.3.0	
+@jshookmcp/jshook	0.4.6	2026-11-22
+@juscribe/mcp	0.2.9	
 @justice8096/sagemath-mcp-server	1.0.1	
+@k8ika0s/mcp-tmux	0.1.7	2026-11-22
 @kadam-net/mcp-server	0.3.4	
+@kaeawc/auto-mobile	0.0.67	2026-11-22
 @kansei-link/mcp-server	1.3.0	
 @karashiiro/my-cool-proxy	1.5.4	
+@kasabeh/baton-mcp	0.3.0	2026-11-22
 @keenable/mcp	0.1.1	
-@keepmysubs/mcp	0.1.0	2026-11-15
+@keepmysubs/mcp	0.1.0	
+@keyhalve/verify-mcp	0.1.0	2026-11-22
 @khalidsaidi/a2abench-mcp	1.0.1	
-@khavion/architecture-review-mcp	0.1.1	2026-11-15
+@khavion/architecture-review-mcp	0.1.1	
 @kinti/a11y-toolkit	5.26.0	
-@kiraautonoma/agent-memory-mcp	0.1.3	2026-11-15
-@kiwiclaw/mcp-server	0.1.1	2026-11-15
-@klever/mcp-server	1.3.0	2026-11-15
+@kiraautonoma/agent-memory-mcp	0.1.3	
+@kiwiclaw/mcp-server	0.1.1	
+@klever/mcp-server	1.3.0	
+@kolivri/memoria-mcp	1.0.2	2026-11-22
 @korala/mcp	0.9.0	
-@krovacloud/mcp	0.3.19	2026-11-15
-@kryptosai/mcp-observatory	1.36.1	2026-11-15
+@korgg/recall-mcp	0.1.1	2026-11-22
+@krovacloud/mcp	0.3.19	
+@kryptosai/mcp-observatory	1.36.1	
+@krystiangw/zen-mcp	0.1.1	2026-11-22
 @kubently/cli	2.3.1	
 @kunwarshah/claudex	1.3.4	
-@lastehr/mcp	0.5.4	2026-11-15
+@kyanitelabs/epoch	0.5.2	2026-11-22
+@kyma-api/mcp-server	1.0.3	2026-11-22
+@larsbaunwall/unlinked	2.0.0	2026-11-22
+@lastehr/mcp	0.5.4	
 @lattis-dev/cli	0.4.0	
-@ldclabs/kip-mcp-server	1.0.1	2026-11-15
+@ldclabs/kip-mcp-server	1.0.1	
 @leafwright/mcp	0.2.4	
 @leakferret/mcp	0.1.13	
 @learningnodes/elen-mcp	0.3.1	
-@ledgenter/mcp	0.1.1	2026-11-15
+@ledgenter/mcp	0.1.1	
 @leewinder/mcp-tcgdex	1.0.0	
+@letmepost/mcp	0.2.1	2026-11-22
 @letoribo/mcp-graphql-enhanced	4.16.0	
 @licklider/nomue-mcp	0.2.0-rc.1	
 @lightning-tools/mcp-server	0.3.3	
-@linqapp/sdk-mcp	0.82.2	2026-11-15
+@likerts/mcp	0.1.0	2026-11-22
+@linqapp/sdk-mcp	0.82.2	
 @litshrine/agent	0.1.1	
 @littlebearapps/outlook-assistant	3.14.1	
 @livevariant/mcp	0.1.5	
-@localgov-jp/mcp-server	0.2.3	2026-11-15
-@locli/cli	0.1.11	2026-11-15
-@logicnodez/mcp-bridge	1.0.5	2026-11-15
+@localgov-jp/mcp-server	0.2.3	
+@locli/cli	0.1.11	
+@logicnodez/mcp-bridge	1.0.5	
+@logly-uk/mcp	1.0.2	2026-11-22
+@lovepivix/mcp-weather-server	1.0.1	2026-11-22
+@lubab/madar	0.40.0-beta.1	2026-11-22
 @lulzasaur9192/agent-infra-mcp	1.0.0	
-@machinegrade/validate	0.1.2	2026-11-15
+@lumen-seo/cli	0.3.0	2026-11-22
+@machinegrade/validate	0.1.2	
 @madhan-g-p/devdocs-mcp-server	1.0.0	
-@mag-cie/mcp-microsoft-todo	1.2.2	2026-11-15
-@mailrith/mcp-server	2.0.1	2026-11-15
+@mag-cie/mcp-microsoft-todo	1.2.2	
+@magic-resume-kit/mcp	1.0.2	2026-11-22
+@magicsword-io/magicsword-mcp	0.1.7	2026-11-22
+@mailrith/mcp-server	2.0.1	
+@makeaivideo/mcp	1.2.0	2026-11-22
 @makerportal/mcp	0.1.1	
-@mambalabsdev/mcp-icp-fit-scorer	1.3.1	2026-11-15
-@mambalabsdev/mcp-lead-file-import-checker	1.0.0	2026-11-15
-@mambalabsdev/mcp-newsletter-sponsor-tracker	1.0.1	2026-11-15
-@mambalabsdev/mcp-shopify-app-store-chrome-web-store-listings	1.0.1	2026-11-15
+@mambalabsdev/mcp-account-hiring-watch	1.0.2	2026-11-22
+@mambalabsdev/mcp-api-change-monitor	1.0.1	2026-11-22
+@mambalabsdev/mcp-email-verifier	1.0.1	2026-11-22
+@mambalabsdev/mcp-funding-investor-record	1.2.1	2026-11-22
+@mambalabsdev/mcp-icp-fit-scorer	1.3.1	
+@mambalabsdev/mcp-lead-file-import-checker	1.0.0	
+@mambalabsdev/mcp-linkedin-post-engager-capture	1.4.1	2026-11-22
+@mambalabsdev/mcp-news-media-mention-monitor	1.0.1	2026-11-22
+@mambalabsdev/mcp-newsletter-sponsor-tracker	1.0.1	
+@mambalabsdev/mcp-shopify-app-store-chrome-web-store-listings	1.0.1	
+@mambalabsdev/mcp-substack-scraper	1.0.1	2026-11-22
+@mambalabsdev/mcp-vc-accelerator-portfolio-list-builder	1.0.2	2026-11-22
+@mambalabsdev/mcp-youtube-channel-transcript-extractor	1.2.2	2026-11-22
 @manansiingh/figma-react-mcp-server	1.0.3	
 @mandatefi/mcp	0.1.1	
+@mapbox/mcp-docs-server	0.4.0	2026-11-22
+@maple-kit/mcp	0.17.1	2026-11-22
 @maraventano/map	1.0.2	
 @marcelo-ochoa/server-qnap	1.0.8	
-@marketmaster/mcp	0.1.3	2026-11-15
+@markasso/mcp	0.7.6	2026-11-22
+@marketmaster/mcp	0.1.3	
 @markup-carve/carve-mcp	0.1.12	
 @marocain/mcp-server	0.1.9	
-@mashware/domain-memory-server	0.2.4	2026-11-15
-@masonator/coolify-mcp	3.10.1	2026-11-15
-@matematicsolutions/mcp-eu-compliance	0.4.1	2026-11-15
+@martintoz/placepack-mcp	0.1.2	2026-11-22
+@mashware/domain-memory-server	0.2.4	
+@masonator/coolify-mcp	3.10.1	
+@matematicsolutions/mcp-eu-compliance	0.4.1	
 @matematicsolutions/mcp-eureka	0.2.0	
 @matematicsolutions/mcp-nsa	1.4.0	
 @maxkle1nz/m1nd	1.5.0	
 @mbeato/apimesh-mcp-server	1.8.2	
-@mcp-z/mcp-outlook	2.2.3	2026-11-15
+@mcp-z/mcp-drive	2.6.2	2026-11-22
+@mcp-z/mcp-outlook	2.2.3	
 @mcp-z/mcp-pdf	1.0.3	
 @mcpgrade/mcp	0.1.1	
 @md-musaraf/sentinal-mcp	1.0.5	
-@meetlark/mcp-server	1.0.3	2026-11-15
+@measurespace/measure-space-mcp-server	0.1.0	2026-11-22
+@meetlark/mcp-server	1.0.3	
 @melra/cli	0.3.0-alpha.14	
+@memforgeai/memory-service	1.0.1	2026-11-22
 @metataro/zumen-mcp	0.7.0	
-@mgcrea/mcp-apple-safari	1.39.0	2026-11-15
+@mgcrea/mcp-apple-messages	1.43.0	2026-11-22
+@mgcrea/mcp-apple-safari	1.39.0	
+@mguttmann/hetzner-cloud-mcp	0.2.0	2026-11-22
+@microcharts/mcp	0.1.17	2026-11-22
 @mikusnuz/meta-mcp	2.2.2	
 @mikusnuz/npm-mcp	1.4.0	
-@milos106/ares-mcp	0.1.2	2026-11-15
+@mikusnuz/umami-mcp	2.1.1	2026-11-22
+@milos106/ares-mcp	0.1.2	
 @mindjack/mcp	1.4.5	
-@mindstone/mcp-server-browser-automation	0.2.6	2026-11-15
-@mindstone/mcp-server-email-imap	0.3.4	2026-11-15
-@mindstone/mcp-server-microsoft-files	0.2.1	2026-11-15
-@mindstone/mcp-server-slack	0.3.8	2026-11-15
+@mindstone/mcp-server-browser-automation	0.2.6	
+@mindstone/mcp-server-email-imap	0.3.4	
+@mindstone/mcp-server-microsoft-files	0.2.1	
+@mindstone/mcp-server-microsoft-teams	0.3.4	2026-11-22
+@mindstone/mcp-server-slack	0.3.8	
 @mindstone/mcp-server-wise	0.1.1	
 @mintline/mcp	1.1.9	
 @mintwarehq/mcp-server	0.1.3	
-@miroslavmyrha/cypress-mcp	0.1.2	2026-11-15
+@miroslavmyrha/cypress-mcp	0.1.2	
 @misarblog/mcp	5.1.8	
 @misarseo/mcp	1.0.0	
-@mlawsonking/code-guard-mcp	1.3.0	2026-11-15
-@mmj-map/palette	0.1.0	2026-11-15
+@mlawsonking/code-guard-mcp	1.3.0	
+@mmillan76/aemet-mcp	0.1.1	2026-11-22
+@mmj-map/palette	0.1.0	
 @mmvv1638/404-directory-mcp	0.10.3	
-@mnemodb/mcp	0.1.22	2026-11-15
-@mockherodev/mcp-server	0.2.0	2026-11-15
-@modisign/mcp	0.7.0	2026-11-15
-@molio/cli	0.1.2	2026-11-15
-@monikaskorykow/mcp-workshops	1.0.0	2026-11-15
+@mnemodb/mcp	0.1.22	
+@mockherodev/mcp-server	0.2.0	
+@modisign/mcp	0.7.0	
+@molio/cli	0.1.2	
+@monikaskorykow/mcp-workshops	1.0.0	
+@mosadd/voice-truthgate-mcp	0.1.1	2026-11-22
 @mostajs/net	2.0.42	
-@mrfentmen/actionscript-mcp	1.0.0	2026-11-15
-@mrfentmen/adviceslip-mcp	1.0.0	2026-11-15
+@mrfentmen/actionscript-mcp	1.0.0	
+@mrfentmen/adobe-font-metrics-mcp	1.0.0	2026-11-22
+@mrfentmen/adviceslip-mcp	1.0.0	
+@mrfentmen/agda-mcp	1.0.0	2026-11-22
 @mrfentmen/al-mcp	1.0.0	
 @mrfentmen/aleo-mcp	1.0.0	
-@mrfentmen/algorand-mcp	1.0.1	2026-11-15
+@mrfentmen/algorand-mcp	1.0.1	
 @mrfentmen/alloy-mcp	1.0.0	
 @mrfentmen/anilist-mcp	1.0.1	
-@mrfentmen/answer-set-programming-mcp	1.0.0	2026-11-15
-@mrfentmen/apacheconf-mcp	1.0.0	2026-11-15
+@mrfentmen/answer-set-programming-mcp	1.0.0	
+@mrfentmen/apacheconf-mcp	1.0.0	
 @mrfentmen/apl-mcp	1.0.0	
-@mrfentmen/arinc429-mcp	1.0.1	2026-11-15
-@mrfentmen/artifact-hub-mcp	1.0.6	2026-11-15
+@mrfentmen/arinc429-mcp	1.0.1	
+@mrfentmen/artifact-hub-mcp	1.0.6	
+@mrfentmen/arxiv-mcp	1.0.1	2026-11-22
+@mrfentmen/ashby-mcp	1.0.1	2026-11-22
 @mrfentmen/aspectj-mcp	1.0.0	
 @mrfentmen/assembly-mcp	1.0.0	
-@mrfentmen/b4x-mcp	1.0.0	2026-11-15
-@mrfentmen/baml-mcp	1.0.0	2026-11-15
-@mrfentmen/base58-mcp	1.0.1	2026-11-15
+@mrfentmen/autosar-arxml-mcp	1.0.0	2026-11-22
+@mrfentmen/autotools-mcp	1.0.1	2026-11-22
+@mrfentmen/avisynth-mcp	1.0.0	2026-11-22
+@mrfentmen/b4x-mcp	1.0.0	
+@mrfentmen/babysitting-activity-bag-pack-cost-mcp	1.0.0	2026-11-22
+@mrfentmen/babysitting-activity-bag-pack-match-mcp	1.0.0	2026-11-22
+@mrfentmen/babysitting-emergency-card-fridge-track-mcp	1.0.0	2026-11-22
+@mrfentmen/babysitting-rate-card-sheet-sim-mcp	1.0.0	2026-11-22
+@mrfentmen/baml-mcp	1.0.0	
+@mrfentmen/base58-mcp	1.0.1	
 @mrfentmen/basic-mcp	1.0.0	
-@mrfentmen/befunge-mcp	1.0.0	2026-11-15
+@mrfentmen/befunge-mcp	1.0.0	
 @mrfentmen/beluga-mcp	1.0.0	
-@mrfentmen/berry-mcp	1.0.0	2026-11-15
-@mrfentmen/bf-mcp	1.0.0	2026-11-15
+@mrfentmen/berry-mcp	1.0.0	
+@mrfentmen/bf-mcp	1.0.0	
 @mrfentmen/bible-api-mcp	1.0.1	
 @mrfentmen/bibtex-style-mcp	1.0.0	
+@mrfentmen/biopax-mcp	1.0.0	2026-11-22
+@mrfentmen/bird2-mcp	1.0.0	2026-11-22
+@mrfentmen/birding-bird-bath-care-track-mcp	1.0.0	2026-11-22
+@mrfentmen/birding-warbler-id-spring-compare-mcp	1.0.0	2026-11-22
 @mrfentmen/bison-mcp	1.0.0	
 @mrfentmen/bluespec-mcp	1.0.0	
-@mrfentmen/boogie-mcp	1.0.0	2026-11-15
-@mrfentmen/cameligo-mcp	1.0.0	2026-11-15
+@mrfentmen/board-games-game-shelf-audit-index-mcp	1.0.0	2026-11-22
+@mrfentmen/board-games-party-game-stack-match-mcp	1.0.0	2026-11-22
+@mrfentmen/boo-mcp	1.0.0	2026-11-22
+@mrfentmen/boogie-mcp	1.0.0	
+@mrfentmen/cameligo-mcp	1.0.0	
+@mrfentmen/carseats-fit-by-age-stage-compare-mcp	1.0.0	2026-11-22
+@mrfentmen/carseats-fit-by-age-stage-match-mcp	1.0.0	2026-11-22
+@mrfentmen/carseats-install-angle-check-track-mcp	1.0.0	2026-11-22
+@mrfentmen/carseats-second-hand-screen-index-mcp	1.0.0	2026-11-22
+@mrfentmen/carseats-second-hand-screen-plan-mcp	1.0.0	2026-11-22
 @mrfentmen/catfact-mcp	1.0.1	
 @mrfentmen/cbioportal-mcp	1.0.1	
 @mrfentmen/census-geocode-mcp	1.0.1	
-@mrfentmen/cif-mcp	1.0.1	2026-11-15
-@mrfentmen/cirru-mcp	1.0.0	2026-11-15
+@mrfentmen/chesscom-mcp	1.0.1	2026-11-22
+@mrfentmen/chronam-mcp	1.0.1	2026-11-22
+@mrfentmen/cif-mcp	1.0.1	
+@mrfentmen/cirru-mcp	1.0.0	
 @mrfentmen/clean-mcp	1.0.0	
+@mrfentmen/coinpaprika-mcp	1.0.1	2026-11-22
+@mrfentmen/coldfusion-mcp	1.0.0	2026-11-22
+@mrfentmen/common-lisp-mcp	1.0.0	2026-11-22
+@mrfentmen/cpt-mcp	1.0.0	2026-11-22
 @mrfentmen/crossref-mcp	1.0.1	
-@mrfentmen/csound-score-mcp	1.0.0	2026-11-15
-@mrfentmen/curry-mcp	1.0.0	2026-11-15
+@mrfentmen/csound-score-mcp	1.0.0	
+@mrfentmen/curry-mcp	1.0.0	
 @mrfentmen/cweb-mcp	1.0.0	
-@mrfentmen/cwl-mcp	1.0.0	2026-11-15
+@mrfentmen/cwl-mcp	1.0.0	
 @mrfentmen/cypher-mcp	1.0.0	
 @mrfentmen/dafny-mcp	1.0.0	
-@mrfentmen/data-gov-au-mcp	1.0.0	2026-11-15
+@mrfentmen/data-gov-au-mcp	1.0.0	
 @mrfentmen/datamuse-mcp	1.0.1	
 @mrfentmen/dexscreener-mcp	1.0.1	
 @mrfentmen/diff-mcp	1.0.1	
-@mrfentmen/drug-shortages-mcp	1.0.0	2026-11-15
+@mrfentmen/drug-shortages-mcp	1.0.0	
 @mrfentmen/duckduckgo-mcp	1.0.1	
+@mrfentmen/dylan-mcp	1.0.0	2026-11-22
 @mrfentmen/easycrypt-mcp	1.0.0	
-@mrfentmen/ecl-mcp	1.0.0	2026-11-15
-@mrfentmen/edgar-mcp	1.0.0	2026-11-15
+@mrfentmen/ec-mcp	1.0.0	2026-11-22
+@mrfentmen/ecl-mcp	1.0.0	
+@mrfentmen/edgar-mcp	1.0.0	
 @mrfentmen/eff-mcp	1.0.0	
+@mrfentmen/electrical-diy-outlet-swap-safe-compare-mcp	1.0.0	2026-11-22
 @mrfentmen/energy-charts-mcp	1.0.0	
-@mrfentmen/epa-echo-mcp	1.0.2	2026-11-15
+@mrfentmen/epa-echo-mcp	1.0.2	
 @mrfentmen/ergoscript-mcp	1.0.0	
 @mrfentmen/erlang-mcp	1.0.0	
+@mrfentmen/euphoria-mcp	1.0.0	2026-11-22
 @mrfentmen/event-b-mcp	1.0.0	
-@mrfentmen/f1-mcp	1.0.1	2026-11-15
+@mrfentmen/f1-mcp	1.0.1	
+@mrfentmen/filterscript-mcp	1.0.0	2026-11-22
 @mrfentmen/firrtl-mcp	1.0.0	
 @mrfentmen/fiscaldata-mcp	1.0.1	
 @mrfentmen/fluent-mcp	1.0.0	
 @mrfentmen/forth-mcp	1.0.0	
 @mrfentmen/fortnite-mcp	1.0.0	
+@mrfentmen/freelancing-client-intake-form-index-mcp	1.0.0	2026-11-22
 @mrfentmen/fruityvice-mcp	1.0.2	
-@mrfentmen/game-of-life-mcp	1.0.1	2026-11-15
+@mrfentmen/futhark-mcp	1.0.0	2026-11-22
+@mrfentmen/game-of-life-mcp	1.0.1	
 @mrfentmen/gdb-mcp	1.0.0	
 @mrfentmen/genero-4gl-mcp	1.0.0	
 @mrfentmen/genie-mcp	1.0.0	
 @mrfentmen/genshi-mcp	1.0.0	
+@mrfentmen/gentoo-ebuild-mcp	1.0.0	2026-11-22
 @mrfentmen/ghcn-mcp	1.0.1	
 @mrfentmen/gimp-mcp	1.0.2	
+@mrfentmen/gitea-mcp	1.0.0	2026-11-22
+@mrfentmen/glyph-bitmap-distribution-format-mcp	1.0.0	2026-11-22
 @mrfentmen/glyph-mcp	1.0.0	
-@mrfentmen/gn-mcp	1.0.0	2026-11-15
-@mrfentmen/grain-mcp	1.0.0	2026-11-15
+@mrfentmen/gn-mcp	1.0.0	
+@mrfentmen/gno-mcp	1.0.0	2026-11-22
+@mrfentmen/grain-mcp	1.0.0	
 @mrfentmen/grammatical-framework-mcp	1.0.0	
 @mrfentmen/graph-algorithms-mcp	1.0.1	
-@mrfentmen/groovy-mcp	1.0.0	2026-11-15
+@mrfentmen/groovy-mcp	1.0.0	
 @mrfentmen/groovy-server-pages-mcp	1.0.0	
+@mrfentmen/gs1-gdsn-mcp	1.0.0	2026-11-22
 @mrfentmen/guardian-mcp	1.0.0	
 @mrfentmen/hackernews-mcp	1.0.1	
+@mrfentmen/hash-mcp	1.0.2	2026-11-22
 @mrfentmen/hashid-mcp	1.0.1	
 @mrfentmen/hashnode-mcp	1.1.0	
 @mrfentmen/hex-pm-mcp	1.0.0	
 @mrfentmen/hgnc-mcp	1.0.1	
 @mrfentmen/himalayas-mcp	1.0.0	
 @mrfentmen/hiveql-mcp	1.0.0	
+@mrfentmen/houston-astros-outing-index-mcp	1.0.0	2026-11-22
+@mrfentmen/houston-astros-outing-sim-mcp	1.0.0	2026-11-22
+@mrfentmen/houston-astros-outing-track-mcp	1.0.0	2026-11-22
 @mrfentmen/hts-tariff-mcp	1.0.0	
+@mrfentmen/hubspot-mcp	1.1.0	2026-11-22
+@mrfentmen/huggingface-mcp	1.0.0	2026-11-22
+@mrfentmen/hurl-mcp	1.0.0	2026-11-22
 @mrfentmen/ical-mcp	1.0.1	
 @mrfentmen/il-assembly-mcp	1.0.0	
+@mrfentmen/imba-mcp	1.0.0	2026-11-22
 @mrfentmen/inspire-hep-mcp	1.0.1	
-@mrfentmen/inspirehep-mcp	1.0.0	2026-11-15
+@mrfentmen/inspirehep-mcp	1.0.0	
 @mrfentmen/interpro-mcp	1.0.2	
+@mrfentmen/interviews-salary-ask-script-index-mcp	1.0.0	2026-11-22
+@mrfentmen/interviews-thank-you-note-send-compare-mcp	1.0.0	2026-11-22
+@mrfentmen/interviews-thank-you-note-send-track-mcp	1.0.0	2026-11-22
+@mrfentmen/interviews-video-setup-check-compare-mcp	1.0.0	2026-11-22
+@mrfentmen/interviews-whiteboard-prep-drills-plan-mcp	1.0.0	2026-11-22
 @mrfentmen/ioke-mcp	1.0.0	
 @mrfentmen/isbn-mcp	1.0.1	
-@mrfentmen/j-mcp	1.0.0	2026-11-15
+@mrfentmen/j-mcp	1.0.0	
 @mrfentmen/janet-mcp	1.0.0	
+@mrfentmen/jison-mcp	1.0.0	2026-11-22
+@mrfentmen/jokeapi-mcp	1.0.2	2026-11-22
+@mrfentmen/jolie-mcp	1.0.0	2026-11-22
 @mrfentmen/joy-mcp	1.0.0	
+@mrfentmen/jsondiff-mcp	1.0.1	2026-11-22
 @mrfentmen/jsonpath-mcp	1.0.1	
-@mrfentmen/just-mcp	1.0.0	2026-11-15
+@mrfentmen/just-mcp	1.0.0	
 @mrfentmen/jwt-mcp	1.0.2	
 @mrfentmen/kaitai-struct-mcp	1.0.0	
-@mrfentmen/landxml-mcp	1.0.1	2026-11-15
+@mrfentmen/kotlin-mcp	1.0.0	2026-11-22
+@mrfentmen/landxml-mcp	1.0.1	
 @mrfentmen/launchlibrary-mcp	1.0.0	
-@mrfentmen/lfe-mcp	1.0.0	2026-11-15
-@mrfentmen/linear-mcp	1.1.0	2026-11-15
+@mrfentmen/lawn-care-leaf-cleanup-route-match-mcp	1.0.0	2026-11-22
+@mrfentmen/lawn-care-mow-schedule-height-index-mcp	1.0.0	2026-11-22
+@mrfentmen/lfe-mcp	1.0.0	
+@mrfentmen/libraries-card-signup-visit-match-mcp	1.0.0	2026-11-22
+@mrfentmen/libraries-storytime-weekly-plan-mcp	1.0.0	2026-11-22
+@mrfentmen/linear-mcp	1.1.0	
+@mrfentmen/literate-agda-mcp	1.0.0	2026-11-22
+@mrfentmen/literate-coffeescript-mcp	1.0.0	2026-11-22
 @mrfentmen/llvm-ir-mcp	1.0.0	
+@mrfentmen/london-rain-gear-kit-track-mcp	1.0.0	2026-11-22
 @mrfentmen/lorcana-mcp	1.0.2	
+@mrfentmen/ls-dyna-mcp	1.0.1	2026-11-22
 @mrfentmen/lua-mcp	1.0.0	
 @mrfentmen/luau-mcp	1.0.0	
-@mrfentmen/marlowe-mcp	1.0.0	2026-11-15
+@mrfentmen/marlowe-mcp	1.0.0	
 @mrfentmen/mathematical-programming-system-mcp	1.0.0	
-@mrfentmen/maze-mcp	1.0.1	2026-11-15
-@mrfentmen/mei-mcp	1.0.0	2026-11-15
+@mrfentmen/maze-mcp	1.0.1	
+@mrfentmen/mei-mcp	1.0.0	
 @mrfentmen/metar-mcp	1.0.1	
-@mrfentmen/michelson-mcp	1.0.0	2026-11-15
-@mrfentmen/microsoft-visual-studio-solution-mcp	1.0.0	2026-11-15
+@mrfentmen/michelson-mcp	1.0.0	
+@mrfentmen/microsoft-visual-studio-solution-mcp	1.0.0	
 @mrfentmen/mint-mcp	1.0.0	
 @mrfentmen/mirc-script-mcp	1.0.0	
 @mrfentmen/module-management-system-mcp	1.0.0	
 @mrfentmen/mojo-mcp	1.0.0	
-@mrfentmen/moonbit-mcp	1.0.0	2026-11-15
-@mrfentmen/mps-mcp	1.0.0	2026-11-15
+@mrfentmen/moonbit-mcp	1.0.0	
+@mrfentmen/motorola-68k-assembly-mcp	1.0.0	2026-11-22
+@mrfentmen/moving-diy-truck-size-estimate-index-mcp	1.0.0	2026-11-22
+@mrfentmen/moving-diy-truck-size-estimate-match-mcp	1.0.0	2026-11-22
+@mrfentmen/mps-mcp	1.0.0	
 @mrfentmen/mql4-mcp	1.0.0	
-@mrfentmen/musicbrainz-mcp	1.0.2	2026-11-15
-@mrfentmen/nager-date-mcp	1.0.0	2026-11-15
+@mrfentmen/musicbrainz-mcp	1.0.2	
+@mrfentmen/nager-date-mcp	1.0.0	
 @mrfentmen/nasa-neo-mcp	1.0.2	
-@mrfentmen/nasdaq-mcp	1.0.1	2026-11-15
+@mrfentmen/nasdaq-mcp	1.0.1	
+@mrfentmen/nastran-bdf-mcp	1.0.1	2026-11-22
 @mrfentmen/navidrome-mcp	1.0.0	
 @mrfentmen/ncbi-datasets-mcp	1.0.1	
-@mrfentmen/netlinx-mcp	1.0.0	2026-11-15
-@mrfentmen/nmodl-mcp	1.0.0	2026-11-15
+@mrfentmen/netlinx-mcp	1.0.0	
+@mrfentmen/nmodl-mcp	1.0.0	
 @mrfentmen/noaa-space-weather-mcp	1.0.0	
+@mrfentmen/nodeset-mcp	1.0.0	2026-11-22
 @mrfentmen/npi-registry-mcp	1.0.3	
 @mrfentmen/ns-mcp	1.0.1	
-@mrfentmen/nunjucks-mcp	1.0.0	2026-11-15
-@mrfentmen/nwscript-mcp	1.0.0	2026-11-15
+@mrfentmen/nunjucks-mcp	1.0.0	
+@mrfentmen/nushell-mcp	1.0.0	2026-11-22
+@mrfentmen/nws-alerts-mcp	1.0.0	2026-11-22
+@mrfentmen/nwscript-mcp	1.0.0	
 @mrfentmen/obis-mcp	1.0.1	
 @mrfentmen/objective-c-mcp	1.0.0	
+@mrfentmen/omnet-ned-mcp	1.0.0	2026-11-22
 @mrfentmen/ooc-mcp	1.0.0	
-@mrfentmen/opal-mcp	1.0.0	2026-11-15
-@mrfentmen/open-meteo-geocoding-mcp	1.0.0	2026-11-15
+@mrfentmen/opal-mcp	1.0.0	
+@mrfentmen/open-meteo-geocoding-mcp	1.0.0	
 @mrfentmen/open-meteo-marine-mcp	1.0.0	
-@mrfentmen/opencitations-mcp	1.0.0	2026-11-15
+@mrfentmen/opencitations-mcp	1.0.0	
 @mrfentmen/openrc-runscript-mcp	1.0.0	
+@mrfentmen/openscap-mcp	1.0.0	2026-11-22
 @mrfentmen/ourairports-mcp	1.0.2	
+@mrfentmen/package-registry-mcp	1.0.0	2026-11-22
 @mrfentmen/pact-mcp	1.0.0	
-@mrfentmen/parrot-pir-mcp	1.0.0	2026-11-15
+@mrfentmen/painting-home-color-sample-boards-cost-mcp	1.0.0	2026-11-22
+@mrfentmen/painting-home-color-sample-boards-plan-mcp	1.0.0	2026-11-22
+@mrfentmen/painting-home-color-sample-boards-sim-mcp	1.0.0	2026-11-22
+@mrfentmen/painting-home-room-prep-tape-plan-mcp	1.0.0	2026-11-22
+@mrfentmen/parrot-pir-mcp	1.0.0	
 @mrfentmen/password-mcp	1.0.1	
 @mrfentmen/pdf-generator-mcp	1.0.4	
-@mrfentmen/pexels-mcp	1.0.0	2026-11-15
+@mrfentmen/pepxml-mcp	1.0.0	2026-11-22
+@mrfentmen/pest-control-mosquito-yard-dump-track-mcp	1.0.0	2026-11-22
+@mrfentmen/pexels-mcp	1.0.0	
 @mrfentmen/pinterest-mcp	1.0.1	
+@mrfentmen/pkg-config-mcp	1.0.0	2026-11-22
+@mrfentmen/playgrounds-meetup-plan-saturday-check-mcp	1.0.0	2026-11-22
+@mrfentmen/playgrounds-meetup-plan-saturday-match-mcp	1.0.0	2026-11-22
 @mrfentmen/please-mcp	1.0.0	
-@mrfentmen/pod-6-mcp	1.0.0	2026-11-15
+@mrfentmen/plumbing-diy-drain-clear-steps-sim-mcp	1.0.0	2026-11-22
+@mrfentmen/plumbing-diy-shutoff-valve-map-check-mcp	1.0.0	2026-11-22
+@mrfentmen/pod-6-mcp	1.0.0	
 @mrfentmen/postmark-mcp	1.0.0	
-@mrfentmen/praat-mcp	1.0.0	2026-11-15
-@mrfentmen/prism-mcp	1.0.0	2026-11-15
-@mrfentmen/processing-mcp	1.0.0	2026-11-15
-@mrfentmen/propublica-nonprofits-mcp	1.0.0	2026-11-15
+@mrfentmen/powerbuilder-mcp	1.0.0	2026-11-22
+@mrfentmen/praat-mcp	1.0.0	
+@mrfentmen/primes-mcp	1.0.1	2026-11-22
+@mrfentmen/prism-mcp	1.0.0	
+@mrfentmen/processing-mcp	1.0.0	
+@mrfentmen/propublica-nonprofits-mcp	1.0.0	
 @mrfentmen/pvs-mcp	1.0.0	
+@mrfentmen/randomuser-mcp	1.0.2	2026-11-22
 @mrfentmen/rascript-mcp	1.0.0	
 @mrfentmen/rcl-mcp	1.0.0	
 @mrfentmen/reasonml-mcp	1.0.0	
-@mrfentmen/red-mcp	1.0.0	2026-11-15
+@mrfentmen/red-mcp	1.0.0	
 @mrfentmen/reddit-mcp	1.0.0	
 @mrfentmen/renderscript-mcp	1.0.0	
-@mrfentmen/renpy-mcp	1.0.0	2026-11-15
+@mrfentmen/renpy-mcp	1.0.0	
 @mrfentmen/research-mcp	1.0.0	
-@mrfentmen/roblox-mcp	1.0.0	2026-11-15
+@mrfentmen/resumes-bullet-verb-bank-index-mcp	1.0.0	2026-11-22
+@mrfentmen/resumes-bullet-verb-bank-plan-mcp	1.0.0	2026-11-22
+@mrfentmen/resumes-reference-list-ready-sim-mcp	1.0.0	2026-11-22
+@mrfentmen/roblox-mcp	1.0.0	
 @mrfentmen/roc-mcp	1.0.0	
-@mrfentmen/sail-mcp	1.0.0	2026-11-15
+@mrfentmen/sagemath-mcp	1.0.0	2026-11-22
+@mrfentmen/sail-mcp	1.0.0	
+@mrfentmen/scala-mcp	1.0.0	2026-11-22
 @mrfentmen/scenic-mcp	1.0.0	
+@mrfentmen/scheme-mcp	1.0.0	2026-11-22
 @mrfentmen/scilab-mcp	1.0.0	
-@mrfentmen/scilla-mcp	1.0.0	2026-11-15
-@mrfentmen/scorm-mcp	1.0.0	2026-11-15
-@mrfentmen/sec-edgar-mcp	1.0.2	2026-11-15
+@mrfentmen/scilla-mcp	1.0.0	
+@mrfentmen/scorm-mcp	1.0.0	
+@mrfentmen/sec-edgar-mcp	1.0.2	
+@mrfentmen/seed7-mcp	1.0.0	2026-11-22
 @mrfentmen/self-mcp	1.0.0	
+@mrfentmen/selinux-policy-mcp	1.0.0	2026-11-22
 @mrfentmen/sentry-mcp	1.1.0	
 @mrfentmen/shen-mcp	1.0.0	
+@mrfentmen/slice-mcp	1.0.0	2026-11-22
 @mrfentmen/smithy-mcp	1.0.0	
+@mrfentmen/snomed-ct-mcp	1.0.0	2026-11-22
 @mrfentmen/sourcepawn-mcp	1.0.0	
+@mrfentmen/sports-scores-mcp	1.0.0	2026-11-22
 @mrfentmen/spotify-mcp	1.1.0	
+@mrfentmen/sqlite-mcp	1.0.0	2026-11-22
 @mrfentmen/squirrel-mcp	1.0.0	
+@mrfentmen/srec-mcp	1.0.0	2026-11-22
+@mrfentmen/srecode-template-mcp	1.0.0	2026-11-22
 @mrfentmen/standard-ml-mcp	1.0.0	
-@mrfentmen/starlark-mcp	1.0.0	2026-11-15
-@mrfentmen/stellar-mcp	1.0.0	2026-11-15
+@mrfentmen/stargazing-telescope-setup-first-index-mcp	1.0.0	2026-11-22
+@mrfentmen/starlark-mcp	1.0.0	
+@mrfentmen/stellar-mcp	1.0.0	
 @mrfentmen/supabase-mcp	1.1.0	
+@mrfentmen/surrealql-mcp	1.0.0	2026-11-22
 @mrfentmen/sway-mcp	1.0.0	
-@mrfentmen/swift-mcp	1.0.0	2026-11-15
-@mrfentmen/systemverilog-mcp	1.0.0	2026-11-15
+@mrfentmen/swift-mcp	1.0.0	
+@mrfentmen/swig-mcp	1.0.0	2026-11-22
+@mrfentmen/systemverilog-mcp	1.0.0	
 @mrfentmen/tarot-mcp	1.0.0	
 @mrfentmen/thrift-mcp	1.0.0	
+@mrfentmen/tla-plus-mcp	1.0.0	2026-11-22
 @mrfentmen/tolk-mcp	1.0.0	
+@mrfentmen/traceql-mcp	1.0.0	2026-11-22
+@mrfentmen/tutoring-test-prep-countdown-sim-mcp	1.0.0	2026-11-22
 @mrfentmen/twitch-mcp	1.0.1	
-@mrfentmen/ucsc-genome-mcp	1.0.1	2026-11-15
+@mrfentmen/ucode-mcp	1.0.0	2026-11-22
+@mrfentmen/ucsc-genome-mcp	1.0.1	
 @mrfentmen/uiua-mcp	1.0.0	
-@mrfentmen/ukparliament-mcp	1.0.0	2026-11-15
+@mrfentmen/uk-parliament-mcp	1.0.2	2026-11-22
+@mrfentmen/ukg-kronos-mcp	1.0.1	2026-11-22
+@mrfentmen/ukparliament-mcp	1.0.0	
 @mrfentmen/ulid-mcp	1.0.1	
-@mrfentmen/unpaywall-mcp	1.0.0	2026-11-15
+@mrfentmen/unpaywall-mcp	1.0.0	
 @mrfentmen/unstats-mcp	1.0.1	
-@mrfentmen/upf-mcp	1.0.0	2026-11-15
+@mrfentmen/upf-mcp	1.0.0	
 @mrfentmen/usgs-earthquake-mcp	1.0.0	
-@mrfentmen/usno-mcp	1.0.1	2026-11-15
+@mrfentmen/usno-mcp	1.0.1	
 @mrfentmen/uuid-mcp	1.0.0	
 @mrfentmen/valorant-mcp	1.0.0	
-@mrfentmen/vdm-mcp	1.0.0	2026-11-15
-@mrfentmen/vercel-mcp	1.1.0	2026-11-15
-@mrfentmen/volt-mcp	1.0.0	2026-11-15
-@mrfentmen/vyper-mcp	1.0.0	2026-11-15
-@mrfentmen/webvtt-mcp	1.0.0	2026-11-15
-@mrfentmen/wing-mcp	1.0.0	2026-11-15
+@mrfentmen/vdm-mcp	1.0.0	
+@mrfentmen/vercel-mcp	1.1.0	
+@mrfentmen/volt-mcp	1.0.0	
+@mrfentmen/vyper-mcp	1.0.0	
+@mrfentmen/webvtt-mcp	1.0.0	
+@mrfentmen/wine-cellar-temp-monitor-sim-mcp	1.0.0	2026-11-22
+@mrfentmen/wine-glass-care-polish-plan-mcp	1.0.0	2026-11-22
+@mrfentmen/wing-mcp	1.0.0	
 @mrfentmen/wolfram-mcp	1.0.0	
 @mrfentmen/wollok-mcp	1.0.0	
 @mrfentmen/worms-mcp	1.0.1	
 @mrfentmen/xproc-mcp	1.0.0	
-@mrfentmen/yara-mcp	1.0.0	2026-11-15
-@mrfentmen/yfinance-mcp	1.0.1	2026-11-15
+@mrfentmen/xyz-mcp	1.0.0	2026-11-22
+@mrfentmen/yara-mcp	1.0.0	
+@mrfentmen/yfinance-mcp	1.0.1	
 @mrfentmen/z-mcp	1.0.0	
 @mrfentmen/zeek-mcp	1.0.0	
 @mrfentmen/zenscript-mcp	1.0.0	
 @msantagiulianab/x402-mcp-server	1.0.7	
-@muhammetali/asc-mcp-server	1.2.0	2026-11-15
+@msgmesh/mcp-server	0.1.11	2026-11-22
+@muhammetali/asc-mcp-server	1.2.0	
 @mukundakatta/agentfit-mcp	0.1.0	
 @mukundakatta/jmespath-mcp	0.1.0	
 @mukundakatta/ragdrift-mcp	0.1.1	
-@mukundakatta/shellquote-mcp	0.1.0	2026-11-15
-@mukundakatta/sqlfmt-mcp	0.1.0	2026-11-15
-@mukundakatta/timezone-mcp	0.1.0	2026-11-15
+@mukundakatta/shellquote-mcp	0.1.0	
+@mukundakatta/sqlfmt-mcp	0.1.0	
+@mukundakatta/timezone-mcp	0.1.0	
+@mukundakatta/toml-yaml-json-mcp	0.1.0	2026-11-22
 @munhq/cloud-tools	0.2.0	
-@mysocial.io/intelligence	0.1.4	2026-11-15
-@mysupermarket/mcp-grocery-prices	0.1.1	2026-11-15
-@n0zer0d4y/mercury-spec-ops	0.1.2	2026-11-15
+@munition/mcp	0.0.16	2026-11-22
+@mushi-mushi/mcp	0.31.8	2026-11-22
+@mypivots/mcp	0.1.2	2026-11-22
+@mysocial.io/intelligence	0.1.4	
+@mysupermarket/mcp-grocery-prices	0.1.1	
+@n0zer0d4y/mercury-spec-ops	0.1.2	
+@nagora/mcp	0.1.0	2026-11-22
 @nats-trail/mcp	0.6.1	
-@neat.is/mcp	0.10.9	2026-11-15
+@ndhkaeru/codeloupe-mcp	1.1.2	2026-11-22
+@neat.is/mcp	0.10.9	
+@needanai/mcp	0.1.3	2026-11-22
+@neiltron/apple-health-mcp	1.4.5	2026-11-22
+@nekzus/mcp-server	1.26.1	2026-11-22
 @nemesis-shield-autogon/mcp	0.2.7	
+@nerdydata/mcp	1.0.8	2026-11-22
 @neural-ng/mcp-server	1.0.1	
+@nevarn/mcp	0.2.0	2026-11-22
 @neverinfamous/postgres-mcp	1.0.2	
 @nexusforgetools/eu-finance	1.0.4	
-@ni-c/carddav-mcp	0.1.4	2026-11-15
-@nicktcode/swissgroceries-mcp	0.1.2	2026-11-15
+@ni-c/carddav-mcp	0.1.4	
+@ni-c/freshrss-mcp	0.3.2	2026-11-22
+@nicktcode/swissgroceries-mcp	0.1.2	
 @nimblework/sk-cli	0.1.5	
 @nithin554/code-crawler	0.1.86	
 @nodemint/projectmind	0.6.0	
 @nodeproxy/vectorcache	0.1.1	
 @nograai/mcp	1.0.3	
-@noodlrstudio/mcp	0.2.2	2026-11-15
-@nooticr/mcp	1.26.19	2026-11-15
+@noodlrstudio/mcp	0.2.2	
+@nooticr/mcp	1.26.19	
 @nor-data/nabolag-mcp	0.2.2	
 @nslookup-io/mcp-server	1.6.0	
-@nubiia/mcp-freematica	0.11.2	2026-11-15
-@nyuchi/mukoko-news-mcp	1.2.0	2026-11-15
+@nubiia/mcp-freematica	0.11.2	
+@nyuchi/mukoko-news-mcp	1.2.0	
 @obsidiancorps/umami-mcp	0.1.2	
-@octri/cli	1.0.6	2026-11-15
-@octri/mcp	1.4.2	2026-11-15
-@odingard/guardian-mcp	0.5.0	2026-11-15
+@octri/cli	1.0.6	
+@octri/mcp	1.4.2	
+@odingard/guardian-mcp	0.5.0	
+@oktopeak/mycase-mcp	1.0.4	2026-11-22
 @omarei/hush	0.13.2	
-@omnicoreos/planka-mcp	0.3.0	2026-11-15
+@omnicoreos/planka-mcp	0.3.0	
 @once-agent/mcp	0.2.1	
-@onlyoffice/docspace-mcp	3.4.0	2026-11-15
+@onlyoffice/docspace-mcp	3.4.1	2026-11-22
 @ooples/token-optimizer-mcp	7.9.0	
 @open-agreements/contract-templates-mcp	0.10.2	
+@openfinance-sh/mcp	0.2.0	2026-11-22
+@openly-useful/linear-project-mcp-server	0.1.0	2026-11-22
 @openly-useful/project-status-mcp	1.2.1	
-@openmbee/sysml-mcp	0.12.1	2026-11-15
-@opentrain-ai/mcp	0.2.2	2026-11-15
-@opsconduit/jobber-mcp	0.1.3	2026-11-15
-@opsmaxx/mcp	0.1.3	2026-11-15
+@openmbee/sysml-mcp	0.12.1	
+@openplan/mcp	0.1.22	2026-11-22
+@openserp/mcp	0.1.12	2026-11-22
+@opentrain-ai/mcp	0.2.2	
+@opentweet/mcp-server	1.1.3	2026-11-22
+@opsconduit/jobber-mcp	0.1.3	
+@opsmaxx/mcp	0.1.3	
+@opticell/drawpad-mcp	2.0.0	2026-11-22
 @optimalai/optibot-mcp	1.4.1	
 @oraclaw/mcp-server	1.5.1	
 @orderly.network/mcp-server	1.5.8	
@@ -749,177 +1089,238 @@
 @oryanomer/whoop-mcp	1.0.3	
 @orygn/opa-mcp	0.9.1	
 @oscarmarin/mcp-devtools	1.0.1	
-@p31ca/cli	3.1.6	2026-11-15
-@p31ca/govern	0.1.3	2026-11-15
-@p7ntech/mcp	0.3.4	2026-11-15
+@p31ca/cli	3.1.6	
+@p31ca/govern	0.1.3	
+@p7ntech/mcp	0.3.4	
 @pagerender/mcp	1.2.0	
+@paidfor/mcp	0.7.7	2026-11-22
 @paigy/mcp	0.40.42	
 @pandanpc/mcp-server	0.1.22	
 @paretools/docker	0.8.0	
 @paretools/go	0.7.1	
+@paretools/python	0.8.1	2026-11-22
+@paretools/search	0.8.1	2026-11-22
+@parryhotter/office-mcp	0.10.2	2026-11-22
 @parse-gl/mcp	1.0.0	
 @pasichdev/docket	3.1.0	
-@patrizzos/stylesafe	0.1.9	2026-11-15
-@patrizzos/stylespeak	1.2.0	2026-11-15
-@payments-ai/mcp	1.1.3	2026-11-15
+@passwerk/server	0.1.1	2026-11-22
+@patrizzos/stylesafe	0.1.9	
+@patrizzos/stylespeak	1.2.0	
+@payments-ai/mcp	1.1.3	
 @paystage/preflight	0.1.0	
-@pedra-ai/mcp	0.6.1	2026-11-15
-@percher/mcp	1.4.0	2026-11-15
+@pedra-ai/mcp	0.6.1	
+@peekdev/mcp	0.1.0-alpha.24	2026-11-22
+@perceptdot/github	0.1.5	2026-11-22
+@percher/mcp	1.4.0	
 @perfonext/render-mcp	0.5.2	
+@perspectask/mcp	1.0.0	2026-11-22
+@pexbot/mcp	3.0.0	2026-11-22
 @philmingdao/anno	0.4.0	
-@pidgeon-ai/mcp	1.4.0	2026-11-15
+@pidgeon-ai/mcp	1.4.0	
 @pipeworx/mcp-42matters	0.2.1	
+@pipeworx/mcp-abn-lookup	0.2.1	2026-11-22
 @pipeworx/mcp-activecampaign	0.2.1	
+@pipeworx/mcp-advice	0.2.2	2026-11-22
 @pipeworx/mcp-adzuna	0.2.1	
 @pipeworx/mcp-ai-feeds	0.2.1	
-@pipeworx/mcp-airquality	0.2.1	2026-11-15
-@pipeworx/mcp-alphafold	0.2.1	2026-11-15
+@pipeworx/mcp-ai-incident-db	0.2.1	2026-11-22
+@pipeworx/mcp-airquality	0.2.1	
+@pipeworx/mcp-allen-brain	0.2.1	2026-11-22
+@pipeworx/mcp-alphafold	0.2.1	
 @pipeworx/mcp-api-football	0.2.1	
 @pipeworx/mcp-api-ninjas	0.2.1	
 @pipeworx/mcp-arcgis-abbotsford	0.2.1	
+@pipeworx/mcp-arcgis-chapelhill	0.2.1	2026-11-22
+@pipeworx/mcp-arcgis-darlington	0.2.1	2026-11-22
 @pipeworx/mcp-arcgis-detroit	0.2.1	
 @pipeworx/mcp-arcgis-dukescounty	0.2.1	
+@pipeworx/mcp-arcgis-fauquier	0.2.1	2026-11-22
 @pipeworx/mcp-arcgis-greenwood	0.2.1	
-@pipeworx/mcp-arcgis-kinston	0.2.1	2026-11-15
+@pipeworx/mcp-arcgis-henderson	0.2.1	2026-11-22
+@pipeworx/mcp-arcgis-irvine	0.2.1	2026-11-22
+@pipeworx/mcp-arcgis-kinston	0.2.1	
+@pipeworx/mcp-arcgis-lacounty	0.2.1	2026-11-22
 @pipeworx/mcp-arcgis-lakecountyil	0.2.1	
-@pipeworx/mcp-arcgis-lakeland	0.2.1	2026-11-15
-@pipeworx/mcp-arcgis-lancaster	0.2.1	2026-11-15
+@pipeworx/mcp-arcgis-lakeland	0.2.1	
+@pipeworx/mcp-arcgis-lancaster	0.2.1	
 @pipeworx/mcp-arcgis-leecounty	0.2.1	
 @pipeworx/mcp-arcgis-lincolncountync	0.2.1	
+@pipeworx/mcp-arcgis-longview	0.2.1	2026-11-22
 @pipeworx/mcp-arcgis-peachtreecorners	0.2.1	
-@pipeworx/mcp-arcgis-peoria	0.2.1	2026-11-15
+@pipeworx/mcp-arcgis-peoria	0.2.1	
 @pipeworx/mcp-arcgis-peterborough	0.2.1	
-@pipeworx/mcp-arcgis-pima	0.2.1	2026-11-15
+@pipeworx/mcp-arcgis-pima	0.2.1	
 @pipeworx/mcp-arcgis-pittsburgh	0.2.1	
 @pipeworx/mcp-arcgis-puyallup	0.2.1	
 @pipeworx/mcp-arcgis-sacramento	0.2.1	
 @pipeworx/mcp-arcgis-sanbernardino	0.2.1	
 @pipeworx/mcp-arcgis-sanjuannm	0.2.1	
 @pipeworx/mcp-arcgis-sarpycounty	0.2.1	
-@pipeworx/mcp-arcgis-yakima	0.2.1	2026-11-15
+@pipeworx/mcp-arcgis-tallahassee	0.2.1	2026-11-22
+@pipeworx/mcp-arcgis-vilas	0.2.1	2026-11-22
+@pipeworx/mcp-arcgis-yakima	0.2.1	
 @pipeworx/mcp-artic	0.2.1	
 @pipeworx/mcp-asrs-reports	0.2.1	
 @pipeworx/mcp-asub-ax	0.2.1	
+@pipeworx/mcp-attom	0.2.1	2026-11-22
 @pipeworx/mcp-austin-animal-services	0.2.1	
 @pipeworx/mcp-auto-dev	0.2.1	
 @pipeworx/mcp-avoindata-fi	0.2.1	
 @pipeworx/mcp-ban-fr	0.2.1	
+@pipeworx/mcp-bindingdb	0.2.1	2026-11-22
+@pipeworx/mcp-biomodels	0.2.1	2026-11-22
 @pipeworx/mcp-biosamples	0.2.1	
-@pipeworx/mcp-blm-mining-claims	0.2.1	2026-11-15
+@pipeworx/mcp-bitquery	0.2.1	2026-11-22
+@pipeworx/mcp-blm-mining-claims	0.2.1	
 @pipeworx/mcp-bls	0.3.1	
-@pipeworx/mcp-bored	0.2.1	2026-11-15
+@pipeworx/mcp-bored	0.2.1	
+@pipeworx/mcp-box	0.2.1	2026-11-22
 @pipeworx/mcp-bright-data	0.2.1	
 @pipeworx/mcp-bulgaria-beneficial-owners	0.2.1	
 @pipeworx/mcp-businesswire	0.2.1	
-@pipeworx/mcp-ca-medical-exclusions	0.2.2	2026-11-15
-@pipeworx/mcp-california-tax-appeals	0.2.1	2026-11-15
-@pipeworx/mcp-catfacts	0.2.1	2026-11-15
+@pipeworx/mcp-ca-medical-exclusions	0.2.2	
+@pipeworx/mcp-cactus	0.2.1	2026-11-22
+@pipeworx/mcp-california-tax-appeals	0.2.1	
+@pipeworx/mcp-catfacts	0.2.1	
 @pipeworx/mcp-cbs-il	0.2.1	
 @pipeworx/mcp-census-trade	0.2.1	
-@pipeworx/mcp-chainlist	0.2.1	2026-11-15
+@pipeworx/mcp-chainlist	0.2.1	
 @pipeworx/mcp-chargebee	0.2.1	
-@pipeworx/mcp-china-air-quality	0.2.1	2026-11-15
+@pipeworx/mcp-china-air-quality	0.2.1	
 @pipeworx/mcp-china-exchange-data	0.2.1	
+@pipeworx/mcp-china-news	0.2.1	2026-11-22
 @pipeworx/mcp-china-pharma	0.3.1	
 @pipeworx/mcp-china-stocks	0.2.1	
 @pipeworx/mcp-cia-factbook	0.2.1	
-@pipeworx/mcp-cipo	0.2.2	2026-11-15
+@pipeworx/mcp-cipo	0.2.2	
 @pipeworx/mcp-citybikes	0.2.1	
 @pipeworx/mcp-civic	0.2.1	
 @pipeworx/mcp-civitai	0.2.1	
-@pipeworx/mcp-clickup	0.2.1	2026-11-15
+@pipeworx/mcp-clickup	0.2.1	
 @pipeworx/mcp-close-crm	0.2.1	
 @pipeworx/mcp-codewars	0.2.1	
-@pipeworx/mcp-comtrade	0.2.1	2026-11-15
+@pipeworx/mcp-codex-gsfa	0.2.1	2026-11-22
+@pipeworx/mcp-coinbase-exchange	0.2.1	2026-11-22
+@pipeworx/mcp-comtrade	0.2.1	
 @pipeworx/mcp-copernicus-dataspace	0.2.1	
-@pipeworx/mcp-country-news	0.2.1	2026-11-15
-@pipeworx/mcp-country-state-city	0.2.1	2026-11-15
+@pipeworx/mcp-countries	0.2.1	2026-11-22
+@pipeworx/mcp-country-news	0.2.1	
+@pipeworx/mcp-country-state-city	0.2.1	
 @pipeworx/mcp-creative-constraints	0.2.1	
-@pipeworx/mcp-data-angers	0.2.1	2026-11-15
+@pipeworx/mcp-crypto-feeds	0.2.1	2026-11-22
+@pipeworx/mcp-ct-dmv	0.2.1	2026-11-22
+@pipeworx/mcp-currents	0.2.2	2026-11-22
+@pipeworx/mcp-data-angers	0.2.1	
 @pipeworx/mcp-data-baltimore	0.2.1	
 @pipeworx/mcp-data-bloomington	0.2.1	
 @pipeworx/mcp-data-cambridge	0.2.2	
 @pipeworx/mcp-data-centrevaldeloire	0.2.1	
+@pipeworx/mcp-data-dallas	0.2.1	2026-11-22
+@pipeworx/mcp-data-denver	0.2.1	2026-11-22
 @pipeworx/mcp-data-gov-in	0.2.2	
-@pipeworx/mcp-data-maryland	0.2.1	2026-11-15
+@pipeworx/mcp-data-grandparissud	0.2.1	2026-11-22
+@pipeworx/mcp-data-iledefrance	0.2.1	2026-11-22
+@pipeworx/mcp-data-maryland	0.2.1	
 @pipeworx/mcp-data-nantes	0.2.1	
-@pipeworx/mcp-data-nashville	0.2.1	2026-11-15
+@pipeworx/mcp-data-nashville	0.2.1	
 @pipeworx/mcp-data-newcaledonia	0.2.1	
-@pipeworx/mcp-data-nj	0.2.1	2026-11-15
+@pipeworx/mcp-data-nj	0.2.1	
+@pipeworx/mcp-data-nola	0.2.1	2026-11-22
 @pipeworx/mcp-data-novascotia	0.2.1	
-@pipeworx/mcp-data-odre	0.2.1	2026-11-15
+@pipeworx/mcp-data-odre	0.2.1	
 @pipeworx/mcp-data-orlando	0.2.1	
 @pipeworx/mcp-data-providence	0.2.1	
+@pipeworx/mcp-data-toulouse	0.2.1	2026-11-22
 @pipeworx/mcp-data-va	0.2.1	
-@pipeworx/mcp-data360	0.2.1	2026-11-15
+@pipeworx/mcp-data360	0.2.1	
+@pipeworx/mcp-datacommons	0.2.1	2026-11-22
+@pipeworx/mcp-datacube-sk	0.2.1	2026-11-22
 @pipeworx/mcp-datafiniti	0.2.1	
 @pipeworx/mcp-datagov	0.2.1	
 @pipeworx/mcp-dataverse-harvard	0.2.1	
 @pipeworx/mcp-datos-ar	0.2.1	
-@pipeworx/mcp-db-rail	0.2.1	2026-11-15
+@pipeworx/mcp-db-rail	0.2.1	
 @pipeworx/mcp-dc-dmv	0.2.1	
 @pipeworx/mcp-deezer	0.2.1	
 @pipeworx/mcp-defillama	0.2.1	
-@pipeworx/mcp-deps-dev	0.2.1	2026-11-15
-@pipeworx/mcp-dice	0.2.1	2026-11-15
+@pipeworx/mcp-deps-dev	0.2.1	
+@pipeworx/mcp-dice	0.2.1	
 @pipeworx/mcp-dilisense	0.2.1	
-@pipeworx/mcp-disney	0.2.1	2026-11-15
+@pipeworx/mcp-disify	1.1.2	2026-11-22
+@pipeworx/mcp-disney	0.2.1	
 @pipeworx/mcp-doaj	0.2.1	
 @pipeworx/mcp-dogceo	1.1.1	
 @pipeworx/mcp-dol-m1	0.2.1	
+@pipeworx/mcp-dostuff	0.2.1	2026-11-22
 @pipeworx/mcp-dtcc-swaps	0.2.1	
 @pipeworx/mcp-dwd-climate	0.2.1	
-@pipeworx/mcp-ebay	0.2.1	2026-11-15
-@pipeworx/mcp-ebsa	0.2.1	2026-11-15
+@pipeworx/mcp-ebay	0.2.1	
+@pipeworx/mcp-ebsa	0.2.1	
 @pipeworx/mcp-econdata	1.1.1	
+@pipeworx/mcp-edamam	0.2.2	2026-11-22
 @pipeworx/mcp-edgar	0.4.2	
-@pipeworx/mcp-edinet	0.2.1	2026-11-15
+@pipeworx/mcp-edinet	0.2.1	
+@pipeworx/mcp-edmtrain	0.2.1	2026-11-22
 @pipeworx/mcp-einpresswire	0.2.1	
-@pipeworx/mcp-emarket-storage	0.2.1	2026-11-15
-@pipeworx/mcp-emsc	0.2.1	2026-11-15
-@pipeworx/mcp-entertainment-feeds	0.2.1	2026-11-15
-@pipeworx/mcp-eodhd	0.2.1	2026-11-15
-@pipeworx/mcp-epo-ops	0.2.1	2026-11-15
+@pipeworx/mcp-emarket-storage	0.2.1	
+@pipeworx/mcp-emsc	0.2.1	
+@pipeworx/mcp-energi-data-dk	0.2.2	2026-11-22
+@pipeworx/mcp-entertainment-feeds	0.2.1	
+@pipeworx/mcp-eodhd	0.2.1	
+@pipeworx/mcp-epa-aqs	0.2.1	2026-11-22
+@pipeworx/mcp-epa-envirofacts	0.2.1	2026-11-22
+@pipeworx/mcp-epo-ops	0.2.1	
 @pipeworx/mcp-epss	0.2.1	
-@pipeworx/mcp-eu-ctis	0.2.1	2026-11-15
-@pipeworx/mcp-eu-energy-imports	0.2.1	2026-11-15
-@pipeworx/mcp-europeana	0.2.1	2026-11-15
-@pipeworx/mcp-europepmc	0.2.2	2026-11-15
+@pipeworx/mcp-eu-ctis	0.2.1	
+@pipeworx/mcp-eu-energy-imports	0.2.1	
+@pipeworx/mcp-eu-funding-tenders	0.2.1	2026-11-22
+@pipeworx/mcp-europeana	0.2.1	
+@pipeworx/mcp-europepmc	0.2.2	
 @pipeworx/mcp-faa-aircraft-registry	0.2.1	
+@pipeworx/mcp-fara	0.2.1	2026-11-22
 @pipeworx/mcp-fbi-crime	0.2.1	
 @pipeworx/mcp-fda-inspections	0.2.1	
-@pipeworx/mcp-fda-regulations	0.2.1	2026-11-15
-@pipeworx/mcp-fdic	0.2.1	2026-11-15
+@pipeworx/mcp-fda-regulations	0.2.1	
+@pipeworx/mcp-fdic	0.2.1	
 @pipeworx/mcp-federal-civil	0.2.1	
 @pipeworx/mcp-findymail	0.2.1	
 @pipeworx/mcp-finnhub	0.2.1	
 @pipeworx/mcp-finra-fixed-income	0.2.1	
-@pipeworx/mcp-flightaware	0.2.1	
-@pipeworx/mcp-flood	1.1.1	2026-11-15
+@pipeworx/mcp-fjc-judges	0.2.1	2026-11-22
+@pipeworx/mcp-flightaware	0.2.2	2026-11-22
+@pipeworx/mcp-flood	1.1.1	
 @pipeworx/mcp-fracfocus	0.2.1	
 @pipeworx/mcp-france-dvf	0.2.1	
 @pipeworx/mcp-france-legi	0.2.1	
+@pipeworx/mcp-freshdesk	0.2.1	2026-11-22
 @pipeworx/mcp-fruityvice	1.1.1	
 @pipeworx/mcp-ga-medical-exclusions	0.2.1	
-@pipeworx/mcp-gamedeals	1.1.1	2026-11-15
+@pipeworx/mcp-gamedeals	1.1.1	
 @pipeworx/mcp-gaming-feeds	0.2.1	
 @pipeworx/mcp-gbif	1.1.1	
 @pipeworx/mcp-gdacs	0.2.1	
 @pipeworx/mcp-gdc	0.2.1	
 @pipeworx/mcp-geohash	0.2.1	
-@pipeworx/mcp-georgia-archives	0.3.1	2026-11-15
+@pipeworx/mcp-georgia-archives	0.3.1	
+@pipeworx/mcp-gie-storage	0.2.1	2026-11-22
 @pipeworx/mcp-giphy	0.2.1	
+@pipeworx/mcp-gitignore	0.2.1	2026-11-22
+@pipeworx/mcp-gong	0.2.2	2026-11-22
 @pipeworx/mcp-google-books	0.2.1	
-@pipeworx/mcp-google_sheets	0.2.1	2026-11-15
-@pipeworx/mcp-govinfo	0.2.1	2026-11-15
-@pipeworx/mcp-guild-wars-2	0.2.1	2026-11-15
+@pipeworx/mcp-google_sheets	0.2.1	
+@pipeworx/mcp-govinfo	0.2.1	
+@pipeworx/mcp-gtex	0.2.1	2026-11-22
+@pipeworx/mcp-guild-wars-2	0.2.1	
 @pipeworx/mcp-hagstofa-is	0.2.1	
-@pipeworx/mcp-hagstova-fo	0.2.1	2026-11-15
+@pipeworx/mcp-hagstova-fo	0.2.1	
 @pipeworx/mcp-harris-county	0.2.1	
-@pipeworx/mcp-hathitrust	0.2.1	2026-11-15
-@pipeworx/mcp-hawaii-code	0.2.1	2026-11-15
+@pipeworx/mcp-harvard-art	0.2.1	2026-11-22
+@pipeworx/mcp-hathitrust	0.2.1	
+@pipeworx/mcp-hawaii-code	0.2.1	
 @pipeworx/mcp-hcup-inpatient-stats	0.2.1	
 @pipeworx/mcp-health-canada-drugs	0.2.1	
+@pipeworx/mcp-here	0.2.1	2026-11-22
+@pipeworx/mcp-hibp	0.2.1	2026-11-22
 @pipeworx/mcp-hilma	0.2.1	
 @pipeworx/mcp-hsa-singapore	0.2.1	
 @pipeworx/mcp-httpstatus	0.2.1	
@@ -927,43 +1328,53 @@
 @pipeworx/mcp-ietf-datatracker	0.2.1	
 @pipeworx/mcp-il-medical-exclusions	0.2.1	
 @pipeworx/mcp-ilostat	0.2.1	
+@pipeworx/mcp-imei	0.2.1	2026-11-22
 @pipeworx/mcp-inaturalist	0.2.1	
-@pipeworx/mcp-index-constituents	0.2.1	2026-11-15
+@pipeworx/mcp-index-constituents	0.2.1	
 @pipeworx/mcp-india-tenders	0.2.1	
-@pipeworx/mcp-insider-trading	0.2.1	2026-11-15
+@pipeworx/mcp-insider-trading	0.2.1	
 @pipeworx/mcp-interpro	0.2.1	
 @pipeworx/mcp-ip-australia	0.2.1	
-@pipeworx/mcp-ipaddress	0.2.1	2026-11-15
-@pipeworx/mcp-ipify	0.2.1	2026-11-15
+@pipeworx/mcp-ipaddress	0.2.1	
+@pipeworx/mcp-ipify	0.2.1	
+@pipeworx/mcp-ipinfo	1.1.2	2026-11-22
 @pipeworx/mcp-ipquery	0.2.1	
-@pipeworx/mcp-isbn	0.2.1	2026-11-15
-@pipeworx/mcp-isrctn	0.2.1	2026-11-15
+@pipeworx/mcp-isbn	0.2.1	
+@pipeworx/mcp-isrctn	0.2.1	
 @pipeworx/mcp-italy-tenders	0.2.1	
+@pipeworx/mcp-itis	0.2.1	2026-11-22
 @pipeworx/mcp-japan-corporate-number	0.2.1	
 @pipeworx/mcp-japan-law	0.2.1	
-@pipeworx/mcp-jina-reader	0.2.1	2026-11-15
+@pipeworx/mcp-japan-places	0.1.0	2026-11-22
+@pipeworx/mcp-jina-reader	0.2.1	
+@pipeworx/mcp-jokes	0.2.1	2026-11-22
 @pipeworx/mcp-json	0.2.1	
+@pipeworx/mcp-jsonplaceholder	0.2.2	2026-11-22
 @pipeworx/mcp-jungle-scout	0.3.1	
 @pipeworx/mcp-kansas-code	0.2.1	
-@pipeworx/mcp-keepa	0.2.1	2026-11-15
+@pipeworx/mcp-kartaview	0.2.1	2026-11-22
+@pipeworx/mcp-keepa	0.2.2	2026-11-22
 @pipeworx/mcp-kokkai-diet	0.2.1	
-@pipeworx/mcp-kraken	0.2.1	2026-11-15
+@pipeworx/mcp-kraken	0.2.1	
 @pipeworx/mcp-kroger	0.2.1	
-@pipeworx/mcp-la-metro	0.2.1	2026-11-15
-@pipeworx/mcp-latam-validate	0.2.1	2026-11-15
-@pipeworx/mcp-launchdarkly	0.2.1	2026-11-15
+@pipeworx/mcp-l2beat	0.2.1	2026-11-22
+@pipeworx/mcp-la-metro	0.2.1	
+@pipeworx/mcp-latam-validate	0.2.1	
+@pipeworx/mcp-launchdarkly	0.2.1	
 @pipeworx/mcp-law-commission	0.2.1	
 @pipeworx/mcp-leadmagic	0.2.1	
+@pipeworx/mcp-licenses	0.2.1	2026-11-22
 @pipeworx/mcp-listen-notes	0.2.1	
 @pipeworx/mcp-luchtmeetnet	0.2.1	
 @pipeworx/mcp-lyrics-ovh	0.2.1	
 @pipeworx/mcp-macau-stats	0.2.1	
 @pipeworx/mcp-marginalia	0.2.1	
-@pipeworx/mcp-marketdata-app	0.2.1	2026-11-15
+@pipeworx/mcp-marketdata-app	0.2.1	
 @pipeworx/mcp-massachusetts-code	0.2.1	
 @pipeworx/mcp-mastodon	0.2.1	
 @pipeworx/mcp-materials	0.2.1	
 @pipeworx/mcp-mbta	0.2.1	
+@pipeworx/mcp-md-dmv	0.2.1	2026-11-22
 @pipeworx/mcp-medical-codes	0.2.1	
 @pipeworx/mcp-medlineplus	0.2.1	
 @pipeworx/mcp-met-no	0.2.1	
@@ -974,192 +1385,248 @@
 @pipeworx/mcp-mississippi-code	0.2.1	
 @pipeworx/mcp-mockdata	0.2.1	
 @pipeworx/mcp-moldova-tenders	0.2.1	
-@pipeworx/mcp-monday	0.2.1	2026-11-15
+@pipeworx/mcp-monarch-initiative	0.2.1	2026-11-22
+@pipeworx/mcp-monday	0.2.1	
 @pipeworx/mcp-mondo	0.2.1	
-@pipeworx/mcp-mygene-info	0.2.1	2026-11-15
+@pipeworx/mcp-mygene-info	0.2.1	
 @pipeworx/mcp-myhealthfinder	0.2.1	
-@pipeworx/mcp-myvariant	0.2.1	2026-11-15
+@pipeworx/mcp-myvariant	0.2.1	
 @pipeworx/mcp-n2yo	0.2.1	
 @pipeworx/mcp-nasa-firms	0.2.1	
 @pipeworx/mcp-nasa-gibs	0.2.1	
+@pipeworx/mcp-nber-macrohistory	0.2.1	2026-11-22
 @pipeworx/mcp-nbu-ua	0.2.1	
 @pipeworx/mcp-ncbi-eutils	0.2.1	
-@pipeworx/mcp-ncua	0.2.1	2026-11-15
+@pipeworx/mcp-ncua	0.2.1	
 @pipeworx/mcp-neso	0.2.1	
-@pipeworx/mcp-nevada-code	0.2.1	2026-11-15
-@pipeworx/mcp-nih-supplements	0.2.1	2026-11-15
+@pipeworx/mcp-nevada-code	0.2.1	
+@pipeworx/mcp-newsdata	0.2.1	2026-11-22
+@pipeworx/mcp-nflverse	0.2.1	2026-11-22
+@pipeworx/mcp-nih-supplements	0.2.1	
+@pipeworx/mcp-nihr	0.2.1	2026-11-22
 @pipeworx/mcp-nist-beacon	0.2.1	
+@pipeworx/mcp-nl-rechtspraak	0.2.1	2026-11-22
 @pipeworx/mcp-noaa-ncei	0.2.1	
 @pipeworx/mcp-noirlab-datalab	0.2.1	
-@pipeworx/mcp-nominatim	0.2.1	
+@pipeworx/mcp-nominatim	0.2.2	2026-11-22
 @pipeworx/mcp-north-carolina-code	0.2.1	
 @pipeworx/mcp-northern-mariana-code	0.2.1	
+@pipeworx/mcp-notion_connect	0.2.1	2026-11-22
 @pipeworx/mcp-nsf-awards	0.2.1	
 @pipeworx/mcp-nuget	0.2.0	
 @pipeworx/mcp-ny-dmv	0.2.1	
-@pipeworx/mcp-ny-procurement	0.2.1	2026-11-15
+@pipeworx/mcp-ny-omig-exclusions	0.2.1	2026-11-22
+@pipeworx/mcp-ny-procurement	0.2.1	
 @pipeworx/mcp-oig-corporate-integrity	0.2.1	
 @pipeworx/mcp-oklahoma-code	0.2.1	
 @pipeworx/mcp-oneinfo-storage	0.2.1	
+@pipeworx/mcp-open-corporates	0.2.1	2026-11-22
 @pipeworx/mcp-open-sanctions	0.2.1	
 @pipeworx/mcp-openchargemap	0.2.1	
 @pipeworx/mcp-opendata-swiss	0.2.1	
 @pipeworx/mcp-opendosm-my	0.2.1	
 @pipeworx/mcp-openei-urdb	0.2.1	
-@pipeworx/mcp-openf1	0.2.1	2026-11-15
+@pipeworx/mcp-openf1	0.2.1	
 @pipeworx/mcp-openfoodfacts	0.2.1	
 @pipeworx/mcp-openrouter	0.2.1	
 @pipeworx/mcp-openstates	0.2.1	
-@pipeworx/mcp-opentopography	0.2.1	2026-11-15
+@pipeworx/mcp-opentopography	0.2.1	
 @pipeworx/mcp-osv	0.2.1	
 @pipeworx/mcp-pa-dmv	0.2.1	
 @pipeworx/mcp-pa-medical-exclusions	0.2.1	
 @pipeworx/mcp-pacer	0.2.1	
 @pipeworx/mcp-packagephobia	0.2.1	
 @pipeworx/mcp-packagist	0.2.1	
+@pipeworx/mcp-paddle	0.2.1	2026-11-22
 @pipeworx/mcp-paperswithcode	0.2.1	
+@pipeworx/mcp-password	0.2.1	2026-11-22
 @pipeworx/mcp-patent-maintenance-fees	0.2.1	
 @pipeworx/mcp-patents	0.2.1	
 @pipeworx/mcp-paypal	0.2.1	
-@pipeworx/mcp-peopledatalabs	0.2.1	2026-11-15
+@pipeworx/mcp-pbgc	0.2.1	2026-11-22
+@pipeworx/mcp-peopledatalabs	0.2.1	
+@pipeworx/mcp-perilpulse	0.2.1	2026-11-22
 @pipeworx/mcp-phillips	0.2.1	
 @pipeworx/mcp-phishtank	0.2.1	
 @pipeworx/mcp-pjm	0.2.1	
 @pipeworx/mcp-podatki-si	0.2.1	
 @pipeworx/mcp-police-shootings	0.2.1	
 @pipeworx/mcp-politics-feeds	0.2.1	
-@pipeworx/mcp-polygon-io	0.2.1	2026-11-15
-@pipeworx/mcp-prayer-times	0.2.1	2026-11-15
-@pipeworx/mcp-predictit	0.2.1	2026-11-15
+@pipeworx/mcp-polygon-io	0.2.1	
+@pipeworx/mcp-prayer-times	0.2.1	
+@pipeworx/mcp-predictit	0.2.1	
 @pipeworx/mcp-property-records	0.2.1	
 @pipeworx/mcp-prozorro	0.2.1	
-@pipeworx/mcp-pubmed	1.2.1	2026-11-15
+@pipeworx/mcp-pubmed	1.2.1	
 @pipeworx/mcp-pubtator	0.2.1	
 @pipeworx/mcp-pypi	0.2.1	
 @pipeworx/mcp-pypi-stats	0.2.1	
-@pipeworx/mcp-quran	0.2.1	2026-11-15
+@pipeworx/mcp-quran	0.2.1	
 @pipeworx/mcp-rdap	0.2.1	
+@pipeworx/mcp-realestateapi	0.2.1	2026-11-22
 @pipeworx/mcp-rebrickable	0.2.1	
 @pipeworx/mcp-regulations-gov	0.2.1	
+@pipeworx/mcp-reoon	0.2.2	2026-11-22
 @pipeworx/mcp-reverb	0.2.1	
 @pipeworx/mcp-rfc-editor	0.2.1	
 @pipeworx/mcp-rijksmuseum	0.2.1	
 @pipeworx/mcp-roblox	0.3.1	
 @pipeworx/mcp-ror	0.2.1	
-@pipeworx/mcp-rxnorm	0.2.1	2026-11-15
-@pipeworx/mcp-salesforce	0.2.1	2026-11-15
-@pipeworx/mcp-sanctions-screening	0.2.1	2026-11-15
-@pipeworx/mcp-science	0.2.1	2026-11-15
+@pipeworx/mcp-rxnorm	0.2.1	
+@pipeworx/mcp-salesforce	0.2.1	
+@pipeworx/mcp-sanctions-screening	0.2.1	
+@pipeworx/mcp-science	0.2.1	
 @pipeworx/mcp-science-feeds	0.2.1	
 @pipeworx/mcp-sciencebase	0.2.1	
 @pipeworx/mcp-scotcourts	0.2.1	
-@pipeworx/mcp-scrapingant	0.2.1	2026-11-15
+@pipeworx/mcp-scrapingant	0.2.1	
 @pipeworx/mcp-sec	0.2.1	
-@pipeworx/mcp-sec-financial-statements	0.2.1	2026-11-15
+@pipeworx/mcp-sec-financial-statements	0.2.1	
 @pipeworx/mcp-sec-ftd	0.2.1	
 @pipeworx/mcp-sec-insider	0.2.1	
 @pipeworx/mcp-sec-nport	0.2.1	
 @pipeworx/mcp-securitytrails	0.2.1	
-@pipeworx/mcp-sefaria	0.2.1	2026-11-15
+@pipeworx/mcp-sefaria	0.2.1	
 @pipeworx/mcp-segment	0.2.1	
 @pipeworx/mcp-seo-serp	0.2.1	
 @pipeworx/mcp-sfda-drugs	0.2.1	
-@pipeworx/mcp-shodan-internetdb	0.2.1	2026-11-15
-@pipeworx/mcp-shovels	0.2.1	2026-11-15
-@pipeworx/mcp-slack_connect	0.2.1	2026-11-15
+@pipeworx/mcp-shodan-internetdb	0.2.1	
+@pipeworx/mcp-shovels	0.2.1	
+@pipeworx/mcp-slack_connect	0.2.1	
 @pipeworx/mcp-smarty	0.2.1	
+@pipeworx/mcp-smithsonian	0.2.1	2026-11-22
 @pipeworx/mcp-soilgrids	0.2.1	
-@pipeworx/mcp-solana-rpc	0.3.1	2026-11-15
+@pipeworx/mcp-solana-rpc	0.3.1	
 @pipeworx/mcp-south-carolina-code	0.2.1	
-@pipeworx/mcp-south-dakota-code	0.2.1	2026-11-15
+@pipeworx/mcp-south-dakota-code	0.2.1	
+@pipeworx/mcp-spacenews	1.1.1	2026-11-22
 @pipeworx/mcp-spdx-license	0.2.1	
+@pipeworx/mcp-sportmonks	0.2.2	2026-11-22
 @pipeworx/mcp-sports-feeds	0.2.1	
 @pipeworx/mcp-sports-game-odds	0.2.1	
-@pipeworx/mcp-stat-lv	0.2.1	2026-11-15
-@pipeworx/mcp-statbel-be	0.2.1	2026-11-15
+@pipeworx/mcp-stat-ee	0.2.1	2026-11-22
+@pipeworx/mcp-stat-lv	0.2.1	
+@pipeworx/mcp-statbel-be	0.2.1	
 @pipeworx/mcp-stats-nz	0.2.1	
-@pipeworx/mcp-swissmedic	0.2.1	2026-11-15
+@pipeworx/mcp-superhero	1.1.1	2026-11-22
+@pipeworx/mcp-swissmedic	0.2.1	
 @pipeworx/mcp-symmap	0.2.1	
 @pipeworx/mcp-tatoeba	0.2.1	
 @pipeworx/mcp-tavily	0.2.1	
 @pipeworx/mcp-tcm-products	0.2.1	
 @pipeworx/mcp-ted-eu	0.2.1	
+@pipeworx/mcp-texas-code	0.2.1	2026-11-22
 @pipeworx/mcp-textstats	0.2.1	
-@pipeworx/mcp-the-graph	0.2.1	2026-11-15
+@pipeworx/mcp-the-graph	0.2.1	
+@pipeworx/mcp-themeparks	0.2.1	2026-11-22
+@pipeworx/mcp-threatfox	0.2.1	2026-11-22
 @pipeworx/mcp-trade-compliance	0.2.1	
+@pipeworx/mcp-trademarks	0.2.1	2026-11-22
 @pipeworx/mcp-traveltime	0.2.1	
-@pipeworx/mcp-trefle	0.2.1	2026-11-15
-@pipeworx/mcp-troostwijk	0.2.1	2026-11-15
+@pipeworx/mcp-trefle	0.2.1	
+@pipeworx/mcp-troostwijk	0.2.1	
 @pipeworx/mcp-trove	0.2.1	
-@pipeworx/mcp-tsa-passenger-volumes	0.2.1	2026-11-15
+@pipeworx/mcp-tsa-passenger-volumes	0.2.1	
 @pipeworx/mcp-twitch	0.2.1	
+@pipeworx/mcp-tx-procurement	0.2.1	2026-11-22
 @pipeworx/mcp-ucdp	0.2.1	
-@pipeworx/mcp-uk-parliament	0.2.1	2026-11-15
+@pipeworx/mcp-uk-parliament	0.2.1	
 @pipeworx/mcp-ukri-gtr	0.2.1	
-@pipeworx/mcp-un-sdg	0.2.1	2026-11-15
+@pipeworx/mcp-un-sdg	0.2.1	
 @pipeworx/mcp-unesco-uis	0.2.1	
 @pipeworx/mcp-unicode	0.2.1	
-@pipeworx/mcp-unsplash	0.2.1	2026-11-15
-@pipeworx/mcp-us-drought-monitor	0.2.1	2026-11-15
+@pipeworx/mcp-uniprot	0.2.1	2026-11-22
+@pipeworx/mcp-unsplash	0.2.1	
+@pipeworx/mcp-us-drought-monitor	0.2.1	
 @pipeworx/mcp-us-news-feeds	0.2.1	
-@pipeworx/mcp-usgs-critical-deposits	0.2.1	2026-11-15
-@pipeworx/mcp-usgs-mineral-commodities	0.2.1	2026-11-15
+@pipeworx/mcp-usaspending	0.2.1	2026-11-22
+@pipeworx/mcp-usgs-critical-deposits	0.2.1	
+@pipeworx/mcp-usgs-mineral-commodities	0.2.1	
 @pipeworx/mcp-usitc-edis	0.2.1	
-@pipeworx/mcp-usno-astronomy	0.2.1	2026-11-15
+@pipeworx/mcp-usno-astronomy	0.2.1	
 @pipeworx/mcp-uspto-ptab	0.2.1	
-@pipeworx/mcp-vimeo	0.2.1	2026-11-15
+@pipeworx/mcp-veriphone	0.2.2	2026-11-22
+@pipeworx/mcp-vermont-code	0.2.1	2026-11-22
+@pipeworx/mcp-vies-eu	0.2.1	2026-11-22
+@pipeworx/mcp-vimeo	0.2.1	
+@pipeworx/mcp-visa-requirements	0.2.1	2026-11-22
 @pipeworx/mcp-visualcrossing	0.2.1	
+@pipeworx/mcp-vizier	0.2.1	2026-11-22
+@pipeworx/mcp-w3c	0.2.1	2026-11-22
 @pipeworx/mcp-wa-dmv	0.2.1	
+@pipeworx/mcp-warframe	0.2.1	2026-11-22
 @pipeworx/mcp-water-quality-portal	0.2.1	
-@pipeworx/mcp-weather-gc-ca	0.2.1	2026-11-15
-@pipeworx/mcp-west-virginia-rules	0.2.1	2026-11-15
+@pipeworx/mcp-weather-gc-ca	0.2.1	
+@pipeworx/mcp-web-fetch	0.2.1	2026-11-22
+@pipeworx/mcp-west-virginia-rules	0.2.1	
+@pipeworx/mcp-who-tb	0.2.1	2026-11-22
 @pipeworx/mcp-wi-dmv	0.2.1	
-@pipeworx/mcp-wikidata-sparql	0.2.1	2026-11-15
-@pipeworx/mcp-wikiquote	0.2.1	2026-11-15
+@pipeworx/mcp-wikidata-sparql	0.2.1	
+@pipeworx/mcp-wikiquote	0.2.1	
 @pipeworx/mcp-wiktionary	0.2.1	
 @pipeworx/mcp-wisconsin-code	0.2.1	
 @pipeworx/mcp-wmata	0.2.1	
 @pipeworx/mcp-world-news-feeds	0.2.1	
 @pipeworx/mcp-worldbank	0.2.1	
 @pipeworx/mcp-xero	0.2.1	
-@pipeworx/mcp-xposedornot	0.2.1	2026-11-15
-@pipeworx/mcp-zoho_crm	0.3.2	2026-11-15
-@pondlog/mcp-ebird	0.1.5	2026-11-15
+@pipeworx/mcp-xposedornot	0.2.1	
+@pipeworx/mcp-zoho_crm	0.3.2	
+@pofky/appstore-connect-mcp	0.2.1	2026-11-22
+@polytest/mcp	0.2.0	2026-11-22
+@pondlog/mcp-ebird	0.1.5	
 @ponzu_app/mcp	1.1.0	
-@postfleet/mcp	0.1.4	2026-11-15
+@postfleet/mcp	0.1.4	
+@postquickai/mcp	0.1.5	2026-11-22
+@postsider/mcp	1.0.0	2026-11-22
 @pracht/cli	1.17.0	
 @praveenc/mcp-docs-server	0.1.0	
 @pressa/mcp	0.11.4	
 @printr/mcp	0.4.1	
+@privacyscrubber/mcp-server	2.5.0	2026-11-22
+@productflow/autopm	4.0.1	2026-11-22
 @professional-wiki/mediawiki-mcp-server	0.21.0	
 @programinglive/dev-workflow-mcp-server	1.4.6	
+@prompteden/mcp-server	0.4.1	2026-11-22
+@promptibus/mcp	0.9.0	2026-11-22
+@proof-layer/mcp	1.0.1	2026-11-22
 @pseolint/mcp	0.6.4	
 @pubnub/mcp	2.3.2	
 @pulsemcp/image-diff-mcp-server	0.1.3	
 @pulsemcp/pulse-fetch	0.2.14	
+@pulsenetwork/lp-copilot-mcp	0.1.1	2026-11-22
 @purplesquirrel/hedera-mcp	0.5.0	
-@pushizo/mcp-server	0.1.0	2026-11-15
+@pushinpaybr/mcp-server	0.1.1	2026-11-22
+@pushizo/mcp-server	0.1.0	
 @putervision/agent-reasoning-mcp	0.4.1	
-@putervision/state-memory-mcp	1.4.1	2026-11-15
+@putervision/state-memory-mcp	1.4.1	
+@putput/mcp	0.0.3	2026-11-22
 @pvpwire/mcp-server	1.0.2	
 @qmmughal/mcp-server-template	1.0.0	
 @quantustik/mcp-server	1.0.1	
-@qutpay/mcp	0.1.2	2026-11-15
-@rajsir/mcp-server-terraform	0.2.1	2026-11-15
+@qutpay/mcp	0.1.2	
+@ragionex/memory-mcp	0.9.1	2026-11-22
+@rajsir/mcp-server-terraform	0.2.1	
 @rakshasar/xsignal	0.2.1	
-@ramp-kit/mcp	0.1.9	2026-11-15
-@rcs-kz/mcp-1c	0.1.0	2026-11-15
+@ramp-kit/mcp	0.1.9	
+@raysker/axon-research	1.1.0	2026-11-22
+@raytien/git-mcp-server	0.2.3	2026-11-22
+@rcs-kz/mcp-1c	0.1.0	
+@re-bruce-wayne/trade-router-mcp	1.0.6	2026-11-22
 @readmigo/shipkit-mcp	0.1.1	
+@readystack/accessibility-statement-lint	1.0.2	2026-11-22
 @readystack/actions-deprecation-lint-2026	0.1.6	
 @readystack/agentforce-action-audit	1.0.1	
 @readystack/ai-companion-safety-lint	1.0.2	
+@readystack/arbeitsvertrag-nachwg-lint	1.0.1	2026-11-22
+@readystack/cbpr-address-lint	1.0.1	2026-11-22
 @readystack/container-hardening-800-190	1.0.1	
 @readystack/coverage-gate-lint	1.0.3	
+@readystack/cra-24-72-14-reporting-lint	1.0.6	2026-11-22
 @readystack/cra-annex-ii-docs-lint	1.0.4	
 @readystack/data-act-switching-lint	1.0.2	
-@readystack/devicetree-config-language-pack	0.1.2	2026-11-15
+@readystack/devicetree-config-language-pack	0.1.2	
 @readystack/dora-register-lint	1.0.1	
-@readystack/einvoice-mandate-lint	1.0.4	2026-11-15
+@readystack/einvoice-mandate-lint	1.0.4	
 @readystack/en301549-lint	0.1.6	
 @readystack/facturae-verifactu-lint	1.0.4	
 @readystack/france-einvoice-reception-lint	1.0.5	
@@ -1169,241 +1636,333 @@
 @readystack/k8s-removed-api-lint	1.0.3	
 @readystack/ksef-fa3-invoice-lint	1.0.2	
 @readystack/mcp-config-audit	1.0.2	
+@readystack/model-card-lint-gpai	1.0.3	2026-11-22
 @readystack/openapi-security-contract-lint	1.0.2	
 @readystack/outlook-email-html-lint	0.1.1	
-@readystack/personal-data-map-dsar-audit	0.1.2	2026-11-15
+@readystack/personal-data-map-dsar-audit	0.1.2	
+@readystack/proto-wire-break-check	1.0.2	2026-11-22
 @readystack/rechnung-pflichtangaben-lint-de	1.0.3	
 @readystack/romu-hozon-kikan-lint-jp	1.0.1	
 @readystack/runtime-eol-deploy-block-audit	0.1.3	
-@readystack/saft-pt-atcud-lint	1.0.1	2026-11-15
+@readystack/saft-pt-atcud-lint	1.0.1	
+@readystack/steuerlager-schwund-check-de	1.0.1	2026-11-22
 @readystack/streitbeilegung-hinweis-lint	1.0.1	
-@readystack/verfahrensdoku-gobd-check	1.0.5	2026-11-15
-@readystack/vsix-publish-lint	1.0.4	2026-11-15
-@readystack/webfont-license-audit	1.0.1	2026-11-15
-@refreshagent/mcp	0.1.1	2026-11-15
+@readystack/verfahrensdoku-gobd-check	1.0.5	
+@readystack/vsix-publish-lint	1.0.4	
+@readystack/webfont-license-audit	1.0.1	
+@refgrow/mcp	1.3.0	2026-11-22
+@refreshagent/mcp	0.1.1	
 @reinconsole/mcp	0.8.0	
+@reneturcios/abandoncheck	0.1.0	2026-11-22
 @reneturcios/agenttrio	0.1.0	
+@reneturcios/aidocs	0.1.0	2026-11-22
 @reneturcios/analyticbase	0.1.0	
-@reneturcios/animeport	0.1.0	2026-11-15
-@reneturcios/areaguide	0.1.0	2026-11-15
+@reneturcios/animeport	0.1.0	
+@reneturcios/areaguide	0.1.0	
+@reneturcios/artifactbloat	0.1.0	2026-11-22
 @reneturcios/assetlens	0.1.0	
+@reneturcios/audioport	0.1.0	2026-11-22
 @reneturcios/bookbind	0.1.0	
-@reneturcios/brandcheck	0.1.0	2026-11-15
+@reneturcios/brandcheck	0.1.0	
+@reneturcios/brdata	0.1.0	2026-11-22
 @reneturcios/busfactor	0.1.0	
 @reneturcios/calendarport	0.1.0	
-@reneturcios/carboncalc	0.1.0	2026-11-15
+@reneturcios/carboncalc	0.1.0	
 @reneturcios/chatvault	0.1.0	
 @reneturcios/clockport	0.1.0	
 @reneturcios/clouddocs	0.1.0	
-@reneturcios/codehost-remote	0.1.0	2026-11-15
-@reneturcios/crmcloud	0.1.0	2026-11-15
+@reneturcios/codehost-remote	0.1.0	
+@reneturcios/comexscope	0.1.0	2026-11-22
+@reneturcios/crawlport	0.1.0	2026-11-22
+@reneturcios/crmcloud	0.1.0	
 @reneturcios/cueport	0.1.0	
-@reneturcios/datawatch	0.1.0	2026-11-15
+@reneturcios/dashmetrics	0.1.0	2026-11-22
+@reneturcios/datawatch	0.1.0	
+@reneturcios/deadpath	0.1.0	2026-11-22
 @reneturcios/designport	0.1.0	
-@reneturcios/deskcommand	0.1.0	2026-11-15
-@reneturcios/dishmath	0.1.0	2026-11-15
-@reneturcios/docmark	0.1.0	2026-11-15
+@reneturcios/deskcommand	0.1.0	
+@reneturcios/dishmath	0.1.0	
+@reneturcios/docmark	0.1.0	
 @reneturcios/docxredline	0.1.0	
-@reneturcios/dropbrowse	0.1.0	2026-11-15
-@reneturcios/encyport	0.1.0	2026-11-15
-@reneturcios/evalsnap	0.1.0	2026-11-15
-@reneturcios/fdarecords	0.1.0	2026-11-15
+@reneturcios/dropbrowse	0.1.0	
+@reneturcios/encyport	0.1.0	
+@reneturcios/eodrecord	0.1.0	2026-11-22
+@reneturcios/evalsnap	0.1.0	
+@reneturcios/fdarecords	0.1.0	
+@reneturcios/fedvendor	0.1.0	2026-11-22
 @reneturcios/feedport	0.1.0	
-@reneturcios/gapproof	0.1.0	2026-11-15
+@reneturcios/firmproof	0.1.0	2026-11-22
+@reneturcios/formwire	0.1.0	2026-11-22
+@reneturcios/gapproof	0.1.0	
 @reneturcios/gatefile	0.1.4	
-@reneturcios/greenlight	0.27.0	2026-11-15
+@reneturcios/greenlight	0.27.0	
 @reneturcios/handoffgen	0.1.0	
 @reneturcios/hangulport	0.1.0	
+@reneturcios/imagedata	0.1.0	2026-11-22
 @reneturcios/jobfeed	0.1.0	
+@reneturcios/jpverify	0.1.0	2026-11-22
+@reneturcios/lawcorpus	0.1.0	2026-11-22
 @reneturcios/ledgerbackup	0.1.0	
 @reneturcios/libdocs	0.1.0	
-@reneturcios/linkscribe	0.1.0	2026-11-15
+@reneturcios/linkscribe	0.1.0	
+@reneturcios/lockdrift	0.1.0	2026-11-22
 @reneturcios/mathpack	0.1.0	
-@reneturcios/matrixshrink	0.1.0	2026-11-15
+@reneturcios/matrixshrink	0.1.0	
 @reneturcios/mcpaudit	0.1.2	
-@reneturcios/npmpreflight	0.1.0	2026-11-15
-@reneturcios/nycrentals	0.1.0	2026-11-15
+@reneturcios/musicport	0.1.0	2026-11-22
+@reneturcios/npmpreflight	0.1.0	
+@reneturcios/nycrentals	0.1.0	
 @reneturcios/officelens	0.1.0	
 @reneturcios/packcompare	0.1.0	
-@reneturcios/pagesdata	0.1.0	2026-11-15
+@reneturcios/pagesdata	0.1.0	
 @reneturcios/parallelmap	0.1.0	
-@reneturcios/payport	0.1.0	2026-11-15
-@reneturcios/pdfporter	0.1.0	2026-11-15
-@reneturcios/pgcloud	0.1.0	2026-11-15
+@reneturcios/partfits	0.1.0	2026-11-22
+@reneturcios/payport	0.1.0	
+@reneturcios/pdfporter	0.1.0	
+@reneturcios/pgcloud	0.1.0	
 @reneturcios/policyrecall	0.1.0	
+@reneturcios/polyguide	0.1.0	2026-11-22
 @reneturcios/prepboard	0.1.0	
+@reneturcios/previewglow	0.1.0	2026-11-22
 @reneturcios/promptpack	0.1.0	
-@reneturcios/propdata	0.1.0	2026-11-15
+@reneturcios/propdata	0.1.0	
 @reneturcios/qrpaint	0.1.0	
+@reneturcios/readmeaudit	0.1.0	2026-11-22
 @reneturcios/recordcrm	0.1.0	
-@reneturcios/repofind	0.1.0	2026-11-15
+@reneturcios/repofind	0.1.0	
 @reneturcios/rerunplan	0.1.0	
-@reneturcios/reviewthread	0.1.0	2026-11-15
+@reneturcios/reviewthread	0.1.0	
 @reneturcios/rollbackplan	0.1.0	
 @reneturcios/routerbase	0.1.0	
-@reneturcios/saleroom	0.1.0	2026-11-15
-@reneturcios/scicompute	0.1.0	2026-11-15
+@reneturcios/saleroom	0.1.0	
+@reneturcios/scicompute	0.1.0	
+@reneturcios/serieslib	0.1.0	2026-11-22
 @reneturcios/serverlessrun	0.1.0	
 @reneturcios/shipcheck	0.2.0	
 @reneturcios/shotframe	0.1.0	
+@reneturcios/signalfeed	0.1.0	2026-11-22
 @reneturcios/skillcheck	0.1.0	
-@reneturcios/sociallens	0.1.0	2026-11-15
+@reneturcios/sociallens	0.1.0	
 @reneturcios/speccheck	0.1.0	
 @reneturcios/stayport	0.1.0	
 @reneturcios/supprecord	0.1.0	
-@reneturcios/surveyloop	0.1.0	2026-11-15
-@reneturcios/tunecatalog	0.1.0	2026-11-15
+@reneturcios/surveyloop	0.1.0	
+@reneturcios/tailnetport	0.1.0	2026-11-22
+@reneturcios/threatcheck	0.1.0	2026-11-22
+@reneturcios/tododebt	0.1.0	2026-11-22
+@reneturcios/tunecatalog	0.1.0	
 @reneturcios/types2docs	0.1.0	
-@renzo.johnson/google-slides-mcp	26.11.14	2026-11-15
-@renzo.johnson/google-tag-manager-mcp	26.11.14	2026-11-15
+@reneturcios/viewdaily	0.1.0	2026-11-22
+@reneturcios/wattindex	0.1.0	2026-11-22
+@reneturcios/weatherport	0.1.0	2026-11-22
+@renzo.johnson/google-drive-mcp	26.11.14	2026-11-22
+@renzo.johnson/google-slides-mcp	26.11.14	
+@renzo.johnson/google-tag-manager-mcp	26.11.14	
 @repo-prism/mcp-server	1.1.1	
-@retain-so/mcp-server	0.1.2	2026-11-15
+@retain-so/mcp-server	0.1.2	
 @revclamp/google-ads-transparency-mcp	1.0.17	
 @revclamp/google-ads-transparency-mcp-actor	1.0.7	
 @reworkdigital.io/rework-proof-mcp	1.2.1	
+@rigel-protocol/solana-mcp	1.2.4	2026-11-22
 @rightnow/forge-mcp-server	1.0.2	
+@roadraven/mcp	0.9.2	2026-11-22
+@roamzy/mcp-server	1.6.9	2026-11-22
+@robinmordasiewicz/f5xc-terraform-mcp	3.24.0	2026-11-22
 @robthepcguy/rag-vault	1.5.3	
 @rog0x/mcp-a11y-tools	1.0.2	
 @rog0x/mcp-api-tools	1.0.2	
 @rog0x/mcp-database-tools	1.0.1	
 @rog0x/mcp-env-tools	1.0.2	
 @rog0x/mcp-git-tools	1.0.1	
-@rog0x/mcp-json-tools	1.0.1	2026-11-15
+@rog0x/mcp-json-tools	1.0.1	
 @rog0x/mcp-math-tools	1.0.1	
 @rog0x/mcp-network-tools	1.0.2	
 @rog0x/mcp-perf-tools	1.0.2	
+@rog0x/mcp-seo-tools	1.0.1	2026-11-22
 @rog0x/mcp-task-tools	1.0.1	
+@rog0x/mcp-testing-tools	1.0.2	2026-11-22
 @rog0x/mcp-web-tools	1.0.1	
 @rog0x/mcp-webhook-tools	1.0.2	
-@romudille/agentpay-mcp	2.8.1	2026-11-15
-@roomi-fields/notebooklm-mcp	4.10.0	2026-11-15
+@romudille/agentpay-mcp	2.9.2	2026-11-22
+@roomi-fields/notebooklm-mcp	4.10.0	
+@routescore/mcp	0.3.5	2026-11-22
 @royreznik/oura-ring-mcp	1.0.0	
 @rsdoctor/mcp-server	0.1.2-beta.0	
+@runapi.ai/flux-2-mcp	0.3.2	2026-11-22
+@runapi.ai/flux-kontext-mcp	0.2.2	2026-11-22
 @runapi.ai/gpt-image-mcp	0.2.1	
 @runapi.ai/kling-mcp	0.4.1	
 @runapi.ai/mcp	0.17.0	
-@runapi.ai/midjourney-mcp	0.4.1	2026-11-15
+@runapi.ai/midjourney-mcp	0.4.1	
 @runapi.ai/qwen-image-mcp	0.2.1	
 @runapi.ai/suno-mcp	0.4.2	
-@runapi.ai/veo-3-1-mcp	0.2.1	2026-11-15
+@runapi.ai/veo-3-1-mcp	0.2.1	
 @runhooks/mcp	0.1.12	
 @runonflux/flux-cloud-mcp	0.2.8	
-@russellshen1992/2o-mcp	1.0.0	2026-11-15
-@ryamgoh/terminal-mcp	0.1.0	2026-11-15
+@russellshen1992/2o-mcp	1.0.0	
+@ryamgoh/terminal-mcp	0.1.0	
 @sampuli/mcp	0.1.2	
-@samuraizer/mcp-server	0.1.7	2026-11-15
-@sanctumai/mcp-server	0.3.2	2026-11-15
-@saperly/mcp	0.1.2	2026-11-15
-@saroday/mcp-server	0.2.0	2026-11-15
-@sarveshsea/memoire	0.16.1	2026-11-15
+@samuraizer/mcp-server	0.1.7	
+@sanctumai/mcp-server	0.3.2	
+@saperly/mcp	0.1.2	
+@saroday/mcp-server	0.2.0	
+@sarutobi-sasuke/credential-broker-mcp	0.1.2	2026-11-22
+@sarveshsea/memoire	0.16.1	
 @sathergate/notifykit	0.1.0	
-@satohub/kit	0.1.0	2026-11-15
+@satohub/kit	0.1.0	
+@savantoai/mcp-server	0.2.1	2026-11-22
+@schelling/mcp-server	3.0.1	2026-11-22
 @scopeblind/verify-mcp	0.1.3	
 @scrapio/mcp	1.10.0	
 @seamless-engineering/datev-extf-mcp	0.1.0	
-@secforge/chrome-devtools-mcp	1.10.1004	2026-11-15
-@seidl-family/ncrypted-mcp	0.2.2	2026-11-15
+@secforge/chrome-devtools-mcp	1.10.1004	
+@seedbase/client	0.2.2	2026-11-22
+@seekrit/mcp	0.8.5	2026-11-22
+@seidl-family/ncrypted-mcp	0.2.2	
 @seldonframe/mcp	1.59.2	
+@semore/mcp-commerce	0.4.2	2026-11-22
 @sendsoon/mcp	0.3.8	
 @sensegrep/mcp	1.5.3	
-@seodesignlab/mcp-server	1.0.4	2026-11-15
+@seoasist/mcp	1.1.1	2026-11-22
+@seodesignlab/mcp-server	1.0.4	
 @seraviahealth/glp1search-mcp	2.0.1	
-@serdnaley/metabase-mcp	0.5.0	2026-11-15
-@serpstat/llm-brand-monitor-mcp	1.0.1	2026-11-15
+@serdnaley/metabase-mcp	0.5.0	
+@serpstat/llm-brand-monitor-mcp	1.0.1	
+@servelink/serve	0.8.8	2026-11-22
 @shashwatgtmalpha/craft-gtm-mcp	2.2.23	
 @shawnwollenberg/walletlens-mcp	0.1.2	
+@shibbirweb/mcp-db-read-only	1.1.0	2026-11-22
 @shibbirweb/mcp-mysql-read-only	1.1.6	
-@shingou-io/mcp-stdio	0.4.2	2026-11-15
-@shipatmidnight/mockanything	0.2.2	2026-11-15
+@shieldz/swap-mcp	0.1.1	2026-11-22
+@shingou-io/mcp-stdio	0.4.2	
+@shipatmidnight/mockanything	0.2.2	
+@shirbarzur/planform-mcp-server	1.0.7	2026-11-22
 @shuji-bonji/houki-nta-mcp	0.27.1	
+@shuji-bonji/pdf-reader-mcp	0.23.0	2026-11-22
 @shuji-bonji/s1000d-reader-mcp	0.8.0	
 @shuotao/revit-mcp-server	1.6.0	
-@sifende/mcp	0.2.0	2026-11-15
-@signdocs-brasil/mcp-server	0.11.0	2026-11-15
+@sifende/mcp	0.2.0	
+@signdocs-brasil/mcp-server	0.11.0	
+@sima-prime/mcp-server	0.1.6	2026-11-22
 @simple-lang/lsp-mcp-server	0.9.8	
+@simplifierag/simplifier-mcp	0.11.4	2026-11-22
 @sirmacke/adsense-mcp	0.2.0	
-@sisense/mcp-server	0.2.2	2026-11-15
-@sketchxflow/dev-mcp	0.4.0	2026-11-15
+@sisense/mcp-server	0.2.2	
+@sketchxflow/dev-mcp	0.4.0	
 @skillfm/llm-cost-optimizer-mcp	0.1.0	
 @skills-hub-ai/mcp	0.1.11	
 @slingshot-fyi/brand-kit	0.1.0	
 @smartmemory/compose-mcp	0.7.2	
-@snowmead/oxcode-mcp	0.4.1	2026-11-15
-@socialneuron/mcp-server	1.6.0	2026-11-15
-@solentic/mcp-server	1.1.1	2026-11-15
+@snowmead/oxcode-mcp	0.4.1	
+@socialneuron/mcp-server	1.6.0	
+@solentic/mcp-server	1.1.1	
+@solinkify/mcp	0.3.3	2026-11-22
+@sonenta/mcp	0.57.0	2026-11-22
 @sonpiaz/watch-cli-mcp	0.3.1	
-@spanlens/mcp-server	0.3.0	2026-11-15
+@sophiacave/mcp-shield	1.0.7	2026-11-22
+@spanlens/mcp-server	0.3.0	
 @spatialpack/mcp	0.1.0	
-@spec-family/spec-guard	0.35.0	2026-11-15
-@spicrawl/mcp	0.2.0	2026-11-15
-@spideriq/mcp-gate	1.3.0	2026-11-15
+@spec-family/spec-guard	0.35.0	
+@spicrawl/mcp	0.2.0	
+@spideriq/mcp-gate	1.3.0	
 @spideriq/mcp-mail	1.4.0	
-@spines/mcp-server	1.1.0	2026-11-15
+@spines/mcp-server	1.1.0	
 @spoolis/mcp	0.1.6	
 @sqlike/mcp	0.2.3	
 @sriinnu/kosha-discovery	1.13.0	
-@ssavecc/mcp-server	0.1.1	2026-11-15
+@ssavecc/mcp-server	0.1.1	
+@stackfiesta/mcp	0.1.2	2026-11-22
+@standardbeagle/devtool-mcp	0.3.1	2026-11-22
 @starfetch-js/mcp	0.3.0	
-@statable/mcp	0.1.0	2026-11-15
-@statuser/mcp	0.7.1	2026-11-15
+@statable/mcp	0.1.0	
+@statuser/mcp	0.7.1	
 @storybloq/agkit	0.6.0	
-@strato-space/media-gen-mcp	1.0.4	2026-11-15
-@striderlabs/mcp-gmail	0.1.0	2026-11-15
-@stsepelin/checktrail	0.1.0-alpha.5	2026-11-15
+@storycaptures/mcp	0.1.0	2026-11-22
+@strato-space/media-gen-mcp	1.0.4	
+@streamkap/tools	0.11.0	2026-11-22
+@striderlabs/mcp-gmail	0.1.0	
+@striderlabs/mcp-walmart	0.1.1	2026-11-22
+@stsepelin/checktrail	0.1.0-alpha.5	
 @studiomeyer/mcp-video	1.0.4	
 @summit53/mcp-server	1.0.2	
 @super-log/mcp	0.4.1	
-@supernova123/resend-mcp-server	1.0.0	2026-11-15
-@supportpages.io/wtfm	0.7.4	2026-11-15
+@supernova123/docker-mcp-server	0.3.5	2026-11-22
+@supernova123/resend-mcp-server	1.0.0	
+@supportpages.io/wtfm	0.7.4	
+@sutramx/mcp-server	0.1.6	2026-11-22
 @sveltejs/mcp	0.1.30	
+@swarmwage/mcp	0.4.3	2026-11-22
+@switchboard-mcp/cli	0.2.3	2026-11-22
+@syke1/mcp-server	1.5.4	2026-11-22
 @sylphx/lockdocs	0.7.5	
 @sylphx/lookout	0.3.3	
-@sync.so/mcp-server	0.3.22	2026-11-15
+@sylphx/video-reader-mcp	0.1.0	2026-11-22
+@sync.so/mcp-server	0.3.22	
+@synchronex/mcp-proxy	1.2.1	2026-11-22
 @synchronity/mcp-server	0.5.21	
 @synmerco/mcp-server	2.1.15	
-@synterai/mcp-server	1.4.0	2026-11-15
+@synterai/mcp-server	1.4.6	2026-11-22
+@t2000/mcp	0.20.1	2026-11-22
 @t3ratech/mcp-session-bridge	1.4.1	
-@t4dhg/mcp-holded	4.0.0	2026-11-15
+@t4dhg/mcp-holded	4.0.0	
 @table-bro/mcp	1.2.0	
 @tabnas/mcp	0.1.20	
 @takehub/mcp	1.1.2	
 @talivia/agent	0.1.0	
 @team-monet/monet	1.12.0	
-@templatefox/mcp-server	1.9.7	2026-11-15
+@templatefox/mcp-server	1.9.7	
 @tenova/swt3-mcp	0.7.5	
 @tensor-cad/mcp	0.1.21	
-@testivai/mcp	0.9.4	2026-11-15
+@terranode-co/mcp-server	0.1.10	2026-11-22
+@testivai/mcp	0.9.4	
 @tethral/acr-mcp	2.14.0	
-@tharanabopearachchi/sql-server-mcp-macos	1.0.4	2026-11-15
+@tharanabopearachchi/sql-server-mcp-macos	1.0.4	
+@thatapicompany/overture-maps-mcp	0.1.5	2026-11-22
 @the-staq/tradestaq-mcp	0.6.3	
 @themelt/mcp-server	0.1.1	
-@thenextgennexus/hr-compensation-mcp-server	1.0.1	2026-11-15
+@thenextgennexus/hr-compensation-mcp-server	1.0.1	
 @theupsider/lsp-mcp	0.1.6	
-@theyahia/boxberry-mcp	1.0.2	2026-11-15
-@theyahia/kaiten-mcp	1.0.0	2026-11-15
-@theyahia/mindbox-mcp	1.0.1	2026-11-15
-@theyahia/tkassa-mcp	1.0.0	2026-11-15
+@theyahia/boxberry-mcp	1.0.2	
+@theyahia/elma365-mcp	1.0.0	2026-11-22
+@theyahia/getcourse-mcp	1.0.0	2026-11-22
+@theyahia/kaiten-mcp	1.0.0	
+@theyahia/mindbox-mcp	1.0.1	
+@theyahia/retailcrm-mcp	1.0.0	2026-11-22
+@theyahia/sber-mcp	1.0.0	2026-11-22
+@theyahia/tkassa-mcp	1.0.0	
+@theyahia/unisender-mcp	1.0.2	2026-11-22
 @theyahia/voximplant-mcp	1.2.3	
 @theyahia/yandex-metrika-mcp	2.1.1	
-@theyahia/yandexgpt-mcp	3.0.1	2026-11-15
-@three-ws/agent-sniper	0.1.7	2026-11-15
-@three-ws/agentcore-payments-mcp	0.1.5	2026-11-15
-@three-ws/ibm-x402-mcp	1.1.4	2026-11-15
+@theyahia/yandex-webmaster-mcp	1.0.2	2026-11-22
+@theyahia/yandexgpt-mcp	3.0.1	
+@three-ws/agent-sniper	0.1.7	
+@three-ws/agentcore-payments-mcp	0.1.5	
+@three-ws/alibaba-cloud-mcp	0.1.4	2026-11-22
+@three-ws/billing-mcp	0.1.3	2026-11-22
+@three-ws/blender-mcp	0.5.0	2026-11-22
+@three-ws/ibm-x402-mcp	1.1.4	
+@three-ws/intel-mcp	0.1.3	2026-11-22
+@three-ws/knock-mcp	0.1.0	2026-11-22
 @three-ws/kol-mcp	0.1.2	
 @three-ws/marketplace-mcp	0.1.3	
 @three-ws/metaplex-agent-mcp	0.2.1	
 @three-ws/onchain-agent-wallets	0.1.1	
-@three-ws/scene-mcp	0.2.2	2026-11-15
+@three-ws/portfolio-mcp	0.1.2	2026-11-22
+@three-ws/scene-mcp	0.2.2	
 @three-ws/vanity-mcp	0.1.3	
-@thryx/contract-scanner-mcp-server	1.0.2	2026-11-15
+@thryx/contract-scanner-mcp-server	1.0.2	
 @thryx/portfolio-mcp-server	1.0.0	
 @tigerdata/tiger-skills-mcp-server	0.1.4	
-@timeprooflabs/truthspine-mcp	0.2.2	2026-11-15
+@timeprooflabs/truthspine-mcp	0.2.2	
 @tingyen/agent-cockpit	0.1.0	
-@tollxyz/mcp	0.6.1	2026-11-15
-@tollylabs/x402-mcp	0.7.1	2026-11-15
+@toktikhq/mcp	0.1.1	2026-11-22
+@toleno/mcp	1.0.6	2026-11-22
+@tollxyz/mcp	0.6.1	
+@tollylabs/x402-mcp	0.7.1	
+@toolc/cli	0.1.1	2026-11-22
 @toolprint/hypertool-mcp	0.0.42	
 @topy-ai/coo-mcp	0.1.0	
+@topy-ai/cpo-mcp	0.1.0	2026-11-22
 @topy-ai/cso-mcp	0.1.0	
 @toremlabs/proof-mcp	1.0.0	
 @touchskyer/memex	0.1.8	
@@ -1411,100 +1970,130 @@
 @tradealmanac/mcp-server	2026.10.7	
 @transita/mcp-server	0.2.0	
 @trazum/mcp	2.7.7	
-@trishchuk/coolors-mcp	2.0.0	2026-11-15
+@trishchuk/antigravity-mcp-server	0.3.0	2026-11-22
+@trishchuk/coolors-mcp	2.0.0	
+@tronrental-com/mcp-server	2.0.0	2026-11-22
 @truepathpdf/mcp-server	0.3.0	
-@tthorstenson/juris	0.1.0	2026-11-15
+@trustscoreagent/mcp-server	0.2.7	2026-11-22
+@tthorstenson/juris	0.1.0	
 @tugcantopaloglu/godot-mcp	1.0.0	
 @turbosteed/cli	1.1.1	
+@tychilabs/tyi-mcp	1.0.0-beta.8	2026-11-22
+@ucm/mcp-server	0.3.3	2026-11-22
+@ultimaps/mcp	0.2.1	2026-11-22
 @unclick/amber-mcp	0.1.0	
 @unclick/australiapost-mcp	0.1.0	
+@unclick/bgg-mcp	0.1.0	2026-11-22
 @unclick/deezer-mcp	0.1.0	
+@unclick/exchangerate-mcp	0.1.0	2026-11-22
 @unclick/gdelt-mcp	0.1.0	
-@unclick/ipapi-mcp	0.1.0	2026-11-15
+@unclick/ipapi-mcp	0.1.0	
 @unclick/omdb-mcp	0.1.0	
 @unclick/openfoodfacts-mcp	0.1.0	
+@unclick/openlibrary-mcp	0.1.0	2026-11-22
 @unclick/restcountries-mcp	0.1.0	
+@unclick/tmdb-mcp	0.1.0	2026-11-22
 @unclick/untappd-mcp	0.1.0	
 @unclick/youtube-mcp	0.1.0	
 @unifiedoffer/mcp-server	2.0.1	
 @unlocalhost/unlocalhost	0.1.1	
-@upapi/mcp	0.2.0	2026-11-15
+@upapi/mcp	0.2.0	
 @upstash/redis-mcp	0.1.1	
-@utilix-tech/mcp	0.107.0	2026-11-15
-@validatefin/mcp	1.2.1	2026-11-15
-@variflight-ai/variflight-mcp	1.1.0	2026-11-15
+@ura-dev/changelogai	1.1.3	2026-11-22
+@urlbox/screenshot-mcp	2.0.0	2026-11-22
+@usethoth/mcp-server	1.0.2	2026-11-22
+@utilix-tech/mcp	0.107.0	
+@vaaya/mcp	0.8.1	2026-11-22
+@validatefin/mcp	1.2.1	
+@variflight-ai/variflight-mcp	1.1.0	
 @vashp2029/glovebox	0.3.2	
 @verbaly/mcp	0.81.0	
-@verusidx/chain-mcp	0.1.7	2026-11-15
+@verusidx/chain-mcp	0.1.7	
 @verygoodplugins/mcp-edd	1.1.0	
-@vibebyte/vibe3d-mcp	0.2.14	2026-11-15
+@verygoodplugins/mcp-local-wp	2.0.0	2026-11-22
+@vibebyte/vibe3d-mcp	0.2.14	
+@vibevo/mcp	0.7.0	2026-11-22
 @vibgrate/cli	2026.1103.2	
+@vibo-dev/vibo-mcp	0.3.0	2026-11-22
+@vijay-npm/mcp-weather-server	1.0.2	2026-11-22
+@vimo.cuthongthai.vn/mcp-server	1.2.0	2026-11-22
 @vk0/agent-cost-mcp	2.3.3	
 @vk0/code-impact-mcp	1.6.10	
 @vlabsoft/easyeda-pro-mcp	1.0.2	
+@vmcsubastop/herald-mcp	1.1.0	2026-11-22
 @voidly/pay-mcp	0.7.4	
-@vorluno/agora-mcp	0.1.0	2026-11-15
+@vorluno/agora-mcp	0.1.0	
 @voyageurworks/handoff-desk	1.2.3	
-@vublox/agent-tools	0.1.3	2026-11-15
-@walletbureau/mcp	0.1.1	2026-11-15
+@vublox/agent-tools	0.1.3	
+@walletbureau/mcp	0.1.1	
 @wasmagent/mcp-server	1.1.1	
-@webability/mcp	1.10.1	
+@webability/mcp	1.11.1	2026-11-22
 @webclaw/mcp	0.7.1	
 @weiseer/status-aggregator-mcp	0.1.2	
 @wendellresearch-ai/benchwarmers	0.5.6	
 @wheelfor/mcp	1.0.1	
-@wickedlabs/wicked-mcp	0.7.5	2026-11-15
-@wickpics/onchain-safety-mcp	0.2.0	2026-11-15
-@wireboard/mcp	0.1.3	2026-11-15
+@wickedlabs/wicked-mcp	0.7.5	
+@wickpics/onchain-safety-mcp	0.2.0	
+@wireboard/mcp	0.1.3	
 @wirecat/gcal-cli	0.23.0	
 @wirecat/zoom-cli	0.70.0	
-@withpica/mcp-server-business	1.8.0	2026-11-15
-@woven-video/mcp	0.1.0	2026-11-15
-@woyax/mcp-max-messenger	1.2.2	2026-11-15
-@wphealthkit/mcp-server	0.6.2	2026-11-15
+@wiseappsai/play-console-mcp	0.3.0	2026-11-22
+@withpica/mcp-server-business	1.8.0	
+@woven-video/mcp	0.1.0	
+@woyax/mcp-max-messenger	1.2.2	
+@wphealthkit/mcp-server	0.6.2	
 @wraps.dev/mcp	0.11.1	
 @writerslogic/ai-agents-mcp	0.3.0	
-@wycord/nigeria-mcp-electricity	0.4.0	2026-11-15
+@wycord/nigeria-mcp-electricity	0.4.0	
 @wycord/nigeria-mcp-health-facility	0.3.0	
 @wycord/nigeria-mcp-trade-intel	0.5.0	
 @wycord/nigeria-mcp-un-sdg	0.3.0	
 @x-tkn/mcp	1.0.1	
 @xavifabregat/spotify-mcp	0.1.2	
 @xentropy/mcp	0.3.1	
-@xrpay/x402	0.1.1	2026-11-15
-@xultrax-web/agent-memory-mcp	0.15.0	2026-11-15
+@xrpay/x402	0.1.1	
+@xultrax-web/agent-memory-mcp	0.15.0	
 @yafldev/mcp	0.1.6	
-@yatmo/mcp	1.0.0	2026-11-15
+@yatmo/mcp	1.0.0	
 @yawlabs/fetch-mcp	0.8.6	
 @yawlabs/lemonsqueezy-mcp	1.1.1	
 @yawlabs/nol-mcp	0.1.1	
 @yawlabs/ssh-mcp	0.18.1	
 @yodolabs/plateau-creative-mcp	0.1.1	
-@yummybait/uniswap-tx-builder-mcp	0.4.3	2026-11-15
-@yybd/telegram-notify-mcp	0.1.2	2026-11-15
+@ysskrishna/markdown-convert-mcp	1.2.0	2026-11-22
+@yummybait/uniswap-tx-builder-mcp	0.4.3	
+@yybd/telegram-notify-mcp	0.1.2	
 @zenrows/mcp	2.19.0	
-@zeptap/mcp	1.0.1	2026-11-15
-@zerodust/mcp-server	0.5.1	2026-11-15
-@zeugwerk/plcsense	1.1.22	2026-11-15
+@zeptap/mcp	1.0.1	
+@zerodust/mcp-server	0.5.1	
+@zeugwerk/plcsense	1.1.22	
 @zguiyang/pi-worker-mcp	0.1.1	
 @zktx.io/say-ur-intent	0.4.4	
+@zktx.io/sui-mcp	0.8.2	2026-11-22
 @zumer/snapsurf	0.1.2	
 @zyluo/remote-ssh-mcp	0.2.0	
 a0nexus-bitcoin-mcp	0.1.4	
+a2asearch-mcp	1.1.5	2026-11-22
+ableton-mind	0.1.1	2026-11-22
 academyinfo-mcp	0.4.0	
+accessibilitybrief	1.1.2	2026-11-22
 ace-context-mcp	0.1.1	
 ackee-mcp	1.0.0	
 actually-mcp-server	0.1.10	
 admob-mcp-server	0.2.0	
-adobe-commerce-mcp	0.1.0	2026-11-15
+adobe-commerce-mcp	0.1.0	
+adobe-mcp-illustrator	0.9.1	2026-11-22
 adobe-mcp-indesign	2.5.0	
 adscapi	0.12.1	
-adsturbo-creative-mcp	0.1.5	2026-11-15
-aegis-skills	1.5.0	2026-11-15
-aegis-x402-mcp	1.0.5	2026-11-15
+adsturbo-creative-mcp	0.1.5	
+adtest-mcp	1.1.0	2026-11-22
+aegis-skills	1.5.0	
+aegis-x402-mcp	1.0.5	
 aeron-wallet	0.4.0	
+affiliate-router-mcp	0.1.14	2026-11-22
 affirmations-mcp	1.0.1	
-agent-comms	10.0.0	2026-11-15
+africa-api-mcp	0.1.1	2026-11-22
+agent-comms	10.0.0	
 agent-costcenter-mcp	0.1.3	
 agent-envelope-mcp	1.0.1	
 agent-firewall-mcp	1.3.0	
@@ -1514,178 +2103,257 @@ agent-passport-system-mcp	8.1.1
 agent-press-wire-mcp	0.3.0	
 agent-security-mcp	0.1.3	
 agent-theatre	1.9.0	
+agent-trading-journal	0.1.0	2026-11-22
 agent-webbridge	1.3.3	
-agentforge-openapi-lint-mcp	0.1.0	2026-11-15
+agentforge-openapi-lint-mcp	0.1.0	
+agentic-device	0.1.0	2026-11-22
 agentic-mentions	0.1.0	
 agentic-os-mcp	0.2.11	
+agentic-repurpose	0.1.0	2026-11-22
 agentic-scout	0.1.0	
-agentoolbox-mcp	0.1.4	2026-11-15
+agentmd-mcp	0.1.4	2026-11-22
+agentoolbox-mcp	0.1.4	
 agentpack-cli	1.11.1	
-agentpay-gateway	0.9.0	2026-11-15
-agentpump-mcp	1.1.1	2026-11-15
-agentrank-mcp-server	2.0.0	2026-11-15
-agentreacher	0.9.0	2026-11-15
-agentrynku-mcp	1.2.2	2026-11-15
+agentpay-gateway	0.9.0	
+agentphone-mcp	0.8.0	2026-11-22
+agentpump-mcp	1.1.1	
+agentrank-mcp-server	2.0.0	
+agentreacher	0.9.0	
+agentrynku-mcp	1.2.2	
 agentsafe-mcp-server	1.0.1	
 agentsbase-mcp	1.0.1	
-agentseal-mcp	0.2.1	2026-11-15
+agentseal-mcp	0.2.1	
+agenttaskers-mcp	1.0.2	2026-11-22
 agenttwin	0.3.27	
+agentwallet-mcp	1.14.15	2026-11-22
+agentx402-mcp-server	1.0.4	2026-11-22
 ai-agent-bank-mcp-server	1.0.2	
-ai-business-system-advisor-mcp	0.1.10	2026-11-15
+ai-business-system-advisor-mcp	0.1.10	
+ai-context-kit	0.1.2	2026-11-22
 ai-edit-studio	0.11.0	
+ai-price-mcp	1.5.0	2026-11-22
 ai-scanner-mcp	1.0.3	
+ai-sdlc-prompts-mcp	1.0.3	2026-11-22
 ai-tomogotchi-mcp	1.0.1	
-ai-validation-mcp	0.1.2	2026-11-15
+ai-usage-mcp	0.17.1	2026-11-22
+ai-validation-mcp	0.1.2	
 ai-visibility-mcp	1.0.0	
 ai4l-library	0.1.12	
-aiagentsbay-mcp	0.2.0	2026-11-15
+aiagentsbay-mcp	0.2.0	
+aicodeman	1.51.1	2026-11-22
 aifp-mcp	1.5.8	
 aigroup-mdtoword-mcp	4.0.2	
-aimetadatacleaner-mcp	0.1.3	2026-11-15
+aimetadatacleaner-mcp	0.1.3	
 ainative-strapi-mcp-server	1.4.1	
 ainative-zerodb-memory-mcp	1.2.12	
-ainovaq	1.2.0	2026-11-15
-airtable-user-mcp	2.1.1	2026-11-15
-aiveed-mcp	0.1.1	2026-11-15
-albert-heijn-mcp	1.9.1	
+ainovaq	1.2.0	
+aipe-mcp	1.0.2	2026-11-22
+airtable-user-mcp	2.1.1	
+aiveed-mcp	0.1.1	
+ajisai-mcp-server	0.9.0	2026-11-22
+akb-mcp	2.0.4	2026-11-22
+albert-heijn-mcp	1.10.0	2026-11-22
+alphacouncil-agent	1.0.15	2026-11-22
+alphaportal-mcp	1.3.0	2026-11-22
+altcheck	0.1.1	2026-11-22
+alterlab-mcp-server	1.13.31	2026-11-22
+amendor-mcp	1.0.0	2026-11-22
 amicus	4.14.3	
 amorphous-cli	0.1.3	
-anairyspirit	0.1.454	2026-11-15
-androjack-mcp	2.1.0	2026-11-15
-angular-signal-forms-migration-mcp	0.9.1	2026-11-15
+anairyspirit	0.1.454	
+androjack-mcp	2.1.0	
+angular-signal-forms-migration-mcp	0.9.1	
+anilist-mcp-server	0.11.0	2026-11-22
 anti-default	0.5.6	
 anyapi-mcp	0.1.5	
-apacta-mcp	1.0.0	2026-11-15
-apex-psi-mcp	1.1.2	2026-11-15
-apiauto-mcp	0.1.1	2026-11-15
-apilocker	1.0.3	2026-11-15
+apacta-mcp	1.0.0	
+apex-psi-mcp	1.1.2	
+api-meter-mcp	1.0.0	2026-11-22
+apiauto-mcp	0.1.2	2026-11-22
+apilocker	1.0.3	
 app-ionelul-mcp	0.12.0	
+app-publish-mcp	0.7.0	2026-11-22
 appcontext-mcp	0.1.0	
-appcrane-mcp	1.8.2	2026-11-15
+appcrane-mcp	1.8.2	
 apple-app-store-connect-mcp	0.5.0	
+apple-voice-memo-mcp	0.1.1	2026-11-22
+appstore-release-mcp	0.1.1	2026-11-22
 appveyor-mcp	1.0.1	
 arakice-nhl-mcp	0.1.1	
 arbeitnow-mcp	1.0.2	
 arc-control-mcp	0.4.0	
-arc-security-mcp	0.5.1	2026-11-15
-arcagents-mcp	1.0.0	2026-11-15
+arc-security-mcp	0.5.1	
+arca-agro-mcp	1.2.1	2026-11-22
+arcagents-mcp	1.0.0	
 arcbounty-mcp	0.6.2	
 architectos	0.1.30	
+archprint	0.20.0	2026-11-22
 ari-mcp	0.1.3	
+art-institute-mcp	1.0.6	2026-11-22
 artisign	2.2.0	
-ascope-mcp	0.1.1	2026-11-15
+ascope-mcp	0.1.1	
+ashby-location-filter	0.2.2	2026-11-22
 astral-mcp	0.2.0	
+atimelogger-mcp	0.1.2	2026-11-22
 audio	2.10.0	
 audius-mcp	1.0.1	
 aur-mcp	1.0.1	
 auseklis	0.4.0	
+austria-property-mcp	0.6.1	2026-11-22
 autorouter-mcp	0.3.1	
 auxiliar-mcp	0.22.1	
-awesome-agent-skills-mcp	1.0.2	2026-11-15
+awesome-agent-skills-mcp	1.0.2	
 ayudas-es-mcp	0.8.0	
 azure-vm-pricing-mcp	0.1.4	
-b1-mcp-server	1.6.0	2026-11-15
-bagos-mcp-server	3.0.7	2026-11-15
+b1-mcp-server	1.6.0	
+b2match-mcp	0.2.1	2026-11-22
+b4n1-web	0.12.1	2026-11-22
+baconservices-mcp	0.4.0	2026-11-22
+bagos-mcp-server	3.0.7	
 balenciaga-mcp	1.0.1	
-bankregpulse-mcp-server	1.3.0	2026-11-15
+bank-statement-sheet-mcp	0.1.1	2026-11-22
+bankregpulse-mcp-server	1.3.0	
 base-multi-wallet-mcp	1.0.2	
+baserow-mcp	1.0.0	2026-11-22
 batchwatch-mcp	0.1.1	
-baton-run	0.2.10	2026-11-15
+baton-run	0.2.10	
 baywheels-mcp	1.0.1	
 beacon-mcp	0.1.1	
+better-design	0.51.0	2026-11-22
+bhived-mcp	1.4.2	2026-11-22
 bible-mcp	1.0.1	
-biblical-atlas-mcp	0.2.2	2026-11-15
-bigdatacloud-mcp	1.0.1	2026-11-15
-billbee-mcp	1.0.0	2026-11-15
-biorxiv-mcp	1.0.1	2026-11-15
+biblical-atlas-mcp	0.2.2	
+bigdatacloud-mcp	1.0.1	
+billbee-mcp	1.0.0	
+biomcp	1.4.3	2026-11-22
+biorxiv-mcp	1.0.1	
+bitbucket-datacenter-mcp	0.6.0	2026-11-22
 bitbucket-mcp	5.0.5	
 bkk-mcp	1.0.0	
-blackwall-mcp	1.4.2	2026-11-15
+blackwall-mcp	1.4.2	
 blackwindow-weave-mcp	0.1.2	
-blank-invoice-maker-mcp	1.0.2	2026-11-15
-block-genomics-mcp	0.1.2	2026-11-15
+blank-invoice-maker-mcp	1.0.2	
+bling-bag	0.2.0	2026-11-22
+block-genomics-mcp	0.1.2	
 blockcypher-mcp	1.0.1	
 blockdex-mcp	0.1.0	
+blogcaster-mcp	1.0.1	2026-11-22
 blowhorn-mcp	1.0.0	
-bluecolumn-mcp	1.4.0	2026-11-15
-bostrom-mcp	0.5.0	2026-11-15
+bluecolumn-mcp	1.4.0	
+blumen-komander-mcp	1.2.0	2026-11-22
+bostrom-mcp	0.5.0	
 botindex-mcp-server	2.2.0	
 botverse-mcp	1.5.1	
 bovedia	2.7.0	
 brainchain-mcp	0.9.0	
+brainfaq-mcp	1.0.2	2026-11-22
+brave-mcp	1.12.0	2026-11-22
 brewers-almanack	0.1.0	
 brianbooms-mcp	1.0.7	
-bridgeguard-mcp	0.1.1	2026-11-15
-broke2built-skills-mcp	1.1.1	2026-11-15
-buildutilities-mcp	0.1.3	2026-11-15
+brickproof-adb	1.0.0	2026-11-22
+bridgeguard-mcp	0.1.1	
+broke2built-skills-mcp	1.1.1	
+browserbash-cli	1.5.1	2026-11-22
+btcturk-mcp	1.0.0	2026-11-22
+bugcatcher-mcp	1.0.0	2026-11-22
+buildutilities-mcp	0.1.3	
+bulbapedia-mcp	1.0.1	2026-11-22
 buyforme-mcp	1.0.2	
-buyking-mcp	1.2.5	2026-11-15
+buyking-mcp	1.2.5	
+buymeacoffee-mcp	0.1.2	2026-11-22
 cabin-flights	0.1.1	
 cad-compare-mcp	0.2.1	
-cad-mcp-server	0.8.1	2026-11-15
+cad-mcp-server	0.8.1	
 calcom-mcp	1.1.0	
-calllint-mcp	0.2.1	2026-11-15
+calibre-mcp	0.14.0	2026-11-22
+calllint-mcp	0.2.1	
 callx402	1.0.5	
-canli-markets-mcp	0.17.0	2026-11-15
-canlii-mcp	1.1.4	2026-11-15
+candor-ts	0.43.0	2026-11-22
+canli-markets-mcp	0.17.0	
+canli-mcp	0.22.0	2026-11-22
+canlii-mcp	1.1.4	
+canvas-lms-mcp	2.11.1	2026-11-22
 capacity-attest	0.7.0	
 capmonster-mcp	0.1.14	
-carbone-mcp	2.4.1	2026-11-15
+captchano-mcp	1.0.0	2026-11-22
+carbone-mcp	2.4.1	
+cartier-mcp	1.0.1	2026-11-22
+casemargin-mcp-server	1.0.2	2026-11-22
 causallayer-mcp	0.4.0	
+cbr-mcp	1.0.1	2026-11-22
 cdc-data-mcp	1.0.1	
 cdnjs-mcp	1.0.3	
+celestrak-mcp	1.0.1	2026-11-22
 cert-atlas-mcp	1.3.0	
-cfpb-mcp	1.0.1	2026-11-15
+cfpb-mcp	1.0.1	
+chainanalyzer-mcp	1.8.0	2026-11-22
 chainward-mcp-server	0.2.3	
-chakorventures-mcp	1.0.4	2026-11-15
+chakorventures-mcp	1.0.4	
 chanel-mcp	1.0.1	
-changebook	0.10.2	2026-11-15
+changebook	0.10.2	
+chargescout	0.2.0	2026-11-22
+charlotteonthecheap-mcp	0.1.1	2026-11-22
 chartforge-mcp	0.1.4	
 chatatlas-local	0.1.2	
-chembl-mcp	1.0.1	2026-11-15
+chembl-mcp	1.0.1	
 chess-mcp-node	0.8.8	
 chinese-almanac-mcp	1.0.2	
 chinese-text-tools	1.0.3	
 chromium-bridge	0.5.3	
 chron-mcp	0.1.7	
-chutes-media-mcp	2.1.0	2026-11-15
+chutes-media-mcp	2.1.0	
+ci-guard-mcp	0.1.0	2026-11-22
+cigalpay-mcp	1.1.0	2026-11-22
 citable-mcp	0.6.3	
 citadel-mcp	2.2.0	
 claims-mcp	0.1.0	
 claude-code-conversation-search-mcp	1.1.3	
+claude-code-usage-mcp	0.1.0	2026-11-22
 claude-desktop-bridge	1.0.0	
-claude-interview-mode	0.5.1	2026-11-15
-claude-ops-telegram-server	0.2.1	2026-11-15
+claude-interview-mode	0.5.1	
+claude-ops-telegram-server	0.2.1	
 clawphunks-mcp	1.1.0	
+clean-markdown-mcp	1.1.3	2026-11-22
+clevelandart-mcp	1.0.1	2026-11-22
 clotr-guard	0.1.3	
+cloudgpu-mcp	0.16.8	2026-11-22
 cloudpin	1.2.3	
 cloudscope-mcp	0.3.3	
+cloudsketch-mcp	0.1.0	2026-11-22
 cn-theories-mcp	0.1.0	
-cob-rag-mcp	0.2.0	2026-11-15
-cocktaildb-mcp	1.0.0	2026-11-15
-code-auditor-mcp	5.0.2	2026-11-15
+cob-rag-mcp	0.2.0	
+cocktaildb-mcp	1.0.0	
+code-auditor-mcp	5.0.2	
 code-sentinel-mcp	0.2.6	
 codebase-chat-mcp	0.10.1	
-codeburn	0.9.28	2026-11-15
-codeinspectus	4.0.0	2026-11-15
+codeburn	0.9.28	
+codeinspectus	4.0.0	
+codeix	0.5.0	2026-11-22
 codex-delegate-mcp	2.8.0	
 codex-octopus	1.0.1	
-codex-supervisor-mcp	0.8.0	2026-11-15
-coinmetrics-mcp	1.0.0	2026-11-15
-coinopai-mcp	1.2.4	2026-11-15
+codex-subagent-mcp	0.6.0	2026-11-22
+codex-supervisor-mcp	0.8.0	
+codify-mcp	1.0.0	2026-11-22
+coinmetrics-mcp	1.0.0	
+coinopai-mcp	1.2.4	
+collective-memory	0.1.2	2026-11-22
+color-engine-mcp	1.0.1	2026-11-22
 colorblind-mcp	0.2.0	
 comfyui-mcp	0.52.206	
+comment-scraper-mcp	0.1.3	2026-11-22
+commitshow-mcp	0.2.2	2026-11-22
 commoncrawl-mcp	1.0.1	
+company-gibraltar-mcp	1.0.0	2026-11-22
 comprabtc-mcp	0.1.1	
 compute-api-mcp	1.0.5	
 computer-use-mcp	1.8.0	
 concord-engine	0.3.2	
-concord-mcp	0.4.1	2026-11-15
-confluent-mcp	1.0.1	2026-11-15
+concord-mcp	0.4.1	
+confluent-mcp	1.0.1	
 confucius-debug-mcp	2.0.1	
-congress-gov-mcp	1.0.1	2026-11-15
-connectiq-mcp-server	1.2.0	2026-11-15
-consolelog-mcp	0.1.0	2026-11-15
+congress-gov-mcp	1.0.1	
+connectiq-mcp-server	1.2.0	
+consolelog-mcp	0.1.0	
 container-registry-mcp	1.0.2	
 content-genie-mcp	2.9.4	
 context-awesome	0.1.1	
@@ -1693,53 +2361,76 @@ context-doctor	0.45.0
 context-fabric	1.2.2	
 context-mem	3.2.1	
 contract-ops-mcp	0.3.0	
-contri-mcp	0.2.0	2026-11-15
-convertica-mcp	0.1.3	2026-11-15
+contri-mcp	0.2.0	
+convertica-mcp	0.1.3	
 convertisseur-ia-mcp	1.0.1	
 convertkit-mcp	1.0.1	
-convexity-mcp	0.6.0	
+convexity-mcp	0.10.0	2026-11-22
+conviction-mcp	0.5.2	2026-11-22
+coolftp	0.1.4	2026-11-22
+coreforge-books-mcp	1.0.1	2026-11-22
 corroborate-mcp	0.1.3	
-coursecode	0.4.5	2026-11-15
+coursecode	0.4.5	
+covalent-bond	0.1.2	2026-11-22
 coverageunlocked-mcp	1.0.4	
+cowork-qa-mcp	0.1.1	2026-11-22
+crawlbit-mcp	1.0.1	2026-11-22
 crazyseo	0.1.2	
+creator-deals-mcp	1.0.2	2026-11-22
+crewhaus-mcp-server	1.0.1	2026-11-22
+crosspad-mcp-server	4.0.1	2026-11-22
 crypto-analysis-human-mcp	1.6.1	
 crypto-com-mcp	1.0.1	
+crypto-derivatives-mcp	0.6.1	2026-11-22
+crypto-tools-mcp	1.0.1	2026-11-22
 cryptoiz-mcp	4.16.17	
-cursor-delegate-mcp	2.8.0	2026-11-15
-cursor-telegram-chat	0.1.23	2026-11-15
-cvdsafe-mcp	0.2.0	2026-11-15
+ctxfile	0.6.0	2026-11-22
+cuehq-mcp	0.1.0	2026-11-22
+cursor-delegate-mcp	2.8.0	
+cursor-telegram-chat	0.1.23	
+cvdsafe-mcp	0.2.0	
 cverdict-mcp	0.1.3	
 cyberbrick-mcp	0.4.0	
 dailymed-mcp	1.0.1	
-data-gouv-mcp	1.0.1	2026-11-15
+data-gouv-mcp	1.0.1	
 databazaar-mcp	1.5.1	
-datacite-mcp	1.0.1	2026-11-15
-datascoop-mcp	1.0.0	2026-11-15
+datacite-mcp	1.0.1	
+datascoop-mcp	1.0.0	
 dates-le-mcp	2.5.0	
+db-mcp	1.0.2	2026-11-22
+dea-agents	0.4.0	2026-11-22
 dealhub-admin-mcp	1.0.1	
+dear-claude	1.2.0	2026-11-22
 debtfree-mcp-server	1.0.1	
 decisionmatrix-mcp	1.0.2	
 deckbase-mcp-server	1.0.0	
+deep-research-mcp-server	1.0.2	2026-11-22
+deepai-mcp	1.0.0	2026-11-22
 deepviews-mcp	1.1.3	
-dejared-mcp	1.0.0	2026-11-15
+dejared-mcp	1.0.0	
 delimit-cli	3.10.4	
 deliverkit-mcp	0.3.2	
 dembrandt	0.39.2	
 dependency-fitness-mcp	0.1.1	
-depwire-cli	1.29.0	2026-11-15
-design-lounge-mcp	0.2.7	2026-11-15
-dev-diagnosis-cli	0.2.2	2026-11-15
-devglow-mcp	1.6.0	2026-11-15
-devicecloud-mcp	0.3.3	2026-11-15
+dependency-mcp	0.0.5	2026-11-22
+deployvera-mcp	0.5.0	2026-11-22
+depot-mcp	0.2.1	2026-11-22
+depwire-cli	1.29.0	
+design-lounge-mcp	0.2.7	
+dev-diagnosis-cli	0.2.2	
+devglow-mcp	1.6.0	
+devicecloud-mcp	0.3.3	
 devkit-for-strapi-mcp	0.2.4	
 devx-multichain-balances	2.1.0	
 dexe-mcp	0.37.1	
 diagrams-mcp-server	0.11.0	
-digitalnz-mcp	1.0.1	2026-11-15
+digikey-mcp	1.0.0	2026-11-22
+digitalnz-mcp	1.0.1	
 dineroenlamesa-mcp	1.0.0	
 dingdawg-healthcare-agent	2.0.4	
 dingdawg-legal-agent	2.0.7	
-dingdawg-sales-agent	2.0.6	2026-11-15
+dingdawg-sales-agent	2.0.6	
+dingdawg-shield	1.0.4	2026-11-22
 disify-mcp	1.0.2	
 distill-mcp-server	0.1.1	
 dnd5e-mcp	1.0.1	
@@ -1747,11 +2438,12 @@ doab-mcp	1.0.0
 doc2video	0.2.3	
 docbot-mcp	1.0.4	
 docspell-mcp	1.0.0	
-document-integrity-validator-mcp	1.0.20	2026-11-15
+document-integrity-validator-mcp	1.0.20	
 docx-forge-mcp	0.1.1	
-dompruner-mcp	0.5.2	2026-11-15
+dompruner-mcp	0.5.2	
+dopaminedesk-ai-data-marketplace-mcp	2.11.3	2026-11-22
 downdetector-mcp	1.0.1	
-dracoon-mcp	1.0.0	2026-11-15
+dracoon-mcp	1.0.0	
 draw2agent	1.3.4	
 drawarch-mcp	0.2.0	
 dreamd-mcp	1.3.0	
@@ -1761,147 +2453,205 @@ driftwatch-mcp	0.1.2
 drillflow-mcp	1.0.96	
 drizzle-mcp	0.1.1	
 droidbar-mcp	0.1.1	
+dropperch-mcp	1.0.1	2026-11-22
+duduclaw	1.74.0	2026-11-22
 dummyjson-mcp	1.0.1	
 e3d-pilot	0.2.0	
 earnrate	0.2.21	
 earth-2-elevation-mcp	0.1.1	
-ecardwidget-mcp	0.5.2	2026-11-15
+easysend-mcp	1.0.1	2026-11-22
+ebenova-legal-docs-mcp	1.5.1	2026-11-22
+ecardwidget-mcp	0.5.2	
 edgeo-mcp	0.1.4	
-effectfence	0.3.0	2026-11-15
-egovframe-scaffold-mcp	1.20.0	2026-11-15
+edition-mcp-server	0.1.3	2026-11-22
+effectfence	0.3.0	
+egovframe-scaffold-mcp	1.20.0	
 egypt-research-mcp	1.2.0	
 eight-sleep-mcp-unofficial	0.2.5	
 einvoice-mcp	0.1.3	
-eleata-verify-mcp	0.1.1	2026-11-15
-eleion-scanner-mcp	0.1.1	2026-11-15
-ellmos-codecommander-mcp	1.3.26	
+eleata-verify-mcp	0.1.1	
+eleion-scanner-mcp	0.1.1	
+ellmos-codecommander-mcp	1.3.27	2026-11-22
+ellmos-filecommander-mcp	1.11.6	2026-11-22
 elyreon-workflow-rescue	1.0.1	
-email-validator-mcp	1.0.2	2026-11-15
+email-validator-mcp	1.0.2	
 endform	0.82.2	
+enpass-mcp	0.1.0	2026-11-22
 env-forge-mcp	1.0.3	
-envirocar-mcp	1.0.1	2026-11-15
-envsync-le-mcp	2.5.0	2026-11-15
-er-api-mcp	1.0.5	2026-11-15
+envirocar-mcp	1.0.1	
+envsync-le-mcp	2.5.0	
+er-api-mcp	1.0.5	
 erabi-mcp	0.1.6	
-erechnung-digital-mcp	0.1.1	2026-11-15
-etld-mcp-server	3.2.2	2026-11-15
-europepmc-mcp	1.0.1	2026-11-15
+erechnung-digital-mcp	0.1.1	
+etld-mcp-server	3.2.2	
+etoro-trading-mcp	1.0.1	2026-11-22
+europepmc-mcp	1.0.1	
+evernode-mcp	0.6.1	2026-11-22
+everything-mcp-server	0.1.0	2026-11-22
 evidence-diff-mcp	1.0.1	
 evipedia-mcp	0.1.30	
-evmole-mcp	0.9.4	2026-11-15
-evolution-whatsapp-mcp	0.3.1	2026-11-15
+evmole-mcp	0.9.4	
+evolution-whatsapp-mcp	0.3.1	
 execbro	2.20.0	
 exoplanets-mcp	1.0.1	
 expo-launch-video	0.1.2	
+extract-insurance	3.1.0	2026-11-22
+extraer-datos-ine-mcp	1.0.0	2026-11-22
 ezo-watcher	0.1.0	
 f-droid-mcp	1.0.1	
-faceit-mcp	1.0.0	2026-11-15
+faceit-mcp	1.0.0	
 failmodes-mcp	0.1.0	
-fattureincloud-mcp	0.5.1	2026-11-15
+fastpilot	0.5.1	2026-11-22
+fastx402-mcp	0.1.1	2026-11-22
+fattureincloud-mcp	0.5.1	
 fbi-wanted-mcp	1.0.1	
-fcc-mcp	1.0.1	2026-11-15
+fcc-mcp	1.0.1	
 fdic-mcp-server	3.0.1	
-fecklesspleb-actors-mcp	0.1.0	2026-11-15
+fecklesspleb-actors-mcp	0.1.0	
 federal-compass-mcp	0.1.10	
-fema-mcp	1.0.1	2026-11-15
+fedramp-docs-mcp	0.2.2	2026-11-22
+feedback-magic-mcp	1.3.1	2026-11-22
+fema-mcp	1.0.1	
+fendi-mcp	1.0.1	2026-11-22
+ffmpeg-mcp-server	1.0.2	2026-11-22
+fhirhydrant	0.17.3	2026-11-22
 fiatdock-mcp	1.16.1	
 figbridge-mcp	0.4.0	
-figjam-context-mcp	0.13.1	2026-11-15
+figjam-context-mcp	0.13.1	
+figma-developer-mcp	0.13.2	2026-11-22
 figma-mcp-rs	0.1.0	
+figma-vector-mcp	0.3.3	2026-11-22
 figme-mcp	1.1.1	
+filechanger-mcp	0.1.3	2026-11-22
 fileforge-mcp-server	0.2.2	
-filesystem-mcp	1.3.0	2026-11-15
-finalspace-mcp	1.0.0	2026-11-15
+fileshareforagents-mcp	0.2.0	2026-11-22
+filesystem-mcp	1.3.0	
+finalspace-mcp	1.0.0	
 finance-data-mcp	0.1.2	
 finance-mcp-server	1.0.1	
+finlight-mcp	1.0.3	2026-11-22
 finops-focus-mcp	0.2.0	
 finoptima	1.3.1	
-firenook	0.2.5	2026-11-15
-firstdollar	1.0.7	2026-11-15
+firenook	0.2.5	
+firstdollar	1.0.7	
 fitfilesize-mcp	0.2.1	
 fixgraph-mcp	1.0.2	
 flagpost	0.1.1	
-flagrix	0.5.1	2026-11-15
+flagrix	0.5.1	
 flarehq-mcp	0.2.1	
 flowzap-mcp	2.2.1	
-flutter-skill	0.9.36	2026-11-15
+flutter-skill	0.9.36	
 font-lab	1.0.0	
-founden-mcp	0.1.0	2026-11-15
+font-proof-mcp	0.1.0	2026-11-22
+forgebridge	0.1.0-alpha.4	2026-11-22
+forkmind	0.9.0	2026-11-22
+founden-mcp	0.1.0	
+fourchan-mcp	1.0.1	2026-11-22
 fox-mcp	1.0.0	
 framegrove	1.0.0	
-fred-economic-mcp	1.0.3	2026-11-15
-freshvault	0.4.0	2026-11-15
+france-data-mcp	0.32.0	2026-11-22
+fred-economic-mcp	1.0.3	
+freshvault	0.4.0	
 funplay-cocos-mcp	0.7.0	
-funplay-unreal-mcp	0.2.0	2026-11-15
+funplay-unreal-mcp	0.2.0	
 gage-mcp	0.7.0	
-galactic-bridge-mcp	0.1.1	2026-11-15
-galapagos-trip-planner-mcp	1.0.0	2026-11-15
+galactic-bridge-mcp	0.1.1	
+galapagos-trip-planner-mcp	1.0.0	
 gambot-mcp	1.9.1	
 garmin-connect-personal-api-mcp	1.0.0	
-gasfeepredictor-mcp	1.0.1	2026-11-15
+garmin-mcp	1.4.3	2026-11-22
+gasfeepredictor-mcp	1.0.1	
 gateio-mcp	1.0.0	
-gbfs-france-mcp	0.1.5	2026-11-15
-gdocs-comments-mcp	0.1.1	2026-11-15
+gbfs-france-mcp	0.1.5	
+gdocs-comments-mcp	0.1.1	
+geckoterminal-mcp	1.0.1	2026-11-22
 gemini-researcher	1.0.2	
-gemsmakers-mcp-server	1.0.0	2026-11-15
-genderize-mcp	1.0.0	2026-11-15
-generect-ultimate-mcp	0.13.2	2026-11-15
+gemsmakers-mcp-server	1.0.0	
+gen-image-mcp	0.2.3	2026-11-22
+genderize-mcp	1.0.0	
+generect-ultimate-mcp	0.13.2	
 genius-mcp	1.0.0	
-geo-tool-check	1.0.1	2026-11-15
+geo-figure-mcp	0.2.11	2026-11-22
+geo-tool-check	1.0.1	
+getdigitalcraft-mcp-render	1.0.1	2026-11-22
 getdr-mcp	0.2.0	
+getmattered-mcp	1.21.2	2026-11-22
 gft-mcp	0.1.4	
-ghostbus	0.5.11	
+gguf-mcp	0.1.1	2026-11-22
+ghidralens	0.1.1	2026-11-22
+ghostbus	0.5.12	2026-11-22
 ghostchars	1.0.2	
 ghostfox	0.9.2	
 gia-mcp-server	0.4.4	
+git-archaeologist-mcp	0.1.1	2026-11-22
 git-for-me	0.1.3	
-git-reflog-archaeologist-mcp	1.0.1	2026-11-15
-gitflic-cli-mcp	0.5.1	2026-11-15
+git-reflog-archaeologist-mcp	1.0.1	
+gitflic-cli-mcp	0.5.1	
 github-intel-mcp	1.0.0	
+gitwhy-mcp	0.7.9	2026-11-22
+glory-mcp	0.2.2	2026-11-22
+glot-i18n	0.4.0	2026-11-22
+glyphloop	0.1.0-beta.0	2026-11-22
 gmail-tidy-mcp	0.5.1	
-gocardless-mcp	1.0.0	2026-11-15
+gocardless-mcp	1.0.0	
+gocd-mcp	0.1.2	2026-11-22
 godot-forge	0.1.2	
 godotwright	0.6.0	
-gog-mcp	1.0.1	2026-11-15
+gog-mcp	1.0.1	
 gogcli-mcp-maps	4.11.1	
+gogcli-mcp-sheets	4.12.0	2026-11-22
 golive-mcp	1.0.1	
-google-classroom-student-mcp	0.1.10	2026-11-15
+good-eggs-mcp-server	0.1.11	2026-11-22
+google-autocomplete-mcp	1.0.0	2026-11-22
+google-classroom-student-mcp	0.1.10	
+google-docs-workspace-mcp-server	0.1.4	2026-11-22
+google-fonts-mcp	1.0.0	2026-11-22
 google-health-mcp-unofficial	0.5.2	
+google-jules-mcp-server	0.4.0	2026-11-22
+google-surf-mcp	1.1.8	2026-11-22
 googlenews-mcp	1.0.0	
 gotify-mcp	1.0.0	
+govcontractscout-mcp	1.0.5	2026-11-22
 govtrack-mcp	1.0.0	
 gpodder-mcp	1.0.0	
-gpt-image-2-5-mcp	0.2.2	2026-11-15
+gpt-image-2-5-mcp	0.2.2	
 grafta	0.3.0	
 graph-atlas-mcp	0.4.0	
-gravityport-mcp	0.3.12	2026-11-15
+graph-excel-mcp	0.5.2	2026-11-22
+gravityport-mcp	0.3.12	
 greenops-scan	0.1.39	
+gretl-mcp	0.2.1	2026-11-22
 gridwork-license	1.0.0	
-grok-build-mcp-server	0.2.5	2026-11-15
-groundlink-mcp	0.1.1	2026-11-15
-groundmail-mcp	0.29.11	2026-11-15
+grok-build-mcp-server	0.2.5	
+groundlink-mcp	0.1.1	
+groundmail-mcp	0.29.11	
+gsc-magic-mcp	0.1.0	2026-11-22
 gucci-mcp	1.0.1	
-guesty-mcp-server	0.11.2	2026-11-15
+guesty-mcp-server	0.11.2	
 gulliver-mcp	0.3.0	
-ha-mcp-server	0.6.1	2026-11-15
-hana-cli	4.202607.1	2026-11-15
+gw2-mcp	1.0.1	2026-11-22
+ha-mcp-server	0.6.1	
+hana-cli	4.202607.1	
+handinloop-mcp-server	0.9.1	2026-11-22
+haru-cms-mcp	1.0.1	2026-11-22
 headroomd	0.2.20	
 healthaccess-mcp	1.0.0	
-hedera-hcs-mcp-server	1.0.1	2026-11-15
+hedera-hcs-mcp-server	1.0.1	
 hermai-cli	0.3.0	
-hermes-action-bridge	0.6.3	2026-11-15
-hermes-mcp	1.0.1	2026-11-15
+hermes-action-bridge	0.6.3	
+hermes-mcp	1.0.1	
 hermoso	0.1.529	
 hex-mcp	1.0.0	
 highwire-mcp	0.14.2	
 hilan-mcp	0.3.2	
-hipsum-mcp	1.0.0	2026-11-15
+hipsum-mcp	1.0.0	
 hiring-mender-mcp	0.1.0	
 hledit-mcp	0.1.4	
 hlplanet-mcp	1.0.0	
 hn-hiring-mcp	0.1.0	
 hogswap-mcp	0.4.0	
 hoi4-agent-tools	4.14.0	
+holographic-memory-mcp	0.1.2	2026-11-22
 holomime	1.9.2	
 home-renovation-free-tools	1.0.0	
 homebrew-mcp	1.0.0	
@@ -1909,213 +2659,274 @@ homes-mcp	2.2.0
 hotedit	0.5.0	
 housestyle-mcp	1.0.2	
 hscope	0.1.3	
-humanifyme	0.2.2	2026-11-15
+huddoai	0.10.2	2026-11-22
+humanifyme	0.2.2	
 humanpages	1.4.6	
 hvtracker-mcp	0.4.0	
 hyre-mcp	2.2.0	
-i18n-le-mcp	1.1.0	2026-11-15
-ibanforge-mcp	1.10.0	2026-11-15
+i18n-le-mcp	1.1.0	
+ibanforge-mcp	1.10.0	
 icantmarket-mcp	0.1.0	
-icon-composer-mcp	1.1.0	2026-11-15
+icon-composer-mcp	1.1.0	
 idmly-mcp	0.1.4	
+ietf-mcp	1.0.1	2026-11-22
+ifandco-mcp	1.0.1	2026-11-22
 ifdb-mcp-server	1.0.0	
+ilo415-research-mcp	1.1.0	2026-11-22
 imf-mcp	1.0.0	
 in-memoria	0.5.7	
 indesign-nutria-mcp	1.6.1	
 india-reg-mcp	1.0.1	
 infernoflow	0.50.0	
-inkbloc-mcp	0.1.2	2026-11-15
+infinitecampus-mcp	3.3.2	2026-11-22
+inistate-mcp	1.5.1	2026-11-22
+inkbloc-mcp	0.1.2	
 insightsocial	0.3.9	
 inspectrum	0.2.3	
 inspirobot-mcp	1.0.0	
 instagit	0.1.5	
-interbanking-mcp	1.0.2	2026-11-15
+interbanking-mcp	1.0.2	
 internet-radio-mcp	1.0.4	
-invoiceflow-mcp-server	1.4.0	2026-11-15
-invovate-mcp-server	0.1.1	2026-11-15
-ip-calc-mcp	1.0.4	2026-11-15
-ip-geo-mcp	1.0.0	2026-11-15
-ipapi-mcp	1.0.0	2026-11-15
-ipgeolocation-io-mcp	2.0.3	2026-11-15
-iptime-mcp	0.2.2	2026-11-15
+inventor-studio	1.0.3	2026-11-22
+invoiceflow-mcp-server	1.4.0	
+invovate-mcp-server	0.1.1	
+ip-calc-mcp	1.0.4	
+ip-geo-mcp	1.0.0	
+ipapi-mcp	1.0.0	
+ipgeolocation-io-mcp	2.0.3	
+iptime-mcp	0.2.2	
 ipwhois-mcp	1.0.0	
-iz-tolk-mcp	1.2.1	2026-11-15
+iteratools-mcp	1.0.5	2026-11-22
+ithura-mcp	1.0.1	2026-11-22
+iz-tolk-mcp	1.2.1	
 japan-ux-mcp	2.1.1	
+javabytes-mcp	1.5.2	2026-11-22
 jbnu-lms-mcp	0.8.0	
 jd-intel-mcp	0.13.0	
-jedanderson-corpus-mcp	1.0.0	2026-11-15
+jedanderson-corpus-mcp	1.0.0	
 jeero-mcp	2.0.0	
+jev-decision-mcp	0.3.0	2026-11-22
 jev-use	0.8.0	
-jira-easy-mcp	2.0.1	2026-11-15
-job-search-mcp	0.0.6	2026-11-15
-jobyap-mcp	1.1.0	2026-11-15
+jh-presentation	0.9.0	2026-11-22
+jira-easy-mcp	2.0.1	
+job-search-mcp	0.0.6	
+jobyap-mcp	1.1.0	
+jokes-mcp	1.0.0	2026-11-22
 joplin-mcp-server	2.3.3	
 json-contracts	0.1.2	
-jsonlink-mcp	0.2.0	2026-11-15
+jsonlink-mcp	0.2.0	
 jsonloupe	1.9.2	
-jsonshim-mcp	1.0.2	2026-11-15
+jsonshim-mcp	1.0.2	
+juris-licita-mcp	0.1.0	2026-11-22
 jwt-tools-mcp	1.0.0	
-k6-mcp	1.0.0	2026-11-15
+k6-mcp	1.0.0	
 kairos-lang-mcp	1.1.0	
-kanzeigen-mcp	1.1.0	2026-11-15
-karea-mcp	0.15.1	2026-11-15
+kanzeigen-mcp	1.1.0	
+karea-mcp	0.15.1	
+kaspa-script-mcp	0.1.1	2026-11-22
 kepta-mcp	3.4.0	
-kernal-mcp	0.2.1	2026-11-15
-kicad-copilot-mcp	0.1.0	2026-11-15
-kicad-mcp-pro	4.16.0	2026-11-15
-kie-mcp	4.0.1	2026-11-15
-kiriya	0.3.0	2026-11-15
+kernal-mcp	0.2.1	
+kicad-copilot-mcp	0.1.0	
+kicad-mcp-pro	4.16.0	
+kie-mcp	4.0.1	
+kiriya	0.3.0	
 kitbag-mcp	1.1.2	
 kitsu-mcp	1.0.0	
+klakix-mcp	0.1.0	2026-11-22
 kleinanzeigen-mcp	0.1.0	
 klypix-mcp	1.112.1	
 knownfix	0.3.17	
-kodza-mcp	0.1.8	2026-11-15
-kogiqa-mcp	1.3.103	2026-11-15
+kodza-mcp	0.1.8	
+kogiqa-mcp	1.3.103	
 koma-gate-mcp	0.1.1	
 kontra-mcp	0.1.2	
-korean-parenting-mcp	0.2.0	2026-11-15
+korean-parenting-mcp	0.2.0	
 kronicle-lite	0.8.0	
-kshana-mcp	0.41.0	2026-11-15
+kshana-mcp	0.41.0	
 lago-mcp	1.0.0	
+lagsmith-mcp	1.0.1	2026-11-22
 landmines	0.2.1	
 launch-library-mcp	1.0.1	
 lawai-mcp-server	0.2.1	
 laya-mcp	0.1.5	
-leapfrog-mcp	0.7.4	2026-11-15
+leapfrog-mcp	0.7.4	
 leavesheet-mcp	0.1.0	
 legitshow-mcp	0.1.0	
 lema-mcp	0.22.2	
+levelrail-mcp	1.5.7	2026-11-22
+levels-of-self-mcp-server	1.0.1	2026-11-22
 lexilint-mcp	1.2.0	
-leximo-ai-call-assistant-mcp-server	1.0.1	2026-11-15
+leximo-ai-call-assistant-mcp-server	1.0.1	
 license-compliance-mcp	1.0.2	
-lineupify-mcp	0.6.0	2026-11-15
+lightning-faucet-mcp	2.0.5	2026-11-22
+lightning-fm-mcp	0.1.5	2026-11-22
+lineupify-mcp	0.6.0	
 lingjing-classroom-mcp	1.0.2	
 lingnao-mcp	1.4.2	
+linkedin-campaign-manager-mcp	1.0.1	2026-11-22
 linkedin-profile-mcp	0.1.1	
 linkmeta-mcp	1.2.0	
 listenbrainz-mcp	1.0.0	
+listingbureau-mcp	0.1.11	2026-11-22
 literal-mcp	1.0.0	
 literature-clock-mcp	1.6.2	
 litescope	0.9.0	
+llm-cost-estimator-mcp	0.3.1	2026-11-22
 llmverify	1.8.0	
 llmxray	0.8.13	
-loaditout-mcp-server	0.2.4	2026-11-15
+llng-mcp	0.1.1	2026-11-22
+loaditout-mcp-server	0.2.4	
 lobster-mcp	1.1.0	
+local-workspace-mcp	0.2.2	2026-11-22
 lock-autopsy	0.2.0	
-loki-mode	10.9.1	2026-11-15
+loki-mode	10.9.1	
+lol-datadragon-mcp	1.0.0	2026-11-22
 lookupd	0.1.2	
 lorcana-oracle	0.1.0	
-lorem-forge-mcp	1.0.3	2026-11-15
-lotus-wisdom-mcp	0.10.0	2026-11-15
-lovie	1.0.10	2026-11-15
-lyrics-mcp	1.0.0	2026-11-15
+lorem-forge-mcp	1.0.3	
+lorem-mcp	0.2.3	2026-11-22
+lostmedia-mcp	1.0.0	2026-11-22
+lotus-wisdom-mcp	0.10.0	
+louisvuitton-mcp	1.0.0	2026-11-22
+lovie	1.0.10	
+lyrics-mcp	1.0.0	
 mac-organiser-mcp	0.2.0	
-mac-shortcuts-mcp	0.1.2	2026-11-15
+mac-shortcuts-mcp	0.1.2	
+mac-use-mcp	1.1.1	2026-11-22
 macos-vision-mcp	0.7.0	
 mailbox-mcp	0.13.1	
-mailcycle-mcp	0.6.3	2026-11-15
+mailcycle-mcp	0.6.3	
+mailgun-mcp	1.0.1	2026-11-22
 make-mcp-server	1.3.3	
-mapleai-mcp	0.3.1	2026-11-15
-mappls-mcp	2.0.0	2026-11-15
-maqami-travel	1.0.9	2026-11-15
+mal-mcp	0.11.0	2026-11-22
+mapleai-mcp	0.3.1	
+mappls-mcp	2.0.0	
+maqami-travel	1.0.9	
+marine-forecast-mcp	1.0.0	2026-11-22
 markdown-forge-mcp	1.0.3	
 market-depth-lab-mcp-server	0.2.2	
-marketnow-mcp	1.16.1	2026-11-15
-marketstack-mcp	1.0.1	2026-11-15
+marketnow-mcp	1.16.1	
+marketplaces-mcp-ru	0.7.0	2026-11-22
+marketstack-mcp	1.0.1	
 marklayer-mcp	0.6.1	
+markudown-mcp	2.0.0	2026-11-22
 matchcv-mcp	0.1.1	
 math-svg-mcp	1.1.2	
 matrix-tsunagi-migration	0.4.0	
 maxaeo-ai-visibility-mcp	0.4.0	
-mc-changelog-mcp	1.0.0	2026-11-15
-mcacp	0.1.3	2026-11-15
+mbta-mcp	1.0.0	2026-11-22
+mc-changelog-mcp	1.0.0	
+mcacp	0.1.3	
 mcp-adr-analysis-server	2.14.19	
 mcp-agent-trace-inspector	1.0.1	
+mcp-agentdocs	0.1.3	2026-11-22
+mcp-anything	0.2.0	2026-11-22
 mcp-architector	1.11.1	
-mcp-ariel-memory	1.0.0	2026-11-15
+mcp-ariel-memory	1.0.0	
+mcp-asc	2.0.4	2026-11-22
 mcp-astgl-knowledge	1.3.1	
-mcp-attest-demo	0.2.0	2026-11-15
-mcp-avito-ads	1.3.1	2026-11-15
+mcp-attest-demo	0.2.0	
+mcp-avito-ads	1.3.1	
+mcp-baepsae	6.3.0	2026-11-22
 mcp-bastion	1.5.0	
 mcp-bbc-goodfood	1.2.0	
-mcp-belgium	1.0.4	2026-11-15
-mcp-better	0.5.0	2026-11-15
-mcp-bideetmusique	2.1.0	2026-11-15
-mcp-check-licenses	0.2.0	2026-11-15
-mcp-comfy-ui-builder	2.4.1	2026-11-15
+mcp-belgium	1.0.4	
+mcp-better	0.7.0	2026-11-22
+mcp-bideetmusique	2.1.0	
+mcp-check-licenses	0.2.0	
+mcp-chrome-launcher	0.1.3	2026-11-22
+mcp-comfy-ui-builder	2.4.1	
+mcp-contract-security	0.1.1	2026-11-22
 mcp-db-connect	0.1.21	
 mcp-docker-server	1.0.1	
 mcp-drawthings	1.1.2	
-mcp-event-intelligence	0.11.0	
-mcp-failure-lab	0.13.2	2026-11-15
-mcp-gads	0.5.4	2026-11-15
+mcp-elempleo	0.1.0	2026-11-22
+mcp-event-intelligence	1.0.0	2026-11-22
+mcp-failure-lab	0.13.2	
+mcp-gads	0.5.4	
 mcp-gateway-scan	0.1.1	
 mcp-glue-code-generator	1.0.6	
 mcp-google-contacts	1.1.2	
-mcp-google-merchants	1.3.2	2026-11-15
+mcp-google-merchants	1.3.2	
 mcp-google-tagmanager	1.3.2	
 mcp-google-tasks	1.1.2	
+mcp-graphql-bridge	2.1.0	2026-11-22
 mcp-growi	0.2.0	
 mcp-guard-scan	1.1.1	
-mcp-immo-olv	1.12.0	2026-11-15
-mcp-itglue	0.6.0	2026-11-15
-mcp-legal-doc-analyzer	1.0.1	2026-11-15
+mcp-immo-olv	1.12.0	
+mcp-itglue	0.6.0	
+mcp-lazy-proxy	0.2.0	2026-11-22
+mcp-legal-doc-analyzer	1.0.1	
+mcp-link-doctor	0.1.1	2026-11-22
+mcp-listen	0.1.1	2026-11-22
 mcp-lrclib	2.1.0	
 mcp-magneto	0.1.0	
 mcp-mat	0.1.0	
 mcp-me	0.6.0	
-mcp-omnisearch	0.0.15	2026-11-15
+mcp-omnisearch	0.0.15	
+mcp-open-library	1.3.0	2026-11-22
 mcp-output-firewall	0.3.0	
+mcp-planner	0.4.0	2026-11-22
 mcp-postgres-server	0.3.1	
+mcp-protocol-conformance	0.2.2	2026-11-22
 mcp-prowl	0.1.1	
+mcp-ptitchef	1.1.0	2026-11-22
 mcp-queue-doctor	0.2.2	
 mcp-retriever	0.0.24	
 mcp-roadmapsh	0.2.0	
 mcp-rubber-duck	1.18.0	
-mcp-rule34	2.1.0	2026-11-15
+mcp-rule34	2.1.0	
 mcp-rzd-tickets	0.1.2	
 mcp-security-guard	0.9.1	
-mcp-server-andru-intelligence	2.0.2	2026-11-15
-mcp-server-ava	0.1.3	2026-11-15
+mcp-server-andru-intelligence	2.0.2	
+mcp-server-ava	0.1.3	
 mcp-server-cloudflare-dns	1.0.2	
+mcp-server-db2i	3.8.9	2026-11-22
 mcp-server-devutils	1.0.2	
+mcp-server-erechnung	1.0.2	2026-11-22
 mcp-server-geodata-placefinder	2.0.0	
 mcp-server-github-gist	1.0.2	
-mcp-server-health-monitor	1.0.1	2026-11-15
-mcp-server-indexforge	1.0.2	2026-11-15
+mcp-server-health-monitor	1.0.1	
+mcp-server-indexforge	1.0.2	
 mcp-server-markdown	1.0.1	
-mcp-server-npm-plus	1.0.1	2026-11-15
+mcp-server-npm-plus	1.0.1	
+mcp-server-qubic	0.2.0	2026-11-22
 mcp-server-scraper	1.0.1	
 mcp-server-security-scanner	1.1.4	
 mcp-server-serp-title-width	0.1.0	
 mcp-server-sfmc	2.10.1	
+mcp-server-trustcar	1.0.2	2026-11-22
 mcp-sophon	0.5.4	
 mcp-sqlite-server	1.0.1	
 mcp-stashbox	2.1.0	
+mcp-supertoinette	1.2.0	2026-11-22
 mcp-swiss	0.9.0	
 mcp-tenant-isolation	2.0.0	
+mcp-threatintel-server	1.0.1	2026-11-22
 mcp-ticket-demo	1.9.0	
-mcp-token-optimizer	0.1.1	2026-11-15
+mcp-token-optimizer	0.1.1	
 mcp-udacity-commit	1.2.2	
-mcp-virtual-fs	0.2.2	2026-11-15
-mcp-vk-ads	1.8.3	2026-11-15
-mcp-web-recon-agent	0.8.1	2026-11-15
+mcp-virtual-fs	0.2.2	
+mcp-vk-ads	1.8.3	
+mcp-web-recon-agent	0.8.1	
+mcp-xmorf	1.0.2	2026-11-22
 mcpfabric-mcp-server	0.9.0	
-mcpvault-mcp	0.2.2	2026-11-15
+mcpvault-mcp	0.2.2	
 mcstatus-mcp	1.0.0	
 md-feedback	1.5.6	
-md-log-mcp	1.3.1	2026-11-15
-mdshare-mcp	1.5.0	2026-11-15
+md-log-mcp	1.3.1	
+mdshare-mcp	1.5.0	
+medrxiv-mcp	1.0.0	2026-11-22
+memeboat-mcp	0.3.0	2026-11-22
 memegician-mcp	1.0.0	
 memini	0.4.0	
-memocall	0.1.0	2026-11-15
-memory-for-ai-mcp	0.11.0	2026-11-15
+memocall	0.1.0	
+memory-for-ai-mcp	0.11.0	
 memorylens-mcp	2.1.3	
 menhthien	1.0.2	
 mercury-mcp	1.0.0	
-mergewarden-mcp	0.9.0	2026-11-15
-meridian-skills-mcp	1.0.0	2026-11-15
+mergewarden-mcp	0.9.0	
+meridian-skills-mcp	1.0.0	
 merx-mcp	1.0.5	
 met-mcp	0.2.0	
 metamuse-mcp	0.1.2	
@@ -2125,133 +2936,181 @@ mexc-mcp	1.0.0
 mexicoapi-mcp	0.2.1	
 microlink-mcp	1.0.2	
 microsoft-outlook-mcp	1.0.1	
-migration-map-mcp	1.0.2	2026-11-15
+midnight-cast	0.2.2	2026-11-22
+migration-map-mcp	1.0.2	
 migrationpilot	1.6.4	
-mind-map-mcp	1.12.13	2026-11-15
+mimikyu-mcp	0.2.0	2026-11-22
+mind-map-mcp	1.12.13	
 mindvalley-products-mcp	1.0.1	
-minipainter	0.7.3	2026-11-15
+minipainter	0.7.3	
 minnimemory	1.4.2	
-mirofy-cli	0.6.0	2026-11-15
+mirofy-cli	0.6.0	
+miromiro-mcp	0.3.1	2026-11-22
 missinglinkz	1.1.7	
 missoma-mcp	1.0.0	
-mit-dining-mcp	1.0.1	2026-11-15
+mit-dining-mcp	1.0.1	
 mixcloud-mcp	1.0.0	
 mizuki-mcp	0.1.2	
 mlola-ui	1.14.3	
 mmm-mcp-server	0.5.0	
-mmt-mcp	1.42.4	2026-11-15
+mmt-mcp	1.42.4	
 mnemon-mcp	1.0.1	
-mnogoreels-mcp	1.0.0	2026-11-15
+mnogoreels-mcp	1.0.0	
+mobai-mcp	1.2.1	2026-11-22
 mobygames-mcp	1.1.3	
-modelbound-mcp	0.1.2	2026-11-15
-moltalyzer-mcp	1.7.0	2026-11-15
+model-shunt	1.2.1	2026-11-22
+modelbound-mcp	0.1.2	
+moldsim-mcp	0.4.1	2026-11-22
+moltalyzer-mcp	1.7.0	
 moltbridge	0.1.5	
 moretes-aws-architect-mcp	0.5.0	
 morphogen-mcp	0.2.0	
-motionlint	0.2.1	2026-11-15
+motionlint	0.2.1	
+mozaic-mcp-server	2.14.3	2026-11-22
 mpp32-mcp-server	1.1.2	
+ms-contacts-mcp	1.0.1	2026-11-22
 ms-sharepoint-mcp	1.0.1	
-mtg-mcp	1.0.0	2026-11-15
+mtg-mcp	1.0.0	
+mtg-oracle	0.1.0	2026-11-22
+mtor-atlas-mcp	1.3.3	2026-11-22
+mufmuf-mcp	0.1.1	2026-11-22
+mulmocast-vision	1.0.1	2026-11-22
 murmur-cli	1.0.2	
-muslim-prayer-mcp	1.1.1	2026-11-15
+murmur-mcp	1.0.0	2026-11-22
+muslim-prayer-mcp	1.1.1	
 mychart-mcp-server	1.0.0	
-myfatoorah-mcp	0.1.0	2026-11-15
-mymultisig-mcp	0.1.3	2026-11-15
-myrmigo-mcp	0.1.0	2026-11-15
-nadbounty-mcp	0.2.0	2026-11-15
-nakkas	0.5.0	2026-11-15
+myfatoorah-mcp	0.1.0	
+mymultisig-mcp	0.1.3	
+myrmigo-mcp	0.1.0	
+n8n-pro-mcp	1.0.0	2026-11-22
+nadbounty-mcp	0.2.0	
+nakkas	0.5.0	
 nanocalcs-mcp	0.2.1	
 napkin-mcp	0.1.0	
-nasa-epic-mcp	1.0.0	2026-11-15
+nasa-epic-mcp	1.0.0	
 nationalize-mcp	1.0.0	
 native-devtools-mcp	0.10.1	
-navigera	0.14.0	2026-11-15
+navigera	0.14.0	
 nbp-mcp	1.0.0	
-ndbc-buoy-mcp	1.0.0	2026-11-15
+ndbc-buoy-mcp	1.0.0	
 ndjson-local-log-triage-mcp	0.2.0	
-neosatoshi-card-mcp	0.7.0	2026-11-15
+nelly-elephant-mcp	1.0.3	2026-11-22
+neosatoshi-card-mcp	0.7.0	
 neosql-mcp	1.9.0	
-netintel-mcp	1.1.68	2026-11-15
+netintel-mcp	1.1.68	
+next-finance-mcp	0.9.163	2026-11-22
 nextbus-mcp	1.0.0	
 ng-postcode-mcp	0.4.2	
-nightmarquee	0.1.6	2026-11-15
+nido-mcp	4.11.0	2026-11-22
+nightmarquee	0.1.6	
 nix-packages-mcp	1.0.0	
 no-as-service	1.0.2	
 node9-ai	2.26.2	
+nomarmy	0.1.0-beta.22	2026-11-22
+nonecap	0.13.0	2026-11-22
+notemend	0.1.37	2026-11-22
 notion-arena-mcp	0.2.2	
-novai-mcp-server	0.1.1	2026-11-15
+novai-mcp-server	0.1.1	
 npm-run-mcp-server	0.2.12	
-nsgoods-mcp	1.0.3	2026-11-15
+npx-vibe	3.0.0	2026-11-22
+nsgoods-mcp	1.0.3	
 nuttle-mcp	0.1.0	
-nvd-cve-mcp	1.0.0	2026-11-15
+nvd-cve-mcp	1.0.0	
 nyuchi-docs-mcp	0.1.0	
 obelisk-mcp	0.2.0	
 obra-cto	0.3.0	
 octocode-mcp	7.0.9	
-odds-api-mcp-server	1.8.4	2026-11-15
+odds-api-mcp-server	1.8.4	
 ofw-mcp	2.27.4	
-olostep-mcp	1.0.21	2026-11-15
+ohm-mcp	1.0.1	2026-11-22
+olostep-mcp	1.0.21	
 omdb-mcp	1.0.0	
 omnarai-mcp	1.12.0	
 on-this-day-mcp	1.0.0	
 one-search-mcp	1.2.4	
 one-shot-ui	0.7.0	
 onehome-mcp	1.2.1	
+onesignal-mcp	1.0.0	2026-11-22
 oorep-mcp	1.2.5	
-oortmem	0.10.0	2026-11-15
+oortmem	0.10.0	
 opedd-mcp	0.12.15	
 open-compute-mcp	0.1.0-alpha.6	
-open-notify-mcp	1.0.0	2026-11-15
+open-notify-mcp	1.0.0	
 open-primitive-mcp	1.2.0	
 open-transfer-times-mcp	0.3.0	
-open-vsx-mcp	1.0.0	2026-11-15
+open-vsx-mcp	1.0.0	
 open-zk-kb	1.4.4	
-openbrewery-mcp	1.0.0	2026-11-15
+openbrewery-mcp	1.0.0	
 openchargemap-mcp	1.0.0	
 openclaw-control-mcp	0.8.3	
-openfateai-mcp	0.1.0	2026-11-15
-openrouter-admin-mcp	0.7.3	2026-11-15
-options-data-mcp	0.1.2	2026-11-15
+openfateai-mcp	0.1.0	
+openplaques-mcp	1.0.0	2026-11-22
+openrouter-admin-mcp	0.7.3	
+openses-mcp	1.0.0	2026-11-22
+opentable-mcp	1.4.1	2026-11-22
+options-data-mcp	0.1.2	
 optiq-mcp	0.1.0-beta.3	
+orchestrui	0.4.0	2026-11-22
+ordan-mcp	0.1.4	2026-11-22
 orisha-data-mcp	0.1.1	
+orla-cli	0.5.3	2026-11-22
 osf-data-marketplace	1.0.2	
 osm-notes-mcp	1.0.1	
 osrm-mcp	1.0.0	
 oss-search	0.3.2	
-ossfind	0.1.12	2026-11-15
-osv-mcp	1.0.1	2026-11-15
+ossfind	0.1.12	
+osv-mcp	1.0.1	
 otp-mcp-server	0.5.3	
-ovellum	0.24.0	2026-11-15
+outrank-cli	0.10.0	2026-11-22
+outreach-deliverability-mcp	1.0.2	2026-11-22
+ovellum	0.24.0	
+overpass-mcp	1.0.0	2026-11-22
+overspan-mcp	0.1.2	2026-11-22
+owasp-mcp-scan	0.2.1	2026-11-22
 owncloud-mcp	1.0.2	
 oyez-mcp	1.0.0	
-ozmoz	0.1.78	2026-11-15
+ozmoz	0.1.78	
 paceva-garmin-mcp	0.1.0	
-pagerunner	0.8.0	2026-11-15
+pagerunner	0.8.0	
 painprep-mcp-server	0.1.2	
 paired-mcp	0.1.0	
 paironce	0.11.4	
-palyan-ai-ops-mcp-server	1.0.1	2026-11-15
+palyan-ai-ops-mcp-server	1.0.1	
 pangolinfo-review-mining-mcp	0.1.2	
 panini-connector-mcp	0.1.3	
-paperless-ngx-mcp	3.2.1	2026-11-15
+paperless-ngx-mcp	3.2.1	
+papersprocket-mcp	1.0.0	2026-11-22
+papertrade-ai	0.1.0	2026-11-22
+papertype-mcp	0.1.0	2026-11-22
 paprika3d	0.2.4	
-parallel-browser-mcp	0.1.14	2026-11-15
+paraglide-messages-mcp	0.3.0	2026-11-22
+parallel-browser-mcp	0.1.14	
+parecode	0.7.0	2026-11-22
 paris-compass-mcp	0.1.4	
+parsi-mcp	0.3.0	2026-11-22
+partner-center-mcp	0.18.0	2026-11-22
 password-forge-mcp	1.0.3	
-patchxnote-agent	0.2.15	2026-11-15
+patchloom	0.37.10	2026-11-22
+patchxnote-agent	0.2.15	
 patents-mcp	1.0.0	
-pbdb-mcp	1.0.0	2026-11-15
+payment-guard-mcp	1.3.0	2026-11-22
+payment-intelligence-mcp	0.3.2	2026-11-22
+pbdb-mcp	1.0.0	
 pdb-mcp	1.0.1	
 pdfkit-mcp	1.0.7	
-peerkith-mcp	0.5.1	2026-11-15
-pentagonal-mcp	1.0.1	2026-11-15
-perly-pay-mcp	0.3.0	2026-11-15
+peerkith-mcp	0.5.1	
+pentagonal-mcp	1.0.1	
+perly-pay-mcp	0.3.0	
+personal-brand-mcp	1.0.1	2026-11-22
 petal-components-mcp	0.1.0	
 petsonality	0.4.6	
 phantom-secrets-mcp	0.7.9	
+pharma-signal-mcp	1.0.1	2026-11-22
 phi-guard-mcp	0.2.0	
 photofresco	0.1.2	
-picomcp-docs	0.1.0	2026-11-15
+pi-durabletask-mcp	0.7.12	2026-11-22
+picoli-mcp	1.0.1	2026-11-22
+picomcp-docs	0.1.0	
 picright-mcp	0.1.0	
 picsum-mcp	1.0.0	
 pikes-peak-trip-planner-mcp	1.0.0	
@@ -2261,68 +3120,92 @@ pinpoint-bridge	0.7.2
 pipepost-mcp	0.9.0	
 pitworld	0.5.0	
 pixelfed-mcp	1.0.0	
-pixelsquads-mcp-server	0.1.1	2026-11-15
+pixelsquads-mcp-server	0.1.1	
+pixelvault-mcp	1.0.0	2026-11-22
 pkg-health-mcp	0.2.0	
-pkgtruth	0.2.2	2026-11-15
-pkgxray	1.2.1	2026-11-15
-plaid-mcp	1.1.0	2026-11-15
+pkgtruth	0.2.2	
+pkgxray	1.2.1	
+plaid-mcp	1.1.0	
+plannie-mcp	0.5.0	2026-11-22
+planvortex-mcp	0.15.0	2026-11-22
 playcanvas-mcp	1.0.1	
 plonk-mcp	0.4.3	
+pls-touch-grass-mcp	0.3.0	2026-11-22
+plugmcp-mcp	0.1.4	2026-11-22
+poindeo-mcp	0.1.10	2026-11-22
 pointmaxx-mcp	0.1.2	
-pokeapi-mcp	1.0.0	2026-11-15
-poliety-mcp	1.3.0	2026-11-15
+pointsyeah-mcp-server	0.2.9	2026-11-22
+pokeapi-mcp	1.0.0	
+poliety-mcp	1.3.0	
 poltertab	1.12.0	
-polymarket-toolkit-mcp	0.7.1	2026-11-15
+polymarket-toolkit-mcp	0.7.1	
 polymath-megablaster-mcp	3.1.0	
 pomera-ai-commander	1.5.1	
-portlandmaps-mcp	0.2.5	2026-11-15
+portlandmaps-mcp	0.2.5	
+portveil-mcp	0.4.4	2026-11-22
+postalkit-mcp	0.1.1	2026-11-22
+postals-mcp	1.0.0	2026-11-22
 postgres-scout-mcp	1.0.3	
 postking-mcp	1.1.7	
 postman-echo-mcp	1.0.0	
 ppxc-leads-mcp	0.1.28	
 pqs-mcp-server	1.4.0	
-prediction-market-mcp	1.0.1	2026-11-15
+prediction-market-mcp	1.0.1	
 prefab-mcp	0.1.1	
 premiere-pro-mcp	1.30.0	
-preventionlabs-mcp	1.2.6	2026-11-15
+preventionlabs-mcp	1.2.6	
 prinfer	3.4.0	
-privacypage-mcp	0.1.0	2026-11-15
+privacypage-mcp	0.1.0	
 product-lock-mcp	0.1.1	
-project-knowledge-mcp	1.0.6	2026-11-15
+project-knowledge-mcp	1.0.6	
 prometiam-risk-mcp	0.4.57	
-proofpack-cli	0.3.2	2026-11-15
+proofmark-units	1.0.0	2026-11-22
+proofpack-cli	0.3.2	
 propfirmdealfinder-mcp-server	1.0.4	
-protect-mcp	0.32.4	2026-11-15
+protect-mcp	0.32.4	
 protocolprobe-mcp	0.1.1	
-protondb-mcp	1.0.0	2026-11-15
+protondb-mcp	1.0.0	
 provably-fair-mcp	1.0.4	
 proxy-veil	1.5.4	
-psycgod-sage	2.6.2	2026-11-15
+psycgod-sage	2.6.2	
 psyche-ai	9.2.2	
 public-holidays-mcp	1.0.1	
 pullpush-mcp	1.0.1	
-pusaka-mcp	1.1.2	2026-11-15
+pusaka-mcp	1.1.2	
+pushtodisplay	0.1.14	2026-11-22
+pylos-mcp	1.4.0	2026-11-22
 qa-wrap-bridge	0.1.0	
+qbittorrent-mcp	1.0.0	2026-11-22
 qingkuai-mcp-server	1.0.13	
 qualien-mcp	0.6.2	
-quorum-mcp-server	4.0.0	2026-11-15
-r3plica	2.3.3	2026-11-15
-random-animals-mcp	1.0.0	2026-11-15
-rankfabrik-mcp	2.0.0	2026-11-15
+quanttogo-mcp	1.1.0	2026-11-22
+quorum-mcp-server	4.0.0	
+r3plica	2.3.3	
+random-animals-mcp	1.0.0	
+random-word-mcp	1.0.0	2026-11-22
+rankfabrik-mcp	2.0.0	
 rarefaction-lsp-mcp	0.4.3	
-rawg-mcp	1.0.0	2026-11-15
-readme-forge-mcp	1.0.3	2026-11-15
-readyorai	0.1.2	2026-11-15
+raspberry-pi-connect-mcp	0.2.0	2026-11-22
+rawg-mcp	1.0.0	
+readme-forge-mcp	1.0.3	
+readyorai	0.1.2	
 real-browser-mcp	1.2.1	
-reelary	0.1.1	2026-11-15
+receipts-index-mcp	0.1.5	2026-11-22
+redditapis-mcp	0.21.0	2026-11-22
+redirection-mcp	1.0.0	2026-11-22
+redpill-mcp	0.1.3	2026-11-22
+reelary	0.1.1	
 reflex-browser	0.4.12	
-regex-lab-mcp	1.0.4	2026-11-15
-regex-le-mcp	2.6.0	2026-11-15
-remembrallmcp	0.1.0	2026-11-15
+regex-lab-mcp	1.0.4	
+regex-le-mcp	2.6.0	
+registry-mcp	0.4.2	2026-11-22
+remembrallmcp	0.1.0	
+remote-agents	0.1.47	2026-11-22
 replicant-mcp	1.6.7	
 repograph-cli	0.1.1	
+repotector	1.6.0	2026-11-22
 reputa-mcp	1.5.2	
-resultsza-mcp	0.1.1	2026-11-15
+resultsza-mcp	0.1.1	
 resume-optimizer	1.1.4	
 retrogachievements-mcp	1.0.0	
 revenue-mcp	0.1.2	
@@ -2330,156 +3213,210 @@ reverseport	1.18.0
 review-assist-mcp	1.1.0	
 rhizome-mcp	1.6.1	
 risk-calculation-mcp	1.0.0	
-rival-mcp	1.0.2	2026-11-15
-rng-mcp	1.0.0	2026-11-15
+rival-mcp	1.0.2	
+rng-mcp	1.0.0	
 robotstxt-ai-mcp	1.0.1	
 robrain	2.6.1	
 ror-mcp	1.0.1	
 routinekit	0.2.0	
-rowstile	0.1.0-beta.4	2026-11-15
+rowstile	0.1.0-beta.4	
 rpgmaker-mv-mcp	5.21.0	
 rpgmaker-mz-mcp	1.4.0	
-rq-scan-mcp	1.2.1	2026-11-15
-rundeck-mcp-server	1.0.3	2026-11-15
-runescape-wiki-mcp	1.2.0	2026-11-15
+rpgmaker-xp-mcp	1.1.3	2026-11-22
+rq-scan-mcp	1.2.1	
+rundeck-mcp-server	1.0.3	
+runescape-wiki-mcp	1.2.0	
 rupa3d	1.6.2	
+ruyuejian-jobs-mcp	0.1.0	2026-11-22
 s3eidat-tools-mcp	0.1.0	
+saagar-portfolio-mcp	0.1.0	2026-11-22
 saascity-mcp	2.1.0	
 sabline-lang	8.8.0	
-safe-upgrade-mcp	0.2.0	2026-11-15
-salamailer	1.0.0	2026-11-15
-salesforce-marketing-mcp	1.0.1	2026-11-15
+safari-devtools-mcp	1.8.1	2026-11-22
+safari-mcp	2.24.1	2026-11-22
+safe-upgrade-mcp	0.2.0	
+salamailer	1.0.0	
+salesforce-marketing-mcp	1.0.1	
+salonrunner-mcp	0.2.0	2026-11-22
 samotpravil-mcp	1.8.0	
 sanctionscreen-mcp	0.1.0	
 sanctionwise	0.1.1	
-sap-abap-sql-mcp	0.3.0	2026-11-15
-satoshkin-aml-mcp	0.2.0	2026-11-15
-savesavesavesave	0.1.3	2026-11-15
+sap-abap-sql-mcp	0.3.0	
+satnogs-mcp	1.0.0	2026-11-22
+satoshkin-aml-mcp	0.2.0	
+savesavesavesave	0.1.3	
 savvycal-mcp	1.0.1	
 scala-mcp-server	0.1.3	
 scandiary	0.2.1	
 scbee-mcp	0.2.2	
-scento-perfume-api	1.0.1	2026-11-15
+scento-perfume-api	1.0.1	
+scholar-feed-mcp	3.20.0	2026-11-22
 scholar-sidekick-mcp	0.8.13	
 scope-guard-mcp	0.1.3	
-scorecard-ai-mcp	2.1.1	2026-11-15
-screenpipe-mcp	0.20.4	2026-11-15
-screenshotor-mcp	1.0.0	2026-11-15
-screenshotty-mcp	1.1.0	2026-11-15
-search-console-mcp-server	0.2.2	2026-11-15
+scorecard-ai-mcp	2.1.1	
+scrapingdog-mcp	0.1.1	2026-11-22
+screenpipe-mcp	0.20.4	
+screenshotor-mcp	1.0.0	
+screenshotty-mcp	1.1.0	
+scytheradar-mcp	0.1.2	2026-11-22
+search-console-mcp-server	0.2.2	
 searchcraft	0.1.1	
+searxng-deepdive	0.4.1	2026-11-22
 secret-design-mcp	0.6.0	
 secret-hygiene-mcp	1.0.1	
 secure-privacy-mcp	1.1.1	
-secure-vault-mcp	0.1.1	2026-11-15
+secure-telegram-mcp	0.3.3	2026-11-22
+secure-vault-mcp	0.1.1	
 seerxo	1.13.0	
-segaretro-mcp	1.0.3	2026-11-15
-sellat-mcp	0.3.3	2026-11-15
+segaretro-mcp	1.0.3	
+selfheal-mcp	0.1.1	2026-11-22
+sellat-mcp	0.3.3	
 semantic-scholar-mcp	1.0.0	
 sentinel-scan-cli	1.4.16	
 sentrik	1.2.0	
+sentry-mcp-server	1.0.0	2026-11-22
+seo-audit-tool	1.1.4	2026-11-22
 seo-geo-mcp-server	1.2.2	
-seo-tools-mcp-xmlriver	1.8.0	2026-11-15
-seo-tools-mcp-ywm	1.8.0	2026-11-15
-session-steward	0.12.1	2026-11-15
+seo-tools-mcp-xmlriver	1.8.0	
+seo-tools-mcp-ywm	1.8.0	
+serpdive-mcp	0.1.4	2026-11-22
+server-noonien	1.3.0	2026-11-22
+session-steward	0.12.1	
 settlemesh	0.1.92	
 sexai-mcp	0.11.11	
-sharedoc-mcp	2.1.4	2026-11-15
+sharecut-mcp	1.1.0	2026-11-22
+sharedoc-mcp	2.1.4	
 ship-mcp	0.2.1	
-shipcheck-mcp	0.1.12	2026-11-15
-shipscreens	0.1.7	2026-11-15
+shipcheck-mcp	0.1.12	
+shipmail-mcp	0.9.13	2026-11-22
+shipscreens	0.1.7	
 shopify-multi-store-mcp-server	2.0.3	
-shouldigo-surf-mcp	1.0.2	2026-11-15
-simmer-mcp	3.3.2	2026-11-15
+shopify-theme-inspector-mcp	0.5.1	2026-11-22
+shopops-mcp-server	1.2.2	2026-11-22
+shouldigo-surf-mcp	1.0.2	
+sic-codes-mcp	1.0.0	2026-11-22
+signoff-cli	4.0.2	2026-11-22
+simmer-mcp	3.3.2	
 simulation-mcp-server	0.3.0	
 site-search-opener-mcp	1.1.1	
-skia-studio-mcp	0.2.1	2026-11-15
+skia-studio-mcp	0.2.1	
 skilldb	0.8.3	
+skills-movie-mcp	1.0.1	2026-11-22
 skillselion-mcp	0.9.12	
 skim-mcp-server	1.0.3	
-skimless	0.1.2	2026-11-15
+skimless	0.1.2	
 skylight-mcp	1.6.1	
 slipmark	0.6.2	
 smallprint-mcp	1.1.1	
-snapmcp	2.3.11	2026-11-15
+snapmcp	2.3.11	
 snipaya-mcp	1.2.2	
-sockodds-mcp	1.1.0	2026-11-15
+sockodds-mcp	1.1.0	
 socraticode	1.16.2	
-solana-nft-mcp	1.18.0	2026-11-15
+solana-nft-mcp	1.18.0	
 solmachina-x402-mcp	1.4.0	
-solmail-mcp	1.0.2	2026-11-15
-source-map-parser-mcp	1.3.2	2026-11-15
+solmail-mcp	1.0.2	
+sophos-central-mcp-server	0.13.5	2026-11-22
+source-map-parser-mcp	1.3.2	
 sovereign-seo-analyzer-mcp	1.0.0	
-spawner-cli	2.2.1	2026-11-15
+spaceflight-news-api-mcp	1.0.1	2026-11-22
+spare-email-mcp	0.1.2	2026-11-22
+spawner-cli	2.2.1	
 spdx-mcp	1.0.1	
 specter-skills	0.11.1	
 spendlog	1.0.4	
-sportwizzard-mcp	0.1.4	2026-11-15
-ssh-mcp-pro	1.7.2	2026-11-15
-stablevoy-mcp	0.4.1	
+sphior-code-mcp	1.1.13	2026-11-22
+sportwizzard-mcp	0.1.4	
+ssh-mcp-pro	1.7.2	
+ssh-session-mcp	2.7.1	2026-11-22
+stables-mcp-server	2.6.13	2026-11-22
+stablevoy-mcp	0.8.0	2026-11-22
 stack-and-dns-mcp	1.0.1	
+stackexchange-mcp	1.1.0	2026-11-22
 stacktree-mcp	0.8.3	
-stalemap	0.4.1	2026-11-15
+stalemap	0.4.1	
+stalwart-mail-mcp	2.3.0	2026-11-22
 startupnamegenerator-mcp	0.1.0	
-stashot-mcp	0.8.0	2026-11-15
-steam-local-mcp	0.2.2	2026-11-15
+stashot-mcp	0.8.0	
+statementsure-mcp	0.1.1	2026-11-22
+staygreen	0.1.3	2026-11-22
+steam-local-mcp	0.2.2	
+stellar-memory	1.0.3	2026-11-22
 stellar-pulse-mcp	0.1.0	
+stemem	0.1.0	2026-11-22
+stock-images-mcp	2.0.1	2026-11-22
 stock-sentinel-mcp	1.1.0	
-stockbit-mcp	1.4.1	2026-11-15
+stockbit-mcp	1.4.1	
 stockmatrix-mcp	0.5.0	
-stockportfolio-mcp	0.3.2	2026-11-15
-storefront-mcp	1.0.1	2026-11-15
+stockportfolio-mcp	0.3.2	
+storefront-mcp	1.0.1	
+stori3d-mcp	0.11.0	2026-11-22
+string-le-mcp	2.5.1	2026-11-22
 stripe-mcp-server	1.0.0	
 stripekit	0.2.2	
 study-planner-mcp	0.1.9	
+studydiff-mcp	0.2.0	2026-11-22
 stylekit-mcp	0.5.0	
 sunrise-sunset-mcp	1.0.0	
-supercarto	0.7.0	2026-11-15
-supercolony-mcp	0.1.8	2026-11-15
+supercarto	0.7.0	
+supercolony-mcp	0.1.8	
 superhighway-mcp	1.2.0	
 superlocalmemory	4.2.13	
-suprasuta-markdown-mcp	0.1.4	2026-11-15
-suprsonic-mcp	0.3.4	2026-11-15
+supership-scan	2.0.2	2026-11-22
+suprasuta-markdown-mcp	0.1.4	
+suprsonic-mcp	0.3.4	
 svipall	1.3.1	
 svix-mcp	1.0.0	
 swiadectwo-energetyczne24-mcp	1.2.0	
 swiss-sbb-mcp	1.0.0	
 swissyphus	1.0.1	
+switchbot-mcp	1.0.0	2026-11-22
+switchfile-mcp	0.1.2	2026-11-22
 synap-mcp	0.1.1	
 syncbridge-mcp	0.1.1	
+tablecloth-mcp	0.3.0	2026-11-22
 tabler-mcp-server	1.0.1	
 tactual	0.2.1	
-tag-per-track-mcp	1.6.4	2026-11-15
+tag-per-track-mcp	1.6.4	
 talkback-mcp	0.1.3	
-tap2cal-mcp	1.0.0	2026-11-15
+tanvo-mcp	0.2.1	2026-11-22
+tap2cal-mcp	1.0.0	
 targetly-mcp	0.1.4	
-tasmota-mcp	1.0.0	2026-11-15
+tarotoo-mcp-server	2.0.0	2026-11-22
+tasmota-mcp	1.0.0	
+tauri-hasgard	0.7.0	2026-11-22
 tdai-memory-mcp	0.3.0	
+tdcv2-mcp	0.4.0	2026-11-22
 tdl-mcp	1.1.0	
+telbase	0.14.0-beta.2	2026-11-22
 telekash-mcp-server	0.6.1	
-tereno-mcp	0.1.3	2026-11-15
+telemost-mcp-server	0.2.2	2026-11-22
+tenjin-cli	0.1.0-alpha.15	2026-11-22
+tentra-mcp	1.3.2	2026-11-22
+tereno-mcp	0.1.8	2026-11-22
 test-coverage-mcp	1.1.0	
-tetriswiki-mcp	1.0.1	2026-11-15
+tetriswiki-mcp	1.0.1	
 tewip-ai	0.82.0	
 text-tools-mcp	1.0.0	
 tfl-status-mcp	1.0.0	
-tft-oracle	0.1.0	2026-11-15
+tft-oracle	0.1.0	
 thecocktaildb-mcp	1.0.1	
 thegoldbarometer-mcp	1.0.1	
-thegraph-mcp	1.0.0	2026-11-15
+thegraph-mcp	1.0.0	
 thesportsdb-mcp	1.0.0	
 thisispaper-mcp	1.0.1	
 thoughtproof-mcp	0.3.2	
 threadctx-mcp	0.5.0	
+thunderbird-cli-mcp	1.2.0	2026-11-22
 tiktok-agent-publisher	0.1.5	
+timps-swarm	2.2.3	2026-11-22
 tinkercad-circuits-mcp	0.1.0	
 toasttab-mcp	1.1.1	
-token-gate-mcp	0.1.3	2026-11-15
+token-gate-mcp	0.1.3	
 tokentrace	0.21.2	
-tokonomix-council-mcp	1.14.0	2026-11-15
-tokyo-futuro-mcp	0.1.2	2026-11-15
+tokonomix-council-mcp	1.14.0	
+tokyo-futuro-mcp	0.1.2	
 toolchain-lens-mcp	1.0.1	
-tooldash-mcp	1.0.2	2026-11-15
+tooldash-mcp	1.0.2	
 toolfactory	0.4.8	
 toolforte-mcp	0.4.2	
 toolradar-mcp	2.4.0	
@@ -2487,106 +3424,145 @@ toon-memory	4.3.5
 tourwright	2.6.1	
 tower-mcp	0.12.1	
 tracklix-mcp	0.1.2	
+transcriptapi-mcp	0.1.1	2026-11-22
 tripwire-guard	0.4.2	
-tronbyt-mcp	0.1.0	2026-11-15
-true-solar-time-mcp	1.0.1	2026-11-15
+tripwire-roblox	0.2.5	2026-11-22
+tronbyt-mcp	0.1.0	
+true-solar-time-mcp	1.0.1	
 trustagent-mcp	0.1.2	
 ttctl	0.1.0	
-tubemind-secure-mcp	0.1.3	2026-11-15
+tubemind-secure-mcp	0.1.3	
 tubescout	0.1.1	
+tubetotranscript-mcp	1.1.1	2026-11-22
 tugra	0.1.4	
-twitter-signal-mcp	0.5.0	2026-11-15
+tunein-mcp	1.0.0	2026-11-22
+turntax	0.11.0	2026-11-22
+twitter-signal-mcp	0.5.0	
+twitterapi-docs-mcp	1.0.3	2026-11-22
 twitterapi-io-mcp	1.7.2	
+typeform-mcp	1.1.0	2026-11-22
 uap-pulse	0.4.0	
 uarpie	0.3.23	
 ui-design-to-code-mcp	0.1.12	
+uisight	0.34.0	2026-11-22
+ultralytics-mcp	0.1.14	2026-11-22
 umami-compass	0.5.1	
 umbriel	1.14.0	
 umd-mcp	0.0.1	
+unicode-security-mcp	1.0.1	2026-11-22
 unified-reading	0.3.0	
-uniprof	0.3.4	2026-11-15
+uniprof	0.3.4	
+unity-mcp-server	1.9.0	2026-11-22
 universal-blockchain-mcp	1.0.2	
-universal-brute-workpack	0.1.4	2026-11-15
-uol-mcp	0.7.0	2026-11-15
+universal-brute-workpack	0.1.4	
+unreal-mcp-ue4-for-ohd	2026.5.12-12	2026-11-22
+uol-mcp	0.7.0	
 uptime-kuma-mcp	1.0.0	
-urlhaus-mcp	1.0.0	2026-11-15
+urlhaus-mcp	1.0.0	
+urlscan-mcp	1.0.0	2026-11-22
 usable-browser-agent	0.7.1	
+usajobs-mcp	1.0.1	2026-11-22
 useqr-mcp	1.0.0	
+usgs-mcp	1.0.1	2026-11-22
 ustaxrecords-mcp	0.1.0	
-utilia-solana-agent	0.5.8	2026-11-15
+uta-shield	0.3.0	2026-11-22
+utilia-solana-agent	0.5.8	
+uxloom	0.14.0	2026-11-22
+validatehtml	0.1.0	2026-11-22
 vaspera-hardening-mcp-server	1.0.2	
 vaspera-pm	2.15.0	
+vault-mcp-tools	1.0.1	2026-11-22
 vectorise-mcp	0.2.0	
 verbative-memory	1.1.3	
 veridict	0.1.1	
-verified-reality-agents-mcp	1.0.1	2026-11-15
+verified-reality-agents-mcp	1.0.1	
 verify402-mcp	1.0.9	
-verirun	0.2.1-dev	2026-11-15
-verity-mcp	1.0.2	2026-11-15
+verifyanyemail-mcp	1.2.3	2026-11-22
+verirun	0.2.1-dev	
+verity-mcp	1.0.2	
+vesselapi-mcp	2.2.1	2026-11-22
 vestige-mcp-server	4.2.0	
-veyora	0.2.2	2026-11-15
+veyora	0.2.2	
 vibemovie	0.2.3	
 vibenetwork	0.1.2	
 vid2llm-mcp	0.3.0	
-vigilis-mcp	0.4.1	2026-11-15
-vin-decoder-mcp	1.0.0	2026-11-15
+vigilis-mcp	0.4.1	
+vin-decoder-mcp	1.0.0	
 virustotal-mcp	1.0.0	
 vision-squeezer	0.9.0	
+vivarium-mcp	1.0.0	2026-11-22
 vndb-mcp	1.0.1	
 vocabit-mcp	0.1.3	
+vocadb-mcp	1.0.0	2026-11-22
 vocce-transcribe-mcp	1.1.0	
-voidfeed-mcp	1.0.0	2026-11-15
-voulti-mcp	0.1.0	2026-11-15
+voidfeed-mcp	1.0.0	
+volthq-mcp-server	0.1.10	2026-11-22
+voulti-mcp	0.1.0	
 vreddie-mcp-server	1.0.1	
-wake-mcp-server	2.2.2	2026-11-15
+wake-mcp-server	2.2.2	
 warden-ai	0.7.1	
 warp-agent-mcp	0.20.1	
 wayback-mcp	1.0.0	
+wc26-mcp	0.3.0	2026-11-22
 wc3-mcp	0.5.19	
-weasley-deepmind	1.0.0	2026-11-15
+weasley-deepmind	1.0.0	
 weather-for-grown-ups	0.5.5	
 web-task-api	0.10.1	
-webcake-landing-mcp	1.7.0	2026-11-15
+web3agent	0.6.2	2026-11-22
+webcake-landing-mcp	1.13.6	2026-11-22
 webcheck-mcp	0.1.3	
 webhook-crash-lab-mcp	0.2.4	
 webpeel	0.3.0	
-weeklymoat-mcp	1.0.1	2026-11-15
+websitetoolbox-mcp	1.0.0	2026-11-22
+weeklymoat-mcp	1.0.1	
 wellness-cycle-coach	0.3.5	
+wfirma-mcp	1.0.0	2026-11-22
 whats-loaded-mcp	0.2.5	
 whitemagic-mcp	11.0.0	
 wield-mcp	0.1.4	
-willmehr	0.1.0	2026-11-15
-windows-print-mcp	1.0.0	2026-11-15
+willmehr	0.1.0	
+windows-computer-use-mcp	0.1.0	2026-11-22
+windows-print-mcp	1.0.0	
+wiring-diagram-mcp	0.5.0	2026-11-22
+wisewall-mcp	0.1.10	2026-11-22
 wordstat-mcp-server	0.1.1	
-wxo-agent-mcp	1.0.8	2026-11-15
+wormaceptor-mcp	3.5.0	2026-11-22
+wxo-agent-mcp	1.0.8	
 wyrd-mcp	0.4.0	
-x4-script-mcp	0.5.0	2026-11-15
-x402-crypto-mcp	1.3.7	2026-11-15
+wyrd-scribe	0.2.1	2026-11-22
+x4-script-mcp	0.5.0	
+x402-crypto-mcp	1.3.7	
 x402-escrow-mcp	1.0.1	
-x402-list-mcp	0.5.3	2026-11-15
+x402-list-mcp	0.5.3	
+x402-markettwits-mcp	0.1.0	2026-11-22
 x402-micro-tollgate	0.3.3	
 x402-money-farm-mcp	1.0.1	
 x402-scan-audit	0.0.3	
-x402-video-mcp	0.1.1	2026-11-15
+x402-video-mcp	0.1.1	
 x402-webhook-mcp	1.0.1	
-x402ai-mcp	0.1.1	2026-11-15
-x402receipts-mcp	1.0.0	2026-11-15
-xcodemcp	2.1.4	2026-11-15
-xpensiv-mcp	0.1.1	2026-11-15
+x402ai-mcp	0.1.1	
+x402receipts-mcp	1.0.0	
+xcodemcp	2.1.4	
+xiange-mcp	0.2.1	2026-11-22
+xpensiv-mcp	0.1.1	
 xrocket-mcp	0.6.0	
 yad-agent-mcp	0.1.1	
 yaktool-compliance-mcp	0.4.0	
-yaktool-gs1-mcp	0.3.0	2026-11-15
-yaktool-invoice-mcp	0.2.0	2026-11-15
+yaktool-gs1-mcp	0.3.0	
+yaktool-invoice-mcp	0.2.0	
 yaktool-labels-mcp	0.3.1	
 yaktool-pdf-mcp	0.7.0	
-youtube-organic-mcp	1.0.0	2026-11-15
-yungle-mcp	0.3.3	2026-11-15
-z-zero-mcp-server	1.11.0	2026-11-15
+yandex-direct-mcp-plus	3.0.0	2026-11-22
+yes-no-mystery-mcp	1.0.0	2026-11-22
+youtube-organic-mcp	1.0.0	
+yr-metno-mcp	1.0.0	2026-11-22
+yungle-mcp	0.3.3	
+z-zero-mcp-server	1.11.0	
 zahori	0.1.1	
 zerostel	0.3.2	
-zkshare-mcp	1.0.1	2026-11-15
-zn-gate	1.15.0	2026-11-15
+zigbee2mqtt-mcp	0.7.0	2026-11-22
+zkshare-mcp	1.0.1	
+zn-gate	1.17.0	2026-11-22
 zod-contract-mock-forge-mcp	0.2.0	
-zork-mcp	1.0.1	2026-11-15
+zork-mcp	1.0.1	
 zxoar-mcp	0.2.2	

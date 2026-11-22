@@ -1,0 +1,1740 @@
+{
+  "toolmenu": 1,
+  "server": {
+    "name": "mcp-task-orchestrator-current",
+    "version": "4.0.2",
+    "protocolVersion": "2025-11-25",
+    "era": "legacy",
+    "extensions": {}
+  },
+  "capturedAt": "2026-11-22T07:00:57.354Z",
+  "tools": [
+    {
+      "name": "items_write",
+      "inputSchema": {
+        "properties": {
+          "ops": {
+            "type": "array",
+            "description": "Write operations, one flat object per op, run in order. A field marked [ops: ...] applies only to the ops named.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "description": "The operation this element runs.",
+                  "enum": [
+                    "create",
+                    "update",
+                    "delete",
+                    "create_tree",
+                    "complete_tree",
+                    "repin"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Item title. [ops: create, update]"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Declared item type; required on create. [ops: create, update]"
+                },
+                "parentId": {
+                  "type": "string",
+                  "description": "Parent id; omit for a root. Update moves the item. [ops: create, update, create_tree]"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Long description. [ops: create, update]"
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "Short summary. [ops: create, update]"
+                },
+                "statusLabel": {
+                  "type": "string",
+                  "description": "Free-form status label. [ops: create, update]"
+                },
+                "priority": {
+                  "type": "string",
+                  "description": "Create defaults to medium. [ops: create, update]",
+                  "enum": [
+                    "high",
+                    "medium",
+                    "low"
+                  ]
+                },
+                "complexity": {
+                  "type": "integer",
+                  "description": "1 to 10. [ops: create, update]"
+                },
+                "requiresVerification": {
+                  "type": "boolean",
+                  "description": "Completion needs verification. [ops: create, update]"
+                },
+                "metadata": {
+                  "type": "string",
+                  "description": "Free-form metadata text. [ops: create, update]"
+                },
+                "tags": {
+                  "type": "array",
+                  "description": "Lowercase, hyphenated. Update: [] clears. [ops: create, update]",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "traits": {
+                  "type": "array",
+                  "description": "Declared trait names. Update: [] clears. [ops: create, update]",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "properties": {
+                  "type": "object",
+                  "description": "Free-form JSON object without a traits key. [ops: create, update]"
+                },
+                "id": {
+                  "type": "string",
+                  "description": "Item UUID or 8+ hex prefix. [ops: update, delete, repin]"
+                },
+                "expectedVersion": {
+                  "type": "integer",
+                  "description": "Fails version_conflict if the item is at another version. [ops: update, delete, repin]"
+                },
+                "clear": {
+                  "type": "array",
+                  "description": "Update only: optional fields to set to null. [ops: update]",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "description",
+                      "statusLabel",
+                      "metadata",
+                      "complexity",
+                      "properties",
+                      "parentId"
+                    ]
+                  }
+                },
+                "recursive": {
+                  "type": "boolean",
+                  "description": "Delete the subtree; required when the item has children. [ops: delete]"
+                },
+                "root": {
+                  "type": "object",
+                  "description": "Tree root: id attaches, else title and type create. [ops: create_tree]",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Item to attach to. Not with parentId."
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Title; required without id."
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Declared type; required without id."
+                    },
+                    "priority": {
+                      "type": "string",
+                      "description": "Create defaults to medium.",
+                      "enum": [
+                        "high",
+                        "medium",
+                        "low"
+                      ]
+                    },
+                    "tags": {
+                      "type": "array",
+                      "description": "Lowercase, hyphenated. Update: [] clears.",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "traits": {
+                      "type": "array",
+                      "description": "Declared trait names. Update: [] clears.",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "summary": {
+                      "type": "string",
+                      "description": "Short summary."
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Long description."
+                    },
+                    "statusLabel": {
+                      "type": "string",
+                      "description": "Free-form status label."
+                    },
+                    "complexity": {
+                      "type": "integer",
+                      "description": "1 to 10."
+                    },
+                    "requiresVerification": {
+                      "type": "boolean",
+                      "description": "Completion needs verification."
+                    },
+                    "metadata": {
+                      "type": "string",
+                      "description": "Free-form metadata text."
+                    },
+                    "properties": {
+                      "type": "object",
+                      "description": "Free-form JSON object without a traits key."
+                    },
+                    "noteAnchors": {
+                      "type": "array",
+                      "description": "Notes cut from docRef sections.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "noteKey": {
+                            "type": "string",
+                            "description": "Note key."
+                          },
+                          "role": {
+                            "type": "string",
+                            "description": "Note role.",
+                            "enum": [
+                              "queue",
+                              "work",
+                              "review"
+                            ]
+                          },
+                          "anchor": {
+                            "type": "string",
+                            "description": "Heading to cut."
+                          }
+                        },
+                        "required": [
+                          "noteKey",
+                          "role",
+                          "anchor"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "children": {
+                  "type": "array",
+                  "description": "Child items, any order; nest with parentRef. [ops: create_tree]",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ref": {
+                        "type": "string",
+                        "description": "Unique ref; not root."
+                      },
+                      "title": {
+                        "type": "string",
+                        "description": "Item title."
+                      },
+                      "type": {
+                        "type": "string",
+                        "description": "Declared item type."
+                      },
+                      "parentRef": {
+                        "type": "string",
+                        "description": "Parent ref; default root."
+                      },
+                      "priority": {
+                        "type": "string",
+                        "description": "Create defaults to medium.",
+                        "enum": [
+                          "high",
+                          "medium",
+                          "low"
+                        ]
+                      },
+                      "tags": {
+                        "type": "array",
+                        "description": "Lowercase, hyphenated. Update: [] clears.",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "traits": {
+                        "type": "array",
+                        "description": "Declared trait names. Update: [] clears.",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "summary": {
+                        "type": "string",
+                        "description": "Short summary."
+                      },
+                      "description": {
+                        "type": "string",
+                        "description": "Long description."
+                      },
+                      "statusLabel": {
+                        "type": "string",
+                        "description": "Free-form status label."
+                      },
+                      "complexity": {
+                        "type": "integer",
+                        "description": "1 to 10."
+                      },
+                      "requiresVerification": {
+                        "type": "boolean",
+                        "description": "Completion needs verification."
+                      },
+                      "metadata": {
+                        "type": "string",
+                        "description": "Free-form metadata text."
+                      },
+                      "properties": {
+                        "type": "object",
+                        "description": "Free-form JSON object without a traits key."
+                      },
+                      "noteAnchors": {
+                        "type": "array",
+                        "description": "Notes cut from docRef sections.",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "noteKey": {
+                              "type": "string",
+                              "description": "Note key."
+                            },
+                            "role": {
+                              "type": "string",
+                              "description": "Note role.",
+                              "enum": [
+                                "queue",
+                                "work",
+                                "review"
+                              ]
+                            },
+                            "anchor": {
+                              "type": "string",
+                              "description": "Heading to cut."
+                            }
+                          },
+                          "required": [
+                            "noteKey",
+                            "role",
+                            "anchor"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "ref",
+                      "title",
+                      "type"
+                    ]
+                  }
+                },
+                "deps": {
+                  "type": "array",
+                  "description": "Dependencies between refs. [ops: create_tree]",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "from": {
+                        "type": "string",
+                        "description": "From ref (the blocker)."
+                      },
+                      "to": {
+                        "type": "string",
+                        "description": "Target ref."
+                      },
+                      "type": {
+                        "type": "string",
+                        "description": "blocks (default) or relates_to.",
+                        "enum": [
+                          "blocks",
+                          "relates_to"
+                        ]
+                      },
+                      "unblockAt": {
+                        "type": "string",
+                        "description": "Unblocks at this role; default terminal.",
+                        "enum": [
+                          "queue",
+                          "work",
+                          "review",
+                          "terminal"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "from",
+                      "to"
+                    ]
+                  }
+                },
+                "notes": {
+                  "type": "array",
+                  "description": "Notes; win over noteAnchors and createNotes. [ops: create_tree]",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "itemRef": {
+                        "type": "string",
+                        "description": "Item ref."
+                      },
+                      "key": {
+                        "type": "string",
+                        "description": "Note key."
+                      },
+                      "role": {
+                        "type": "string",
+                        "description": "Note role.",
+                        "enum": [
+                          "queue",
+                          "work",
+                          "review"
+                        ]
+                      },
+                      "body": {
+                        "type": "string",
+                        "description": "Note text."
+                      }
+                    },
+                    "required": [
+                      "itemRef",
+                      "key",
+                      "role"
+                    ]
+                  }
+                },
+                "createNotes": {
+                  "type": "boolean",
+                  "description": "true: blank notes for unwritten schema keys. [ops: create_tree]"
+                },
+                "docRef": {
+                  "type": "object",
+                  "description": "Plan document for noteAnchors; root adopts it. [ops: create_tree]",
+                  "properties": {
+                    "slug": {
+                      "type": "string",
+                      "description": "Slug (not rule/)."
+                    },
+                    "rootId": {
+                      "type": "string",
+                      "description": "Must be the tree's root (default)."
+                    }
+                  },
+                  "required": [
+                    "slug"
+                  ]
+                },
+                "rootId": {
+                  "type": "string",
+                  "description": "Complete its descendants. Exactly one of rootId, itemIds. [ops: complete_tree]"
+                },
+                "itemIds": {
+                  "type": "array",
+                  "description": "Complete exactly these items. [ops: complete_tree]",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "trigger": {
+                  "type": "string",
+                  "description": "complete (default) or cancel. [ops: complete_tree]",
+                  "enum": [
+                    "complete",
+                    "cancel"
+                  ]
+                },
+                "includeRoot": {
+                  "type": "boolean",
+                  "description": "With rootId: the root too, last. Default true. [ops: complete_tree]"
+                },
+                "idempotencyKey": {
+                  "type": "string",
+                  "description": "Optional client key (1-128 chars). Resending the same op with the same key returns the stored result."
+                }
+              },
+              "required": [
+                "op"
+              ]
+            }
+          },
+          "atomic": {
+            "type": "boolean",
+            "description": "true: the first failing op rolls back the whole batch. Default false: each op commits on its own."
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Create, update and delete work items or whole trees, one ops[] element each. Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 1818
+    },
+    {
+      "name": "notes_read",
+      "inputSchema": {
+        "properties": {
+          "select": {
+            "type": "string",
+            "description": "Which read to run. A field marked [select: ...] applies only to the selects named.",
+            "enum": [
+              "get",
+              "list"
+            ]
+          },
+          "itemId": {
+            "type": "string",
+            "description": "Id of the work item that owns the note: a full UUID or 8 to 32 hex characters of one."
+          },
+          "key": {
+            "type": "string",
+            "description": "Note key, unique per item (1 to 200 characters, case-sensitive). [select: get]"
+          },
+          "ifVersion": {
+            "type": "integer",
+            "description": "The version the caller already holds (at least 1). When it equals the current version the answer is {unchanged: true, version} with no body. [select: get]"
+          },
+          "role": {
+            "type": "string",
+            "description": "Only notes of this role: queue, work or review (case-insensitive). [select: list]"
+          },
+          "keys": {
+            "type": "array",
+            "description": "Only notes with one of these keys. An empty list matches nothing. [select: list]",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Page size, 1 to 200 (default 50). [select: list]"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor from the previous page's page.next. [select: list]"
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Read the notes on work items: get one note with its body, or list an item's notes without bodies. Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 345
+    },
+    {
+      "name": "notes_write",
+      "inputSchema": {
+        "properties": {
+          "ops": {
+            "type": "array",
+            "description": "Write operations, one flat object per op, run in order. A field marked [ops: ...] applies only to the ops named.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "description": "The operation this element runs.",
+                  "enum": [
+                    "upsert",
+                    "delete"
+                  ]
+                },
+                "itemId": {
+                  "type": "string",
+                  "description": "Id of the work item that owns the note: a full UUID or 8 to 32 hex characters of one."
+                },
+                "key": {
+                  "type": "string",
+                  "description": "Note key, unique per item (1 to 200 characters, case-sensitive)."
+                },
+                "role": {
+                  "type": "string",
+                  "description": "Note role: queue, work or review (case-insensitive). [ops: upsert]"
+                },
+                "body": {
+                  "type": "string",
+                  "description": "Inline note text (may be empty). Exactly one of body and bodyFromFile is required. [ops: upsert]"
+                },
+                "bodyFromFile": {
+                  "type": "string",
+                  "description": "Server-side path whose text becomes the body. Exactly one of body and bodyFromFile is required. Resolved strictly inside the agent config root: no absolute path, no '..', no symlink out of it; a regular UTF-8 file of at most 65536 bytes; CRLF becomes LF. An idempotency replay does not re-read the file. [ops: upsert]"
+                },
+                "expectedVersion": {
+                  "type": "integer",
+                  "description": "Guard on the note's version: omit to write unconditionally, 0 to require that the note does not exist, n to require that its current version is n. Anything else is version_conflict and nothing is written."
+                },
+                "takeover": {
+                  "type": "boolean",
+                  "description": "Admin only: take over a note owned by another principal. Never with a seat token. [ops: upsert]"
+                },
+                "idempotencyKey": {
+                  "type": "string",
+                  "description": "Optional client key (1-128 chars). Resending the same op with the same key returns the stored result."
+                }
+              },
+              "required": [
+                "op"
+              ]
+            }
+          },
+          "atomic": {
+            "type": "boolean",
+            "description": "true: the first failing op rolls back the whole batch. Default false: each op commits on its own."
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Create, replace or delete notes on work items, in batches. Every element commits on its own unless atomic is true. Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 524
+    },
+    {
+      "name": "deps_read",
+      "inputSchema": {
+        "properties": {
+          "select": {
+            "type": "string",
+            "description": "Which read to run. A field marked [select: ...] applies only to the selects named.",
+            "enum": [
+              "list",
+              "graph"
+            ]
+          },
+          "item": {
+            "type": "string",
+            "description": "Item id: a UUID or a hex prefix of 8 to 32 characters."
+          },
+          "direction": {
+            "type": "string",
+            "description": "incoming = edges whose to is item (what blocks it), outgoing = edges whose from is item. Default all. [select: list]",
+            "enum": [
+              "incoming",
+              "outgoing",
+              "all"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Only edges of this type. Default both. [select: list]",
+            "enum": [
+              "blocks",
+              "relates_to"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Page size, 1 to 200 (default 50)."
+          },
+          "cursor": {
+            "type": "string",
+            "description": "The page.next value of the previous page."
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Read dependency edges between items. select: list (edges of one item, with direction and type filters) or graph (the blocking graph around an item). Edge: {id, from, to, type, unblockAt?}; from blocks to. Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 286
+    },
+    {
+      "name": "deps_write",
+      "inputSchema": {
+        "properties": {
+          "ops": {
+            "type": "array",
+            "description": "Write operations, one flat object per op, run in order. A field marked [ops: ...] applies only to the ops named.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "description": "The operation this element runs.",
+                  "enum": [
+                    "create",
+                    "delete",
+                    "linear",
+                    "fan_out",
+                    "fan_in"
+                  ]
+                },
+                "from": {
+                  "type": "string",
+                  "description": "Source item of the edge (the blocker for blocks): a UUID or a hex prefix of 8 to 32 characters. [ops: create, delete, fan_out]"
+                },
+                "to": {
+                  "type": "string",
+                  "description": "Target item of the edge (the blocked item for blocks): a UUID or a hex prefix of 8 to 32 characters. [ops: create, delete, fan_in]"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Edge type: blocks or relates_to. Create applies blocks when absent; delete matches either type when absent.",
+                  "enum": [
+                    "blocks",
+                    "relates_to"
+                  ]
+                },
+                "unblockAt": {
+                  "type": "string",
+                  "description": "Role the blocker must reach to unblock the target: queue, work, review or terminal (default terminal). Not allowed with relates_to. [ops: create, linear, fan_out, fan_in]",
+                  "enum": [
+                    "queue",
+                    "work",
+                    "review",
+                    "terminal"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "description": "Full dependency UUID (not a prefix). [ops: delete]"
+                },
+                "item": {
+                  "type": "string",
+                  "description": "Delete every edge touching this item (either end). Item id: a UUID or a hex prefix of 8 to 32 characters. [ops: delete]"
+                },
+                "ids": {
+                  "type": "array",
+                  "description": "Items in chain order, at least 2: each one blocks the next. [ops: linear]",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "toIds": {
+                  "type": "array",
+                  "description": "Target items, at least 1: from blocks each of them. [ops: fan_out]",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "fromIds": {
+                  "type": "array",
+                  "description": "Source items, at least 1: each of them blocks to. [ops: fan_in]",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "idempotencyKey": {
+                  "type": "string",
+                  "description": "Optional client key (1-128 chars). Resending the same op with the same key returns the stored result."
+                }
+              },
+              "required": [
+                "op"
+              ]
+            }
+          },
+          "atomic": {
+            "type": "boolean",
+            "description": "true: the first failing op rolls back the whole batch. Default false: each op commits on its own."
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Create and delete dependency edges between items: create, delete, and the patterns linear, fan_out and fan_in (one element, all edges or none). Each op needs the manage-dependencies capability and sees only items in scope. Result: an edge {id, from, to, type, unblockAt?}, {created: [edge]} or {deleted: n}. Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 643
+    },
+    {
+      "name": "advance",
+      "inputSchema": {
+        "properties": {
+          "ops": {
+            "type": "array",
+            "description": "Write operations, one flat object per op, run in order. A field marked [ops: ...] applies only to the ops named.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "description": "The operation this element runs.",
+                  "enum": [
+                    "transition",
+                    "claim",
+                    "release",
+                    "heartbeat"
+                  ]
+                },
+                "itemId": {
+                  "type": "string",
+                  "description": "Item id: a UUID or a dash-free hex prefix of 8 to 32 characters."
+                },
+                "trigger": {
+                  "type": "string",
+                  "description": "The trigger to apply: start, complete, block, hold, resume, cancel or reopen. [ops: transition]",
+                  "enum": [
+                    "start",
+                    "complete",
+                    "block",
+                    "hold",
+                    "resume",
+                    "cancel",
+                    "reopen"
+                  ]
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "Optional human-readable summary recorded on the transition. [ops: transition]"
+                },
+                "credentialRefs": {
+                  "type": "array",
+                  "description": "Audit labels of the credentials this transition consumed (opaque labels, never secret values): at most 8, each 1 to 128 characters matching ^[a-z0-9][a-z0-9\\-_./]*$. [ops: transition]",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "reason": {
+                  "type": "string",
+                  "description": "Why the item blocks, block or hold only; default manual. resume clears it. [ops: transition]",
+                  "enum": [
+                    "awaiting_decision",
+                    "dependency",
+                    "resource",
+                    "manual"
+                  ]
+                },
+                "decisionId": {
+                  "type": "string",
+                  "description": "With reason awaiting_decision only: the open decision on this item. [ops: transition]"
+                },
+                "select": {
+                  "type": "object",
+                  "description": "Find-and-claim: claim the best eligible item matching these filters. [ops: claim]",
+                  "properties": {
+                    "role": {
+                      "type": "string",
+                      "description": "Role to look in; default queue.",
+                      "enum": [
+                        "queue",
+                        "work",
+                        "review",
+                        "blocked",
+                        "terminal"
+                      ]
+                    },
+                    "parentId": {
+                      "type": "string",
+                      "description": "Only direct children of this item."
+                    },
+                    "tags": {
+                      "type": "array",
+                      "description": "Match items carrying any of these tags.",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "priority": {
+                      "type": "string",
+                      "description": "Only items of this priority.",
+                      "enum": [
+                        "high",
+                        "medium",
+                        "low"
+                      ]
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Only items of this type."
+                    },
+                    "complexityMax": {
+                      "type": "integer",
+                      "description": "Only items with a complexity of at most this value."
+                    },
+                    "createdAfter": {
+                      "type": "string",
+                      "description": "Only items created at or after this instant.",
+                      "format": "date-time"
+                    },
+                    "createdBefore": {
+                      "type": "string",
+                      "description": "Only items created at or before this instant.",
+                      "format": "date-time"
+                    },
+                    "roleChangedAfter": {
+                      "type": "string",
+                      "description": "Only items whose role changed at or after this instant.",
+                      "format": "date-time"
+                    },
+                    "roleChangedBefore": {
+                      "type": "string",
+                      "description": "Only items whose role changed at or before this instant.",
+                      "format": "date-time"
+                    },
+                    "orderBy": {
+                      "type": "string",
+                      "description": "Ranking of the matches: priority (default), oldest or newest.",
+                      "enum": [
+                        "priority",
+                        "oldest",
+                        "newest"
+                      ]
+                    }
+                  }
+                },
+                "ttlSeconds": {
+                  "type": "integer",
+                  "description": "Claim lifetime in seconds, 1 to 86400; default 900. [ops: claim, heartbeat]"
+                },
+                "claimRef": {
+                  "type": "string",
+                  "description": "Opaque caller reference (at most 64 characters), echoed in the result. [ops: claim]"
+                },
+                "idempotencyKey": {
+                  "type": "string",
+                  "description": "Optional client key (1-128 chars). Resending the same op with the same key returns the stored result."
+                }
+              },
+              "required": [
+                "op"
+              ]
+            }
+          },
+          "atomic": {
+            "type": "boolean",
+            "description": "true: the first failing op rolls back the whole batch. Default false: each op commits on its own."
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Move items through their phases and manage who owns them. Each ops[] element has an op: transition (apply a trigger), claim (take an item by id or by selector), release, or heartbeat (extend a held claim). A transition on an item claimed by someone else is not_claim_holder. Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 864
+    },
+    {
+      "name": "items_read",
+      "inputSchema": {
+        "properties": {
+          "select": {
+            "type": "string",
+            "description": "Which read to run. A field marked [select: ...] applies only to the selects named.",
+            "enum": [
+              "get",
+              "list",
+              "schema",
+              "search",
+              "overview",
+              "related",
+              "context",
+              "next",
+              "blocked",
+              "history"
+            ]
+          },
+          "itemId": {
+            "type": "string",
+            "description": "Item id (UUID or 8-32 hex). get, schema: the item. search: only its own content. overview: list its children. related: the item to find relatives of. [select: get, schema, search, overview, related, context, history]"
+          },
+          "fields": {
+            "type": "array",
+            "description": "Extra members. get: createdAt, modifiedAt, roleChangedAt, ancestors. list: the same plus summary. schema: guidance. [select: get, list, schema, context, next, blocked]",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ifVersion": {
+            "type": "integer",
+            "description": "Answer {unchanged: true, version} instead of the item when its version equals this value. [select: get]"
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Only direct children of this item (UUID or 8-32 hex). [select: list, next, blocked]"
+          },
+          "ancestorId": {
+            "type": "string",
+            "description": "Only this item's subtree, itself included (UUID or 8-32 hex). [select: list, search, context, next, blocked]"
+          },
+          "depth": {
+            "type": "integer",
+            "description": "Only items at this depth (0 = roots). [select: list]"
+          },
+          "role": {
+            "type": "string",
+            "description": "Only items (search: content of items) in this role. [select: list, search, next]",
+            "enum": [
+              "queue",
+              "work",
+              "review",
+              "blocked",
+              "terminal"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "description": "Only items with this priority. [select: list, next]",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "description": "Only items with at least one of these tags (case-insensitive). [select: list, search, next]",
+            "items": {
+              "type": "string"
+            }
+          },
+          "traits": {
+            "type": "array",
+            "description": "Only items with at least one of these traits (exact). [select: list, search]",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "type": "string",
+            "description": "list: only items of this type. schema: the type whose schema to return. [select: list, schema, next]"
+          },
+          "claimStatus": {
+            "type": "string",
+            "description": "Only items in this claim state (expired: TTL elapsed). [select: list]",
+            "enum": [
+              "claimed",
+              "unclaimed",
+              "expired"
+            ]
+          },
+          "createdAfter": {
+            "type": "string",
+            "description": "Created at or after (ISO 8601). [select: list, next]",
+            "format": "date-time"
+          },
+          "createdBefore": {
+            "type": "string",
+            "description": "Created at or before (ISO 8601). [select: list, next]",
+            "format": "date-time"
+          },
+          "modifiedAfter": {
+            "type": "string",
+            "description": "Modified at or after (ISO 8601). [select: list, next]",
+            "format": "date-time"
+          },
+          "modifiedBefore": {
+            "type": "string",
+            "description": "Modified at or before (ISO 8601). [select: list, next]",
+            "format": "date-time"
+          },
+          "roleChangedAfter": {
+            "type": "string",
+            "description": "Role changed at or after (ISO 8601). [select: list, next]",
+            "format": "date-time"
+          },
+          "roleChangedBefore": {
+            "type": "string",
+            "description": "Role changed at or before (ISO 8601). [select: list, next]",
+            "format": "date-time"
+          },
+          "sort": {
+            "type": "string",
+            "description": "Sort field; default createdAt. [select: list]",
+            "enum": [
+              "title",
+              "priority",
+              "complexity",
+              "createdAt",
+              "modifiedAt"
+            ]
+          },
+          "order": {
+            "type": "string",
+            "description": "Sort direction; default desc. [select: list]",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Page size. list, overview: default 50, max 200. search: default 20, max 100. related: default 10, max 50. [select: list, search, overview, related, context, next, blocked, history]"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "The page.next of the previous page; absent for the first page. [select: list, search, overview, related, context, next, blocked, history]"
+          },
+          "rootId": {
+            "type": "string",
+            "description": "With type: the project root whose config resolves it (UUID or 8-32 hex). [select: schema]"
+          },
+          "query": {
+            "type": "string",
+            "description": "Search terms, all must match; matched literally. [select: search]"
+          },
+          "kinds": {
+            "type": "array",
+            "description": "item (title, summary, description), note (bodies) and/or document (title, body); default every kind the filters apply to. role, tags and traits apply to item and note only: with any of them the default is item and note, and naming document too is invalid. [select: search]",
+            "items": {
+              "type": "string",
+              "enum": [
+                "item",
+                "note",
+                "document"
+              ]
+            }
+          },
+          "matchMode": {
+            "type": "string",
+            "description": "auto (default: both, fused), substring (terms of 3+ characters), text (stemmed). [select: search]",
+            "enum": [
+              "auto",
+              "substring",
+              "text"
+            ]
+          },
+          "snippet": {
+            "type": "boolean",
+            "description": "Add a highlighted snippet to each hit; default true. [select: search]"
+          },
+          "explain": {
+            "type": "boolean",
+            "description": "Add ranking detail to each hit (search: per-analyzer ranks; related: per-signal ranks); default false. [select: search, related]"
+          },
+          "anchorId": {
+            "type": "string",
+            "description": "List this item's children with subtree role counts (UUID or 8-32 hex). [select: overview]"
+          },
+          "excludeTerminal": {
+            "type": "boolean",
+            "description": "Drop terminal items without open work below; default false. [select: overview]"
+          },
+          "includeChildren": {
+            "type": "boolean",
+            "description": "Global only: add each item's children; default false. [select: overview]"
+          },
+          "acrossRoots": {
+            "type": "boolean",
+            "description": "Look beyond the item's own root (every signal); default false. The caller's scope still applies. [select: related]"
+          },
+          "complexityMax": {
+            "type": "integer",
+            "description": "Only items with a complexity of at most this (1-10); items without one are excluded. [select: next]"
+          },
+          "orderBy": {
+            "type": "string",
+            "description": "Ranking: priority (default: high first, then lower complexity), oldest or newest first. [select: next]",
+            "enum": [
+              "priority",
+              "oldest",
+              "newest"
+            ]
+          },
+          "includeClaimed": {
+            "type": "boolean",
+            "description": "Also list items under an active claim, each with isClaimed; default false. [select: next]"
+          },
+          "since": {
+            "type": "string",
+            "description": "Only transitions at or after this time (ISO 8601). [select: history]",
+            "format": "date-time"
+          },
+          "until": {
+            "type": "string",
+            "description": "Only transitions at or before this time (ISO 8601). [select: history]",
+            "format": "date-time"
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Read work items. Selects: get (one item), list (a filtered page), schema (the note schema of a type or an item), search (full text over item, note and document content), overview (a hierarchy summary), related (items and documents related to an item by dependencies, links, shared tags and similar text). Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 1601
+    },
+    {
+      "name": "docs_read",
+      "inputSchema": {
+        "properties": {
+          "select": {
+            "type": "string",
+            "description": "Which read to run. A field marked [select: ...] applies only to the selects named.",
+            "enum": [
+              "get",
+              "list",
+              "history",
+              "links"
+            ]
+          },
+          "rootId": {
+            "type": "string",
+            "description": "Id of the depth-0 project root that owns the document: a full UUID or 8 to 32 hex characters."
+          },
+          "kind": {
+            "type": "string",
+            "description": "Document kind: plan, rule or page. On list it is optional and filters.",
+            "enum": [
+              "plan",
+              "rule",
+              "page"
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "description": "Document slug, unique per (root, kind). [select: get, history, links]"
+          },
+          "version": {
+            "type": "integer",
+            "description": "Read this stored version (at least 1) instead of the current one. Not together with ifVersion. [select: get]"
+          },
+          "ifVersion": {
+            "type": "integer",
+            "description": "The version the caller already holds (at least 1). When it equals the current version the answer is {unchanged: true, version} with no body. [select: get]"
+          },
+          "includeArchived": {
+            "type": "boolean",
+            "description": "Include archived documents. Default false. [select: list]"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Page size, 1 to 200 (default 50). [select: list, history, links]"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor from the previous page's page.next. [select: list, history, links]"
+          },
+          "direction": {
+            "type": "string",
+            "description": "outgoing = links the document makes, incoming = links that point at it. Default all. [select: links]",
+            "enum": [
+              "outgoing",
+              "incoming",
+              "all"
+            ]
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Read the versioned documents of a project root. select: get (one document or one stored version), list (metadata only), history (versions) or links (what the document links to and what links to it). Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 449
+    },
+    {
+      "name": "docs_write",
+      "inputSchema": {
+        "properties": {
+          "ops": {
+            "type": "array",
+            "description": "Write operations, one flat object per op, run in order. A field marked [ops: ...] applies only to the ops named.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "description": "The operation this element runs.",
+                  "enum": [
+                    "upsert",
+                    "archive",
+                    "unarchive",
+                    "delete",
+                    "attach",
+                    "detach"
+                  ]
+                },
+                "rootId": {
+                  "type": "string",
+                  "description": "Id of the depth-0 project root that owns the document: a full UUID or 8 to 32 hex characters."
+                },
+                "kind": {
+                  "type": "string",
+                  "description": "Document kind: plan, rule or page.",
+                  "enum": [
+                    "plan",
+                    "rule",
+                    "page"
+                  ]
+                },
+                "slug": {
+                  "type": "string",
+                  "description": "Document slug, unique per (root, kind). On upsert: 1 to 200 characters, no leading or trailing whitespace, no control characters, none of [ ] #; a plan slug must not start with rule/."
+                },
+                "body": {
+                  "type": "string",
+                  "description": "Inline document text (may be empty). Exactly one of body and bodyFromFile is required. [ops: upsert]"
+                },
+                "bodyFromFile": {
+                  "type": "string",
+                  "description": "Server-side path whose text becomes the body (MCP only). Exactly one of body and bodyFromFile is required. Resolved strictly inside the agent config root: no absolute path, no '..', no symlink out of it; a regular UTF-8 file of at most 65536 bytes. [ops: upsert]"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Display title. Omit to keep the current title. [ops: upsert]"
+                },
+                "expectedVersion": {
+                  "type": "integer",
+                  "description": "Guard on the document's version: omit to write unconditionally, 0 to require that it does not exist, n to require that its current version is n. Anything else is version_conflict and nothing is written. [ops: upsert, archive, unarchive]"
+                },
+                "itemId": {
+                  "type": "string",
+                  "description": "Id of the work item: a full UUID or 8 to 32 hex characters of one. It must be under the document's root. [ops: attach, detach]"
+                },
+                "idempotencyKey": {
+                  "type": "string",
+                  "description": "Optional client key (1-128 chars). Resending the same op with the same key returns the stored result."
+                }
+              },
+              "required": [
+                "op"
+              ]
+            }
+          },
+          "atomic": {
+            "type": "boolean",
+            "description": "true: the first failing op rolls back the whole batch. Default false: each op commits on its own."
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Write the versioned documents (plans, rules, pages) of a project root, in batches: upsert, archive, unarchive, delete, attach and detach. Every op needs the write-docs capability. Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 617
+    },
+    {
+      "name": "config",
+      "inputSchema": {
+        "properties": {
+          "ops": {
+            "type": "array",
+            "description": "Write operations, one flat object per op, run in order. A field marked [ops: ...] applies only to the ops named.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "description": "The operation this element runs.",
+                  "enum": [
+                    "get",
+                    "history",
+                    "push",
+                    "validate",
+                    "rollback",
+                    "reset",
+                    "effective",
+                    "rules"
+                  ]
+                },
+                "rootId": {
+                  "type": "string",
+                  "description": "Project root item (depth 0): a UUID or a hex prefix of 8 to 32 characters."
+                },
+                "version": {
+                  "type": "integer",
+                  "description": "Config version number, 1 or greater. [ops: get, rollback]"
+                },
+                "fingerprint": {
+                  "type": "string",
+                  "description": "Content fingerprint to classify against the root's history; adds relation: current, superseded or unknown. [ops: get]"
+                },
+                "limit": {
+                  "type": "integer",
+                  "description": "Page size, 1 to 200 (default 50). [ops: history]"
+                },
+                "before": {
+                  "type": "integer",
+                  "description": "Page back: only versions below this number (exclusive); pass the last version of the previous page. [ops: history]"
+                },
+                "configYaml": {
+                  "type": "string",
+                  "description": "The config document, YAML text of at most 131072 bytes. [ops: push, validate]"
+                },
+                "force": {
+                  "type": "boolean",
+                  "description": "Skip the project.rootId mismatch and older-content guards (default false). Never skips validation or expectedVersion. [ops: push]"
+                },
+                "expectedVersion": {
+                  "type": "integer",
+                  "description": "Compare-and-set: the head version this write expects, 1 or greater. A different head is version_conflict; force does not skip it. [ops: push, rollback]"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "Rule key: lowercase letters, digits, dot, underscore or hyphen, starting alphanumeric, at most 100 characters. [ops: rules]"
+                },
+                "itemId": {
+                  "type": "string",
+                  "description": "Item whose effective schema holds noteKey: a UUID or a hex prefix of 8 to 32 characters. A root item is its own root. [ops: rules]"
+                },
+                "noteKey": {
+                  "type": "string",
+                  "description": "Note key looked up in itemId's effective schema; its skill field names the rule key. [ops: rules]"
+                },
+                "idempotencyKey": {
+                  "type": "string",
+                  "description": "Optional client key (1-128 chars). Resending the same op with the same key returns the stored result."
+                }
+              },
+              "required": [
+                "op"
+              ]
+            }
+          },
+          "atomic": {
+            "type": "boolean",
+            "description": "true: the first failing op rolls back the whole batch. Default false: each op commits on its own."
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Per-root config and rules. Each ops[] element has an op: get, history, push, validate, rollback, reset (a root's versioned config document), effective (the resolved view), or rules (rule text). Reads need the read capability, push, rollback and reset the write-config capability. rootId is a depth-0 item. Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 669
+    },
+    {
+      "name": "runs_read",
+      "inputSchema": {
+        "properties": {
+          "select": {
+            "type": "string",
+            "description": "Which read to run. A field marked [select: ...] applies only to the selects named.",
+            "enum": [
+              "get",
+              "list",
+              "seats",
+              "frontier"
+            ]
+          },
+          "runId": {
+            "type": "string",
+            "description": "Run id: a UUID or a hex prefix of 8 to 32 characters. [select: get, seats, frontier]"
+          },
+          "rootId": {
+            "type": "string",
+            "description": "Only those on this root. Item id: a UUID or a hex prefix of 8 to 32 characters. [select: list]"
+          },
+          "status": {
+            "type": "string",
+            "description": "Only runs in this status: open, paused or closed. [select: list]",
+            "enum": [
+              "open",
+              "paused",
+              "closed"
+            ]
+          },
+          "endedSince": {
+            "type": "string",
+            "description": "Only runs closed at or after this instant (ISO 8601 UTC, for example 2026-10-13T00:00:00Z). [select: list]",
+            "format": "date-time"
+          },
+          "unmarked": {
+            "type": "string",
+            "description": "Only closed runs that do not carry this mark key (lowercase letters, digits, - and _, starting with a letter). Implies closed runs. [select: list]"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Page size, 1 to 200 (default 50). [select: list]"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "The page.next value of the previous page. [select: list]"
+          },
+          "itemId": {
+            "type": "string",
+            "description": "Only those on this item (a UUID or a hex prefix). [select: seats]"
+          },
+          "ended": {
+            "type": "boolean",
+            "description": "true: include ended seats; default only active ones. [select: seats]"
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Read runs, the bounded budgeted passes over a set of items. select: get (one run), list (runs, newest first), seats (a run's seat assignments), frontier (ready, in-flight and waiting members), decisions or decision. A run or decision is outside the call scope when its root is. Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "tokens": 477
+    },
+    {
+      "name": "runs_write",
+      "inputSchema": {
+        "properties": {
+          "ops": {
+            "type": "array",
+            "description": "Write operations, one flat object per op, run in order. A field marked [ops: ...] applies only to the ops named.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "description": "The operation this element runs.",
+                  "enum": [
+                    "open",
+                    "update",
+                    "close",
+                    "assign",
+                    "end_seat",
+                    "raise"
+                  ]
+                },
+                "rootId": {
+                  "type": "string",
+                  "description": "The root item the run belongs to. Item id: a UUID or a hex prefix of 8 to 32 characters. [ops: open, raise]"
+                },
+                "items": {
+                  "type": "array",
+                  "description": "Member items, at most 500. Each is an item of the root that has a lifecycle and is in no other open run. [ops: open]",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "scopeId": {
+                  "type": "string",
+                  "description": "An item the run is scoped to. Item id: a UUID or a hex prefix of 8 to 32 characters. [ops: open]"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "A short label, at most 64 characters. [ops: open]"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "A title, at most 200 characters. [ops: open]"
+                },
+                "budget": {
+                  "type": "object",
+                  "description": "Run budget: attemptsPerSeat, maxActiveSeats; absent means no cap. On open it may not exceed a configured ceiling; on update a field can only be lowered or newly set. [ops: open, update]",
+                  "properties": {
+                    "attemptsPerSeat": {
+                      "type": "integer",
+                      "description": "Most attempts one seat may take."
+                    },
+                    "maxActiveSeats": {
+                      "type": "integer",
+                      "description": "Most seats active at once."
+                    }
+                  }
+                },
+                "stallAfterSeconds": {
+                  "type": "integer",
+                  "description": "Seconds without a coordinator sign of life before the run reads as stalled. Default from config. [ops: open]"
+                },
+                "hints": {
+                  "type": "object",
+                  "description": "Short structured coordinator hints, string to string. On update they replace the stored hints. [ops: open, update, assign]",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "runId": {
+                  "type": "string",
+                  "description": "Run id: a UUID or a hex prefix of 8 to 32 characters. [ops: update, close, assign, raise]"
+                },
+                "addItems": {
+                  "type": "array",
+                  "description": "Items to add to the run. Item id: a UUID or a hex prefix of 8 to 32 characters. [ops: update]",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "removeItems": {
+                  "type": "array",
+                  "description": "Items to remove from the run. Item id: a UUID or a hex prefix of 8 to 32 characters. [ops: update]",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "expectedVersion": {
+                  "type": "integer",
+                  "description": "Fails with version_conflict unless the run is at this version. [ops: update]"
+                },
+                "reason": {
+                  "type": "string",
+                  "description": "Why the run ends: completed, cancelled, failed or abandoned. completed is refused while a seat is active. [ops: close]",
+                  "enum": [
+                    "completed",
+                    "cancelled",
+                    "failed",
+                    "abandoned"
+                  ]
+                },
+                "itemId": {
+                  "type": "string",
+                  "description": "Item id: a UUID or a hex prefix of 8 to 32 characters. [ops: assign, raise]"
+                },
+                "seat": {
+                  "type": "string",
+                  "description": "A seat of the item's schema (implementer or planner when it has none, plus reviewer when it has review notes). Returns a seat token; re-assigning supersedes. [ops: assign]"
+                },
+                "outcome": {
+                  "type": "string",
+                  "description": "How the calling seat ended. [ops: end_seat]",
+                  "enum": [
+                    "done",
+                    "failed",
+                    "abandoned"
+                  ]
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "Closing summary, at most 500 characters. [ops: end_seat]"
+                },
+                "links": {
+                  "type": "array",
+                  "description": "Up to 10 {kind, ref} pointers; kind is item, note, doc, commit or url. [ops: end_seat, raise]",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "class": {
+                  "type": "string",
+                  "description": "Decision class (for example question or deviation); it decides who may answer. [ops: raise]"
+                },
+                "question": {
+                  "type": "string",
+                  "description": "The question, at most 500 characters. [ops: raise]"
+                },
+                "options": {
+                  "type": "array",
+                  "description": "1 to 8 choices, each {key, label, consequence}. [ops: raise]",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "recommended": {
+                  "type": "string",
+                  "description": "Key of the recommended option. [ops: raise]"
+                },
+                "context": {
+                  "type": "string",
+                  "description": "Background for the answerer, at most 1000 characters. [ops: raise]"
+                },
+                "dedupeKey": {
+                  "type": "string",
+                  "description": "Re-raising the same key returns the open or answered decision instead of a new one. [ops: raise]"
+                },
+                "severity": {
+                  "type": "string",
+                  "description": "Class default. [ops: raise]",
+                  "enum": [
+                    "high",
+                    "normal",
+                    "low"
+                  ]
+                },
+                "block": {
+                  "type": "boolean",
+                  "description": "true: also block itemId as awaiting_decision in the same unit. [ops: raise]"
+                },
+                "idempotencyKey": {
+                  "type": "string",
+                  "description": "Optional client key (1-128 chars). Resending the same op with the same key returns the stored result."
+                }
+              },
+              "required": [
+                "op"
+              ]
+            }
+          },
+          "atomic": {
+            "type": "boolean",
+            "description": "true: the first failing op rolls back the whole batch. Default false: each op commits on its own."
+          },
+          "describe": {
+            "type": "boolean",
+            "description": "true: return the operations, their parameters and errors instead of running the tool."
+          }
+        },
+        "type": "object"
+      },
+      "description": "Open, update, close, pause, resume and mark runs; assign and end seats; raise, ack, answer and withdraw decisions. Each op needs the runs capability (ack, answer: decide) and a root in scope. close: coordinator, director or a human; update, assign: coordinator token; end_seat: the seat's own token; pause and resume: director or human only; mark: REST only. Result: the run (close adds snapshot, mark adds marked) or the decision. Call with describe:true for each operation's parameters and errors.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "tokens": 1290
+    }
+  ],
+  "totalTokens": 9583
+}

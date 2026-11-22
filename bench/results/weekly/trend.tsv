@@ -1,3 +1,4 @@
 week	hosted	hosted_open	hosted_menus_changed	hosted_client_fails	hosted_with_findings	stdio_rechecked	stdio_client_fails	vendors	vendors_listing	vendors_menus_changed	docker	docker_listing	docker_menus_changed
 2026-11-09	2109	1120	0	26	522	1089	12
 2026-11-15	2109	1110	225	28	523	690	115	98	78	17	236	198	7
+2026-11-22	2109	1119	201	28	552	703	103	98	78	17	236	198	8
