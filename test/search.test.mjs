@@ -23,6 +23,15 @@ test('searchText: the name, description, argument names and argument description
   assert.deepEqual(searchText(t), ['list', 'issue', 'list', 'issue', 'filter', 'which', 'one', 'label', 'tag']);
 });
 
+test("searchText for Codex: name, title, description and the top-level argument names, without argument descriptions", () => {
+  const t = tool('list_issues', [], {
+    title: 'Issue list',
+    description: 'Lists issues.',
+    inputSchema: { type: 'object', properties: { filter: { type: 'object', description: 'Which ones', properties: { label: { type: 'string', description: 'A tag' } } } } },
+  });
+  assert.deepEqual(searchText(t, undefined, 'codex'), ['list', 'issue', 'list', 'issue', 'issue', 'list', 'filter']);
+});
+
 test('buildIndex: the tool named for the words ranks first; a rarer word weighs more', () => {
   const index = buildIndex(fillers);
   assert.equal(index.rank('get refund')[0].tool, 'get_refund');

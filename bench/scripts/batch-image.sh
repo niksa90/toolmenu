@@ -4,7 +4,7 @@
 # Each runs in its own container, started by toolmenu with `docker run -i --rm`, so its code
 # stays there: snapshot, session --auto and review, as full-one.sh; then the sealed pass with
 # --network none: every tool called once, writes included. Each image is pulled first
-# (outside toolmenu's timeout); PRUNE=1 removes it after its server, so a long list
+# (outside toolmenu's timeout, again after a wait if Docker Hub's rate limit refuses it); PRUNE=1 removes it after its server, so a long list
 # (Docker's catalog, docker-catalog.py) fits on the disk. Build first: npm run build.
 set -uo pipefail
 T="$(cd "$(dirname "$0")/../.." && pwd)/dist/cli.js"
@@ -13,7 +13,15 @@ one() {
   local id=$1 image=$2 env_kv=$4 args=$5 d="$out/$1"; mkdir -p "$d"; cd "$d" || return
   local e=(); for kv in $env_kv; do e+=(-e "$kv"); done
   local run=(docker run -i --rm --memory 2g "${e[@]}")
-  if ! timeout 900 docker pull -q "$image" > pull.txt 2>&1; then echo "pull-failed $id" >> "$out/status.txt"; return; fi
+  # Docker Hub refuses pulls past its rate limit (429 Too Many Requests): wait and try again,
+  # so a refused pull doesn't read as a server that stopped starting.
+  local pulled=1 wait
+  for wait in 60 180 0; do
+    timeout 900 docker pull -q "$image" > pull.txt 2>&1 && { pulled=0; break; }
+    grep -qiE '\b429\b|too many requests|toomanyrequests' pull.txt && [ "$wait" -gt 0 ] || break
+    sleep "$wait"
+  done
+  if [ "$pulled" -ne 0 ]; then echo "pull-failed $id" >> "$out/status.txt"; return; fi
   timeout 420 node "$T" snapshot --json --timeout 60000 --lists prompts,resources --read-resources --client claude-code --offline-check --out menu.json -- "${run[@]}" "$image" $args > snapshot.json 2> snapshot-err.txt
   local sc=$? tools
   tools=$(node -e 'try{const j=JSON.parse(require("fs").readFileSync("snapshot.json","utf8"));console.log(j.tools||0)}catch{console.log(0)}')

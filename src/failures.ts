@@ -35,6 +35,25 @@ const SIGN_IN = /\bsign in to\b|\blog ?in to (?:continue|use)\b|\bconnect your [
 const PAYMENT = /\bpayment required\b|\b(?:HTTP|status(?: code)?) 402\b|\binsufficient (?:credits?|balance|funds)\b/i;
 const AUTH = /\b(?:auth|authentication|credentials?|api[ _-]?key|access token)\b (?:is |are )?missing\b|\b(?:api[ _-]?key|access token|auth token|credentials?)\b (?:is |are |was |were )?not (?:configured|set|provided)\b|\bneeds? (?:an? )?(?:[\w-]+ )?(?:credentials?|api[ _-]?key|access token)\b|\bmissing (?:required )?authentication credentials?\b|\b[a-z0-9_]*(?:api_?key|token|secret)\b (?:is |was )?not (?:set|configured|provided)\b|\bno (?:authentication|auth|credentials?|api[ _-]?keys?|access tokens?|auth tokens?) (?:was |were )?(?:found|provided|configured|set|given)\b|\b(401|403)\b|unauthori[sz]ed|unauth(enticated|error)|forbidden|bad credentials|authori[sz]ation expired|re-?authori[sz]e|not authenticated|not logged (?:in|into)\b(?! to the browser)|authentication (token|failed|required|error)|(invalid|expired|revoked) (api[ _-]?key|access token|token|credentials)|(token|api[ _-]?key|credentials) (is |are )?(not valid|invalid|expired)|(api[ _-]?key|access token|credentials)\b[^.]{0,30}\b(was|were|is|are) (rejected|refused|revoked)|valid (access )?token/i;
 const NETWORK = /\b(ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|EHOSTUNREACH)\b|socket hang up|getaddrinfo|network error/i;
+/**
+ * A request that got no answer at all: the connection dropped or never opened, so Node's
+ * fetch threw ("fetch failed", with ECONNRESET, "other side closed" or the like as its
+ * cause). That's what toolmenu saw happen to the connection, not anything the server said,
+ * so it's the network's, not a server error. A JSON-RPC error (a numeric code) is the
+ * server's answer, and a tool that answers "fetch failed" as its own error is telling
+ * about its upstream API: neither is this.
+ */
+export function connectionLost(error: unknown): boolean {
+  if (typeof (error as { code?: unknown } | null)?.code === 'number') return false;
+  for (let e: unknown = error, depth = 0; e && depth < 6; e = (e as { cause?: unknown }).cause, depth++) {
+    const code = (e as { code?: unknown }).code;
+    const message = e instanceof Error ? e.message : String(e);
+    if (typeof code === 'string' && (NETWORK.test(code) || code === 'UND_ERR_SOCKET' || code === 'UND_ERR_CLOSED')) return true;
+    if (/^(?:TypeError: )?fetch failed$|\bother side closed\b|\bsocket hang up\b/i.test(message)) return true;
+  }
+  return false;
+}
+
 // "Either 'page_id' OR both 'title' and 'space_key' must be provided" (Atlassian),
 // "**Input Error**" (Sentry), JSON-RPC's invalid params.
 const INVALID_ARGUMENTS = /invalid (params|parameters|arguments|input)|input error|validation (error|failed)|must be provided|is required\b|\beither\b[^.]{0,80}\bor\b[^.]{0,80}\b(must|required)/i;
@@ -207,7 +226,7 @@ export function setupFailureAdvice(classes: Iterable<FailureClass>, transport: '
   if (set.has('payment')) steps.push('If a tool asks for payment, it can\'t be checked without paying: leave it out of the scenario, or run with an account that has credit.');
   if (set.has('environment')) steps.push('If something is missing on this machine (a browser, a binary, a module), install it where the server runs, or run the server in its own container image.');
   if (set.has('client')) steps.push("If a tool needs a client capability toolmenu doesn't declare (roots and sampling, which 2026-07-28 deprecates, the Tasks extension, or one the error names), those calls only checked that the menu stays put, and the server isn't at fault.");
-  if (set.has('network')) steps.push('If the server calls an upstream API, check this machine can reach it (DNS, proxy, firewall).');
+  if (set.has('network')) steps.push(transport === 'http' ? 'If the connection to the server dropped (fetch failed, a reset), rerun: it may not happen twice. If the server calls an upstream API, check this machine can reach it (DNS, proxy, firewall).' : 'If the server calls an upstream API, check this machine can reach it (DNS, proxy, firewall).');
   return { fix: steps.join(' ') || 'Check the quoted errors: they came from before the tool ran.', confidence: 'unsure' };
 }
 

@@ -96,3 +96,15 @@ test('"needs an <X> API key" and "<X>_API_KEY is not set" are missing credential
 test('"missing required authentication credential" is a missing credential (Google\'s hosted MCP servers, bench 2026-11-09)', () => {
   assert.equal(classifyFailure('Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential.', { hadArguments: true }), 'auth');
 });
+
+test('connectionLost: a request that got no answer, not a server\'s words', async () => {
+  const { connectionLost } = await import('../dist/failures.js');
+  // Node's fetch when the socket closes (aliasbakery, 2026-11-22 weekly bench).
+  const dropped = new TypeError('fetch failed', { cause: Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' }) });
+  assert.equal(connectionLost(dropped), true);
+  assert.equal(connectionLost(new TypeError('fetch failed', { cause: Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }) })), true);
+  assert.equal(connectionLost(new Error('socket hang up')), true);
+  // A JSON-RPC error is the server's answer, whatever it says.
+  assert.equal(connectionLost(Object.assign(new Error('MCP error -32603: fetch failed'), { code: -32603 })), false);
+  assert.equal(connectionLost(new Error('Invalid arguments for tool get_form')), false);
+});

@@ -65,10 +65,10 @@ export function toJunit(findings: Finding[], options: JunitOptions): string {
     const tools = toolsOf(f);
     // One case per tool, as SARIF has one result per tool.
     for (const tool of tools.length ? tools : [undefined]) {
-      const key = `${f.rule}\u0000${tool ?? ''}`;
+      const key = `${f.rule}\u0000${tool ?? ''}\u0000${f.client ?? ''}`;
       const nth = seen.get(key) ?? 0;
       seen.set(key, nth + 1);
-      const name = `${tool ?? '(menu)'}${nth ? ` #${nth + 1}` : ''}`;
+      const name = `${tool ?? '(menu)'}${f.client ? ` (${f.client})` : ''}${nth ? ` #${nth + 1}` : ''}`;
       const open = `    <testcase classname="${xml(`toolmenu.${options.command}.${f.rule}`)}" name="${xml(name)}" time="0">`;
       if (SEVERITY_RANK[f.severity] >= SEVERITY_RANK[failOn]) {
         failures++;

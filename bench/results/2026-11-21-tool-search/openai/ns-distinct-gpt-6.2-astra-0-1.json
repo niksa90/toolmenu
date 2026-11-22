@@ -1,0 +1,475 @@
+{
+ "id": "resp_08fe4148185ae8d7006aff66a6a6b887d2a8a345acf8f4a0f6",
+ "object": "response",
+ "created_at": 1795122854,
+ "status": "completed",
+ "access_programs": {
+  "cyber": "standard"
+ },
+ "background": false,
+ "billing": {
+  "payer": "openai"
+ },
+ "completed_at": 1795122857,
+ "error": null,
+ "frequency_penalty": 0.0,
+ "image": {
+  "context_compression": "disabled"
+ },
+ "incomplete_details": null,
+ "input_transformations": [],
+ "instructions": null,
+ "max_output_tokens": null,
+ "max_tool_calls": null,
+ "model": "gpt-6.2-astra",
+ "moderation": null,
+ "output": [
+  {
+   "id": "tsc_08fe4148185ae8d7006aff66a8300487d2a1dc0778dd03b946",
+   "type": "tool_search_call",
+   "status": "completed",
+   "arguments": {
+    "paths": [
+     "github",
+     "jira"
+    ]
+   },
+   "call_id": null,
+   "execution": "server"
+  },
+  {
+   "id": "tso_08fe4148185ae8d7006aff66a8680c87d2ab48dedd8388d67e",
+   "type": "tool_search_output",
+   "status": "completed",
+   "call_id": null,
+   "execution": "server",
+   "tools": [
+    {
+     "type": "namespace",
+     "description": "Jira: issues, sprints and boards for project tracking.",
+     "name": "jira",
+     "tools": [
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Get one Jira issue by its ID.",
+       "name": "get_issue",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Search Jira issues.",
+       "name": "search_issues",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Create a Jira issue.",
+       "name": "create_issue",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Comment on a Jira issue.",
+       "name": "add_comment",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      }
+     ]
+    },
+    {
+     "type": "namespace",
+     "description": "GitHub: repositories, pull requests and issues.",
+     "name": "github",
+     "tools": [
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Get one GitHub issue by its ID.",
+       "name": "get_issue",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Search GitHub issues.",
+       "name": "search_issues",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Create a GitHub issue.",
+       "name": "create_issue",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      },
+      {
+       "type": "function",
+       "defer_loading": true,
+       "description": "Comment on a GitHub issue.",
+       "name": "add_comment",
+       "output_schema": null,
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": false
+       },
+       "strict": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fc_08fe4148185ae8d7006aff66a998e887d2ba05a72b6dc393c3",
+   "type": "function_call",
+   "status": "completed",
+   "arguments": "{\"id\":\"42\"}",
+   "call_id": "call_qkXbc6aTl2ZDcjRRuDPtnoRx",
+   "name": "get_issue",
+   "namespace": "github"
+  }
+ ],
+ "parallel_tool_calls": false,
+ "presence_penalty": 0.0,
+ "previous_response_id": null,
+ "prompt_cache_key": null,
+ "prompt_cache_retention": "24h",
+ "reasoning": {
+  "context": "all_turns",
+  "effort": "medium",
+  "mode": "standard",
+  "summary": null
+ },
+ "safety_identifier": null,
+ "service_tier": "default",
+ "store": true,
+ "temperature": 1.0,
+ "text": {
+  "format": {
+   "type": "text"
+  },
+  "verbosity": "medium"
+ },
+ "tool_choice": "auto",
+ "tool_usage": {
+  "image_gen": {
+   "input_tokens": 0,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 0
+   },
+   "output_tokens": 0,
+   "output_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 0
+   },
+   "total_tokens": 0
+  },
+  "web_search": {
+   "num_requests": 0
+  }
+ },
+ "tools": [
+  {
+   "type": "tool_search",
+   "description": null,
+   "parameters": null
+  },
+  {
+   "type": "namespace",
+   "description": "Jira: issues, sprints and boards for project tracking.",
+   "name": "jira",
+   "tools": [
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get one Jira issue by its ID.",
+     "name": "get_issue",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Search Jira issues.",
+     "name": "search_issues",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Create a Jira issue.",
+     "name": "create_issue",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Comment on a Jira issue.",
+     "name": "add_comment",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    }
+   ]
+  },
+  {
+   "type": "namespace",
+   "description": "GitHub: repositories, pull requests and issues.",
+   "name": "github",
+   "tools": [
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Get one GitHub issue by its ID.",
+     "name": "get_issue",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Search GitHub issues.",
+     "name": "search_issues",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Create a GitHub issue.",
+     "name": "create_issue",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    },
+    {
+     "type": "function",
+     "defer_loading": true,
+     "description": "Comment on a GitHub issue.",
+     "name": "add_comment",
+     "output_schema": null,
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "additionalProperties": false
+     },
+     "strict": true
+    }
+   ]
+  }
+ ],
+ "top_logprobs": 0,
+ "top_p": 1.0,
+ "truncation": "disabled",
+ "usage": {
+  "input_tokens": 850,
+  "input_tokens_details": {
+   "cache_write_tokens": 0,
+   "cache_write_tokens_details": {
+    "ttl_12h_tokens": 0,
+    "ttl_30m_tokens": 0
+   },
+   "cached_tokens": 0
+  },
+  "output_tokens": 39,
+  "output_tokens_details": {
+   "reasoning_tokens": 21
+  },
+  "total_tokens": 889
+ },
+ "user": null,
+ "metadata": {}
+}

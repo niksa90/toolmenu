@@ -4,6 +4,7 @@
 // languages can. The VALID tools are the controls: spec/ref must stay quiet.
 // Serves 2026-07-28 via serveStdio, or only the 2025 protocol when LEGACY=1.
 // REFS=valid serves only the valid tools.
+import { pathToFileURL } from 'node:url';
 import { Server } from '@modelcontextprotocol/server';
 import { StdioServerTransport, serveStdio } from '@modelcontextprotocol/server/stdio';
 
@@ -35,7 +36,7 @@ export function build() {
   return server;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (process.env.LEGACY) await build().connect(new StdioServerTransport());
   else serveStdio(build);
 }

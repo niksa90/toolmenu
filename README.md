@@ -168,16 +168,19 @@ Inputs, servers behind auth, forks and `gate: review` are in
 | `review` | Should the new menu replace the baseline? One verdict and an exit code | [docs](https://github.com/niksa90/toolmenu/blob/main/docs/diff.md#accepting-a-new-baseline-review) |
 | `auth check` | Walks an HTTP server's OAuth discovery as a spec-following client does, without logging in | [docs](https://github.com/niksa90/toolmenu/blob/main/docs/usage.md#http-servers-and-oauth) |
 | `auth login` | Signs in to a server behind OAuth once, in a browser; `snapshot` and `session` then use that login | [docs](https://github.com/niksa90/toolmenu/blob/main/docs/usage.md#http-servers-and-oauth) |
-| `scan` | `snapshot` on every server in a client config (Claude Desktop, `.mcp.json`, Cursor, VS Code), side by side | [docs](https://github.com/niksa90/toolmenu/blob/main/docs/snapshot.md#every-server-you-use-scan) |
+| `scan` | `snapshot` on every server in a client config (Claude Desktop, `.mcp.json`, Cursor, VS Code), side by side, then all their tools in one search, as an agent with them all loaded searches them: which tools another server's push out | [docs](https://github.com/niksa90/toolmenu/blob/main/docs/snapshot.md#every-server-you-use-scan) |
 | `history` | Installs a package's published versions one by one and diffs them. Runs third-party code: use a container | [docs](https://github.com/niksa90/toolmenu/blob/main/docs/diff.md#history-a-packages-releases-researched) |
 | `init` | Writes the baseline and the CI workflow | [above](#in-ci-one-pr-comment) |
 | `mcp` | toolmenu as an MCP server and a Claude Code plugin, so the agent building your server can check it while it works | [docs](https://github.com/niksa90/toolmenu/blob/main/docs/usage.md#for-the-agent-building-your-server-mcp) |
 | `explain <rule>` | What a rule checks, its default level and how to change it | [RULES](https://github.com/niksa90/toolmenu/blob/main/docs/RULES.md) |
 
-`--client <name>` checks the menu for one client, from that client's own docs: Claude
+`--client <name>` checks the menu for a client, from that client's own docs or source: Claude
 Code, the Claude API, OpenAI, Codex, VS Code (Copilot Chat), Copilot cloud agent and code
-review, Gemini CLI, the Gemini API or Antigravity ([docs](https://github.com/niksa90/toolmenu/blob/main/docs/clients.md)). A client
-that doesn't document a limit doesn't get one: Cursor's and Windsurf's aren't checked.
+review, Gemini CLI, the Gemini API or Antigravity ([docs](https://github.com/niksa90/toolmenu/blob/main/docs/clients.md)). Several
+(`--client claude-api-search,codex`) compare them: Claude's search returns 5 tools and reads
+argument descriptions, Codex's returns 8 and doesn't, so the same tool can be found in one and
+missed in the other (FINDINGS F23). A client that doesn't document a limit doesn't get one:
+Cursor's and Windsurf's aren't checked.
 
 `session` calls tools for real. Without `allow_writes: true` it refuses any tool not
 marked `readOnlyHint: true`, and `--call-everything` is refused over HTTP, because a

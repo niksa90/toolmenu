@@ -1,0 +1,119 @@
+{
+ "id": "v1_ChdrMmpfYXJHNUFiV3R3YlVQcU9yWi1RURIXazJqX2FyRzVBYld0d2JVUHFPclotUVE",
+ "status": "requires_action",
+ "usage": {
+  "total_tokens": 2758,
+  "total_input_tokens": 1111,
+  "input_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 1111
+   }
+  ],
+  "total_cached_tokens": 0,
+  "total_output_tokens": 99,
+  "total_tool_use_tokens": 1283,
+  "tool_use_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 1283
+   }
+  ],
+  "total_thought_tokens": 265,
+  "initial_input_tokens": 1111
+ },
+ "created": "2026-11-19T21:23:00Z",
+ "updated": "2026-11-19T21:23:00Z",
+ "service_tier": "standard",
+ "steps": [
+  {
+   "id": "call_15271035562614827439",
+   "signature": "EpIICo8ICAISiggBaRR9E4byUaVFGrsTzxPEUPuHHbawEL3rrWZWHs7CiM2v2Fo6F5UJkoMvdUzdYa5SOu4hgLVblfp0Zq3UxkDnOPCdbIZQt9PT5Pp1htcK6/5Qr4tlzZj83EKkihpOxAcm67IpCw9DrBRo09fBN8JAhHvcD0MsPz+W4IJmpGzLe53xzyJGFznFw2eZGM76PerrSUPo1MbA4asgeG4sxHYUy4yrFtvL1M92cgOF7UpmieHcmLaEKkqiWkCovPtdAXlOC0BDt7E3eIuwI+Q2gdVKoDvSTxBv6eqMVQpSZOwCe8bmYxFcRtvGG9IeB1ozHiFj9PxIa4rE0PeXkbw5ELaS2/JFVAtOyMFhY+y7NwRIhGkOWgEzahX5EaFLuB5/VenDYAmmIBWubmWS2PWaam8pUX3bxMlYtaiq0MJxKEiISd8TI+iv4CPULotFxM1zlTmpZ3b5ccH7vyY5tPIPmg3qhcJPBA+rTFDPqAGwhtknLWUSJDfDDc2lM5e2NlenbPEfe8xdih1jaEUHGXd+sZnBH1U7dGCMg3AXJUlufTGhBQ0HIT54oDchjBpUIllGFC/N25CxIVj31zqtXx53mUWlWQdNFqLwLmfp3doaCRYJuBst0XyBjWp71h9K0Yiv1ZpLczQuNcqcJfrF6VeehX+iVUWE2BcMiHxIMbMgFmAyUmyKgAnLK5tQIiYXRj/6lsdgVcq7oYGy31QgFyFcii5+QfEKQzIoE6HnpFFf3QsnpxqZC6IOnJPws48gYQTQWiAKCKdnhfDOIuaXH6EbS6wxeIBDzv3xgeBLyHHb03emp0HOZQzi4kDPdkothYGIgsLNYy+fjK4PuKv+GXqkiMTMvz1yzbTf6z3KdnLTvqrVrIgsU4cVtk3Y9cj025V/9sL+//BIl2ZdvPPlZ9UUCOhCkZzz+3KuAAHzxdhRWe/9AvnjKSidk9aRkPKwqhRL+TGY9Y9/Nu7yqsewMFd1ytq0ZOSbYaY30YHroVuu25G25YzpXfu1K2o1IELThKmLxvJKCMVp6txSoH0VPFLCJRX72VCSe3IbzAwUv1m6oAcM6dtAI+ndByhxldkOz9hL7e2icE+JVbHPRRw7Ti2V8UiOHuuaGpkTJo5RBwKOTpp4fd2sRkhqoTuyw8P9CQfLEuzkuRRE+/f13Zl0TVfqTG6TIuhByz7C2F0ubKhOEu/dSI7koipdbV20hVr5EF+eT6nLh3PyGuzKrfNGlHgWLWqx2KsAc/1lfiCWrcG9yw51JkFJI+NC1slmUtWLKp7YRgPfrowfhgr/iJ5ZawCHkzt3iUBDPNAG+CCxXopHEbNwmj2nN5avOB1SZPnRMzdImFGW+hkM+zM0qr/CmQPRX/yUNXHqb/Yq7FTr+Q==",
+   "type": "tool_search_call",
+   "arguments": {
+    "function_names": [
+     "list_open_orders",
+     "get_order",
+     "list_shipments"
+    ]
+   }
+  },
+  {
+   "call_id": "call_15271035562614827439",
+   "signature": "CAISzgYBaRR9E9rCnv5R37Y72e42TY4ywI2UfpH4np2lDBS1aAiZ75IhyUVuIXjICXHQyFPXa7Tjys6YRI6AGWARBq1N46aMdyx5DXPqK4+ESIjUzTM/bf7EAbhjLajGtZcfRTy2fUoSiDerhPWUOPnBRWbILs0J/B0OJ69gvUFfHVFv4oTiVqbq6Txvh0Vdm8Gg5RtaZ9N7wqbTfeV9KhYOIcxMbAvHrakd4EJgJb+x1e3z8aqGMzdDdrptdzM5MIz3GKxYLn0A+uYwhNavlSOU34zm1/a7OML+luSirPtH34yePr42gCmxSdUkT7qfZradc41pGxjxRJXhm3wVJ+PV6X3dNC3zMhPNyyDqO7ESLRXFPeblmF9Rj/BUr0Wej3ZSYYU6gCvlbeO1m6sCKwrm38gRZMdr5KwJQ6r8Gs61ytbY25slzs0BninBSyZ/dvXnZQFNmSHdjUqDLbP0Du7CLOkovmj+jYrEek4Z3Z5zWornV7L7tSYGS6BiMGk4kMm0VnxS2AyRGUZcTpTni/E4Vo1xi/wJGTM+WIH+xSrZcGESlVgeaphNh7cObfGkBBrUQctd0bU8aHpIhwkh5Q6JskxEzcSG1i90zmcAL9/f7HZT6u27Q4X6J6/n9RT+7tBSufQacryEap8XDJJ0UAFA7NsQmiPQwOwroLMqXJ8NgOWn7vvqJp3XiU9Jm/s1VY+lxgWkaT0z4m9ib93cfsyyiBE9F/xBI6tFdy2pOpCpyhefAQz+qyefv041Co+eqbf9AzMRwO5Vehsb5kjl0XnMT1B+Aq3QQvCRpqZtC/MPlUskoAc1I8+WZvG1PaQxNET1bT4pVcQy6imVSMXIHr7ddiqCNEcgqh/hjpAsEvZ94kPVNjtGmOsCnCcLhClvzFo446RzSIe1NJrY2MaxGZpkKcvdD2BlHj+WVqPE1IBDIOc0Yr0QbXTAYqchZmNFIRGgnqgt2Y050BMCwVRgrblXm0ymlh8/1hM7wkibQ6DeGhY+7dYCYGKhhVAL+cipVbsHAjcWdZQj9DMBjQrvLE/OXpJHzJq4D+AoRDMaChmS3T2kryrHuUTERdRF8HAfXS5xKphVNpz5igk3X86wCoyhEmP/9uR/LWiEUXPrY11U37g=",
+   "type": "tool_search_result",
+   "result": [
+    {
+     "name": "default_api:list_open_orders",
+     "description": "List open orders for a customer ID.",
+     "parameters": {
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    },
+    {
+     "name": "default_api:get_order",
+     "description": "Get order for a customer ID.",
+     "parameters": {
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    },
+    {
+     "name": "default_api:list_shipments",
+     "description": "List shipments for a customer ID.",
+     "parameters": {
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "signature": "Ep4CCpsCAWkUfROjeMw9fg6173p26umsPTLby0Zs5FNS9itwwrjy5fwaw80PXstzAA2zr2DOLtp9V6Fa2EIdO/p8cH6pDigJVcUs9AVG//pUu5DFbQ+uPP4G5rHpu9j1HO1+R8MKH3ZZK03xMfp+cn+HtQdsD7uTtIg5S9Y6QvZ9GAMeLDQM+I+1B10LXEyBwu71nPJWlsZeg8ySUVUrZuaK269hKHjS3fZN+FA7iy16WHjN0vKh6xq006C9yru6j6MbNc9oWdxiWqY3li994bkthFry40yMRV6TXetd0fttk6qLJOLqOhf4S585spaeuvdrQChRTbFpqE/6ICiw6fewG4+XGQ9TjQHaXUm+oehSqY4jQRwtJzo43gMz9NVDGA==",
+   "type": "thought"
+  },
+  {
+   "id": "call_6710455805147290022",
+   "type": "function_call",
+   "name": "list_open_orders",
+   "arguments": {
+    "customer_id": "CUST-12345"
+   }
+  },
+  {
+   "id": "call_6710455805147287933",
+   "type": "function_call",
+   "name": "list_shipments",
+   "arguments": {
+    "customer_id": "CUST-12345"
+   }
+  }
+ ],
+ "object": "interaction",
+ "model": "gemini-3.6-flash"
+}

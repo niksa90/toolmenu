@@ -1,6 +1,7 @@
 // A 2026-07-28 menu for --client: names an API refuses, a tool its server marks to
 // load up front in Claude Code, and a tool whose words sit past what Claude Code's
 // search reads. Low-level Server, so names and _meta go out as written.
+import { pathToFileURL } from 'node:url';
 import { Server } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 
@@ -21,4 +22,4 @@ export function build() {
   return server;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) serveStdio(build);
+if (import.meta.url === pathToFileURL(process.argv[1]).href) serveStdio(build);

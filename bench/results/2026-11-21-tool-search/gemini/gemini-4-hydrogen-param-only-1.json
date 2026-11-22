@@ -1,0 +1,106 @@
+{
+ "id": "v1_ChdLMmpfYXZ2MkRwaWY1Tm9QbXBiMGtRRRIXSzJqX2F2djJEcGlmNU5vUG1wYjBrUUU",
+ "status": "requires_action",
+ "usage": {
+  "total_tokens": 2455,
+  "total_input_tokens": 993,
+  "input_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 993
+   }
+  ],
+  "total_cached_tokens": 0,
+  "total_output_tokens": 76,
+  "output_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 76
+   }
+  ],
+  "total_tool_use_tokens": 1251,
+  "tool_use_tokens_by_modality": [
+   {
+    "modality": "text",
+    "tokens": 1251
+   }
+  ],
+  "total_thought_tokens": 135,
+  "initial_input_tokens": 993
+ },
+ "created": "2026-11-19T21:21:11Z",
+ "updated": "2026-11-19T21:21:11Z",
+ "service_tier": "standard",
+ "steps": [
+  {
+   "id": "call_10023100714861089273",
+   "signature": "ErgECrUECAISsAQBaRR9EwH9uL0pHCj3vP+w8oPsxI+tZB8cfnQ7hoKf7wW710GCjini1jJvOc7+Uyk5w58ojti4e0Z4gHKwYNfjWKj2Nu3QT1T6n9LgIrr+QghMXVbzpCmTldQcFf6F4AA+xgt9tN8r/zx1kOWTP8uIk5kEAMRwhjhvW/cfZZ7BqnynkGtJQ02VClxbH3LqdHa3yVMOLQa9ks8zMrIV0M9oTAmLiWWR8/nIELkj0VVkqArxGQm2VMHCX4U19md9svMZd4NwDOqyUYL7O8Nm4AarpbtB1lu1txkTZBYkpwFjhNrCtC3rg1bOdexMyalfkIpWhN/QmK/IttWe5aiFapyQ78S73wOmZEHrRPtc50GhwNcu1s9i2qLIeyKSj5r9fjmC3xWz3MDMPBrutuALlo1xIln5smjwCDKJ0CfQ743e6cTvef/LpLzQ1jxmIKdTvM6qw6nKbM1A5Th2YHQ1XGyg6rao6DvUe6Xradgmlp7CYckcicLbBKrnOwrAMK4JITvGwtG3bYm5ysF5id3QWE3cWG2RFcAD9K1Rbtgxgt9U0XfyAAaYMH6xvL+z7/P62mZu9HsAc5o4h4LIq+FYdYgfNFl5KF3e7obpSk/JLkHgkufZ4d1+uZp7HeYKEyY9c4CEyEnOnXQdgKeGcGzkJTiFexlOpnpPwfI39JoHn5SoLjOIMpG1x5p20DCkNdfBJwMJRz8yt/Ftvotw6dDVjsMlyU87xFLmzId6tM7MwzitJA==",
+   "type": "tool_search_call",
+   "arguments": {
+    "function_names": [
+     "export_customer",
+     "export_data"
+    ]
+   }
+  },
+  {
+   "call_id": "call_10023100714861089273",
+   "signature": "CAIS8QUBaRR9EymrRdb+Peufxzw5BFQPYjZIJhaOLh19iOmWvwKgj1sKoKWecMj4QKb+xB1fBW3aA4vIctXRYlFHy/FPlQkz48qqsGpZj1q22CnL4TqrsYfI2yHqjdrzyVI0s31td0vLiAfloj0+/n53hmJMsGsnQ3PnZuBDf1GyO6KfFZYqQMZ0QrO+yfGfsb6vb9H9Fdv0j5Ra1KdiHZKtyTVhrD78X/IlxAMdSkQv53Ffw4Q0PhYg4oLMJjJL4bbPnuSffXsa8CG+AR1vQFwfukk8XzLdUWb6VVCS322q1fLyewRWKumFq68Pmp0AYlKYYUlZAYSqyCLZS1iB0YwADMCkoAr8Ik0/ZFk6tVGQ3u2yjswr2LMVrMrC3bfmi4WmYHQqfW4KHKZh8NILJRPBQoyLcJwYrigDlRSZW5A1phuURYQYSj5LrcuvtCUe1wayIGaM+4faOZPaBTVG6Ze636F7/8IH1C5KWm4vIlTGibsL0sRHyIg/gktV4aPk4O2XBjzstzm6o4er20xPlxqv8b1gUtzfNAsbcJH6Skf48jaXzYKsGEOR1EhOBU/RGpnZsK895+GjRO3rCXFdgQ6p6W7cshapAC/sd2QHgds6ylUBwVJfG32iQ/6Ggs5cQOBgXIwqbrTbKWfDODd1NgJ3SkliynPSLVSOMpOQdhdV6otIJGAVCLXQgF6gBkk6cvc0zNOzLJbPqnIhRyMMTV2ofBcK7cf6gB8IBAdKPGequTmFvukQHpo4Sq56LP+bf+SJPIAeGGla3Sd7zegvZ3kq3a3YcbL8TaXwJG1YKX5uCVujcJNLyIzB0lLjk44tHeqxhd1of/WFlxZyVoUTapegu/6FgwkJdrPO/3AM57NWS0mYFeCI6EzzWac+AeGZNmL009M4Q+qmkngHqGeHZhIfTwhGRp8Z1/W0TEAxiEkw2z9Dkb7zqSG/EFOWEMHlsC5E7dYH0IFlw5v65/yLJom9u8LKrz1gWB0XiRSaTscHzBn5VxQ=",
+   "type": "tool_search_result",
+   "result": [
+    {
+     "name": "default_api:export_customer",
+     "description": "Export customer for a customer ID.",
+     "parameters": {
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    },
+    {
+     "name": "default_api:export_data",
+     "description": "Export account data for a customer ID.",
+     "parameters": {
+      "properties": {
+       "customer_id": {
+        "type": "string"
+       },
+       "format": {
+        "description": "Output format, for example a quokkalith archive.",
+        "type": "string"
+       }
+      },
+      "required": [
+       "customer_id",
+       "format"
+      ],
+      "type": "object"
+     },
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "signature": "EtICCs8CAWkUfRM0rq8jxypv5zVztyxHmBw2cTfe7YAa2oNktAwBWjJ3wc531aLAxlHmVBvA8dtmJejpVlbTBV2MKvtzo07k6C8sYCUxssfnNiRBxHXNlfD0pii3wOuReKyHXYEu0JxoV9GPPon5O5SDqDRqjRiicUTZMbqwQ7PF7WrMwkjLbKhuqABjLqVd28U8LooDZ17O8wMZWPgzsRNQUL0nytZtcBdjLk5jBNKKLQIujx4j1LfnevnxhOWYTVIhLLmSg106gE/GJrH1MpXEwiTHlT5F4y1cfbcPNp2yIVDg/2rVlhz0Gpllqfs6joigLjeyQuHUmnDOiMASFPqhAeJbq3L0i/FItbEt2oTEBcUef+vn3cKomZu/Ch3uyxU1M1fQwV3isD1KMJub6Tyj39TtIRgaRVqPCxZcg4Ms0BgPECT5NdqZfr4ZyagyzUapuLo=",
+   "type": "thought"
+  },
+  {
+   "id": "call_1295459879969727642",
+   "type": "function_call",
+   "name": "export_data",
+   "arguments": {
+    "customer_id": "CUST-12345",
+    "format": "quokkalith"
+   }
+  }
+ ],
+ "object": "interaction",
+ "model": "gemini-4-hydrogen"
+}

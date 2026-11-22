@@ -2,6 +2,41 @@
 
 ## Unreleased
 
+### New
+
+- **`scan` ranks across servers (`search/outranked`).** An agent with several servers
+  loaded searches all their tools at once, so a tool its own server ranks in the top
+  results can drop out. With Atlassian, GitHub, Sentry and Azure DevOps together, 8 tools
+  do in Claude's search (GitHub's `list_issues`: 4th alone, 23rd with the others), none in
+  Codex's. `scan --routes` checks your phrases across servers; `scan --client` ranks per client.
+- **`--client a,b` checks for several clients in one run** (also `scan --client`, and a list
+  in the config). The client-specific rules run for each, labelled "For Codex: …"; the
+  first client is the main one.
+- **`search/client-difference`** (info): with two or more clients toolmenu can rank, the
+  tools one client's search finds by their own name and another's misses. Sentry 0.49.0's
+  `find_organizations` is 23rd in Claude's search and 7th in Codex's: missed in one,
+  found in the other.
+- **`--client codex` ranks tools for `search/findable`.** Codex's source (commit
+  `3869f39`, read 2026-11-19) defers every MCP tool when the model supports tool search,
+  ranks them with BM25 over the name, `title`, description and top-level argument names
+  (not their descriptions), and returns 8 by default. `search/findable` now uses each
+  client's own result count, 5 for Claude, 8 for Codex, and Codex's fields for Codex.
+
+### Repository
+
+- **The plugin runs toolmenu 0.29.0** (was 0.28.1): its snapshots report
+  `instructions/unknown-name` and `spec/discover-refused`, and no longer
+  `description/late-instruction`.
+
+### Fixed
+
+- **A call whose connection drops is the network's, not a `session/step-failed` error.**
+  When toolmenu's own request gets no answer (Node's fetch throws "fetch failed": a reset,
+  the other side closed), the call counts under `session/untested` as "on the network",
+  with a next step to rerun. On the 2026-11-22 weekly bench, aliasbakery's `about` answered
+  at step 2 and dropped at step 11, and the finding called it the server's error. A tool
+  that answers "fetch failed" as its own error stays a `session/tool-error`.
+
 ## 0.29.0
 
 ### New
