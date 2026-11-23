@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- **`auth login` works on a server that speaks only 2026-07-28.** The login went through,
+  then the command failed on its own 2025 `initialize` with "Unsupported protocol
+  version: 2025-11-25". `auth login` now negotiates the version the way `snapshot` does
+  by default.
+
 ## 0.30.0
 
 ### New

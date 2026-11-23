@@ -7,7 +7,9 @@ import { createServer } from 'node:http';
 import { createMcpHandler } from '@modelcontextprotocol/server';
 import { build } from './forms.mjs';
 
-export async function start({ tokenLifetime = 3600, registration = true, preRegistered, authorizationEndpoint } = {}) {
+// modernOnly: a server that speaks only 2026-07-28 (a hosted one, say): the 2025
+// initialize handshake is refused the way it refuses it, -32022 with the versions it supports.
+export async function start({ tokenLifetime = 3600, registration = true, preRegistered, authorizationEndpoint, modernOnly = false } = {}) {
   const handler = createMcpHandler(build);
   const clients = new Map();
   // An app registered by hand, as GitHub requires: { client_id, client_secret, redirect_uris }.
@@ -97,6 +99,9 @@ export async function start({ tokenLifetime = 3600, registration = true, preRegi
       const expiry = tokens.get(token);
       if (!expiry || expiry < Date.now()) {
         return json(res, 401, { error: 'invalid_token' }, { 'www-authenticate': `Bearer resource_metadata="${base}/.well-known/oauth-protected-resource/mcp"` });
+      }
+      if (modernOnly && /"method"\s*:\s*"initialize"/.test(body)) {
+        return json(res, 400, { jsonrpc: '2.0', error: { code: -32022, message: 'Unsupported protocol version: 2025-11-25', data: { supported: ['2026-07-28'], requested: '2025-11-25' } }, id: 0 });
       }
       const headers = new Headers();
       for (const [k, v] of Object.entries(req.headers)) if (typeof v === 'string') headers.set(k, v);
