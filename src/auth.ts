@@ -379,7 +379,7 @@ export async function login(serverUrl: string, options: LoginOptions = {}): Prom
     // moved); the state is then kept for the callback leg's check.
     await provider.invalidateCredentials('discovery');
     const transport = new StreamableHTTPClientTransport(new URL(serverUrl), { authProvider: provider });
-    const client = new Client({ name: 'toolmenu', version: VERSION });
+    const client = new Client({ name: 'toolmenu', version: VERSION }, { versionNegotiation: { mode: 'auto' } });
     // Whether the server asked for credentials during this login (a 401 to answer).
     let challenged = false;
     try {
@@ -445,7 +445,7 @@ async function anonymousTools(serverUrl: string): Promise<number | undefined> {
 
 /** Connect with the stored login and list tools: the login works. */
 async function check(serverUrl: string): Promise<{ name?: string; tools: number }> {
-  const client = new Client({ name: 'toolmenu', version: VERSION });
+  const client = new Client({ name: 'toolmenu', version: VERSION }, { versionNegotiation: { mode: 'auto' } });
   const transport = new StreamableHTTPClientTransport(new URL(serverUrl), { authProvider: new StoredOAuthProvider(serverUrl) });
   await client.connect(transport);
   try {

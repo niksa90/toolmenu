@@ -55,6 +55,23 @@ test('auth login: register, authorize, exchange, and snapshot uses the login', a
   }
 });
 
+// A hosted server that speaks only 2026-07-28: the login went through,
+// then auth login failed on its own 2025 initialize ("Unsupported protocol version").
+test('auth login: a server that speaks only 2026-07-28 logs in, and snapshot uses the login', async () => {
+  isolated();
+  const server = await start({ modernOnly: true });
+  try {
+    const result = await login(server.url, { port: port(), open: browser() });
+    assert.equal(result.authenticated, true);
+    assert.equal(result.tools > 0, true);
+    assert.equal(hasLogin(server.url), true);
+    const { menu } = await snapshot({ kind: 'http', url: server.url }, { timeoutMs: TIMEOUT_MS });
+    assert.ok(menu.tools.length > 0);
+  } finally {
+    await server.close();
+  }
+});
+
 test('auth: an expired token is refreshed; a revoked login says to log in again', async () => {
   isolated();
   const server = await start();
