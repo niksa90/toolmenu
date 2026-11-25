@@ -77,6 +77,9 @@ export function serverMetadataUrls(issuer: string): string[] {
     : [`${u.origin}/.well-known/oauth-authorization-server`, `${u.origin}/.well-known/openid-configuration`];
 }
 
+/** Microsoft Entra ID's own metadata host. */
+export const isEntraMetadata = (url: string | undefined): boolean => /^https:\/\/login\.microsoftonline\.com\//.test(url ?? '');
+
 export async function authCheck(url: string, timeoutMs = 15_000): Promise<AuthCheck> {
   const out: AuthCheck = { url, findings: [] };
   const say = (rule: string, severity: Finding['severity'], message: string, fix?: string, detail?: string[]) =>
@@ -211,15 +214,18 @@ export async function authCheck(url: string, timeoutMs = 15_000): Promise<AuthCh
   }
   out.pkce = Array.isArray(as.code_challenge_methods_supported) ? (as.code_challenge_methods_supported as unknown[]).map(String) : undefined;
   if (!out.pkce?.includes('S256')) {
+    // Microsoft Entra ID's OpenID metadata omits the field though it supports S256, so every
+    // Microsoft-hosted server would show this error for something it doesn't lack: a warn.
+    const entra = isEntraMetadata(out.serverMetadataUrl) && !out.pkce;
     say('auth/pkce',
-      'error',
+      entra ? 'warn' : 'error',
       out.pkce
         ? `The authorization server's metadata (${out.serverMetadataUrl}) lists code_challenge_methods_supported ${JSON.stringify(out.pkce)}, without S256. MCP clients MUST use S256 when they can and MUST verify it's supported, so a client that follows the spec can't log in.`
         : (out.serverMetadataUrl ?? '').includes('openid-configuration')
           ? // OpenID Connect Discovery doesn't define the field, but MCP 2025-11-25 requires it
             // of providers that use it. Its absence says PKCE isn't advertised, not that it's
             // missing: Entra ID supports S256 and documents it, and omits the field.
-            `The authorization server's OpenID Connect metadata (${out.serverMetadataUrl}) has no code_challenge_methods_supported. That doesn't show the server lacks PKCE (some support it without saying so here), but MCP 2025-11-25 requires providers that use OpenID Connect Discovery to include it, and tells clients to verify it and refuse to go on without it. So a client that follows the MCP spec to the letter won't log in, whatever the server supports.`
+            `The authorization server's OpenID Connect metadata (${out.serverMetadataUrl}) has no code_challenge_methods_supported. That doesn't show the server lacks PKCE (some support it without saying so here), but MCP 2025-11-25 requires providers that use OpenID Connect Discovery to include it, and tells clients to verify it and refuse to go on without it. So a client that follows the MCP spec to the letter won't log in, whatever the server supports.${entra ? ' This is Microsoft Entra ID, which supports S256 and leaves the field out of its OpenID metadata, so most clients do log in.' : ''}`
           : `The authorization server's metadata (${out.serverMetadataUrl}) has no code_challenge_methods_supported. Under RFC 8414 that means it doesn't support PKCE, and MCP clients MUST refuse to go on without it, so a client that follows the spec can't log in.`,
       'Add "code_challenge_methods_supported": ["S256"] to the authorization server metadata (and support it).',
     );
