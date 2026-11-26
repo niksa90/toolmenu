@@ -708,6 +708,14 @@ test('session: the same error from different tools is one tool-error finding; a 
   assert.equal(e.confidence, 'unsure');
 });
 
+test('session: an error about a condition of the server (terms to accept) does not send the reader to --value', async () => {
+  const r = await run(['session', '--auto', '--json', '--value', 'broken_search.query=x', '--env', 'EULA=1', '--', process.execPath, join(FIXTURES, 'auto-server.mjs')]);
+  const e = JSON.parse(r.stdout).findings.find((f) => f.rule === 'session/tool-error');
+  assert.ok(e, r.stdout);
+  assert.doesNotMatch(e.fix, /Check the values you gave/);
+  assert.match(e.fix, /condition of its own, not on the values/);
+});
+
 test('session: a mid-session finding says the cache cost once', async () => {
   const scenario = join(ROOT, 'examples/unlock.scenario.yml');
   const r = await run(['session', '--scenario', scenario, '--json', '--', process.execPath, join(FIXTURES, 'session-server.mjs')]);

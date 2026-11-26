@@ -45,7 +45,7 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   } else if (msg.method === 'tools/call') {
     const { name, arguments: args = {} } = msg.params ?? {};
     if (process.env.CALLS) appendFileSync(process.env.CALLS, JSON.stringify({ name, args }) + '\n');
-    if (name === 'broken_search') send({ id: msg.id, result: text('Search engine rejected the request: bad query', true) });
+    if (name === 'broken_search') send({ id: msg.id, result: text(process.env.EULA ? 'The EULA must be accepted before using this tool. Start the server with --accepteula.' : 'Search engine rejected the request: bad query', true) });
     else if (name === 'fetch_urls' && !(args.urls ?? []).length) send({ id: msg.id, result: text('urls must not be empty', true) });
     else send({ id: msg.id, result: text('ok') });
   } else {

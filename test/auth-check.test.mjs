@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { authCheck, resourceMetadataOf, serverMetadataUrls, wellKnownResource } from '../dist/auth-check.js';
+import { authCheck, isEntraMetadata, resourceMetadataOf, serverMetadataUrls, wellKnownResource } from '../dist/auth-check.js';
 
 /** A server whose discovery documents are set by `docs` (path → JSON, or a status code). */
 async function serve(docs, { header = true } = {}) {
@@ -127,4 +127,11 @@ test('auth/pkce on OpenID Connect metadata says PKCE isn\'t advertised, not that
   const r = await check((b) => ({ '/.well-known/oauth-protected-resource/mcp': prm(b), '/.well-known/oauth-authorization-server': 404, '/.well-known/openid-configuration': { issuer: b, registration_endpoint: '/r' } }));
   assert.deepEqual(rules(r), ['auth/pkce:error']);
   assert.match(r.findings[0].message, /doesn't show the server lacks PKCE .* MCP 2025-11-25 requires providers that use OpenID Connect Discovery to include it/);
+});
+
+test('helpers: only Microsoft Entra ID\'s own metadata host gets the softer auth/pkce wording', () => {
+  assert.equal(isEntraMetadata('https://login.microsoftonline.com/organizations/v2.0/.well-known/openid-configuration'), true);
+  assert.equal(isEntraMetadata('https://login.microsoftonline.com.evil.example/.well-known/openid-configuration'), false);
+  assert.equal(isEntraMetadata('http://127.0.0.1:1/.well-known/openid-configuration'), false);
+  assert.equal(isEntraMetadata(undefined), false);
 });

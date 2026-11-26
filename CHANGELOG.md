@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **`session/tool-error` no longer blames `--value` for a condition of the server's own.**
+  When the error says terms or an EULA must be accepted (the Power BI modeling server's
+  `The Power BI Authoring MCP EULA must be accepted…`), the next step now says the values
+  weren't what it refused, and to meet the condition on the server side.
+- **`auth/pkce` is a warning for Microsoft Entra ID's metadata.** Entra supports S256 and
+  leaves `code_challenge_methods_supported` out of its OpenID metadata, so every
+  Microsoft-hosted server showed an error for something it doesn't lack.
+
 ## 0.30.1
 
 ### Fixed

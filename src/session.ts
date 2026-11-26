@@ -929,6 +929,9 @@ function sameError(failures: Failure[]): Failure[] {
 // Only definite statements: a hedge in the server's own advice ("the account may lack
 // permission") says nothing about this call, and a bare "permission" or "role" turns up in
 // ordinary validation messages.
+// The server's own words for a precondition on the server's side (terms to accept, a licence),
+// not on the call's values.
+const PRECONDITION = /\b(?:eula|terms of (?:use|service)|licen[cs]e agreement|must be accepted|must accept|accept the (?:terms|agreement|licen[cs]e))\b/i;
 const UNAVAILABLE = /\b(?:isn't|is not|not|aren't|are not)\s+(?:set up|enabled|configured|available|activated|licensed|provisioned)\b|\bdisabled\b|\b(?:permission|access)s? denied\b|\binsufficient (?:permissions?|privileges?)\b|\b(?:don't|doesn't|do not|does not) have (?:the )?(?:required |necessary )?(?:permissions?|access)\b|\bforbidden\b|\bnot allowed\b/i;
 
 /** A step whose change was only in values known to vary on their own. */
@@ -981,6 +984,8 @@ function failureFindings(failures: Failure[], auto: AutoSummary | undefined): Ra
       ? undefined
       : unavailable
         ? `The server says this feature isn't available here: nothing to change in the call. Test ${tools.length === 1 ? 'it' : 'them'} on a deployment that has it, or leave ${tools.length === 1 ? 'it' : 'them'} out: ${leaveOut}.`
+        : argsCan && PRECONDITION.test(f.text)
+          ? `The server refused on a condition of its own, not on the values: read its words above, meet the condition on the server side (a flag, a setting or an acceptance) and rerun, or leave ${tools.length === 1 ? 'it' : 'them'} out: ${leaveOut}.`
         : noParams
           ? `${tools.length === 1 ? `${f.tool} takes` : 'These tools take'} no arguments, so nothing in the call can fix this: the error is the server's. Check it on the server side, or leave ${tools.length === 1 ? 'it' : 'them'} out: ${leaveOut}.`
           : auto?.withValues?.includes(f.tool)
